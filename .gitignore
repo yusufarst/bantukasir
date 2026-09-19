@@ -1,0 +1,36 @@
+# Secrets and private local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+private/
+.local/
+
+# Dependencies and generated output (future implementation)
+node_modules/
+.next/
+out/
+dist/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+*.log
+
+# Operational data never belongs in the public repository
+backups/
+uploads/
+data/
+*.dump
+*.backup
+*.sqlite
+
+# Local tooling
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
