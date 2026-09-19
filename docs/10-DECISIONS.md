@@ -1,59 +1,79 @@
-# 10 — Keputusan arsitektur dan asumsi
+# 10 — Architecture decisions and assumptions
 
-Baseline desain tanggal **19 September 2026**, disusun dari brief pemilik dan inspeksi repositori kosong. `LOCKED-BASELINE` berarti agen berikutnya harus mengikuti keputusan sampai diganti secara eksplisit; **bukan** klaim pemilik sudah menyetujui review dokumentasi/visual. Review dokumentasi owner masih menunggu. Ketika keputusan diganti, tambahkan ID baru yang menyebut keputusan lama, alasan, dampak dokumen/tugas/data dan persetujuan bila diperlukan; jangan menulis ulang sejarah.
+Initial baseline: **19 September 2026**. Refinement: **20 September 2026**. LOCKED means the design is binding for subsequent agents until explicitly replaced; it does **not** claim owner document/visual approval. Owner review is pending.
 
-## Register keputusan
+Preserve decision history. A replacement names the prior ID, reason and affected specification/tasks. Do not reopen accepted decisions without a concrete requirement.
 
-| ID / status | Keputusan dan alasan | Alternatif / tradeoff | Spesifikasi kanonis |
+## Baseline decisions
+
+| ID / status | Decision and reason | Tradeoff | Canonical source |
 | --- | --- | --- | --- |
-| D01 / LOCKED-BASELINE | Modular monolith, satu PostgreSQL, stack pilihan brief dipertahankan; worker dari codebase sama | Microservices/Redis/queue eksternal menambah biaya operasi tanpa kebutuhan dua staf | [02](02-ARCHITECTURE.md) |
-| D02 / LOCKED-BASELINE | Ledger append-only + balance projection sinkron dalam satu commit | SUM ledger setiap baca sederhana tetapi mahal dan tidak menyediakan row stabil untuk validasi; cache async berisiko stale saat issue | [06](06-INVENTORY-SPEC.md) |
-| D03 / LOCKED-BASELINE | READ COMMITTED + guard row per produk dan lock berurutan, receipt durable | SERIALIZABLE dapat menjadi alternatif tetapi tetap butuh retry; lock hanya per lokasi mempersulit agregat alert. Throughput satu SKU dibatasi secara sengaja | [06](06-INVENTORY-SPEC.md) |
-| D04 / LOCKED-BASELINE | Satu base unit/SKU, numeric(18,3), precision 0–3, serial integer, tanpa konversi pack MVP | Integer saja tidak cocok kabel per meter; float tidak aman; multi-unit ditunda agar scan tidak memiliki faktor implisit | [06](06-INVENTORY-SPEC.md) |
-| D05 / LOCKED-BASELINE | Serial dasar masuk Core bersama quantity; QC/warranty/service tetap lanjutan | Menunda semua serial berisiko merombak identitas, scanner dan ledger setelah dipakai. Core hanya identity/posisi/riwayat, bukan siklus servis | [03](03-DOMAIN-MODEL.md), [12](12-BARCODE-SCANNER.md) |
-| D06 / LOCKED-BASELINE | Scan-session browser → review → commit; HID keyboard vendor-neutral; Code 128 internal | Posting tiap scan rawan salah/dobel; vendor SDK menambah lock-in; kamera/PWA offline write bukan prasyarat MVP | [12](12-BARCODE-SCANNER.md) |
-| D07 / LOCKED-BASELINE | Low-stock memakai stok tersedia agregat STORAGE per produk, minimum inklusif | Total fisik dapat menyesatkan saat reserved/transit; per-location alert default menciptakan spam. Per-location policy dapat ditambah terpisah | [13](13-NOTIFICATIONS.md) |
-| D08 / LOCKED-BASELINE | Satu episode perhatian sampai Normal; LOW/OUT masing-masing sekali, escalation OUT, recovery parsial tidak reset | Check threshold setiap poll mengulang alert; threshold hysteresis ditunda karena transisi episode cukup untuk kebutuhan awal | [13](13-NOTIFICATIONS.md) |
-| D09 / LOCKED-BASELINE | Inbox durable + Web Push opt-in, transactional outbox, external delivery at least once | Inbox saja tidak memberi pemberitahuan di luar tab; WhatsApp/SaaS berbayar tidak disetujui. Push tetap bergantung izin/perangkat/provider | [13](13-NOTIFICATIONS.md) |
-| D10 / LOCKED-BASELINE | Better Auth self-hosted, sesi DB, fixed roles + permissions, owner TOTP, tanpa signup publik | Auth buatan sendiri memperbesar risiko; managed auth berbayar tidak perlu. Library perlu verifikasi compatibility/security saat P01 | [04](04-AUTH-RBAC-SECURITY.md) |
-| D11 / LOCKED-BASELINE | Audit/keamanan/health hook sejak ledger; backup/restore dan ops dasar sebelum pilot | Urutan awal yang menaruh audit/ops di akhir terlalu lambat untuk data gudang. Public website tetap setelah Core terpercaya | [11](11-BUILD-PLAN.md) |
-| D12 / LOCKED-BASELINE | Transfer langsung dan koreksi owner minimal di MVP; reversal penuh sekali/original; approval engine kemudian | Tanpa koreksi sistem tak bisa menangani salah catat; approval semua transaksi membuat owner bottleneck; partial reversal lebih rumit | [06](06-INVENTORY-SPEC.md) |
-| D13 / LOCKED-BASELINE | Public allowlist projection dari master tunggal, tanpa exact availability default | Database publik terpisah membuat sinkronisasi ganda; serializing internal model lalu hiding UI membocorkan data | [02](02-ARCHITECTURE.md) |
-| D14 / LOCKED-BASELINE | HTML/CSS standalone sebagai kontrak; dua approval gate, prototype registry dan revisi | Implementasi React dulu melanggar brief; tes/screenshot bukan persetujuan visual owner | [05](05-DESIGN-SYSTEM.md) |
-| D15 / LOCKED-BASELINE | Waktu posting server UTC, hari bisnis WIB, tanpa backdating ledger | Editable timestamp dapat menyembunyikan urutan transaksi. Tanggal dokumen disimpan terpisah | [02](02-ARCHITECTURE.md), [06](06-INVENTORY-SPEC.md) |
-| D16 / LOCKED-BASELINE | Backup 6-jam terenkripsi off-host + latihan restore, tanpa hapus otomatis ledger/receipt | Snapshot lokal saja tidak melindungi kehilangan VPS; PITR dapat diperlukan jika RPO 6 jam tak diterima | [09](09-DEPLOYMENT-OPS.md) |
-| D17 / LOCKED-BASELINE | Progres berdasarkan jumlah tugas selesai dari 55; baseline dokumen tidak menambah progres aplikasi | Estimasi subjektif/FE [V] dianggap selesai memberi kesan palsu. Task count tidak sama dengan persentase waktu/biaya | [11](11-BUILD-PLAN.md) |
-| D18 / LOCKED-BASELINE | Dua dokumen tambahan: barcode/scanner (12), notifikasi (13); 06 menautkan keduanya | Menjejalkan semua detail ke 06 memperberat pemulihan konteks. Tidak ada spesifikasi scanner/alert kedua | [README](../README.md) |
-| D19 / LOCKED-BASELINE | Opname lanjutan memakai freeze scope, reservasi terpisah dari ledger fisik, transit dua posting | Rolling count dan mutasi qty saat reservation memperbesar peluang salah hitung. Freeze perlu jadwal operasional yang jelas | [06](06-INVENTORY-SPEC.md) |
+| D01 / LOCKED | Modular monolith, one PostgreSQL, requested stack and same-codebase worker | Microservices/external queues add unjustified operating cost | [02](02-ARCHITECTURE.md) |
+| D02 / LOCKED | Append-only ledger and synchronous transactional balance projection | Repeated full sums are costly; asynchronous stock projection cannot authorize issue safely | [06](06-INVENTORY-SPEC.md) |
+| D03 / LOCKED | READ COMMITTED, ordered product guards and durable receipts | Same-SKU throughput deliberately serialized; SERIALIZABLE would still require retry | [06](06-INVENTORY-SPEC.md) |
+| D04 / LOCKED | One base unit/SKU, numeric(18,3), precision 0–3, serial integer, no Core pack conversion | Supports fractional cable without hidden scan multipliers | [06](06-INVENTORY-SPEC.md) |
+| D05 / LOCKED | Basic serial identity in Core; QC/warranty/service later | Avoid later identity/ledger redesign without building full service lifecycle early | [03](03-DOMAIN-MODEL.md) |
+| D06 / LOCKED | Browser scan-session → review → atomic commit; vendor-neutral HID and internal Code 128 | Per-beep posting and proprietary middleware rejected; camera/offline writes not Core prerequisites | [12](12-BARCODE-SCANNER.md) |
+| D07 / LOCKED | Low stock uses aggregate eligible STORAGE availability and inclusive minimum | Physical totals can hide reserved/transit stock; per-location alert policy deferred | [13](13-NOTIFICATIONS.md) |
+| D08 / LOCKED | Attention episode lasts until NORMAL; LOW/OUT once each | Partial recovery/read status never resets deduplication; no periodic same-state spam | [13](13-NOTIFICATIONS.md) |
+| D09 / LOCKED | Durable inbox, opt-in Web Push and transactional outbox; at-least-once external delivery | Provider/device dependency remains; no paid notification service required | [13](13-NOTIFICATIONS.md) |
+| D10 / LOCKED | Self-hosted Better Auth, DB sessions, fixed roles/permissions, owner TOTP, no public signup | Verify pinned library/adapter/security during P01; no custom cryptography or paid auth | [04](04-AUTH-RBAC-SECURITY.md) |
+| D11 / LOCKED | Audit/security/health from ledger inception; backup/restore before pilot | Public site and advanced reporting cannot delay Core integrity | [11](11-BUILD-PLAN.md) |
+| D12 / LOCKED | Direct transfer and minimum owner correction in Core; one full reversal/original | Routine staff operations need no approval; flexible approval and partial reversal deferred | [06](06-INVENTORY-SPEC.md) |
+| D13 / LOCKED | Public allowlist projection of one Product Master; exact stock private | No duplicate public master or full-entity serialization with UI hiding | [02](02-ARCHITECTURE.md) |
+| D14 / REFINED BY D27 | Standalone HTML as visual contract with owner prototype and implementation gates | Technical checks/screenshots do not replace owner approval | [05](05-DESIGN-SYSTEM.md) |
+| D15 / LOCKED | Server UTC posting, WIB business dates, no physical-ledger backdating | Separate document/evidenced financial dates preserve actual posting order | [06](06-INVENTORY-SPEC.md) |
+| D16 / LOCKED | Encrypted six-hour off-host backups, measured restore, no automatic ledger/receipt deletion | Same-VPS copies insufficient; stricter loss tolerance requires PITR decision | [09](09-DEPLOYMENT-OPS.md) |
+| D17 / SUPERSEDED BY D31 | Baseline progress denominator was 55 tasks /30 Core | Retained as history only; current denominator belongs to 11 | [11](11-BUILD-PLAN.md) |
+| D18 / EXTENDED BY D22/D20 | Scanner (12) and notifications (13) have separate canonical ownership | Avoid one oversized inventory specification or duplicated algorithms; import/finance now have 14/15 | [README](../README.md) |
+| D19 / LOCKED | Later opname freezes locations; reservation is separate from physical ledger; transit uses dispatch/receipt postings | Rolling counts and reservation quantity edits rejected initially | [06](06-INVENTORY-SPEC.md) |
 
-## Perubahan terhadap urutan/ide awal
+## Refinement decisions
 
-1. Identitas serial dasar dimajukan ke Core; fitur lifecycle lanjut tetap ditunda (D05).
-2. Audit, keamanan, atomic health/event dan backup dipindah sebelum operasi nyata; tidak menunggu akhir seluruh fitur (D11).
-3. Transfer langsung, opening dan koreksi minimal dimasukkan Core, sedangkan reservation/transit/opname/approval formal tetap fase lanjutan (D12/D19).
-4. Definisi ambang diperjelas sebagai available aggregate, dengan aturan Habis dan severity escalation dalam episode yang sama (D07/D08).
-5. Inbox/push dan durable outbox ditetapkan agar “proaktif” mempunyai jalur teknis nyata tanpa vendor berbayar (D09).
-6. Serial/scanner dan notifikasi memiliki kepemilikan dokumen sendiri (D18). Teknologi utama brief tidak diganti; Better Auth ditambahkan sebagai pilihan autentikasi.
+| ID / status | Decision and reason | Tradeoff / effect | Canonical source |
+| --- | --- | --- | --- |
+| D20 / LOCKED | MWA per SKU across locations for interchangeable quantity and serialized goods; actual serial acquisition retained as evidence | FIFO adds unsupported layer complexity; specific identification reserved for future truly non-interchangeable/custom scope. Capture private evidence in Core; valuation after Sales | [15](15-FINANCE-PROFITABILITY.md) |
+| D21 / LOCKED | First metric is Laba Kotor Penjualan Barang with matched accepted revenue/COGS; owner-only cost/profit permissions | No net-profit or whole-company claim; unknown evidence blocks complete metrics, not physical posting | [15](15-FINANCE-PROFITABILITY.md), [04](04-AUTH-RBAC-SECURITY.md) |
+| D22 / LOCKED | Core XLSX/UTF-8 CSV, create-only products, one atomic business commit/file, 5,000-row cap | Any invalid/existing SKU blocks file. Staging batches are allowed; silent upsert/skip/partial business commits are not | [14](14-BULK-IMPORT.md) |
+| D23 / LOCKED | Product import never touches stock. Quantity/serial opening jobs use the ledger, matching cutover freeze and durable receipts | Authorized opening worker alone has 5,000-line cap; interactive commands remain 200. Independent scope splitting only | [14](14-BULK-IMPORT.md) |
+| D24 / LOCKED | Internal brand area is a single sidebar toggle; public logo is a home link | Avoid ambiguous dual actions. Desktop rail uses official mark; mobile uses a drawer | [05](05-DESIGN-SYSTEM.md) |
+| D25 / LOCKED | Mobile-first task hierarchy and deliberately productive desktop layouts | Phone monitoring differs from desktop bulk review; mandatory viewport/keyboard/touch checks | [05](05-DESIGN-SYSTEM.md) |
+| D26 / LOCKED | Burgundy, Source Sans 3, Lucide and restrained tokens/motion | Replaces earlier blue assumption; candidate colors require asset/contrast review; no logo redesign or default shadcn identity | [05](05-DESIGN-SYSTEM.md) |
+| D27 / LOCKED | Five canonical HTML bundles, CP01–CP04 before production and CP05 later; reuse approved patterns directly | Refines D14 without removing either owner gate. Significant new workflows revise their CP; no second full frontend codebase | [05](05-DESIGN-SYSTEM.md) |
+| D28 / LOCKED | Each complete repeated quantity token adds one; no timing-based duplicate modal; serials hard-deduplicate | Replaces baseline rapid-identical-scan interruption. Visible counts, undo, final review and real hardware tests protect accuracy | [12](12-BARCODE-SCANNER.md) |
+| D29 / LOCKED | Server search/filter/pagination, PostgreSQL-native indexes first, limited useful bulk actions | No whole-master browser fetch, speculative mass edits or external search/queue service without measured need | [02](02-ARCHITECTURE.md), [14](14-BULK-IMPORT.md) |
+| D30 / LOCKED | Attention-first cockpit and mandatory element/action/fact audit | Current stock separate from period finance/operations; no duplicate KPI/chart/list facts, fake charts or decorative UI | [01](01-PRD.md), [05](05-DESIGN-SYSTEM.md) |
+| D31 / LOCKED | Current plan: 65 tasks, 34 Core, 13 phases; documentation adds no implementation credit | Replaces D17; consolidates prototypes and adds import/evidence/camera/finance dependencies. Version 2.1 explicitly covers CMS/wa.me without changing count | [11](11-BUILD-PLAN.md) |
+| D32 / LOCKED | First-party database-managed structured public content, draft/preview/publish, owner-only publication/settings, published wa.me configuration | Supersedes prior PRODUCT_SALES_ADMIN publication permission; product draft preparation remains. No paid CMS, raw HTML editor, WhatsApp API or content-only redeploy. Click is not conversation/sale | [02](02-ARCHITECTURE.md), [04](04-AUTH-RBAC-SECURITY.md) |
+| D33 / LOCKED | Existing VPS/domain, configurable origins/storage, local storage adapter and independent encrypted backup | No hardcoded VPS credentials/paths/ports or assumed internal hostname. Paid storage only if needed/approved; reliable off-host backup remains mandatory | [09](09-DEPLOYMENT-OPS.md) |
+| D34 / LOCKED | Canonical documentation English; user-facing LATANSA UI Bahasa Indonesia | Latest owner instruction replaces the baseline Indonesian documentation language; technical identities remain unchanged | [AGENTS](../AGENTS.md), [05](05-DESIGN-SYSTEM.md) |
 
-## Asumsi eksplisit dan waktu validasi
+## Assumptions and validation
 
-| ID | Asumsi keputusan awal | Validasi / tindakan jika salah |
+| ID | Assumption / current state | Validate or change before |
 | --- | --- | --- |
-| A01 | Satu badan usaha; satu owner dan dua staf. Dua staf awal dapat sama-sama inventory admin | Review dokumentasi; ubah assignment tanpa menaikkan staf ke owner |
-| A02 | Satu lokasi aktif awal boleh diperluas; seluruh operator inventory boleh mengakses seluruh lokasi usaha | Sebelum pilot; jika scope per gudang wajib, rancang end-to-end authorization dahulu |
-| A03 | Tidak ada batch/lot/kedaluwarsa atau consignment wajib pada produk awal | Review dokumentasi dan sebelum import; jika ada, revisi identity/ledger sebelum input stok tersebut |
-| A04 | Satuan dasar saja, kabel boleh pecahan hingga tiga desimal; tidak ada pack conversion MVP | Sebelum membuat master; permintaan presisi/konversi lebih luas memerlukan perubahan kontrak |
-| A05 | Stok negatif/backorder fisik dilarang; koreksi hanya menggambarkan kenyataan terverifikasi | Review dokumentasi; jangan implementasi bypass untuk mengatasi mismatch |
-| A06 | Nomor seri unik per produk setelah trim/uppercase, tidak diasumsikan unik lintas brand/model | Sebelum import serial; jika case-sensitive nyata, revisi normalisasi dan constraint dahulu |
-| A07 | Perangkat utama mendukung HID Enter; ukuran label 50×30 mm hanya template uji | Hardware/printer smoke P04/P06; sesuaikan layout/suffix tanpa vendor middleware |
-| A08 | Owner memiliki perangkat mendukung Web Push atau bersedia menilai batas kanal aktual | Persiapan P05, uji perangkat di HTTPS staging P06.5; jika gagal, gate proaktif belum selesai, jangan mengarang delivery |
-| A09 | RPO 6 jam/RTO 4 jam dapat diterima dan operator teknis punya akses storage off-host | Sebelum pilot; ubah strategi backup/PITR bila owner memerlukan batas lebih ketat |
-| A10 | Owner dapat menangani koreksi sensitif yang jarang; staf harian tidak menunggu approval | Pilot; bila volume koreksi tinggi, evaluasi sebab UX/proses sebelum memperluas permission |
-| A11 | Skala 5.000 SKU/20.000 serial/100.000 kaki ledger hanya dataset benchmark | Ukur data nyata tanpa menganggap angka ini inventaris perusahaan |
-| A12 | Belum ada domain/VPS/destination backup/printer/lisensi font/nomor WhatsApp yang ditetapkan | Pilih saat fase terkait. Tidak memblokir dokumen; dapat memblokir penerimaan deploy atau perangkat |
+| A01 | One business, one owner and two staff; both staff may be inventory admins | Document review; assign actual roles without elevating staff to owner |
+| A02 | One initial site may grow; inventory roles access all company locations | Pilot; design end-to-end scope authorization first if needed |
+| A03 | No required batch/expiry/consignment tracking established | Importing affected stock; revise identity/ledger before use if needed |
+| A04 | Base units only, cable up to three decimals, no pack conversion | Master creation |
+| A05 | No negative stock/backdated physical posting; corrections reflect verified facts | Owner review and operating SOP |
+| A06 | Manufacturer serial unique per product after trim/uppercase | Serial import; revise normalization first if truly case-sensitive |
+| A07 | HID Enter devices; 50×30 mm is only an initial label test | P04/P06 actual scanner/printer tests |
+| A08 | Owner device supports acceptable push or owner explicitly accepts the actual channel limitation | P05 setup and P06.5 HTTPS/closed-tab acceptance |
+| A09 | Six-hour RPO/four-hour RTO acceptable; independent recovery storage available | Pilot; owner accepts measured result or require stronger backup |
+| A10 | Sensitive corrections are infrequent enough for owner execution | Pilot; inspect UX/process causes before broadening permissions |
+| A11 | 5,000 SKUs/20,000 serials/100,000 ledger legs are benchmark data, not company facts | Performance tests and actual scale review |
+| A12 / UPDATED | Client already owns a VPS and current business domain (see README). Actual host access, internal hostname, backup destination, printer and WhatsApp number remain unset | Relevant deployment/public/device phases; never request or store secrets in public docs |
+| A13 | Initial financial coverage is interchangeable goods in IDR; custom manufacturing/services need later policy | Costing eligibility and P11 activation |
+| A14 | Official colored/monochrome logos and legible rail mark have not been supplied here | CP01 owner approval; do not generate substitutes |
+| A15 | One atomic 5,000-row job fits bounded target resources | P02/P03 measured admission tests; explicitly revise caps if it does not |
+| A16 | Source Sans 3/Lucide are selected; actual assets/license copies are not packaged yet | CP01/package verification |
+| A17 | Optional first-party WhatsApp click tracking is sufficient; no chat/sale outcome integration required | P09 inquiry design |
 
-Tidak ada pertanyaan yang harus dijawab untuk menulis baseline ini. Asumsi yang menyentuh data fisik atau pemulihan harus diverifikasi **sebelum** penggunaan operasional, bukan dibiarkan sebagai default tersembunyi.
+No unanswered question blocks this documentation checkpoint. Actual physical-data, permissions, recovery and financial-scope assumptions MUST be validated before operational use. Pending owner/asset/host evidence is not implementation completion.
 
-## Rujukan teknis dan versi
+## Reference and version policy
 
-Rujukan primer diperiksa 19 September 2026; tautan dekat klaim berada di dokumen kanonis: PostgreSQL locking/isolation/constraints/backup, Next.js authentication, Better Auth session/email/2FA, MDN Barcode Detection dan Push API. Keputusan desain LATANSA adalah pertimbangan engineering, bukan klaim dokumentasi vendor menetapkan arsitektur ini. Versi dependency yang benar-benar dipakai belum dipilih; P01 wajib memeriksa versi stabil, adapter kompatibel dan advisory lalu mengunci lockfile. Upgrade major memerlukan evaluasi risiko dan keputusan pengganti bila semantik berubah.
+Primary references are linked near their claims in canonical documents: PostgreSQL locking/isolation/constraints/backup, Next.js auth, Better Auth sessions/2FA, MDN barcode/push, OWASP file upload, WAI disclosure, Source Sans/Lucide licenses and IAS 2/IFRS 15 concepts. These support specific mechanisms, not a vendor endorsement of LATANSA's architecture.
+
+Dependencies are not installed/pinned yet. P01 verifies current compatible stable versions/advisories and commits a lockfile. Major upgrades require risk review and a replacement decision if semantics change.

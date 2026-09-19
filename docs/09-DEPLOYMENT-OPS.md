@@ -1,99 +1,125 @@
-# 09 — Deployment dan operasi
+# 09 — Deployment and operations
 
-Desain target, belum ada host/Compose/backup/job yang berjalan. Pelaksana teknis mengoperasikan sistem; owner tidak perlu menjalankan PostgreSQL secara manual. Menambah VPS/storage berbayar memerlukan keputusan pembelian terpisah, bukan dianggap gratis karena software open-source.
+Target design only. No deployment, Compose file, running backup or job exists. Use the client's existing VPS and domain; any extra recurring purchase requires explicit approval. Open-source software does not make storage or recovery free.
 
-## Topologi dan rilis
+## Topology and portability
 
-Satu VPS Linux menjalankan Docker Compose: Caddy, web Next.js, worker dari image yang sama, PostgreSQL, dan job backup terjadwal. Hanya Caddy mengekspos 80/443. Port DB tidak terbuka internet; web/worker terhubung jaringan internal. Data Postgres dan file persisten di volume terpisah dengan permission minimum. Aplikasi/worker non-root, image version/digest terkunci; jangan menggunakan tag `latest` untuk produksi.
+One Linux VPS runs Compose services: Caddy, Next.js web, worker from the same image, PostgreSQL and scheduled backup. Only Caddy exposes public 80/443 by default; host bindings remain deployment configuration. Database is private. Separate persistent database and file volumes, least-privilege permissions, non-root app/worker and pinned image versions/digests; no production latest tags.
 
-Caddy menangani HTTPS otomatis dan reverse proxy; domain/email sertifikat memakai konfigurasi operator yang tidak perlu dipublikasikan. Redirect HTTPS, header keamanan dan batas request body ditetapkan saat deploy. Jalur auth/stock tidak di-cache proxy. Pengaturan trusted proxy memastikan client tak bisa memalsukan IP lewat header langsung.
+Caddy provides HTTPS/reverse proxy. Configure hostnames, certificate contact, request limits, security headers and trusted proxy behavior at deployment. No auth/stock response caching. Central APP_ORIGIN identifies the internal application; PUBLIC_SITE_ORIGIN later identifies the public site. The current business domain is recorded in README, not scattered through code. Do not assume the final internal hostname/subdomain.
 
-MVP tidak memerlukan cluster/Kubernetes. Pisahkan environment development, test, staging/pilot, production beserta DB, key, push subscription dan backup destination. Staging tidak mengirim notifikasi produksi. Database migration dijalankan sebagai pekerjaan tunggal sebelum trafik versi baru; web startup tidak berlomba menjalankan migration.
+VPS IP, SSH host/user/keys, credentials, port mappings and absolute storage paths live in private operator configuration. Code uses logical volumes/object keys and validated environment settings. Migration to another VPS restores database/media/configuration, changes DNS/origins and verifies HTTPS/auth/push/backup; it must not require application source edits.
 
-Urutan rilis kelak: review/quality gate → build image immutable → backup tervalidasi → maintenance bila perubahan incompatible → migration terkontrol → start web/worker → readiness → smoke test → buka trafik → pantau error/stock invariant. Gunakan expand/contract untuk perubahan skema bertahap. Rollback kode hanya jika schema compatible; destructive migration membutuhkan restore/recovery plan, bukan menjalankan down migration tanpa menilai data.
+Separate development, test, staging/pilot and production databases, secrets, subscriptions and backup destinations. Staging cannot notify production recipients. Run migrations once as a controlled job; web startup must not race migration.
 
-## Konfigurasi dan secret
+Release sequence: applicable review/quality gate → immutable image → verified backup → maintenance if incompatible → controlled migration → start web/worker → readiness/smoke → traffic → monitor. Prefer expand/contract changes. Code rollback requires compatible schema; destructive migrations need explicit recovery planning.
 
-[.env.example](../.env.example) hanya key dengan nilai kosong. Tabel ini mendefinisikan komponen yang membutuhkan masing-masing key. Nilai nyata berada di secret store/mount file environment pada host privat dengan permission ketat, tidak di compose yang dikomit atau screenshot. Startup memvalidasi tipe/URL/origin/secret strength, log hanya **nama** variabel yang hilang.
+## Runtime configuration
 
-| Variabel | Komponen / persyaratan | Sifat |
+[.env.example](../.env.example) holds empty values only. Store real values in protected runtime files/mounts, never committed Compose files or screenshots. Validate types, URLs/origins and secret strength. Errors name missing variables without exposing values.
+
+| Variable | Component/requirement | Classification |
 | --- | --- | --- |
-| `NODE_ENV` | web/worker, pilihan development/test/production tervalidasi | Nonsecret |
-| `APP_ORIGIN` | web, satu origin resmi; HTTPS produksi; allowlist CSRF/tautan push | Nonsecret, konfigurasi deployment |
-| `DATABASE_URL` | web/worker, akun runtime least privilege | Secret |
-| `MIGRATION_DATABASE_URL` | job migration saja, pemilik schema terpisah | Secret; tidak di environment web |
-| `BETTER_AUTH_SECRET` | web/auth; entropi sesuai library versi terkunci | Secret; tidak ada fallback |
-| `BETTER_AUTH_URL` | web/auth; konsisten dengan origin resmi | Nonsecret |
-| `PUSH_ENABLED` | worker/web, boolean eksplisit; false hanya mode pengembangan atau degradasi tercatat | Nonsecret; tidak default diam-diam |
-| `VAPID_PUBLIC_KEY` | push enabled; dikirim ke client hanya lewat endpoint yang diperlukan | Public key, bukan private secret |
-| `VAPID_PRIVATE_KEY` | worker jika push enabled | Secret |
-| `VAPID_SUBJECT` | worker jika push enabled; kontak valid operator | Konfigurasi privat, jangan demo kontak asli di Git |
-| `BACKUP_DATABASE_URL` | job backup; akun khusus read akses backup sesuai kebutuhan | Secret |
-| `BACKUP_DESTINATION` | backup job; tujuan di luar host melalui konfigurasi aman | Perlakukan privat, tanpa embedded credential dalam log |
-| `BACKUP_ENCRYPTION_RECIPIENT` | backup job; public recipient key enkripsi backup | Public key, tetapi nilai deployment tidak di repo |
-| `BACKUP_DECRYPTION_KEY_FILE` | restore operator saja; path file private key terproteksi | Secret file; tidak dipasang di web/worker/backup rutin |
-| `POSTGRES_DB`, `POSTGRES_USER` | bootstrap container DB dari template deploy kelak | Konfigurasi privat |
-| `POSTGRES_PASSWORD_FILE` | bootstrap DB; path mounted secret yang diberikan Docker | Secret file, tidak dikomit |
+| NODE_ENV | Web/worker; validated development/test/production | Nonsecret |
+| APP_ORIGIN | Web; configured internal origin, HTTPS in production; CSRF/push links | Deployment setting |
+| PUBLIC_SITE_ORIGIN | Public website once enabled; public canonical links/SEO | Deployment setting, no assumed subdomain |
+| STORAGE_ROOT | Core import worker/web; configured private writable root/mount | Deployment path, never hardcoded |
+| DATABASE_URL | Web/worker least-privilege runtime account | Secret |
+| MIGRATION_DATABASE_URL | Migration job only, separate schema owner | Secret, absent from web environment |
+| BETTER_AUTH_SECRET | Auth; required entropy under pinned library | Secret, no fallback |
+| BETTER_AUTH_URL | Auth; consistent with APP_ORIGIN | Deployment setting |
+| PUSH_ENABLED | Explicit boolean; false only development or recorded degradation | No silent default |
+| VAPID_PUBLIC_KEY | Required when push enabled; limited client endpoint | Public key |
+| VAPID_PRIVATE_KEY | Push worker | Secret |
+| VAPID_SUBJECT | Push worker operator contact | Private deployment configuration |
+| BACKUP_DATABASE_URL | Dedicated backup account | Secret |
+| BACKUP_DESTINATION | Off-host destination, transport credentials separate | Private configuration |
+| BACKUP_ENCRYPTION_RECIPIENT | Backup encryption public recipient key | Deployment value kept out of Git |
+| BACKUP_DECRYPTION_KEY_FILE | Restore operator only, protected private key path | Secret file, absent from web/worker/routine backup |
+| POSTGRES_DB, POSTGRES_USER | Container initialization | Private deployment configuration |
+| POSTGRES_PASSWORD_FILE | Mounted database initialization secret | Secret file |
 
-Credential transport ke storage backup memakai mount credential/file pada job sesuai adapter terpilih, bukan ditanam di `BACKUP_DESTINATION`. Adapter/destination nyata dipilih ketika lingkungan disiapkan; akses ke destination dan key pemulihan harus terbukti sebelum pilot. Tidak membuat daftar key penyedia SaaS spekulatif.
+Backup adapter credentials are mounted separately, not embedded in destination/logs. Choose and verify the actual destination/recovery access before pilot; do not add speculative SaaS keys.
 
-Konfigurasi wajib komponen yang hilang membuat komponen gagal siap; fitur yang sengaja dimatikan menunjukkan status “Belum Aktif”, bukan berhasil. Jika PUSH_ENABLED=false, inventory tetap dapat berjalan pada development; penerimaan Core tetap tunduk gate kanal owner pada 13. Secret tidak pernah memakai prefix `NEXT_PUBLIC_`; browser hanya mendapatkan VAPID public key yang memang publik.
+Missing required settings fail readiness for the relevant component. Disabled features display **Belum Aktif**, never success. PUSH_ENABLED=false can support development but does not satisfy the real owner-channel gate. No secret uses NEXT_PUBLIC. WhatsApp number/templates belong to published database content, not environment variables.
 
-## Backup yang dapat dipulihkan
+## Local file storage
 
-Asumsi sasaran pilot: **RPO maksimal 6 jam, RTO maksimal 4 jam**, perlu persetujuan owner dan pengukuran restore. Ini toleransi kehilangan data, bukan jaminan yang telah terbukti. Jika enam jam transaksi tak dapat diterima, tingkatkan ke WAL archiving/PITR sebelum go-live dan catat keputusan baru.
+Use a storage adapter with logical keys under configurable STORAGE_ROOT. Separate private imports/error exports, private evidence attachments when introduced, and intentionally published media. Private directories MUST NOT be mounted as public web roots. Serve private objects through authenticated handlers; static public assets contain no serial labels/documents.
 
-- Jadwalkan logical dump PostgreSQL custom format setiap 6 jam. Enkripsi sebelum salin keluar host; lakukan checksum dan verifikasi keterbacaan arsip. Simpan hasil job, waktu snapshot, checksum, ukuran, DB/app schema version, tujuan dan exit status tersanitasi.
-- Dump adalah snapshot DB konsisten; bukan copy volume Postgres hidup. Cluster roles/privileges/extensions perlu dicatat dan direstorasi terpisah. Rujukan dasar: [PostgreSQL SQL dump](https://www.postgresql.org/docs/current/backup-dump.html). Pemilihan jadwal/retensi berikut adalah kebijakan LATANSA.
-- Retensi awal: seluruh backup 6-jam untuk 7 hari, satu per minggu untuk 4 minggu, satu per bulan untuk 3 bulan. Jangan menghapus backup terakhir yang diketahui valid karena upload terbaru belum terverifikasi. Kapasitas dan biaya storage diukur.
-- Minimal satu salinan terenkripsi berada pada media/akun/host terpisah dari VPS dan diuji aksesnya. Volume lain pada VPS yang sama tidak cukup. Batasi credential backup agar tidak mudah menghapus semua salinan; versioning/immutability bila destination mendukung.
-- Kunci dekripsi disimpan terpisah dari VPS, dengan akses pemulihan oleh owner/operator berwenang. Kehilangan key berarti backup tidak dapat dipakai; latihan restore harus memakai salinan key recovery sebenarnya melalui kanal privat.
-- Saat aset file diperkenalkan: gunakan objek immutable/content-addressed, backup file dan manifest yang sesuai DB snapshot; jangan delete fisik sebelum retention aman. Untuk perubahan file nonimmutable, freeze upload singkat selama koordinasi snapshot. DB dump saja tidak memulihkan gambar/lampiran.
+- Import limits under [14](14-BULK-IMPORT.md): 10 MiB input, 50 MiB expanded XLSX, 100 archive entries and 5,000 data rows.
+- Later product/hero images: at most 10 MiB input and 20 megapixels; allow JPEG/PNG/WebP, verify signatures, decode/re-encode, strip metadata, bound CPU/memory, and create sized variants. Reject SVG/HTML/user scripts and arbitrary remote URL fetches. Trusted owner-provided logo source files are reviewed separately before packaging.
+- Random/immutable object keys, no user-supplied filesystem paths; reject traversal and executable uploads. Files have no execute permission; owner-only filesystem access plus restricted runtime group.
+- Store object metadata/checksum/reference in PostgreSQL. Publish only validated derived assets. Do not physically remove objects still referenced by published revisions or retained backup manifests.
+- Monitor disk and cleanup terminal staging under retention rules. Back up committed media with DB-referenced manifests.
+- Future S3-compatible storage changes the adapter/configuration, not business identities. Copy objects, verify counts/checksums/references, switch adapter, verify access/restore, then retire the old copy under retention. Do not automatically purchase object storage.
 
-## Runbook restore
+## Recoverable backup
 
-1. Nyatakan insiden dan waktu cut-off ke owner, hentikan posting serta worker external delivery. Jaga sumber lama read-only untuk investigasi; jangan menimpa satu-satunya salinan.
-2. Pilih backup tervalidasi, cocokkan checksum/version, dekripsi di host pemulihan terisolasi dengan permission ketat. Catat snapshot time dan potensi rentang transaksi hilang.
-3. Siapkan PostgreSQL compatible, role/extension/privilege dan storage file sesuai manifest. Restore ke **database baru**, fail pada galat; jangan menyembunyikan kegagalan parsial.
-4. Jalankan integrity check: ledger ↔ balance, posisi serial, reservation, state/episode/event/outbox, unique constraints dan jumlah dokumen. Jalankan ANALYZE serta smoke read/write terkontrol di lingkungan uji.
-5. Cabut semua sesi hasil restore, evaluasi rotasi credential bila insiden keamanan. Review pending outbox dari snapshot; default suppress push lama sebelum cut-off agar tidak mengirim ulang kejadian usang. Pertahankan inbox/episode historis; restart delivery hanya setelah rekonsiliasi owner.
-6. Rekonsiliasi bukti fisik/dokumen transaksi setelah snapshot. Gunakan command opening/corrective yang tepat dan referensi insiden; jangan mengganti saldo dengan SQL. Restore snapshot lama dapat kehilangan receipt baru juga, sehingga replay setelah cut-off harus diputuskan dari bukti transaksi, tidak dianggap aman otomatis.
-7. Owner mengonfirmasi selisih yang tersisa dan operator mengalihkan trafik; uji auth/scan/commit/alert, baru buka posting. Catat RPO aktual, RTO aktual, backup yang digunakan, hasil verifikasi dan tindak lanjut.
+Pilot targets: **RPO ≤6 hours, RTO ≤4 hours**, subject to owner acceptance and measured restore. If loss of six hours is unacceptable, design WAL/PITR before go-live.
 
-Uji restore penuh sebelum pilot, tiap bulan, dan setelah perubahan skema/storage/backup mayor. Keberhasilan job backup tanpa latihan restore tidak memenuhi gate.
+1. PostgreSQL custom-format logical dump every six hours. Encrypt before off-host copying; verify checksum and archive readability. Record snapshot time, schema/app version, size, safe destination and job outcome.
+2. Use a consistent database dump, not a copy of a live database volume. Restore cluster roles/extensions/privileges separately. Reference: [PostgreSQL SQL dump](https://www.postgresql.org/docs/current/backup-dump.html).
+3. Retain all six-hour backups for seven days, one weekly for four weeks and one monthly for three months. Never delete the last verified backup because the newest upload is unverified.
+4. Maintain at least one encrypted copy on a separate host/device/account from the VPS. Another volume on the same VPS does not protect total host loss. Restrict backup credentials from deleting all copies; use versioning/immutability where available.
+5. Keep recovery decryption keys outside the VPS, accessible to authorized owner/operator. Test the real recovery key path privately.
+6. Backup immutable media and a manifest consistent with database references. Retain referenced objects; if nonimmutable files exist, briefly freeze uploads to coordinate the snapshot. DB-only backup does not restore media.
 
-## Health, observabilitas, dan jadwal
+Cheapest responsible option: an already-owned independent device/host or existing storage account with reliable automated transfer and checks. If none meets reliability/capacity requirements, recommend a small offsite storage cost for owner approval. The vendor choice is optional; a reliable off-VPS copy is a mandatory go-live control. Spreadsheet exports are not backups.
 
-Liveness minimal menyatakan proses hidup tanpa konfigurasi sensitif. Readiness memeriksa DB reachable/schema cocok dan konfigurasi; endpoint detail dibatasi jaringan/izin. Halaman owner menampilkan last successful backup/restore drill, heartbeat worker, usia outbox, kegagalan pengiriman, rekonsiliasi terakhir dan kapasitas disk. Nilai tak tersedia berlabel “Belum Terverifikasi”, bukan hijau.
+## Restore runbook
 
-| Pemeriksaan | Jadwal awal / kondisi perhatian | Tindakan |
+1. Declare incident/cutoff to owner; stop posting, external delivery and automatic import/valuation resume. Preserve the old source read-only.
+2. Select a verified backup, match checksum/version and decrypt on an isolated recovery host. Record snapshot time and potential missing transaction window.
+3. Prepare compatible PostgreSQL, roles/extensions/permissions and referenced media. Restore into a **new database**, failing on errors rather than masking partial recovery.
+4. Reconcile ledger/balances, serial positions, reservations, health/episodes/events/outbox, unique constraints, ImportCommit/CommandReceipt and document counts. Verify media checksums; run ANALYZE and controlled smoke checks.
+5. Revoke restored sessions; assess credential rotation. Suppress stale pre-cutoff push replay by default while preserving inbox/history. Resume delivery only after reconciliation.
+6. Reconcile physical/documents after the snapshot. A missing restored receipt does not prove the original never committed. Decide replay from evidence before requeuing imports; use appropriate authorized opening/corrective commands, never SQL balance edits.
+7. Finance checks sequences, evidence versions, clearing, watermarks and published pointers. Reports stay incomplete until reconciled. CMS publication pointers/assets must resolve to the restored published revisions.
+8. Owner confirms remaining business differences; operator switches traffic and validates auth/scan/commit/attention before reopening posting. Record actual RPO/RTO, backup identity, checks and follow-up.
+
+Full restore drill before pilot, monthly, and after major schema/storage/backup changes. A successful backup job alone does not pass acceptance.
+
+## Health and schedules
+
+Minimal liveness exposes no sensitive configuration. Readiness checks database/schema/configuration; restrict detailed health endpoints. Owner system view shows backup/drill times, heartbeat, outbox age/failures, reconciliation and disk. Unknown is **Belum Terverifikasi**, never green.
+
+| Check | Initial schedule/threshold | Response |
 | --- | --- | --- |
-| Worker heartbeat | Setiap menit; tak terlihat >3 menit | Cek worker/log, jangan menulis ulang movement |
-| Outbox | Continuous polling; pending tertua >5 menit | Cek provider/lease/config, inbox tetap sumber perhatian |
-| Rekonsiliasi read-only | Harian dan setelah restore | Selisih membekukan posting scope dan memicu insiden |
-| Backup | Setiap 6 jam; gagal atau sukses terakhir >7 jam | Alert, perbaiki, jangan menghapus backup valid terakhir |
-| Disk | Peringatan <20% bebas, kritis <10% | Tambah ruang/retensi aman; kapasitas ditinjau sebelum DB penuh |
-| Restore drill | Bulanan / perubahan besar | Ukur RPO/RTO, laporkan kegagalan sebagai blocker rilis |
-| Dependency/security updates | Tinjau berkala dan sebelum release | Terapkan lewat branch/test, tanpa auto-update produksi buta |
+| Worker heartbeat | Each minute; missing >3 minutes | Inspect worker/logs, no stock rewrite |
+| Outbox | Continuous polling; oldest pending >5 minutes | Inspect provider/lease/config; inbox remains authoritative |
+| Reconciliation | Daily and after restore | Mismatch blocks affected posting and raises incident |
+| Backup | Every six hours; failed or last success >7 hours | Alert and repair without deleting last valid copy |
+| Disk | Warning <20% free, critical <10% | Capacity/authorized retention action before disk full |
+| Restore drill | Monthly/major changes | Measure recovery; failed drill blocks release |
+| Dependency/security updates | Periodic and before release | Reviewed branch/tests, no blind auto-update |
+| Imports/valuation | Age/lease/error/backlog monitoring | Reconcile receipts and fencing before retry; no false progress |
 
-Structured log memiliki requestId/commandId/jobId, durasi, kode galat dan actor ID seperlunya; tanpa body utuh, password, cookie, barcode serial mentah atau credential URL. Metrik dashboard tidak menyamakan jumlah log dengan transaksi sah.
+Structured logs include request/command/job IDs, duration, safe error code and necessary actor ID. No full payloads, passwords, cookies, raw serials or credential URLs. Log count is not transaction count.
 
-Jika seluruh VPS mati, aplikasi di VPS itu tidak dapat mengirim alert. Sebelum produksi, operator menyiapkan pemeriksaan eksternal dari perangkat/host independen yang sudah tersedia atau layanan yang disetujui; bila belum tersedia, cantumkan celah deteksi downtime dan jangan mengklaim monitoring penuh. Tidak menambahkan SaaS berbayar diam-diam.
+A dead VPS cannot notify from itself. Before production use an independent existing device/host check or an approved service. If unavailable, record the detection gap; do not claim full monitoring or silently buy SaaS.
 
-## Retensi dan perawatan data
+## Retention
 
-| Data | Kebijakan awal |
+| Data | Initial policy |
 | --- | --- |
-| Ledger, actor historis, audit bisnis, receipt idempotensi, episode/event | Tidak dihapus otomatis; dipertahankan selama platform beroperasi, arsip tetap dapat ditelusuri |
-| UserNotification | Tampilkan/arsip setelah 90 hari; episode OPEN tetap mudah diakses; event bisnis tidak dihapus |
-| Delivery attempts/debug logs | 30 hari, galat ringkas untuk diagnosis; event dan hasil final tetap tertaut |
-| Security access/login log | 90 hari dengan pembatasan akses; insiden terkait ditahan sampai selesai |
-| Session/token kedaluwarsa | Bersihkan berkala sesuai library; tidak menghapus audit actor |
-| Draf browser | Sesuai 12; tidak ada retensi draf sebagai ledger |
-| Data sales/PII masa depan | Tetapkan tujuan/retensi/penghapusan sebelum mengumpulkan; tidak memakai retensi ledger sebagai alasan menyimpan semua PII selamanya |
+| Ledger, historical actors, business audit, receipts, episodes/events | No automatic deletion; retain for platform lifetime with traceable archive |
+| UserNotification | UI archive after 90 days; open episodes stay accessible |
+| Delivery attempts/debug logs | 30 days; final event/result links remain |
+| Security access/login logs | 90 days, restricted; incident records held until resolved |
+| Expired sessions/tokens | Library-appropriate cleanup, no actor-audit deletion |
+| Browser drafts | Under 12, never treated as ledger |
+| Future sales/PII | Define purpose/retention before collection; ledger retention is not permission to keep all PII forever |
+| Raw import/error files | Private; purge seven days after definitive terminal outcome, never while uncertain; READY revalidation after 24 hours |
+| Successful import manifest/ImportCommit | Durable with related business/audit history, separate from raw-file TTL |
+| Cost evidence/revenue/cost events/report versions | Private, final immutable, versioned correction; archival policy reviewed for actual finance needs |
+| Published content/settings revisions | Preserve publication/audit lineage; no deletion of still-referenced media |
+| Optional outbound click events | 90 days, minimal non-PII fields; aggregate only if useful |
 
-Ini kebijakan operasional awal, bukan pernyataan kepatuhan hukum. Review kebutuhan kontraktual/perusahaan sebelum retensi diubah. Purge/arsip sensitif harus terjadwal, berizin dan diaudit; jangan memberi tombol hapus riwayat transaksi.
+These are operational policies, not a legal compliance claim. Review contractual/business needs before changing retention. Sensitive purge is scheduled, authorized and audited; never expose delete-history controls.
 
-## Insiden dan perubahan operator
+## Incident ownership
 
-Runbook minimum: hentikan posting jika integritas diragukan, amankan backup dan log privat, identifikasi scope, koreksi melalui jalur resmi, verifikasi ulang, baru buka operasi. Owner menentukan tindakan bisnis; operator teknis menjalankan recovery. Daftar kontak/operator/host/key disimpan privat di luar Git. Serah-terima operator mencakup akses backup dan latihan pemulihan, bukan memberikan password produksi di dokumen proyek.
+Owner decides business action; authorized operator performs recovery. Keep real contacts/host/key access in private runbooks outside Git. Operator handoff includes recovery access and a drill, never public production passwords.
+
+Private import parsing uses bounded resources and a separate execution slot from notifications. Do not report parsed rows as committed rows. Cleanup must respect active/uncertain jobs. Successful manifests remain restorable after raw files expire. Exports omit schema constraints, ledger links, sessions/queues and runtime configuration; they cannot replace database/media backup.

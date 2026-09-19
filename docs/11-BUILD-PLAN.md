@@ -1,158 +1,191 @@
-# 11 — Rencana pembangunan dan progres resmi
+# 11 — Official build plan and progress
 
-**Versi rencana: 1.0 — 19 September 2026.** Satu-satunya pelacak progres build. Semua baris implementasi belum dimulai. Tugas sekarang berakhir setelah commit baseline dokumentasi; langkah berikutnya **review dokumentasi owner**, bukan menjalankan P01 otomatis.
+**Plan version 2.1 — 20 September 2026.** The only implementation progress tracker. All build/prototype tasks remain unstarted. Next sequence: owner architecture review → official brand assets → P00 prototypes when instructed. Production requires a separate implementation instruction; documents or approved HTML do not automatically authorize it.
 
-## Status, klasifikasi, dan perhitungan
+## Status and calculation
 
-| Status | Makna | Kontribusi selesai |
+| Status | Meaning | Completion credit |
 | --- | --- | ---: |
-| `[ ]` | BELUM DIMULAI | 0 |
-| `[~]` | SEDANG DIKERJAKAN | 0 |
-| `[T]` | MENUNGGU VERIFIKASI TEKNIS | 0 |
-| `[V]` | MENUNGGU REVIEW VISUAL OWNER | 0 |
-| `[x]` | SELESAI & TERVERIFIKASI | 1 |
-| `[!]` | TERBLOKIR | 0 |
+| [ ] | NOT STARTED | 0 |
+| [~] | IN PROGRESS | 0 |
+| [T] | WAITING FOR TECHNICAL VERIFICATION | 0 |
+| [V] | WAITING FOR OWNER VISUAL REVIEW | 0 |
+| [x] | COMPLETE AND VERIFIED | 1 |
+| [!] | BLOCKED | 0 |
 
-`[BE]` backend/database/integrasi tanpa dampak visual; `[FE]` frontend/prototipe; `[FS]` fitur dengan frontend dan backend. FE/FS wajib bukti review sesuai [05](05-DESIGN-SYSTEM.md). Hanya satu baris `[~]` dalam satu waktu. Bila blocker, simpan sebab, kebutuhan pembuka, dan tugas independen berikutnya; jangan menyebut pekerjaan belum mendapat giliran sebagai terblokir.
+[BE] = backend/database/integration without visual impact; [FE] = frontend/prototype; [FS] = backend plus visual impact. FE/FS needs [05](05-DESIGN-SYSTEM.md) evidence. At most one [~] task. Record the exact blocker and unblock condition; merely awaiting its turn is not blocked.
 
-**55 tugas = 11 fase × 5 tugas.** Progres implementasi = `100 × jumlah [x] / 55`, ditampilkan dua desimal. Progres Core = `100 × [x] pada P01–P06 / 30`. Progres fase = `100 × [x] fase / 5`. FE prototype adalah deliverable terpisah dan hanya dapat selesai setelah approval HTML; integrasi tampilannya mempunyai baris sendiri dan approval final. `[V]` tidak mendapat kredit parsial.
+**65 tasks in 13 phases P00–P12; 34 Core tasks P00–P06.**
+Overall progress = 100 × completed tasks /65, two decimals.
+Core progress = 100 × completed P00–P06 tasks /34.
+Phase progress uses actual row count. Prototype completion after Gate A counts as a design deliverable, **not production implementation**. Integration has separate Gate B tasks. [V] receives no partial credit.
 
-Task count mengukur deliverable selesai, **bukan** perkiraan durasi, biaya, atau kompleksitas. Bila scope perlu dipecah/ditambah, naikkan versi rencana, catat alasan dan denominator lama/baru; jangan memecah pekerjaan selesai demi menaikkan persentase. Hilangnya fitur wajib tidak boleh dipakai mengecilkan denominator.
+Task count is not elapsed time, cost or complexity. Scope changes require a version and old/new denominator with rationale. Never split finished work to inflate progress or remove mandatory features to shrink the denominator.
 
-| Ukuran saat baseline | Nilai terverifikasi |
+| Snapshot | Verified state |
 | --- | --- |
-| Baseline dokumentasi (di luar build) | 1/1 paket teknis; review dokumentasi owner menunggu |
-| Implementasi keseluruhan | **0/55 = 0,00%** |
-| Core MVP | **0/30 = 0,00%** |
-| Tugas build aktif | Tidak ada |
-| Tugas build berikutnya setelah izin owner | P01.1 |
-| Blocker teknis baseline | Tidak ada yang ditemukan |
-| Gerbang sebelum implementasi | Review dokumentasi dan instruksi owner untuk mulai |
+| Documentation, outside build | Technical refinement complete; owner review pending |
+| Overall plan | **0/65 = 0.00%** |
+| Core | **0/34 = 0.00%** |
+| Active build task | None |
+| First build task after review/assets/instruction | P00.1 |
+| Production implementation | NOT STARTED |
+| Before production | Owner document review, approved CP01–CP04 and explicit implementation instruction |
 
-Setiap baris memiliki dependency dan acceptance. Kolom Bukti diisi saat dikerjakan: commit, hasil tes ringkas dan tautan REVIEW bila visual. Jangan menulis “PASS” tanpa bukti; `—` saat ini berarti belum tersedia.
+Evidence column later records commit, concise technical results and visual REVIEW link. Current dash means no evidence exists.
 
-## P01 — Fondasi, identitas, dan akses (Core)
+## Plan history
 
-Prasyarat: owner meninjau baseline dan mengizinkan implementasi. Tujuan: lingkungan, auth dan izin dapat dipercaya sebelum fitur stok.
+Version 1.0: 55 tasks, Core 30. Version 2.0 consolidated six unstarted prototype rows (P01.3/P02.3/P04.1/P04.4/P05.3/P06.3) into four P00 bundles, added six Core import/evidence tasks, one camera task and five finance tasks. Overall 55−6+4+6+1+5=65; Core 30−6+4+6=34. Old P11 became P12. No completed work gained duplicate credit. D31 records the replacement of D17's denominator.
 
-| ID | Status | Kelas | Deliverable / acceptance | Dependensi | Bukti |
+Version 2.1 translates the tracker and makes structured public CMS, owner publication, wa.me configuration and portability acceptance explicit within existing P09/P06 tasks. Count remains 65/34; no implementation credit added.
+
+## P00 — Core visual contracts before production
+
+Prerequisites: owner architecture review and official brand assets. No Next.js/API/database in this phase. Four deterministic Core bundles with browser preview; CP05 waits until public work.
+
+| ID | Status | Class | Deliverable / acceptance | Dependencies | Evidence |
 | --- | --- | --- | --- | --- | --- |
-| P01.1 | [ ] | [BE] | Scaffold setelah izin, versi/lockfile, modul/config validation, PostgreSQL dev/test, baseline audit storage dan DB roles | Review owner | — |
-| P01.2 | [ ] | [BE] | Better Auth, role/permission, bootstrap/invite/reset/2FA/session revocation; security negative tests | P01.1 | — |
-| P01.3 | [ ] | [FE] | HTML auth/pemulihan/2FA dan app shell berizin; browser + Gerbang A | P01.1 | — |
-| P01.4 | [ ] | [FS] | Implementasi pola auth/shell approved, real auth, keyboard/mobile dan Gerbang B | P01.2, P01.3 | — |
-| P01.5 | [ ] | [BE] | CI/scripts lint/typecheck/unit/integration/E2E/build/secret check, environment guard dan auth smoke | P01.2, P01.4 | — |
+| P00.1 | [ ] | [FE] | Verify official assets; CP01 shell/auth, tokens/Lucide, brand toggle/rail/drawer, anti-slop/redundancy audit; Gate A | Owner review + official assets + prototype instruction | — |
+| P00.2 | [ ] | [FE] | CP02 products/labels/product import/quantity and serial opening/errors/results/private owner evidence; Gate A | P00.1 | — |
+| P00.3 | [ ] | [FE] | CP03 receipt/issue/transfer/stock/history/correction, keyboard/mobile, uncertainty/duplicates; Gate A | P00.2 | — |
+| P00.4 | [ ] | [FE] | CP04 attention/inbox/cockpit/system exceptions; finance demo only, required viewports; Gate A | P00.3 | — |
 
-## P02 — Master, lokasi, dan identitas barang (Core)
+## P01 — Foundation, identity and access (Core)
 
-| ID | Status | Kelas | Deliverable / acceptance | Dependensi | Bukti |
+Production prerequisites remain separate from prototype completion.
+
+| ID | Status | Class | Deliverable / acceptance | Dependencies | Evidence |
 | --- | --- | --- | --- | --- | --- |
-| P02.1 | [ ] | [BE] | Product/SKU/satuan/precision/tracking, category/brand, lokasi, version guard, permission CRUD | P01.5 | — |
-| P02.2 | [ ] | [BE] | Registry barcode, register serial tanpa stok, uniqueness/normalisasi/resolver, label payload | P02.1 | — |
-| P02.3 | [ ] | [FE] | HTML master/lokasi/identitas dan label cetak; state CRUD/permission + Gerbang A | P02.1 | — |
-| P02.4 | [ ] | [FS] | UI master/lokasi/identitas dan label ke backend; cetak uji + Gerbang B | P02.2, P02.3 | — |
-| P02.5 | [ ] | [BE] | Demo master aman/deterministik, seed environment guard; belum seed saldo tanpa command | P02.2 | — |
+| P01.1 | [ ] | [BE] | Authorized scaffold, compatible versions/lockfile, config, dev/test PostgreSQL, audit storage/DB roles and local test infrastructure | P00.4 + owner implementation instruction | — |
+| P01.2 | [ ] | [BE] | Better Auth, permissions, bootstrap/invite/reset/2FA/revocation and negative security tests | P01.1 | — |
+| P01.4 | [ ] | [FS] | Implement approved CP01 with real auth/sidebar/keyboard/mobile; Gate B | P01.2, P00.1 | — |
+| P01.5 | [ ] | [BE] | Lint/typecheck/unit/integration/E2E/build/secret scripts and CI, environment guards, auth smoke | P01.2, P01.4 | — |
 
-## P03 — Ledger atomik dan perhatian stok (Core)
+## P02 — Product, location and identity (Core)
 
-State/episode/outbox dimajukan ke transaksi inti agar tidak ditempel setelah integritas posting selesai. Delivery ke perangkat/UI berada di P05.
-
-| ID | Status | Kelas | Deliverable / acceptance | Dependensi | Bukti |
+| ID | Status | Class | Deliverable / acceptance | Dependencies | Evidence |
 | --- | --- | --- | --- | --- | --- |
-| P03.1 | [ ] | [BE] | Skema ledger/balance/receipt, constraint dan guard lock, immutable DB permissions; migrations reviewed | P02.5 | — |
-| P03.2 | [ ] | [BE] | Command receipt/issue/transfer, serial transitions, idempotensi dan status recovery; atomic audit | P03.1 | — |
-| P03.3 | [ ] | [BE] | Policy minimum, health episode, inbox/outbox terintegrasi transaksi dan perubahan setting; transisi NOT01–05 | P03.2 | — |
-| P03.4 | [ ] | [BE] | Opening, owner adjustment/reversal dan safe rejection; tidak ada edit saldo; demo movement sah | P03.3 | — |
-| P03.5 | [ ] | [BE] | Suite multi-connection race/rollback/property/idempotency/serial + oracle rekonsiliasi seluruh ledger | P03.4 | — |
+| P02.1 | [ ] | [BE] | Product/SKU/unit/precision/tracking, category/brand, locations, optimistic versions and CRUD permissions | P01.5 | — |
+| P02.2 | [ ] | [BE] | Barcode registry, no-stock serial registration, normalization/uniqueness/resolver and labels | P02.1 | — |
+| P02.4 | [ ] | [FS] | CP02 master/location/identity/labels with real backend, server search/pagination and print smoke; Gate B | P02.2, P00.2 | — |
+| P02.5 | [ ] | [BE] | Safe deterministic master demo and environment guard; no direct balance seed | P02.2 | — |
+| P02.6 | [ ] | [BE] | XLSX/CSV staging/validation/atomic apply/permissions/retry/private errors; 5,000-row and duplicate tests | P02.5 | — |
+| P02.7 | [ ] | [FS] | CP02 import preview/owner apply/history/errors, export/label selection; phone status and desktop review; Gate B | P02.6, P02.4 | — |
 
-## P04 — Operasi gudang dan scanner (Core)
+## P03 — Atomic ledger and stock attention (Core)
 
-| ID | Status | Kelas | Deliverable / acceptance | Dependensi | Bukti |
+State/episode/outbox are part of the initial posting transaction. Device delivery/UI follow in P05.
+
+| ID | Status | Class | Deliverable / acceptance | Dependencies | Evidence |
 | --- | --- | --- | --- | --- | --- |
-| P04.1 | [ ] | [FE] | HTML masuk/keluar/transfer, scanning/review/error/uncertain/mobile, demo saja + Gerbang A | P03.5 | — |
-| P04.2 | [ ] | [FE] | Input HID/reducer/queue/fokus/duplicate/session recovery sesuai pola approved; browser tests + Gerbang B | P04.1 | — |
-| P04.3 | [ ] | [FS] | Hubungkan scanner ke resolver/command/status; end-to-end USB/Bluetooth dan error jaringan + Gerbang B | P04.2, P03.5 | — |
-| P04.4 | [ ] | [FE] | HTML saldo/lokasi/detail serial/riwayat/koreksi owner; empty/error/filter + Gerbang A | P03.5 | — |
-| P04.5 | [ ] | [FS] | Saldo/riwayat/serial/koreksi dan export aman real data, re-auth/izin + Gerbang B | P04.4 | — |
+| P03.1 | [ ] | [BE] | Ledger/balance/receipt/product sequence, constraints/locks, immutable DB privileges; reviewed migrations | P02.7 | — |
+| P03.2 | [ ] | [BE] | Receipt/issue/transfer, serial transitions, idempotency/status recovery and atomic audit | P03.1 | — |
+| P03.3 | [ ] | [BE] | Threshold/health/episodes/inbox/outbox in posting and policy changes; NOT01–05 | P03.2 | — |
+| P03.4 | [ ] | [BE] | Opening, owner adjustment/reversal with safe rejection, lawful demo movements | P03.3 | — |
+| P03.5 | [ ] | [BE] | Independent-connection races, rollback/property/idempotency/serial suite and full-ledger oracle | P03.4 | — |
+| P03.6 | [ ] | [BE] | Separate quantity/serial opening import, cutover freeze, bounded 5,000-row atomic posting, receipts/recovery | P03.5, P02.6 | — |
+| P03.7 | [ ] | [BE] | Owner-only receipt/opening evidence, revision/completeness/private audit; unknown cost does not block stock | P03.6 | — |
 
-## P05 — Notifikasi dan dasbor pemilik (Core)
+## P04 — Warehouse and scanner (Core)
 
-| ID | Status | Kelas | Deliverable / acceptance | Dependensi | Bukti |
+| ID | Status | Class | Deliverable / acceptance | Dependencies | Evidence |
 | --- | --- | --- | --- | --- | --- |
-| P05.1 | [ ] | [BE] | Worker outbox lease/retry/dedup, subscription Web Push dan delivery access checks | P04.5, P03.3 | — |
-| P05.2 | [ ] | [BE] | Query snapshot dashboard/inbox/read-state, KPI nyata dan batas WIB; tidak ada metrik palsu | P05.1 | — |
-| P05.3 | [ ] | [FE] | HTML notifikasi/push onboarding/dasbor/setting minimum; semua state + Gerbang A | P05.2 | — |
-| P05.4 | [ ] | [FS] | UI approved ke query/policy nyata, polling/recovery dan Gerbang B | P05.3 | — |
-| P05.5 | [ ] | [FS] | E2E inbox/izin push/escalation/recovery dan provider uji, Gerbang B; uji perangkat owner aktual pada P06.5 | P05.4 | — |
+| P04.2 | [ ] | [FE] | CP03 HID reducer/queue/focus, rapid quantity, serial dedupe/session recovery; browser checks and Gate B | P00.3, P03.7 | — |
+| P04.3 | [ ] | [FS] | Resolver/command/status integration, actual USB/Bluetooth and network errors; Gate B | P04.2, P03.5 | — |
+| P04.5 | [ ] | [FS] | CP03 real stock/history/serial/correction/export, permissions/re-auth; Gate B | P04.3, P00.3 | — |
+| P04.6 | [ ] | [FS] | CP02 opening review/result/recovery, count reconciliation/freeze release/monitor activation; Gate B | P04.5, P03.6 | — |
+| P04.7 | [ ] | [FS] | CP02 private owner evidence/source/completeness/revision, no staff cost fields; Gate B | P04.6, P03.7 | — |
 
-## P06 — Operasi, pemulihan, dan pilot Core
+## P05 — Notifications and owner cockpit (Core)
 
-**Tidak ada data stok produksi sebelum fase ini diterima.** Deploy staging diperlukan untuk uji perangkat; go-live harus menunggu bukti restore dan penerimaan Core.
-
-| ID | Status | Kelas | Deliverable / acceptance | Dependensi | Bukti |
+| ID | Status | Class | Deliverable / acceptance | Dependencies | Evidence |
 | --- | --- | --- | --- | --- | --- |
-| P06.1 | [ ] | [BE] | Compose/Caddy image pinning, network/secrets, backup off-host terenkripsi, health endpoints dan worker supervision | P05.5 | — |
-| P06.2 | [ ] | [BE] | Restore nyata terisolasi + RPO/RTO terukur, rekonsiliasi/maintenance dan penanganan outbox restore | P06.1 | — |
-| P06.3 | [ ] | [FE] | HTML status sistem/backup/insiden dengan data demo berlabel + Gerbang A | P06.1 | — |
-| P06.4 | [ ] | [FS] | Health/backup UI real data, unknown bukan sukses, akses owner + Gerbang B | P06.2, P06.3 | — |
-| P06.5 | [ ] | [FS] | Full Core gate 08, hardware/printer/mobile, push tab tertutup pada perangkat owner di HTTPS staging, owner final review, asumsi/SOP/cutover dan penerimaan pilot | P06.4, seluruh P01–P05 | — |
+| P05.1 | [ ] | [BE] | Outbox lease/retry/dedup, Web Push subscription and delivery authorization | P04.7, P03.3 | — |
+| P05.2 | [ ] | [BE] | Consistent dashboard/inbox/read-state queries, factual metrics and WIB boundaries | P05.1 | — |
+| P05.4 | [ ] | [FS] | CP04 real queries/policy, attention without duplicate metrics, current state separate from period, no fake finance; Gate B | P05.2, P00.4 | — |
+| P05.5 | [ ] | [FS] | Inbox/push permission/escalation/recovery E2E and provider tests; Gate B; actual owner-device acceptance at P06.5 | P05.4 | — |
 
-Core selesai hanya jika 30/30 `[x]`, perangkat/channel diterima, dan tidak ada blocker keselamatan. Hasil test bagus tidak melewati gerbang visual atau restore.
+## P06 — Operations, recovery and Core pilot
 
-## P07 — Reservasi, transit, opname, dan persetujuan (lanjutan)
+No operational production stock before this phase is accepted. HTTPS staging is required for real device tests; go-live waits for restore evidence and Core acceptance.
 
-| ID | Status | Kelas | Deliverable / acceptance | Dependensi | Bukti |
+| ID | Status | Class | Deliverable / acceptance | Dependencies | Evidence |
 | --- | --- | --- | --- | --- | --- |
-| P07.1 | [ ] | [BE] | Reservasi/events/expiry/partial fulfillment dan health tersedia; race tests | P06.5 | — |
-| P07.2 | [ ] | [BE] | Transfer transit dispatch/partial receive/return/loss, ledger dan identity invariants | P07.1 | — |
-| P07.3 | [ ] | [BE] | Approval proposal/version/one-use, opname freeze/count/adjustment, negative tests | P07.2 | — |
-| P07.4 | [ ] | [FE] | HTML alur lanjutan gudang/persetujuan dan state konflik + Gerbang A | P07.3 | — |
-| P07.5 | [ ] | [FS] | Integrasi alur approved, E2E lintas modul dan Gerbang B | P07.4 | — |
+| P06.1 | [ ] | [BE] | Portable Compose/Caddy, pinned images/private network/secrets, configurable origins/storage, encrypted off-host DB/media backup, health/worker supervision | P05.5 | — |
+| P06.2 | [ ] | [BE] | Isolated restore including alternate host/storage configuration, measured RPO/RTO, reconciliation and restored jobs/outbox controls | P06.1 | — |
+| P06.4 | [ ] | [FS] | CP04 real exceptions/health/backup, unknown not success, no normal-health filler card; Gate B | P06.2, P00.4 | — |
+| P06.5 | [ ] | [FS] | Full Core gate 08, devices/labels/mobile, actual owner push on HTTPS/closed tab, visual acceptance, assumptions/SOP/cutover and pilot acceptance | P06.4, all P01–P05 | — |
 
-## P08 — QC, garansi dan servis (lanjutan)
+Core requires all 34 tasks [x], accepted device/channel behavior and no safety blocker. Product/opening import precedes pilot. Tests never bypass owner review or restore.
 
-| ID | Status | Kelas | Deliverable / acceptance | Dependensi | Bukti |
+## P07 — Reservation, transit, stock opname and approval
+
+| ID | Status | Class | Deliverable / acceptance | Dependencies | Evidence |
 | --- | --- | --- | --- | --- | --- |
-| P08.1 | [ ] | [BE] | QC record immutable, karantina dan eligibility terintegrasi ledger/health | P07.5 | — |
-| P08.2 | [ ] | [BE] | Garansi/service case, custody barang pelanggan terpisah dari stok perusahaan | P08.1 | — |
-| P08.3 | [ ] | [FE] | HTML QC/garansi/servis/detail item, exception states + Gerbang A | P08.2 | — |
-| P08.4 | [ ] | [FS] | Implementasi approved dan real service/QC flow + Gerbang B | P08.3 | — |
-| P08.5 | [ ] | [BE] | Cross-module tests custody/availability/audit/privacy dan backup metadata baru | P08.4 | — |
+| P07.1 | [ ] | [BE] | Reservation/events/expiry/partial fulfillment, availability/health and race tests | P06.5 | — |
+| P07.2 | [ ] | [BE] | Transit dispatch/partial receive/return/loss and identity/ledger invariants | P07.1 | — |
+| P07.3 | [ ] | [BE] | Versioned one-use approval, opname freeze/count/adjustment and negative tests | P07.2 | — |
+| P07.4 | [ ] | [FE] | CP03 warehouse/approval variants and conflict states; Gate A | P07.3 | — |
+| P07.5 | [ ] | [FS] | Approved advanced flows, cross-module E2E and Gate B | P07.4 | — |
+| P07.6 | [ ] | [FS] | CP03 camera variant, Gate A for new interaction, permissions/frame latch/manual-HID fallback and actual devices; Gate B | P06.5, P00.3 | — |
 
-## P09 — Website perusahaan dan katalog (lanjutan)
+## P08 — QC, warranty and service
 
-| ID | Status | Kelas | Deliverable / acceptance | Dependensi | Bukti |
+| ID | Status | Class | Deliverable / acceptance | Dependencies | Evidence |
 | --- | --- | --- | --- | --- | --- |
-| P09.1 | [ ] | [BE] | Publishing/master safe projection, image/spec upload aman dan cache boundary | P08.5 | — |
-| P09.2 | [ ] | [BE] | Search/filter/detail/comparison queries, public allowlist dan pagination | P09.1 | — |
-| P09.3 | [ ] | [FE] | HTML corporate home/katalog/detail/comparison/responsive + Gerbang A | P09.2 | — |
-| P09.4 | [ ] | [FS] | Implementasi approved real public data, SEO dan WhatsApp link aman + Gerbang B | P09.3 | — |
-| P09.5 | [ ] | [BE] | Leak/cache/public authorization dan performance audit; sentinel secret-field tests | P09.4 | — |
+| P08.1 | [ ] | [BE] | Immutable QC, quarantine and eligibility integrated with ledger/health | P07.5 | — |
+| P08.2 | [ ] | [BE] | Warranty/service and customer custody separate from company stock | P08.1 | — |
+| P08.3 | [ ] | [FE] | CP02/CP03 QC/warranty/service/item-detail variants and exception states; Gate A | P08.2 | — |
+| P08.4 | [ ] | [FS] | Approved real QC/service flows; Gate B | P08.3 | — |
+| P08.5 | [ ] | [BE] | Custody/availability/audit/privacy regression and backup of new metadata | P08.4 | — |
 
-## P10 — RFQ, leads, penawaran dan sales (lanjutan)
+## P09 — Structured public CMS, website and catalog
 
-| ID | Status | Kelas | Deliverable / acceptance | Dependensi | Bukti |
+| ID | Status | Class | Deliverable / acceptance | Dependencies | Evidence |
 | --- | --- | --- | --- | --- | --- |
-| P10.1 | [ ] | [BE] | RFQ intake/anti-spam/PII policy, link click attribution tanpa klaim conversion palsu | P09.5 | — |
-| P10.2 | [ ] | [BE] | Lead/quotation revision/deal dan permission sales, integrasi reservation service | P10.1, P07.1 | — |
-| P10.3 | [ ] | [FE] | HTML form RFQ/follow-up/penawaran/deal dan privacy states + Gerbang A | P10.2 | — |
-| P10.4 | [ ] | [FS] | Frontend sales approved/public RFQ, audit real data + Gerbang B | P10.3 | — |
-| P10.5 | [ ] | [FS] | End-to-end deal → reservasi → scan keluar/partial/cancel, cross-role owner review | P10.4, P07.5 | — |
+| P09.1 | [ ] | [BE] | Structured DB content/settings, owner-only draft/preview/publish/revisions/audit, safe product projections, media validation/storage, configured wa.me templates, dynamic published reads | P06.5 | — |
+| P09.2 | [ ] | [BE] | Published search/filter/detail/comparison, featured references, pagination and allowlist queries | P09.1 | — |
+| P09.3 | [ ] | [FE] | CP05 factual B2B/B2G home/catalog/detail/comparison plus CP02 CMS editor/preview variant; official assets and Gate A | P09.2 | — |
+| P09.4 | [ ] | [FS] | Real internal CMS/public rendering/SEO/wa.me, content changes without redeploy, safe optional click tracking; Gate B | P09.3 | — |
+| P09.5 | [ ] | [BE] | PUB01–05, leak/cache/draft/publication authorization/media/redirect/performance tests; sentinel private-field checks | P09.4 | — |
 
-## P11 — Laporan lanjutan dan pematangan produksi
+## P10 — RFQ, leads, quotations and sales
 
-Hardening dasar sudah wajib P06; fase ini untuk perluasan platform, bukan alasan menunda keamanan Core.
-
-| ID | Status | Kelas | Deliverable / acceptance | Dependensi | Bukti |
+| ID | Status | Class | Deliverable / acceptance | Dependencies | Evidence |
 | --- | --- | --- | --- | --- | --- |
-| P11.1 | [ ] | [BE] | Laporan/export lintas modul, retention/arsip dan permission sesuai sumber data nyata | P10.5 | — |
-| P11.2 | [ ] | [FE] | HTML laporan/filter/drill-down/ekspor dan system views lanjutan + Gerbang A | P11.1 | — |
-| P11.3 | [ ] | [FS] | Laporan approved ke query nyata, audit akses dan Gerbang B | P11.2 | — |
-| P11.4 | [ ] | [BE] | Load/profile data aktual, patch/hardening, restore diperluas, capacity/monitoring review | P11.3 | — |
-| P11.5 | [ ] | [FS] | Full regression platform, final owner acceptance, runbook/operator handover dan rilis terverifikasi | P11.4 | — |
+| P10.1 | [ ] | [BE] | RFQ validation/anti-spam/PII policy, inquiry attribution without false conversion claims | P09.5 | — |
+| P10.2 | [ ] | [BE] | Lead/quotation/deal, prices/discounts/acceptance/RevenueEvent/credit notes, sales permissions and reservation service | P10.1, P07.1 | — |
+| P10.3 | [ ] | [FE] | CP02/CP05 RFQ/follow-up/quotation/deal/privacy variants; Gate A | P10.2 | — |
+| P10.4 | [ ] | [FS] | Approved sales/public RFQ with real data/audit; Gate B | P10.3 | — |
+| P10.5 | [ ] | [FS] | Deal → reservation → issue/partial/cancel E2E and cross-role owner review | P10.4, P07.5 | — |
 
-## Aturan pembaruan pelacak
+## P11 — Costing and profitability after Sales
 
-Update hanya baris yang benar-benar berubah, lalu hitung ulang ringkasan dari status baris. Catat tanggal, commit/bukti dan blocker spesifik saat ada. Jika FE sedang menunggu pemilik, pertahankan `[V]`; pekerjaan BE independen boleh dipilih sebagai satu tugas aktif berikutnya. Jangan menghapus gate hanya karena proses review lama.
+First report is complete-data **Laba Kotor Penjualan Barang**. No hidden expense/net-profit module. [15](15-FINANCE-PROFITABILITY.md) and [08](08-TESTING-ACCEPTANCE.md) own policy/acceptance.
 
-Setelah baseline, prioritas fase lanjutan boleh ditata ulang atas kebutuhan bisnis melalui keputusan baru tanpa mengubah hard invariant/Core. Urutan awal memilih kelengkapan operasi sebelum ekspansi akuisisi pelanggan; P08 bukan dependensi teknis mutlak katalog, melainkan prioritas bisnis yang dapat direvisi.
+| ID | Status | Class | Deliverable / acceptance | Dependencies | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| P11.1 | [ ] | [BE] | Eligibility/verified value cutoff, global SKU MWA, sequence/allocations/clearing and versioned replay | P10.5, P03.7 | — |
+| P11.2 | [ ] | [BE] | Revenue/COGS/return/credit matching, completeness/watermark, atomic report publication and owner-only queries | P11.1 | — |
+| P11.3 | [ ] | [FE] | CP04 finance/drill-down revision, scope/period/incomplete/revised states, no net-profit label; Gate A | P11.2 | — |
+| P11.4 | [ ] | [FS] | Real approved gross profit/margin, valid comparisons and Gate B | P11.3 | — |
+| P11.5 | [ ] | [BE] | Golden costing/return/reversal/delay/rounding, no-leak matrix and ledger/clearing/report/restore reconciliation | P11.4 | — |
+
+## P12 — Extended reporting and production maturity
+
+Basic hardening is already mandatory in P06. This phase must not defer Core safety.
+
+| ID | Status | Class | Deliverable / acceptance | Dependencies | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| P12.1 | [ ] | [BE] | Cross-module real-data reports/exports, retention/archive and source permissions | P11.5, P08.5 | — |
+| P12.2 | [ ] | [FE] | CP02/CP04 report/filter/drill-down/export/system variants and redundancy audit; Gate A | P12.1 | — |
+| P12.3 | [ ] | [FS] | Approved real report queries/access audit; Gate B | P12.2 | — |
+| P12.4 | [ ] | [BE] | Actual-load profiling, patch/hardening, expanded restore, capacity/monitoring | P12.3 | — |
+| P12.5 | [ ] | [FS] | Full platform regression, final owner acceptance, operator handover/runbook and verified release | P12.4, P07.6 | — |
+
+## Tracker updates
+
+Update only actual task changes, then recalculate summaries. Include date/evidence and specific blockers. Preserve [V] while waiting for owner review; independent BE work may become the sole active task. Do not remove gates because review takes time.
+
+Later phases may be reordered by a recorded business decision without weakening Core/invariants. P09 depends on reliable Core, not an artificial QC dependency. Camera P07.6 is independent of reservation/transit and may be prioritized after Core. New significant visual variants still require their canonical CP and both applicable gates; do not create a new family just to rename a page.

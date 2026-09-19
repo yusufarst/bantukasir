@@ -1,85 +1,105 @@
-# 12 — Barcode, label, dan sesi pemindaian
+# 12 — Barcode, labels and scan sessions
 
-Pemilik topik: identitas machine-readable dan interaksi input. Posting dan retry DB mengikuti [06](06-INVENTORY-SPEC.md); persetujuan visual mengikuti [05](05-DESIGN-SYSTEM.md).
+Owns machine-readable identity and input interaction. [06](06-INVENTORY-SPEC.md) owns posting/retry; [05](05-DESIGN-SYSTEM.md) visual review.
 
-## Registry identitas
+## Identity registry
 
-Barcode adalah **kunci lookup opaque**, bukan perintah, URL eksekusi, harga, jumlah stok, atau pembawa data privat. Satu token normalisasi global menunjuk tepat satu product atau serialized item. Beberapa alias boleh menunjuk target yang sama; satu alias tidak boleh menunjuk beberapa target.
+A barcode is an opaque lookup key, not a command, executable URL, price, stock count or private payload. One globally normalized token targets exactly one product OR serialized item. Multiple aliases may share a target; one alias cannot identify multiple targets.
 
-- Pilihan label internal MVP: Code 128 dengan teks ASCII uppercase dan human-readable code di bawahnya; mudah digunakan HID 1D. QR dapat ditambah untuk perangkat 2D setelah kebutuhan nyata, tidak mengganti registry.
-- Format: `LT-P-<16 karakter Crockford Base32>` untuk produk dan `LT-I-<16 karakter Crockford Base32>` untuk item. ID acak server dengan unique constraint; collision menghasilkan ulang sebelum identitas dicetak. Format bukan serial bisnis dan bukan token autentikasi.
-- Prefix `LT-` dicadangkan internal. Kode produsen tidak boleh didaftarkan ke namespace tersebut. Tidak menyimpan SKU/nomor seri/warehouse dalam payload internal; label teks boleh menampilkan nama/SKU/satuan dan nomor item yang diperlukan, tidak biaya/pemasok.
-- Normalisasi barcode: lepaskan terminator HID; trim spasi ASCII **di luar**, pertahankan kapitalisasi, tanda baca dan nol awal untuk alias produsen. Internal code harus sudah uppercase valid; jangan mengubah semua barcode menjadi angka. Panjang token 1–128 karakter ASCII printable; embedded control/newline ditolak. Barcode non-ASCII memerlukan keputusan/dukungan tersendiri.
-- Manufacturer EAN/UPC bila digunakan divalidasi format/check digit sesuai jenis, tetapi tidak otomatis dianggap SKU atau serial. Alias global yang ambigu ditolak; operator menggunakan barcode internal sebagai penyelesaiannya.
-- Manufacturer serial unik dalam produk menurut [06](06-INVENTORY-SPEC.md). Bare serial tidak otomatis menjadi barcode global. Mode “Cari nomor seri” meminta produk dan nomor seri; pilih item lalu scan internal/konfirmasi identitas. Ini mencegah nomor seri yang sama lintas model salah terpilih.
-- Identitas tidak digunakan ulang meskipun produk/item nonaktif. Cetak ulang mempertahankan kode; penggantian label dapat memakai alias baru, kode lama RETIRED dan tetap tercatat. Scan retired memberi pesan khusus, bukan diperlakukan sebagai barang tidak dikenal.
+- Core internal format is Code 128, uppercase ASCII with human-readable code. QR may follow actual 2D requirements without replacing the registry.
+- Product: LT-P-<16 Crockford Base32 characters>; item: LT-I-<16 Crockford Base32 characters>. Server-generated random identity with a unique constraint; regenerate collisions before printing. This is not an authentication token.
+- Reserve LT- for internal issuance. Manufacturer aliases cannot use it. Do not encode SKU, manufacturer serial or location inside internal identity. Label text may show necessary name/SKU/unit/item identity, never cost/supplier.
+- Remove HID terminators; trim outer ASCII spaces. Preserve manufacturer barcode case, punctuation and leading zeros. Internal codes must already match the uppercase format. Never convert barcodes to numbers.
+- Token length 1–128 printable ASCII characters. Reject embedded controls/newlines. Non-ASCII support requires a separate decision.
+- Validate EAN/UPC format/check digit when using those declared formats. Do not automatically interpret them as SKU/serial. Reject ambiguous aliases; use internal codes instead.
+- Manufacturer serial is unique within product under 06. Bare serial is not automatically a global barcode. **Cari nomor seri** requires product context before selecting/verifying the item.
+- Never reuse identity after deactivation. Reprint retains the code. Replacement may issue a new alias while retiring the old token; retired scans receive a specific message and remain traceable.
 
-## Label dan printer
+## Printing
 
-Gunakan SVG barcode yang dibuat library tervalidasi, browser print stylesheet, ukuran fisik mm, quiet zone yang benar dan hitam di putih. Template awal 50 × 30 mm adalah asumsi yang perlu uji printer, bukan pemaksaan vendor. Owner dapat memilih ukuran tanpa mengganti identitas. Cetak halaman uji, ukur scaling 100%, scan hasil nyata pada USB/Bluetooth, termasuk label panjang dan permukaan/kontras realistis.
+Generate SVG barcodes with a verified library and browser print CSS, physical millimeter dimensions, correct quiet zones, black on white. Initial 50×30 mm is a printer-test assumption, not a vendor requirement. Size changes never change identity. Test 100% scaling, long codes, real surfaces and USB/Bluetooth reads.
 
-Jangan mengandalkan screenshot barcode, barcode font tanpa verifikasi, print yang terpotong, atau vendor SDK. Printer label maupun A4 didukung lewat driver OS/browser. Dialog cetak selesai tidak membuktikan tinta tercetak; audit mencatat “Permintaan Cetak Label”, bukan klaim jumlah label fisik berhasil. Audit reprint mencatat actor, target, jumlah diminta, alasan bila penggantian.
+Do not rely on screenshots, unverified barcode fonts, cropped output or proprietary SDKs. Support label/A4 printers through OS/browser drivers. Print-dialog completion is not proof ink was printed. Audit **Permintaan Cetak Label**, requested count, actor/target and replacement reason where relevant.
 
-## Asumsi HID
+## HID assumptions
 
-USB/Bluetooth HID bertindak sebagai keyboard OS tanpa middleware, WebUSB, atau WebBluetooth. Scanner dikonfigurasi layout karakter yang cocok dan suffix Enter; perangkat kadang mengirim CR/LF sehingga event terminator kedua untuk buffer kosong diabaikan. Input manual dengan Enter menghasilkan alur yang sama.
+USB/Bluetooth HID behaves as an OS keyboard; no middleware, WebUSB or WebBluetooth. Configure matching character layout and Enter suffix. Ignore a second CR/LF terminator on an empty buffer. Manual input with Enter follows the same path.
 
-Input berdasar nilai text field dan event keyboard/commit, tidak menebak perangkat dari kecepatan. Timing hanya untuk peringatan duplicate/diagnostik, bukan dasar sah-tidaknya barcode. IME composition harus selesai sebelum Enter dianggap terminator. Tidak ada listener global yang menangkap password atau mengetik di form lain.
+Use field value and keyboard/composition events, not typing speed to guess device type. Timing may support diagnostics, never decide barcode validity or suppress legitimate complete quantity scans. Finish IME composition before treating Enter as terminator. No global listener that captures passwords or other forms.
 
-Jika scanner tidak memiliki suffix, operator memakai tombol “Tambahkan” atau mengatur suffix perangkat. Tab tidak diterima sebagai suffix pada baseline karena mengubah fokus; dukungan perangkat yang membutuhkan Tab harus diuji eksplisit. Buffer tidak otomatis disubmit oleh timeout.
+Without suffix, use **Tambahkan** or configure the scanner. Tab suffix is not supported by default because it moves focus; add only after explicit device tests. Never submit a buffer on timeout.
 
-## State machine sesi
+## Session states
 
 ```text
 CONTEXT → SCANNING ↔ REVIEW → SUBMITTING → COMMITTED
               ↓                  ↓
-           CANCELLED          UNCERTAIN → cek/kirim ulang → COMMITTED
-                                 ↓ penolakan server definitif
+           CANCELLED          UNCERTAIN → original status/retry → COMMITTED
+                                 ↓ definitive server rejection
                                REVIEW
 ```
 
-| State | Perilaku wajib |
+| State | Contract |
 | --- | --- |
-| CONTEXT | Pilih masuk/keluar/transfer, lokasi, tujuan/sumber dan alasan/referensi. Tidak ada mutasi stok |
-| SCANNING | Field scan fokus, buffer input, queue lookup terurut, daftar sesi dan jumlah belum disimpan terlihat |
-| REVIEW | Hentikan penerimaan scan; selesaikan semua lookup; tampilkan identitas dan qty/serial/lokasi untuk dikoreksi |
-| SUBMITTING | Envelope/key dibekukan; tidak menerima scan/edit/cancel; tombol simpan disabled |
-| UNCERTAIN | “Hasil penyimpanan belum dapat dipastikan. Periksa status.” Tidak dianggap sukses/gagal, tidak boleh membuat pengganti |
-| COMMITTED | Tampilkan nomor/waktu transaksi server; draf lama dibersihkan; “Transaksi Baru” membuka sesi/key baru dengan konteks aman yang dipilih |
-| CANCELLED | Konfirmasi bila ada baris; buang draf tanpa movement. Tidak boleh membatalkan request yang mungkin sudah commit |
+| CONTEXT | Choose receipt/issue/transfer, locations, source/destination and reason/reference; no mutation |
+| SCANNING | Dedicated field, buffer, ordered lookup queue and visibly unsaved lines |
+| REVIEW | Pause scan capture; require all lookups resolved; inspect/edit identities, quantity and context |
+| SUBMITTING | Frozen envelope/key; no scan/edit/cancel; save disabled |
+| UNCERTAIN | **Hasil penyimpanan belum dapat dipastikan. Periksa status.** No replacement transaction |
+| COMMITTED | Server document/time; clear old draft; explicit **Transaksi Baru** creates new session/key |
+| CANCELLED | Confirm when nonempty, discard draft without movement; cannot cancel a possibly committed request |
 
-`sourceSessionId` per sesi logis, revision draf bertambah saat edit. Confirmation key dibuat saat envelope dibekukan; persis envelope ini disimpan untuk pemulihan. Jangan menghasilkan key baru untuk setiap HTTP attempt.
+One sourceSessionId per logical session; increment draft revision on edits. Create the confirmation key once when freezing the envelope and preserve it for recovery, not once per HTTP attempt.
 
-## Buffer, fokus, dan urutan input
+## Buffer, focus and ordering
 
-1. Gunakan satu field khusus “Pindai atau ketik barcode”. Enter mengambil buffer nonkosong, menambah lookup queue, lalu mengosongkan field tanpa submit form induk. Buffer >128/control ditolak sebelum jaringan.
-2. Queue menjaga urutan feedback walau response lookup datang terbalik. Batasi lookup paralel rendah atau proses serial; tidak boleh menggabungkan response produk yang salah. Selagi queue berisi, review/finalisasi disabled dengan informasi jumlah yang masih diperiksa.
-3. Scanner yang terputus di tengah kode meninggalkan buffer **belum ditambahkan**. Tampilkan tombol hapus/ulangi; idle warning setelah dua detik boleh membantu tetapi tidak membuang atau mengirim kode otomatis.
-4. Kembali fokus sesudah scan valid/error yang sudah ditangani; jangan mencuri fokus ketika operator mengedit qty/alasan, membuka modal, mencari produk, atau layar browser tidak aktif. Tampilkan “Pemindai Dijeda” dan tombol “Lanjutkan Pemindaian”.
-5. Esc menghentikan mode scan atau menutup dialog sesuai hierarki, bukan langsung menghapus sesi. Shortcut ditampilkan dan tidak bertabrakan dengan browser; finalisasi memakai tindakan eksplisit, **Enter scanner tidak pernah berarti final confirm**.
-6. Paste diperlakukan satu kode, multi-line ditolak; pengguna manual memiliki pencarian produk dan pemilihan item sebagai alternatif penuh.
+1. One field: **Pindai atau ketik barcode**. Enter queues a nonempty token and clears the field without submitting its parent form. Reject overlength/control input before network access.
+2. Preserve lookup feedback order even when responses arrive out of order. Process serially or with bounded concurrency and sequence IDs. Review/finalize stays disabled until the queue is empty and errors resolved.
+3. A disconnected scanner's partial code remains unsent. Offer clear/retry; an optional two-second idle warning must not discard/submit it.
+4. Restore focus after a handled scan result, but never steal focus from quantity/reason edits, dialogs, product search or inactive browser. Show **Pemindai Dijeda** and **Lanjutkan Pemindaian**.
+5. Escape pauses scanning or closes the current dialog according to hierarchy, never silently deletes the session. Explicit final confirmation is required; scanner Enter never means final confirm.
+6. Paste is one token; reject multiline paste. Manual product search/item selection is a complete fallback.
 
-## Scan berulang dan koreksi
+## Repeated scans and correction
 
-Kuantitas: barcode product menambah satu satuan dasar. Untuk satuan pecahan (misalnya kabel meter), scan menambah 1 m dan operator dapat mengisi qty desimal secara eksplisit. Tidak ada perkalian pack/box tersembunyi. Setiap scan menampilkan baris terakhir dan delta yang ditambahkan, dengan “Urungkan Terakhir”. Edit qty/remove baris mengubah draf saja dan dapat dilakukan via keyboard.
+Quantity product scan adds one base unit. A fractional product such as cable adds 1 m; explicit decimal edit is available. No hidden pack multiplier. Show last product and quantity delta, with keyboard-accessible **Urungkan Terakhir**. Edit/remove affects the draft only.
 
-Kode identik dalam ≤300 ms dari **terminator sebelumnya** dianggap kemungkinan pantulan scanner: tahan scan kedua dalam prompt “Barcode sama baru dipindai. Tambahkan lagi?” Default tidak menambah; Enter kosong tidak menyetujui. Aksi eksplisit “Tambahkan Lagi”/shortcut terpisah menerima bila sengaja; scan berikutnya di luar jendela tetap menambah satu. Parameter diuji pada perangkat nyata, karena kecepatan saja tidak bisa membedakan niat. Inilah pengaman UX, bukan pengganti review.
+Do not interrupt identical quantity tokens within 300 ms with a modal. Every complete nonempty token adds one, including rapid identical scans. Ignore keydown.repeat and extra empty terminators. Optional inline **Dipindai kembali · +1** is sufficient; no error beep, silent drop or modal. Visible totals, undo and review protect against accidental scans. Investigate actual scanner bounce via device configuration; timing alone cannot distinguish intent.
 
-Serial: barcode item hanya boleh muncul sekali dalam satu sesi; scan kedua selalu ditolak dengan fokus pada baris sebelumnya. Barcode model SERIALIZED memulai pemilihan/registrasi unit, tidak otomatis menaikkan qty. Receipt unit baru meminta identitas minimum dan serial produsen jika tersedia; issue/transfer wajib memilih unit yang sudah ada pada lokasi benar. Validasi client membantu, tetapi server memeriksa ulang saat finalisasi.
+An item barcode can appear once per session. Reject a second serial scan and highlight the existing row. A SERIALIZED product-model barcode starts item selection/registration, never increments anonymous quantity. New receipts identify the correct product/unit and manufacturer serial when available. Issue/transfer selects an existing eligible unit at the source. Server revalidates all conditions.
 
-Unknown: pesan “Barcode belum terdaftar”; pertahankan token untuk diperiksa, sediakan cari produk/input manual. Owner dapat mendaftarkan alias lewat alur berizin; staf tidak boleh mengaitkan kode arbitrer atau membuat item stok otomatis hanya karena scan tidak dikenal. Mendaftarkan unit serial baru di receipt dilakukan setelah produk dipilih, bukan menebak produk dari serial.
+Unknown token: **Barcode tidak ditemukan.** Keep it available for inspection/search. Owner may register an alias through authorized workflow. Staff cannot attach arbitrary unknown codes or create stock automatically. New receipt-unit registration follows explicit product selection.
 
-## Koneksi, penyimpanan sementara, dan retry
+## Network, local drafts and recovery
 
-- Resolve/barcode lookup yang gagal tidak masuk sebagai scan berhasil. Kode tertahan ditampilkan dengan tombol “Periksa Lagi”. Jika offline, hentikan lookup baru dan finalisasi; buffer/draf dapat direview, tidak dibuat antrean mutasi offline.
-- Gunakan memory + `sessionStorage` per tab/user untuk draft dan frozen envelope minimal, tanpa credential/token; tidak menggunakan localStorage atau service worker untuk data inventory. Terapkan usia maksimum draf 8 jam, simpan timestamp/context revision dan hapus setelah commit/cancel/logout. Browser shared memerlukan logout disiplin.
-- Muat ulang meminta konfirmasi “Pulihkan Sesi” setelah login actor yang sama, lalu resolve ulang semua identitas/versi. Frozen envelope dengan hasil belum pasti tidak boleh diedit atau kedaluwarsa diam-diam; cek hasil lebih dahulu. Jika data per tab hilang, cari riwayat transaksi terbaru/sourceSession bersama owner sebelum mengulang pencatatan.
-- Saat logout dengan hasil belum pasti, ingatkan nomor referensi sesi untuk penelusuran; hapus data lokal sensitif, receipt server tetap bertahan. Akun lain tidak boleh melihat draf lama.
-- Bila saldo/serial berubah di antara scan dan finalisasi, server menolak seluruh dokumen. Tampilkan baris yang perlu ditinjau; tidak otomatis mengurangi qty agar transaksi lolos.
-- Teks “Tersimpan” hanya pada COMMITTED yang dibuktikan response/receipt server, termasuk setelah recovery. Navigasi tab atau beep input tidak cukup.
+- Failed lookup is not an accepted scan. Retain the token with **Periksa Lagi**. Offline mode stops new lookup/finalization; draft review remains possible without an offline mutation queue.
+- Use memory plus per-tab/per-user sessionStorage for minimal draft/frozen envelope, never credentials. No inventory localStorage or service-worker response caching.
+- Ordinary draft maximum age is eight hours. Store timestamp/context revision; clear after commit/cancel/logout.
+- Reload offers **Pulihkan Sesi** after the same actor logs in, then re-resolves identity/version. An uncertain frozen envelope must not be edited or silently expire before status recovery.
+- If tab storage is lost, inspect recent history/source-session evidence with the owner before recreating work.
+- Logout during uncertainty warns the user to retain the nonsensitive session reference, then clears local sensitive data. Server receipts remain durable. Another actor cannot see/replay the draft.
+- Concurrent balance/serial changes reject the whole document. Highlight affected lines; never silently lower quantities to make posting pass.
+- Only verified COMMITTED response/receipt may display saved status. Beeps/navigation are not proof.
 
-## Mobile dan perluasan
+## Mobile and camera extension
 
-MVP mendukung browser responsif, input manual dan HID Bluetooth pada ponsel/tablet. Kamera adalah enhancement lanjutan setelah pengujian perangkat; jangan membuat dependensi pada native Barcode Detection API saja karena dukungan tidak merata. Gunakan feature detection, izin kamera, HTTPS, dan fallback manual. Rujukan: [MDN Barcode Detection API](https://developer.mozilla.org/en-US/docs/Web/API/Barcode_Detection_API).
+Core supports mobile browsers, manual entry and Bluetooth HID. Camera follows Core at P07.6. Do not depend only on native Barcode Detection API support; use feature detection, HTTPS, user-initiated permission, a tested Code 128 decoder and manual fallback. See [MDN Barcode Detection API](https://developer.mozilla.org/en-US/docs/Web/API/Barcode_Detection_API).
 
-Uji wajib mencakup USB nyata, Bluetooth nyata, input lambat/manual, CR/LF, scan cepat, focus hilang, keyboard mobile, duplicate serial, unknown, lookup out-of-order, disconnect, response commit hilang dan pemulihan sesi. Checklist teknis formal ada di [08](08-TESTING-ACCEPTANCE.md).
+CP03 shows **Pemindai/Manual**, and later **Kamera** only once implemented. Never open camera automatically. Repeated video frames are not new scans: after acceptance, latch until the code leaves the frame or user selects **Pindai Lagi**. Feed accepted codes through the same session reducer. Stop media tracks when leaving camera mode or the tab becomes inactive. Permission/decoder failures retain manual/HID access. Optional audio/vibration supplements text.
+
+## Work layout and feedback
+
+Phone: visible type/location, scan input/last result, dense two-line session list and one review action clear of the virtual keyboard. Long context/serial forms use full-screen presentation. Desktop/tablet: dominant session table, useful side summary, optional sidebar rail without automatic per-scan changes.
+
+F2 may focus scan input only after browser/device conflict testing; provide the visible resume button too. Tab retains normal focus order. Review pauses capture and initially focuses heading/summary/back, never the final submit control. Scan/queue Enter cannot submit confirmation.
+
+| Result | Single visible feedback | Continue |
+| --- | --- | --- |
+| Quantity accepted | Product/SKU, **Ditambahkan · +1**, row total | Ready for next scan; undo available |
+| Serial accepted | Product and selected unit identity | Unique unit row, not hidden aggregate |
+| Duplicate serial | **Unit ini sudah ada dalam sesi.** | Highlight prior row; other work continues |
+| Unknown | **Barcode tidak ditemukan.** | Retain token, inspect/search |
+| Ineligible | **Stok tidak mencukupi.** / **Barang sedang dikarantina.** | Explicit correction, no automatic location switch |
+| Commit confirmed | **Barang keluar berhasil dicatat.** plus server document | New session only after definite result |
+
+No toast per scan or server-success sound before commit. One concise live region announces the last result; avoid hundreds of queued screen-reader announcements. [08](08-TESTING-ACCEPTANCE.md) covers actual USB/Bluetooth, labels, manual/IME, CR/LF, rapid scans, focus loss, mobile keyboard, duplicates, out-of-order lookup and lost commit responses.

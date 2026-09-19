@@ -1,75 +1,79 @@
-# 13 — Status stok dan notifikasi pemilik
+# 13 — Stock states and owner notifications
 
-Ini sumber kanonis klasifikasi, episode perhatian, deduplikasi, recipient dan delivery. Inventory memanggil evaluator dalam transaksi [06](06-INVENTORY-SPEC.md); dashboard memakai state yang sama, tidak menyalin rumus sendiri.
+Canonical classification, episodes, deduplication, recipients and delivery. Inventory evaluates inside [06](06-INVENTORY-SPEC.md) transactions; the dashboard reads the same state.
 
-## Kebijakan stok
+## Stock policy
 
-Scope MVP **per produk, agregat semua lokasi STORAGE aktif yang layak dikeluarkan**. Gunakan `tersedia(p)` dari 06, bukan total fisik. Ini memungkinkan reservasi/karantina/transit kelak mengurangi kesiapan stok tanpa mengubah makna peringatan. Stok per lokasi tetap terlihat; minimum per lokasi adalah perluasan dengan policy key terpisah, bukan tambahan alert diam-diam.
+Core scope is each product's aggregate available quantity in active, issue-eligible STORAGE locations, using eligible(p) from 06. Do not use total physical quantity. Future reservation/quarantine/transit therefore changes availability consistently. Location detail remains visible; per-location thresholds require separate explicit policy keys later.
 
-`monitoringEnabled`, `minimumQty ≥ 0`, dan optional reorder target disimpan sekali pada Product; precision mengikuti produk. Reorder target bila terisi harus > minimum; hanya informasi perencanaan, bukan trigger kedua atau pesanan otomatis. StockHealth hanya menyimpan hasil evaluasi/episode/versi, tidak menyalin konfigurasi.
+Product owns monitoringEnabled, minimumQty ≥0 and optional reorder target. Precision matches product; reorder target, when present, must exceed minimum. It is planning information, not another trigger or automatic purchase order. StockHealth stores result/episode/version only.
 
 ```text
-tersedia = 0                     → OUT    → Habis
-0 < tersedia ≤ minimumQty        → LOW    → Menipis
-tersedia > minimumQty            → NORMAL → Normal
+available = 0                 → OUT    → Habis
+0 < available ≤ minimumQty    → LOW    → Menipis
+available > minimumQty        → NORMAL → Normal
 ```
 
-Minimum 0 berarti tidak ada rentang Menipis, tetapi Habis tetap terdeteksi. Nilai negatif tidak masuk klasifikasi karena dilarang inventory. Produk monitoring off berlabel “Tidak Dipantau” dengan currentState null; jangan menampilkan Normal palsu. Produk nonaktif tidak dipantau. Aktivasi dari null mengevaluasi saldo saat ini, bukan memakai state lama sebelum monitor dimatikan.
+Minimum zero has no LOW interval but still detects OUT. Negative values are forbidden upstream. Monitoring off means null state and **Tidak Dipantau**, not falsely Normal. Inactive products are unmonitored. Reenable evaluates current stock afresh.
 
-Saat setup produk, monitoring awal off agar produk kosong yang belum selesai disiapkan tidak membanjiri inbox. Setelah saldo awal/review kebijakan, owner memilih “Mulai Pantau Stok”; evaluasi dilakukan saat itu, termasuk menghasilkan Habis bila masih nol. **Semua SKU yang memang disimpan harus monitoring on sebelum pilot**; pengecualian produk pesanan khusus harus dicatat alasan oleh owner. Setup status terlihat di dasbor pengaturan, bukan disembunyikan.
+New products start monitoring off to prevent incomplete onboarding flooding inboxes. After opening/policy review, owner chooses **Mulai Pantau Stok**; current zero may legitimately open OUT. All genuinely stocked SKUs must be monitored before pilot. Owner documents custom-order exceptions. Show incomplete monitoring setup in settings.
 
-## Episode dan transisi
+## Episodes and transitions
 
-Satu episode adalah satu periode perhatian yang belum kembali Normal. Ada maksimum satu episode OPEN per product. Simpan `currentState`, stateVersion, episode sequence, openedAt, resolvedAt/reason, severity tertinggi dan notification event unik. Lock product dari 06 menyerialkan posting, setting threshold, dan pemeriksaan terjadwal.
+An episode is unresolved attention until stock returns to NORMAL. At most one OPEN episode per product. Store state/version, episode sequence/openedAt/resolvedAt/reason and highest severity. Product guards serialize movement, threshold changes and authorized evaluation.
 
-| Sebelum | Sesudah | Perubahan episode | Notifikasi baru |
+| Before | After | Episode action | New event |
 | --- | --- | --- | --- |
-| NORMAL | LOW | Buka episode | LOW sekali |
-| NORMAL | OUT | Buka episode | OUT sekali; jangan juga mengirim LOW |
-| LOW | LOW | Tetap | Tidak |
-| LOW | OUT | Tetap; naikkan severity maksimum | OUT sekali jika belum pernah OUT pada episode ini |
-| OUT | OUT | Tetap | Tidak |
-| OUT | LOW | Tetap; mulai pulih tetapi belum Normal | Tidak |
-| LOW atau OUT | NORMAL | Tutup episode sebagai pulih | Tidak ada push pemulihan MVP; inbox dapat menunjukkan sudah pulih |
-| NORMAL | NORMAL | Tidak ada | Tidak |
+| NORMAL | LOW | Open | LOW once |
+| NORMAL | OUT | Open | OUT once, no extra LOW |
+| LOW | LOW | Keep | None |
+| LOW | OUT | Keep, raise maximum severity | OUT once if not already emitted |
+| OUT | OUT | Keep | None |
+| OUT | LOW | Keep, partial recovery | None |
+| LOW/OUT | NORMAL | Resolve | No recovery push in Core |
+| NORMAL | NORMAL | None | None |
 
-Unique `(episodeId, severity)` menjamin paling banyak satu LOW dan satu OUT. OUT→LOW→OUT dalam episode sama tidak membuat OUT kedua. Pergerakan ke Normal lalu turun lagi membuka episode sequence baru. Tidak ada reminder berkala untuk episode yang sama pada MVP. Baca/unread tidak menutup episode atau mereset deduplikasi.
+Unique episode/severity permits at most one LOW and one OUT. OUT→LOW→OUT never emits another OUT in that episode. Return to NORMAL then decline creates a new episode. No periodic same-state reminders. Read/unread never resets deduplication.
 
-Contoh min 5: `6→5` LOW#1; `5→4→3` tanpa event; `3→0` OUT#1; `0→2` tetap episode; `2→0` tanpa OUT baru; `0→20` tutup; `20→5` LOW#2. Receipt pertama yang menghasilkan tersedia > minimum saat monitoring baru diaktifkan mulai NORMAL tanpa event. Aktivasi langsung pada low/out diperlakukan masuk ke kondisi tersebut dan membuat episode awal.
+Minimum 5 example: 6→5 LOW#1; 5→4→3 none; 3→0 OUT#1; 0→2 same episode; 2→0 none; 0→20 resolve; 20→5 LOW#2. Monitoring activation at LOW/OUT opens an initial episode; activation above minimum starts NORMAL silently.
 
-Perubahan minimum/monitor menjalankan evaluator ber-lock, actor dan reason konfigurasi diaudit. Threshold baru bisa membuka/menutup episode tanpa movement; payload menyebut perubahan kebijakan. Mematikan monitor/menonaktifkan produk menutup episode dengan alasan administratif, bukan “stok pulih”. Mengaktifkan ulang mengevaluasi sebagai episode baru jika perlu. Kebijakan ini hanya owner supaya staf tidak bisa menghapus perhatian dengan mematikan monitor.
+Threshold/monitor changes use the same guarded evaluator and actor/reason audit. Policy change may open/resolve attention without physical movement; record that cause. Monitor-off/product deactivation resolves administratively, not as physical recovery. Reenable can open a fresh episode. Only owner changes policy.
 
-## Batas transaksi dan deduplikasi
+## Atomicity and deduplication
 
-Posting inventory selesai menghitung semua kaki dahulu. Untuk setiap product terpengaruh, bandingkan persisted state dengan hasil akhir dalam transaction yang sama; buat state/episode/event, recipient inbox, dan outbox. Transfer STORAGE→STORAGE pada product yang sama tidak menghasilkan low transient karena evaluasi tidak dilakukan per kaki. Jika audit atau event/outbox wajib gagal ditulis, seluruh posting rollback.
+Finish all movement legs before evaluating each affected product's final balance. State/episode/event, recipient inbox and outbox share the stock transaction. STORAGE→STORAGE transfer cannot trigger a transient low state between legs. Required audit/event/outbox failure rolls back posting.
 
-Constraint: satu health row/product, satu open episode/product (partial unique), event unik episode-severity, inbox unik event-user, delivery unik event-channel-recipient-device. Jika tidak ada perangkat terdaftar, inbox tetap dibuat; outbox push tidak perlu dibuat. Penerima stok MVP adalah seluruh owner aktif yang punya permission owner dashboard saat event terjadi; staf hanya mendapat pesan feedback transaksinya, bukan salinan seluruh alert owner.
+Constraints: one health row/product, partial unique open episode/product, unique episode/severity, event/user inbox and event/channel/recipient/device delivery. No registered device means inbox only, not missing attention.
 
-Job rekonsiliasi read-only membandingkan status dengan saldo. Bila stock-health projection melenceng tanpa posting yang sah, laporkan insiden sebagaimana 06; jangan menutupi bug dengan menulis notifikasi baru berulang. Normalisasi state setelah maintenance/rebuild dilakukan terkontrol dengan product lock dan dedupe key yang sama.
+Recipients are active owners with ownerDashboard permission at event creation. Staff receive their transaction feedback, not all owner alerts. A later owner can still see current dashboard attention; historical events are not silently broadcast again.
 
-## Kanal dan janji pengiriman
+Read-only reconciliation compares state with stock. Projection mismatch raises an incident under 06 rather than repeatedly generating events to conceal the bug. Controlled maintenance/rebuild uses product guards and the same deduplication keys.
 
-1. **Inbox dalam aplikasi adalah kanal durable wajib.** Poll saat tab aktif tiap 15 detik, refresh saat fokus kembali dan setelah command; tampilkan waktu terakhir berhasil. Tidak perlu WebSocket/SSE MVP.
-2. **Web Push adalah kanal proaktif di luar tab** dari worker memakai VAPID dan subscription perangkat yang disetujui. Tidak memerlukan SaaS notifikasi berbayar, tetapi browser/vendor push service dan koneksi tetap menjadi dependensi eksternal; pengiriman tepat waktu tidak dijamin.
+## Channels and delivery promises
 
-Push memakai service worker dengan payload minimal: “Stok memerlukan perhatian” dan tautan same-origin ke inbox. Detail SKU/jumlah/lokasi tampil setelah login, bukan layar terkunci. Subscription endpoint/key adalah data sensitif. Registrasi memerlukan izin browser atas tindakan user, validasi owner/user aktif, dan association perangkat; logout, pencabutan izin atau akun nonaktif menghentikan subscription.
+1. **In-app inbox is mandatory and durable.** Poll every 15 seconds while active; refresh after commands and focus return. Show last successful refresh. No WebSocket/SSE required.
+2. **Web Push is opt-in proactive delivery outside the tab.** Same-codebase worker uses VAPID and user-approved device subscriptions. Browser/provider/network dependencies remain; no guaranteed arrival time or paid provider prerequisite.
+3. Existing SMTP may be evaluated later if available; it is not a Core dependency. Separate event from delivery channel so future adapters do not change stock facts.
 
-Owner onboarding mencakup izin, kirim uji, buka dari notifikasi, dan periksa saat tab tertutup pada perangkat sebenarnya. Browser yang tidak mendukung/izin ditolak mendapat penjelasan “Pemberitahuan perangkat belum aktif; notifikasi tetap tersedia di aplikasi.” Tidak boleh mengklaim owner menerima push ketika hanya provider menerima request. Dukungan perangkat diuji, bukan diasumsikan; lihat [MDN Push API](https://developer.mozilla.org/en-US/docs/Web/API/Push_API).
+Push payload is minimal: **Stok memerlukan perhatian**, same-origin inbox link and stable event tag. Show SKU/quantity/location only after login, not on lock screens. Subscription endpoints/keys are sensitive. Register on user gesture with active authorized association. Logout, permission revocation and account disablement revoke device association.
 
-Untuk menyatakan tujuan proaktif pilot terpenuhi, Web Push harus terbukti pada perangkat owner, atau owner menyetujui secara eksplisit batas kanal yang tersedia beserta alur pengecekan inbox. Bila tidak, gate notifikasi tetap terbuka. Ini review kemampuan aktual, bukan izin membeli layanan. Email/Telegram/WhatsApp API bukan dependensi MVP; penambahan layanan berbayar memerlukan persetujuan khusus.
+Owner onboarding tests permission, delivery, opening the notification and closed-tab behavior on the actual device. Unsupported/denied UI: **Pemberitahuan perangkat belum aktif; notifikasi tetap tersedia di aplikasi.** Provider acceptance does not prove owner delivery. Reference: [MDN Push API](https://developer.mozilla.org/en-US/docs/Web/API/Push_API).
 
-## Worker, retry, dan spam
+Pilot proactive acceptance requires verified owner-device push, or explicit owner acceptance of the actual channel limitation and an inbox-checking procedure. Otherwise the gate remains open. This is capability acceptance, not permission to purchase a service. Email/Telegram/WhatsApp APIs are not Core requirements; paid providers need explicit approval. Public wa.me links are separate from notification delivery.
 
-- Worker polling DB, claim due jobs dengan `FOR UPDATE SKIP LOCKED`, simpan lease 60 detik dan claim token; transaksi claim singkat, kirim di luar transaksi. ACK hanya pemegang token yang masih berlaku. Lease expired dapat diklaim ulang.
-- Delivery bersifat **at least once**. Crash sesudah provider menerima tetapi sebelum ACK dapat mengirim ulang. Gunakan push tag `eventId` untuk mengganti duplikat pada perangkat sejauh didukung; jangan menjanjikan exactly-once lintas jaringan.
-- Retry sementara pada 1, 5, 15, 60, 240 menit, lalu DEAD bila upaya berikutnya tetap gagal. Simpan attempt count, nextAttemptAt dan galat tersanitasi; 429 mengikuti `Retry-After` yang dibatasi, tidak tight loop.
-- HTTP 404/410 endpoint mencabut subscription; galat autentikasi/VAPID menandai konfigurasi gagal dan alert operasi. Inbox tetap tersedia. Jangan mengulang tanpa batas.
-- Sebelum delivery, periksa recipient masih aktif/berizin dan episode masih OPEN. Episode sudah pulih → SUPPRESSED; event LOW yang sudah meningkat OUT → SUPPRESSED agar alert lama tidak menyusul. Inbox historis tetap ada. Jika episode berubah setelah cek dan sebelum provider, push generik masih aman; aplikasi selalu menampilkan state terkini.
-- Batas awal 5 push per menit per recipient; antrekan menunda sisanya, tidak membuang event. Inbox dapat menampilkan beberapa produk dalam satu daftar. Tidak ada heartbeat push yang berulang saat tidak ada perubahan.
-- Ukur umur outbox; >5 menit tanpa progres membuat health warning yang terlihat owner/operator. Pengiriman DEAD bisa diulang manual oleh operator berizin memakai delivery yang sama; tidak membuat event bisnis baru.
+## Worker, retry and spam control
 
-## Isi dan tindakan
+- Claim due rows with FOR UPDATE SKIP LOCKED, 60-second lease and fencing claim token. Claim transaction is short; send outside it. Only current token can ACK. Expired lease may be reclaimed.
+- External delivery is **at least once**. Crash after provider acceptance but before ACK may resend. Stable eventId push tag can replace duplicates where supported; never claim network-wide exactly-once.
+- Retry transient failure after 1, 5, 15, 60 and 240 minutes; after the final retry fails, mark DEAD. Record attempts/nextAttemptAt and safe errors. Respect bounded Retry-After for 429; no tight loops.
+- 404/410 revokes the subscription. VAPID/auth errors expose a configuration incident; no endless retries. Inbox remains.
+- Before send, recheck recipient active/authorized and episode OPEN. Resolved episode → SUPPRESSED. LOW superseded by OUT → SUPPRESSED. Keep historical inbox. If state changes between check and send, generic push remains safe and the opened UI shows current state.
+- Initial limit five pushes/minute/recipient; delay excess, never drop business events. No unchanged heartbeat pushes.
+- Oldest pending >5 minutes raises operational warning. Authorized manual retry reuses the delivery identity and creates no business event.
 
-Inbox LOW: “Stok Menipis — Produk Demo tersisa 5 unit. Minimum 5 unit.” OUT: “Stok Habis — Produk Demo tidak memiliki stok tersedia.” Lampirkan event time, snapshot qty, current state, dan aksi “Lihat Stok”/“Lihat Riwayat”. Tautan lokasi/detail hanya setelah izin. Jangan membuat purchase order atau mengubah minimum secara otomatis.
+## Content and action
 
-Kondisi bisnis tetap terlihat di dasbor walaupun notifikasi dibaca/dikirim gagal. Detail teknis queue hanya dalam halaman sistem berizin. Kelak approval/QC/RFQ/backup memakai event type dan dedupe key sendiri; jangan mencampurkan episode stok dengan reminder sistem.
+LOW example: **Stok Menipis — Produk Demo tersisa 5 unit. Minimum 5 unit.**
+OUT example: **Stok Habis — Produk Demo tidak memiliki stok tersedia.**
+
+Include event time/snapshot, current state and **Lihat Stok/Lihat Riwayat** after authorization. No automatic purchase order or threshold change. Dashboard attention remains even if read or delivery fails. Queue details belong in restricted system views. Future approval/QC/RFQ/backup alerts have their own event types and keys, not inventory episodes.

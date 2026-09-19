@@ -1,93 +1,117 @@
-# 02 — Arsitektur teknis
+# 02 — Technical architecture
 
-Status: desain target, belum diimplementasikan. Arah teknologi tetap mengikuti brief; keputusan rinci dan alternatif dicatat di [10](10-DECISIONS.md).
+Target design only. No implementation exists. [10](10-DECISIONS.md) records choices and alternatives.
 
-## Bentuk sistem
+## System shape
 
-Satu modular monolith, satu repositori, satu PostgreSQL. Next.js menyajikan UI dan endpoint; proses worker dari codebase/image yang sama menangani outbox dan pekerjaan berkala. Worker bukan layanan domain terpisah. Tidak ada Redis, Kafka, Elasticsearch, atau backend terkelola sebagai prasyarat.
+One modular monolith, repository and PostgreSQL database. Next.js serves UI and endpoints. A worker from the same codebase/image handles outbox delivery and scheduled work. No Redis, Kafka, RabbitMQ, Elasticsearch, Kubernetes or managed backend is required.
 
 ```mermaid
 flowchart TD
-  S[Staf: scan dan review] --> H[Next.js: autentikasi dan validasi]
-  O[Pemilik: dasbor dan notifikasi] --> H
-  H --> C[Command dan query service per modul]
-  C --> P[(PostgreSQL: ledger, saldo, audit, episode, outbox)]
-  P --> W[Worker dari codebase yang sama]
-  W --> N[Web Push dengan persetujuan perangkat]
-  V[Pengunjung publik, fase berikutnya] --> R[Query proyeksi publik allowlist]
+  S[Staff: scan and review] --> H[Next.js: authentication and validation]
+  O[Owner: cockpit and notifications] --> H
+  H --> C[Module command and query services]
+  C --> P[(PostgreSQL: ledger, balances, audit, episodes, outbox)]
+  P --> W[Worker from the same codebase]
+  W --> N[Opt-in Web Push]
+  V[Public visitor, later phase] --> R[Published allowlist queries]
   R --> P
 ```
 
-| Modul | Memiliki | Dependensi yang diperbolehkan |
+| Module | Owns | Allowed dependencies |
 | --- | --- | --- |
-| identity | Akun, sesi, peran, pemeriksaan izin | Infrastruktur DB/auth |
-| products | Master, kategori/brand, identitas produk | identity, audit; identitas barcode melalui kontrak barcode |
-| inventory | Command stok, ledger, saldo, posisi serial | products, identity, audit, evaluasi stock-health |
-| barcode | Registry kode, resolusi, label | products, identitas item; tidak mengubah saldo |
-| stock-health | Kebijakan minimum, state dan episode | Saldo yang disuplai dalam transaksi inventory; bukan query HTTP silang |
-| notifications | Inbox, outbox, subscription, delivery | identity, event stock-health; tidak menulis ledger |
-| audit | Catatan peristiwa immutable dan pembacaan berizin | Infrastruktur; tidak memanggil modul bisnis kembali |
-| operations | Backup status, health, rekonsiliasi | Query terbatas, worker |
-| public-catalog / sales | Proyeksi publik / RFQ dan penjualan mendatang | Kontrak produk dan inventory; tanpa tulis tabel stok langsung |
+| identity | Accounts, sessions, roles, authorization | Database/auth infrastructure |
+| products | Master, category/brand/unit, product identity | identity, audit, barcode contract |
+| inventory | Stock commands, ledger, balances, serial positions | products, identity, audit, stock-health |
+| barcode | Registry, resolution and labels | products/item identity; no balance writes |
+| stock-health | Threshold evaluation, state and episodes | Balances supplied inside inventory transactions |
+| notifications | Inbox, outbox, subscriptions and delivery | identity, stock-health events; no ledger writes |
+| audit | Immutable events and authorized reads | Infrastructure; no calls back into business modules |
+| operations | Health, backup status and reconciliation | Restricted queries and worker |
+| imports (Core) | Private staging, validation, preview, jobs/results | Product identity or OPENING commands under 14 |
+| finance | Core evidence; later valuation, allocations and report versions | Read-only physical facts, evidence revisions and sales revenue under 15 |
+| public-content (later) | Structured company content, settings, revisions, publishing | identity, audit, validated media |
+| public-catalog (later) | Published product projections and queries | products, public-content |
+| sales (later) | RFQ, leads, quotation, fulfillment and revenue facts | Product/inventory contracts; no direct stock writes |
 
-Domain service menerima konteks actor dan transaksi eksplisit. Modul lain menggunakan interface layanan, bukan mengubah tabel milik modul secara bebas. Evaluasi stok dan pembuatan event berada dalam **transaksi yang sama** dengan posting; pengiriman jaringan dilakukan setelah commit oleh worker.
+Services receive explicit actor and transaction context. Other modules call service interfaces rather than writing foreign tables. Stock-health, inbox/event/outbox and audit commit with stock. External delivery occurs after commit.
 
-## Rencana struktur kode — belum dibuat
+## Planned code structure
 
 ```text
-src/app/                 route publik, auth, dan aplikasi internal
-src/modules/<module>/    domain, application, repository, schemas, UI modul
-src/server/              DB, auth adapter, konfigurasi tervalidasi
-src/shared/              tipe, pemetaan pesan Indonesia, utilitas kecil
-src/workers/             polling outbox dan job terjadwal
-drizzle/                 migrasi ditinjau, kelak
-tests/                   unit, integration, concurrency, e2e
-prototypes/              HTML/CSS terisolasi dan catatan review
-docs/                    kontrak dan pelacak resmi
+src/app/                 public, auth and internal routes
+src/modules/<module>/    domain, application, repository, schemas, module UI
+src/server/              database, auth adapter, validated configuration
+src/shared/              types, Indonesian message mappings, small utilities
+src/workers/             outbox polling and scheduled jobs
+drizzle/                 reviewed migrations, later
+tests/                   unit, integration, concurrency and E2E
+prototypes/              isolated HTML/CSS and review records
+docs/                    canonical specifications and tracker
 ```
 
-Jangan membuat folder kode kosong sekadar meniru diagram. Paket dan versi stabil yang kompatibel diverifikasi pada P01, lalu lockfile dikomit. Hindari kode yang hanya mengantisipasi fase mendatang.
+Do not create empty code directories just to match this diagram. Verify stable compatible packages and advisories at P01, then lock versions.
 
-## Batas transport dan layanan
+## Transport and service boundary
 
-Gunakan Route Handler untuk command inventaris dan status retry; Server Component/Action boleh menjadi adapter tipis untuk UI lain. Semua jalur memanggil command/query service yang sama dengan Zod, autentikasi, izin dan batas objek. Server Action tetap diperlakukan sebagai endpoint yang dapat diserang. [Panduan Next.js](https://nextjs.org/docs/app/guides/authentication) mendukung pemeriksaan izin dekat akses data; pemilihan struktur di atas adalah keputusan LATANSA.
+Use Route Handlers for inventory commands and recovery status. Server Components/Actions may be thin adapters elsewhere. All adapters use the same Zod validation, authentication, permission and object-boundary checks. Server Actions are externally callable attack surfaces. Check authorization near data access; see [Next.js authentication guidance](https://nextjs.org/docs/app/guides/authentication).
 
-Kontrak command stok, belum berupa implementasi:
-
-| Bagian | Kontrak |
+| Stock command part | Contract |
 | --- | --- |
-| Permintaan | `idempotencyKey`, `sourceSessionId`, `type`, sumber/tujuan bila relevan, `lines`, alasan terstruktur, referensi opsional, waktu dokumen opsional |
-| Baris | `productId`, `quantity` sebagai string desimal kanonis, `serializedItemId` bila item sudah ada, metadata penerimaan serial baru bila relevan |
-| Identitas tepercaya | `actorId`, izin, waktu posting, saldo, status, delta dan audit dibentuk server; tidak menerima klaim browser |
-| Sukses | ID/nomor transaksi, `postedAt`, ringkasan hasil dan versi saldo; hanya dikembalikan setelah commit |
-| Galat | `code` internal stabil, `message` Indonesia, `fieldErrors` bila ada, `requestId`, `retryable`; tanpa SQL/stack/secret |
-| Retry | Payload identik + key yang sama. Status receipt hanya dapat dibaca pemilik sesi atau pemilik berizin |
+| Request | idempotencyKey, sourceSessionId, type, relevant locations, lines, structured reason, optional reference/document date |
+| Line | productId, canonical decimal quantity string, existing serializedItemId or new receipt identity metadata |
+| Server authority | Actor, permissions, posting time, balances, status, signed deltas and audit |
+| Success | Movement ID/number, postedAt, result summary and balance versions, only after commit |
+| Error | Stable code, Indonesian message, fieldErrors where applicable, requestId, retryable; no SQL/stack/secrets |
+| Retry | Identical envelope and key; receipt access restricted to session actor or authorized owner |
 
-Endpoint konseptual: `POST /api/inventory/commands`, `GET /api/inventory/commands/status?key=…`, `POST /api/barcodes/resolve`, `GET /api/inventory/balances`, `GET /api/notifications`. Nama boleh disesuaikan sebelum implementasi bila semantik tidak berubah; endpoint bukan jaminan telah tersedia.
+Conceptual endpoints: POST /api/inventory/commands; GET /api/inventory/commands/status?key=…; POST /api/barcodes/resolve; GET /api/inventory/balances; GET /api/notifications. These are proposed contracts, not existing endpoints.
 
-HTTP: 401 belum masuk, 403 tidak berizin, 404 objek tak boleh diketahui/tidak ada, 409 konflik stok/serial/key, 422 input, 429 terlalu sering, 503 gangguan sementara. Hilangnya respons tidak membuktikan transaksi gagal; semantik pastinya di [06](06-INVENTORY-SPEC.md).
+HTTP semantics: 401 unauthenticated, 403 denied, 404 nonexistent/undisclosable, 409 state/key conflict, 422 invalid input, 429 rate limit, 503 temporary failure. Missing responses never prove rollback; [06](06-INVENTORY-SPEC.md) owns recovery.
 
-## Pembacaan dan konsistensi
+## Reads, time and consistency
 
-- Ledger append-only adalah otoritas; tabel saldo adalah proyeksi yang diperbarui sinkron dalam commit yang sama. Jangan memakai materialized view yang terlambat untuk validasi pengeluaran.
-- Gunakan primary DB untuk query stok setelah posting. Tidak ada read replica pada MVP.
-- Ringkasan dasbor menggunakan satu snapshot read-only `REPEATABLE READ` atau satu query atomik agar kartu yang berkaitan konsisten; tampilkan waktu snapshot. Pagination riwayat menggunakan `(posted_at, id)` stabil.
-- Response internal dan auth `no-store`; tidak masuk cache publik, CDN, localStorage, atau service worker. PWA hanya menyimpan aset shell yang tidak sensitif. Draft sementara per tab dijelaskan [12](12-BARCODE-SCANNER.md).
-- `timestamptz`/instant UTC untuk kejadian, IANA `Asia/Jakarta` untuk tanggal bisnis. Rentang hari adalah tengah malam WIB inklusif sampai tengah malam berikutnya eksklusif, dikonversi ke UTC di server. `documentDate` tidak mengubah urutan ledger.
-- Semua angka stok menggunakan desimal eksak; JSON mengangkut string. Tidak ada float untuk perhitungan domain.
+- Ledger is authoritative. Balance projections update synchronously in the same commit. Never use stale materialized views to authorize stock issues.
+- Use the primary database for post-command reads. No MVP read replica.
+- Related dashboard values share one atomic query or read-only REPEATABLE READ snapshot. Include snapshot time. History pagination uses stable (posted_at, id).
+- Internal/auth responses are no-store and excluded from public caches and service-worker data caching. Only nonsensitive shell assets may be cached. [12](12-BARCODE-SCANNER.md) defines temporary tab drafts.
+- Events use UTC timestamptz. Business dates use Asia/Jakarta. Day ranges are local midnight inclusive to next midnight exclusive, converted server-side. documentDate never changes physical posting order.
+- Domain quantities use exact decimals and JSON strings, never floating-point arithmetic.
 
-## Proyeksi publik dan file
+## Public projections
 
-Master tunggal tidak berarti response tunggal. Query publik hanya mengambil produk `PUBLISHED` dan aktif, dengan allowlist: ID publik/slug, SKU publik bila disetujui, nama, kategori/brand publik, deskripsi yang disanitasi, spesifikasi publik, gambar publik, dan metadata SEO. MVP tidak memiliki route publik produk.
+Query only active, published products. Allowlist public ID/slug, approved public SKU, name, public category/brand, sanitized description, public specifications/images and SEO. No public product route is part of Core.
 
-Harga beli, margin, pemasok, lokasi, jumlah tepat, serial, catatan privat, audit dan identitas pengguna dilarang. Bahkan Boolean ketersediaan publik ditunda sampai kebijakan publikasi disepakati; default tampilkan “Hubungi kami untuk ketersediaan”. Jangan `SELECT *` lalu menyembunyikan field di komponen. Proyeksi adalah query/view allowlist, bukan database produk kedua. Bila memakai DB role publik pada fase website, role hanya dapat membaca view aman.
+Exclude costs, COGS, margins/profit, supplier-sensitive data, exact quantity/location, serials, private notes, audit and user/security data. Public availability indicators require a later explicit policy; default UI: **Hubungi kami untuk ketersediaan**. Never SELECT * and hide fields in components. A separate public DB role, if added, reads safe views only.
 
-Gambar publik dan lampiran privat menggunakan penyimpanan terpisah secara akses. MVP tidak membutuhkan lampiran operasional. Fase upload: validasi ukuran/MIME/signature, nama objek acak, tidak mengeksekusi SVG/HTML tak tepercaya, akses privat melalui handler berizin. Public image tidak boleh berisi label serial atau dokumen gudang nyata.
+Product publication is a revisioned projection of the same master. Editing a draft does not leak to the live site. Keep the published content snapshot stable until republished; live master deactivation always hides the product for safety. Stock and private fields never enter a publication snapshot.
 
-## Ketahanan dan skala awal
+## Lightweight first-party CMS and wa.me
 
-Proses DB singkat, tanpa input manusia atau HTTP eksternal saat lock ditahan. Worker mengklaim outbox dengan lease; kegagalan provider tidak membatalkan stok. Protokol retry, batas waktu, dan locking dimiliki [06](06-INVENTORY-SPEC.md) dan [13](13-NOTIFICATIONS.md).
+Implement at P09, after Core. Use typed database fields and constrained sections, not arbitrary page-builder blocks or raw HTML/scripts/CSS. Own company display name/tagline, hero title/text/media, About, address/office hours, public contacts, section headings/copy, footer, SEO and featured product references. Product content remains in the product domain. Public RFQ/contact copy and WhatsApp default/product/RFQ templates are editable settings.
 
-DB role runtime bukan schema owner/superuser; tidak diberi UPDATE/DELETE/TRUNCATE pada ledger/audit. Migrator terpisah. Constraint dan kontrol command menjaga integritas; akun DB runtime yang bocor tetap merupakan insiden besar, bukan ancaman yang dapat diselesaikan oleh pemisahan modul saja.
+Workflow: **DRAFT → authenticated PREVIEW → PUBLISH**. The owner alone can edit site settings and publish company/product content. Product/sales admins may prepare authorized product drafts; they cannot publish or manage site-wide content. Publishing validates required fields, safe links/media, active featured product references and the expected revision. Concurrent stale publication fails rather than overwriting.
 
-Angka kapasitas awal untuk pengujian, bukan data bisnis: 5.000 SKU, 20.000 item serial, 100.000 baris ledger, dua operator aktif. Indeks mengikuti unique key, `(product_id, location_id)`, waktu posting, actor, status notifikasi dan outbox due. Ukur dahulu sebelum menambah infrastruktur.
+Store immutable published revisions, actor/time and a safe audit diff. Publish pointer and audit commit atomically. Rollback republishes a previous valid revision as a new action. Never erase publication history. Preview is owner-authenticated, no-store and noindex, with no public bearer preview URLs.
+
+Published settings are read dynamically from PostgreSQL. Initial low-traffic public reads use no-store; static assets may be cached by immutable name. Routine edits therefore need no build/redeploy. If public query caching is later measured as necessary, use revision-keyed cache with reliable publish invalidation and tests for stale/cross-boundary data.
+
+WhatsApp uses standard `https://wa.me/<international-digits>?text=<encoded-text>` links, following the [official click-to-chat format](https://faq.whatsapp.com/5913398998672934). Validate the international number; remove formatting and reject invalid destinations. It is business content, not a source-code constant or deployment secret. Allowlisted template placeholders: public product name/SKU/URL and, later, an authorized public RFQ reference. Do not insert private prices, serials, notes or customer PII into public templates. Encode text once and construct the destination from a fixed wa.me origin; never accept an arbitrary redirect URL.
+
+Use the currently published number/template. Preview labels are clear and do not generate real tracking. An optional first-party outbound click event records CTA type, public product/reference, timestamp and minimal source context, then redirects. Tracking failure must not block the link. Do not record message body or interpret the click as delivery, conversation, lead qualification or sale. No WhatsApp Business API, Meta Cloud API, webhook provider or paid messaging SaaS.
+
+## Storage and scale
+
+Use configurable VPS/local storage initially. A storage adapter accepts object keys rather than hardcoded absolute paths. Separate private staging/media from deliberately published assets; no private directory is web-served. [09](09-DEPLOYMENT-OPS.md) owns configuration, limits, permissions, backup/restore and future S3 migration.
+
+Bulk import staging is Core; product images are later. Parser work is resource-limited and outside long Next.js requests. Metadata/rows/results live in PostgreSQL. One apply job per company; staging is batched, final business apply is atomic under 14. Separate execution slots for import and notifications prevent a large parse blocking push delivery. This remains one codebase, without external queue infrastructure.
+
+Stock import calls the same command service with the authorized opening-import limit; interactive commands remain limited to 200 lines. Every master mutator shares normalization and permission rules. Job/file/error access is authorized, same-origin and no-store.
+
+Search, filters, sorting and pagination are server-side. Exact indexed SKU/barcode lookup first; evaluate PostgreSQL full-text/trigram only when required by measured queries. Whitelist sorts and use ID tie-breakers. Maximum page size 100; selector at most 20 candidates. Never fetch the whole master for a browser table or selector.
+
+Initial benchmark only: 5,000 SKUs, 20,000 serials, 100,000 ledger legs and two active operators. Index unique identities, product/location, posting time, notification recipient/state and due jobs. Validate query plans before adding indexes or infrastructure.
+
+Runtime DB role is not schema owner/superuser and has no UPDATE/DELETE/TRUNCATE on ledger/audit. Migrator is separate. Transactions hold no human input or external network calls.
+
+Cost evidence is private, absent from stock/product DTOs. Core records a per-product posting sequence. Later finance reads physical facts/evidence/revenue into versioned valuations and checks completeness before displaying profit. A delayed valuation cannot invalidate a successful stock posting or silently rewrite published financial results.

@@ -1,71 +1,97 @@
-# 01 — Kebutuhan produk
+# 01 — Product requirements
 
-Dokumen ini memiliki tujuan bisnis, cakupan, prioritas, dan ukuran keberhasilan. Mekanisme teknis dimiliki dokumen sesuai [indeks](../README.md).
+This document owns business outcomes, scope, priorities and dashboard information hierarchy. Technical mechanisms belong to the documents in the [index](../README.md).
 
-## Masalah dan hasil yang diinginkan
+## Business outcome and users
 
-Pemilik CV. Latansa Jogjakarta perlu mengetahui barang yang masuk/keluar, sisa dan lokasi stok, pelaksana, serta barang yang perlu ditindaklanjuti. Staf menjalankan pencatatan harian; pemilik tidak bertugas memperbarui jumlah setiap hari.
+CV. Latansa Jogjakarta needs trustworthy stock, locations, movement history and timely attention. Staff perform daily operations. The owner monitors exceptions and approves sensitive changes.
 
-Keberhasilan utama: **dua staf dapat bekerja bersamaan, memindai dan menyimpan transaksi secara andal, sementara pemilik dapat mempercayai saldo dan memperoleh perhatian stok tanpa spam.**
+**Success: two staff members can scan and post concurrently without losing integrity, while the owner trusts current stock and receives useful alerts without spam.**
 
-| Pengguna awal | Tanggung jawab | Hasil yang dibutuhkan |
+| Initial user | Responsibility | Required outcome |
 | --- | --- | --- |
-| 1 pemilik, `SUPER_ADMIN` | Pengawasan, kebijakan, koreksi sensitif, pengelolaan akun | Daftar tindakan dan jejak alasan yang jelas |
-| Staf gudang, `INVENTORY_ADMIN` | Penerimaan, pengeluaran, pemindahan | Scan cepat, koreksi sebelum simpan, konfirmasi akurat |
-| Admin produk/penjualan, `PRODUCT_SALES_ADMIN` | Deskripsi produk dan kelak katalog/penjualan | Data produk tanpa akses biaya atau mutasi stok |
+| Owner, SUPER_ADMIN | Monitoring, policy, sensitive corrections, accounts, public publication | Clear actions and traceable decisions |
+| Warehouse staff, INVENTORY_ADMIN | Receipt, issue, transfer | Fast scanning, editable drafts, reliable confirmation |
+| Product/sales admin, PRODUCT_SALES_ADMIN | Product content and later sales | Appropriate data without stock mutation or cost access |
 
-Awalnya kedua staf diasumsikan operator gudang dan memperoleh `INVENTORY_ADMIN`. Bila salah satunya hanya mengelola produk, berikan peran produk. Peran dapat digabung secara eksplisit oleh pemilik; jumlah akun tidak memaksakan pembagian peran yang tidak sesuai pekerjaan.
+Initially both staff may be warehouse operators. Assign roles by actual work. The owner may explicitly combine roles; account count does not dictate a role split.
 
-## Core MVP — batas rilis pertama
+## Core MVP
 
-Termasuk:
+- Individual accounts, secure sessions, authorization, account administration and recovery.
+- Product Master for thousands of SKUs, server search/filter/pagination, categories, brands, units, tracking mode and stock thresholds; multiple warehouses/locations.
+- XLSX/CSV product creation import, authorized export and bulk labels.
+- Quantity inventory **and basic serialized identity from the start**: receipt, issue, location and history. QC, warranty and service follow later.
+- Immutable ledger, synchronous balances, opening, receipt, issue, direct atomic transfer and owner correction/reversal.
+- Separate quantity/serial opening imports, count reference, cutover freeze and atomic ledger posting under [14](14-BULK-IMPORT.md).
+- Owner-only acquisition cost evidence from opening/receipt. Missing cost remains explicit and does not block warehouse posting. This is data preparation, not a profit report; see [15](15-FINANCE-PROFITABILITY.md).
+- Internal barcodes, unambiguous manufacturer aliases, browser label printing, USB/Bluetooth HID, manual entry and scan → review → confirmation.
+- Normal/low/out stock states, attention episodes, owner inbox, opt-in Web Push and a factual operational cockpit.
+- Audit from the first transaction, traceable history and authorized export.
+- Bahasa Indonesia UI, mobile-first layouts and productive desktop workflows, four Core prototype bundles and two visual review gates.
+- Encrypted off-host backup, verified restore, basic health and a controlled pilot before operational stock use.
 
-- Akun individual, autentikasi, otorisasi, pengelolaan akses minimal, pemulihan akses, keamanan sesi.
-- Master produk dengan SKU, satuan dasar, cara pelacakan, kategori/brand minimal, ambang minimum; gudang dan lokasi jamak.
-- Barang kuantitas **dan identitas berserial minimal sejak awal**: penerimaan, pengeluaran, lokasi, riwayat. QC, garansi, servis ditunda.
-- Ledger, saldo transaksional, saldo awal, barang masuk/keluar, transfer langsung atomik, koreksi/pembalikan oleh pemilik dengan alasan.
-- Barcode internal, alias barcode produsen yang tidak ambigu, label cetak browser, scanner USB/Bluetooth HID, input manual, sesi scan–review–konfirmasi.
-- Stok Normal/Menipis/Habis, episode perhatian, kotak notifikasi pemilik dan Web Push dengan persetujuan perangkat, dasbor operasional nyata.
-- Audit sejak transaksi pertama; penelusuran stok dan ekspor riwayat sederhana dengan izin.
-- UI responsif berbahasa Indonesia, prototipe dan dua gerbang review visual, pengujian risiko, demo deterministik.
-- Backup terenkripsi di luar host, restore teruji, health dasar dan rilis pilot aman sebelum stok operasional digunakan.
+Core excludes the public site/catalog, checkout, full accounting, valuation/COGS/profit calculation, complex purchasing, reservation, staged transit, guided stock opname, general approval engine, QC, warranty/service, camera scanning, offline mutation, multiple companies/currencies, paid SaaS and WhatsApp APIs. Camera is a post-Core enhancement. Recording cost evidence does not mean profitability is implemented.
 
-Tidak termasuk: website/katalog publik, checkout, akuntansi/valuasi/FIFO, purchase order kompleks, reservasi penjualan, transfer bertahap/transit, opname terpandu, mesin persetujuan fleksibel, QC, garansi, servis, kamera scanner, offline mutation, multi-perusahaan, multi-mata uang, SaaS berbayar, integrasi WhatsApp API, atau analitik konversi yang belum memiliki sumber data.
+Direct transfer and minimum correction are Core because multiple locations and recording mistakes occur from day one. Normal operations MUST NOT require owner approval for every transaction.
 
-Transfer langsung dan koreksi minimal masuk MVP karena lokasi dan kesalahan pencatatan sudah nyata pada hari pertama. Transfer dengan perjalanan/penerimaan terpisah menunggu fase lanjutan. Persetujuan umum tidak menjadi prasyarat setiap transaksi normal.
+## Business acceptance
 
-## Kemampuan dan penerimaan bisnis
-
-| ID | Kebutuhan | Bukti bisnis yang harus tersedia |
+| ID | Requirement | Evidence |
 | --- | --- | --- |
-| B01 | Catat masuk/keluar tanpa pemilik sebagai operator rutin | Staf berizin menyelesaikan sesi scan sendiri |
-| B02 | Saldo dipercaya | Setiap perubahan dapat ditelusuri ke ledger, pelaksana, waktu, lokasi, alasan/referensi |
-| B03 | Dua staf serentak aman | Perebutan stok terakhir tidak menghasilkan saldo negatif atau transaksi ganda |
-| B04 | Perhatian stok proaktif | Ambang 5: 6→5 satu peringatan; 5→4 tidak duplikat; 3→20 pulih; 20→5 episode baru |
-| B05 | Barang berserial tidak tertukar | Satu item tidak dapat keluar dua kali atau hadir di dua lokasi |
-| B06 | Pemilik melihat tindakan yang relevan | Menipis/habis, pergerakan harian, aktivitas dan status sistem berasal dari query nyata |
-| B07 | Koneksi gagal tidak memberi kepastian palsu | Sesi menunjukkan hasil belum pasti dan dapat dipulihkan tanpa menggandakan mutasi |
-| B08 | Pekerjaan dapat dipulihkan dari insiden | Restore menghasilkan ledger/saldo/serial/episode yang konsisten |
-| B09 | Aman untuk repositori publik | Tidak ada secret atau data operasional dalam commit; data privat tidak bocor ke proyeksi publik |
+| B01 | Staff operate independently | Authorized staff complete a scan session without owner intervention |
+| B02 | Trustworthy balances | Every change traces to ledger, actor, time, location and reason/reference |
+| B03 | Safe concurrency | Two users competing for the final unit cannot create negative or duplicate stock |
+| B04 | Proactive attention | Minimum 5: 6→5 alerts once; 5→4 does not repeat; 3→20 resolves; 20→5 opens a new episode |
+| B05 | Serialized identity | One item cannot leave twice or occupy two locations |
+| B06 | Actionable owner cockpit | Current stock, period operations and exceptions come from real queries |
+| B07 | Honest network recovery | Unknown outcomes can recover without duplicate posting |
+| B08 | Recoverable operations | Restore reconciles ledger, balances, serials and episodes |
+| B09 | Public repository safety | No secrets/operational data in Git; no private fields in public projections |
+| B10 | Practical onboarding | Validate and preview 5,000 rows without overwriting products or setting stock fields |
+| B11 | Financial truth | Match revenue and COGS; unknown is not zero; gross profit is never labeled net profit |
+| B12 | Useful phone and desktop | Responsive hierarchy, drawer/rail, keyboard and touch controls pass 05 |
 
-Skenario uji teknis dan target kinerja ada di [08](08-TESTING-ACCEPTANCE.md). Nilai sasaran adalah kriteria penerimaan, bukan klaim hasil pengukuran saat ini.
+[08](08-TESTING-ACCEPTANCE.md) owns technical acceptance and performance targets. Targets are not measured results.
 
-## Dasbor pemilik
+## Owner cockpit
 
-Urutan informasi: tindakan stok → ringkasan operasi hari ini → transaksi terbaru → kesehatan operasional. KPI awal:
+Primary question: **what needs attention?** The dashboard is not a welcome page or a repeated shortcut menu. Canonical priority:
 
-- Total SKU aktif: jumlah produk aktif, bukan jumlah unit.
-- Stok Menipis/Habis: jumlah produk dipantau pada masing-masing status kanonis [13](13-NOTIFICATIONS.md); dua kelompok tidak tumpang tindih.
-- Barang Masuk/Keluar Hari Ini: jumlah dokumen `RECEIPT`/`ISSUE` yang diposting pada hari bisnis WIB. Saldo awal, transfer, penyesuaian, dan pembalikan tidak dihitung sebagai penerimaan/pengeluaran normal. Dokumen yang dibalik tetap tampak dengan penanda dan tautan pembalikannya.
-- Rincian pergerakan per produk/satuan boleh ditampilkan; jangan menjumlah meter dan unit menjadi satu angka kuantitas.
-- Daftar perhatian: produk, stok tersedia, minimum, waktu perubahan, tindakan lihat lokasi/riwayat. Riwayat notifikasi dibaca terpisah dari kondisi stok yang belum pulih.
+1. Real critical exceptions: inventory integrity, stopped operations or critical backup failure. Blocking approvals join this level after the module exists. Hide the section when empty.
+2. Current inventory attention: one actionable list, OUT before LOW. Show state counts once in its heading/filter, without duplicate cards or charts.
+3. Financial summary when supported: revenue, COGS, gross profit and gross margin in one compact group. This section is absent in Core.
+4. Period operations: receipts/issues with document drill-down.
+5. Noncritical approvals requiring a decision, once implemented.
+6. Up to five meaningful recent documents with actor and traceability.
+7. Trends only when they answer a distinct question with sufficient data. Normal system health is not a permanent dashboard card.
 
-Dashboard memuat `diperbarui pada`, keadaan kosong, memuat, gagal, dan data kedaluwarsa. Nol hanya untuk query berhasil dengan hasil nol. Jangan merender metrik RFQ, omzet, QC, persetujuan, atau backup sebelum modul/sumber datanya tersedia.
+Stock rows show name/SKU, available quantity/unit, minimum, condition age and location/history drill-down. Within each state, sort by available/minimum ratio, oldest episode, then SKU. Do not divide OUT rows by a zero threshold. Reading the inbox does not remove unresolved stock attention. When all stock is normal, show one concise line.
 
-## Pengembangan setelah MVP
+| Information | Definition | Single primary placement |
+| --- | --- | --- |
+| Low/out stock | Mutually exclusive counts of actively monitored products under 13 | Attention list filter/heading |
+| Available/location | Same inventory read model used by staff, with snapshot time | Row/detail; never sum unrelated units |
+| Receipts/issues | Count RECEIPT/ISSUE documents within postedAt business-time range; exclude opening, transfer, adjustment and reversal | Flat operations strip and document drill-down |
+| Reversed original | Still part of its original document count, clearly linked to reversal | Document detail/list |
+| Active SKU count | Product count, not item quantity | Products page, absent from default cockpit |
+| Profit | Verified eligible revenue/COGS under 15 | One financial group |
+| System state | Actionable incidents | Critical exception area; full details under settings |
 
-Reservasi dan pemenuhan pesanan → transfer transit/opname/persetujuan → QC/garansi/servis → situs publik/katalog aman → RFQ/leads/penawaran → laporan lanjutan dan skala operasi. Urutan resmi dan dependensinya dimiliki [11](11-BUILD-PLAN.md).
+One **Periode** selector governs finance and period operations: **Hari Ini**, **7 Hari**, **Bulan Ini**, **Bulan Lalu**, **Rentang Tanggal**. Core defaults to today; finance-enabled cockpit defaults to the current month. Operation labels follow the selected period. Current stock attention, reservations and pending approvals remain current state and MUST NOT be filtered by that selector.
 
-## Asumsi bisnis yang dapat dikonfigurasi
+Phone layouts preserve this order. Desktop adds useful details/context without promoting secondary information above urgency. No repeated product/stock action shortcuts already present in navigation.
 
-Satu badan usaha, bahasa `id-ID`, hari bisnis `Asia/Jakarta`, stok negatif selalu dilarang, tanpa backdating ledger, satuan dasar per SKU, tanpa konversi kemasan pada MVP. Tidak ada kebutuhan pelacakan batch/kedaluwarsa yang telah dinyatakan. Konfirmasi saat review dokumentasi; kebutuhan batch wajib didesain sebelum stok terkait diimpor. Asumsi bernomor dan keputusan penggantinya ada di [10](10-DECISIONS.md).
+Distinguish loading, inactive feature, valid empty state, incomplete data, error and stale snapshot. A failed query is not zero. Stale data may be read with its timestamp, but cannot authorize mutation. Prototype finance uses explicit **Data Demo** labels and never enters production. A subset report cannot claim whole-company or net profit.
+
+## Public website and later capabilities
+
+After reliable Core: reservation/transit/opname/approval, QC/warranty/service, a corporate B2B/B2G website and catalog, RFQ/leads/quotations/sales, then valuation/gross profit and broader reporting. Independent later work may be reordered through the official [plan](11-BUILD-PLAN.md).
+
+The website uses one Product Master and owner-controlled publication. Company information, hero/banner, About, contacts/hours/address, section/footer copy, featured products, product descriptions/images/specifications, inquiry copy and SEO must be editable through a lightweight first-party CMS. Routine changes require no developer, Git commit or redeploy. Safe structured fields, draft/preview/publish and audit are required. No paid external CMS or unrestricted HTML editor.
+
+WhatsApp uses owner-configured wa.me destination and message templates. A click event measures an outbound click only. It does not prove a conversation or sale. Architecture and publishing behavior are owned by [02](02-ARCHITECTURE.md).
+
+## Business assumptions
+
+One company; UI locale id-ID; business days Asia/Jakarta; no negative stock or physical-ledger backdating; one base unit per SKU; no MVP pack conversion. Batch/expiry/consignment needs have not been established and must be resolved before importing affected stock. Numbered assumptions belong to [10](10-DECISIONS.md).

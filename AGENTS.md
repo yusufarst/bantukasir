@@ -1,51 +1,57 @@
-# Aturan agen — LATANSA Platform
+# Agent rules — LATANSA Platform
 
-Aturan ini berlaku untuk seluruh repositori, termasuk Gemini Antigravity dan agen implementasi lain. Instruksi eksplisit pemilik dalam sesi tetap didahulukan. Jika instruksi tampak mengubah invariant keselamatan, jelaskan dampaknya dan catat perubahan keputusan sebelum bekerja.
+These rules apply throughout the repository, including Gemini Antigravity and future implementation agents. Explicit owner instructions take precedence. If a requested change affects a safety invariant, explain the impact and record the replacement decision before implementation.
 
-## Pemulihan konteks cepat
+## Recover context efficiently
 
-1. Periksa `git status --short`; pertahankan perubahan milik pengguna.
-2. Baca `docs/00-CURRENT-STATE.md`, lalu baris tugas aktif/berikutnya di `docs/11-BUILD-PLAN.md`.
-3. Cari topik dengan `rg` sebelum membaca file luas. Baca entri relevan `docs/10-DECISIONS.md` dan spesifikasi kanonis tugas; indeks kepemilikan ada di `README.md`.
-4. Jika belum ada izin implementasi setelah baseline, berhenti pada review dokumentasi. **Tugas baseline ini hanya dokumentasi: tidak ada scaffold, aplikasi, migrasi, atau instalasi dependensi.**
+1. Inspect `git status --short`. Preserve user work.
+2. Read `docs/00-CURRENT-STATE.md` and the current/next task in `docs/11-BUILD-PLAN.md`.
+3. Search with `rg` before broad reading. Read relevant decisions and canonical specifications only. `README.md` maps ownership.
+4. The current task is documentation only. MUST NOT create application code, migrations, HTML prototypes, replacement logos, scaffolds, or install dependencies. Next: owner architecture review, official assets, then P00 when instructed. Document/prototype approval does not itself authorize production implementation.
 
-## Prioritas dan invariant wajib
+## Mandatory product and safety rules
 
-- Inventaris operasional adalah inti: staf → scan → masuk/keluar → ledger → saldo → perhatian stok → pemilik. Website publik tidak boleh mendahului integritas inti.
-- Semua UI, pesan galat, laporan, audit manusia, dan notifikasi berbahasa Indonesia. Enum internal wajib dipetakan. Ikuti `05-DESIGN-SYSTEM.md`.
-- Sumber kebenaran jumlah adalah ledger immutable. Jangan menyediakan edit saldo bebas, menghapus riwayat, membuat stok negatif, atau memperbaiki selisih dengan perubahan SQL diam-diam. Ikuti `06-INVENTORY-SPEC.md`.
-- Seluruh mutasi stok melalui satu command service, transaksi PostgreSQL, otorisasi backend, idempotensi, locking, dan audit. UI tersembunyi bukan kontrol akses.
-- Scan belum mengubah stok. Sukses hanya sesudah server mengonfirmasi commit. Jangan menambahkan mutasi stok offline.
-- Stok menipis/habis menggunakan transisi dan episode perhatian pada `13-NOTIFICATIONS.md`, bukan notifikasi berulang setiap pemeriksaan.
-- Jangan memberikan `SUPER_ADMIN` kepada staf biasa. Semua jalur API/action/job harus mengikuti batas izin pada `04-AUTH-RBAC-SECURITY.md`.
-- Produk publik berasal dari allowlist proyeksi master yang sama; jangan mengirim entitas internal lengkap ke browser publik.
-- Tidak boleh ada rahasia asli, data pelanggan asli, dump DB, atau konfigurasi produksi di Git. `.env.example` hanya nama variabel dan nilai kosong; tidak ada rahasia cadangan.
+- Inventory is the priority: staff → scan/input → receipt/issue → ledger → balance → stock attention → owner action.
+- All canonical documentation MUST be English. All user-facing UI, errors, reports, human-readable audit messages and notifications MUST be Bahasa Indonesia. Map internal enums to approved labels.
+- The immutable movement ledger is the quantity source of truth. MUST NOT allow arbitrary balance edits, negative stock, deleted history, or silent SQL repairs. Follow `06-INVENTORY-SPEC.md`.
+- Every stock mutation uses the same command service, PostgreSQL transaction, backend authorization, idempotency, locks and audit. Hiding a control is not authorization.
+- A scan changes a draft only. Show success only after confirmed server commit. No offline stock mutation.
+- Low/out-of-stock alerts use transitions and attention episodes in `13-NOTIFICATIONS.md`.
+- Ordinary staff MUST NOT receive `SUPER_ADMIN`. Enforce permissions on every API/action/job and object access.
+- Public data uses an allowlist projection of the same Product Master. Never send internal entities to public clients.
+- Public company/catalog content is structured and database-managed. `SUPER_ADMIN` controls draft, preview and publication. Routine content changes need no code edit, commit or redeploy.
+- MVP WhatsApp uses configured `wa.me` links only. Never hardcode the destination or claim a click proves a conversation or sale.
+- Thousands of SKUs are normal. Follow `14-BULK-IMPORT.md`: validate/preview/confirm, create-only product import, atomic file apply, separate ledger-based quantity/serial opening. Business exports are not backups.
+- Follow `15-FINANCE-PROFITABILITY.md`: private cost evidence in Core; valuation and gross profit after Sales and complete data. Unknown is not zero. Purchase cost, COGS, margin and profit are owner-only by default. Never label gross profit as net profit.
+- Use existing infrastructure and mature open-source tools. Additional paid services require explicit approval. Cost savings MUST NOT weaken integrity, security or off-host recovery.
+- No secrets, real customer data, database dumps or production configuration in Git. `.env.example` contains variable names with empty values. No fallback secrets, fixed credentials, VPS IPs or environment-specific paths in source.
 
-## Aturan visual yang tidak boleh dilewati
+## Visual contracts
 
-Klasifikasikan setiap pekerjaan `[BE]`, `[FE]`, atau `[FS]` sebelum implementasi.
+Classify tasks `[BE]`, `[FE]` or `[FS]` before implementation.
 
-Frontend signifikan: kebutuhan → HTML/CSS mandiri dengan demo aman → preview browser → review visual manual pemilik → revisi sampai disetujui → Next.js → data nyata → verifikasi otomatis/browser → review visual final pemilik.
+Major new visual systems/interactions: requirements → standalone HTML/CSS with safe demo data → browser preview → owner Gate A review → revisions until approved → production implementation → real data → technical/browser verification → owner Gate B review.
 
-- HTML yang disetujui adalah kontrak visual. Prototipe tidak boleh memanggil API atau database produksi.
-- Lint, typecheck, test, build, dan screenshot agen tidak menggantikan persetujuan pemilik.
-- `[FE]`/`[FS]` yang lolos teknis masih `[V] MENUNGGU REVIEW VISUAL OWNER`; hanya persetujuan eksplisit pemilik atas revisi tertentu memungkinkan `[x]`.
-- Backend `[BE]` dapat selesai secara mandiri. Pisahkan baris BE bila ingin menghitung progresnya; jangan menganggap keseluruhan FS selesai.
-- Perubahan minor yang benar-benar menggunakan pola kanonis yang sudah disetujui tidak memerlukan HTML baru; tetap verifikasi browser dan review visual hasilnya. Definisi dan bukti review ada di `05-DESIGN-SYSTEM.md`.
+- Approved HTML is the visual contract. Prototypes MUST NOT access production APIs or databases.
+- Reuse approved canonical patterns directly in Next.js. Do not build every screen twice. Significant deviations need review and, when a new pattern is introduced, a revised prototype.
+- FE/FS prototype work waits at `[V] WAITING FOR OWNER VISUAL REVIEW` for Gate A. Production FE/FS work waits at `[V]` for Gate B. Only explicit owner approval of the specific revision permits `[x]`.
+- Tests, builds and agent screenshots never substitute for owner approval. BE may complete after technical verification; do not count an entire FS task complete because its backend passes.
+- Use the five canonical bundles in `05-DESIGN-SYSTEM.md`. CP01–CP04 establish Core; CP05 is later. Audit every major variant for anti-AI-slop, redundancy, mobile and desktop usability, consistent Lucide icons and official branding.
+- Never redesign the logo, generate a replacement, or use the default shadcn appearance as LATANSA's identity.
 
-## Disiplin eksekusi dan token
+## Execution and token discipline
 
-- Repositori adalah memori kerja, bukan riwayat chat. Satu dokumen kanonis per topik; tautkan aturan, jangan menyalinnya ke banyak spesifikasi.
-- **Satu tugas build aktif** pada satu waktu. Tidak ada refactor tak terkait, fitur spekulatif, atau perluasan MVP diam-diam.
-- Jangan membaca ulang dokumen yang tidak berubah dalam sesi. Cari simbol/section dahulu; batasi keluaran command dan diff ke bagian relevan.
-- Jangan mengulang penjelasan arsitektur yang sudah diterima. Jika perlu mengubahnya, buat keputusan pengganti dengan alasan dan dampak.
-- Jalankan tes terarah saat iterasi dan gerbang penuh yang berlaku saat penyelesaian menurut `08-TESTING-ACCEPTANCE.md`. Efisiensi tidak mengurangi integritas, keamanan, pengujian, audit, atau review visual.
-- Jangan menyatakan tes lulus bila tidak dijalankan. Nyatakan `belum dijalankan` beserta alasan, jangan memberi status selesai palsu.
-- Jangan menginstal layanan berbayar, mengirim pesan ke pihak lain, menerbitkan situs, atau mendorong commit tanpa cakupan instruksi yang sesuai.
-- Gunakan cabang reviewable setelah baseline. Jangan mengubah sejarah Git atau menghapus pekerjaan pengguna.
+- Keep one canonical document per topic. Link specifications rather than copying them.
+- Keep **one active build task**. No unrelated refactoring, speculative features or silent MVP expansion.
+- Do not repeatedly read unchanged files. Search sections first and limit command output.
+- Preserve accepted decisions. Changes need a concise replacement decision with reason and impact.
+- Run targeted tests during implementation and the relevant completion gate in `08-TESTING-ACCEPTANCE.md`. Efficiency never reduces safety or verification.
+- Never claim an unrun test passed. State that it was not run and why.
+- Do not install paid services, message third parties, publish, push or merge without authorization for that action.
+- Use a reviewable branch after baseline. Never rewrite Git history or discard user work.
 
-## Serah-terima dan definisi selesai
+## Handoff and completion
 
-Perbarui baris tugas pada `11-BUILD-PLAN.md` dengan status dan bukti yang dapat ditemukan. Perbarui `00-CURRENT-STATE.md` hanya dengan keadaan terverifikasi, tugas aktif/berikutnya, blocker, dan hasil cek. Catat keputusan baru pada `10-DECISIONS.md`; jangan mengubah keputusan terkunci tanpa riwayat pengganti.
+Update actual task status and discoverable evidence in `11-BUILD-PLAN.md`. Record real decisions in `10-DECISIONS.md`. Update `00-CURRENT-STATE.md` **last**, with verified state, current/next task, blockers, checks and visual/production status. Documentation completion is not implementation completion.
 
-Laporan akhir ringkas: hasil, berkas utama, pemeriksaan yang benar-benar dilakukan, keterbatasan/blocker, status visual, dan langkah berikutnya. Jangan menghitung `[V]` sebagai selesai. Jangan menyimpan kredensial, cookie, payload sensitif, atau transkrip panjang sebagai bukti.
+Keep final reports concise. Do not count `[V]` as complete. Never store credentials, cookies, sensitive payloads or long transcripts as evidence.

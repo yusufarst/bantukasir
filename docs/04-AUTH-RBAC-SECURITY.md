@@ -1,87 +1,105 @@
-# 04 — Autentikasi, izin, dan keamanan
+# 04 — Authentication, permissions and security
 
-Otorisasi wajib pada backend setiap akses. Boundary data publik dimiliki [02](02-ARCHITECTURE.md); transaksi/audit posting di [06](06-INVENTORY-SPEC.md); operasi secret dan retensi di [09](09-DEPLOYMENT-OPS.md).
+Authorize every backend access. [02](02-ARCHITECTURE.md) owns public projections; [06](06-INVENTORY-SPEC.md) posting/audit atomicity; [09](09-DEPLOYMENT-OPS.md) secret operations and retention.
 
-## Autentikasi dan akun
+## Authentication and accounts
 
-Gunakan Better Auth self-hosted dengan adapter PostgreSQL/Drizzle, password hashing bawaan library, dan sesi server-side di database. Jangan menulis algoritme auth/kriptografi sendiri. Tidak ada pendaftaran publik; undangan akun hanya oleh owner, token sekali pakai dan kedaluwarsa. Library, adapter, opsi mematikan signup, reset dan 2FA wajib diverifikasi pada versi yang dikunci di P01 sebelum auth dinyatakan selesai.
+Use self-hosted Better Auth with PostgreSQL/Drizzle, library password hashing and database sessions. Do not invent authentication or cryptography. No public signup. Owner invitations are expiring, single-use. Verify the pinned library/adapter configuration, signup disablement, reset and 2FA during P01.
 
-Keputusan LATANSA: cookie sesi `HttpOnly`, `Secure` di deployment HTTPS, `SameSite=Lax`, host-only; cookie cache auth dimatikan supaya pencabutan segera terlihat. Batas sesi awal delapan jam tanpa perpanjangan melewati batas absolut; perangkat gudang tidak memakai opsi “ingat saya”. Auth terkini dan user aktif diperiksa pada semua command. Dokumentasi dasar: [session management](https://better-auth.com/docs/concepts/session-management) dan [email/password](https://better-auth.com/docs/authentication/email-password).
+Session cookies: HttpOnly, Secure on HTTPS, SameSite=Lax, host-only. Disable auth cookie caching so revocation is checked promptly. Initial absolute session lifetime is eight hours; no extension beyond that limit or shared-device remember-me. Every command checks current session and active user. References: [session management](https://better-auth.com/docs/concepts/session-management), [email/password](https://better-auth.com/docs/authentication/email-password).
 
-Owner menggunakan TOTP sebelum go-live; recovery codes disimpan offline oleh owner. Gunakan [fitur 2FA library](https://better-auth.com/docs/plugins/2fa), bukan shared OTP buatan aplikasi. Re-auth maksimal lima menit diperlukan untuk mengubah role, menonaktifkan akun, mengubah pengaturan keamanan dan tindakan koreksi owner. Staf dapat memakai TOTP, tetapi tidak memerlukan ponsel pribadi untuk setiap scan. Alur auth lengkap tetap berbahasa Indonesia melalui mapping pesan/halaman sendiri.
+Owner TOTP is mandatory before go-live; keep recovery codes offline. Use [library 2FA](https://better-auth.com/docs/plugins/2fa). Require authentication refreshed within five minutes for role/security changes, account disablement and owner stock corrections. Staff may use TOTP without a phone prompt on every scan. Map the entire auth UI to Bahasa Indonesia.
 
-Bootstrap owner: operator deployment yang berwenang menjalankan proses sekali pakai melalui terminal tepercaya dan input tersembunyi; nonaktifkan bootstrap setelah user pertama dibuat. Tidak ada endpoint publik bootstrap, akun demo berpassword tetap, atau password dalam command history/Git. Undangan/reset staf menghasilkan tautan sekali pakai melalui antarmuka owner setelah verifikasi identitas; delivery manual melalui kanal privat, tidak perlu SMTP. Token berlaku 30 menit, disimpan hashed bila dikelola aplikasi, dan tidak tercatat dalam access log. Kredensial tidak pernah ditampilkan kembali. Owner kehilangan akses memakai recovery code; pemulihan darurat oleh operator host hanya setelah verifikasi pemilik, dicatat, mencabut sesi lama dan memaksa pendaftaran 2FA ulang.
+Bootstrap once from an authorized operator's trusted terminal with hidden input. Disable bootstrap after first owner creation. No public bootstrap endpoint, fixed demo credentials, command-history password or secret in Git. Owner-generated staff invitation/reset links follow identity verification, private manual delivery and a 30-minute expiry. Hash application-managed tokens and exclude them from logs. SMTP is optional. Credentials are never displayed again.
 
-Kebijakan awal password minimum 12 karakter, dukung password manager/paste, batas maksimum aman library, tidak memotong diam-diam. Rate limit login/reset berdasarkan akun dan sumber tanpa membocorkan apakah email terdaftar. Respons umum: “Email atau kata sandi tidak sesuai.” Tidak ada shared account dua staf.
+Lost-owner recovery uses offline codes; emergency host recovery requires verified ownership, audit, old-session revocation and 2FA reenrollment. Password minimum 12 characters, support managers/paste, enforce the library's safe maximum and never silently truncate. Rate-limit login/reset by account and trusted source without account enumeration. Generic UI: **Email atau kata sandi tidak sesuai.** Staff MUST NOT share an account.
 
-## Permission yang dipakai layanan
+## Permission matrix
 
-Role adalah kumpulan permission tetap; satu user boleh memiliki lebih dari satu role atas keputusan owner. Default deny. `SUPER_ADMIN` tidak mempunyai hak mengabaikan invariant stok. Nilai tabel berlaku MVP kecuali bertanda L; tidak berarti semua tombol harus muncul sejak fondasi.
+Fixed permission sets; explicit owner assignment may combine roles. Default deny. SUPER_ADMIN cannot bypass inventory invariants. L means later, not a control that should appear before implementation.
 
-| Permission / tindakan | SUPER_ADMIN | INVENTORY_ADMIN | PRODUCT_SALES_ADMIN |
+| Permission/action | SUPER_ADMIN | INVENTORY_ADMIN | PRODUCT_SALES_ADMIN |
 | --- | :---: | :---: | :---: |
-| `users.manage`, `roles.assign`, `security.manage` | Ya | — | — |
-| `products.readInternal` tanpa biaya/supplier privat | Ya | Ya | Ya |
-| `products.writeContent` nama/deskripsi/kategori/brand | Ya | — | Ya |
-| `products.createInventoryIdentity` SKU/satuan/tracking awal | Ya | — | — |
-| `products.archive`, `stockPolicy.manage` minimum/monitor | Ya | — | — |
-| `products.publish` (L) | Ya | — | Ya |
-| `locations.manage` | Ya | — | — |
-| `inventory.read`, `serial.read` posisi/riwayat | Ya | Ya | — |
-| `availability.read` tersedia agregat per produk | Ya | Ya | Ya |
-| `inventory.receive`, `inventory.issue`, `inventory.transfer` | Ya | Ya | — |
-| `barcode.resolve`, `barcode.print`, `serial.register` | Ya | Ya | — |
-| `barcode.manageAliases`, `serial.correctIdentity` | Ya | — | — |
-| `inventory.opening`, `inventory.adjust`, `inventory.reverse` | Ya | — | — |
-| `inventory.exportHistory` tanpa biaya | Ya | Ya | — |
-| `audit.readAll`, `ops.read`, `ownerDashboard.read` | Ya | — | — |
-| `notification.readOwn`, `notification.readOwnState`, `push.manageOwn` | Ya | Ya | Ya |
-| `sales.manage` RFQ/leads/penawaran (L) | Ya | — | Ya |
-| `reservation.request/releaseOwn` (L, scope sales) | Ya | — | Ya |
-| `correction.request`, `opname.count` (L) | Ya | Ya | — |
-| `approval.decide`, `opname.approve` (L) | Ya | — | — |
+| users.manage, roles.assign, security.manage | Yes | — | — |
+| products.readInternal, excluding private costs/suppliers | Yes | Yes | Yes |
+| products.writeContent, including permitted product drafts | Yes | — | Yes |
+| products.createInventoryIdentity | Yes | — | — |
+| products.archive, stockPolicy.manage | Yes | — | — |
+| products.publish (L) | Yes | — | — |
+| publicContent.manage, publicContent.preview, publicContent.publish (L) | Yes | — | — |
+| publicSettings.manage, including wa.me destination/templates (L) | Yes | — | — |
+| locations.manage | Yes | — | — |
+| inventory.read, serial.read positions/history | Yes | Yes | — |
+| availability.read aggregate | Yes | Yes | Yes |
+| inventory.receive/issue/transfer | Yes | Yes | — |
+| barcode.resolve/print, serial.register | Yes | Yes | — |
+| barcode.manageAliases, serial.correctIdentity | Yes | — | — |
+| inventory.opening/adjust/reverse | Yes | — | — |
+| inventory.exportHistory without costs | Yes | Yes | — |
+| products.importPrepare | Yes | — | Yes |
+| products.importApply | Yes | — | — |
+| inventory.openingImportPrepare | Yes | Yes | — |
+| inventory.openingImportApply, onboardingFreeze.manage | Yes | — | — |
+| products.export safe master fields | Yes | Yes | Yes |
+| costEvidence.read/write/verify (Core) | Yes | — | — |
+| finance.readProfit/export, valuation.publish (L) | Yes | — | — |
+| audit.readAll, ops.read, ownerDashboard.read | Yes | — | — |
+| notification.readOwn/readOwnState, push.manageOwn | Yes | Yes | Yes |
+| sales.manage RFQ/leads/quotations (L) | Yes | — | Yes |
+| reservation.request/releaseOwn, sales scope (L) | Yes | — | Yes |
+| correction.request, opname.count (L) | Yes | Yes | — |
+| approval.decide, opname.approve (L) | Yes | — | — |
 
-Warehouse scope MVP mencakup seluruh lokasi aktif perusahaan bagi role inventory; tidak ada multi-tenant atau pembatasan per gudang yang setengah diterapkan. Jika kelak diperkenalkan scope, semua query, barcode lookup, ekspor, command dan background action ikut memeriksanya. Admin produk dapat mengubah konten tetapi tidak mengganti tracking/satuan atau memberi diri izin stok. Pembuatan identitas produk dilakukan owner karena jarang dan menentukan akuntansi.
+Core inventory roles cover all active company locations. No partial tenant/warehouse scoping. If scoped access is introduced later, apply it to queries, barcode lookup, exports, commands and jobs.
 
-Menu “Riwayat Stok” staf boleh menampilkan pelaksana operasi yang relevan, bukan audit keamanan lengkap. Biaya/margin/supplier privat belum dimodelkan MVP; bila ditambahkan, permission baru eksplisit, bukan otomatis diwarisi `readInternal`.
+Product admin prepares bulk product data; owner applies inventory identity/minimum as a batch. Inventory staff prepare counts/opening; owner finalizes. This does not require approval for routine receipt/issue. Product content permission does not grant tracking/unit edits, publication or stock mutation.
 
-## Penegakan
+Staff stock history may show relevant operators but not the full security audit. Sales staff may see authorized selling prices, never acquisition cost, COGS, margin or profit, including hidden API fields. A finance role requires an explicit later decision.
 
-1. Adapter HTTP memvalidasi cookie/origin/CSRF dan input.
-2. Service mengambil actor server-side dan permission aktif dari DB, memeriksa tindakan **serta objek** (termasuk ownership inbox, push endpoint, session receipt).
-3. Transaksi stok mengulang pemeriksaan di bawah user guard sebelum posting, sebagaimana urutan lock [06](06-INVENTORY-SPEC.md).
-4. Repository menerima scope terverifikasi; response DTO memakai allowlist. Middleware/layout hanya membantu navigasi, tidak menggantikan langkah ini.
+Exclude costs from stock/product DTOs, autocomplete, labels, public metadata/cache, generic audit before/after, staff exports and import errors. Financial audit is private; general audit may say **Bukti biaya diperbarui** with actor/reference and no amounts. Revenue is private too. A public RFQ confirmation cannot read the sales ledger.
 
-Worker menggunakan service actor khusus dan command terbatas, bukan akun owner/password owner. Job tidak dapat mengubah role atau memposting koreksi arbitrer. Satu owner aktif harus selalu tersisa; penonaktifan/demotion/2FA reset menggunakan transaksi dengan guard pengelolaan owner untuk mencegah dua request menghapus owner terakhir.
+Import jobs are readable by an authorized preparer or owner, not arbitrary colleagues. Prepare permission never implies apply. Recheck executor status/permissions when the worker applies; do not borrow an unrestricted owner service account. Files/errors are private with authenticated, expiring download access. Reject unexpected financial columns without copying their sensitive values into broadly visible error output.
 
-Core tidak memerlukan approval transaksi rutin. Koreksi owner adalah eksekusi berizin dengan re-auth dan alasan; itu **bukan** klaim pemisahan maker-checker. Fase approval memungkinkan permintaan staf dan keputusan owner. Owner-initiated emergency correction tetap diberi label khusus dan diaudit; jangan mengaku ada reviewer kedua bila hanya satu owner.
+Only SUPER_ADMIN manages/publishes site content, product publication and wa.me settings. Preview is authenticated, no-store/noindex; public requests cannot select draft revision IDs. Editing drafts never changes published content until publish. Validate and sanitize structured text/links/media; reject executable HTML and arbitrary redirects.
 
-## Ancaman dan kontrol
+## Enforcement
 
-| Risiko | Kontrol wajib dan verifikasi |
+1. HTTP adapter validates session cookie, origin/CSRF and structure.
+2. Service obtains actor server-side and checks current permission plus object ownership, including inbox, subscription and command receipt.
+3. Stock transactions recheck under user guard in the [06](06-INVENTORY-SPEC.md) lock order.
+4. Repositories receive validated scope and return allowlisted DTOs. Middleware/layout alone is insufficient.
+
+Workers use limited service actors, not owner passwords. They cannot assign roles or post arbitrary corrections. Preserve at least one active owner through a shared owner-management guard, including concurrent disable/demotion/reset requests.
+
+Core owner corrections are authorized execution with re-authentication and reason, not maker-checker separation. Later staff proposals may receive owner approval. Label owner emergency corrections honestly; never invent a second reviewer.
+
+## Threat controls
+
+| Risk | Required control and verification |
 | --- | --- |
-| IDOR/role bypass | Negative test tiap permission, ID objek milik user lain, perubahan role saat sesi masih terbuka |
-| CSRF, request dari origin lain | Validasi Origin terhadap konfigurasi, perlindungan CSRF library/custom endpoint yang sesuai; semua mutasi POST, cookie aman |
-| XSS / injection | React escaping, sanitasi konten katalog, CSP bertahap, query parameterized Drizzle; raw SQL hanya parameterized/reviewed |
-| Credential brute force | Rate limit terukur, audit gagal masuk, tidak ada pesan enumerasi akun; header IP hanya dipercaya dari Caddy |
-| Barcode/payload berbahaya | Input panjang/charset terbatas, tidak mengeksekusi URL/HTML, tidak menulis raw payload ke log, batas ukuran dokumen |
-| Replay dan race | Receipt unique, lock dan invariant DB; pengujian concurrency di PostgreSQL nyata |
-| Kebocoran cache | Internal no-store, cache publik terpisah, service worker tidak cache response auth/stok, uji dua user bergantian |
-| Upload/SSRF kelak | Tidak fetch URL arbitrer dari input; validasi tipe, batas file, decode/re-encode gambar, akses objek privat berizin |
-| CSV formula injection | Ekspor mengamankan sel awalan formula/control, quoting benar, whitelist kolom; uji aplikasi spreadsheet |
-| Ketergantungan rentan | Lockfile, tinjau advisory/dependensi pada upgrade dan release; jangan mencatat “aman” hanya karena build lolos |
-| DB/runtime bocor | Least privilege, port DB privat, credential migrator terpisah, rotasi, backup terenkripsi, prosedur insiden |
+| IDOR/role bypass | Negative tests for permissions, other users' IDs and revoked roles |
+| CSRF/cross-origin calls | Configured Origin checks, appropriate library/custom CSRF defense, POST mutations, secure cookies |
+| XSS/injection | React escaping, constrained/sanitized published content, reviewed CSP, parameterized Drizzle/raw SQL |
+| Brute force | Measured rate limits, safe failure audit, no account enumeration; trust forwarded IP only from Caddy |
+| Malicious barcode/payload | Length/character/document limits; never execute URLs/HTML or log raw payloads |
+| Replay/races | Unique receipts, locks and DB invariants, tested with real PostgreSQL |
+| Cache leaks | Internal no-store; no auth/stock service-worker caching; cross-user tests |
+| Upload/SSRF | No arbitrary URL fetching; validate type/signature/size; decode/re-encode images; authorized private access |
+| Spreadsheet formulas | Sanitize export formula/control prefixes, proper quoting and column allowlists; spreadsheet smoke test |
+| Vulnerable dependencies | Lockfile and advisory review during upgrades/releases; build success is not security proof |
+| Compromised runtime/DB | Least privilege, private DB network, separate migrator, rotation, encrypted backup and incident procedure |
+| CMS/redirect abuse | Owner-only publication, optimistic revisions, safe placeholder allowlist, fixed wa.me origin, no draft leaks |
 
-## Audit yang dapat dipercaya
+## Audit
 
-Field minimum: `eventId`, `schemaVersion`, `occurredAt` server, actorId atau serviceActor, action internal, entityType/entityId, requestId, reason/reference, safe before/after, outcome. Immutable untuk bisnis yang berhasil; event posting harus gagal bersama transaksi bila audit tidak tersimpan. Before/after stok terdapat pada kaki ledger dan ditautkan dari audit, tidak disalin sebagai payload besar.
+Minimum fields: eventId, schemaVersion, server occurredAt, actorId/serviceActor, internal action, entityType/ID, requestId, reason/reference, safe before/after and outcome. Successful business audit is immutable and mandatory in the same transaction. Reference stock ledger before/after rather than copying large payloads.
 
-Login gagal/akses ditolak tidak berada dalam transaksi stok yang rollback: catat pada security log terpisah, rate limited, tanpa password/token/raw body. Bila sink log keamanan terganggu, alert ops; login biasa tidak menulis event bisnis palsu. Perubahan privilege/keamanan harus gagal tertutup bila audit wajib tidak bisa ditulis.
+Failed login/denied access use a separate, rate-limited security log, not a rolled-back stock transaction. Never log credentials/tokens/raw bodies. Security log sink failure raises an operational alert; required privilege/security audit failure blocks the change.
 
-UI merender template berversi, misalnya “Petugas Gudang Demo mencatat 2 unit Barang Contoh keluar dari Gudang Utama.” Kode seperti `INVENTORY.ISSUE.POSTED` hanya untuk diagnostik berizin. Hindari memasukkan data pribadi yang tidak perlu. DB administrator masih dapat memodifikasi database secara teknis; append-only runtime adalah kontrol aplikasi, bukan bukti antiperusakan absolut. Backup, log operasi terpisah, dan pembatasan admin melengkapi kontrol.
+Human audit text uses versioned Indonesian templates, for example **Petugas Gudang Demo mencatat 2 unit Barang Contoh keluar dari Gudang Utama.** Internal codes are restricted diagnostics. Minimize personal data. Runtime append-only controls are not absolute tamper-proofing against database administrators; off-host backups, separate operational logs and restricted admin access complement them.
 
-## Kebijakan repositori publik
+## Public repository
 
-Rahasia hanya environment/secure runtime, tidak ada fallback, tidak ada secret di `NEXT_PUBLIC_*`. `.env.example` berisi nama kosong; nilai wajib yang hilang menyebabkan startup komponen terkait gagal dengan nama variabel saja. Gambar/screenshot/test fixture harus demo. Jangan memasukkan dump, token push, recovery code, password hash produksi, IP/host rahasia, atau kontak pelanggan.
+Secrets belong only in secure runtime configuration. No fallback values or secrets in NEXT_PUBLIC variables. Missing required values fail the component startup with variable names only. Fixtures/screenshots use demo data. Never commit dumps, real password hashes, push tokens, recovery codes, private host details or customer contacts.
 
-Jika secret pernah dikomit: hentikan penyebaran, cabut/rotasi, audit pemakaian, lalu koordinasikan pembersihan sejarah; menghapus baris pada commit berikutnya saja tidak cukup. Jangan menyalin secret ke laporan insiden publik.
+If a secret is committed: stop propagation, revoke/rotate, audit use, then coordinate history cleanup. Deleting the next line/commit alone is insufficient. Never copy the secret into public incident notes.

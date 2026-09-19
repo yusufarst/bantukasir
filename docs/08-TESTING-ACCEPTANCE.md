@@ -1,95 +1,154 @@
-# 08 — Pengujian dan penerimaan
+# 08 — Testing and acceptance
 
-Ini pemilik definisi bukti dan gerbang selesai. Coverage percentage bukan pengganti pengujian risiko. Saat baseline ini dibuat, tidak ada aplikasi, package script, DB, atau tes aplikasi yang dijalankan.
+Canonical evidence and completion gates. Coverage percentage does not replace risk testing. No application, package scripts, database or application tests exist yet.
 
-## Tingkatan dan lingkungan
+## Test layers
 
-| Tingkat | Fokus | Sarana target |
+| Layer | Focus | Planned tools |
 | --- | --- | --- |
-| Unit | Desimal, normalisasi, reducer scan, transisi health, permission mapping, pesan Indonesia | Vitest, fake clock untuk waktu/retry |
-| Integration | Constraint, transaction rollback, auth services, projection publik, outbox, audit | PostgreSQL nyata disposable; bukan SQLite/mock sebagai bukti integritas |
-| Concurrency | Interleaving dua koneksi/proses dan unique/lock race | Barrier terkontrol, bukan sleep acak; koneksi DB independen |
-| End-to-end | Login → scan → review → commit → stok → inbox/dasbor | Playwright, layanan app/worker/DB uji, assertion hasil persisten |
-| Manual perangkat | USB/Bluetooth, printer, ponsel, push, aksesibilitas | Hardware yang benar-benar akan digunakan |
-| Visual owner | Kesesuaian HTML dan implementasi | Dua gerbang di [05](05-DESIGN-SYSTEM.md), bukti persetujuan revisi |
-| Operasional | Backup/restore, restart, config fail, insiden | Lingkungan terisolasi setara target deploy |
+| Unit | Decimals, normalization, scan reducer, health states, permissions and Indonesian mappings | Vitest and controlled clock |
+| Integration | Constraints, rollback, auth, public projections, outbox/audit | Disposable real PostgreSQL, not SQLite/mocks as integrity proof |
+| Concurrency | Controlled independent-connection interleavings | Barriers, not random sleeps |
+| E2E | Login → scan → review → commit → stock → inbox/cockpit | Playwright with test app/worker/DB; persisted assertions |
+| Hardware/manual | USB/Bluetooth, printer, phone, push, accessibility | Actual intended devices |
+| Owner visual | Prototype and implementation | Both gates in [05](05-DESIGN-SYSTEM.md), exact-revision evidence |
+| Operations | Backup/restore, restart, missing config and incident recovery | Isolated deployment-like environment |
 
-Gunakan database uji terpisah; runner wajib menolak koneksi database produksi/identitas tak dikenal. Tes destruktif hanya database ephemeral yang dibuat runner, tidak menerima URL produksi sebagai parameter bebas. Mock provider boleh untuk retry deterministik, tetapi satu uji perangkat nyata diperlukan sebelum klaim delivery berhasil.
+Test runner rejects production/unknown database identities. Destructive tests use runner-created ephemeral databases, never an arbitrary production URL. Mock providers support deterministic retry tests; actual device testing remains required for delivery claims.
 
-## Matriks integritas inti
+## Inventory integrity
 
-| ID / rujukan | Skenario | Hasil wajib |
+| ID / invariant | Scenario | Expected result |
 | --- | --- | --- |
-| INV01 / I01–I02 | Opening, receipt, issue, transfer, adjustment, reversal | Agregat ledger = saldo seluruh pasangan; tidak ada edit/hapus runtime yang lolos |
-| INV02 / I03 | Stok 1, dua koneksi issue masing-masing 1 | Tepat satu sukses; satu konflik; akhir 0, satu movement issue |
-| INV03 / I04 | Dua issue serial sama; dua receipt serial/barcode sama | Maksimal satu posting sah; tidak ada dua item/posisi atau saldo +2 |
-| INV04 / I05 | 10 request simultan key/payload sama | Satu receipt/movement, semua sukses replay menunjuk ID yang sama |
-| INV05 / I05 | Key sama payload berbeda; key baru sourceSession sama | Konflik atau replay identik sesuai 06; tidak ada movement kedua |
-| INV06 / I06 | Inject failure setelah insert kaki, update saldo, audit, health, outbox | Tidak ada perubahan parsial/receipt sukses pada tiap titik gagal |
-| INV07 / I07 | Transfer beberapa produk, tujuan gagal; transfer berlawanan | Semua rollback saat gagal; total terjaga dan lock order konsisten |
-| INV08 / I03 | Receipt dibalik setelah stok digunakan; adjustment minus terlalu besar | Tolak, tanpa saldo negatif atau inverse parsial |
-| INV09 / I04 | Serial dipindah keluar lalu kembali sebelum mencoba reversal lama | Tolak karena last movement bukan original, walau lokasi kebetulan cocok |
-| INV10 / I08 | Actor palsu, lokasi nonaktif, qty float/overflow/precision salah | Ditolak backend; tidak memercayai body atau pembulatan client |
-| INV11 | Dua posting pada balance yang belum ada | Unique pair tunggal, saldo benar; tidak kehilangan penambahan |
-| INV12 | Response commit sengaja diputus, lalu status dan retry | Tidak pernah sukses palsu; satu commit setelah recovery, key tetap |
-| INV13 | Role dicabut/inaktivasi produk/lokasi bersamaan posting | Hasil berurutan menurut guard, tidak ada mutasi setelah pencabutan yang sudah commit |
-| INV14 | Rebuild projection dan replay rangkaian movement generated | Hasil sama; property test selalu menjaga I01–I08 dan precision |
-| INV15 (L) | Reserve vs issue/expire/fulfill bersamaan | Tidak oversell, available tidak dikurangi dua kali, event/reserved cocok |
-| INV16 (L) | Opname freeze vs transfer/issue, approval stale/dua konsumsi | Scope benar-benar terkunci operasional; proposal stale/double consume ditolak |
+| INV01 / I01–I02 | All movement types; runtime history mutation attempts | Full ledger aggregate equals balances; forbidden update/delete fails |
+| INV02 / I03 | Two connections each issue the final unit | One success, one conflict, final zero and one issue |
+| INV03 / I04 | Duplicate serial issue or concurrent identical serial/barcode receipt | At most one valid posting; no duplicate identity/position/+2 stock |
+| INV04 / I05 | Ten concurrent identical requests | One receipt/movement; replay returns the same result |
+| INV05 / I05 | Same key changed payload; new key same session | Conflict/equivalent replay under 06; no second movement |
+| INV06 / I06 | Inject failure after legs, balances, audit, health and outbox | No partial commit or successful receipt |
+| INV07 / I07 | Multi-product transfer failure/opposing transfers | Complete rollback on failure; quantity preserved; consistent lock order |
+| INV08 / I03 | Reverse consumed receipt; excessive negative adjustment | Reject, no negative or partial inverse |
+| INV09 / I04 | Serial moved away and returned before reversing an older movement | Reject by last movement even when location matches |
+| INV10 / I08 | Forged actor, inactive location, float/overflow/excess precision | Backend rejects; no client rounding/identity trust |
+| INV11 | Concurrent first balance creation | One unique pair, correct aggregate |
+| INV12 | Disconnect during commit then status/retry | Honest uncertainty; one recovered commit with original key |
+| INV13 | Role revocation/product-location deactivation versus posting | Guard-defined ordering; no new post after committed revocation |
+| INV14 | Projection rebuild and generated movement sequences | Identical results; property checks preserve I01–I08 and precision |
+| INV15 (later) | Reserve versus issue/expiry/fulfillment | No oversell or double availability reduction; events equal reserved |
+| INV16 (later) | Opname freeze versus writers; stale/double-consumed approval | All ordinary writers blocked; matching approved posting alone consumes freeze |
 
-## Notifikasi dan pemindai
+## Notifications and scanner
 
-| ID | Skenario | Hasil wajib |
+| ID | Scenario | Expected result |
 | --- | --- | --- |
-| NOT01 | Min 5: 6→5→4→3→20→5 | Dua episode LOW, tidak ada event di tiap decrement |
-| NOT02 | 6→0→2→0→20 | OUT sekali, recovery parsial tidak mereset episode |
-| NOT03 | 6→5→0→2→0 | LOW dan OUT masing-masing satu, satu episode |
-| NOT04 | Minimum 0, monitoring on/off, threshold diubah saat issue | State/event benar dan serialisasi kebijakan; audit actor perubahan |
-| NOT05 | Dua lokasi produk berubah bersamaan, transfer langsung | Satu state final konsisten; tidak ada episode dari kaki transfer sementara |
-| NOT06 | Crash worker setelah send sebelum ACK; lease expired | Delivery dapat dicoba ulang, event/inbox tidak duplikat; tag stabil |
-| NOT07 | Provider 410/429/5xx, episode pulih sebelum retry | Subscription dibatalkan/backoff/suppress sesuai kontrak; stok tetap sah |
-| NOT08 | Inbox dibaca, owner lain/perangkat lain, akun nonaktif | Read per user, episode tetap; tidak bocor atau dikirim ke user nonaktif |
-| SCN01 | USB/Bluetooth Enter/CRLF, buffer kosong/paste/manual/IME | Satu lookup per kode; tidak submit transaksi oleh Enter scanner |
-| SCN02 | Identik <300 ms vs scan kuantitas disengaja | Prompt duplicate tidak auto menambah; di luar jendela qty bertambah; undo benar |
-| SCN03 | Serial dua kali, model serial, unknown/retired alias | Duplicate dicegah, unit dipilih, error Indonesia, tidak mutasi langsung |
-| SCN04 | Lookup out-of-order, 128+ karakter, kontrol, focus modal | Tidak salah produk/menangkap password; review menunggu queue kosong |
-| SCN05 | Putus jaringan sebelum lookup, sebelum kirim, saat commit | State dan frozen envelope benar; tidak ada mutasi offline terselubung |
-| SCN06 | Reload, logout/login, ganti user, draf kedaluwarsa | Isolasi actor, hasil belum pasti dipulihkan, tidak menampilkan draf user lain |
-| SCN07 | Label cetak ukuran nyata, kode panjang dan reprint | Scan kembali ke identitas sama, tidak ada pembuatan item baru saat print |
+| NOT01 | Minimum 5: 6→5→4→3→20→5 | Two LOW episodes, no decrement spam |
+| NOT02 | 6→0→2→0→20 | One OUT; partial recovery does not reset |
+| NOT03 | 6→5→0→2→0 | One LOW and one OUT in one episode |
+| NOT04 | Minimum zero, monitor toggle, concurrent threshold/issue | Correct serialized policy/state/event and audit |
+| NOT05 | Concurrent locations and direct transfer | One final state, no transient leg alert |
+| NOT06 | Worker crash after send before ACK; expired lease | Delivery may retry; no duplicate event/inbox; stable tag/fencing |
+| NOT07 | 410/429/5xx and recovery before retry | Revoke/backoff/suppress correctly; stock remains committed |
+| NOT08 | Read state, other owner/device, disabled account | Per-user reads, persistent episode and no unauthorized delivery |
+| SCN01 | USB/Bluetooth Enter/CRLF, empty buffer, manual/paste/IME | One lookup/token; scanner Enter never finalizes |
+| SCN02 | Twenty fast complete identical quantity scans; key repeat/CRLF | Twenty additions without modal; empty terminators/repeat ignored; undo/review correct |
+| SCN03 | Repeated item, serialized model, unknown/retired alias | Hard serial dedupe, explicit identity selection, Indonesian errors, no direct mutation |
+| SCN04 | Out-of-order lookup, >128 chars, controls and modal focus | Correct product matching; no password capture; queue blocks review |
+| SCN05 | Offline before lookup/send/during commit | Correct states/frozen envelope; no offline mutation queue |
+| SCN06 | Reload/logout/account switch/draft expiry | Actor isolation and uncertain-outcome recovery |
+| SCN07 | Actual label size, long token and reprint | Same identity on rescan; printing creates no stock/item |
+| SCN08 (later) | Camera denial/decoder failure/repeated frames | Manual/HID fallback, frame latch, user gesture, tracks stopped on exit |
 
-## Keamanan, data publik, dan audit
+## Security, language and audit
 
-- SEC01: positive/negative matrix setiap permission 04 pada endpoint/action/query, termasuk ID milik actor lain dan role gabungan. Staf tidak dapat assign role, posting adjustment, membaca private field melalui export atau parameter tambahan.
-- SEC02: signup publik ditutup, rate limit, session expired/revoked, 2FA/recovery, CSRF/origin, cookie flags; uji langsung HTTP, tidak hanya klik menu.
-- SEC03: public query/JSON/HTML/metadata/cache tidak berisi biaya, supplier, lokasi, exact qty, serial, catatan, PII, audit. Uji objek punya field rahasia sentinel lalu pastikan semua proyeksi publik tidak memuatnya.
-- SEC04: secret scan staged/release, config wajib kosong fail safely, debug response/log tidak mengandung cookie, token atau URL credential. Fixture rahasia hanya string sintetis yang ditandai untuk tes, tidak secret valid.
-- AUD01: setiap posting/perubahan master/role memiliki actor/what/when/entity/reason/reference dan before/after relevan; rollback tidak meninggalkan audit sukses. Penolakan auth tetap tercatat terpisah tanpa payload sensitif.
-- UI01: semua state termasuk galat library, print, export, empty/loading/offline berbahasa Indonesia; enum mentah tidak terlihat. Pengecualian identitas teknis mengikuti 05.
-- UI02: keyboard penuh, screen-reader form/status dasar, zoom 200%, viewport 360/768/1280, kontras, modal focus return dan hardware input.
+- SEC01: positive/negative matrix for every 04 permission on endpoint/action/query, foreign actor objects and combined roles. Staff cannot assign roles, correct stock, publish site/product content or obtain private fields via exports/extra parameters.
+- SEC02: disabled public signup, rate limiting, expired/revoked sessions, 2FA/recovery, origin/CSRF and cookie flags through direct HTTP tests.
+- SEC03: sentinel private values absent from public JSON/HTML/metadata/cache, including costs/suppliers/locations/exact stock/serials/notes/PII/audit.
+- SEC04: staged/release secret scan; missing config fails safely; errors/logs expose no credentials/cookies/tokens. Synthetic fixtures are clearly test-only.
+- AUD01: successful stock/master/role/publishing changes have actor/action/time/entity/reference and relevant safe before/after. Rollback cannot leave success audit. Denials log separately without sensitive payload.
+- UI01: all user-visible states/library errors/print/export/loading/offline text use Bahasa Indonesia, with only approved technical identifiers unchanged.
+- UI02: full keyboard path, basic screen-reader form/status, 200% zoom, 375/768/1024/1440/1920 px plus 360 px regression, contrast, modal focus return and hardware input.
 
-## Demo yang deterministik
+## Bulk import and onboarding
 
-Kelak seed demo opt-in untuk environment `development/test` saja dan ditolak saat production. Dataset berlabel Demo dengan ID/data deterministik: satu produk kuantitas min 5 stok 20, satu min 5 stok 5, satu min 0 stok 0, satu produk SERIALIZED dengan dua unit unik; dua lokasi STORAGE untuk transfer; tiga role akun tanpa password yang dikomit. Credential demo diperoleh dari input lokal yang aman saat setup, tidak muncul dalam snapshot publik.
+| ID | Scenario | Expected result |
+| --- | --- | --- |
+| IMP01 | Equivalent XLSX/CSV, leading zeros, delimiters/decimal comma, text versus numeric identity | Same normalization; no guessed/mangled identity |
+| IMP02 | Missing/invalid fields, normalized duplicates, unknown references/aliases | Every affected original row/field marked; no silent upsert/skip |
+| IMP03 | Stock/cost/publication/internal ID in product template | Reject before apply; no stock/value/master side effect or sensitive error echo |
+| IMP04 | One bad row among 5,000; apply uniqueness race; stale references | Whole file blocked/rolled back; NEEDS_REVIEW when stale |
+| IMP05 | Crash before/during/after commit, double confirm, stale lease | One ImportCommit/result; recovery without duplicate products/opening |
+| IMP06 | Unauthorized apply, revoked executor, expired intent | Backend rejects/requires review; prepare does not inherit owner authority |
+| IMP07 | Mixed tracking modes, duplicate/already-stocked serial, fabricated LT- identity | Reject safely, no duplicate unit or silent status rewrite |
+| IMP08 | 5,000-row opening, late injected failure, ordinary writer during freeze | Entire posting atomic; all ordinary writers reject; explicit owner freeze release |
+| IMP09 | Oversize/ZIP bomb/macros/formulas/external links/hidden rows/bad UTF-8 | Bounded resources, no evaluation/network fetch, safe error exports |
+| IMP10 | Successful file reupload, APPLYING cancel, cleanup/restore | Honest recovery/cancel behavior; durable manifests/receipts survive TTL |
+| IMP11 | Thousands of SKUs, cross-page selection/filter/export | Server pagination/stable order, selector ≤20; filter clears selection; no private fields |
 
-Saldo demo dibuat melalui command/ledger, bukan menulis saldo langsung. Uji dapat menyiapkan fixture DB melalui helper khusus test dengan invariant diverifikasi. Reset hanya database demo yang teridentifikasi; data produksi tidak pernah dihapus untuk mengembalikan demo. Jam test fixed, nomor identitas tetap dan state notifikasi predictable. Tidak memasukkan nama/kontak/serial operasional asli.
+Initial benchmark on reference staging 2 vCPU/4 GiB, not a purchase recommendation: 5,000-row parse/validation p95 ≤15 seconds, product apply ≤15 seconds, opening apply ≤30 seconds; hard apply deadline 60 seconds. Initial parser memory budget 256 MiB. Measure peak memory, query plans/counts and scanner/push latency during import. If resources fail, explicitly reduce admission limits or redesign before acceptance; do not remove integrity checks or silently partial-commit. Preview loads 50-row pages.
 
-## Sasaran kinerja yang harus diukur
+## Finance
 
-Dengan dataset acuan 02, dua operator dan jaringan stabil: feedback input lokal ≤100 ms; resolve barcode p95 ≤500 ms; finalisasi dokumen 100 baris p95 ≤2 detik; dasbor p95 ≤2 detik. Ukur server dan end-to-end terpisah, catat spesifikasi host, jaringan, sampel dan variasi. Kegagalan performa tidak dibenahi dengan menghapus lock/validasi.
+| ID | Scenario | Expected result |
+| --- | --- | --- |
+| FIN01 | 10 at Rp100,000 + 10 at Rp140,000; accept five, net revenue Rp900,000 | Average Rp120,000, COGS Rp600,000, gross Rp300,000, margin 33.33%; issue alone is not revenue |
+| FIN02 | Same-SKU serial units acquired at Rp10m/Rp12m; sell first | MWA COGS Rp11m, not automatically actual Rp10m; trace remains |
+| FIN03 | Return/credit two from FIN01 | Revenue −Rp360,000, COGS −Rp240,000; net revenue Rp540,000, COGS Rp360,000, gross Rp180,000 |
+| FIN04 | Issue before acceptance; new receipt; partial acceptance/pre-sale return | Separate clearing; correct warehouse average; no double quantity/value subtraction |
+| FIN05 | Unknown receipt/direct cost/opening value | Downstream PENDING; no false zero/complete profit; warehouse posting works |
+| FIN06 | Late cost revision, duplicate/reordered workers | Deterministic source sequence, atomic report publication, preserved prior versions/watermarks |
+| FIN07 | Supplier return/loss/found stock/receipt reversal after average change | Separate variance/non-sale effects; preserve physical sequence; warehouse Q0 implies V0 |
+| FIN08 | Discount/residual/final unit/precision/negative revenue | Exact totals and 15 rounding; margin not applicable for revenue ≤0; no floats/overflow |
+| FIN09 | Staff attempts owner DTO/export/error/audit/cached report access | No cost/COGS/margin/profit leak; authorized selling prices only |
+| FIN10 | Period changes with active stock attention; company has excluded services | Current attention unchanged; explicit eligible goods scope, no net/whole-company profit label |
+| FIN11 | Late acceptance date and return after recognition | RecordedAt preserved, evidence-validated recognition, linked correction/version; no physical backdating or deleted acceptance |
 
-Inbox tercipta dalam commit; tab aktif melihat perubahan dalam ≤20 detik pada jaringan sehat; worker mencoba push pertama ≤60 detik. Ini target upaya pengiriman, bukan jaminan delivery perangkat. RPO/RTO dan restore dimiliki 09. Target belum terverifikasi pada baseline ini.
+Finance calculation tests run when that phase exists. Core tests evidence permissions, null versus zero, revisions and separation from warehouse DTOs first.
 
-## Gerbang tiap tugas
+## Public CMS, WhatsApp and portability
 
-Selama iterasi: tes terarah untuk risiko yang berubah. Saat menyelesaikan tugas implementasi: review diff, secret check, lint, typecheck, unit suite, integration suite yang sudah tersedia, build dan E2E alur kritis yang terdampak. Bila mengubah inventory/auth/health, seluruh suite risiko inti modul terkait wajib dijalankan, bukan satu happy path. Saat rilis Core: seluruh suite aplikasi, concurrency, rollback, security matrix, critical E2E, restore dan hardware smoke.
+| ID | Scenario | Expected result |
+| --- | --- | --- |
+| PUB01 | Owner edits all normal company/hero/contact/footer/product/SEO fields | Internal structured editor supports changes without source edit, Git commit or content-only redeploy |
+| PUB02 | Draft edit, unauthorized preview, concurrent publish, rollback | Live revision unchanged until valid owner publish; no draft leak; stale version rejected; rollback audited as new publication |
+| PUB03 | Stored XSS/unsafe URL/media, inactive featured product, orphan asset | Validation rejects; active published allowlist only; media references restored safely |
+| PUB04 | Published wa.me number/template changes | Link uses current published settings, fixed wa.me origin, correct international digits/encoding; no hardcoded destination |
+| PUB05 | Tracking success/failure, forged redirect, private template placeholders | Safe outbound click only; link still works if tracking fails; no PII/private values or conversation/sale claim |
+| OPS01 | Restore database/media to a different configured host/root/origin | No application source edits; correct permissions/links/auth/push; no hardcoded VPS details |
+| OPS02 | Failed/off-host-missing backup, lost runtime, restored imports/valuation | Honest failure state; no pilot without restore evidence; no blind replay after snapshot loss |
 
-P01 akan menyediakan scripts bernama konsisten (misalnya `lint`, `typecheck`, `test:unit`, `test:integration`, `test:e2e`, `build`) dan dokumentasi environment. **Nama tersebut rencana; jangan mengklaim command ada atau lulus sebelum package dibuat.** Jika fasilitas belum dibangun dalam fase awal, laporkan subset yang tersedia dan dependensi gate berikutnya; tidak boleh melewati acceptance tugas yang sedang dikerjakan.
+## Visual acceptance
 
-- `[BE]`: bukti teknis sesuai risiko, migrasi/rollback plan bila relevan, izin/audit benar → dapat `[x]`.
-- `[FE]` prototipe: browser check + owner Gerbang A untuk revisi itu → `[x]` hanya tugas prototipe.
-- `[FE]/[FS]` implementasi: bukti teknis/browser + owner Gerbang B → `[x]`. Tanpa persetujuan tetap `[V]`.
-- Bukti disimpan pada baris tugas dengan commit/tes ringkas dan rujukan artefak, serta `REVIEW.md` untuk visual. Hindari log panjang atau screenshot produksi dalam repo publik.
+Every CP/significant variant records purpose/action/fact inventory and anti-AI-slop/redundancy audit. Test logo click/Enter/Space without accidental navigation; 240/64 desktop sidebar and mobile drawer; focus/tooltips/reduced motion; no duplicated account/logout/CTA; purposeful desktop space and phone priority.
 
-## Gerbang baseline dokumentasi (tugas saat ini)
+Cockpit: critical/stock priority, state counts once, finance absent until supported, correct period labels and distinct empty/error/stale/incomplete states. Import: phone summary versus complete desktop review. Scanner: fast quantity repeats, hard serial dedupe, navigation pauses input, keyboard does not cover review/error. Official logo geometry preserved. Check font/icon licenses at packaging; initial combined Latin font budget ≤160 KiB, without dropping required glyphs.
 
-Cek kelengkapan 00–13, README/AGENTS/config-example/prototype index; tautan lokal; kesesuaian ownership; hard constraints; tabel transisi dan contoh; urutan dependensi build; perhitungan 55 tugas; semua status implementasi belum dimulai; tidak ada file aplikasi/migrasi/dependensi; `.env.example` tanpa nilai; diff/secret scan dan commit hanya baseline. Review silang kontrak receipt/serial/lock/alert/izin dilakukan sebelum commit. Ini validasi dokumentasi, **bukan** bukti tes aplikasi atau persetujuan owner.
+Screenshots supplement interaction testing, not replace it or owner review.
+
+## Deterministic demo
+
+Future opt-in seed only for development/test, rejected in production. Clearly labeled demo dataset: quantity minimum 5/stock20; minimum5/stock5; minimum0/stock0; one serialized product with two distinct units; two STORAGE locations and three roles. No committed passwords; setup uses secure local input.
+
+Create demo balances through commands/ledger. Dedicated test helpers may prepare fixtures only with verified invariants. Reset only identified demo/test databases. Fixed clock/IDs support predictable attention states. No real business names/contacts/serials in fixtures.
+
+## Performance targets
+
+Reference dataset from 02, two operators, stable network: local input feedback ≤100 ms; barcode resolve p95 ≤500 ms; 100-line finalize p95 ≤2 seconds; cockpit p95 ≤2 seconds. Record host/network/sample and separate server from end-to-end latency. Never remove locks/validation to improve timing.
+
+Inbox is committed with stock. Active tab reflects changes within 20 seconds on a healthy network; first push attempt within 60 seconds. This is an attempt target, not device-delivery guarantee. [09](09-DEPLOYMENT-OPS.md) owns RPO/RTO. None are measured results yet.
+
+## Completion gates
+
+During iteration run targeted risk tests. Before implementation task completion: diff/secret review, lint, typecheck, available unit/integration suites, build and affected critical E2E. Inventory/auth/health changes require their complete risk suite, not one happy path. Core release requires all relevant application/concurrency/rollback/security/E2E/restore/hardware checks.
+
+P01 will create consistent scripts such as lint, typecheck, test:unit, test:integration, test:e2e and build. These names are planned, not commands currently available. Report early-phase available checks honestly without bypassing the active task's acceptance.
+
+- BE: technical evidence, permissions/audit and relevant migration/recovery plan permit [x].
+- Prototype FE: browser checks and owner Gate A permit [x] for the prototype only.
+- Implementation FE/FS: technical/browser evidence and owner Gate B permit [x]; otherwise [V].
+- Store concise task evidence/commit and REVIEW reference. No huge logs or production screenshots in public Git.
+
+## Documentation gate — current task
+
+Verify canonical 00–15, README/AGENTS/prototype index/config example; English documentation with Indonesian UI labels; valid local links; clear ownership; invariant/transition/cost examples; import versus interactive limits; valid dependency graph; **65 tasks / 34 Core / 13 phases**, all unstarted.
+
+Review inventory concurrency/serials, alerts, scanner, scale/import/opening, owner finance/privacy, responsive/sidebar/icons/anti-slop/redundancy, both visual gates, structured CMS/wa.me, near-zero cost, portable VPS, storage/backup and secret safety. Check no HTML/generated assets/application/migrations/dependencies. Validate empty environment values, whitespace/conflict markers, secret patterns, git diff --check and status. Arithmetic verification is documentation checking, not application testing or owner approval.

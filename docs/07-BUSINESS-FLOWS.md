@@ -1,78 +1,88 @@
-# 07 — Alur bisnis
+# 07 — Business workflows
 
-Dokumen ini merangkai tanggung jawab pengguna. Aturan stok dimiliki [06](06-INVENTORY-SPEC.md), interaksi scan [12](12-BARCODE-SCANNER.md), izin [04](04-AUTH-RBAC-SECURITY.md), dan notifikasi [13](13-NOTIFICATIONS.md). Jangan membuat versi algoritme terpisah dari alur berikut.
+This document connects user responsibilities. [06](06-INVENTORY-SPEC.md) owns stock rules, [12](12-BARCODE-SCANNER.md) scanner interaction, [04](04-AUTH-RBAC-SECURITY.md) permissions and [13](13-NOTIFICATIONS.md) alerts.
 
-## F01 — Persiapan operasional pertama
+## F01 — Initial onboarding
 
-Operator deployment menyiapkan lingkungan aman dan owner melakukan aktivasi akun/2FA. Owner membuat akun staf dengan peran tepat, gudang/lokasi, SKU/satuan/tracking dan minimum. Admin produk dapat melengkapi konten. Owner/staf mencetak label dan menguji scanner dengan demo lebih dahulu.
+The operator prepares the environment; the owner activates their account/2FA, assigns staff roles and creates warehouse/location/unit/category/brand references. Product admin uploads and validates the master XLSX/CSV; owner reviews and applies the identity/minimum batch. Products initially have no stock, publication or active monitoring. Test scanners/labels with demo data first. [14](14-BULK-IMPORT.md) owns templates and atomicity.
 
-Untuk cutover, owner menetapkan waktu berhenti pencatatan lama, staf menghitung barang/serial per lokasi, lalu owner memposting OPENING dengan batch dan referensi hitung. Cek total serta identitas, aktifkan monitoring SKU yang disimpan, uji notifikasi perangkat owner, backup dan restore lingkungan uji. Mulai operasi baru hanya setelah gate pilot [11](11-BUILD-PLAN.md) terpenuhi. Jangan menjalankan dua sumber saldo paralel tanpa aturan cutover.
+Owner defines the legacy-system cutover and activates onboarding freeze. Staff count quantities/serials by location and prepare separate opening templates. Owner reviews and applies an atomic OPENING job. Reconcile physical totals and identities, activate monitoring for stocked SKUs and release freeze. Staging push/backup/restore acceptance precedes go-live. Owner records private opening cost evidence; unknown does not become zero.
 
-Kesalahan master/label diperbaiki sebelum opening bila memungkinkan. Setelah ledger tersedia, perubahan tracking/satuan bukan edit biasa. Data demo tidak digabung dengan saldo produksi.
+Do not run two competing balance sources without an explicit cutover. Correct master/label mistakes before opening where possible. Tracking/unit changes after ledger use are not ordinary edits. Demo data never mixes with production stock.
 
-## F02 — Barang Masuk
+## F02 — Receipt
 
-1. Staf masuk, memilih Barang Masuk, lokasi penerimaan aktif, sumber/pengirim, alasan dan referensi bila ada.
-2. Staf memindai produk kuantitas atau item serial. Item baru berserial diidentifikasi pada produk yang benar. Barang tak dikenal ditahan untuk identifikasi; tidak otomatis menambah stok.
-3. Sesi menampilkan barang **belum disimpan**. Staf mengoreksi qty, duplikat, atau baris salah. Label baru dapat dicetak dari identitas REGISTERED; stok tetap belum berubah.
-4. Staf membuka review, memeriksa fisik dan ringkasan, lalu mengonfirmasi sekali. Server memvalidasi dan memposting seluruh dokumen.
-5. Nomor transaksi server membuktikan selesai. Tombol Transaksi Baru mempertahankan konteks yang dipilih secara jelas, mengosongkan barang dan membuat sesi baru.
+1. Staff choose **Barang Masuk**, active destination, source/sender, reason and optional reference.
+2. Scan quantity products or serialized items. Identify new serials against the correct product. Hold unknown goods for identification; never auto-create stock.
+3. Correct the unsaved session. REGISTERED identities may be printed without changing stock.
+4. Review physical goods, lines and context; confirm once. Server posts all or none.
+5. A server document number confirms completion. **Transaksi Baru** clears lines and creates a new session, showing any retained context explicitly.
 
-Jika koneksi gagal setelah kirim, sesi masuk hasil belum pasti dan mengikuti pemulihan 12. Jika receipt merupakan pengembalian, pilih reason RETURN dan rujukan pengeluaran; verifikasi unit yang kembali. Pengembalian dari pelanggan dengan kerusakan memerlukan alur karantina setelah modul QC tersedia, bukan otomatis layak dikeluarkan.
+Lost responses follow the recovery contract. Returns use RETURN with the issue reference and verified identity. Damaged returned stock requires the quarantine/QC workflow when available; do not assume it is immediately issue-eligible.
 
-## F03 — Barang Keluar
+## F03 — Issue
 
-1. Staf memilih lokasi sumber, tujuan/penerima, alasan dan referensi pekerjaan/dokumen. Persetujuan owner tidak diperlukan untuk pengeluaran normal yang diizinkan.
-2. Scan kuantitas/item serial, koreksi sesi, review identitas dan jumlah.
-3. Server memeriksa available dan status serial terkini. Jika stok berubah karena operator lain, seluruh dokumen ditolak; staf melihat baris bermasalah dan mereview ulang, tidak menerima penyimpanan parsial.
-4. Setelah commit, staf melihat nomor dokumen; low-stock evaluator secara atomik memperbarui perhatian dan inbox owner. Kegagalan push tidak membatalkan transaksi yang telah sah.
+1. Staff choose source, destination/recipient, reason and work/document reference. Normal authorized issues need no owner approval.
+2. Scan, correct and review identities/quantities.
+3. Server validates current availability/serial state. Concurrent changes reject the whole document with actionable line errors, not a partial save.
+4. After commit, show the document number. Atomic stock-health evaluation updates owner attention/inbox. Push delivery failure does not undo lawful stock posting.
 
-Barang fisik diserahkan mengikuti prosedur gudang setelah bukti posting. Bila kondisi lapangan mengharuskan urutan berbeda, owner menetapkan SOP dan referensi, bukan menghilangkan pencatatan. Saldo stok tidak otomatis turun saat RFQ/penawaran diterima kelak.
+Physical handover follows the warehouse SOP and posting evidence. If field conditions require another sequence, owner defines a documented SOP without removing recording. RFQ/quotation acceptance never directly reduces physical stock.
 
-## F04 — Transfer lokasi langsung
+## F04 — Direct transfer
 
-Staf memilih asal dan tujuan berbeda, mencatat alasan, memindai serta mengonfirmasi. Kedua lokasi harus dapat ditangani dalam satu aktivitas operasional. Server memposting dua kaki atomik; owner melihat total tetap dan distribusi lokasi berubah. Tujuan gagal/serial salah berarti seluruh transfer batal.
+Staff choose distinct source/destination, reason, scan and confirm. Both locations must be handled in one operational activity. Paired legs commit together; total physical stock is unchanged. Any invalid destination/serial rejects all.
 
-Jika perpindahan membutuhkan perjalanan dan penerimaan terpisah, jangan memakai transfer langsung seolah barang sudah tiba. Aktifkan alur transit fase P07 dahulu atau batasi operasional MVP pada transfer langsung yang dapat dikonfirmasi saat itu.
+Do not pretend goods have arrived when travel and separate receipt are required. Implement staged transit first or limit Core operations to immediately verifiable direct transfers.
 
-## F05 — Kesalahan dan koreksi
+## F05 — Errors and correction
 
-Sebelum finalisasi, staf edit/urungkan draf. Sesudah posting, staf membuka nomor transaksi dan melaporkan alasan kepada owner; MVP belum memiliki kotak permintaan persetujuan formal. Owner memeriksa fisik, riwayat lanjutan, dan dampak; memilih pembalikan penuh untuk salah pencatatan yang memenuhi prasyarat, atau penyesuaian berdasarkan hitung nyata. Re-auth, alasan dan referensi diwajibkan.
+Before confirmation, staff edit/undo the draft. After posting, staff identify the document and explain the issue to the owner. Core has no formal approval request inbox.
 
-Jika pembalikan tidak aman karena stok telah digunakan atau serial berpindah lagi, sistem menjelaskan penolakan. Owner menyelidiki dan membuat koreksi yang benar-benar menggambarkan kondisi fisik. Riwayat asli dan pembalikannya selalu dapat dibuka. Tidak ada tombol hapus transaksi atau edit angka saldo.
+Owner verifies physical facts, later movements and impact, then chooses an eligible full reversal or a count-based adjustment. Require recent authentication, reason/reference and current-state preview. Unsafe reversals fail with an explanation; investigate and correct actual facts. Original and corrective documents remain readable. No delete-transaction or edit-balance button.
 
-## F06 — Pemilik menangani stok
+## F06 — Owner stock attention
 
-Owner memperoleh inbox dan push jika perangkat diaktifkan, lalu membuka daftar Menipis/Habis. Detail menunjukkan snapshot saat event, state saat ini, stok per lokasi, pergerakan dan pelaksana. Owner dapat menandai dibaca, menghubungi pengadaan melalui proses bisnis di luar MVP, atau melihat barang yang masih ada di lokasi lain.
+Owner receives inbox and opted-in push, then opens **Menipis/Habis**. Detail shows event snapshot, current state, location stock and movement/actor history. Owner may mark read or organize procurement outside Core.
 
-Membaca tidak memulihkan stok. Receipt/release reservation atau perubahan kebijakan sah memicu evaluasi lagi. Ketika stok Normal, kondisi perhatian ditutup otomatis; episode baru baru dapat dibuka saat turun kembali. Jangan memaksa owner mengedit stok atau menutup alert satu per satu untuk menyinkronkan sistem.
+Reading is not recovery. Receipt, reservation release or a lawful policy change triggers reevaluation. Normal stock resolves the episode; later decline can open a new episode. Owner never manually edits balances or closes alerts to synchronize the system. Period selection does not hide current OUT stock. Finance appears only with the verified sources under 15.
 
-## F07 — Pencabutan akun/perangkat
+## F07 — Revoke accounts/devices
 
-Owner menonaktifkan staf yang tidak lagi bertugas; backend mencabut sesi dan akses push, audit menyimpan identitas pelaksana lama. Sesi gudang yang belum diposting tidak dapat dikirim dengan izin lama. Transaksi yang sudah commit tetap ada. Browser bersama harus keluar dari akun sebelum dipakai orang lain; draf tidak ditransfer otomatis antaractor.
+Owner disables departing staff. Backend revokes sessions/push access while preserving historical actor identity. Unsaved sessions cannot post with revoked permissions. Committed transactions remain. Shared-device users log out before account switching; drafts never transfer automatically between actors.
 
-## F08 — Reservasi dan pengiriman penjualan (lanjutan)
+## F08 — Reservation and sales fulfillment (later)
 
-Admin penjualan mencatat deal diterima → meminta alokasi produk/lokasi/unit → reservation service menahan available → gudang melihat referensi pemenuhan → staf memindai Barang Keluar terhadap reservasi → onHand dan reserved dikurangi bersamaan → status fulfillment diperbarui. Partial fulfillment menyisakan reserved yang belum dipenuhi; batal/kedaluwarsa melepas sisanya, tidak menambah fisik.
+Sales records an accepted deal and requests product/location/unit allocation. Reservation service holds availability. Warehouse scans issue against that reservation; onHand and reserved decrease together and fulfillment updates. Partial fulfillment retains the remainder; cancellation/expiry releases it without adding physical stock.
 
-Sales tidak memilih stock delta atau membuat movement langsung. Reservasi gagal karena stok tidak cukup bukan deal yang otomatis terpenuhi. Backorder bukan stok negatif.
+Sales cannot choose signed deltas or directly write movements. Failed allocation is not fulfillment. Backorder cannot become negative physical stock.
 
-## F09 — Opname dan persetujuan (lanjutan)
+## F09 — Stock opname and approval (later)
 
-Owner menetapkan scope dan waktu; lokasi dibekukan oleh sistem sebelum baseline. Staf menghitung fisik, memasukkan identitas serial dan qty, submit proposal; owner menilai discrepancy. Proposal disetujui tetap diperiksa versi/hash saat posting. Adjustment dan pembukaan freeze commit bersama; owner melihat before/after dan hasil akhir. Staf tidak dapat menyetujui proposal sendiri. Pembatalan tidak memposting selisih.
+Owner defines scope/time. System freezes locations before baseline capture. Staff count quantities/serials and submit. Owner reviews differences. Approved proposal is revalidated by hash/version at posting; adjustment and freeze release commit together. No staff self-approval. Cancel does not post differences.
 
-Persetujuan awal untuk semua koreksi yang diajukan staf; batas “besar” kelak harus berasal dari data/aturan owner, bukan angka nominal asumsi. Tindakan rutin masuk/keluar/transfer tetap tanpa approval. Rincian concurrency/freeze dimiliki 06.
+Staff-proposed sensitive corrections require approval. Any future materiality threshold must come from actual owner policy, not an invented amount. Routine receipt/issue/direct transfer remain independent of approval.
 
-## F10 — QC, garansi dan servis (lanjutan)
+## F10 — QC, warranty and service (later)
 
-Petugas mencatat hasil QC item; gagal QC mengubah ketersediaan melalui perpindahan ke karantina yang diaudit. Hasil QC tidak otomatis menghapus stok. Garansi menghubungkan unit dengan periode/ketentuan. Service case membedakan barang milik perusahaan dari barang titipan pelanggan; hanya pergerakan stok milik perusahaan yang masuk ledger inventaris. Menyelesaikan servis tidak berarti otomatis menjual/menyerahkan barang.
+Staff record inspection results. Failed QC reduces eligibility through an audited transfer to quarantine; it does not delete physical stock. Warranty links a serial to terms/period. Service cases distinguish company property from customer custody. Only company-stock movements enter the inventory ledger. Closing a service case does not automatically sell or deliver goods.
 
-## F11 — Website, WhatsApp, RFQ dan sales (lanjutan)
+## F11 — Public content, inquiry and sales (later)
 
-Pengunjung melihat produk terbit dari proyeksi aman, mencari/membandingkan, kemudian memilih WhatsApp atau mengirim RFQ. WhatsApp click membuka link dengan teks produk aman; klik hanya boleh dicatat sebagai klik, **bukan** bukti pesan terkirim, lead sah, atau penjualan. Tidak ada integrasi API berbayar otomatis.
+Owner edits structured company/contact/hero/footer/SEO content and configured wa.me destination/templates in the internal CMS, previews the draft and publishes a specific revision. Product admins may prepare permitted product content; owner controls publication. Live content changes without code edits or redeploy. [02](02-ARCHITECTURE.md) owns validation, publication and cache boundaries.
 
-RFQ menerima kontak dan kebutuhan dengan validasi/anti-spam → admin sales menilai → lead → penawaran berversi → deal → F08. Produk custom dapat berupa kebutuhan bebas tanpa membuat SKU persediaan palsu. Upload publik ditunda sampai kontrol file tersedia. Konfirmasi publik berbahasa Indonesia dan tidak mengungkap status/PII pemohon lain.
+Visitors search/compare published product projections and choose a configured WhatsApp link or RFQ. Track WhatsApp only as an optional outbound click, never a sent message, qualified lead or sale. No WhatsApp API/provider.
 
-## F12 — Gangguan dan pemulihan
+RFQ validates contact/requirements with anti-spam controls → sales qualification → lead → versioned quotation → deal → F08. Custom requests may be free-text needs without fake stock SKUs. Public attachments remain deferred until file controls exist. Confirmation is Indonesian and cannot reveal another applicant's data.
 
-Staf melihat status koneksi, menghentikan posting baru bila tidak dapat memverifikasi hasil, dan mencatat referensi sesi untuk penelusuran. Operator teknis memeriksa health/outbox/backup; owner memutuskan penghentian operasi jika kepercayaan saldo terganggu. Restore mengikuti [09](09-DEPLOYMENT-OPS.md), dengan posting ditutup dan external delivery dijeda sampai rekonsiliasi selesai. Aplikasi tidak mengarang sukses untuk mempertahankan kesan lancar.
+After shipment, verified acceptance creates the revenue fact. Scanning an issue alone does not recognize revenue.
+
+## F12 — Incident and recovery
+
+Staff see connection state and stop new posting when the previous result cannot be determined; preserve session references. Operator checks health/outbox/backup. Owner pauses operations if stock cannot be trusted. [09](09-DEPLOYMENT-OPS.md) governs restore, with posting and external delivery paused until reconciliation. Never fabricate success to appear responsive.
+
+## F13 — Cost completeness and profitability
+
+Core: owner records/verifies private receipt/opening evidence while staff work without prices. After Sales and valuation, accepted goods match cost allocations to support **Laba Kotor Penjualan Barang**. Pending data shows incompleteness, not estimated profit. Owner selects a period and drills into eligible orders/SKUs; sales staff see authorized selling prices without COGS/margin.
+
+Physical return, credit/refund and cost correction may occur at different times. Each has its own event/reference. Recheck completeness before publishing a revised report under [15](15-FINANCE-PROFITABILITY.md). Refund does not add stock; stock input does not silently rewrite prior reports. Expense accounting/net profit is outside this scope.

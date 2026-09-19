@@ -1,38 +1,44 @@
 # LATANSA Platform
 
-Sistem operasional inventaris untuk **CV. Latansa Jogjakarta**. Staf mencatat barang masuk dan keluar melalui pemindaian; pemilik memperoleh stok yang dapat dipercaya, pemberitahuan stok menipis/habis, dan dasbor tindakan. Situs perusahaan dan penjualan adalah perluasan berikutnya dengan satu master produk.
+Inventory and warehouse operations for **CV. Latansa Jogjakarta**. Staff scan goods in and out. The owner monitors trustworthy stock, low-stock attention, exceptions, and later profitability. The public website and sales extend the same Product Master after inventory Core is reliable.
 
-**Status: baseline dokumentasi, 19 September 2026. Belum ada aplikasi, migrasi, atau lingkungan produksi.** Dokumentasi siap ditinjau pemilik; keputusan desain belum berarti fitur sudah tersedia.
+**Documentation refinement: 20 September 2026. Production implementation has not started.** No application, migrations, HTML prototypes, or production environment exist. Official brand assets and owner review remain pending.
 
-## Mulai di sini
+## Start here
 
-1. Baca [AGENTS.md](AGENTS.md) untuk aturan kerja.
-2. Baca [kondisi saat ini](docs/00-CURRENT-STATE.md) untuk serah-terima sesi.
-3. Pilih satu pekerjaan dari [rencana pembangunan](docs/11-BUILD-PLAN.md), setelah pemilik mengizinkan implementasi.
-4. Baca hanya dokumen topik yang diperlukan dan [keputusan terkunci](docs/10-DECISIONS.md).
+1. Read [AGENTS.md](AGENTS.md) for working rules.
+2. Read [current state](docs/00-CURRENT-STATE.md) for the verified handoff.
+3. Follow the [build plan](docs/11-BUILD-PLAN.md): owner review, official assets, then four Core prototype bundles when instructed. Production requires approved visual contracts and a separate instruction to implement.
+4. Read only relevant specifications and [decisions](docs/10-DECISIONS.md).
 
-## Peta sumber kebenaran
+Documentation is English. All user-facing LATANSA UI is Bahasa Indonesia.
 
-| Dokumen | Pemilik topik |
+## Canonical ownership
+
+| Document | Owns |
 | --- | --- |
-| [01 — PRD](docs/01-PRD.md) | Hasil bisnis, pengguna, batas MVP, ukuran keberhasilan |
-| [02 — Arsitektur](docs/02-ARCHITECTURE.md) | Modul, aliran dependensi, kontrak layanan, batas publik |
-| [03 — Model domain](docs/03-DOMAIN-MODEL.md) | Identitas, relasi, siklus hidup, batas integritas entitas |
-| [04 — Autentikasi dan keamanan](docs/04-AUTH-RBAC-SECURITY.md) | Izin, akun, ancaman, rahasia, audit keamanan |
-| [05 — Sistem desain](docs/05-DESIGN-SYSTEM.md) | Bahasa UI, prototipe, kontrak visual, review pemilik |
-| [06 — Spesifikasi inventaris](docs/06-INVENTORY-SPEC.md) | Akuntansi stok, transaksi, locking, pembalikan, reservasi |
-| [07 — Alur bisnis](docs/07-BUSINESS-FLOWS.md) | Perjalanan pengguna lintas modul |
-| [08 — Pengujian](docs/08-TESTING-ACCEPTANCE.md) | Bukti penerimaan, matriks risiko, definisi selesai |
-| [09 — Operasi](docs/09-DEPLOYMENT-OPS.md) | Konfigurasi, deploy, backup, restore, insiden |
-| [10 — Keputusan](docs/10-DECISIONS.md) | Pilihan arsitektur, alasan, asumsi, perubahan keputusan |
-| [11 — Rencana pembangunan](docs/11-BUILD-PLAN.md) | Satu pelacak tugas dan progres resmi |
-| [12 — Barcode dan pemindai](docs/12-BARCODE-SCANNER.md) | Identitas kode, label, sesi scan, input HID |
-| [13 — Notifikasi](docs/13-NOTIFICATIONS.md) | Status stok, episode perhatian, deduplikasi, pengiriman |
+| [01 — PRD](docs/01-PRD.md) | Outcomes, users, scope, priorities, dashboard hierarchy |
+| [02 — Architecture](docs/02-ARCHITECTURE.md) | Modules, services, public CMS, storage boundaries |
+| [03 — Domain model](docs/03-DOMAIN-MODEL.md) | Entities, relationships, identity and lifecycle |
+| [04 — Security](docs/04-AUTH-RBAC-SECURITY.md) | Accounts, permissions, privacy and security audit |
+| [05 — Design system](docs/05-DESIGN-SYSTEM.md) | UI language, tokens, navigation, responsive behavior and visual gates |
+| [06 — Inventory](docs/06-INVENTORY-SPEC.md) | Ledger, balances, concurrency, corrections and advanced inventory |
+| [07 — Business flows](docs/07-BUSINESS-FLOWS.md) | Cross-module user workflows |
+| [08 — Testing](docs/08-TESTING-ACCEPTANCE.md) | Acceptance evidence, risk scenarios and completion gates |
+| [09 — Operations](docs/09-DEPLOYMENT-OPS.md) | Configuration, deployment, backup, retention and recovery |
+| [10 — Decisions](docs/10-DECISIONS.md) | Accepted design choices, tradeoffs and assumptions |
+| [11 — Build plan](docs/11-BUILD-PLAN.md) | Implementation order and the only official progress tracker |
+| [12 — Barcode and scanner](docs/12-BARCODE-SCANNER.md) | Code identity, printing, HID input and scan sessions |
+| [13 — Notifications](docs/13-NOTIFICATIONS.md) | Stock states, attention episodes, deduplication and delivery |
+| [14 — Bulk import](docs/14-BULK-IMPORT.md) | Product/opening templates, staging, validation, atomic apply and bulk actions |
+| [15 — Finance](docs/15-FINANCE-PROFITABILITY.md) | Cost evidence, valuation, revenue matching, gross profit and completeness |
 
-## Arah teknologi
+## Technology and cost
 
-Modular monolith: Next.js, TypeScript, PostgreSQL, Drizzle, Zod, Tailwind CSS, shadcn/ui, Better Auth, Vitest, Playwright, Docker Compose, dan Caddy. Versi akan diverifikasi dan dikunci saat fondasi implementasi dimulai. Tidak ada perintah instalasi atau menjalankan aplikasi yang sudah tersedia saat ini.
+Modular monolith: Next.js, TypeScript, PostgreSQL, Drizzle, Zod, Tailwind CSS, shadcn/ui where useful, Lucide, Better Auth, Vitest, Playwright, Docker Compose and Caddy. Verify compatible stable versions and security advisories during P01, then commit a lockfile. No application installation or run command exists yet.
 
-Repositori publik: jangan memasukkan rahasia atau data operasional nyata. [.env.example](.env.example) hanya berisi nama variabel dengan nilai kosong; kebutuhan dan tahap aktivasinya ada di dokumen operasi.
+Use the client's existing VPS and current domain, `latansajogjakarta.com`. Keep deployment portable and centralize host configuration. No paid CMS, WhatsApp API, hosted search, or managed database is required. Responsible off-host backup remains mandatory.
 
-Remote: [yusufarst/latansa-inventory](https://github.com/yusufarst/latansa-inventory). Baseline awal menggunakan `main`; perubahan substansial berikutnya menggunakan cabang `codex/` atau cabang yang diminta pemilik dan review yang sesuai.
+This repository is public. Never commit secrets or real operational data. [.env.example](.env.example) contains empty values only; activation requirements belong to [operations](docs/09-DEPLOYMENT-OPS.md).
+
+Remote: [yusufarst/latansa-inventory](https://github.com/yusufarst/latansa-inventory). The initial baseline is on `main`; refinement uses a reviewable `codex/` branch. A local commit does not imply a push or merge.

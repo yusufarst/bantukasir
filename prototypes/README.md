@@ -1,10 +1,12 @@
-# Indeks prototipe
+# Prototype registry
 
-Belum ada prototipe. Tidak ada pola visual yang telah disetujui pemilik.
+No prototypes exist. No visual pattern has owner approval. Official colored/monochrome logos and a suitable official mark are pending. No replacement assets have been created.
 
-Aturan struktur, state, dan bukti persetujuan dimiliki [05 — Sistem desain](../docs/05-DESIGN-SYSTEM.md). Setiap prototipe mendatang dicatat di tabel ini dan memiliki `REVIEW.md` per revisi; tabel ini mengindeks artefak, bukan menghitung progres build.
+[05 — Design system](../docs/05-DESIGN-SYSTEM.md) owns structure, states and review evidence. Register each future artifact here and keep a revision-specific `REVIEW.md`. This registry is not the build progress tracker.
 
-| Pattern ID | Revisi | Status artefak | Tautan HTML / review |
+| Pattern ID | Revision | Artifact status | HTML / review link |
 | --- | --- | --- | --- |
 
-Implementasi belum diizinkan oleh tugas baseline dokumentasi. Gunakan hanya data demo aman ketika pemilik kemudian meminta pembuatan prototipe.
+Canonical order: CP01 shell/auth → CP02 products/import → CP03 inventory/scan → CP04 owner cockpit → CP05 public website/catalog. The first four are P00 tasks. This sequence does not imply any artifact exists.
+
+Create standalone HTML/CSS with safe demo data and official assets only after the owner requests the prototype phase. Reuse approved patterns; do not create a second frontend codebase. No production API/database connections or Next.js implementation belong in this phase.
