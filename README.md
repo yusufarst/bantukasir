@@ -2,13 +2,13 @@
 
 Inventory and warehouse operations for **CV. Latansa Jogjakarta**. Staff scan goods in and out. The owner monitors trustworthy stock, low-stock attention, exceptions, and later profitability. The public website and sales extend the same Product Master after inventory Core is reliable.
 
-**Documentation refinement: 20 September 2026. Production implementation has not started.** No application, migrations, HTML prototypes, or production environment exist. Official brand assets and owner review remain pending.
+**Planning baseline complete — 20 September 2026. Next executor task: P00.1, Gemini Antigravity.** Owner approval of D01–D34 is recorded. The [official colored mark](assets/brand/README.md) is preserved unchanged and the logo-derived pastel system is documented. Build progress is 0%; no application, migrations, HTML prototypes, visual approval or production environment exists.
 
 ## Start here
 
 1. Read [AGENTS.md](AGENTS.md) for working rules.
 2. Read [current state](docs/00-CURRENT-STATE.md) for the verified handoff.
-3. Follow the [build plan](docs/11-BUILD-PLAN.md): owner review, official assets, then four Core prototype bundles when instructed. Production requires approved visual contracts and a separate instruction to implement.
+3. Follow the [executor handoff](docs/16-EXECUTOR-HANDOFF.md) and the next row in the [build plan](docs/11-BUILD-PLAN.md). Start P00.1 only in the next execution session; P00.2 waits for its Gate A approval. Production requires approved Core visual contracts and separate explicit authorization.
 4. Read only relevant specifications and [decisions](docs/10-DECISIONS.md).
 
 Documentation is English. All user-facing LATANSA UI is Bahasa Indonesia.
@@ -32,6 +32,7 @@ Documentation is English. All user-facing LATANSA UI is Bahasa Indonesia.
 | [13 — Notifications](docs/13-NOTIFICATIONS.md) | Stock states, attention episodes, deduplication and delivery |
 | [14 — Bulk import](docs/14-BULK-IMPORT.md) | Product/opening templates, staging, validation, atomic apply and bulk actions |
 | [15 — Finance](docs/15-FINANCE-PROFITABILITY.md) | Cost evidence, valuation, revenue matching, gross profit and completeness |
+| [16 — Executor handoff](docs/16-EXECUTOR-HANDOFF.md) | Session start, one-task execution, verification, stop conditions and reporting |
 
 ## Technology and cost
 

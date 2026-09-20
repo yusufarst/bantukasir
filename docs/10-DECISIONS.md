@@ -1,6 +1,8 @@
 # 10 — Architecture decisions and assumptions
 
-Initial baseline: **19 September 2026**. Refinement: **20 September 2026**. LOCKED means the design is binding for subsequent agents until explicitly replaced; it does **not** claim owner document/visual approval. Owner review is pending.
+Initial baseline: **19 September 2026**. Refinement: **20 September 2026**. LOCKED means the design is binding until explicitly replaced. On 20 September 2026, the owner explicitly approved **D01–D34** in the focused brand-refinement request: “The owner now APPROVES architecture decisions D01–D34.” This approves their effective decisions and recorded supersessions; it does not revive D17's old denominator or approve any unbuilt prototype.
+
+The same request designated the supplied logo official and required a pastel direction. D26's previous exact colors were provisional; D35 records their replacement under that instruction. The new token values are documented design choices awaiting CP01 visual review, not an invented owner approval of a rendered interface. Other approved decisions are unchanged.
 
 Preserve decision history. A replacement names the prior ID, reason and affected specification/tasks. Do not reopen accepted decisions without a concrete requirement.
 
@@ -38,7 +40,7 @@ Preserve decision history. A replacement names the prior ID, reason and affected
 | D23 / LOCKED | Product import never touches stock. Quantity/serial opening jobs use the ledger, matching cutover freeze and durable receipts | Authorized opening worker alone has 5,000-line cap; interactive commands remain 200. Independent scope splitting only | [14](14-BULK-IMPORT.md) |
 | D24 / LOCKED | Internal brand area is a single sidebar toggle; public logo is a home link | Avoid ambiguous dual actions. Desktop rail uses official mark; mobile uses a drawer | [05](05-DESIGN-SYSTEM.md) |
 | D25 / LOCKED | Mobile-first task hierarchy and deliberately productive desktop layouts | Phone monitoring differs from desktop bulk review; mandatory viewport/keyboard/touch checks | [05](05-DESIGN-SYSTEM.md) |
-| D26 / LOCKED | Burgundy, Source Sans 3, Lucide and restrained tokens/motion | Replaces earlier blue assumption; candidate colors require asset/contrast review; no logo redesign or default shadcn identity | [05](05-DESIGN-SYSTEM.md) |
+| D26 / OWNER-APPROVED; PALETTE REFINED BY D35 | Burgundy-family identity, Source Sans 3, Lucide and restrained tokens/motion | Original #74263D/#5E1E31/#F7EDF0 were provisional before the official asset. D35 replaces those colors with the logo-derived pastel system; typography/icons/motion and no-redesign rule remain | [05](05-DESIGN-SYSTEM.md) |
 | D27 / LOCKED | Five canonical HTML bundles, CP01–CP04 before production and CP05 later; reuse approved patterns directly | Refines D14 without removing either owner gate. Significant new workflows revise their CP; no second full frontend codebase | [05](05-DESIGN-SYSTEM.md) |
 | D28 / LOCKED | Each complete repeated quantity token adds one; no timing-based duplicate modal; serials hard-deduplicate | Replaces baseline rapid-identical-scan interruption. Visible counts, undo, final review and real hardware tests protect accuracy | [12](12-BARCODE-SCANNER.md) |
 | D29 / LOCKED | Server search/filter/pagination, PostgreSQL-native indexes first, limited useful bulk actions | No whole-master browser fetch, speculative mass edits or external search/queue service without measured need | [02](02-ARCHITECTURE.md), [14](14-BULK-IMPORT.md) |
@@ -47,6 +49,7 @@ Preserve decision history. A replacement names the prior ID, reason and affected
 | D32 / LOCKED | First-party database-managed structured public content, draft/preview/publish, owner-only publication/settings, published wa.me configuration | Supersedes prior PRODUCT_SALES_ADMIN publication permission; product draft preparation remains. No paid CMS, raw HTML editor, WhatsApp API or content-only redeploy. Click is not conversation/sale | [02](02-ARCHITECTURE.md), [04](04-AUTH-RBAC-SECURITY.md) |
 | D33 / LOCKED | Existing VPS/domain, configurable origins/storage, local storage adapter and independent encrypted backup | No hardcoded VPS credentials/paths/ports or assumed internal hostname. Paid storage only if needed/approved; reliable off-host backup remains mandatory | [09](09-DEPLOYMENT-OPS.md) |
 | D34 / LOCKED | Canonical documentation English; user-facing LATANSA UI Bahasa Indonesia | Latest owner instruction replaces the baseline Indonesian documentation language; technical identities remain unchanged | [AGENTS](../AGENTS.md), [05](05-DESIGN-SYSTEM.md) |
+| D35 / DOCUMENTED; VISUAL REVIEW PENDING | Refine D26 using the unchanged official wine-burgundy/rose mark: neutral-heavy pastel surfaces, dark text, muted wine CTA and independent semantic/focus colors | Replaces provisional exact palette only. Internal 80/15/5 and public 70/20/10 are composition guidelines, not quotas. No metallic UI or logo edits. Computed pair contrast passes; CP01 still requires actual-size/accessibility and owner Gate A review. No task completion credit | [05](05-DESIGN-SYSTEM.md), [asset manifest](../assets/brand/README.md) |
 
 ## Assumptions and validation
 
@@ -65,12 +68,12 @@ Preserve decision history. A replacement names the prior ID, reason and affected
 | A11 | 5,000 SKUs/20,000 serials/100,000 ledger legs are benchmark data, not company facts | Performance tests and actual scale review |
 | A12 / UPDATED | Client already owns a VPS and current business domain (see README). Actual host access, internal hostname, backup destination, printer and WhatsApp number remain unset | Relevant deployment/public/device phases; never request or store secrets in public docs |
 | A13 | Initial financial coverage is interchangeable goods in IDR; custom manufacturing/services need later policy | Costing eligibility and P11 activation |
-| A14 | Official colored/monochrome logos and legible rail mark have not been supplied here | CP01 owner approval; do not generate substitutes |
+| A14 / UPDATED | Official colored mark received, reviewed and preserved unchanged; no separate monochrome, wordmark or banner received | Use original on white for CP01; test small-size rail legibility. Obtain an official small-use export only if necessary; no generated substitute |
 | A15 | One atomic 5,000-row job fits bounded target resources | P02/P03 measured admission tests; explicitly revise caps if it does not |
 | A16 | Source Sans 3/Lucide are selected; actual assets/license copies are not packaged yet | CP01/package verification |
 | A17 | Optional first-party WhatsApp click tracking is sufficient; no chat/sale outcome integration required | P09 inquiry design |
 
-No unanswered question blocks this documentation checkpoint. Actual physical-data, permissions, recovery and financial-scope assumptions MUST be validated before operational use. Pending owner/asset/host evidence is not implementation completion.
+No unanswered question blocks this focused documentation checkpoint. Architecture approval is recorded. Actual physical-data, permissions, recovery and financial-scope assumptions still require operational validation. Pending prototype visual review, small-size asset checks and host evidence are not implementation completion.
 
 ## Reference and version policy
 

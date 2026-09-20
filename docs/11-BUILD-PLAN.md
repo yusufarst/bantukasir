@@ -1,6 +1,6 @@
 # 11 — Official build plan and progress
 
-**Plan version 2.1 — 20 September 2026.** The only implementation progress tracker. All build/prototype tasks remain unstarted. Next sequence: owner architecture review → official brand assets → P00 prototypes when instructed. Production requires a separate implementation instruction; documents or approved HTML do not automatically authorize it.
+**Plan version 2.2 — 20 September 2026.** The only implementation progress tracker. Planning is complete; all build/prototype tasks remain unstarted. D01–D34 approval and the official colored mark are recorded. **NEXT EXECUTION TASK: P00.1 — GEMINI ANTIGRAVITY.** The owner designated that first visual contract for the next execution session. This planning session creates no prototype. Production still requires approved CP01–CP04 and explicit owner authorization.
 
 ## Status and calculation
 
@@ -24,13 +24,13 @@ Task count is not elapsed time, cost or complexity. Scope changes require a vers
 
 | Snapshot | Verified state |
 | --- | --- |
-| Documentation, outside build | Technical refinement complete; owner review pending |
+| Documentation, outside build | D01–D34 owner-approved; official mark received; pastel palette documented; CP01 visual review pending |
 | Overall plan | **0/65 = 0.00%** |
 | Core | **0/34 = 0.00%** |
 | Active build task | None |
-| First build task after review/assets/instruction | P00.1 |
+| Next execution task | P00.1 — Gemini Antigravity; prerequisites satisfied for preparation, actual-size asset checks are part of the task |
 | Production implementation | NOT STARTED |
-| Before production | Owner document review, approved CP01–CP04 and explicit implementation instruction |
+| Before production | Architecture approval received; still requires approved CP01–CP04 and explicit implementation instruction |
 
 Evidence column later records commit, concise technical results and visual REVIEW link. Current dash means no evidence exists.
 
@@ -40,13 +40,15 @@ Version 1.0: 55 tasks, Core 30. Version 2.0 consolidated six unstarted prototype
 
 Version 2.1 translates the tracker and makes structured public CMS, owner publication, wa.me configuration and portability acceptance explicit within existing P09/P06 tasks. Count remains 65/34; no implementation credit added.
 
+Version 2.2 records satisfied architecture-approval/colored-asset prerequisites, D26/D35 pastel refinement and the executor handoff. P00.1 is the owner's designated next execution task; its preparation may begin in the next executor session. No completion status/denominator changed; no prototype is created in the final planning pass.
+
 ## P00 — Core visual contracts before production
 
-Prerequisites: owner architecture review and official brand assets. No Next.js/API/database in this phase. Four deterministic Core bundles with browser preview; CP05 waits until public work.
+Architecture approval, the official colored mark and designation of P00.1 as the first executor task are recorded. P00.1 tests source-image whitespace/readability on white at expanded/rail sizes; missing monochrome alone does not block light-surface preparation. No Next.js/API/database in P00. P00.2 MUST NOT begin until P00.1 is [x] with explicit owner Gate A evidence. Four deterministic Core bundles with browser preview; CP05 waits until public work.
 
 | ID | Status | Class | Deliverable / acceptance | Dependencies | Evidence |
 | --- | --- | --- | --- | --- | --- |
-| P00.1 | [ ] | [FE] | Verify official assets; CP01 shell/auth, tokens/Lucide, brand toggle/rail/drawer, anti-slop/redundancy audit; Gate A | Owner review + official assets + prototype instruction | — |
+| P00.1 | [ ] | [FE] | Verify official mark at actual sizes; CP01 shell/auth, pastel tokens/Lucide, brand toggle/rail/drawer, anti-slop/redundancy audit; Gate A | Architecture approval + official colored mark + executor-task designation received | — |
 | P00.2 | [ ] | [FE] | CP02 products/labels/product import/quantity and serial opening/errors/results/private owner evidence; Gate A | P00.1 | — |
 | P00.3 | [ ] | [FE] | CP03 receipt/issue/transfer/stock/history/correction, keyboard/mobile, uncertainty/duplicates; Gate A | P00.2 | — |
 | P00.4 | [ ] | [FE] | CP04 attention/inbox/cockpit/system exceptions; finance demo only, required viewports; Gate A | P00.3 | — |

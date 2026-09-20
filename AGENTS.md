@@ -1,13 +1,14 @@
 # Agent rules — LATANSA Platform
 
-These rules apply throughout the repository, including Gemini Antigravity and future implementation agents. Explicit owner instructions take precedence. If a requested change affects a safety invariant, explain the impact and record the replacement decision before implementation.
+These rules apply throughout the repository, including Gemini Antigravity and future implementation agents. **The repository is the source of truth.** Explicit owner instructions take precedence. Never silently replace D01–D34 or later accepted decisions. If implementation conflicts with a canonical rule or safety invariant, STOP the affected task and report the conflict; do not invent a workaround or change the decision yourself.
 
 ## Recover context efficiently
 
 1. Inspect `git status --short`. Preserve user work.
-2. Read `docs/00-CURRENT-STATE.md` and the current/next task in `docs/11-BUILD-PLAN.md`.
+2. Read this file, `docs/00-CURRENT-STATE.md`, and the active/next row in `docs/11-BUILD-PLAN.md`. Select exactly one task and verify its dependencies before editing.
 3. Search with `rg` before broad reading. Read relevant decisions and canonical specifications only. `README.md` maps ownership.
-4. The current task is documentation only. MUST NOT create application code, migrations, HTML prototypes, replacement logos, scaffolds, or install dependencies. Next: owner architecture review, official assets, then P00 when instructed. Document/prototype approval does not itself authorize production implementation.
+4. Planning is complete. At the planning checkpoint, the first executor task is **P00.1**, the CP01 standalone HTML shell/auth visual contract. D01–D34 have owner approval and the official colored mark is available under `assets/brand/source/`. Use the pastel system in 05. The final planning session creates no prototype; the next Gemini Antigravity execution session starts P00.1 without repeating architecture approval. On subsequent sessions, follow the updated CURRENT-STATE/build row rather than restarting P00.1. See `docs/16-EXECUTOR-HANDOFF.md` for the operational checklist.
+5. P00.2 MUST NOT start until P00.1 passes owner Gate A and is [x]. P01 production work MUST NOT start until CP01–CP04 are approved and the owner explicitly authorizes production implementation. This is a phase boundary, not a permanent ban on execution.
 
 ## Mandatory product and safety rules
 
@@ -51,6 +52,10 @@ Major new visual systems/interactions: requirements → standalone HTML/CSS with
 - Use a reviewable branch after baseline. Never rewrite Git history or discard user work.
 
 ## Handoff and completion
+
+Lifecycle: [ ] → [~] → [T] for technical verification, then [V] if owner visual review is required, then [x] only with the applicable evidence. Only one [~] task. Stop at a required visual gate; do not treat silence as approval or advance to a dependent task. BE with no visual output needs technical verification, not visual approval.
+
+STOP and report contradictory canonical instructions, a required invariant change, unavailable required credentials, destructive-history migration risk, an unapproved paid dependency, material scope expansion or a required owner visual decision. Never substitute fake credentials, weaken safety, buy a service, or mark work complete to bypass a blocker. Record [!] for an actual blocker, [V] for visual review, and the exact unblock condition.
 
 Update actual task status and discoverable evidence in `11-BUILD-PLAN.md`. Record real decisions in `10-DECISIONS.md`. Update `00-CURRENT-STATE.md` **last**, with verified state, current/next task, blockers, checks and visual/production status. Documentation completion is not implementation completion.
 

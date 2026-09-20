@@ -1,76 +1,80 @@
-# 00 — Verified current state and handoff
+# 00 — Verified current state and executor handoff
 
-Updated **20 September 2026**, working timezone Asia/Jakarta. This handoff was updated after the canonical specifications and build plan.
+Updated **20 September 2026**, Asia/Jakarta. Updated LAST after the brand refinement and executor-readiness audit.
 
-## Repository and completed documentation
-
-- Repository: C:/Projects/latansa-inventory.
-- Remote: https://github.com/yusufarst/latansa-inventory.git.
-- Current documentation branch: **codex/refine-product-ux-architecture**.
-- Initial baseline: **3deb8e8204191959c2bc04eebedc090d3333818c**, created on main on 19 September 2026 after verifying an empty repository.
-- The interrupted refinement was preserved and completed. Canonical documentation is now English; user-facing UI remains Bahasa Indonesia.
-- Canonical documents 00–15, README, AGENTS and prototype registry are reconciled. New topic owners: [14 — Bulk import](14-BULK-IMPORT.md) and [15 — Finance](15-FINANCE-PROFITABILITY.md).
-- Refinement covers inventory integrity/concurrency, serials, HID sessions, attention episodes, thousands of SKUs, separate product/opening import, cost evidence/MWA/gross profit, owner permissions, responsive UI/sidebar/Lucide/anti-slop, canonical prototypes and visual review.
-- Latest requirements are incorporated: structured database-managed public CMS, owner-only publication/settings, configured wa.me links, near-zero-cost infrastructure, portable origins/storage and responsible independent backup.
-- .env.example has **19 empty variables**, including PUBLIC_SITE_ORIGIN and STORAGE_ROOT. No production values or secrets were added.
-- This snapshot belongs to the local documentation checkpoint. Obtain its hash with git log -1 --oneline; do not embed a commit's own future hash in its contents. No push or merge to main is part of this task.
-
-## Implementation and visual status
-
-**PRODUCTION IMPLEMENTATION: NOT STARTED**
-
-No application scaffold, package/dependency installation, migrations, production pages, canonical HTML prototypes, generated brand assets, operational data or deployed environment exists.
-
-No owner document or visual approval has been recorded. No prototype revision exists or is approved. Official colored/monochrome logos and a suitable official mark remain pending.
-
-[11 — Build plan](11-BUILD-PLAN.md) version 2.1 is the only progress tracker:
-
-| Measure | State |
+| Required state | Verified value |
 | --- | --- |
-| Build plan | **0/65 = 0.00%**, all tasks NOT STARTED |
-| Core P00–P06 | **0/34 = 0.00%** |
-| Phases | 13, P00–P12 |
-| Active build task | None |
-| Completed current work | Documentation/refinement and consistency review |
-| Immediate next task | **Owner review of the refined architecture and decisions D01–D34** |
-| First later build task | P00.1 after review, official assets and owner instruction for prototypes |
+| PLANNING BASELINE | COMPLETE |
+| OWNER ARCHITECTURE APPROVAL | D01-D34 APPROVED |
+| OFFICIAL BRAND ASSET | RECEIVED |
+| PRODUCTION IMPLEMENTATION | NOT STARTED |
+| ACTIVE BUILD TASK | NONE |
+| NEXT EXECUTION TASK | **P00.1** |
+| EXECUTOR | **GEMINI ANTIGRAVITY** |
+| UNRESOLVED PLANNING BLOCKERS | NONE |
 
-Documentation completion adds no implementation credit. Production remains separately gated after CP01–CP04 approval and an explicit instruction to implement.
+## Start the next execution session
 
-## Verification
+Read [AGENTS](../AGENTS.md), this file, the **P00.1** row in [11 — Build plan](11-BUILD-PLAN.md), and the short [executor handoff](16-EXECUTOR-HANDOFF.md). Then read only its task-relevant specifications: [05 — Design system](05-DESIGN-SYSTEM.md), visual/completion gates in [08](08-TESTING-ACCEPTANCE.md), and the [official asset manifest](../assets/brand/README.md).
 
-Completed documentation checks:
+P00.1 prepares the CP01 standalone HTML shell/auth visual contract with the official logo and pastel system. Its preparation prerequisites are satisfied. Begin it only in the next executor session, set one task [~], verify browser/keyboard/mobile behavior, record evidence, then stop at **[V] owner Gate A**. No prototype was created in this planning session.
 
-- Cross-document review of ledger/balance/serial invariants, global locks, idempotency/unknown outcomes, freeze/opening atomicity, notification episodes and financial source ordering.
-- Consistent product-import versus stock-import boundary; 200-line interactive limit versus authorized 5,000-row opening job; atomic apply, executor permission and recovery behavior.
-- Owner-only costs/profit/site settings/publication; draft/public/private separation; published wa.me configuration and outbound-click-only semantics.
-- Dashboard priority and period/current-state separation; mobile/desktop layouts, brand-toggle semantics, Lucide, restrained motion, anti-slop/redundancy and both owner visual gates.
-- Existing-VPS/portable configuration, bounded private storage, off-host DB/media backup and restore/replay controls.
-- File inventory: **21 documentation/configuration files**, including **19 Markdown files**. No application, HTML, migration, dependency or generated asset files.
-- Local Markdown links resolve; fences balance; no encoding replacement characters, conflict markers or trailing whitespace.
-- **65 unique task IDs, 34 Core, 13 phases**, all unstarted; explicit task dependencies point to existing preceding tasks. Decision references resolve to the 34-entry register.
-- Environment examples contain names with empty values only. Credential-pattern scan and content review found no credentials. Pattern scanning is not a guarantee against every possible secret type.
-- Financial example arithmetic verified: average 120,000; initial COGS 600,000/gross 300,000; after the documented two-unit return, gross 180,000.
-- git diff --check and repository status inspected before checkpoint.
+**Do not begin P00.2 until P00.1 receives explicit Gate A approval and is [x]. Do not begin P01 until CP01–CP04 are approved and the owner explicitly authorizes production implementation.** No architecture reapproval is required. Future sessions follow updated task status rather than restarting P00.1.
 
-No application build/tests, browser/prototype review, hardware scan/print test, push delivery, performance benchmark or restore drill was run: those artifacts/environments do not exist. Document acceptance scenarios are requirements, not runtime evidence.
+## Repository and completed work
 
-## Pending decisions, prerequisites and blockers
+- Local repository: C:/Projects/latansa-inventory.
+- Current branch: **codex/refine-product-ux-architecture**.
+- Remote: https://github.com/yusufarst/latansa-inventory.git.
+- Initial baseline on main: 3deb8e8204191959c2bc04eebedc090d3333818c.
+- English architecture/refinement checkpoint: 183cea6bff4c604dc91ce5d4758a593bc6806e72.
+- Current checkpoint completes the official-brand pastel refinement and operational executor handoff. Obtain its hash with git log -1 --oneline; no self-referential future hash is embedded here.
+- No merge or push is part of this work. Open this local branch, or ensure a remote/local clone receives the checkpoint before execution; do not assume remote main contains it.
+- Canonical planning documents are 00–16. [10](10-DECISIONS.md) records owner approval of D01–D34 and D35's refinement of D26 without reopening unrelated decisions.
+- [16](16-EXECUTOR-HANDOFF.md) defines session start, one-task lifecycle, applicable backend/visual gates, stop conditions and concise evidence. AGENTS no longer globally prohibits implementation after planning.
+- Documentation remains English. All user-facing LATANSA UI remains Bahasa Indonesia. Inventory, security, audit, public/private boundaries, near-zero-cost and secret rules are unchanged.
 
-No technical blocker remains for the documentation checkpoint. [10 — Decisions](10-DECISIONS.md) records binding design choices and assumptions; owner review is still pending.
+## Official brand and palette
 
-Before the relevant later phase:
+The owner explicitly designated the attached logo official. Its unchanged source is assets/brand/source/latansa-official-colored-mark.png: PNG, 6250 × 6250, 6,680,241 bytes. Source and repository copy SHA-256 match:
 
-- Owner reviews Core scope, role assignments, MWA eligibility and the limits of goods gross profit.
-- Supply official brand variants/mark before CP01 approval. Never invent a replacement.
-- Verify real product unit/serial/batch requirements before master/opening import.
-- Measure atomic-import limits on the chosen host before accepting onboarding capacity.
-- Privately configure actual VPS access, internal/public origins, storage and recovery destination/keys. The client already owns a VPS and current business domain; final internal hostname is not assumed.
-- Accept measured recovery targets and actual scanner/printer/owner notification behavior before pilot.
-- Owner supplies public company content and WhatsApp destination/templates during the public phase. Ordinary product/sales roles do not gain publication or finance access.
+`964e1a8644d75de8b5dbd37b4fae0e5af5f8c961f0acb60000e963ef4356f4ef`
 
-These are explicit phase prerequisites, not claims that production is ready.
+No redraw, generation, recoloring, geometry change, cropping, background removal or optimization occurred. The [manifest](../assets/brand/README.md) owns provenance. A separate monochrome logo, wordmark or banner was not supplied; these are not blockers for preparing the light-surface CP01 with the received mark.
 
-## Resume efficiently
+The logo's wine-burgundy/dusty-rose family informs the flat pastel system in 05. Neutral-heavy composition uses an approximate internal 80/15/5 guideline, with independent green/amber/red/blue semantic colors and visible focus. Metallic effects remain in the original logo only. D26's earlier exact values are superseded through D35.
 
-Read [AGENTS](../AGENTS.md), this snapshot, relevant [plan](11-BUILD-PLAN.md) rows and [decisions](10-DECISIONS.md), then only the canonical topic needed. Search before broad reads. Preserve this branch and valid work. Do not restart the architecture, begin coding or create HTML from documentation completion alone.
+Pastel direction is owner-required; token-pair contrast is verified. Actual-size logo legibility, rendered accessibility and the visual contract still require CP01 verification/owner review. No rendered design is claimed approved.
+
+## Honest progress and verification
+
+[11](11-BUILD-PLAN.md) version 2.2 remains the only progress tracker:
+
+- Overall: **0/65 = 0.00%**.
+- Core: **0/34 = 0.00%**.
+- 13 phases, P00–P12; all task rows [ ], zero active tasks.
+- No application/scaffold, package installation, migration, Next.js page, HTML prototype, operational data or deployed environment exists.
+- No prototype Gate A or implementation Gate B approval exists. Architecture approval does not substitute for either.
+
+Completed planning checks:
+
+- Focused executor-readiness audit of AGENTS, README, 00, 05, 08, 10, 11, 16, prototype registry and asset manifest.
+- Removed stale architecture-review/logo-pending state and the global documentation-only prohibition. One next task and separate visual/production gates are explicit.
+- Task IDs/dependencies/counts/statuses remain consistent; D01–D34 approval and D26/D35 history are recorded.
+- Official asset byte count, dimensions and SHA-256 checked against the supplied file; no image transformation.
+- **39 specified text/control/focus pair checks passed** unrounded sRGB contrast targets. The detailed examples/method and prohibited pairings are in 05. This is palette verification, not complete UI accessibility conformance.
+- Local Markdown links, fences, encoding, whitespace/conflict markers and credential-pattern checks passed; .env.example still has 19 empty variables.
+- git diff --check and git status --short reviewed for the focused checkpoint.
+
+No application build/test, HTML/browser review, hardware test, push test, performance benchmark or restore drill was run. Such runtime evidence is due in the appropriate execution phase, not a planning prerequisite.
+
+## Later validation, not planning blockers
+
+- CP01: test complete source image and its existing whitespace at expanded/rail sizes. If unreadable, obtain an official small-use export; never invent one. Package font/icon assets and licenses when implementing the visual contract.
+- Before product/opening import: validate actual units, manufacturer-serial normalization, and any batch/expiry/consignment needs.
+- Before accepting bulk capacity: measure the bounded atomic import on the chosen host.
+- Before pilot: privately configure host/origins/storage/recovery access; validate scanner/printer/owner-device delivery and measured backup/restore targets.
+- Before finance: verify eligibility, evidence and tax/cost treatment within the approved goods-only gross-profit scope.
+- Before public publication: owner supplies real business content and wa.me destination/templates.
+
+These phase-specific checks do not reopen approved architecture or block P00.1 preparation. If execution discovers a real canonical contradiction or safety conflict, STOP and report it under AGENTS rather than inventing a workaround.
