@@ -8,16 +8,24 @@ Updated **20 September 2026**, Asia/Jakarta. Updated LAST for repository-topolog
 | OWNER ARCHITECTURE APPROVAL | D01-D34 APPROVED |
 | OFFICIAL BRAND ASSET | RECEIVED |
 | PRODUCTION IMPLEMENTATION | NOT STARTED |
-| ACTIVE BUILD TASK | NONE |
-| NEXT EXECUTION TASK | **P00.1** |
+| ACTIVE BUILD TASK | **P00.1 [V]** |
+| NEXT EXECUTION TASK | Await explicit owner Gate A approval. If approved, P00.1 may become [x]. Only then may P00.2 begin. |
 | EXECUTOR | **GEMINI ANTIGRAVITY** |
-| UNRESOLVED PLANNING BLOCKERS | NONE |
+| UNRESOLVED PLANNING BLOCKERS | None. Canonical screenshots are verified and available in `prototypes/cp01-shell-auth/review/`. |
 
 ## Start the next execution session
 
 Read [AGENTS](../AGENTS.md), this file, the **P00.1** row in [11 — Build plan](11-BUILD-PLAN.md), and the short [executor handoff](16-EXECUTOR-HANDOFF.md). Then read only its task-relevant specifications: [05 — Design system](05-DESIGN-SYSTEM.md), visual/completion gates in [08](08-TESTING-ACCEPTANCE.md), and the [official asset manifest](../assets/brand/README.md).
 
-P00.1 prepares the CP01 standalone HTML shell/auth visual contract with the official logo and pastel system. Its preparation prerequisites are satisfied. Begin it only in the next executor session, set one task [~], verify browser/keyboard/mobile behavior, record evidence, then stop at **[V] owner Gate A**. No prototype was created in this planning session.
+## Current Active Task
+
+**P00.1** (CP01 shell/auth visual contract)
+
+**Status:** `[V]` WAITING FOR OWNER VISUAL REVIEW
+
+**Blockers:** None. Browser visual verification was successfully completed and canonical screenshots are available in `prototypes/cp01-shell-auth/review/`.
+
+**Next Steps (Owner):** Review visual output in `prototypes/cp01-shell-auth/REVIEW.md` and the screenshots in `prototypes/cp01-shell-auth/review/`. Provide Gate A approval to unblock P00.2 or request visual revisions.
 
 **Do not begin P00.2 until P00.1 receives explicit Gate A approval and is [x]. Do not begin P01 until CP01–CP04 are approved and the owner explicitly authorizes production implementation.** No architecture reapproval is required. Future sessions follow updated task status rather than restarting P00.1.
 

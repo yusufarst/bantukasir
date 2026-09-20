@@ -4,11 +4,11 @@ Authorize every backend access. [02](02-ARCHITECTURE.md) owns public projections
 
 ## Authentication and accounts
 
-Use self-hosted Better Auth with PostgreSQL/Drizzle, library password hashing and database sessions. Do not invent authentication or cryptography. No public signup. Owner invitations are expiring, single-use. Verify the pinned library/adapter configuration, signup disablement, reset and 2FA during P01.
+Use self-hosted Better Auth with PostgreSQL/Drizzle, library password hashing and database sessions. Do not invent authentication or cryptography. No public signup. Owner invitations are expiring, single-use. Verify the pinned library/adapter configuration, signup disablement, reset and 2FA during R02.
 
 Session cookies: HttpOnly, Secure on HTTPS, SameSite=Lax, host-only. Disable auth cookie caching so revocation is checked promptly. Initial absolute session lifetime is eight hours; no extension beyond that limit or shared-device remember-me. Every command checks current session and active user. References: [session management](https://better-auth.com/docs/concepts/session-management), [email/password](https://better-auth.com/docs/authentication/email-password).
 
-Owner TOTP is mandatory before go-live; keep recovery codes offline. Use [library 2FA](https://better-auth.com/docs/plugins/2fa). Require authentication refreshed within five minutes for role/security changes, account disablement and owner stock corrections. Staff may use TOTP without a phone prompt on every scan. Map the entire auth UI to Bahasa Indonesia.
+Owner TOTP is mandatory before go-live; keep recovery codes offline. Use [library 2FA](https://better-auth.com/docs/plugins/2fa). Require authentication refreshed within five minutes for role/security changes, account disablement, stock corrections, refunds, cash adjustments/variance review and emergency shift closure. Staff may use TOTP without a phone prompt on every scan. Map the entire auth UI to Bahasa Indonesia.
 
 Bootstrap once from an authorized operator's trusted terminal with hidden input. Disable bootstrap after first owner creation. No public bootstrap endpoint, fixed demo credentials, command-history password or secret in Git. Owner-generated staff invitation/reset links follow identity verification, private manual delivery and a 30-minute expiry. Hash application-managed tokens and exclude them from logs. SMTP is optional. Credentials are never displayed again.
 
@@ -16,51 +16,46 @@ Lost-owner recovery uses offline codes; emergency host recovery requires verifie
 
 ## Permission matrix
 
-Fixed permission sets; explicit owner assignment may combine roles. Default deny. SUPER_ADMIN cannot bypass inventory invariants. L means later, not a control that should appear before implementation.
+Three fixed roles, default deny, explicit owner role assignment. Combining OPERATIONS_ADMIN and CASHIER is allowed for actual dual duty; never combine owner merely to bypass a missing staff permission. Owner cannot bypass invariants. Core access is single-company/all active locations; later location scoping must apply end to end.
 
-| Permission/action | SUPER_ADMIN | INVENTORY_ADMIN | PRODUCT_SALES_ADMIN |
-| --- | :---: | :---: | :---: |
-| users.manage, roles.assign, security.manage | Yes | — | — |
-| products.readInternal, excluding private costs/suppliers | Yes | Yes | Yes |
-| products.writeContent, including permitted product drafts | Yes | — | Yes |
-| products.createInventoryIdentity | Yes | — | — |
-| products.archive, stockPolicy.manage | Yes | — | — |
-| products.publish (L) | Yes | — | — |
-| publicContent.manage, publicContent.preview, publicContent.publish (L) | Yes | — | — |
-| publicSettings.manage, including wa.me destination/templates (L) | Yes | — | — |
-| locations.manage | Yes | — | — |
-| inventory.read, serial.read positions/history | Yes | Yes | — |
-| availability.read aggregate | Yes | Yes | Yes |
-| inventory.receive/issue/transfer | Yes | Yes | — |
-| barcode.resolve/print, serial.register | Yes | Yes | — |
-| barcode.manageAliases, serial.correctIdentity | Yes | — | — |
-| inventory.opening/adjust/reverse | Yes | — | — |
-| inventory.exportHistory without costs | Yes | Yes | — |
-| products.importPrepare | Yes | — | Yes |
-| products.importApply | Yes | — | — |
-| inventory.openingImportPrepare | Yes | Yes | — |
-| inventory.openingImportApply, onboardingFreeze.manage | Yes | — | — |
-| products.export safe master fields | Yes | Yes | Yes |
-| costEvidence.read/write/verify (Core) | Yes | — | — |
-| finance.readProfit/export, valuation.publish (L) | Yes | — | — |
-| audit.readAll, ops.read, ownerDashboard.read | Yes | — | — |
-| notification.readOwn/readOwnState, push.manageOwn | Yes | Yes | Yes |
-| sales.manage RFQ/leads/quotations (L) | Yes | — | Yes |
-| reservation.request/releaseOwn, sales scope (L) | Yes | — | Yes |
-| correction.request, opname.count (L) | Yes | Yes | — |
-| approval.decide, opname.approve (L) | Yes | — | — |
+| Action | SUPER_ADMIN / Pemilik | OPERATIONS_ADMIN / Admin Operasional | CASHIER / Kasir |
+| --- | --- | --- | --- |
+| Accounts, roles, security, business/tax/payment configuration, registers | Yes | No | No |
+| Goods/service safe master read | Yes | Yes | POS projection only |
+| Catalog create/edit, selling price revisions, category/brand maintenance | Yes | Yes | No |
+| Identity/tracking/unit change after use | Forbidden; new identity/correction policy | Forbidden | Forbidden |
+| Master archive, locations/units administration | Yes, invariant checks | No | No |
+| Barcode register/retire/print, no-stock serial registration | Yes | Yes | Resolve only |
+| Manufacturer serial identity correction | Yes, reason | No | No |
+| Inventory read/history/non-sale receive/issue/transfer/export | Yes | Yes | Sale availability only |
+| Minimum/reorder target/monitoring and stockAttention.read | Yes | Yes, reason/audit | No |
+| Opening/freeze/adjust/reverse | Yes, reauthentication | Prepare counts only | No |
+| Master import prepare / apply | Yes / Yes | Yes / No | No / No |
+| Goods opening import prepare / apply | Yes / Yes | Yes / No | No / No |
+| Safe master export | Yes | Yes | No |
+| sale.create/checkout, own cart and own sales/reprints | Yes | Only with separately assigned CASHIER | Yes |
+| Safe all-sale history/reprints and operational sales totals | Yes | Yes, buyer PII excluded | Own sales only |
+| Cashier price override/discount | Owner only, reason/re-auth in own sale | No; catalog edits separate | No |
+| refund.execute / saleReturn.post | Yes, reason/re-auth | No | No |
+| shift.open/count/close own zero-variance shift | Yes | Only with CASHIER | Yes |
+| Shift variance review, emergency close, paid-in/out | Yes, reason/re-auth | No | No |
+| shift.read | All | Own only if CASHIER | Own |
+| Acquisition/service cost evidence read/write/verify | Yes | No | No |
+| Goods HPP, service cost, margin/profit, valuation/report/export | Yes | No | No |
+| Security/full audit, health/backup and recovery management | Yes | No | No |
+| Own operational inbox/push | Yes | Yes | No stock alerts |
+| Public content/settings/publication (later) | Yes | Product draft preparation only | No |
+| Advanced reservation/approval/repair/RFQ (later) | Define at phase gate | No implicit new permission | No |
 
-Core inventory roles cover all active company locations. No partial tenant/warehouse scoping. If scoped access is introduced later, apply it to queries, barcode lookup, exports, commands and jobs.
+Raw backup/restore is an authorized operator procedure, never arbitrary browser shell execution. Owner may inspect status and authorize controlled recovery. Staff sale projection includes type/SKU/name/unit/selling price and eligible availability only; it excludes cost, suppliers, broad serial/stock history and other cashiers' drafts.
 
-Product admin prepares bulk product data; owner applies inventory identity/minimum as a batch. Inventory staff prepare counts/opening; owner finalizes. This does not require approval for routine receipt/issue. Product content permission does not grant tracking/unit edits, publication or stock mutation.
+Safe operational reports include sale/refund counts and recorded selling totals, receipt/issue and stock attention. They do not include COGS/profit or buyer contact details. Cashier can only see own shift/payment/sales; closed original-sale shift is never reopened by a refund. Count UI hides expected cash until submission; API must enforce this too.
 
-Staff stock history may show relevant operators but not the full security audit. Sales staff may see authorized selling prices, never acquisition cost, COGS, margin or profit, including hidden API fields. A finance role requires an explicit later decision.
+Exclude private finance from stock/product DTOs, autocomplete, labels, receipts, staff reports/import errors, generic audit and public caches. Owner evidence is a separate endpoint/form. General audit may state **Bukti biaya diperbarui**, without amounts. Private financial audit carries restricted amounts. Do not put purchase cost in a field hidden by CSS.
 
-Exclude costs from stock/product DTOs, autocomplete, labels, public metadata/cache, generic audit before/after, staff exports and import errors. Financial audit is private; general audit may say **Bukti biaya diperbarui** with actor/reference and no amounts. Revenue is private too. A public RFQ confirmation cannot read the sales ledger.
+Import jobs belong to authorized preparer/owner; prepare never implies apply. Workers recheck the confirmed executor's current authority and intent expiry. Private files/errors need authenticated expiring access and redaction, not public URLs.
 
-Import jobs are readable by an authorized preparer or owner, not arbitrary colleagues. Prepare permission never implies apply. Recheck executor status/permissions when the worker applies; do not borrow an unrestricted owner service account. Files/errors are private with authenticated, expiring download access. Reject unexpected financial columns without copying their sensitive values into broadly visible error output.
-
-Only SUPER_ADMIN manages/publishes site content, product publication and wa.me settings. Preview is authenticated, no-store/noindex; public requests cannot select draft revision IDs. Editing drafts never changes published content until publish. Validate and sanitize structured text/links/media; reject executable HTML and arbitrary redirects.
+Later public owner-only draft/preview/publish settings remain under 02. Operations may prepare permitted product drafts, never publish. Public responses use allowlist projections; no buyer, exact stock, serial, location, cost or private sales data.
 
 ## Enforcement
 

@@ -6,7 +6,8 @@ No prototypes exist. No visual pattern has owner approval. Architecture decision
 
 | Pattern ID | Revision | Artifact status | HTML / review link |
 | --- | --- | --- | --- |
+| CP01 | INITIAL_DRAFT | UNDER_REVIEW | [REVIEW.md](cp01-shell-auth/REVIEW.md) |
 
-Canonical order: CP01 shell/auth → CP02 products/import → CP03 inventory/scan → CP04 owner cockpit → CP05 public website/catalog. The first four are P00 tasks. This sequence does not imply any artifact exists.
+Canonical order: CP01 shell/auth → CP02 products/import → CP03 inventory/scan → CP04 owner cockpit → CP05 public website/catalog. The first four are P00 tasks.
 
-**Next executor task: P00.1 (CP01 shell/auth), Gemini Antigravity.** The owner designated it as the first execution task; it remains [ ] at this planning checkpoint. Create standalone HTML/CSS with safe labeled demo data and the unchanged official mark, then stop at [V] for owner Gate A. P00.2 cannot start before that approval. Reuse approved patterns rather than creating a second frontend codebase. No production API/database connections or Next.js implementation belong in P00. See [executor handoff](../docs/16-EXECUTOR-HANDOFF.md).
+**Next executor task:** P00.1 (CP01 shell/auth) has been prepared by Gemini Antigravity and is currently **[V] WAITING FOR OWNER VISUAL REVIEW**. P00.2 cannot start before Gate A approval of CP01. Reuse approved patterns rather than creating a second frontend codebase. No production API/database connections or Next.js implementation belong in P00. See [executor handoff](../docs/16-EXECUTOR-HANDOFF.md).

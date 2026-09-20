@@ -80,3 +80,57 @@ No unanswered question blocks this focused documentation checkpoint. Architectur
 Primary references are linked near their claims in canonical documents: PostgreSQL locking/isolation/constraints/backup, Next.js auth, Better Auth sessions/2FA, MDN barcode/push, OWASP file upload, WAI disclosure, Source Sans/Lucide licenses and IAS 2/IFRS 15 concepts. These support specific mechanisms, not a vendor endorsement of LATANSA's architecture.
 
 Dependencies are not installed/pinned yet. P01 verifies current compatible stable versions/advisories and commits a lockfile. Major upgrades require risk review and a replacement decision if semantics change.
+
+## Major retail replanning — 20 September 2026
+
+This section is the effective override of conflicting historical rows above. D01–D35 and A01–A17 above are preserved as the prior baseline, including their original approval wording; that wording does not approve the replacement design or any prototype. The owner explicitly authorized this major replanning. Decisions below are architect-selected under that authority; unresolved business policies are listed separately and are not owner-approved by silence.
+
+### Gap analysis completed before revision
+
+| Area | Repository evidence / gap | Replacement and impact |
+| --- | --- | --- |
+| Actual state | main has local edits to 00/11/prototype registry, untracked CP01, scratch images and skills; no package.json, app or migrations found | Preserve all assets/code; reconcile contradictory “no prototypes” claims; no runtime completion credit |
+| Product | 01 prioritizes warehouse stock and excludes checkout | Retail operations Core includes POS, goods/services, receipt and finance; public acquisition moves later |
+| Sales integrity | 06 is strong but 03/07 defer revenue to RFQ/deal acceptance; no sale/payment/receipt aggregate | Add canonical 17; one sale command composes inventory inside the same transaction; durable cart deduplication |
+| Services | 15 excludes installation/services; ServiceCase means repair custody | Product commercialType GOODS/SERVICE; SERVICE has no stock; completed-service sales and explicit direct-cost evidence |
+| Roles | 04 separates inventory from product/sales admins | Replace with SUPER_ADMIN, OPERATIONS_ADMIN, CASHIER; operations can maintain catalog/prices and receive goods; costs remain owner-only |
+| Finance | P10 sales/P11 valuation; goods-only reporting | Core MWA goods COGS, service direct costs, separate and combined completeness; no net-profit claim |
+| Documents/payment | No normal checkout, tender/change or printer recovery | Immutable sale snapshots; cash recording; same-number thermal/A4 receipt; legal invoice/tax remains a business gate |
+| Refunds | D12 full inventory reversal cannot represent partial commercial refunds | Preserve standalone reversal; add sale-linked bounded partial return/refund commands; no arbitrary sale movement reversal |
+| Brand | 05 and CP01 hardwire LATANSA rose/burgundy; LT- internal barcode namespace | Single-company runtime BusinessProfile; neutral tokens; new RP- namespace, preserve existing issued identities |
+| Stock attention | 13 already has durable episodes; owner-only recipients | Reuse algorithm; include authorized operations admins; services excluded |
+| Import | 14 supports goods-only creation and bans selling prices | Version 2 typed goods/service master with selling price, unchanged create-only/atomic opening guarantees |
+| Recovery/cost | Existing self-hosted stack and six-hour dump design viable, but lost retail cash/sales need explicit recovery | Cost audit in 09; sale/payment/document reconciliation, recovery epoch; owner RPO acceptance before pilot |
+| UI/build | Old four Core bundles omit POS and real finance; 65/34 count no longer describes need | Five new RV bundles; plan 3.0, 46 tasks/36 Core; no carryover approval |
+| Prototype evidence | CP01 REVIEW says INITIAL_DRAFT, CSS says V4; source uses different tokens, missing WOFF2 files, screenshots have variants | Historical evidence only; no inferred exact-revision approval or fresh browser/accessibility claim |
+
+### Replacement decisions
+
+| ID | Replaces / preserves | Chosen decision, alternative and impact |
+| --- | --- | --- |
+| D36 | Supersedes inventory-first sequencing in D11/D30/D31 and old 01/11; preserves D02/D03 | Retail operations Core: master → receive → POS/payment/receipt/issue → restock → owner reporting. Reject merely appending POS after public/RFQ. 01/07/11 define scope/order |
+| D37 | Replaces D10 role semantics, D32 product-admin name and A01 staffing assumption; auth controls retained | Three fixed roles from 04, permission sets beneath them; operations owns routine catalog/prices/barcodes/stock, cashier owns POS only, private finance remains owner-only. No dynamic permission builder |
+| D38 | Extends D05/D13/D22; replaces goods-only A13 | One Product Master with GOODS/SERVICE and goods-only inventory profile. Reject fake service stock and separate duplicate catalogs. Repair ServiceCase stays later; typed import v2 in 14 |
+| D39 | Extends D02/D03/D06/D12/D15 | Atomic sale/payment record/document/revenue fact/GOODS issue/audit/attention/receipt; service-only sale has zero movement. Full standalone reversal retained; bounded partial commercial refunds and returns use 17. Reject stock outbox eventual consistency and separate inventory re-entry |
+| D40 | Replaces old later-sales document assumptions | Recorded full payment and immediate handover/completed service baseline; cash first, no provider/capture API. Immutable retail receipt plus A4 rendering selected. Formal tax invoice, tax policy and staged work require Q01/Q02 disposition before affected implementation |
+| D41 | Supersedes D20 timing, D21 goods-only scope, A13 and old P11; preserves MWA rationale and privacy | MWA per interchangeable goods SKU in Core; services use verified sale-line direct costs. Publish separate/combined gross results only with complete data. Reject guessed service cost and net-profit label. 15 owns policy |
+| D42 | Supersedes universal brand requirements in D24/D26/D35, A14's prerequisite and D33's fixed client-domain implication | Runtime singleton BusinessProfile, identity snapshots on receipts; neutral design and independent semantics. Preserve official LATANSA asset without universal use. Reject multi-tenant SaaS complexity. 02/05/09 |
+| D43 | Refines D06 internal namespace only; D28 scan behavior retained | New RP-P/RP-I codes, permanent legacy-code compatibility if actually issued; aliases unchanged, never rewrite identity due to rebranding. 12 |
+| D44 | Supersedes D27 bundles, D31 denominator/phase order and old executor designation; retains D14/D25 gates | Plan 3.0: 46 tasks, 36 Core, 10 phases, RV01–RV05 before production. CP01 unapproved historical artifact, no completion credit. Next eligible prototype R01.1 only in a future authorized execution session |
+| D45 | Refines D16/D33 operations, extends D18 ownership | Near-zero recurring software cost with cost audit; encrypted off-host recovery still mandatory. RPO ≤6h/RTO ≤4h remains proposed pilot target requiring retail-loss acceptance. Recovery epoch prevents blind stale replay. Add 17 as sole POS owner |
+
+Unaffected semantics remain binding: D01, D02–D04, D07–D09, D19, D23, D25, D28–D29 and D34. D05 still retains basic serial goods in Core; its later “service” means repair lifecycle only. D13 safe public projection and D32 structured CMS/publication/wa.me remain later; operations replaces the former product draft preparer. D17 is historical, D18 is extended by 17, D22 retains create-only atomic import with the v2 field contract. D24 retains the internal navigation-toggle interaction with configurable identity. D30 retains attention-first hierarchy while period finance is now Core. Every D01–D35 row is accounted for here or in the replacement table.
+
+### Material owner policy register
+
+No answer has been received at this writing. These are proposed boundaries, not claims of client agreement. Independent shell planning can proceed; dependent prototype/production work waits as specified.
+
+| ID | Proposed baseline / unresolved business meaning | Exact gate |
+| --- | --- | --- |
+| Q01 | Retail paid receipt and A4 copy, optional customer name/reference, no formal/tax invoice claim. Confirm mandatory buyer identity, tax registration/treatment, inclusive/exclusive pricing and any required legal invoice | Before R01.2 POS contract; no tax-enabled/legal-invoice production without confirmed policy and revised scope |
+| Q02 | Only immediate goods handover and already-completed services paid in full. Owner verifies actual direct service costs; initial report is gross profit. Confirm deposits, staged work, credit sales or true net profit requirements | Before R01.2 and R06.2; if required, replan recognition/expenses instead of treating cash as revenue |
+| Q03 | Owner-only refunds with reauthentication/reason, proportional bounded line credits, no cashier discounts. Cash drawer opening/closing/count variance deferred; payment totals are not drawer reconciliation | Before R01.2; if shifts/other refund authority required, add scope and regenerate counts |
+| Q04 | Six-hour potential data loss and four-hour recovery, independent encrypted destination and real recovery access | Before R07.2/pilot; choose WAL/PITR if unacceptable, never silently accept loss |
+| Q05 | Base units, no packs/batches/expiry/consignment; actual serial normalization and interchangeable costing | Before affected master/opening import; do not ingest unsupported stock |
+
+Q01–Q03 were surfaced to the owner during replanning. Q04–Q05 are operational acceptance gates, not reasons to buy software or request secrets in Git. Existing A02–A12/A15–A17 remain technical assumptions where consistent with plan 3.0; old Pxx deadlines are historical, replaced by the new build dependencies. A08 push capability and A09 recovery acceptance are still required before pilot.

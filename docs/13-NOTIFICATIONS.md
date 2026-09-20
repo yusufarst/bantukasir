@@ -1,10 +1,10 @@
-# 13 — Stock states and owner notifications
+# 13 — Goods stock attention and notifications
 
 Canonical classification, episodes, deduplication, recipients and delivery. Inventory evaluates inside [06](06-INVENTORY-SPEC.md) transactions; the dashboard reads the same state.
 
 ## Stock policy
 
-Core scope is each product's aggregate available quantity in active, issue-eligible STORAGE locations, using eligible(p) from 06. Do not use total physical quantity. Future reservation/quarantine/transit therefore changes availability consistently. Location detail remains visible; per-location thresholds require separate explicit policy keys later.
+Core scope is each GOODS product's aggregate available quantity in active, issue-eligible STORAGE locations, using eligible(p) from 06. Do not use total physical quantity. Future reservation/quarantine/transit therefore changes availability consistently. Location detail remains visible; per-location thresholds require separate explicit policy keys later.
 
 Product owns monitoringEnabled, minimumQty ≥0 and optional reorder target. Precision matches product; reorder target, when present, must exceed minimum. It is planning information, not another trigger or automatic purchase order. StockHealth stores result/episode/version only.
 
@@ -16,7 +16,7 @@ available > minimumQty        → NORMAL → Normal
 
 Minimum zero has no LOW interval but still detects OUT. Negative values are forbidden upstream. Monitoring off means null state and **Tidak Dipantau**, not falsely Normal. Inactive products are unmonitored. Reenable evaluates current stock afresh.
 
-New products start monitoring off to prevent incomplete onboarding flooding inboxes. After opening/policy review, owner chooses **Mulai Pantau Stok**; current zero may legitimately open OUT. All genuinely stocked SKUs must be monitored before pilot. Owner documents custom-order exceptions. Show incomplete monitoring setup in settings.
+New products start monitoring off to prevent incomplete onboarding flooding inboxes. After opening/policy review, owner or operations admin chooses **Mulai Pantau Stok**; current zero may legitimately open OUT. All genuinely stocked SKUs must be monitored before pilot. Owner documents custom-order exceptions. Show incomplete monitoring setup in settings.
 
 ## Episodes and transitions
 
@@ -37,7 +37,7 @@ Unique episode/severity permits at most one LOW and one OUT. OUT→LOW→OUT nev
 
 Minimum 5 example: 6→5 LOW#1; 5→4→3 none; 3→0 OUT#1; 0→2 same episode; 2→0 none; 0→20 resolve; 20→5 LOW#2. Monitoring activation at LOW/OUT opens an initial episode; activation above minimum starts NORMAL silently.
 
-Threshold/monitor changes use the same guarded evaluator and actor/reason audit. Policy change may open/resolve attention without physical movement; record that cause. Monitor-off/product deactivation resolves administratively, not as physical recovery. Reenable can open a fresh episode. Only owner changes policy.
+Threshold/monitor changes use the same guarded evaluator and actor/reason audit. Policy change may open/resolve attention without physical movement; record that cause. Monitor-off/product deactivation resolves administratively, not as physical recovery. Reenable can open a fresh episode. Owner and operations admin may change minimum/reorder/monitoring policy with reason and audit; deactivation still obeys 03/04. SERVICE cannot enable monitoring.
 
 ## Atomicity and deduplication
 
@@ -45,7 +45,7 @@ Finish all movement legs before evaluating each affected product's final balance
 
 Constraints: one health row/product, partial unique open episode/product, unique episode/severity, event/user inbox and event/channel/recipient/device delivery. No registered device means inbox only, not missing attention.
 
-Recipients are active owners with ownerDashboard permission at event creation. Staff receive their transaction feedback, not all owner alerts. A later owner can still see current dashboard attention; historical events are not silently broadcast again.
+Recipients are active owners and operations admins with stockAttention.read permission at event creation. Cashiers receive their transaction feedback, not the operational inbox. Financial/security/backup alerts remain owner-only. A later owner can still see current dashboard attention; historical events are not silently broadcast again.
 
 Read-only reconciliation compares state with stock. Projection mismatch raises an incident under 06 rather than repeatedly generating events to conceal the bug. Controlled maintenance/rebuild uses product guards and the same deduplication keys.
 

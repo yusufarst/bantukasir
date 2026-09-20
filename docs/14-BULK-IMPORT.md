@@ -1,36 +1,38 @@
 # 14 — Bulk import and stock onboarding
 
-Canonical templates, validation, atomicity, recovery, results and bulk actions. [06](06-INVENTORY-SPEC.md) owns ledger posting; [04](04-AUTH-RBAC-SECURITY.md) permissions; CP02 in [05](05-DESIGN-SYSTEM.md) presentation. These are specifications; no template files or implemented features exist.
+Canonical templates, validation, atomicity, recovery, results and bulk actions. [06](06-INVENTORY-SPEC.md) owns ledger posting; [04](04-AUTH-RBAC-SECURITY.md) permissions; RV03 in [05](05-DESIGN-SYSTEM.md) presentation. These are specifications; no template files or implemented features exist.
 
 ## Core scope
 
 Support macro-free **XLSX** and **UTF-8 CSV**, at most 5,000 data rows/job. XLSX is the primary download because it preserves text identity and carries instructions/reference values. CSV supports interoperability. Reject XLS, XLSM, ODS, encrypted workbooks, formulas, external links and cloud-spreadsheet connections.
 
-Three distinct jobs: **Impor Produk**, **Impor Saldo Awal Kuantitas**, **Impor Saldo Awal Berserial**. Product import MUST NOT create physical items, stock quantities, balances, movements, costs or publication. Opening is enabled only after verified ledger commands exist.
+Three distinct jobs: **Impor Produk & Jasa**, **Impor Saldo Awal Kuantitas**, **Impor Saldo Awal Berserial**. Product import MUST NOT create physical items, stock quantities, balances, movements, costs or publication. Opening is enabled only after verified ledger commands exist.
 
 Core product mode is **Tambah Baru Saja**. Existing active/inactive SKU rejects the file; no silent skip/upsert. Future update mode requires a field allowlist, before/after preview, version checks and audit. Individual authorized product editing remains available.
 
-## Product template v1
+## Product template v2
 
 XLSX sheets: **Petunjuk**, **Produk**, and current active **Kategori**, **Merek**, **Satuan** references. CSV contains only the Products table with separate UI instructions. Headers use exact Indonesian names. CSV upload metadata carries templateVersion; XLSX instructions carry it. Examples belong in instructions, never importable data rows.
 
 | Column | Validation | Effect |
 | --- | --- | --- |
 | SKU | Required text, ASCII letters/digits/dot/slash/hyphen/underscore, length 1–64; outer trim/uppercase | New identity; preserve leading zeros |
+| Jenis Item | Required **Barang** or **Jasa** | commercialType GOODS/SERVICE; no implicit default |
+| Harga Jual | Required nonnegative IDR amount, two decimal places | Audited initial selling price; no cost fields |
 | Nama Produk | Required plain text 1–200 after trim | Internal name |
 | Kode Kategori | Required existing active code | Reference, no typo-driven category creation |
 | Kode Merek | Optional existing active code | Blank means unspecified, no automatic Other brand |
 | Kode Satuan | Required existing active base unit | Unit/precision from reference |
-| Jenis Pelacakan | Required **Kuantitas** or **Berserial** | Server enum mapping |
-| Stok Minimum | Optional exact decimal ≥0 within precision; blank proposes zero visibly | Owner confirms; monitoring stays off |
-| Barcode Produsen | Optional text product alias under 12 | No reserved LT- code or item serial |
+| Jenis Pelacakan | GOODS: required **Kuantitas** or **Berserial**; SERVICE: blank | No fake service tracking |
+| Stok Minimum | GOODS: optional exact decimal ≥0; blank proposes zero; SERVICE: blank | Owner confirms batch; goods monitoring stays off |
+| Barcode Produsen | GOODS: optional text alias under 12; SERVICE: blank | No reserved RP-/legacy LT- code or item serial |
 | Deskripsi | Optional plain text, max 2,000 characters | Unpublished content |
 
-Generate product ID/internal product barcode/version/creator/time, active state and monitoring off. New product content remains draft once publication exists.
+Generate product ID/version/creator/time and active state. GOODS gets internal code/GoodsProfile and monitoring off. SERVICE gets neither. Reject service barcode/minimum/tracking/location/serial data, even explicit zero in a prohibited field. New product content remains draft once publication exists.
 
-Reject unknown columns, including actual stock, location, item serials, purchase/selling price, COGS/margin, supplier terms, user/role, internal IDs, timestamps/audit, publication flags or arbitrary metadata. Never silently ignore them.
+Reject unknown columns, including actual stock, location, item serials, purchase cost, COGS/margin, supplier terms, user/role, internal IDs, timestamps/audit, publication flags or arbitrary metadata. Never silently ignore them.
 
-CSV defaults to comma delimiter; semicolon is an explicit parse option, never guessed from numerical content. Decimal values use comma with no grouping separator; quote them under comma delimiter. Reject ambiguous 1.000. XLSX accepts numeric cells for quantity/minimum, but SKU/barcode/serial cells MUST be text. Lost leading zeros require source correction, never reconstruction by guess. Distinguish blank and zero. Reject duplicate headers, hidden/filtered data rows, merged data cells and formulas.
+CSV defaults to comma delimiter; semicolon is an explicit parse option, never guessed from numerical content. Decimal values use comma with no grouping separator; quote them under comma delimiter. Reject ambiguous 1.000. XLSX accepts numeric cells for quantity/minimum/selling price, but SKU/barcode/serial cells MUST be text. Lost leading zeros require source correction, never reconstruction by guess. Distinguish blank and zero. Reject duplicate headers, hidden/filtered data rows, merged data cells and formulas.
 
 ## Workflow and validation
 
@@ -81,9 +83,9 @@ Products/references must exist and be active. Owner establishes cutover and pers
 | Saldo Awal Kuantitas | SKU, Kode Gudang, Kode Lokasi, Jumlah | Required count reference in job metadata; one row/product-location, positive quantity at unit precision |
 | Saldo Awal Berserial | ID Baris, SKU, Kode Gudang, Kode Lokasi | Optional Nomor Seri Produsen; optional Barcode Internal only for platform-issued REGISTERED items; implicit quantity one |
 
-ID Baris is a unique text staging-row ID, not an official serial. Manufacturer serial follows product-scoped uniqueness; duplicate item/internal barcode is rejected globally, including IN_STOCK/ISSUED items. Blank manufacturer serial stays blank. Create stable item/barcode inside commit and print after success. Never accept an arbitrary LT- spreadsheet code as platform-issued identity.
+ID Baris is a unique text staging-row ID, not an official serial. Manufacturer serial follows product-scoped uniqueness; duplicate item/internal barcode is rejected globally, including IN_STOCK/ISSUED items. Blank manufacturer serial stays blank. Create stable item/barcode inside commit and print after success. Never accept an arbitrary RP- or legacy LT- spreadsheet code as platform-issued identity.
 
-Do not mix tracking modes in one opening job. Zero counts create no movement; record the zero count in a separate cutover report and enable monitoring normally. Reject negative quantity, unknown product, wrong/inactive location, cross-product serial and any product/location with prior ledger. Owner acquisition evidence is separate under [15](15-FINANCE-PROFITABILITY.md), absent from warehouse templates.
+Opening accepts GOODS only. Do not mix tracking modes in one opening job. Zero counts create no movement; record the zero count in a separate cutover report and enable monitoring normally. Reject negative quantity, unknown product, wrong/inactive location, cross-product serial and any product/location with prior ledger. Owner acquisition evidence is separate under [15](15-FINANCE-PROFITABILITY.md), absent from warehouse templates.
 
 OPENING carries owner actor, batch/count reference and job/revision, with normal command semantics. Interactive limit remains 200; the authorized worker supports up to 5,000 logical rows in **one movement/receipt/transaction**, never several silent commits.
 
@@ -103,4 +105,4 @@ Exports are authorized DTOs with template/version/filter/time context, not datab
 
 At ≥768 px, provide upload/template/delimiter selection, paged conflicts/preview and confirmation. Phone shows summary/status/errors/history/report download and **Tinjau dan terapkan impor melalui tablet atau komputer.** No phone bulk-apply UI. This is a usability boundary, never user-agent authorization; backend permissions apply to every client.
 
-Store files privately outside webroot with random keys and validated hash/size. Bound parser memory/CPU/archive expansion. Never evaluate formulas/macros, fetch external references, trust extension/MIME alone or run server-side Office automation. No sensitive raw values in logs. Apply retention under 09. Reference: [OWASP File Upload](https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html); numerical limits and atomicity are LATANSA decisions.
+Store files privately outside webroot with random keys and validated hash/size. Bound parser memory/CPU/archive expansion. Never evaluate formulas/macros, fetch external references, trust extension/MIME alone or run server-side Office automation. No sensitive raw values in logs. Apply retention under 09. Reference: [OWASP File Upload](https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html); numerical limits and atomicity are product decisions.

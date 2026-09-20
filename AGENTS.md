@@ -1,62 +1,49 @@
-# Agent rules — LATANSA Platform
+# Agent rules — Retail Operations Platform
 
-These rules apply throughout the repository, including Gemini Antigravity and future implementation agents. **The repository is the source of truth.** Explicit owner instructions take precedence. Never silently replace D01–D34 or later accepted decisions. If implementation conflicts with a canonical rule or safety invariant, STOP the affected task and report the conflict; do not invent a workaround or change the decision yourself.
+Applies throughout this repository and to all executors. The repository is the source of truth; explicit owner instructions take precedence. The 20 September 2026 major retail replanning supersedes conflicting earlier product/phase/brand assumptions through D36–D45. D01–D35 remain historical decisions, with effective status in docs/10-DECISIONS.md. Never silently change safety invariants.
 
-## Recover context efficiently
+## Recover context
 
-1. Inspect `git status --short` and `git branch --show-current`. Preserve user work. After the planning merge, `main` is the default canonical execution branch. Use the files on the currently checked-out canonical branch; do not switch back to the historical `codex/refine-product-ux-architecture` planning branch.
-2. Read this file, `docs/00-CURRENT-STATE.md`, and the active/next row in `docs/11-BUILD-PLAN.md`. Select exactly one task and verify its dependencies before editing.
-3. Search with `rg` before broad reading. Read relevant decisions and canonical specifications only. `README.md` maps ownership.
-4. Planning is complete. At the planning checkpoint, the first executor task is **P00.1**, the CP01 standalone HTML shell/auth visual contract. D01–D34 have owner approval and the official colored mark is available under `assets/brand/source/`. Use the pastel system in 05. The final planning session creates no prototype; the next Gemini Antigravity execution session starts P00.1 without repeating architecture approval. On subsequent sessions, follow the updated CURRENT-STATE/build row rather than restarting P00.1. See `docs/16-EXECUTOR-HANDOFF.md` for the operational checklist.
-5. P00.2 MUST NOT start until P00.1 passes owner Gate A and is [x]. P01 production work MUST NOT start until CP01–CP04 are approved and the owner explicitly authorizes production implementation. This is a phase boundary, not a permanent ban on execution.
+1. Inspect git status --short and git branch --show-current. Preserve local user work. main is the default canonical branch; do not return to the historical planning branch.
+2. Read this file, docs/00-CURRENT-STATE.md and the active/next row in docs/11-BUILD-PLAN.md. Select one task and verify dependencies and policy gates before editing.
+3. Search with rg before broad reading. README.md maps canonical ownership; 17 owns POS.
+4. This is a planning-only checkpoint. Do not resume old CP01, scaffold production or restart Antigravity automatically. Old P00.1/CP01 is unapproved and superseded as a visual direction, not deleted.
+5. Next eligible future execution is R01.1 / RV01. Follow 16 and actual current state. R01.2 requires Q01–Q03 disposition. Production requires approved RV01–RV05 and explicit owner implementation authorization.
 
-## Mandatory product and safety rules
+## Product and safety
 
-- Inventory is the priority: staff → scan/input → receipt/issue → ledger → balance → stock attention → owner action.
-- All canonical documentation MUST be English. All user-facing UI, errors, reports, human-readable audit messages and notifications MUST be Bahasa Indonesia. Map internal enums to approved labels.
-- The immutable movement ledger is the quantity source of truth. MUST NOT allow arbitrary balance edits, negative stock, deleted history, or silent SQL repairs. Follow `06-INVENTORY-SPEC.md`.
-- Every stock mutation uses the same command service, PostgreSQL transaction, backend authorization, idempotency, locks and audit. Hiding a control is not authorization.
-- A scan changes a draft only. Show success only after confirmed server commit. No offline stock mutation.
-- Low/out-of-stock alerts use transitions and attention episodes in `13-NOTIFICATIONS.md`.
-- Ordinary staff MUST NOT receive `SUPER_ADMIN`. Enforce permissions on every API/action/job and object access.
-- Public data uses an allowlist projection of the same Product Master. Never send internal entities to public clients.
-- Public company/catalog content is structured and database-managed. `SUPER_ADMIN` controls draft, preview and publication. Routine content changes need no code edit, commit or redeploy.
-- MVP WhatsApp uses configured `wa.me` links only. Never hardcode the destination or claim a click proves a conversation or sale.
-- Thousands of SKUs are normal. Follow `14-BULK-IMPORT.md`: validate/preview/confirm, create-only product import, atomic file apply, separate ledger-based quantity/serial opening. Business exports are not backups.
-- Follow `15-FINANCE-PROFITABILITY.md`: private cost evidence in Core; valuation and gross profit after Sales and complete data. Unknown is not zero. Purchase cost, COGS, margin and profit are owner-only by default. Never label gross profit as net profit.
-- Use existing infrastructure and mature open-source tools. Additional paid services require explicit approval. Cost savings MUST NOT weaken integrity, security or off-host recovery.
-- No secrets, real customer data, database dumps or production configuration in Git. `.env.example` contains variable names with empty values. No fallback secrets, fixed credentials, VPS IPs or environment-specific paths in source.
+- Core is retail goods/services: master → receive → scan/search → basket → payment/receipt → atomic goods issue → restock → owner gross reporting.
+- Canonical docs are English. All UI/errors/reports/human audit/notifications are Bahasa Indonesia.
+- Product commercialType GOODS/SERVICE is separate from goods trackingMode. Services never have stock balances, serial stock, reorder alerts or ledger legs.
+- Immutable ledger is quantity truth. No arbitrary balance edits, negative stock, deleted history, silent SQL repair or offline financial/stock mutation.
+- All stock writers use 06 command services, one PostgreSQL transaction, backend authorization, ordered locks, idempotency and audit.
+- POS completion includes sale, payment record, receipt snapshot, revenue fact and goods issue in one transaction under 17. Printer/push/valuation work happens after commit and never recreates a sale.
+- A scan edits a draft. Show success only after confirmed commit; preserve original identity during uncertainty.
+- Use SUPER_ADMIN, OPERATIONS_ADMIN, CASHIER and the explicit matrix in 04. Staff never receive owner role merely to do routine work. Check every API/action/job/object.
+- Costs/COGS/margin/profit are owner-only by default, including DTOs, exports, errors and audit. Unknown is not zero. Laba Kotor is not Laba Bersih.
+- Single-business deployment with runtime configurable identity; no hardcoded LATANSA palette/name/domain/code namespace as universal identity. Preserve official assets without redesigning them.
+- Goods attention uses episodes in 13; read state never clears stock problems.
+- Thousands of SKUs are normal. 14 requires typed create-only master import, validate/preview/confirm and atomic file apply. Opening is separate and ledger-based.
+- Public features are later: allowlist projections of the same master, structured DB content, owner publication, configured wa.me only. A click proves no conversation/sale.
+- Prefer mature open-source/self-hosted software and existing infrastructure. Extra paid services require explicit approval; cost savings cannot weaken recovery/security.
+- No secrets, real customer data, dumps or production configuration in Git. .env.example has empty values only. No fallback secrets/fixed credentials/host-specific source paths.
 
-## Visual contracts
+## Visual and implementation gates
 
-Classify tasks `[BE]`, `[FE]` or `[FS]` before implementation.
+Classify tasks [BE], [FE] or [FS]. Major new interactions: requirements → isolated HTML/CSS with safe demo data → browser verification → owner Gate A → production integration → real-data technical/browser checks → owner Gate B.
 
-Major new visual systems/interactions: requirements → standalone HTML/CSS with safe demo data → browser preview → owner Gate A review → revisions until approved → production implementation → real data → technical/browser verification → owner Gate B review.
+Approved revision is the visual contract. Reuse its patterns directly; significant deviations revise it. RV01–RV05 replace old CP bundles for Core. Prototypes access no production API/database. Tests/screenshots are never owner approval. FE/FS stays [V] until the applicable explicit revision approval; BE may complete after technical verification. Stop at each required visual gate.
 
-- Approved HTML is the visual contract. Prototypes MUST NOT access production APIs or databases.
-- Reuse approved canonical patterns directly in Next.js. Do not build every screen twice. Significant deviations need review and, when a new pattern is introduced, a revised prototype.
-- FE/FS prototype work waits at `[V] WAITING FOR OWNER VISUAL REVIEW` for Gate A. Production FE/FS work waits at `[V]` for Gate B. Only explicit owner approval of the specific revision permits `[x]`.
-- Tests, builds and agent screenshots never substitute for owner approval. BE may complete after technical verification; do not count an entire FS task complete because its backend passes.
-- Use the five canonical bundles in `05-DESIGN-SYSTEM.md`. CP01–CP04 establish Core; CP05 is later. Audit every major variant for anti-AI-slop, redundancy, mobile and desktop usability, consistent Lucide icons and official branding.
-- Never redesign the logo, generate a replacement, or use the default shadcn appearance as LATANSA's identity.
+Premium means clear hierarchy, fast operation, restrained styling and useful density. Verify desktop/mobile/keyboard, independent semantic colors, contrast, consistent Lucide icons, and each element/action/fact's purpose. No replacement logos or generic decorative dashboard.
 
-## Execution and token discipline
+## Execution and handoff
 
-- Keep one canonical document per topic. Link specifications rather than copying them.
-- Keep **one active build task**. No unrelated refactoring, speculative features or silent MVP expansion.
-- Do not repeatedly read unchanged files. Search sections first and limit command output.
-- Preserve accepted decisions. Changes need a concise replacement decision with reason and impact.
-- Run targeted tests during implementation and the relevant completion gate in `08-TESTING-ACCEPTANCE.md`. Efficiency never reduces safety or verification.
-- Never claim an unrun test passed. State that it was not run and why.
-- Do not install paid services, message third parties, publish, push or merge without authorization for that action.
-- Keep changes reviewable on the currently checked-out canonical branch, or a task branch explicitly selected for the work. The historical planning branch is not an execution target. Never rewrite Git history or discard user work.
-
-## Handoff and completion
-
-Lifecycle: [ ] → [~] → [T] for technical verification, then [V] if owner visual review is required, then [x] only with the applicable evidence. Only one [~] task. Stop at a required visual gate; do not treat silence as approval or advance to a dependent task. BE with no visual output needs technical verification, not visual approval.
-
-STOP and report contradictory canonical instructions, a required invariant change, unavailable required credentials, destructive-history migration risk, an unapproved paid dependency, material scope expansion or a required owner visual decision. Never substitute fake credentials, weaken safety, buy a service, or mark work complete to bypass a blocker. Record [!] for an actual blocker, [V] for visual review, and the exact unblock condition.
-
-Update actual task status and discoverable evidence in `11-BUILD-PLAN.md`. Record real decisions in `10-DECISIONS.md`. Update `00-CURRENT-STATE.md` **last**, with verified state, current/next task, blockers, checks and visual/production status. Documentation completion is not implementation completion.
-
-Keep final reports concise. Do not count `[V]` as complete. Never store credentials, cookies, sensitive payloads or long transcripts as evidence.
+- One active build task and at most one [~]; no unrelated refactoring or speculative ERP expansion.
+- Lifecycle [ ] → [~] → [T] → [V] if visual → [x]. [!] is an actual blocker with an exact unblock condition.
+- Q01–Q03 in 10 are pending business policies, not inferred approval. Stop affected work; independent prerequisites may proceed only when authorized.
+- Run targeted tests and relevant 08 gates. Never claim an unrun test passed.
+- Stop/report contradictory specs, required invariant changes, missing required credentials, destructive migrations, unapproved paid dependency or material scope change.
+- Never push, merge, publish, deploy, message third parties or buy services without authorization.
+- Preserve user work and Git history. Keep one canonical owner per topic, link rather than duplicate.
+- Update actual task/evidence in 11, real decisions in 10, and 00 LAST. Planning completion is not implementation completion.
+- Final reports are concise, with real checks/limits and no sensitive payloads or long transcripts.

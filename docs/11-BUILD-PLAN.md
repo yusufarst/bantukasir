@@ -15,7 +15,7 @@
 
 [BE] = backend/database/integration without visual impact; [FE] = frontend/prototype; [FS] = backend plus visual impact. FE/FS needs [05](05-DESIGN-SYSTEM.md) evidence. At most one [~] task. Record the exact blocker and unblock condition; merely awaiting its turn is not blocked.
 
-**65 tasks in 13 phases P00–P12; 34 Core tasks P00–P06.**
+**65 tasks in 13 phases P00–P12; one active task P00.1 [V]; 34 Core tasks P00–P06.**
 Overall progress = 100 × completed tasks /65, two decimals.
 Core progress = 100 × completed P00–P06 tasks /34.
 Phase progress uses actual row count. Prototype completion after Gate A counts as a design deliverable, **not production implementation**. Integration has separate Gate B tasks. [V] receives no partial credit.
@@ -27,8 +27,8 @@ Task count is not elapsed time, cost or complexity. Scope changes require a vers
 | Documentation, outside build | D01–D34 owner-approved; official mark received; pastel palette documented; CP01 visual review pending |
 | Overall plan | **0/65 = 0.00%** |
 | Core | **0/34 = 0.00%** |
-| Active build task | None |
-| Next execution task | P00.1 — Gemini Antigravity; prerequisites satisfied for preparation, actual-size asset checks are part of the task |
+| Active build task | P00.1 [V] |
+| Next execution task | Await explicit owner Gate A approval. If approved, P00.1 may become [x]. Only then may P00.2 begin. |
 | Production implementation | NOT STARTED |
 | Before production | Architecture approval received; still requires approved CP01–CP04 and explicit implementation instruction |
 
@@ -48,7 +48,7 @@ Architecture approval, the official colored mark and designation of P00.1 as the
 
 | ID | Status | Class | Deliverable / acceptance | Dependencies | Evidence |
 | --- | --- | --- | --- | --- | --- |
-| P00.1 | [ ] | [FE] | Verify official mark at actual sizes; CP01 shell/auth, pastel tokens/Lucide, brand toggle/rail/drawer, anti-slop/redundancy audit; Gate A | Architecture approval + official colored mark + executor-task designation received | — |
+| P00.1 | [V] | [FE] | Verify official mark at actual sizes; CP01 shell/auth, pastel tokens/Lucide, brand toggle/rail/drawer, anti-slop/redundancy audit; Gate A | Architecture approval + official colored mark + executor-task designation received | prototypes/cp01-shell-auth/REVIEW.md |
 | P00.2 | [ ] | [FE] | CP02 products/labels/product import/quantity and serial opening/errors/results/private owner evidence; Gate A | P00.1 | — |
 | P00.3 | [ ] | [FE] | CP03 receipt/issue/transfer/stock/history/correction, keyboard/mobile, uncertainty/duplicates; Gate A | P00.2 | — |
 | P00.4 | [ ] | [FE] | CP04 attention/inbox/cockpit/system exceptions; finance demo only, required viewports; Gate A | P00.3 | — |

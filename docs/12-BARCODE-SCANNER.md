@@ -7,8 +7,8 @@ Owns machine-readable identity and input interaction. [06](06-INVENTORY-SPEC.md)
 A barcode is an opaque lookup key, not a command, executable URL, price, stock count or private payload. One globally normalized token targets exactly one product OR serialized item. Multiple aliases may share a target; one alias cannot identify multiple targets.
 
 - Core internal format is Code 128, uppercase ASCII with human-readable code. QR may follow actual 2D requirements without replacing the registry.
-- Product: LT-P-<16 Crockford Base32 characters>; item: LT-I-<16 Crockford Base32 characters>. Server-generated random identity with a unique constraint; regenerate collisions before printing. This is not an authentication token.
-- Reserve LT- for internal issuance. Manufacturer aliases cannot use it. Do not encode SKU, manufacturer serial or location inside internal identity. Label text may show necessary name/SKU/unit/item identity, never cost/supplier.
+- Product: RP-P-<16 Crockford Base32 characters>; item: RP-I-<16 Crockford Base32 characters>. Server-generated random identity with a unique constraint; regenerate collisions before printing. This is not an authentication token.
+- Reserve RP- for new internal issuance and LT- for historical platform codes, if actually issued. Legacy identities remain valid/retired under their original record; rebranding never reissues them. No live issued codes were found in this planning repository. Manufacturer aliases cannot use it. Do not encode SKU, manufacturer serial or location inside internal identity. Label text may show necessary name/SKU/unit/item identity, never cost/supplier.
 - Remove HID terminators; trim outer ASCII spaces. Preserve manufacturer barcode case, punctuation and leading zeros. Internal codes must already match the uppercase format. Never convert barcodes to numbers.
 - Token length 1–128 printable ASCII characters. Reject embedded controls/newlines. Non-ASCII support requires a separate decision.
 - Validate EAN/UPC format/check digit when using those declared formats. Do not automatically interpret them as SKU/serial. Reject ambiguous aliases; use internal codes instead.
@@ -41,7 +41,7 @@ CONTEXT → SCANNING ↔ REVIEW → SUBMITTING → COMMITTED
 
 | State | Contract |
 | --- | --- |
-| CONTEXT | Choose receipt/issue/transfer, locations, source/destination and reason/reference; no mutation |
+| CONTEXT | Choose receipt/non-sale issue/transfer or POS with an open shift; inventory location/source/reason or sale context as appropriate; no mutation |
 | SCANNING | Dedicated field, buffer, ordered lookup queue and visibly unsaved lines |
 | REVIEW | Pause scan capture; require all lookups resolved; inspect/edit identities, quantity and context |
 | SUBMITTING | Frozen envelope/key; no scan/edit/cancel; save disabled |
@@ -68,7 +68,7 @@ Do not interrupt identical quantity tokens within 300 ms with a modal. Every com
 
 An item barcode can appear once per session. Reject a second serial scan and highlight the existing row. A SERIALIZED product-model barcode starts item selection/registration, never increments anonymous quantity. New receipts identify the correct product/unit and manufacturer serial when available. Issue/transfer selects an existing eligible unit at the source. Server revalidates all conditions.
 
-Unknown token: **Barcode tidak ditemukan.** Keep it available for inspection/search. Owner may register an alias through authorized workflow. Staff cannot attach arbitrary unknown codes or create stock automatically. New receipt-unit registration follows explicit product selection.
+Unknown token: **Barcode tidak ditemukan.** Keep it available for inspection/search. Owner or operations admin may register an alias through the authorized catalog workflow. Cashier cannot attach aliases; nobody creates stock automatically from an unknown code. New receipt-unit registration follows explicit product selection.
 
 ## Network, local drafts and recovery
 
@@ -83,9 +83,9 @@ Unknown token: **Barcode tidak ditemukan.** Keep it available for inspection/sea
 
 ## Mobile and camera extension
 
-Core supports mobile browsers, manual entry and Bluetooth HID. Camera follows Core at P07.6. Do not depend only on native Barcode Detection API support; use feature detection, HTTPS, user-initiated permission, a tested Code 128 decoder and manual fallback. See [MDN Barcode Detection API](https://developer.mozilla.org/en-US/docs/Web/API/Barcode_Detection_API).
+Core supports mobile browsers, manual entry and Bluetooth HID. Camera follows Core in R08.4. Do not depend only on native Barcode Detection API support; use feature detection, HTTPS, user-initiated permission, a tested Code 128 decoder and manual fallback. See [MDN Barcode Detection API](https://developer.mozilla.org/en-US/docs/Web/API/Barcode_Detection_API).
 
-CP03 shows **Pemindai/Manual**, and later **Kamera** only once implemented. Never open camera automatically. Repeated video frames are not new scans: after acceptance, latch until the code leaves the frame or user selects **Pindai Lagi**. Feed accepted codes through the same session reducer. Stop media tracks when leaving camera mode or the tab becomes inactive. Permission/decoder failures retain manual/HID access. Optional audio/vibration supplements text.
+RV04 and RV02 show **Pemindai/Manual**, and later **Kamera** only once implemented. Never open camera automatically. Repeated video frames are not new scans: after acceptance, latch until the code leaves the frame or user selects **Pindai Lagi**. Feed accepted codes through the same session reducer. Stop media tracks when leaving camera mode or the tab becomes inactive. Permission/decoder failures retain manual/HID access. Optional audio/vibration supplements text.
 
 ## Work layout and feedback
 
@@ -103,3 +103,9 @@ F2 may focus scan input only after browser/device conflict testing; provide the 
 | Commit confirmed | **Barang keluar berhasil dicatat.** plus server document | New session only after definite result |
 
 No toast per scan or server-success sound before commit. One concise live region announces the last result; avoid hundreds of queued screen-reader announcements. [08](08-TESTING-ACCEPTANCE.md) covers actual USB/Bluetooth, labels, manual/IME, CR/LF, rapid scans, focus loss, mobile keyboard, duplicates, out-of-order lookup and lost commit responses.
+
+## POS scan context
+
+Core GOODS share the same alias registry across lookup, receiving, non-sale issue, POS and later stock count. SERVICE is added through SKU/name search, without physical barcode labels. A manufacturer's product code resolves its exact variant/base unit; do not alias a pack barcode to a single unit or strip leading zeros. Different packaging needs a distinct supported SKU or a later explicit conversion policy.
+
+RV02 adds basket/shift/payment review to the same reducer; no Enter key completes payment. Cashier sees authoritative selling price and permitted availability, never private cost. Durable server cart and checkout identity follow 17; local inventory drafts follow the rules above. No new cart may replace an uncertain sale. Label generation uses a pinned, license-verified JsBarcode build; actual quiet zones, 50×30 mm assumption and printer/scanner acceptance remain required. Retail receipt printing is separate from labels.

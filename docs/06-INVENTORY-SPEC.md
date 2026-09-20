@@ -4,7 +4,7 @@ Canonical rules for stock arithmetic, posting, concurrency, correction, reservat
 
 ## Quantities and invariants
 
-For product p and location l:
+Only GOODS products may enter this contract; SERVICE has no movement, stock balance, serial position or health row. For goods product p and location l:
 
 ```text
 onHand(p,l)    = SUM(committed signed ledger legs for p,l)
@@ -51,13 +51,13 @@ REGISTERED is labeled identity without stock. Receipt may atomically create item
 - Verified RETURN receipt reuses the ISSUED item and references its latest issue. Never create a second item for a known identity.
 - Serial adjustment names each specific item. Loss removes identified items; found stock requires verified identity. No anonymous +3 serial adjustment.
 - Check lastLineId/version under lock. Owner manufacturer-serial correction is audited and still subject to uniqueness.
-- Core onHand is STORAGE. Later quarantine/transit moves use transfer legs: physical quantity remains, eligible availability changes. Status and location must agree.
+- Core onHand is STORAGE; non-saleable/damaged commercial returns cannot enter saleable stock until quarantine is implemented. Later quarantine/transit moves use transfer legs: physical quantity remains, eligible availability changes. Status and location must agree.
 
 ## Idempotency and uncertain outcomes
 
 Freeze the final client envelope before sending: random UUID key, UUID sourceSessionId, actor-bound session and canonical business payload. Server computes SHA-256 over canonical UTF-8 JSON with fingerprintVersion=1. Stable field order, equivalent decimal normalization, grouped/sorted quantity pairs and sorted serial identities remove meaningless differences. Include type, sourceSessionId, locations, reasons/references and new-serial metadata. Exclude the key, browser time and meaningless scan order. Never trust a client hash. Preserve historical fingerprint rules across upgrades.
 
-CommandReceipt and movement are 1:1. Unique actor/key and actor/sourceSession prevent duplicate logical commands. Create receipt inside the posting transaction and complete its result before commit; no durable PROCESSING receipt in Core.
+Standalone inventory CommandReceipt and movement are 1:1. POS uses SaleCommandReceipt and optional composed goods movement under [17](17-POS-SALES.md); never an independently callable second stock command. Unique actor/key and actor/sourceSession prevent duplicate logical commands. Create receipt inside the posting transaction and complete its result before commit; no durable PROCESSING receipt in Core.
 
 1. A concurrent duplicate waits on the first unique claim/commit.
 2. Existing equal fingerprint returns the original committed result. Different payload/session produces 409 IDEMPOTENCY_CONFLICT.
@@ -87,17 +87,17 @@ One connection/transaction; do not parallelize dependent queries across connecti
 
 Threshold changes lock user → product. Location deactivation locks user → location then checks emptiness; stock writers already hold shared location locks. Product deactivation locks user → product and checks balances/reservations/open operations.
 
-Import adds job/revision first: job → receipt → user → references → locations → products → balances → serials → reservation/approval if relevant. Commands skip unused classes. Future modules MUST NOT introduce reversed lock order.
+Global order for all writers: optional import job → command receipt → user → business/policy/reference guards → shift/register → cart/existing sale/refund aggregate → locations → products → balances → serials → reservation/approval if relevant. Standalone inventory/import skips commercial guards. POS in 17 supplies the same connection/transaction to this service; no nested commit. Commands skip unused classes. Future modules MUST NOT introduce reversed lock order.
 
 Two users issuing the final unit: A commits zero; B then reads zero and fails. Opposing multi-product transfers acquire the same ordered product guards.
 
-Initial interactive lock_timeout 3 seconds, statement timeout 10 seconds; measure in P03. Known rolled-back deadlock 40P01/serialization 40001 may retry the entire transaction up to three times with short jitter and the same key. Do not blindly retry identity/stock conflicts. Lost commit response follows unknown-outcome recovery.
+Initial interactive lock_timeout 3 seconds, statement timeout 10 seconds; measure in R04. Known rolled-back deadlock 40P01/serialization 40001 may retry the entire transaction up to three times with short jitter and the same key. Do not blindly retry identity/stock conflicts. Lost commit response follows unknown-outcome recovery.
 
 ## Imports and financial boundary
 
 Product import creates master/aliases/audit only. Opening import adapts to OPENING with manifest, receipt and ImportCommit under 14. Core onboarding freeze is persistent cutover control, not the full Stock Opname module. Audit freeze activation/release. Owner releases only after reconciliation; later corrective commands follow ordinary rules after release. SUPER_ADMIN has no implicit freeze bypass.
 
-Physical stock responses contain no financial amounts. Core supplies private cost-evidence links and inventorySequence. Costing/COGS are later versioned financial projections under [15](15-FINANCE-PROFITABILITY.md). Unknown costs do not invalidate lawful physical receipt; they block profit claims. A physical reversal does not silently rewrite published financial reports.
+Physical stock responses contain no financial amounts. Core supplies private cost-evidence links and inventorySequence. Core costing/COGS are versioned financial projections under [15](15-FINANCE-PROFITABILITY.md). Unknown costs do not invalidate lawful physical receipt; they block profit claims. A physical reversal does not silently rewrite published financial reports.
 
 ## Reversal and correction
 
@@ -107,7 +107,7 @@ Preview inverse effect against current stock. Apply original locations/products/
 
 For serials, every item must still be at the original result and its lastLineId must reference that original movement. If it moved later, reject reversal even if it returned to the same location. Preserve before/after status/location snapshots including originally REGISTERED items. Reversal restores prior status/location, but lastLineId points to the new reversal leg. Initial receipt reversal returns REGISTERED; RETURN receipt reversal returns ISSUED.
 
-Issue reversal requires verified recording error/physical return, not a desire to change a report. Normal commercial return uses RECEIPT/RETURN. Reason/reference mandatory; document references suffice in Core, attachments later.
+Issue reversal requires verified recording error/physical return, not a desire to change a report. Normal sale-linked commercial return uses RECEIPT/RETURN through 17 with cumulative original-sale allocation checks. Sale-generated issue/return cannot be independently reversed by this endpoint; use the commercial correction command so revenue/payment/stock remain linked. Reason/reference mandatory; document references suffice in Core, attachments later.
 
 ## Reservation — later
 

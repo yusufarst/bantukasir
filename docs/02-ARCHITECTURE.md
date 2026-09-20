@@ -1,6 +1,6 @@
 # 02 — Technical architecture
 
-Target design only. No implementation exists. [10](10-DECISIONS.md) records choices and alternatives.
+Target design only. Historical standalone CP01 exists; no production application exists. Plan 3.0 puts retail POS and truthful finance in Core. [10](10-DECISIONS.md) records choices and alternatives.
 
 ## System shape
 
@@ -8,7 +8,7 @@ One modular monolith, repository and PostgreSQL database. Next.js serves UI and 
 
 ```mermaid
 flowchart TD
-  S[Staff: scan and review] --> H[Next.js: authentication and validation]
+  S[Cashier / operations: scan, review, checkout] --> H[Next.js: authentication and validation]
   O[Owner: cockpit and notifications] --> H
   H --> C[Module command and query services]
   C --> P[(PostgreSQL: ledger, balances, audit, episodes, outbox)]
@@ -29,7 +29,10 @@ flowchart TD
 | audit | Immutable events and authorized reads | Infrastructure; no calls back into business modules |
 | operations | Health, backup status and reconciliation | Restricted queries and worker |
 | imports (Core) | Private staging, validation, preview, jobs/results | Product identity or OPENING commands under 14 |
-| finance | Core evidence; later valuation, allocations and report versions | Read-only physical facts, evidence revisions and sales revenue under 15 |
+| finance | Core evidence, goods MWA, service costs and versioned gross reports | Read-only physical/commercial facts under 15 |
+| business-config | Single business identity, receipt/policy revisions and registers | identity, audit, validated storage |
+| sales | Core carts, checkout, payments, receipts, returns/refunds and shifts | inventory in the SAME transaction, products, identity, audit; 17 |
+| commercial (later) | RFQ, leads, quotation and deferred fulfillment | sales/finance contracts; no duplicate sale ledger |
 | public-content (later) | Structured company content, settings, revisions, publishing | identity, audit, validated media |
 | public-catalog (later) | Published product projections and queries | products, public-content |
 | sales (later) | RFQ, leads, quotation, fulfillment and revenue facts | Product/inventory contracts; no direct stock writes |
@@ -50,7 +53,7 @@ prototypes/              isolated HTML/CSS and review records
 docs/                    canonical specifications and tracker
 ```
 
-Do not create empty code directories just to match this diagram. Verify stable compatible packages and advisories at P01, then lock versions.
+Do not create empty code directories just to match this diagram. Verify stable compatible packages and advisories at R02.1, then lock versions.
 
 ## Transport and service boundary
 
@@ -88,9 +91,9 @@ Product publication is a revisioned projection of the same master. Editing a dra
 
 ## Lightweight first-party CMS and wa.me
 
-Implement at P09, after Core. Use typed database fields and constrained sections, not arbitrary page-builder blocks or raw HTML/scripts/CSS. Own company display name/tagline, hero title/text/media, About, address/office hours, public contacts, section headings/copy, footer, SEO and featured product references. Product content remains in the product domain. Public RFQ/contact copy and WhatsApp default/product/RFQ templates are editable settings.
+Implement in R09, after Core. Use typed database fields and constrained sections, not arbitrary page-builder blocks or raw HTML/scripts/CSS. Own company display name/tagline, hero title/text/media, About, address/office hours, public contacts, section headings/copy, footer, SEO and featured product references. Product content remains in the product domain. Public RFQ/contact copy and WhatsApp default/product/RFQ templates are editable settings.
 
-Workflow: **DRAFT → authenticated PREVIEW → PUBLISH**. The owner alone can edit site settings and publish company/product content. Product/sales admins may prepare authorized product drafts; they cannot publish or manage site-wide content. Publishing validates required fields, safe links/media, active featured product references and the expected revision. Concurrent stale publication fails rather than overwriting.
+Workflow: **DRAFT → authenticated PREVIEW → PUBLISH**. The owner alone can edit site settings and publish company/product content. Operations admins may prepare authorized product drafts; they cannot publish or manage site-wide content. Publishing validates required fields, safe links/media, active featured product references and the expected revision. Concurrent stale publication fails rather than overwriting.
 
 Store immutable published revisions, actor/time and a safe audit diff. Publish pointer and audit commit atomically. Rollback republishes a previous valid revision as a new action. Never erase publication history. Preview is owner-authenticated, no-store and noindex, with no public bearer preview URLs.
 
@@ -104,7 +107,7 @@ Use the currently published number/template. Preview labels are clear and do not
 
 Use configurable VPS/local storage initially. A storage adapter accepts object keys rather than hardcoded absolute paths. Separate private staging/media from deliberately published assets; no private directory is web-served. [09](09-DEPLOYMENT-OPS.md) owns configuration, limits, permissions, backup/restore and future S3 migration.
 
-Bulk import staging is Core; product images are later. Parser work is resource-limited and outside long Next.js requests. Metadata/rows/results live in PostgreSQL. One apply job per company; staging is batched, final business apply is atomic under 14. Separate execution slots for import and notifications prevent a large parse blocking push delivery. This remains one codebase, without external queue infrastructure.
+Bulk import staging and validated business logo storage are Core; product images are later. Parser work is resource-limited and outside long Next.js requests. Metadata/rows/results live in PostgreSQL. One apply job per company; staging is batched, final business apply is atomic under 14. Separate execution slots for import and notifications prevent a large parse blocking push delivery. This remains one codebase, without external queue infrastructure.
 
 Stock import calls the same command service with the authorized opening-import limit; interactive commands remain limited to 200 lines. Every master mutator shares normalization and permission rules. Job/file/error access is authorized, same-origin and no-store.
 
@@ -114,4 +117,14 @@ Initial benchmark only: 5,000 SKUs, 20,000 serials, 100,000 ledger legs and two 
 
 Runtime DB role is not schema owner/superuser and has no UPDATE/DELETE/TRUNCATE on ledger/audit. Migrator is separate. Transactions hold no human input or external network calls.
 
-Cost evidence is private, absent from stock/product DTOs. Core records a per-product posting sequence. Later finance reads physical facts/evidence/revenue into versioned valuations and checks completeness before displaying profit. A delayed valuation cannot invalidate a successful stock posting or silently rewrite published financial results.
+Cost evidence is private, absent from stock/product DTOs. Core records a per-product posting sequence. Core finance reads physical facts/evidence/revenue into versioned valuations and checks completeness before displaying profit. A delayed valuation cannot invalidate a successful stock posting or silently rewrite published financial results.
+
+## Core business configuration and commercial boundary
+
+Single deployment/database owns one BusinessProfile, not a tenant service. Owner edits typed identity fields, previews neutral accessible theme/receipt and activates a revision with optimistic concurrency and audit. Receipt snapshots retain the selected identity/logo/template revision forever. Brand changes require no redeploy; operational origin/secrets remain deployment configuration. Tax/payment policy is separately versioned and cannot be inferred from decorative brand settings.
+
+Core stack remains Next.js/TypeScript, PostgreSQL, Drizzle, Zod, Tailwind, selectively composed shadcn/ui, Lucide, Better Auth, Vitest and Playwright. 09 owns cost/license audit. No packages are installed here.
+
+17 owns sale/shift endpoints and recovery: cart create/update, checkout/status, sale/document reads, refund/return, shift open/count/close. All adapters call shared application services with server actor, validated scope and one transaction context. Checkout composes inventory instead of dispatching asynchronous stock jobs. Stock audit/attention and commercial/payment/shift/document facts commit together. Printing/push and valuation are recoverable post-commit work; service-only sales create no movement. Current finance uses consistent revenue/cost watermarks and completeness, never stale values pretending to cover newer sales.
+
+Private routes/documents are authenticated/no-store; service worker caches only nonsensitive shell assets. Barcode search returns authorized sale price and availability to cashier, not costs or broad warehouse history. Cashier server drafts are actor-scoped; sessionStorage is only a recoverable local view, never the durable sale. Brand-neutral receipts use validated local assets and browser print/PDF, no paid rendering service.
