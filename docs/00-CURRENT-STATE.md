@@ -1,6 +1,6 @@
 # 00 — Verified current state and executor handoff
 
-Updated **20 September 2026**, Asia/Jakarta. Updated LAST after the brand refinement and executor-readiness audit.
+Updated **20 September 2026**, Asia/Jakarta. Updated LAST for repository-topology normalization; the approved planning baseline and execution status are unchanged.
 
 | Required state | Verified value |
 | --- | --- |
@@ -24,12 +24,13 @@ P00.1 prepares the CP01 standalone HTML shell/auth visual contract with the offi
 ## Repository and completed work
 
 - Local repository: C:/Projects/latansa-inventory.
-- Current branch: **codex/refine-product-ux-architecture**.
+- Default canonical execution branch after the planning merge: **main**. Use the repository files on the currently checked-out canonical branch as the source of truth.
+- Historical planning branch: **codex/refine-product-ux-architecture**. Do not switch back to it for execution.
 - Remote: https://github.com/yusufarst/latansa-inventory.git.
 - Initial baseline on main: 3deb8e8204191959c2bc04eebedc090d3333818c.
 - English architecture/refinement checkpoint: 183cea6bff4c604dc91ce5d4758a593bc6806e72.
-- Current checkpoint completes the official-brand pastel refinement and operational executor handoff. Obtain its hash with git log -1 --oneline; no self-referential future hash is embedded here.
-- No merge or push is part of this work. Open this local branch, or ensure a remote/local clone receives the checkpoint before execution; do not assume remote main contains it.
+- Official-brand pastel refinement and executor-handoff checkpoint: 1d993c15a3f4226273dd788953d1b9f6e7e884d6.
+- This topology normalization makes the handoff safe for canonical main after merge. It does not perform the merge or change task ordering, progress, architecture or production authorization.
 - Canonical planning documents are 00–16. [10](10-DECISIONS.md) records owner approval of D01–D34 and D35's refinement of D26 without reopening unrelated decisions.
 - [16](16-EXECUTOR-HANDOFF.md) defines session start, one-task lifecycle, applicable backend/visual gates, stop conditions and concise evidence. AGENTS no longer globally prohibits implementation after planning.
 - Documentation remains English. All user-facing LATANSA UI remains Bahasa Indonesia. Inventory, security, audit, public/private boundaries, near-zero-cost and secret rules are unchanged.

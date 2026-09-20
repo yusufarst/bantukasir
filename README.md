@@ -42,4 +42,4 @@ Use the client's existing VPS and current domain, `latansajogjakarta.com`. Keep 
 
 This repository is public. Never commit secrets or real operational data. [.env.example](.env.example) contains empty values only; activation requirements belong to [operations](docs/09-DEPLOYMENT-OPS.md).
 
-Remote: [yusufarst/latansa-inventory](https://github.com/yusufarst/latansa-inventory). The initial baseline is on `main`; refinement uses a reviewable `codex/` branch. A local commit does not imply a push or merge.
+Remote: [yusufarst/latansa-inventory](https://github.com/yusufarst/latansa-inventory). After the planning merge, `main` is the default canonical execution branch. Use the repository files on the currently checked-out canonical branch as the source of truth. `codex/refine-product-ux-architecture` is historical planning work; do not switch back to it for execution.

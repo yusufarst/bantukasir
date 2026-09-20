@@ -4,7 +4,7 @@ This file owns the execution checklist only. Business rules remain in their cano
 
 ## Session start
 
-1. Open/clone this repository and select the documentation branch containing this checkpoint: `codex/refine-product-ux-architecture`. Check the commit and `git status --short`; preserve existing work. This checkpoint is local unless separately pushed; a remote clone must first receive it through an authorized push or local repository transfer. Do not assume `main` contains it.
+1. Open/clone this repository. After the planning merge, `main` is the default canonical execution branch. Check `git branch --show-current`, the commit and `git status --short`; preserve existing work. Use the repository files on the currently checked-out canonical branch as the source of truth. `codex/refine-product-ux-architecture` is historical planning work; do not switch back to it or select it as an execution prerequisite.
 2. Read [AGENTS](../AGENTS.md), [current state](00-CURRENT-STATE.md), then the active/next row in [11](11-BUILD-PLAN.md). Current state determines the next task on later sessions; do not restart P00.1 after it is complete.
 3. Select exactly one task. Verify dependencies and actual approval evidence. Search before reading more files; read only relevant sections.
 4. Mark that task [~] only when execution begins. Never silently expand scope.

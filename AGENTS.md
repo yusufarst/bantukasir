@@ -4,7 +4,7 @@ These rules apply throughout the repository, including Gemini Antigravity and fu
 
 ## Recover context efficiently
 
-1. Inspect `git status --short`. Preserve user work.
+1. Inspect `git status --short` and `git branch --show-current`. Preserve user work. After the planning merge, `main` is the default canonical execution branch. Use the files on the currently checked-out canonical branch; do not switch back to the historical `codex/refine-product-ux-architecture` planning branch.
 2. Read this file, `docs/00-CURRENT-STATE.md`, and the active/next row in `docs/11-BUILD-PLAN.md`. Select exactly one task and verify its dependencies before editing.
 3. Search with `rg` before broad reading. Read relevant decisions and canonical specifications only. `README.md` maps ownership.
 4. Planning is complete. At the planning checkpoint, the first executor task is **P00.1**, the CP01 standalone HTML shell/auth visual contract. D01–D34 have owner approval and the official colored mark is available under `assets/brand/source/`. Use the pastel system in 05. The final planning session creates no prototype; the next Gemini Antigravity execution session starts P00.1 without repeating architecture approval. On subsequent sessions, follow the updated CURRENT-STATE/build row rather than restarting P00.1. See `docs/16-EXECUTOR-HANDOFF.md` for the operational checklist.
@@ -49,7 +49,7 @@ Major new visual systems/interactions: requirements → standalone HTML/CSS with
 - Run targeted tests during implementation and the relevant completion gate in `08-TESTING-ACCEPTANCE.md`. Efficiency never reduces safety or verification.
 - Never claim an unrun test passed. State that it was not run and why.
 - Do not install paid services, message third parties, publish, push or merge without authorization for that action.
-- Use a reviewable branch after baseline. Never rewrite Git history or discard user work.
+- Keep changes reviewable on the currently checked-out canonical branch, or a task branch explicitly selected for the work. The historical planning branch is not an execution target. Never rewrite Git history or discard user work.
 
 ## Handoff and completion
 
