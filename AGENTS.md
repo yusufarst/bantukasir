@@ -1,4 +1,4 @@
-# Agent rules â€” Retail Operations Platform
+# Agent rules — Retail Operations Platform
 
 The repository is the sole source of truth. Explicit owner instructions supersede conflicting older assumptions only when recorded in canonical documentation.
 
@@ -20,9 +20,9 @@ Core is a brand-neutral retail operations system for GOODS and SERVICES. A singl
 Instant POS is a fast path through the same Order engine, not a separate commercial system.
 
 Primary roles:
-- `SUPER_ADMIN` â€” Pemilik;
-- `OPERATIONS_ADMIN` â€” Admin Operasional;
-- `CASHIER` â€” Kasir.
+- `SUPER_ADMIN` — Pemilik;
+- `OPERATIONS_ADMIN` — Admin Operasional;
+- `CASHIER` — Kasir.
 
 ## Non-negotiable invariants
 
@@ -39,13 +39,13 @@ Primary roles:
 - Critical writes use DB transactions, backend RBAC, idempotency and audit.
 - No negative stock where prohibited; serialized identity cannot duplicate or issue twice.
 - A scan edits a draft; a beep never means stock changed.
-- Public/staff DTOs never leak private cost, margin, serial, audit/security or internal warehouse data.
+- Public DTOs exclude private cost, margin, serial, audit/security and internal warehouse data. Staff DTOs expose only role/task-authorized operational fields (including serial/location for authorized fulfillment); private cost/profit and security data remain owner-only.
 
 ## UX rule
 
 Keep complexity in the system.
 
-Cashier default: `Scan/Search â†’ Keranjang â†’ Bayar â†’ Struk`. Reveal **Pesanan / DP** fields only when needed.
+Cashier default: `Scan/Search → Keranjang → Bayar → Struk`. Reveal **Pesanan / DP** fields only when needed.
 
 Operations default answers: **apa yang harus dikerjakan hari ini?**
 
@@ -71,7 +71,7 @@ Do not add paid auth/database/queue/search/analytics/CMS/payment/notification Sa
 
 ## Development workflow
 
-Implement vertical slices: database â†’ validation â†’ backend/service â†’ RBAC â†’ audit â†’ UI â†’ tests â†’ browser/device verification.
+Implement vertical slices: database → validation → backend/service → RBAC → audit → UI → tests → browser/device verification.
 
 Major new interactions require a visual prototype Gate A before their production UI and Gate B after real integration. Prototypes are interleaved with the relevant slice; do not build the entire frontend first.
 

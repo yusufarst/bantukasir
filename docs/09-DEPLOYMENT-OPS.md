@@ -1,4 +1,4 @@
-# 09 â€” Deployment and operations
+# 09 — Deployment and operations
 
 Target design only. No deployment, Compose file, running backup or job exists. Use the client's existing VPS and domain; any extra recurring purchase requires explicit approval. Open-source software does not make storage or recovery free.
 
@@ -24,13 +24,13 @@ Do not introduce a paid dependency merely for convenience. Cost reduction never 
 
 One Linux VPS runs Compose services: Caddy, Next.js web, worker from the same image, PostgreSQL and scheduled backup. Only Caddy exposes public 80/443 by default; host bindings remain deployment configuration. Database is private. Separate persistent database and file volumes, least-privilege permissions, non-root app/worker and pinned image versions/digests; no production latest tags.
 
-Caddy provides HTTPS/reverse proxy. Configure hostnames, certificate contact, request limits, security headers and trusted proxy behavior at deployment. No auth/stock response caching. Central APP_ORIGIN identifies the internal application; PUBLIC_SITE_ORIGIN later identifies the public site. The current business domain is recorded in README, not scattered through code. Do not assume the final internal hostname/subdomain.
+Caddy provides HTTPS/reverse proxy. Configure hostnames, certificate contact, request limits, security headers and trusted proxy behavior at deployment. No auth/stock response caching. Central APP_ORIGIN identifies the internal application; PUBLIC_SITE_ORIGIN later identifies the public site. Actual deployment domains belong in private operator configuration, not universal product identity. Do not assume the final internal hostname/subdomain.
 
 VPS IP, SSH host/user/keys, credentials, port mappings and absolute storage paths live in private operator configuration. Code uses logical volumes/object keys and validated environment settings. Migration to another VPS restores database/media/configuration, changes DNS/origins and verifies HTTPS/auth/push/backup; it must not require application source edits.
 
 Separate development, test, staging/pilot and production databases, secrets, subscriptions and backup destinations. Staging cannot notify production recipients. Run migrations once as a controlled job; web startup must not race migration.
 
-Release sequence: applicable review/quality gate â†’ immutable image â†’ verified backup â†’ maintenance if incompatible â†’ controlled migration â†’ start web/worker â†’ readiness/smoke â†’ traffic â†’ monitor. Prefer expand/contract changes. Code rollback requires compatible schema; destructive migrations need explicit recovery planning.
+Release sequence: applicable review/quality gate → immutable image → verified backup → maintenance if incompatible → controlled migration → start web/worker → readiness/smoke → traffic → monitor. Prefer expand/contract changes. Code rollback requires compatible schema; destructive migrations need explicit recovery planning.
 
 ## Runtime configuration
 
@@ -74,7 +74,7 @@ Use a storage adapter with logical keys under configurable STORAGE_ROOT. Separat
 
 ## Recoverable backup
 
-Pilot targets: **RPO â‰¤6 hours, RTO â‰¤4 hours**, subject to owner acceptance and measured restore. If loss of six hours is unacceptable, design WAL/PITR before go-live.
+Pilot targets: **RPO ≤6 hours, RTO ≤4 hours**, subject to owner acceptance and measured restore. If loss of six hours is unacceptable, design WAL/PITR before go-live.
 
 1. PostgreSQL custom-format logical dump every six hours. Encrypt before off-host copying; verify checksum and archive readability. Record snapshot time, schema/app version, size, safe destination and job outcome.
 2. Use a consistent database dump, not a copy of a live database volume. Restore cluster roles/extensions/privileges separately. Reference: [PostgreSQL SQL dump](https://www.postgresql.org/docs/current/backup-dump.html).
@@ -90,9 +90,9 @@ Cheapest responsible option: an already-owned independent device/host or existin
 1. Declare incident/cutoff to owner; stop posting, external delivery and automatic import/valuation resume. Preserve the old source read-only.
 2. Select a verified backup, match checksum/version and decrypt on an isolated recovery host. Record snapshot time and potential missing transaction window.
 3. Prepare compatible PostgreSQL, roles/extensions/permissions and referenced media. Restore into a **new database**, failing on errors rather than masking partial recovery.
-4. Reconcile ledger/balances, serial positions, reservations, health/episodes/events/outbox, unique constraints, ImportCommit/CommandReceipt and document counts. Verify media checksums; run ANALYZE and controlled smoke checks.
-5. Revoke restored sessions; assess credential rotation. Suppress stale pre-cutoff push replay by default while preserving inbox/history. Resume delivery only after reconciliation.
-6. Reconcile physical/documents after the snapshot. A missing restored receipt does not prove the original never committed. Decide replay from evidence before requeuing imports; use appropriate authorized opening/corrective commands, never SQL balance edits.
+4. Reconcile Orders/revisions, append-only payments/refunds, goods fulfillments and their ledger legs, service jobs/progress/completions, cashier shifts/cash events/counts, document snapshots, ledger/balances, serial positions, reservations, health/episodes/events/outbox, unique constraints and ImportCommit/CommandReceipt. Verify media checksums; run ANALYZE and controlled smoke checks.
+5. Revoke restored sessions; assess credential rotation. Establish a new recovery epoch before reopening commands so pre-restore browser envelopes cannot execute as new work. Suppress stale pre-cutoff push replay by default while preserving inbox/history. Resume delivery only after reconciliation.
+6. Reconcile physical goods, printed/payment evidence, actual money and performed service work after the snapshot. A missing restored receipt does not prove the original never committed. Decide replay/correction from evidence before resubmitting Orders/payments/fulfillments or requeuing imports; never re-charge, refund or issue by assumption and never use SQL balance edits.
 7. Finance checks sequences, evidence versions, clearing, watermarks and published pointers. Reports stay incomplete until reconciled. CMS publication pointers/assets must resolve to the restored published revisions.
 8. Owner confirms remaining business differences; operator switches traffic and validates auth/scan/commit/attention before reopening posting. Record actual RPO/RTO, backup identity, checks and follow-up.
 
@@ -127,7 +127,7 @@ A dead VPS cannot notify from itself. Before production use an independent exist
 | Security access/login logs | 90 days, restricted; incident records held until resolved |
 | Expired sessions/tokens | Library-appropriate cleanup, no actor-audit deletion |
 | Browser drafts | Under 12, never treated as ledger |
-| Future sales/PII | Define purpose/retention before collection; ledger retention is not permission to keep all PII forever |
+| Customer/Order PII | Core collects only required customer context; define purpose/access/retention before collection. Immutable business history is not permission to keep all PII forever |
 | Raw import/error files | Private; purge seven days after definitive terminal outcome, never while uncertain; READY revalidation after 24 hours |
 | Successful import manifest/ImportCommit | Durable with related business/audit history, separate from raw-file TTL |
 | Cost evidence/revenue/cost events/report versions | Private, final immutable, versioned correction; archival policy reviewed for actual finance needs |

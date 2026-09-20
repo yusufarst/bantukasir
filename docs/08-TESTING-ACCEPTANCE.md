@@ -1,4 +1,4 @@
-# 08 â€” Testing and acceptance
+# 08 — Testing and acceptance
 
 Tests prove behavior; they do not grant owner visual approval.
 
@@ -51,8 +51,8 @@ Tests prove behavior; they do not grant owner visual approval.
 - RET05 service refund creates no stock movement and does not erase incurred cost.
 
 ### Attention
-- NOT01 minimum 5: 6â†’5 opens LOW once; 5â†’4 does not repeat.
-- NOT02 LOWâ†’OUT emits OUT once in same episode.
+- NOT01 minimum 5: 6→5 opens LOW once; 5→4 does not repeat.
+- NOT02 LOW→OUT emits OUT once in same episode.
 - NOT03 recovery to NORMAL resolves; later decline opens a new episode.
 - NOT04 reservation-induced LOW/OUT uses available quantity consistently.
 - NOT05 read/unread never resolves stock attention.
@@ -63,7 +63,7 @@ Tests prove behavior; they do not grant owner visual approval.
 - FIN03 SERVICE revenue recognizes on verified completion, not booking/progress/payment.
 - FIN04 unknown goods/service cost makes gross-profit scope incomplete.
 - FIN05 no staff endpoint/export leaks owner-only finance.
-- FIN06 returns/refunds correct revenue/HPP according to linked physical facts without rewriting originals.
+- FIN06 returns/refunds correct revenue/HPP according to linked physical facts without rewriting originals, including refund of unrecognized DP without a false revenue/HPP reversal.
 
 ### Recovery
 - REC01 restored system reconciles orders, payments, documents, ledger, reservations, serials, jobs and shifts.
@@ -100,10 +100,10 @@ Gate A = owner approves prototype interaction/visual direction. Gate B = owner a
 Initial reference dataset: 5,000 products, 20,000 serials, 100,000 ledger legs, two concurrent operators.
 
 Targets to measure on chosen host/network:
-- local typing/scan feedback â‰¤100 ms;
-- barcode resolve p95 â‰¤500 ms;
-- ordinary 100-line command p95 â‰¤2 s where applicable;
-- owner cockpit p95 â‰¤2 s;
+- local typing/scan feedback ≤100 ms;
+- barcode resolve p95 ≤500 ms;
+- ordinary 100-line command p95 ≤2 s where applicable;
+- owner cockpit p95 ≤2 s;
 - active inbox refresh within 20 s on healthy network.
 
 Never weaken locks/validation to hit a target.

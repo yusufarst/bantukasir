@@ -19,4 +19,4 @@ The color system and usage rules belong to [05 — Design system](../../docs/05-
 
 Use the supplied mark faithfully on white. Do not apply blend modes, color filters, masks, clipping or automatic background removal. Do not imitate its metallic treatment in controls. Any future delivery optimization must retain this source and be checked for fidelity; a differently colored variant must come from the owner.
 
-CP01 must check readability of the complete image, including its existing whitespace, at actual expanded/rail sizes. A separate official small-use export can be requested if it fails; never invent a replacement mark. Monochrome is not required to start the planned light-surface prototype, but cannot be claimed available or synthesized.
+CP01 is historical and unapproved under Plan 3.1. This asset is preserved for LATANSA first-client/demo configuration, not as the universal product identity. Any future use must check complete-image readability, including existing whitespace, at actual sizes; request an official small-use export if necessary rather than inventing one. No monochrome variant is available or may be synthesized.

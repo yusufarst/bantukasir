@@ -1,6 +1,6 @@
 # 14 — Bulk import and stock onboarding
 
-Canonical templates, validation, atomicity, recovery, results and bulk actions. [06](06-INVENTORY-SPEC.md) owns ledger posting; [04](04-AUTH-RBAC-SECURITY.md) permissions; RV03 in [05](05-DESIGN-SYSTEM.md) presentation. These are specifications; no template files or implemented features exist.
+Canonical templates, validation, atomicity, recovery, results and bulk actions. [06](06-INVENTORY-SPEC.md) owns ledger posting; [04](04-AUTH-RBAC-SECURITY.md) permissions; RV02 in [05](05-DESIGN-SYSTEM.md) presentation. These are specifications; no template files or implemented features exist.
 
 ## Core scope
 
@@ -68,8 +68,8 @@ States: UPLOADED → VALIDATING → INVALID or READY → QUEUED → APPLYING →
 - Input max 10 MiB; expanded XLSX max 50 MiB and 100 archive entries, checked before/during extraction. One apply job/company at a time; no external queue required.
 - Confirmation freezes manifest/hash and actor authorization intent. Worker rechecks current active permission. Confirmation intent lasts 15 minutes in queue; expiry requires review/reconfirmation, not indefinite delegated privilege. Worker lease is not an owner credential.
 - **One business transaction per file/job**: all products/internal codes/aliases/entity audit/batch audit/ImportCommit, or all OPENING legs/balances/items/health/inbox/outbox/audit/CommandReceipt/ImportCommit. Any constraint failure rolls back all.
-- Do heavy parsing before locks. Follow global [06](06-INVENTORY-SPEC.md) order: job, receipt when applicable, user, references, locations, products, balances, serials. No human waits inside locks.
-- Initial apply transaction deadline 60 seconds; lock wait three seconds. Timeout rolls back the whole apply. UI says **Sedang menerapkan…**, never increasing committed-row counts before commit. Meet [08](08-TESTING-ACCEPTANCE.md) resource targets or revise admission limits explicitly; never silently switch to partial import.
+- Do heavy parsing before locks. Lock the import job to claim application, then follow the global [02](02-ARCHITECTURE.md) order: command receipt, actor/policy/reference guards, locations/products, balances/reservations if applicable, then serials. Import skips unused commercial/shift guards; no other command locks an import job after these guards. No human waits inside locks.
+- Initial apply transaction deadline 60 seconds; lock wait three seconds. Timeout rolls back the whole apply. UI says **Sedang menerapkan…**, never increasing committed-row counts before commit. Measure the bounded 5,000-row workload in R02.5 and verify its browser flow in R02.6; revise admission limits explicitly if necessary, never silently switch to partial import.
 - Claim lease 120 seconds, fencing token on ACK. Reclaimed workers first check ImportCommit. Duplicate requests/reloads use the same job/revision. Successful receipt/normalized manifest outlive raw-upload TTL.
 - Unknown outcome: check result/retry the same job, never create a replacement. A matching file hash may link to a prior job the actor may read; hash alone does not authorize replay or prove identical intent. Constraints prevent a successful reupload creating duplicate SKU/opening.
 - Cancellation locks and removes queued work before apply. Do not promise cancellation during APPLYING. Success has no delete/undo-job button; product edits follow permission rules and stock correction uses reversal/adjustment.

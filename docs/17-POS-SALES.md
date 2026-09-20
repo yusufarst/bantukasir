@@ -1,4 +1,4 @@
-# 17 â€” Orders, POS, payments, fulfillment, services, receipts and shifts
+# 17 — Orders, POS, payments, fulfillment, services, receipts and shifts
 
 Owns the commercial lifecycle. 06 owns physical inventory; 12 scanning; 15 financial recognition/costing; 04 permissions.
 
@@ -8,8 +8,8 @@ There is one **Order engine**.
 
 Two user experiences sit on it:
 
-1. **Penjualan Cepat** â€” minimal-field instant POS.
-2. **Pesanan / Booking** â€” deferred order with customer, DP/partial payments, reservation, schedule, fulfillment and service progress.
+1. **Penjualan Cepat** — minimal-field instant POS.
+2. **Pesanan / Booking** — deferred order with customer, DP/partial payments, reservation, schedule, fulfillment and service progress.
 
 Do not build separate commercial truth for POS versus booking.
 
@@ -116,14 +116,14 @@ Within one DB transaction:
 - consume reservation if applicable;
 - post ledger ISSUE;
 - update balance/serial/attention;
-- append fulfillment/audit/result.
+- append fulfillment, its recognized-revenue source fact, audit and durable result; valuation remains a recoverable financial projection.
 
 Partial fulfillment is normal. Order 10 may fulfill 4 + 3 + 3. Payment state does not cause stock movement.
 
 ## Service jobs
 
 A SERVICE line may create ServiceJob:
-`BOOKED â†’ SCHEDULED â†’ IN_PROGRESS â†’ COMPLETED`.
+`BOOKED → SCHEDULED → IN_PROGRESS → COMPLETED`.
 
 ServiceMilestone and ServiceProgressEvent are operational/audit facts. They may include planned dates, notes and responsible context.
 
@@ -132,14 +132,14 @@ Progress/milestones:
 - do not imply payment;
 - do not automatically recognize revenue.
 
-Verified ServiceCompletion is the Core fulfillment evidence used by finance.
+Verified ServiceCompletion and its recognized-revenue source fact commit atomically with audit and the command result. This completion is the Core service fulfillment evidence used by finance; payment remains independent.
 
 If physical company goods/materials are consumed for the job, use a separate authorized GOODS issue with a service-cost reference.
 
 ## Instant POS fast path
 
 Normal cashier UX:
-`scan/search â†’ cart â†’ Bayar â†’ confirm â†’ receipt`.
+`scan/search → cart → Bayar → confirm → receipt`.
 
 No customer/schedule/reservation fields are mandatory.
 
@@ -162,7 +162,7 @@ Printer/network wait never occurs inside the DB transaction.
 Each physical/logical register has at most one eligible active shift. Staff accounts are individual.
 
 Shift lifecycle:
-`OPEN â†’ CLOSING â†’ CLOSED`.
+`OPEN → CLOSING → CLOSED`.
 
 Opening records counted float. CashEvent types:
 - OPENING_FLOAT
@@ -205,10 +205,10 @@ Confirmed cancellation only affects remaining cancellable obligation. Performed 
 Core refund execution is owner-authorized with recent authentication/reason.
 
 Money refund and physical return are independent:
-- refund without return â†’ no stock movement;
-- verified saleable goods return â†’ linked RETURN RECEIPT;
-- service refund â†’ no stock movement;
-- price concession â†’ bounded revenue/payment correction only.
+- refund without return → no stock movement;
+- verified saleable goods return → linked RETURN RECEIPT;
+- service refund → no stock movement;
+- price concession → bounded revenue/payment correction only.
 
 Cumulative refund/return cannot exceed eligible original quantities/values.
 

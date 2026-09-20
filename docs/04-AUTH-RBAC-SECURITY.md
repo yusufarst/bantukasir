@@ -1,20 +1,20 @@
-# 04 â€” Authentication, RBAC and security
+# 04 — Authentication, RBAC and security
 
 Backend authorization is mandatory. Hiding UI is not authorization.
 
 ## Roles
 
-### SUPER_ADMIN â€” Pemilik
+### SUPER_ADMIN — Pemilik
 
 Full business authority: accounts/security, BusinessProfile/policies, catalog/inventory/orders/services, sensitive corrections/refunds, private finance, audit and recovery oversight. High-risk actions require recent authentication where specified.
 
-### OPERATIONS_ADMIN â€” Admin Operasional
+### OPERATIONS_ADMIN — Admin Operasional
 
 Routine operations: catalog/selling prices, barcode/labels, customers/orders/bookings, receiving/non-sale issue/transfer, reservation/fulfillment, service schedules/progress, stock/restock and safe operational reports. Payment recording is allowed when the workflow authorizes it; cash requires the user's own shift.
 
 Default exclusions: acquisition cost/HPP/margin/profit, user/security administration, owner-only refund/sensitive finance correction and recovery secrets.
 
-### CASHIER â€” Kasir
+### CASHIER — Kasir
 
 Counter work: own shift, fast POS, product/service search/scan, simple order/booking, minimal customer creation, customer payments, allowed counter fulfillment, receipts/reprints and necessary own/current transaction history.
 

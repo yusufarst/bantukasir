@@ -1,4 +1,4 @@
-# 05 â€” Design system and UX contract
+# 05 — Design system and UX contract
 
 Owns interaction hierarchy, brand neutrality, responsive behavior and visual review gates.
 
@@ -19,7 +19,7 @@ Typography: Source Sans 3 unless implementation verification selects another sui
 ## Progressive disclosure
 
 ### Kasir
-Primary: `Scan / Cari â†’ Keranjang â†’ Bayar`.
+Primary: `Scan / Cari → Keranjang → Bayar`.
 
 Normal instant sale shows no mandatory customer/schedule/reservation fields. Defaults source location/register and keeps scanner/keyboard flow fast.
 
@@ -49,17 +49,17 @@ Render only authorized/implemented items. Desktop uses persistent sidebar and co
 ## Business-language states
 
 Examples:
-- PARTIALLY_PAID â†’ **Dibayar Sebagian**
-- PARTIAL goods â†’ **Barang Diserahkan Sebagian**
-- IN_PROGRESS service â†’ **Pekerjaan Berjalan**
+- PARTIALLY_PAID → **Dibayar Sebagian**
+- PARTIAL goods → **Barang Diserahkan Sebagian**
+- IN_PROGRESS service → **Pekerjaan Berjalan**
 
 Show independent status badges only when they answer distinct questions.
 
-## Visual contracts â€” interleaved
+## Visual contracts — interleaved
 
 Major interaction families use deterministic HTML/CSS prototypes before their production UI:
 
-- **RV01** shell/auth/role workspaces + fast POS skeleton;
+- **RV01** shell/auth/role workspaces, business identity/settings preview + fast POS skeleton;
 - **RV02** goods/services, barcode/labels, receiving/inventory;
 - **RV03** order/booking, DP/partial payment, reservation, partial fulfillment, service progress;
 - **RV04** cashier shift, payment, receipt/reprint, refund and final fast-checkout states;

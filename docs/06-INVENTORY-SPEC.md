@@ -1,4 +1,4 @@
-# 06 â€” Inventory specification
+# 06 — Inventory specification
 
 Owns physical GOODS truth. SERVICES are excluded from physical stock.
 
@@ -7,6 +7,8 @@ Owns physical GOODS truth. SERVICES are excluded from physical stock.
 StockMovement ledger is source of truth. StockBalance is a synchronous transactional projection.
 
 `available = onHand - reserved`
+
+For stock attention, `eligible(p)` is the sum of available quantity for goods product p across active, issue-eligible STORAGE locations. Reservation changes this aggregate without changing physical onHand; 13 owns its LOW/OUT evaluation.
 
 Constraints:
 - onHand cannot go negative where prohibited;
@@ -27,7 +29,7 @@ Operations chooses destination/source/reference, scans/searches GOODS, reviews a
 
 Serialized receipt validates identity and prevents duplicates.
 
-## Reservation â€” Core
+## Reservation — Core
 
 Reservation is a commercial hold, not physical movement.
 
@@ -41,7 +43,7 @@ Order confirmation/change may reserve goods. Reservation:
 
 Cancellation/amendment releases only remaining unneeded reservation.
 
-## Fulfillment â€” Core
+## Fulfillment — Core
 
 Verified handover creates order-linked ISSUE.
 

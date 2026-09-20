@@ -1,4 +1,4 @@
-# 03 â€” Conceptual domain model
+# 03 — Conceptual domain model
 
 Business contracts, not migrations. **M = Core**, **L = later**. One business per deployment.
 
@@ -9,7 +9,7 @@ Business contracts, not migrations. **M = Core**, **L = later**. One business pe
 | User / Role / AuthSession (M) | Individual actor; SUPER_ADMIN, OPERATIONS_ADMIN, CASHIER; historical actor retained |
 | BusinessProfileRevision (M) | Versioned business name/logo/contact/document/accent configuration |
 | BusinessPolicyRevision (M) | IDR/WIB, payment methods, receipt/tax and operational policy |
-| Product (M) | Unique SKU, `commercialType = GOODS | SERVICE`, name/category/unit/precision, active/version |
+| Product (M) | Unique SKU, `commercialType = GOODS \| SERVICE`, name/category/unit/precision, active/version |
 | GoodsProfile (M) | GOODS only: QUANTITY/SERIALIZED, stock monitoring, minimum/reorder target, costing eligibility |
 | SellingPriceRevision (M) | Product, amount, effective server time, actor/reason |
 | Barcode (M) | GOODS product/item identity; globally unique token; multiple aliases; never reused |
@@ -72,7 +72,7 @@ Milestone progress does not itself imply payment, revenue or stock movement.
 | Entity | Core contract |
 | --- | --- |
 | Register (M) | Logical cash drawer/counter |
-| CashierShift (M) | User/register OPEN â†’ CLOSING â†’ CLOSED |
+| CashierShift (M) | User/register OPEN → CLOSING → CLOSED |
 | CashEvent (M) | OPENING_FLOAT, PAYMENT_CASH, REFUND_CASH, PAID_IN, PAID_OUT |
 | ShiftCount / ShiftClose (M) | Blind count, expected amount, difference, review/reason |
 

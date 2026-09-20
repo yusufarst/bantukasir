@@ -1,4 +1,4 @@
-# 15 â€” Goods and service profitability
+# 15 — Goods and service profitability
 
 Owns management-reporting semantics, costing and completeness. This is not full accounting.
 
@@ -75,10 +75,12 @@ Original commercial/financial facts remain immutable. Corrections append linked 
 
 - money refund without goods return: reduce commercial payment/revenue as applicable; no stock receipt;
 - verified saleable goods return: linked RETURN RECEIPT and historical-cost recovery;
-- service refund: reduce service revenue; incurred direct cost remains unless separately recovered/evidenced;
-- price credit: revenue correction only, no stock movement.
+- service refund: reverse recognized service revenue only when linked to an authorized credit of completed work; incurred direct cost remains unless separately recovered/evidenced;
+- price credit: adjust effective order value and, for already recognized work, linked revenue; no stock movement or implied cash payout.
 
 Never use an inventory reversal to bypass commercial limits.
+
+Refunding unrecognized DP reverses the applied payment, not nonexistent revenue or HPP. Cancelling unperformed work adjusts effective order value through a linked revision/credit. Money payout, commercial credit and recognized-revenue correction are separate linked facts; do not subtract the same credit twice. A price credit can reduce outstanding without a cash refund; any payout appends its own PaymentRefund.
 
 ## Reports and periods
 
@@ -106,10 +108,10 @@ Current LOW/OUT and active jobs remain current-state facts and are not period-fi
 A report snapshot records scope, watermark, evidence versions, calculatedAt and completeness.
 
 Presentation:
-- feature unavailable â†’ hide or **Belum Aktif**;
-- revenue known but cost incomplete â†’ show revenue plus **Data biaya belum lengkap**, no fake gross;
-- complete â†’ show actual HPP/cost/gross;
-- failed/stale query â†’ error/stale state, never zero.
+- feature unavailable → hide or **Belum Aktif**;
+- revenue known but cost incomplete → show revenue plus **Data biaya belum lengkap**, no fake gross;
+- complete → show actual HPP/cost/gross;
+- failed/stale query → error/stale state, never zero.
 
 No hidden exclusion of missing-cost or loss-making transactions.
 

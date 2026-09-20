@@ -1,5 +1,11 @@
 # 10 — Architecture decisions and assumptions
 
+## Effective baseline and historical reading rule
+
+**Plan 3.1 owner acceptance: APPROVED — 20 September 2026.** The owner explicitly said “setuju Plan 3.1”. D46–D53 and the final policy register below govern the accepted unified Order baseline. R00.1 / RV01 is next eligible and remains unstarted; no visual Gate A/B or production authorization is implied.
+
+The D01–D45 decisions, assumptions, gap analysis and policy register below preserve earlier checkpoints. Their original status/“current”/“pending” wording and Pxx/Rxx references are historical where superseded. Read them with the effective overrides at the end; they are not active task dependencies or requests to approve CP01. No historical decision is erased.
+
 Initial baseline: **19 September 2026**. Refinement: **20 September 2026**. LOCKED means the design is binding until explicitly replaced. On 20 September 2026, the owner explicitly approved **D01–D34** in the focused brand-refinement request: “The owner now APPROVES architecture decisions D01–D34.” This approves their effective decisions and recorded supersessions; it does not revive D17's old denominator or approve any unbuilt prototype.
 
 The same request designated the supplied logo official and required a pastel direction. D26's previous exact colors were provisional; D35 records their replacement under that instruction. The new token values are documented design choices awaiting CP01 visual review, not an invented owner approval of a rendered interface. Other approved decisions are unchanged.
@@ -121,9 +127,9 @@ This section is the effective override of conflicting historical rows above. D01
 
 Unaffected semantics remain binding: D01, D02–D04, D07–D09, D19, D23, D25, D28–D29 and D34. D05 still retains basic serial goods in Core; its later “service” means repair lifecycle only. D13 safe public projection and D32 structured CMS/publication/wa.me remain later; operations replaces the former product draft preparer. D17 is historical, D18 is extended by 17, D22 retains create-only atomic import with the v2 field contract. D24 retains the internal navigation-toggle interaction with configurable identity. D30 retains attention-first hierarchy while period finance is now Core. Every D01–D35 row is accounted for here or in the replacement table.
 
-### Material owner policy register
+### Historical material owner policy register — superseded where stated
 
-The table below preserves the policy state from the interrupted Astra replanning. Q02 and Q03 are now superseded and resolved by D46-D51 below; Q01, Q04 and Q05 remain active gates where stated.
+The table below preserves the policy state and old task references from the interrupted Astra replanning. The final Plan 3.1 policy register supplies the effective gates. Q02 and Q03 are resolved by D46–D51; historical R01.2 POS references below are not current dependencies.
 
 | ID | Proposed baseline / unresolved business meaning | Exact gate |
 | --- | --- | --- |
@@ -136,9 +142,11 @@ The table below preserves the policy state from the interrupted Astra replanning
 Q01–Q03 were surfaced to the owner during replanning. Q04–Q05 are operational acceptance gates, not reasons to buy software or request secrets in Git. Existing A02–A12/A15–A17 remain technical assumptions where consistent with plan 3.0; old Pxx deadlines are historical, replaced by the new build dependencies. A08 push capability and A09 recovery acceptance are still required before pilot.
 
 
-## Owner-approved unified order flow ? 20 September 2026
+## Owner-approved unified order flow — 20 September 2026
 
-The owner explicitly approved the unified flow covering instant POS plus DP, booking, staged goods fulfillment, later payment and service progress. The following decisions supersede conflicting immediate/full-payment-only assumptions in D36?D45 without erasing history.
+The owner explicitly approved the unified flow covering instant POS plus DP, booking, staged goods fulfillment, later payment and service progress. The following decisions supersede conflicting immediate/full-payment-only assumptions in D36–D45 without erasing history.
+
+The complete Plan 3.1 baseline was explicitly accepted on **20 September 2026**: **“setuju Plan 3.1”**. This records planning acceptance only. No RV prototype or production implementation is approved by this statement.
 
 | ID | Decision |
 | --- | --- |
@@ -148,15 +156,17 @@ The owner explicitly approved the unified flow covering instant POS plus DP, boo
 | D49 / LOCKED | Scheduled SERVICE work is Core through ServiceJob, milestone/progress and verified completion. SERVICE itself has no stock. Repair/customer-custody service remains later. |
 | D50 / LOCKED | Management finance separates order value, payments collected, outstanding balance, recognized revenue, HPP/direct service cost and gross profit. GOODS revenue follows fulfillment; SERVICE revenue follows verified completion. |
 | D51 / LOCKED | Cashier shift reconciliation is Core: opening float, cash events, blind closing count, variance and immutable history. |
-| D52 / LOCKED | UX uses progressive disclosure: ordinary cashier path stays Scan/Search ? Keranjang ? Bayar ? Struk; Pesanan/DP reveals deferred-order complexity only when needed. |
-| D53 / LOCKED | Plan 3.1 replaces D44's incomplete plan-3.0 count: 47 tasks / 39 Core across R00?R09, with RV01?RV05 interleaved before the relevant production UI rather than frontloading the entire frontend. |
+| D52 / LOCKED | UX uses progressive disclosure: ordinary cashier path stays Scan/Search → Keranjang → Bayar → Struk; Pesanan/DP reveals deferred-order complexity only when needed. |
+| D53 / LOCKED | Plan 3.1 replaces D44's incomplete plan-3.0 count: 47 tasks / 39 Core across R00–R09, with RV01–RV05 interleaved before the relevant production UI rather than frontloading the entire frontend. |
 
 ### Policy register after owner flow approval
 
-- Q01 remains OPEN: formal tax/legal invoice and tax treatment must be confirmed before that behavior is enabled.
-- Q02 is RESOLVED by D46?D50: deposits, staged work and later settlement are required; gross-profit reporting remains the accepted initial profit scope.
+- Q01 remains OPEN: confirm formal tax/legal invoice needs, tax treatment and mandatory buyer identity before pilot and before enabling that behavior. The accepted receipt/A4 and payment-evidence baseline can be designed without claiming legal/tax equivalence. Q01 does not block R00.1.
+- Q02 is RESOLVED by D46–D50: deposits, staged work and later settlement are required; gross-profit reporting remains the accepted initial profit scope.
 - Q03 is RESOLVED by D51: cashier shift reconciliation is required in Core; refund execution remains owner-only by default.
 - Q04 remains a pre-pilot recovery acceptance gate.
 - Q05 remains a pre-import inventory-assumption validation gate.
 
-D40's immediate/full-payment baseline is superseded by D46?D50. D44's 46/36 draft count is superseded by D53. All unaffected inventory/security/cost/backup decisions continue to apply.
+D40's immediate/full-payment baseline is superseded by D46–D50. D44's 46/36 draft count is superseded by D53. All unaffected inventory/security/cost/backup decisions continue to apply.
+
+Effective reading of related historical details: D36's flow now includes deferred Orders; D37's cashier-only POS boundary yields to the current three-role duties in 04 (operations may record authorized payments using their own shift for cash). D39's composed sale transaction applies only to the instant Order fast path; deferred payment, goods fulfillment and service completion remain independent commands. D41's cost evidence and privacy remain, with OrderLine/fulfillment/completion references under 15/17 rather than separate Sale truth. D19's reservation timing is superseded by D48; staged transit/opname remain later. D27/D44's frontloaded prototypes and old task numbers are superseded by D53 and the interleaved tracker in 11.

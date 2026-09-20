@@ -1,4 +1,4 @@
-# 01 â€” Product requirements
+# 01 — Product requirements
 
 Owns business outcomes, Core scope and UX priorities.
 
@@ -33,7 +33,7 @@ Roles describe work, not family relationship. 04 owns permissions.
 11. Goods reservation and partial fulfillment. Payment never implies stock issue.
 12. Service jobs with schedule, milestones/progress and completion; no stock mutation.
 13. Mixed goods + service orders.
-14. Fast POS as a minimal-field path: scan/search â†’ cart â†’ pay â†’ fulfill â†’ receipt.
+14. Fast POS as a minimal-field path: scan/search → cart → pay → fulfill → receipt.
 15. Cashier shifts/opening float/closing count/variance and cash events.
 16. Automatic receipt/payment evidence and A4 representation; reprint without duplicate transaction.
 17. Owner-authorized commercial refund/return; immutable original history.
@@ -46,7 +46,7 @@ Roles describe work, not family relationship. 04 owns permissions.
 ### Kasir
 Default screen is **Kasir**. Normal retail sale requires no customer, schedule or reservation form.
 
-Primary path: `scan/search â†’ quantity â†’ bayar â†’ selesai/cetak`.
+Primary path: `scan/search → quantity → bayar → selesai/cetak`.
 
 Secondary **Pesanan / DP** reveals only customer, payment amount, schedule/due date, reservation and service-booking fields that are actually needed.
 

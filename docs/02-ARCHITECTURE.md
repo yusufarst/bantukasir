@@ -1,4 +1,4 @@
-# 02 â€” Architecture
+# 02 — Architecture
 
 Owns module boundaries, transaction boundaries and infrastructure.
 
@@ -58,7 +58,7 @@ Use PostgreSQL-backed outbox/job tables and the same-codebase worker for push de
 
 ## Canonical lock order
 
-command/idempotency â†’ actor/policy â†’ commercial aggregate â†’ shift/register when used â†’ locations/products â†’ balances/reservations â†’ serials â†’ append-only result/audit.
+command/idempotency → actor/policy → commercial aggregate → shift/register when used → locations/products → balances/reservations → serials → append-only result/audit.
 
 Task specs may refine but must not invert the global order.
 
