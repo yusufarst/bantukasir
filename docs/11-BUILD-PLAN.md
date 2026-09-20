@@ -1,193 +1,141 @@
-# 11 — Official build plan and progress
+# 11 â€” Official build plan and progress
 
-**Plan version 2.2 — 20 September 2026.** The only implementation progress tracker. Planning is complete; all build/prototype tasks remain unstarted. D01–D34 approval and the official colored mark are recorded. **NEXT EXECUTION TASK: P00.1 — GEMINI ANTIGRAVITY.** The owner designated that first visual contract for the next execution session. This planning session creates no prototype. Production still requires approved CP01–CP04 and explicit owner authorization.
+**Plan version 3.1 â€” 20 September 2026.**
 
-## Status and calculation
+This replaces plan 2.2 and the incomplete Astra plan-3.0 draft. Product scope now includes unified orders, DP/partial payment, Core reservation/partial fulfillment and Core service scheduling/progress.
 
-| Status | Meaning | Completion credit |
-| --- | --- | ---: |
-| [ ] | NOT STARTED | 0 |
-| [~] | IN PROGRESS | 0 |
-| [T] | WAITING FOR TECHNICAL VERIFICATION | 0 |
-| [V] | WAITING FOR OWNER VISUAL REVIEW | 0 |
-| [x] | COMPLETE AND VERIFIED | 1 |
-| [!] | BLOCKED | 0 |
+Production implementation has not started.
 
-[BE] = backend/database/integration without visual impact; [FE] = frontend/prototype; [FS] = backend plus visual impact. FE/FS needs [05](05-DESIGN-SYSTEM.md) evidence. At most one [~] task. Record the exact blocker and unblock condition; merely awaiting its turn is not blocked.
+## Status
 
-**65 tasks in 13 phases P00–P12; one active task P00.1 [V]; 34 Core tasks P00–P06.**
-Overall progress = 100 × completed tasks /65, two decimals.
-Core progress = 100 × completed P00–P06 tasks /34.
-Phase progress uses actual row count. Prototype completion after Gate A counts as a design deliverable, **not production implementation**. Integration has separate Gate B tasks. [V] receives no partial credit.
-
-Task count is not elapsed time, cost or complexity. Scope changes require a version and old/new denominator with rationale. Never split finished work to inflate progress or remove mandatory features to shrink the denominator.
-
-| Snapshot | Verified state |
+| Status | Meaning |
 | --- | --- |
-| Documentation, outside build | D01–D34 owner-approved; official mark received; pastel palette documented; CP01 visual review pending |
-| Overall plan | **0/65 = 0.00%** |
-| Core | **0/34 = 0.00%** |
-| Active build task | P00.1 [V] |
-| Next execution task | Await explicit owner Gate A approval. If approved, P00.1 may become [x]. Only then may P00.2 begin. |
-| Production implementation | NOT STARTED |
-| Before production | Architecture approval received; still requires approved CP01–CP04 and explicit implementation instruction |
+| [ ] | NOT STARTED |
+| [~] | IN PROGRESS |
+| [T] | WAITING FOR TECHNICAL VERIFICATION |
+| [V] | WAITING FOR OWNER VISUAL REVIEW |
+| [x] | COMPLETE AND VERIFIED |
+| [!] | BLOCKED |
 
-Evidence column later records commit, concise technical results and visual REVIEW link. Current dash means no evidence exists.
+[BE] backend/integration, [FE] prototype/frontend, [FS] full-stack/visual.
+
+Exactly one [~] at a time. [V] receives no completion credit.
+
+**47 tasks in 10 phases; 39 Core tasks in R00â€“R07.**
+Overall progress: **0/47 = 0.00%**.
+Core progress: **0/39 = 0.00%**.
+
+Old CP01 remains historical/unapproved and contributes no completion credit.
 
 ## Plan history
 
-Version 1.0: 55 tasks, Core 30. Version 2.0 consolidated six unstarted prototype rows (P01.3/P02.3/P04.1/P04.4/P05.3/P06.3) into four P00 bundles, added six Core import/evidence tasks, one camera task and five finance tasks. Overall 55−6+4+6+1+5=65; Core 30−6+4+6=34. Old P11 became P12. No completed work gained duplicate credit. D31 records the replacement of D17's denominator.
+- v1/v2.x: inventory-first LATANSA-specific plan, 65 tasks/34 Core.
+- incomplete Astra v3.0: began retail/POS replanning but retained immediate/full-payment-only assumptions and stale v2.2 tracker.
+- **v3.1**: owner-approved unified Order flow; POS fast path, DP/partial payments, reservation, partial fulfillment, service jobs/progress, shift reconciliation and finance separation.
 
-Version 2.1 translates the tracker and makes structured public CMS, owner publication, wa.me configuration and portability acceptance explicit within existing P09/P06 tasks. Count remains 65/34; no implementation credit added.
+## R00 â€” First visual contract
 
-Version 2.2 records satisfied architecture-approval/colored-asset prerequisites, D26/D35 pastel refinement and the executor handoff. P00.1 is the owner's designated next execution task; its preparation may begin in the next executor session. No completion status/denominator changed; no prototype is created in the final planning pass.
+| ID | Status | Class | Deliverable | Dependencies |
+| --- | --- | --- | --- | --- |
+| R00.1 | [ ] | FE | **RV01** brand-neutral shell/auth/role workspaces + fast POS skeleton; desktop/mobile/keyboard states; Gate A | Planning 3.1 owner acceptance |
 
-## P00 — Core visual contracts before production
+R00.1 does not authorize production implementation.
 
-Architecture approval, the official colored mark and designation of P00.1 as the first executor task are recorded. P00.1 tests source-image whitespace/readability on white at expanded/rail sizes; missing monochrome alone does not block light-surface preparation. No Next.js/API/database in P00. P00.2 MUST NOT begin until P00.1 is [x] with explicit owner Gate A evidence. Four deterministic Core bundles with browser preview; CP05 waits until public work.
+## R01 â€” Foundation, auth and business configuration
 
-| ID | Status | Class | Deliverable / acceptance | Dependencies | Evidence |
-| --- | --- | --- | --- | --- | --- |
-| P00.1 | [V] | [FE] | Verify official mark at actual sizes; CP01 shell/auth, pastel tokens/Lucide, brand toggle/rail/drawer, anti-slop/redundancy audit; Gate A | Architecture approval + official colored mark + executor-task designation received | prototypes/cp01-shell-auth/REVIEW.md |
-| P00.2 | [ ] | [FE] | CP02 products/labels/product import/quantity and serial opening/errors/results/private owner evidence; Gate A | P00.1 | — |
-| P00.3 | [ ] | [FE] | CP03 receipt/issue/transfer/stock/history/correction, keyboard/mobile, uncertainty/duplicates; Gate A | P00.2 | — |
-| P00.4 | [ ] | [FE] | CP04 attention/inbox/cockpit/system exceptions; finance demo only, required viewports; Gate A | P00.3 | — |
+| ID | Status | Class | Deliverable | Dependencies |
+| --- | --- | --- | --- | --- |
+| R01.1 | [ ] | BE | Next.js/TS/Drizzle/Postgres scaffold, config validation, dev/test DB, base migrations, test scripts and CI skeleton | R00.1 Gate A + explicit implementation authorization |
+| R01.2 | [ ] | BE | Better Auth, fixed roles/permissions, TOTP, sessions, backend guards, audit/security tests | R01.1 |
+| R01.3 | [ ] | FS | BusinessProfile/BusinessPolicy revisions, neutral identity settings, runtime validation, owner-only configuration | R01.2 |
+| R01.4 | [ ] | FS | Implement approved RV01 shell/auth/workspaces with real authorization; Gate B | R01.2, R01.3, RV01 |
 
-## P01 — Foundation, identity and access (Core)
+## R02 â€” Goods/services, barcode and inventory foundation
 
-Production prerequisites remain separate from prototype completion.
+| ID | Status | Class | Deliverable | Dependencies |
+| --- | --- | --- | --- | --- |
+| R02.1 | [ ] | FE | **RV02** goods/services, barcode/labels, receiving, stock/history and opening-import states; Gate A | R01.4 |
+| R02.2 | [ ] | BE | Product GOODS/SERVICE, GoodsProfile, price revisions, units/categories, server search/pagination | R01.2 |
+| R02.3 | [ ] | BE | Barcode registry, manufacturer aliases, internal code generation, labels and serialized identity rules | R02.2 |
+| R02.4 | [ ] | BE | Ledger/balances/serials, receiving, non-sale issue, direct transfer, owner adjustment/reversal, idempotency/concurrency | R02.3 |
+| R02.5 | [ ] | BE | Product import + separate quantity/serial opening, freeze, cost-evidence capture and recovery | R02.4 |
+| R02.6 | [ ] | FS | Approved RV02 integrated UI, scanner/label/print checks, import/opening browser flow; Gate B | R02.1, R02.5 |
 
-| ID | Status | Class | Deliverable / acceptance | Dependencies | Evidence |
-| --- | --- | --- | --- | --- | --- |
-| P01.1 | [ ] | [BE] | Authorized scaffold, compatible versions/lockfile, config, dev/test PostgreSQL, audit storage/DB roles and local test infrastructure | P00.4 + owner implementation instruction | — |
-| P01.2 | [ ] | [BE] | Better Auth, permissions, bootstrap/invite/reset/2FA/revocation and negative security tests | P01.1 | — |
-| P01.4 | [ ] | [FS] | Implement approved CP01 with real auth/sidebar/keyboard/mobile; Gate B | P01.2, P00.1 | — |
-| P01.5 | [ ] | [BE] | Lint/typecheck/unit/integration/E2E/build/secret scripts and CI, environment guards, auth smoke | P01.2, P01.4 | — |
+## R03 â€” Orders, payments, reservation and goods fulfillment
 
-## P02 — Product, location and identity (Core)
+| ID | Status | Class | Deliverable | Dependencies |
+| --- | --- | --- | --- | --- |
+| R03.1 | [ ] | FE | **RV03** order/booking, customer, DP/partial payment, reservation, partial fulfillment and service-progress interaction; Gate A | R02.6 |
+| R03.2 | [ ] | BE | Customer + Order/OrderLine/revision model, numbering, pricing snapshots and lifecycle invariants | R02.2 |
+| R03.3 | [ ] | BE | Append-only PaymentRecord/refund facts, outstanding calculation, idempotency and allowed methods | R03.2 |
+| R03.4 | [ ] | BE | Core InventoryReservation, release/consume rules, available-stock races and reconciliation | R03.2, R02.4 |
+| R03.5 | [ ] | BE | Partial GoodsFulfillment linked atomically to reservation + ledger ISSUE; 4+3+3 and serial tests | R03.3, R03.4 |
+| R03.6 | [ ] | FS | Approved RV03 order/booking/payment/reservation/fulfillment UI with real backend; Gate B | R03.1, R03.5 |
 
-| ID | Status | Class | Deliverable / acceptance | Dependencies | Evidence |
-| --- | --- | --- | --- | --- | --- |
-| P02.1 | [ ] | [BE] | Product/SKU/unit/precision/tracking, category/brand, locations, optimistic versions and CRUD permissions | P01.5 | — |
-| P02.2 | [ ] | [BE] | Barcode registry, no-stock serial registration, normalization/uniqueness/resolver and labels | P02.1 | — |
-| P02.4 | [ ] | [FS] | CP02 master/location/identity/labels with real backend, server search/pagination and print smoke; Gate B | P02.2, P00.2 | — |
-| P02.5 | [ ] | [BE] | Safe deterministic master demo and environment guard; no direct balance seed | P02.2 | — |
-| P02.6 | [ ] | [BE] | XLSX/CSV staging/validation/atomic apply/permissions/retry/private errors; 5,000-row and duplicate tests | P02.5 | — |
-| P02.7 | [ ] | [FS] | CP02 import preview/owner apply/history/errors, export/label selection; phone status and desktop review; Gate B | P02.6, P02.4 | — |
+## R04 â€” Service jobs and mixed orders
 
-## P03 — Atomic ledger and stock attention (Core)
+| ID | Status | Class | Deliverable | Dependencies |
+| --- | --- | --- | --- | --- |
+| R04.1 | [ ] | BE | ServiceJob scheduling and service-line linkage; no inventory entities | R03.2 |
+| R04.2 | [ ] | BE | Milestones/progress/completion events, versioning and audit | R04.1 |
+| R04.3 | [ ] | BE | ServiceCostEvidence and optional referenced goods-consumption cost path without double counting | R04.2, R02.4 |
+| R04.4 | [ ] | BE | Mixed GOODS/SERVICE order invariants, completion derivation and change/cancellation rules | R03.5, R04.2 |
+| R04.5 | [ ] | FS | Service operations/mobile views using approved RV03 patterns; real schedule/progress/completion; Gate B | R03.6, R04.4 |
 
-State/episode/outbox are part of the initial posting transaction. Device delivery/UI follow in P05.
+## R05 â€” Fast POS, shifts, receipts and refunds
 
-| ID | Status | Class | Deliverable / acceptance | Dependencies | Evidence |
-| --- | --- | --- | --- | --- | --- |
-| P03.1 | [ ] | [BE] | Ledger/balance/receipt/product sequence, constraints/locks, immutable DB privileges; reviewed migrations | P02.7 | — |
-| P03.2 | [ ] | [BE] | Receipt/issue/transfer, serial transitions, idempotency/status recovery and atomic audit | P03.1 | — |
-| P03.3 | [ ] | [BE] | Threshold/health/episodes/inbox/outbox in posting and policy changes; NOT01–05 | P03.2 | — |
-| P03.4 | [ ] | [BE] | Opening, owner adjustment/reversal with safe rejection, lawful demo movements | P03.3 | — |
-| P03.5 | [ ] | [BE] | Independent-connection races, rollback/property/idempotency/serial suite and full-ledger oracle | P03.4 | — |
-| P03.6 | [ ] | [BE] | Separate quantity/serial opening import, cutover freeze, bounded 5,000-row atomic posting, receipts/recovery | P03.5, P02.6 | — |
-| P03.7 | [ ] | [BE] | Owner-only receipt/opening evidence, revision/completeness/private audit; unknown cost does not block stock | P03.6 | — |
+| ID | Status | Class | Deliverable | Dependencies |
+| --- | --- | --- | --- | --- |
+| R05.1 | [ ] | FE | **RV04** final fast checkout, shift, payment, receipt/reprint, refund/return and uncertain states; Gate A | R04.5 |
+| R05.2 | [ ] | BE | POS fast-path command through Order engine: full payment + immediate fulfillment + receipt facts atomically | R03.5, R04.4 |
+| R05.3 | [ ] | BE | Register/CashierShift/CashEvent/opening float/blind closing/variance and race rules | R03.3 |
+| R05.4 | [ ] | BE | Receipt/payment-evidence snapshots, thermal/A4 browser rendering, numbering and reprint audit | R05.2 |
+| R05.5 | [ ] | BE | Owner-authorized commercial refund/return, bounded partials, linked stock/finance corrections | R05.2, R05.3 |
+| R05.6 | [ ] | FS | Approved RV04 integrated cashier UI; keyboard/HID/actual printer and recovery checks; Gate B | R05.1, R05.5 |
 
-## P04 — Warehouse and scanner (Core)
+## R06 â€” Stock attention, finance and owner cockpit
 
-| ID | Status | Class | Deliverable / acceptance | Dependencies | Evidence |
-| --- | --- | --- | --- | --- | --- |
-| P04.2 | [ ] | [FE] | CP03 HID reducer/queue/focus, rapid quantity, serial dedupe/session recovery; browser checks and Gate B | P00.3, P03.7 | — |
-| P04.3 | [ ] | [FS] | Resolver/command/status integration, actual USB/Bluetooth and network errors; Gate B | P04.2, P03.5 | — |
-| P04.5 | [ ] | [FS] | CP03 real stock/history/serial/correction/export, permissions/re-auth; Gate B | P04.3, P00.3 | — |
-| P04.6 | [ ] | [FS] | CP02 opening review/result/recovery, count reconciliation/freeze release/monitor activation; Gate B | P04.5, P03.6 | — |
-| P04.7 | [ ] | [FS] | CP02 private owner evidence/source/completeness/revision, no staff cost fields; Gate B | P04.6, P03.7 | — |
+| ID | Status | Class | Deliverable | Dependencies |
+| --- | --- | --- | --- | --- |
+| R06.1 | [ ] | FE | **RV05** owner dashboard, restock attention, order/job attention, finance completeness and system states; Gate A | R05.6 |
+| R06.2 | [ ] | BE | StockHealth/AttentionEpisode/inbox/outbox/Web Push using available quantity including reservations | R03.4, R02.4 |
+| R06.3 | [ ] | BE | MWA goods costing, service direct-cost evidence, RevenueEvents from fulfillment/completion, report snapshots/completeness | R05.5, R04.3 |
+| R06.4 | [ ] | BE | Owner dashboard/report queries: order value, payments, outstanding, revenue, HPP, gross, jobs, LOW/OUT, shift variance | R06.2, R06.3 |
+| R06.5 | [ ] | FS | Approved RV05 real owner/operations views, periods/drill-down/incomplete/error states; Gate B | R06.1, R06.4 |
+| R06.6 | [ ] | BE | Golden finance/refund/return/cost-revision tests + owner-only no-leak matrix | R06.5 |
 
-## P05 — Notifications and owner cockpit (Core)
+## R07 â€” Deployment, recovery and Core pilot
 
-| ID | Status | Class | Deliverable / acceptance | Dependencies | Evidence |
-| --- | --- | --- | --- | --- | --- |
-| P05.1 | [ ] | [BE] | Outbox lease/retry/dedup, Web Push subscription and delivery authorization | P04.7, P03.3 | — |
-| P05.2 | [ ] | [BE] | Consistent dashboard/inbox/read-state queries, factual metrics and WIB boundaries | P05.1 | — |
-| P05.4 | [ ] | [FS] | CP04 real queries/policy, attention without duplicate metrics, current state separate from period, no fake finance; Gate B | P05.2, P00.4 | — |
-| P05.5 | [ ] | [FS] | Inbox/push permission/escalation/recovery E2E and provider tests; Gate B; actual owner-device acceptance at P06.5 | P05.4 | — |
+| ID | Status | Class | Deliverable | Dependencies |
+| --- | --- | --- | --- | --- |
+| R07.1 | [ ] | BE | Production Compose/Caddy, environment guards, worker supervision, storage, health and release procedure | R06.6 |
+| R07.2 | [ ] | BE | Encrypted off-VPS backup, isolated restore, reconciliation of orders/payments/reservations/ledger/jobs/shifts/docs; measured RPO/RTO | R07.1 |
+| R07.3 | [ ] | FS | System/backup/notification operational views and real owner-device notification acceptance or documented limitation | R07.2 |
+| R07.4 | [ ] | FS | Full Core E2E/concurrency/load/mobile/scanner/printer/restore regression | R07.3 |
+| R07.5 | [ ] | FS | Cutover, opening reconciliation, SOP, real-role pilot and explicit owner production acceptance | R07.4 |
 
-## P06 — Operations, recovery and Core pilot
+Core requires all R00â€“R07 tasks [x] and no unresolved safety blocker.
 
-No operational production stock before this phase is accepted. HTTPS staging is required for real device tests; go-live waits for restore evidence and Core acceptance.
+## R08 â€” Later operational extensions
 
-| ID | Status | Class | Deliverable / acceptance | Dependencies | Evidence |
-| --- | --- | --- | --- | --- | --- |
-| P06.1 | [ ] | [BE] | Portable Compose/Caddy, pinned images/private network/secrets, configurable origins/storage, encrypted off-host DB/media backup, health/worker supervision | P05.5 | — |
-| P06.2 | [ ] | [BE] | Isolated restore including alternate host/storage configuration, measured RPO/RTO, reconciliation and restored jobs/outbox controls | P06.1 | — |
-| P06.4 | [ ] | [FS] | CP04 real exceptions/health/backup, unknown not success, no normal-health filler card; Gate B | P06.2, P00.4 | — |
-| P06.5 | [ ] | [FS] | Full Core gate 08, devices/labels/mobile, actual owner push on HTTPS/closed tab, visual acceptance, assumptions/SOP/cutover and pilot acceptance | P06.4, all P01–P05 | — |
+| ID | Status | Class | Deliverable | Dependencies |
+| --- | --- | --- | --- | --- |
+| R08.1 | [ ] | FS | Guided stock opname, advanced approval and staged warehouse transit | R07.5 |
+| R08.2 | [ ] | FS | Purchasing/PO/supplier-payable workflow if client needs it | R07.5 |
+| R08.3 | [ ] | FS | QC, warranty and repair/customer-custody service workflow | R07.5 |
+| R08.4 | [ ] | FS | Camera barcode variant with manual/HID fallback; no offline mutation | R07.5 |
 
-Core requires all 34 tasks [x], accepted device/channel behavior and no safety blocker. Product/opening import precedes pilot. Tests never bypass owner review or restore.
+## R09 â€” Later commercial/public/accounting extensions
 
-## P07 — Reservation, transit, stock opname and approval
+| ID | Status | Class | Deliverable | Dependencies |
+| --- | --- | --- | --- | --- |
+| R09.1 | [ ] | FS | Public corporate site/catalog and first-party structured CMS | R07.5 |
+| R09.2 | [ ] | FS | RFQ/leads/quotations and conversion attribution | R09.1 |
+| R09.3 | [ ] | FS | Advanced promotions/loyalty/payment-provider integration if justified | R07.5 |
+| R09.4 | [ ] | BE | Full accounting/net-profit/multi-company scope only after separate business/accounting decision | R07.5 |
 
-| ID | Status | Class | Deliverable / acceptance | Dependencies | Evidence |
-| --- | --- | --- | --- | --- | --- |
-| P07.1 | [ ] | [BE] | Reservation/events/expiry/partial fulfillment, availability/health and race tests | P06.5 | — |
-| P07.2 | [ ] | [BE] | Transit dispatch/partial receive/return/loss and identity/ledger invariants | P07.1 | — |
-| P07.3 | [ ] | [BE] | Versioned one-use approval, opname freeze/count/adjustment and negative tests | P07.2 | — |
-| P07.4 | [ ] | [FE] | CP03 warehouse/approval variants and conflict states; Gate A | P07.3 | — |
-| P07.5 | [ ] | [FS] | Approved advanced flows, cross-module E2E and Gate B | P07.4 | — |
-| P07.6 | [ ] | [FS] | CP03 camera variant, Gate A for new interaction, permissions/frame latch/manual-HID fallback and actual devices; Gate B | P06.5, P00.3 | — |
+## Tracker rules
 
-## P08 — QC, warranty and service
+Update only real status/evidence. Scope changes require a new plan version and corrected denominator. Never award completion credit for documentation or historical prototype artifacts.
 
-| ID | Status | Class | Deliverable / acceptance | Dependencies | Evidence |
-| --- | --- | --- | --- | --- | --- |
-| P08.1 | [ ] | [BE] | Immutable QC, quarantine and eligibility integrated with ledger/health | P07.5 | — |
-| P08.2 | [ ] | [BE] | Warranty/service and customer custody separate from company stock | P08.1 | — |
-| P08.3 | [ ] | [FE] | CP02/CP03 QC/warranty/service/item-detail variants and exception states; Gate A | P08.2 | — |
-| P08.4 | [ ] | [FS] | Approved real QC/service flows; Gate B | P08.3 | — |
-| P08.5 | [ ] | [BE] | Custody/availability/audit/privacy regression and backup of new metadata | P08.4 | — |
-
-## P09 — Structured public CMS, website and catalog
-
-| ID | Status | Class | Deliverable / acceptance | Dependencies | Evidence |
-| --- | --- | --- | --- | --- | --- |
-| P09.1 | [ ] | [BE] | Structured DB content/settings, owner-only draft/preview/publish/revisions/audit, safe product projections, media validation/storage, configured wa.me templates, dynamic published reads | P06.5 | — |
-| P09.2 | [ ] | [BE] | Published search/filter/detail/comparison, featured references, pagination and allowlist queries | P09.1 | — |
-| P09.3 | [ ] | [FE] | CP05 factual B2B/B2G home/catalog/detail/comparison plus CP02 CMS editor/preview variant; official assets and Gate A | P09.2 | — |
-| P09.4 | [ ] | [FS] | Real internal CMS/public rendering/SEO/wa.me, content changes without redeploy, safe optional click tracking; Gate B | P09.3 | — |
-| P09.5 | [ ] | [BE] | PUB01–05, leak/cache/draft/publication authorization/media/redirect/performance tests; sentinel private-field checks | P09.4 | — |
-
-## P10 — RFQ, leads, quotations and sales
-
-| ID | Status | Class | Deliverable / acceptance | Dependencies | Evidence |
-| --- | --- | --- | --- | --- | --- |
-| P10.1 | [ ] | [BE] | RFQ validation/anti-spam/PII policy, inquiry attribution without false conversion claims | P09.5 | — |
-| P10.2 | [ ] | [BE] | Lead/quotation/deal, prices/discounts/acceptance/RevenueEvent/credit notes, sales permissions and reservation service | P10.1, P07.1 | — |
-| P10.3 | [ ] | [FE] | CP02/CP05 RFQ/follow-up/quotation/deal/privacy variants; Gate A | P10.2 | — |
-| P10.4 | [ ] | [FS] | Approved sales/public RFQ with real data/audit; Gate B | P10.3 | — |
-| P10.5 | [ ] | [FS] | Deal → reservation → issue/partial/cancel E2E and cross-role owner review | P10.4, P07.5 | — |
-
-## P11 — Costing and profitability after Sales
-
-First report is complete-data **Laba Kotor Penjualan Barang**. No hidden expense/net-profit module. [15](15-FINANCE-PROFITABILITY.md) and [08](08-TESTING-ACCEPTANCE.md) own policy/acceptance.
-
-| ID | Status | Class | Deliverable / acceptance | Dependencies | Evidence |
-| --- | --- | --- | --- | --- | --- |
-| P11.1 | [ ] | [BE] | Eligibility/verified value cutoff, global SKU MWA, sequence/allocations/clearing and versioned replay | P10.5, P03.7 | — |
-| P11.2 | [ ] | [BE] | Revenue/COGS/return/credit matching, completeness/watermark, atomic report publication and owner-only queries | P11.1 | — |
-| P11.3 | [ ] | [FE] | CP04 finance/drill-down revision, scope/period/incomplete/revised states, no net-profit label; Gate A | P11.2 | — |
-| P11.4 | [ ] | [FS] | Real approved gross profit/margin, valid comparisons and Gate B | P11.3 | — |
-| P11.5 | [ ] | [BE] | Golden costing/return/reversal/delay/rounding, no-leak matrix and ledger/clearing/report/restore reconciliation | P11.4 | — |
-
-## P12 — Extended reporting and production maturity
-
-Basic hardening is already mandatory in P06. This phase must not defer Core safety.
-
-| ID | Status | Class | Deliverable / acceptance | Dependencies | Evidence |
-| --- | --- | --- | --- | --- | --- |
-| P12.1 | [ ] | [BE] | Cross-module real-data reports/exports, retention/archive and source permissions | P11.5, P08.5 | — |
-| P12.2 | [ ] | [FE] | CP02/CP04 report/filter/drill-down/export/system variants and redundancy audit; Gate A | P12.1 | — |
-| P12.3 | [ ] | [FS] | Approved real report queries/access audit; Gate B | P12.2 | — |
-| P12.4 | [ ] | [BE] | Actual-load profiling, patch/hardening, expanded restore, capacity/monitoring | P12.3 | — |
-| P12.5 | [ ] | [FS] | Full platform regression, final owner acceptance, operator handover/runbook and verified release | P12.4, P07.6 | — |
-
-## Tracker updates
-
-Update only actual task changes, then recalculate summaries. Include date/evidence and specific blockers. Preserve [V] while waiting for owner review; independent BE work may become the sole active task. Do not remove gates because review takes time.
-
-Later phases may be reordered by a recorded business decision without weakening Core/invariants. P09 depends on reliable Core, not an artificial QC dependency. Camera P07.6 is independent of reservation/transit and may be prioritized after Core. New significant visual variants still require their canonical CP and both applicable gates; do not create a new family just to rename a page.
+Visual tasks stop at Gate A/Gate B as applicable. Tests/screenshots do not self-approve owner visual gates. Production deployment/merge/push requires explicit authorization.

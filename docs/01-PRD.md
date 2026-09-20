@@ -1,87 +1,108 @@
-# 01 — Retail operations product requirements
+# 01 â€” Product requirements
 
-Owns business outcomes, Core scope and dashboard hierarchy. [10](10-DECISIONS.md) records the gap analysis, supersessions and unresolved owner policies.
+Owns business outcomes, Core scope and UX priorities.
 
-## Positioning and success
+## Positioning
 
-A reusable, brand-neutral retail operations application for office supplies, general merchandise and separately sold services. One company per deployment; LATANSA may be the first configured business. The convenience-store comparison describes scan-to-checkout speed, not another retailer's brand or interface.
+A reusable, brand-neutral retail operations platform for office supplies, general merchandise and separately sold services. One company per deployment. LATANSA may be the first configured business, not the product identity.
 
-Success means operators can receive goods, sell a mixed goods/service basket, record payment and automatically produce a receipt and the correct goods issue without duplicate entry; the owner can trace every transaction, act on stock attention and inspect truthful period gross profit.
+Simple transactions must feel like a fast convenience-store checkout. The same system must also handle DP, booking, partial payments, stock reservation, staged goods handover and service progress without forcing those fields into every sale.
 
-| Role | Outcome |
+## Users
+
+| Role | Primary outcome |
 | --- | --- |
-| SUPER_ADMIN / Pemilik | Business control, private cost/profit, exceptions, corrections, accounts/configuration and recovery oversight |
-| OPERATIONS_ADMIN / Admin Operasional | Maintain goods/services and selling prices, register/print codes, receive/issue/transfer goods, monitor stock and restock attention |
-| CASHIER / Kasir | Fast scan/search, basket, payment recording, receipt and own sale history, without stock adjustment or finance access |
+| SUPER_ADMIN / Pemilik | Understand the business, control sensitive actions, see private finance and manage configuration/recovery |
+| OPERATIONS_ADMIN / Admin Operasional | Keep goods/services, stock, bookings, fulfillment, jobs and restock work moving |
+| CASHIER / Kasir | Sell quickly, accept payments, create simple bookings/orders and issue receipts without inventory/accounting complexity |
 
-[04](04-AUTH-RBAC-SECURITY.md) owns actual permissions. Roles describe work, not family relationship or account count.
+Roles describe work, not family relationship. 04 owns permissions.
 
 ## Core
 
-1. Individual authentication, backend RBAC, owner TOTP and audit from inception.
-2. Configurable business identity and receipt header/contact/footer; neutral visual system and Indonesian UI.
-3. One goods/service master, exact base units, selling-price revisions, goods QUANTITY/SERIALIZED tracking, category/brand/location and server search for thousands of SKUs.
-4. Manufacturer aliases plus generated internal barcodes and browser labels; HID/manual scanning into drafts.
-5. Create-only master import and separate goods quantity/serial opening with freeze and atomic apply.
-6. Immutable goods ledger, receipts, non-sale issues, direct transfers, owner adjustments/reversals and cost evidence.
-7. POS mixed baskets, authoritative pricing, full payment recording, automatic immutable retail receipt/A4 copy and atomic goods issue. Baseline assumes immediate goods handover and completed services; Q01–Q03 must be resolved before its visual contract.
-8. Owner-authorized linked partial refunds/verified sale returns, including refund without restocking; immutable original history.
-9. Goods-only LOW/OUT/NORMAL attention, owner/operations inbox, opt-in Web Push and useful restock list.
-10. Owner period sales, goods COGS/gross profit and service revenue/direct-cost gross result with completeness controls; operations receives safe operational totals only.
-11. Desktop cashier keyboard flow, responsive mobile operations, five visual bundles and both owner review gates.
-12. Least-privilege deployment, encrypted off-host backups, measured restore, devices/printing validation and controlled cutover/pilot.
+1. Individual accounts, backend RBAC, owner TOTP, session revocation and audit.
+2. Runtime BusinessProfile for configurable business name/logo/contact/document identity/accent.
+3. One Product Master with GOODS and SERVICE; goods support QUANTITY/SERIALIZED, services never become fake stock.
+4. Selling-price revisions, categories, units, customer basics and server search/pagination.
+5. Manufacturer barcode aliases plus generated internal barcodes/labels; HID/manual scanning.
+6. Create-only product import and separate ledger-based opening stock import.
+7. Immutable goods ledger: receiving, non-sale issue, direct transfer, reservation, fulfillment, adjustment/reversal and history.
+8. LOW/OUT/NORMAL attention with deduplicated episodes and owner/operations inbox.
+9. Unified Order engine for instant POS and deferred orders/bookings.
+10. Append-only payments supporting unpaid, DP/partial and paid; optional due date; no mandatory gateway.
+11. Goods reservation and partial fulfillment. Payment never implies stock issue.
+12. Service jobs with schedule, milestones/progress and completion; no stock mutation.
+13. Mixed goods + service orders.
+14. Fast POS as a minimal-field path: scan/search â†’ cart â†’ pay â†’ fulfill â†’ receipt.
+15. Cashier shifts/opening float/closing count/variance and cash events.
+16. Automatic receipt/payment evidence and A4 representation; reprint without duplicate transaction.
+17. Owner-authorized commercial refund/return; immutable original history.
+18. Period reporting: Hari Ini, 7 Hari, Bulan Ini, Bulan Lalu, Rentang Tanggal.
+19. Reporting separates order value, payments collected, outstanding balance, recognized revenue, HPP/direct service cost and gross profit.
+20. Backup/restore, health, controlled pilot and production deployment on the client's VPS.
 
-Core financial capability must exist before pilot. Incomplete evidence may block complete profit values, never be shown as zero or used to block lawful receipt solely for missing cost.
+## UX success
 
-## Explicit boundaries
+### Kasir
+Default screen is **Kasir**. Normal retail sale requires no customer, schedule or reservation form.
 
-| Capability | Disposition and reason |
+Primary path: `scan/search â†’ quantity â†’ bayar â†’ selesai/cetak`.
+
+Secondary **Pesanan / DP** reveals only customer, payment amount, schedule/due date, reservation and service-booking fields that are actually needed.
+
+### Admin Operasional
+Default workspace prioritizes:
+- pesanan perlu disiapkan;
+- fulfillment/pickup due;
+- pekerjaan jasa hari ini/terlambat;
+- stok rendah/habis;
+- barang masuk;
+- operational exceptions.
+
+### Pemilik
+Default dashboard prioritizes:
+- critical exceptions;
+- stock LOW/OUT;
+- active/late orders/jobs;
+- payment received/outstanding;
+- cashier variance;
+- recognized revenue/HPP/gross profit with completeness.
+
+No decorative KPI duplication or fake charts.
+
+## Independent status dimensions
+
+An order may be `CONFIRMED + PARTIALLY_PAID + GOODS_PARTIAL + SERVICE_IN_PROGRESS`.
+
+- Order: DRAFT / CONFIRMED / CANCELLED / COMPLETED
+- Payment: UNPAID / PARTIALLY_PAID / PAID / PARTIALLY_REFUNDED / REFUNDED
+- Goods: NONE / UNFULFILLED / PARTIAL / FULFILLED
+- Service: NONE / UNSCHEDULED / SCHEDULED / IN_PROGRESS / COMPLETED
+
+03/17 own exact derivation.
+
+## Acceptance
+
+| ID | Evidence |
 | --- | --- |
-| Purchasing | Receiving source/reference and optional restock target in Core; POs, supplier debt, landed-cost automation later |
-| Payment | Cash recorded first; verified manual non-cash only after method policy; gateways, split tenders, deposits, credit and settlement reconciliation excluded from baseline |
-| Services | Completed work sold at checkout; no fake stock. Scheduling, estimates, milestones, project/job costing and repair custody later |
-| Cash drawer/session | Per-user sale/payment summaries Core; opening float/count variance/shift close provisional later pending Q03 |
-| Discounts | Cashier uses posted prices; owner reasoned line price reduction only. Promotions/coupons/order discount engine later |
-| Returns | Owner-only bounded sale-linked refunds and saleable physical returns Core; damaged-return custody/QC requires later quarantine capability before use |
-| Tax/legal invoices | No rates or compliance assumptions. Q01 determines required scope before affected execution; retail receipt is not a tax invoice |
-| Net profit/accounting | Outside baseline: expenses, payroll, depreciation, interest, tax, liabilities, journals and closing need a separate decision |
-| Public company/catalog/CMS | Later; structured DB content and published allowlist, no public checkout in Core |
-| RFQ/leads/quotations/reservations | Later commercial extension; not prerequisite to counter sales |
-| Opname/transit/general approvals | Later; Core has opening freeze, count-based owner correction and direct transfer |
-| QC/warranty/repair service | Later; separate from selling a SERVICE line |
-| Camera/offline | HID/manual and online writes Core; camera later; no offline financial/stock mutations |
-| Multi-company/currency | One configured business, IDR/WIB; no SaaS tenancy, currency conversion or pack conversion |
+| B01 | Cashier completes normal scan-to-receipt sale without owner credentials or duplicate inventory entry |
+| B02 | Booking with DP leaves onHand unchanged and may reserve availability |
+| B03 | 10 reserved goods can fulfill 4+3+3 with exactly 10 total stock OUT |
+| B04 | Two users competing for final available stock cannot oversell |
+| B05 | Mixed goods/service order posts stock only for fulfilled GOODS |
+| B06 | Service progress/milestones never create stock movement |
+| B07 | Multiple payments preserve prior records and derive correct outstanding balance |
+| B08 | Duplicate/lost-response commands recover the original result |
+| B09 | Printer failure/reprint never duplicates order/payment/stock |
+| B10 | LOW/OUT notifications deduplicate until recovery |
+| B11 | DP/cash collected is not automatically recognized revenue |
+| B12 | Missing cost produces incomplete gross-profit state, never zero |
+| B13 | Staff/public payloads never expose owner-only cost/margin/profit |
+| B14 | Restore reconciles orders, payments, reservations, ledger, jobs, receipts and shifts |
+| B15 | Cashier/operations flows pass keyboard/mobile progressive-disclosure review |
 
-If Q01–Q03 require excluded behavior, revise the affected scope and plan before implementing it.
+## Later unless explicitly promoted
 
-## Business acceptance
+Supplier PO/AP automation; full accounting/net profit; payment gateway settlement; complex promotions/loyalty/gift cards; pack conversion/batch/expiry/consignment; staged warehouse transit/full opname; QC/warranty/repair custody; camera scanning/offline mutation; public website/catalog/RFQ/leads/quotations; multi-company/multi-currency.
 
-| ID | Required evidence |
-| --- | --- |
-| B01 | Staff performs authorized routine receipt or sale without owner credentials |
-| B02 | Every goods change traces to immutable ledger, actor/time/product/location/reason/source |
-| B03 | Two cashiers competing for the last unit yield exactly one completed sale |
-| B04 | Repeated quantity scans add one each; serial scan deduplicates; scans never commit |
-| B05 | Mixed sale creates only GOODS legs; service-only sale creates none |
-| B06 | Duplicate submit/lost response recovers the same sale/payment/receipt number |
-| B07 | Printer failure/reprint never creates another sale or movement |
-| B08 | Refund, return and correction retain original facts and enforce cumulative limits |
-| B09 | Minimum 5: 6→5 alerts once, 5→4 does not spam, 20 resolves, next 5 opens a new episode |
-| B10 | Period reports expose missing goods/service costs; no net-profit or guessed zero |
-| B11 | Staff/public payloads and exports contain no acquisition cost/COGS/profit |
-| B12 | Restore reconciles sale, payment, receipt, stock, costs and attention; hardware and visual gates pass |
-| B13 | 5,000-row validation/atomic import and useful server pagination work within measured limits |
-
-[08](08-TESTING-ACCEPTANCE.md) owns test IDs and targets; none is a measured production result yet.
-
-## Role workspaces and owner dashboard
-
-Cashiers land on **Kasir**; operations on **Stok & Restok**; owner on **Dasbor**. Show only implemented/authorized navigation. Catalog, stock history and receipt details use drill-down rather than repeated shortcuts.
-
-Owner priority: critical integrity/recovery exceptions → current OUT/LOW attention → compact selected-period sales/gross result/completeness → receipt/non-sale issue activity → recent meaningful documents. No welcome hero, decorative chart or duplicate metric cards. Operations sees current attention and operational documents without cost/profit. Cashier sees basket, total, payment and recoverable status.
-
-One **Periode** selector: **Hari Ini**, **7 Hari**, **Bulan Ini** (owner default), **Bulan Lalu**, **Rentang Tanggal**. [15](15-FINANCE-PROFITABILITY.md) owns exact date and financial definitions. Current stock attention never changes with a historical period. Sales count comes from Sale, never by counting all ISSUE movements; show refunds separately. Receipt/non-sale issue counts exclude opening, transfer and reversal, with original/correction links.
-
-Stock rows show goods SKU/name, quantity/unit/minimum, location and episode age; OUT before LOW, then severity ratio, oldest episode, SKU. No mixed-unit sum. Reading attention is not recovery. Restock target suggests max(target − eligible, 0), not automatic procurement; without target show the shortage and require operational judgment.
-
-Distinguish loading, empty, incomplete, stale, denied and failed queries. Zero requires a successful complete query. Prototypes show **Data Demo**. Production contains no fabricated charts, finance or company claims.
+Formal tax/legal invoice requirements remain a pre-pilot policy gate.

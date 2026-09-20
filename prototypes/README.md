@@ -1,13 +1,37 @@
-# Prototype registry
+﻿# Prototype registry
 
-No prototypes exist. No visual pattern has owner approval. Architecture decisions D01–D34 are approved, and the [official colored mark](../assets/brand/README.md) is preserved unchanged. No separate monochrome/wordmark/banner was supplied. CP01 will verify small-size use and the refined pastel system; no replacement assets have been created.
+This registry tracks visual/interaction prototypes only. It is not the build-progress tracker; `docs/11-BUILD-PLAN.md` is authoritative for task status.
 
-[05 — Design system](../docs/05-DESIGN-SYSTEM.md) owns structure, states and review evidence. Register each future artifact here and keep a revision-specific `REVIEW.md`. This registry is not the build progress tracker.
+## Historical artifact
 
-| Pattern ID | Revision | Artifact status | HTML / review link |
+`cp01-shell-auth/` exists as an earlier LATANSA-specific prototype created before the retail/order replanning.
+
+It is preserved for historical/reference purposes only:
+
+- no owner approval is carried forward;
+- it is not a production visual contract;
+- its LATANSA-specific palette/identity must not become the universal product design;
+- it contributes no Plan 3.1 completion credit;
+- do not delete it unless explicitly authorized.
+
+| Pattern ID | Status | Purpose | Artifact |
 | --- | --- | --- | --- |
-| CP01 | INITIAL_DRAFT | UNDER_REVIEW | [REVIEW.md](cp01-shell-auth/REVIEW.md) |
+| CP01 | HISTORICAL / UNAPPROVED | Previous shell/auth exploration | [Review](cp01-shell-auth/REVIEW.md) |
 
-Canonical order: CP01 shell/auth → CP02 products/import → CP03 inventory/scan → CP04 owner cockpit → CP05 public website/catalog. The first four are P00 tasks.
+## Plan 3.1 visual contracts
 
-**Next executor task:** P00.1 (CP01 shell/auth) has been prepared by Gemini Antigravity and is currently **[V] WAITING FOR OWNER VISUAL REVIEW**. P00.2 cannot start before Gate A approval of CP01. Reuse approved patterns rather than creating a second frontend codebase. No production API/database connections or Next.js implementation belong in P00. See [executor handoff](../docs/16-EXECUTOR-HANDOFF.md).
+`docs/05-DESIGN-SYSTEM.md` owns the current visual-contract requirements.
+
+| Pattern ID | Status | Scope |
+| --- | --- | --- |
+| RV01 | PLANNED | Brand-neutral shell/auth/role workspaces + fast POS skeleton |
+| RV02 | PLANNED | Goods/services, barcode/labels, receiving and inventory |
+| RV03 | PLANNED | Orders/bookings, DP/partial payment, reservation, fulfillment and service progress |
+| RV04 | PLANNED | Cashier shift, final fast checkout, payment, receipt/reprint and refund states |
+| RV05 | PLANNED | Owner dashboard, stock attention, finance and system/recovery states |
+
+**Next eligible visual task:** `R00.1 / RV01`, only after Plan 3.1 is accepted for execution.
+
+RV01 must use brand-neutral product foundations with runtime `BusinessProfile`; LATANSA may be used only as a first-client configuration/demo identity.
+
+Prototype Gate A approves interaction/visual direction only. Production implementation still requires separate authorization and later Gate B approval.

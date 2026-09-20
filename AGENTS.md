@@ -1,49 +1,84 @@
-# Agent rules — Retail Operations Platform
+# Agent rules â€” Retail Operations Platform
 
-Applies throughout this repository and to all executors. The repository is the source of truth; explicit owner instructions take precedence. The 20 September 2026 major retail replanning supersedes conflicting earlier product/phase/brand assumptions through D36–D45. D01–D35 remain historical decisions, with effective status in docs/10-DECISIONS.md. Never silently change safety invariants.
+The repository is the sole source of truth. Explicit owner instructions supersede conflicting older assumptions only when recorded in canonical documentation.
 
-## Recover context
+## Recover context first
 
-1. Inspect git status --short and git branch --show-current. Preserve local user work. main is the default canonical branch; do not return to the historical planning branch.
-2. Read this file, docs/00-CURRENT-STATE.md and the active/next row in docs/11-BUILD-PLAN.md. Select one task and verify dependencies and policy gates before editing.
-3. Search with rg before broad reading. README.md maps canonical ownership; 17 owns POS.
-4. This is a planning-only checkpoint. Do not resume old CP01, scaffold production or restart Antigravity automatically. Old P00.1/CP01 is unapproved and superseded as a visual direction, not deleted.
-5. Next eligible future execution is R01.1 / RV01. Follow 16 and actual current state. R01.2 requires Q01–Q03 disposition. Production requires approved RV01–RV05 and explicit owner implementation authorization.
+Before substantial work:
+1. inspect `git status --short` and `git branch --show-current`;
+2. read this file and `docs/00-CURRENT-STATE.md`;
+3. read the active/next task in `docs/11-BUILD-PLAN.md`;
+4. read `docs/01-PRD.md`, `docs/02-ARCHITECTURE.md`, `docs/10-DECISIONS.md`;
+5. read task-specific canonical docs.
 
-## Product and safety
+Preserve local user work. Never silently reset/delete unrelated files.
 
-- Core is retail goods/services: master → receive → scan/search → basket → payment/receipt → atomic goods issue → restock → owner gross reporting.
-- Canonical docs are English. All UI/errors/reports/human audit/notifications are Bahasa Indonesia.
-- Product commercialType GOODS/SERVICE is separate from goods trackingMode. Services never have stock balances, serial stock, reorder alerts or ledger legs.
-- Immutable ledger is quantity truth. No arbitrary balance edits, negative stock, deleted history, silent SQL repair or offline financial/stock mutation.
-- All stock writers use 06 command services, one PostgreSQL transaction, backend authorization, ordered locks, idempotency and audit.
-- POS completion includes sale, payment record, receipt snapshot, revenue fact and goods issue in one transaction under 17. Printer/push/valuation work happens after commit and never recreates a sale.
-- A scan edits a draft. Show success only after confirmed commit; preserve original identity during uncertainty.
-- Use SUPER_ADMIN, OPERATIONS_ADMIN, CASHIER and the explicit matrix in 04. Staff never receive owner role merely to do routine work. Check every API/action/job/object.
-- Costs/COGS/margin/profit are owner-only by default, including DTOs, exports, errors and audit. Unknown is not zero. Laba Kotor is not Laba Bersih.
-- Single-business deployment with runtime configurable identity; no hardcoded LATANSA palette/name/domain/code namespace as universal identity. Preserve official assets without redesigning them.
-- Goods attention uses episodes in 13; read state never clears stock problems.
-- Thousands of SKUs are normal. 14 requires typed create-only master import, validate/preview/confirm and atomic file apply. Opening is separate and ledger-based.
-- Public features are later: allowlist projections of the same master, structured DB content, owner publication, configured wa.me only. A click proves no conversation/sale.
-- Prefer mature open-source/self-hosted software and existing infrastructure. Extra paid services require explicit approval; cost savings cannot weaken recovery/security.
-- No secrets, real customer data, dumps or production configuration in Git. .env.example has empty values only. No fallback secrets/fixed credentials/host-specific source paths.
+## Effective product model
 
-## Visual and implementation gates
+Core is a brand-neutral retail operations system for GOODS and SERVICES. A single **Order** model supports instant POS, booking, DP/partial payments, later settlement, goods reservation, partial fulfillment, mixed goods/services and scheduled service jobs with milestones/progress.
 
-Classify tasks [BE], [FE] or [FS]. Major new interactions: requirements → isolated HTML/CSS with safe demo data → browser verification → owner Gate A → production integration → real-data technical/browser checks → owner Gate B.
+Instant POS is a fast path through the same Order engine, not a separate commercial system.
 
-Approved revision is the visual contract. Reuse its patterns directly; significant deviations revise it. RV01–RV05 replace old CP bundles for Core. Prototypes access no production API/database. Tests/screenshots are never owner approval. FE/FS stays [V] until the applicable explicit revision approval; BE may complete after technical verification. Stop at each required visual gate.
+Primary roles:
+- `SUPER_ADMIN` â€” Pemilik;
+- `OPERATIONS_ADMIN` â€” Admin Operasional;
+- `CASHIER` â€” Kasir.
 
-Premium means clear hierarchy, fast operation, restrained styling and useful density. Verify desktop/mobile/keyboard, independent semantic colors, contrast, consistent Lucide icons, and each element/action/fact's purpose. No replacement logos or generic decorative dashboard.
+## Non-negotiable invariants
 
-## Execution and handoff
+- Immutable stock-movement ledger; no direct balance editing.
+- `available = onHand - reserved`; reservation never changes physical onHand.
+- Payment/DP never causes stock OUT by itself.
+- GOODS stock leaves only on verified fulfillment/issue.
+- SERVICES never create fake stock balances or ledger legs.
+- Payments are append-only; old payments are never overwritten.
+- Order, payment, goods fulfillment and service progress states are separate.
+- Cash received is not automatically revenue; revenue is not automatically cash received.
+- Missing cost is not zero. Gross profit is never labeled net profit.
+- Returns/refunds/corrections preserve original history.
+- Critical writes use DB transactions, backend RBAC, idempotency and audit.
+- No negative stock where prohibited; serialized identity cannot duplicate or issue twice.
+- A scan edits a draft; a beep never means stock changed.
+- Public/staff DTOs never leak private cost, margin, serial, audit/security or internal warehouse data.
 
-- One active build task and at most one [~]; no unrelated refactoring or speculative ERP expansion.
-- Lifecycle [ ] → [~] → [T] → [V] if visual → [x]. [!] is an actual blocker with an exact unblock condition.
-- Q01–Q03 in 10 are pending business policies, not inferred approval. Stop affected work; independent prerequisites may proceed only when authorized.
-- Run targeted tests and relevant 08 gates. Never claim an unrun test passed.
-- Stop/report contradictory specs, required invariant changes, missing required credentials, destructive migrations, unapproved paid dependency or material scope change.
-- Never push, merge, publish, deploy, message third parties or buy services without authorization.
-- Preserve user work and Git history. Keep one canonical owner per topic, link rather than duplicate.
-- Update actual task/evidence in 11, real decisions in 10, and 00 LAST. Planning completion is not implementation completion.
-- Final reports are concise, with real checks/limits and no sensitive payloads or long transcripts.
+## UX rule
+
+Keep complexity in the system.
+
+Cashier default: `Scan/Search â†’ Keranjang â†’ Bayar â†’ Struk`. Reveal **Pesanan / DP** fields only when needed.
+
+Operations default answers: **apa yang harus dikerjakan hari ini?**
+
+Owner default answers: **apa yang perlu perhatian dan bagaimana bisnis berjalan?**
+
+Use progressive disclosure, useful defaults, keyboard/scanner efficiency on desktop, touch efficiency on mobile and Bahasa Indonesia labels. Users do not need to understand ledger, allocations or revenue-event terminology.
+
+## Branding
+
+Do not hardcode LATANSA as product identity. Runtime `BusinessProfile` owns name, logo, contact/document identity and constrained accent configuration. Semantic success/warning/danger/focus colors remain independent from brand colors. Preserve existing LATANSA assets as first-client/historical assets only.
+
+## Cost policy
+
+Target recurring software/SaaS cost is approximately Rp0:
+- existing VPS + Docker Compose/Caddy;
+- PostgreSQL for DB/search/jobs;
+- self-hosted Better Auth;
+- browser print/print-to-PDF;
+- open-source barcode generation;
+- Web Push + in-app inbox.
+
+Do not add paid auth/database/queue/search/analytics/CMS/payment/notification SaaS without explicit approval. Reliable off-VPS backup remains mandatory; if no suitable existing destination exists, document the cost instead of weakening recovery.
+
+## Development workflow
+
+Implement vertical slices: database â†’ validation â†’ backend/service â†’ RBAC â†’ audit â†’ UI â†’ tests â†’ browser/device verification.
+
+Major new interactions require a visual prototype Gate A before their production UI and Gate B after real integration. Prototypes are interleaved with the relevant slice; do not build the entire frontend first.
+
+One active task at a time. Avoid unrelated refactoring or speculative ERP expansion. Never push, merge, deploy, publish or buy services without explicit authorization.
+
+## Completion
+
+A task is not complete merely because UI renders. Relevant migrations, validation, RBAC, audit, tests, lint, typecheck, production build, browser/mobile/device checks and docs must pass.
+
+Update `docs/11-BUILD-PLAN.md` for status/evidence, `docs/10-DECISIONS.md` for real architecture decisions, and `docs/00-CURRENT-STATE.md` last after substantial work.

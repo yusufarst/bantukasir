@@ -123,7 +123,7 @@ Unaffected semantics remain binding: D01, D02–D04, D07–D09, D19, D23, D25, D
 
 ### Material owner policy register
 
-No answer has been received at this writing. These are proposed boundaries, not claims of client agreement. Independent shell planning can proceed; dependent prototype/production work waits as specified.
+The table below preserves the policy state from the interrupted Astra replanning. Q02 and Q03 are now superseded and resolved by D46-D51 below; Q01, Q04 and Q05 remain active gates where stated.
 
 | ID | Proposed baseline / unresolved business meaning | Exact gate |
 | --- | --- | --- |
@@ -134,3 +134,29 @@ No answer has been received at this writing. These are proposed boundaries, not 
 | Q05 | Base units, no packs/batches/expiry/consignment; actual serial normalization and interchangeable costing | Before affected master/opening import; do not ingest unsupported stock |
 
 Q01–Q03 were surfaced to the owner during replanning. Q04–Q05 are operational acceptance gates, not reasons to buy software or request secrets in Git. Existing A02–A12/A15–A17 remain technical assumptions where consistent with plan 3.0; old Pxx deadlines are historical, replaced by the new build dependencies. A08 push capability and A09 recovery acceptance are still required before pilot.
+
+
+## Owner-approved unified order flow ? 20 September 2026
+
+The owner explicitly approved the unified flow covering instant POS plus DP, booking, staged goods fulfillment, later payment and service progress. The following decisions supersede conflicting immediate/full-payment-only assumptions in D36?D45 without erasing history.
+
+| ID | Decision |
+| --- | --- |
+| D46 / LOCKED | One Order engine is the commercial source of truth. Instant POS is a fast path through Order, not a separate Sale truth. |
+| D47 / LOCKED | Payment history is append-only and independent from order, goods and service status. DP/partial/final payments are Core. |
+| D48 / LOCKED | InventoryReservation and partial GoodsFulfillment are Core. Reservation reduces available only; fulfillment posts physical ISSUE. Payment alone never moves stock. |
+| D49 / LOCKED | Scheduled SERVICE work is Core through ServiceJob, milestone/progress and verified completion. SERVICE itself has no stock. Repair/customer-custody service remains later. |
+| D50 / LOCKED | Management finance separates order value, payments collected, outstanding balance, recognized revenue, HPP/direct service cost and gross profit. GOODS revenue follows fulfillment; SERVICE revenue follows verified completion. |
+| D51 / LOCKED | Cashier shift reconciliation is Core: opening float, cash events, blind closing count, variance and immutable history. |
+| D52 / LOCKED | UX uses progressive disclosure: ordinary cashier path stays Scan/Search ? Keranjang ? Bayar ? Struk; Pesanan/DP reveals deferred-order complexity only when needed. |
+| D53 / LOCKED | Plan 3.1 replaces D44's incomplete plan-3.0 count: 47 tasks / 39 Core across R00?R09, with RV01?RV05 interleaved before the relevant production UI rather than frontloading the entire frontend. |
+
+### Policy register after owner flow approval
+
+- Q01 remains OPEN: formal tax/legal invoice and tax treatment must be confirmed before that behavior is enabled.
+- Q02 is RESOLVED by D46?D50: deposits, staged work and later settlement are required; gross-profit reporting remains the accepted initial profit scope.
+- Q03 is RESOLVED by D51: cashier shift reconciliation is required in Core; refund execution remains owner-only by default.
+- Q04 remains a pre-pilot recovery acceptance gate.
+- Q05 remains a pre-import inventory-assumption validation gate.
+
+D40's immediate/full-payment baseline is superseded by D46?D50. D44's 46/36 draft count is superseded by D53. All unaffected inventory/security/cost/backup decisions continue to apply.

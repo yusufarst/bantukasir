@@ -1,113 +1,120 @@
-# 15 — Goods and service profitability
+# 15 â€” Goods and service profitability
 
-Canonical management-reporting semantics, evidence, costing and completeness. This is not a full accounting/financial-statement compliance implementation. [17](17-POS-SALES.md) owns sale/payment/return facts; [06](06-INVENTORY-SPEC.md) physical stock; [04](04-AUTH-RBAC-SECURITY.md) owner-only financial access.
+Owns management-reporting semantics, costing and completeness. This is not full accounting.
 
-## Core scope and labels
+17 owns orders/payments/fulfillment; 06 owns physical stock; 04 owns private financial access.
 
-Owner confirmed completed/lun paid services and initial gross-profit reporting. Core includes actual net sales revenue, goods MWA/HPP, actual direct service costs, refunds/returns, gross results and period filters. Unknown costs never become zero. Cash balances/payment totals are separate from revenue; opening float and paid-in/out are neither revenue nor profit.
+## Keep these concepts separate
 
-| UI metric | Definition |
+| UI metric | Meaning |
 | --- | --- |
-| Penjualan Sebelum Diskon | Completed line base value before authorized selling discounts, excluding configured tax collected for others |
-| Diskon / Pengembalian Dana | Explicit authorized discounts / linked credit amounts; do not subtract a discount twice |
-| Pendapatan Bersih Barang / Jasa | Completed fulfilled net line revenue plus linked revenue credits for that type in period |
-| HPP Barang | Matched goods issue cost less recognized historical-cost recovery for eligible sale returns |
-| Laba Kotor Barang | Net goods revenue − matched goods HPP |
-| Biaya Langsung Jasa | Verified actual direct costs for fulfilled service lines, net only of evidenced cost recoveries |
-| Laba Kotor Jasa | Net service revenue − verified direct service costs |
-| Laba Kotor Penjualan Tercatat | Goods gross + service gross, only when both selected scopes are complete |
-| Margin Kotor | Combined gross / combined net revenue ×100%, only for positive net revenue |
-| Data biaya belum lengkap | Missing evidence or unprocessed valuation; complete gross/margin unavailable |
+| Nilai Pesanan | Effective confirmed order value after authorized revisions |
+| Pembayaran Masuk | Customer money recorded in the selected period; includes DP/partial/final payments |
+| Sisa Tagihan | Commercial outstanding amount on open orders; management metric, not a full accounting AR ledger |
+| Pendapatan Terealisasi | Value recognized from fulfilled GOODS and completed SERVICE obligations |
+| HPP Barang | Matched cost of fulfilled GOODS using MWA |
+| Biaya Langsung Jasa | Verified direct service costs |
+| Laba Kotor | Recognized revenue minus matched HPP/direct service cost when complete |
 
-Display scope, period, currency, included/excluded types and calculated-through watermark. A goods-only complete view may show its result while services are incomplete, but it cannot appear as total business profit. No hidden exclusion of missing-cost or loss-making sales. No ambiguous **Laba** alone. Negative gross remains negative/**Rugi Kotor**; zero/negative net revenue makes margin **Tidak Berlaku**.
+**DP/payment received is not automatically revenue. Revenue is not automatically cash received.**
 
-## Goods policy
+Opening float, paid-in/out and cashier variance are cash-control facts, not revenue/profit.
 
-Perpetual moving weighted average per interchangeable GOODS SKU across company locations, both QUANTITY and SERIALIZED. Serial tracking is physical traceability, not automatically specific-identification costing. Actual serial acquisition evidence is retained. FIFO adds layer/return complexity without stated need; latest purchase price/manual margin is not historical COGS. Non-interchangeable/custom manufacture requires a separate policy before inclusion.
+## Recognition baseline
 
-[IAS 2](https://www.ifrs.org/issued-standards/list-of-standards/ias-2-inventories/) identifies weighted average/FIFO for interchangeable inventory and specific identification for non-interchangeable items. MWA is this product's selected method, not a claim that the application implements all accounting standards.
+### GOODS
 
-AcquisitionCostEvidence links opening/receipt/positive adjustment source to total IDR value, source/reference, acquisition discounts, direct-cost components, tax treatment, completeness, actor/verification and immutable revisions. One effective revision/source; either line total or complete unit allocations reconciling to it, never both counted. Blank and missing differ from explicit verified zero. Owner alone enters/verifies; receipt can commit without it.
+Recognize goods revenue when verified handover/fulfillment occurs. The linked inventory ISSUE and fulfillment quantity are the physical evidence. Booking, reservation, invoice/receipt rendering or DP alone is insufficient.
 
-Owner supplies evidenced final allocations; no landed-cost automation. Nonrecoverable acquisition taxes/direct bringing-to-condition costs may belong in basis only under confirmed policy; recoverable tax is excluded where verified. Unknown tax/component treatment makes the cost incomplete. Supplier invoices remain private; references suffice initially, attachments later.
+Partial fulfillment recognizes only the fulfilled quantity/value.
 
-## Exact pool calculation
+### SERVICE
 
-Q/V is the per-SKU on-hand company goods pool across locations. All sources process product inventorySequence (once per product/movement, lineNo within it), never worker completion order. Transfers change neither Q/V nor average.
+Recognize service revenue on verified `ServiceCompletion` for the relevant service line/quantity. Booking, schedule, milestone progress and payment alone do not recognize revenue.
+
+If the business later needs separately priced/accepted milestones to recognize revenue independently, define that policy explicitly before implementation. Core does not infer it from percent progress.
+
+## Goods costing
+
+Use perpetual moving weighted average per interchangeable GOODS SKU across company locations.
 
 ```text
-Receipt q, verified total c: Q' = Q + q; V' = V + c
-Average A = V/Q when Q > 0
-Issue q: allocation = q*A; Q' = Q-q; V' = V-allocation
-Counter sale: match that issue allocation to fulfilled revenue in the same sale
+Receipt q with verified cost c: Q' = Q + q; V' = V + c
+Average A = V / Q
+Fulfillment issue q: HPP allocation = q * A
 ```
 
-Stock numeric(18,3); cost values/unit costs numeric(24,6), exact decimal strings/high-precision division, half-even allocation to six places. Final quantity out consumes residual V so Q=0 implies V=0. Sum stored values before presentation formatting. POS price/discount/tender rounding is separately fixed in 17. Overflow or unexplained negative pool value blocks valuation and raises incident, never silently clamps.
+Transfers do not change company Q/V. Unknown cost blocks downstream complete HPP for that SKU; do not continue with a guessed old average.
 
-Demo: receive 10 × Rp100,000 and 10 × Rp140,000 → average Rp120,000; sell five for net Rp900,000 → HPP Rp600,000, gross Rp300,000, margin 33.33%. Internal transfers do not change it. Interchangeable serial units acquired for Rp10m/Rp12m use Rp11m average, retaining source evidence.
+Keep exact decimal arithmetic. Physical posting remains valid when financial cost evidence is incomplete.
 
-Unknown cost at a source blocks that SKU's downstream valuation. Do not continue using the old average. Physical sale remains valid with pending HPP. Process cost revisions by replay from earliest affected source into a new report version; physical history never changes.
+## Service direct cost
 
-## Services: minimum actual-cost evidence
+ServiceCostEvidence may include verified direct labor, subcontract, consumed materials and other direct job cost with source/reference and version.
 
-ServiceCostEvidence belongs to a completed SERVICE sale line and fulfilled quantity. Record actual direct labor, subcontracting, job materials and other direct costs only with source/reference, amount/currency, allocation basis, explicit completeness and owner verification. Manual final totals per line with supporting reference are sufficient; no project ERP/timesheet/payroll engine is required. A tree-cutting service cannot inherit zero cost simply because it has no stock.
+Blank is unknown, not zero. Explicit zero requires evidence/reason.
 
-A component must be known included, separately allocated, not applicable or unknown. Explicit verified no-direct-cost declaration needs a reason/source; blank never means zero. Allocate shared invoice/job costs once across named sale lines with reconciled total; prevent overlap. Company-stock materials consumed for a service use a real non-sale goods issue and a unique service-cost allocation reference; their cost is reclassified into service direct costs, not simultaneously goods sales HPP and another manual material cost.
+Company-stock material consumed for a service uses a real inventory issue and unique cost allocation so the same material cost is not counted twice.
 
-Service price is commercial revenue, not evidence of cost. Service refund does not automatically erase wages/material already incurred. Verified supplier/cost recovery adds linked evidence correction; otherwise original direct costs remain and gross result can be negative. Cost corrections are versioned and private.
+Service refund does not automatically erase labor/material already incurred.
 
-Example: service revenue Rp500,000, verified labor Rp200,000 and materials Rp50,000 → gross Rp250,000. Missing labor makes service/combined profit incomplete. A Rp100,000 goodwill refund without cost recovery reduces service gross to Rp150,000 and never creates goods stock.
+## Payments and outstanding
 
-## Fulfillment, credits and financial dates
+PaymentRecord is append-only.
 
-Core recognizes goods at attested immediate handover and services already completed, with full recorded payment under 17. Payment alone is insufficient for unperformed service; such sales are outside Core. This simplified boundary follows the transfer/satisfied-obligation concept in [IFRS 15](https://www.ifrs.org/issued-standards/list-of-standards/ifrs-15-revenue-from-contracts-with-customers/), not a local compliance conclusion.
+For an order:
+`outstanding = effective order total - net applied customer payments`
 
-Completed Sale creates immutable RevenueEvents and goods issue-allocation references transactionally. recordedAt and Core recognizedAt use server completion time. Core refunds/returns recognize adjustments at their current server posting time, not an edit to the original period. Late cost evidence may restate the historical matched cost via a clearly revised financial report; preserve old versions. Backdated sales, deposits, receivables, staged acceptance and formal closing are excluded.
+Refund/credit handling must keep signs and linkage explicit. A revision that would make outstanding negative must either include an explicit refund/credit disposition or be rejected for review.
 
-Revenue excludes confirmed taxes collected for others; no hardcoded tax rate or assumed tax-exempt status. Before pilot owner validates policy with appropriate accounting advice; required tax/invoice behavior must be specified/tested before activation.
+Cash tender/change may be recorded for a cash payment, but only the applied amount reduces outstanding.
 
-| Correction | Treatment |
-| --- | --- |
-| Goods return plus refund | Credit original discounted revenue and recover original returned cost; add goods to pool at that historical cost |
-| Physical return before money refund | Record goods return and pending commercial counterpart; affected result incomplete until disposition reconciles |
-| Refund without return / goodwill price credit | Reduce revenue; no added goods and no automatic HPP reversal |
-| Service refund | Reduce service revenue; incurred cost persists unless explicit evidenced recovery |
-| Supplier return | Remove current average carrying value; supplier credit difference is purchase variance, not sales profit |
-| Loss / negative stock adjustment | Release average value to separate non-sale loss; excluded from sales gross, disclosed as excluded non-sale effects |
-| Found / positive adjustment | Owner verifies value; missing basis blocks cost, no guessed old average |
-| Standalone inventory reversal | At new sequence: incoming inverse restores original released allocation; outgoing inverse releases current carrying value with source-cancellation variance; no physical rewrite |
-| Sale-linked stock correction | Must pass 17 commercial return/refund command; no separate reversal bypass |
-| Zero goods pool | Consume rounding residual; next receipt starts new average |
+## Refunds and returns
 
-Partial returns/credits have independent cumulative quantity/value caps under 17. Goods returned at original cost may alter current average; never use newest purchase price. Final returned portion absorbs residual rounding. Example above: return/refund two → revenue −Rp360,000, HPP −Rp240,000, net revenue Rp540,000, HPP Rp360,000, gross Rp180,000.
+Original commercial/financial facts remain immutable. Corrections append linked events.
 
-Later shipment-before-acceptance requires DispatchClearing: issue removes warehouse Q/V into clearing, acceptance releases to HPP without removing warehouse value twice; pre-acceptance return restores clearing value. Do not introduce clearing into normal completed counter-sale UX.
+- money refund without goods return: reduce commercial payment/revenue as applicable; no stock receipt;
+- verified saleable goods return: linked RETURN RECEIPT and historical-cost recovery;
+- service refund: reduce service revenue; incurred direct cost remains unless separately recovered/evidenced;
+- price credit: revenue correction only, no stock movement.
 
-## Reports, periods and completeness
+Never use an inventory reversal to bypass commercial limits.
 
-```text
-NetRevenue = completed net fulfilled revenue + signed credits in period
-GoodsGross = NetGoodsRevenue − MatchedGoodsCOGS
-ServiceGross = NetServiceRevenue − VerifiedDirectServiceCosts
-CombinedGross = GoodsGross + ServiceGross
-```
+## Reports and periods
 
-WIB boundaries converted server-side to UTC, start inclusive/end exclusive:
-- **Hari Ini**: today midnight through next midnight.
-- **7 Hari**: today and previous six calendar days, through next midnight.
-- **Bulan Ini**: first of this month through first of next month (only committed data exists).
-- **Bulan Lalu**: first of prior month through first of current month.
-- **Rentang Tanggal**: chosen start midnight through day after chosen end.
+Periods use Asia/Jakarta business boundaries converted server-side to UTC:
+- Hari Ini
+- 7 Hari
+- Bulan Ini
+- Bulan Lalu
+- Rentang Tanggal
 
-Include snapshot/current partial-day indication; future data is never fabricated. Owner default Bulan Ini. Equal-length comparisons require equally complete coverage; no percentage comparison against zero. Current stock attention stays current regardless of filter.
+Owner views may show:
+- order value;
+- payments received;
+- outstanding balance;
+- recognized goods/service revenue;
+- goods HPP;
+- direct service cost;
+- goods/service/combined gross profit;
+- gross margin where applicable.
 
-ValuationRun fixes source watermark/policy/evidence revisions, ordered cursor and unique run/source/event. PENDING/BLOCKED/READY/PUBLISHED/SUPERSEDED states; publish one consistent pointer atomically, not mixed runs. Report includes goods/service coverage counts, missing evidence, unresolved return/refund counterparts, unprocessed sources, versions and calculatedAt. New sales after watermark are visibly pending, not quietly omitted while claiming complete current totals.
+Current LOW/OUT and active jobs remain current-state facts and are not period-filtered unless the specific view says so.
 
-Revenue can be displayed from complete sale facts while HPP/profit are pending, explicitly separated. A valid empty complete period yields zero revenue/cost/gross and not-applicable margin. Failed/stale query is never zero. Each drill-down/export uses same scope/allocations and owner authorization. Category/type/unit snapshot prevents later master edits rewriting historical grouping.
+## Completeness
 
-## Net profit and scope limits
+A report snapshot records scope, watermark, evidence versions, calculatedAt and completeness.
 
-Net profit is outside the accepted initial scope. It would require reconciled operating expenses, payroll, rent/utilities, depreciation, financing/interest, tax, non-sale inventory losses/variances, liabilities/accruals, accounting periods/journals and closing policy. One miscellaneous expense field or drawer cash variance does not justify **Laba Bersih**.
+Presentation:
+- feature unavailable â†’ hide or **Belum Aktif**;
+- revenue known but cost incomplete â†’ show revenue plus **Data biaya belum lengkap**, no fake gross;
+- complete â†’ show actual HPP/cost/gross;
+- failed/stale query â†’ error/stale state, never zero.
 
-Published gross reports explicitly exclude those costs. Owner reports may flag non-sale losses/shift variance separately without subtracting arbitrary cash movements from gross profit. If net profit becomes required, document and approve a new accounting scope first.
+No hidden exclusion of missing-cost or loss-making transactions.
 
+## Net profit
+
+Net profit is outside Core. A truthful net-profit feature needs operating expenses, payroll, rent/utilities, depreciation, financing/interest, tax, non-sale losses/variances, liabilities/accruals and period-closing policy.
+
+Do not label gross profit or cash surplus as **Laba Bersih**.

@@ -1,53 +1,82 @@
-# 07 — Business workflows
+# 07 â€” Business workflows
 
-Owns cross-module responsibilities; [17](17-POS-SALES.md) owns POS atomicity, [06](06-INVENTORY-SPEC.md) inventory, [04](04-AUTH-RBAC-SECURITY.md) access and [15](15-FINANCE-PROFITABILITY.md) financial meaning.
+Owns user-visible cross-module flows. 17 owns commercial commands; 06 owns physical inventory.
 
-## F01 — Configure and onboard
+## F01 â€” Configure/onboard
 
-Owner activates account/TOTP, sets BusinessProfile and verified receipt/payment policy, creates locations/units and assigns operational roles. Operations prepares goods/service master with selling prices/aliases; owner applies the reviewed create-only batch. Services need no opening/monitoring. Validate actual scanners/labels and printer with demo data.
+Owner configures BusinessProfile, users/roles, locations/registers, payment/receipt policy and basic references. Operations prepares goods/services, prices and barcodes. Product import creates master only; opening stock is a separate reviewed ledger workflow.
 
-Owner defines cutover, activates location freeze and reviews staff counts/separate goods opening imports. Commands create ledger/items, never editable balances. Reconcile count/serials, verify private opening costs or expose incomplete evidence, enable goods monitoring and release freeze. Complete recovery/device/pilot gates before live trading. No competing balance sources.
+## F02 â€” Receive goods
 
-## F02 — Receive goods
+Admin Operasional: `Barang Masuk â†’ scan/search â†’ quantity/serial â†’ destination/reference â†’ review â†’ confirm`.
 
-Operations selects destination, sender/source, reason and reference → scans existing alias or selects goods → registers new serial identity when needed → edits/reviews draft → confirms once → server document after atomic posting. Unknown code is retained for authorized registration, never auto-created. Owner enters acquisition cost separately; missing cost does not stop lawful receipt. Services cannot be received.
+Confirmation posts RECEIPT, updates balances/attention and audit. Services cannot be received.
 
-Supplier procurement/credit is outside Core; reference documents still explain each receipt. Label printing does not prove receipt.
+## F03 â€” Fast counter sale
 
-## F03 — Counter sale
+Cashier: `Kasir â†’ scan/search â†’ cart â†’ Bayar â†’ confirm â†’ receipt`.
 
-Cashier selects source location → scans/searches goods or adds a service → reviews quantity/prices/total → confirms handover/completed-service facts and payment → completes once. Server revalidates prices, payment and stock and commits the sale and goods issue together. No warehouse re-entry. A printed or onscreen receipt uses that sale number.
+Normal immediate order requires no customer. Full payment is recorded; GOODS fulfill immediately; only actually completed counter SERVICE may complete immediately. Printer failure only affects printing/reprint.
 
-Unknown result freezes the attempt: recover original sale, do not charge again or start a replacement. Printer failure offers reprint. Service already completed is the baseline; deposits/staged work require Q02 scope revision first.
+## F04 â€” Order / booking / DP
 
-## F04 — Non-sale issue and direct transfer
+Cashier or Operations selects **Pesanan / DP**:
+1. identify/create customer;
+2. add GOODS/SERVICE;
+3. set schedule/due date only when needed;
+4. choose unpaid, DP/partial or full payment;
+5. reserve GOODS where appropriate;
+6. create service job/schedule where appropriate;
+7. confirm.
 
-Operations uses Barang Keluar only for non-sale consumption, loss handoff or other authorized reason/reference. Selling goods must use POS. Transfer requires both locations and immediate verified movement; travel with later receipt needs staged transit first. Same ledger and freeze/serial/availability checks apply.
+Confirmation does not pretend fulfillment occurred.
 
-## F05 — Cancellation, refund and correction
+## F05 â€” Reservation/partial fulfillment
 
-Unsubmitted basket may be edited/cancelled. Unknown/submitted sale cannot be discarded. Completed sale stays immutable. Owner verifies the original and uses 17 linked refund/return with reauthentication and reason. Physical return and money refund are distinct facts; neither silently implies the other.
+Order 10 â†’ reserve 10 â†’ onHand unchanged, available -10.
 
-Standalone inventory recording errors use eligible full reversal or count-based adjustment under 06. Sale-linked movements cannot be independently reversed. Staff raises the issue to the owner; no general maker-checker engine in Core.
+Later: hand over 4 â†’ ISSUE 4; then 3 â†’ ISSUE 3; final 3 â†’ ISSUE 3. Each command is idempotent/auditable and remaining reservation follows remaining obligation.
 
-## F06 — Restock
+## F06 â€” Service job
 
-Owner/operations reads current LOW/OUT episode, stock by location and history, then organizes replenishment outside a purchase-order system. Optional target suggests a quantity, never buys automatically. Read/unread does not resolve attention. Receipt/return or lawful policy change reevaluates it; only NORMAL or explicit administrative monitoring removal closes the episode with its actual cause.
+`Booked â†’ Scheduled â†’ In Progress â†’ Completed`.
 
-## F07 — Review business
+Milestones may represent survey, preparation, execution, cleanup and handover. Progress events are append-only. Progress does not move stock or imply payment.
 
-Owner selects the reporting period → reviews net goods/service revenue, goods HPP, direct service costs and complete gross results → drills into sales and missing evidence. Operations views safe receipt/issue/restock and permitted sale totals; cashier views own sales/payment totals. These are not drawer reconciliation or net profit. Cash handover/shift needs are Q03.
+Company-stock material genuinely consumed for a job uses a separate authorized GOODS issue with service-cost reference.
 
-## F08 — Account/session interruption
+## F07 â€” Later payments
 
-Disablement/revocation is enforced by backend guards; historical actors remain. Authentication expiry pauses checkout and requires the same actor to recover the attempt. Server cart/receipt lets the owner investigate an abandoned session. A second employee starts a separate authorized cart, never impersonates the first.
+Open order â†’ **Tambah Pembayaran**. DP, second payment and final payment remain separate records. Outstanding balance derives from effective order total, payments and refunds/credits.
 
-## F09 — Incident/recovery
+Cash payment requires the actor's own open register shift.
 
-Stop posting when integrity is uncertain; identify unresolved sale/stock command by durable reference. Owner decides business reopening, authorized operator restores under 09. Reconcile real cash/non-cash evidence, printed receipts and physical goods against snapshot loss. Never re-charge or replay missing restored commands by assumption.
+## F08 â€” Changes/cancellation
 
-## Later workflows
+Drafts are editable within permission. After confirmation, material changes use a recorded revision. Never overwrite fulfilled quantities, old payments or prior service progress.
 
-Reservations hold availability but not physical stock. Fulfillment consumes reservation and posts issue atomically; later B2B delivery/acceptance must integrate 17/15 without double revenue. Opname freezes locations for count/review/adjustment; proposals bind hash/version and one-use approval. Transit uses separate dispatch/receive legs. QC/quarantine/warranty/repair ServiceCase distinguishes customer custody from company goods.
+Whole-order cancellation is allowed only when obligations can still be safely cancelled. Otherwise cancel bounded remaining work and use refund/return/correction flows for facts already performed.
 
-Public work uses structured CMS draft/preview/owner publish and published product projections; operations may prepare drafts. Configured wa.me measures at most an outbound click. RFQ → lead → quotation is not a sale/revenue and requires its later commercial design. Do not make these prerequisites for counter POS.
+## F09 â€” Refund/return
+
+Owner authorizes Core refunds with reason/re-authentication. Money refund and physical return are distinct. Refund without returned goods creates no stock movement; verified saleable return posts linked RETURN RECEIPT; service refund never creates stock.
+
+## F10 â€” Restock
+
+Owner/Operations act on LOW/OUT attention. Read state does not resolve it. Receipt or valid policy change reevaluates health. Suggested target never auto-purchases.
+
+## F11 â€” Cashier shift
+
+Open assigned register with counted float. Cash events derive from actual cash payments/refunds plus authorized paid-in/out.
+
+Closing blocks new cash operations, resolves uncertain attempts, collects blind count, then shows expected vs actual. Difference is retained/reviewed, never silently balanced.
+
+## F12 â€” Owner review
+
+Period: Hari Ini, 7 Hari, Bulan Ini, Bulan Lalu, Rentang Tanggal.
+
+Keep distinct: nilai pesanan, pembayaran masuk, sisa tagihan, recognized revenue, HPP/direct service cost, laba kotor, active/late orders/jobs, LOW/OUT and cashier variance. Incomplete cost is explicit.
+
+## F13 â€” Incident/recovery
+
+Stop affected posting when integrity/result is uncertain. Resolve using durable command/reference and real evidence. Never re-charge/re-pay/re-issue by assumption. Restore isolated, reconcile orders/payments/ledger/reservations/jobs/shifts/receipts, then reopen.

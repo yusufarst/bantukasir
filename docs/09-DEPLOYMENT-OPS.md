@@ -1,6 +1,24 @@
-# 09 — Deployment and operations
+# 09 â€” Deployment and operations
 
 Target design only. No deployment, Compose file, running backup or job exists. Use the client's existing VPS and domain; any extra recurring purchase requires explicit approval. Open-source software does not make storage or recovery free.
+
+## Recurring cost audit
+
+| Capability | Default Core choice | Software/SaaS recurring cost |
+| --- | --- | ---: |
+| App hosting | Existing client VPS + Docker Compose/Caddy | Rp0 additional software |
+| Database | Self-hosted PostgreSQL | Rp0 |
+| Authentication | Self-hosted Better Auth | Rp0 |
+| Background jobs/outbox | PostgreSQL + same-codebase worker | Rp0 |
+| Search | PostgreSQL indexes/search first | Rp0 |
+| Barcode generation | Open-source library + browser print | Rp0 |
+| Receipt/A4 | HTML/CSS browser print / print-to-PDF | Rp0 |
+| Notifications | In-app inbox + Web Push | Rp0 service fee |
+| Analytics/reporting | First-party SQL/reporting | Rp0 |
+| CMS/public content later | First-party structured DB content | Rp0 |
+| Backup | Independent encrypted destination | Existing owned storage may be Rp0; otherwise explicit owner-approved infrastructure cost |
+
+Do not introduce a paid dependency merely for convenience. Cost reduction never justifies weakening backup, security, audit or transaction integrity.
 
 ## Topology and portability
 
@@ -12,7 +30,7 @@ VPS IP, SSH host/user/keys, credentials, port mappings and absolute storage path
 
 Separate development, test, staging/pilot and production databases, secrets, subscriptions and backup destinations. Staging cannot notify production recipients. Run migrations once as a controlled job; web startup must not race migration.
 
-Release sequence: applicable review/quality gate → immutable image → verified backup → maintenance if incompatible → controlled migration → start web/worker → readiness/smoke → traffic → monitor. Prefer expand/contract changes. Code rollback requires compatible schema; destructive migrations need explicit recovery planning.
+Release sequence: applicable review/quality gate â†’ immutable image â†’ verified backup â†’ maintenance if incompatible â†’ controlled migration â†’ start web/worker â†’ readiness/smoke â†’ traffic â†’ monitor. Prefer expand/contract changes. Code rollback requires compatible schema; destructive migrations need explicit recovery planning.
 
 ## Runtime configuration
 
@@ -56,7 +74,7 @@ Use a storage adapter with logical keys under configurable STORAGE_ROOT. Separat
 
 ## Recoverable backup
 
-Pilot targets: **RPO ≤6 hours, RTO ≤4 hours**, subject to owner acceptance and measured restore. If loss of six hours is unacceptable, design WAL/PITR before go-live.
+Pilot targets: **RPO â‰¤6 hours, RTO â‰¤4 hours**, subject to owner acceptance and measured restore. If loss of six hours is unacceptable, design WAL/PITR before go-live.
 
 1. PostgreSQL custom-format logical dump every six hours. Encrypt before off-host copying; verify checksum and archive readability. Record snapshot time, schema/app version, size, safe destination and job outcome.
 2. Use a consistent database dump, not a copy of a live database volume. Restore cluster roles/extensions/privileges separately. Reference: [PostgreSQL SQL dump](https://www.postgresql.org/docs/current/backup-dump.html).
