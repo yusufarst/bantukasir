@@ -2,7 +2,7 @@
 
 **Configurable production-grade custom POS and stock-control platform.** V1 is a focused GOODS-only POS for one business: reusable product search, barcode, recorded stock receipts/issues, full cash/transfer checkout, immutable thermal/A4 sales documents, restock visibility, owner-only HPP/gross profit and lightweight cash-session reconciliation.
 
-**BantuKasir Plan 1.1:** implementation not started, **0/36 Core tasks**, no active task. Next: **BK01 — UI01 Foundation + Shell**, in a subsequent authorized session. This documentation task starts no prototype or production work. Four prototype bundles and complete owner Gate A precede production frontend.
+**BantuKasir Plan 1.1 optimized delivery baseline:** implementation not started, **0/36 Core tasks**, **154 focused engineering hours**, no active task. Next: **BK01 — UI01 Foundation + Shell**, in a subsequent authorized session. This documentation task starts no prototype or production work. Four prototype bundles and complete owner Gate A precede production frontend.
 
 Copied from `yusufarst/latansa-inventory` at `f7cecfed1fcd0b183625e49f39dfeb736ab4e3a5`. That upstream remains the full Retail Operations Platform blueprint and must not be modified. Previous approvals do not approve BantuKasir visuals; Git history preserves superseded decisions.
 
