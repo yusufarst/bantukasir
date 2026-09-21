@@ -1,151 +1,407 @@
-# 11 — Official build plan and progress
+# 11 — BantuKasir Plan 1.0
 
-**Plan version 3.1.1 — 21 September 2026.** Owner-required D54 refines existing shift-close reporting; no new task or implementation authorization.
+**21 September 2026. Documentation/planning only. 36 total tasks, all 36 Core, 0/36 complete.** No active executor; all implementation/prototype tasks NOT STARTED. Hard ceiling 50 includes prototypes, integration, testing and deployment. Later topics in [01](01-PRD.md) have no task IDs/estimates and are excluded from this baseline.
 
-**Plan 3.1 owner acceptance: APPROVED — 20 September 2026.** Evidence: the owner explicitly said “setuju Plan 3.1”. This accepts the planning baseline, not a visual revision or production implementation.
+Next: **BK01 — UI01 Foundation + Shell**, only in a subsequent authorized session. Do not start it during replanning.
 
-This replaces plan 2.2 and the incomplete Astra plan-3.0 draft. Product scope now includes unified orders, DP/partial payment, Core reservation/partial fulfillment and Core service scheduling/progress.
+## Capacity and phases
 
-Production implementation has not started.
+Target maximum approximately one month / 20 working days. Bottom-up focused effort below totals **160 hours** for one experienced full-time executor; this is a constrained target, not guaranteed feasibility. Most tasks take 3–6 focused hours, final regression/pilot up to one day. Estimates include task tests/docs and specified review preparation, not waiting for external answers or unexpected rework. No spare engineering capacity is assumed. A major blocker or scope promotion invalidates the date; report it and replan, never skip safety.
 
-## Status
+| Phase | Tasks | Hours | Milestone |
+| --- | --- | ---: | --- |
+| P0 Visual contract | BK01–BK05 | 18 | Four compact bundles, complete owner Gate A |
+| P1 Foundation | BK06–BK10 | 18 | Auth/config/integrated shell Gate B |
+| P2 Product and stock | BK11–BK20 | 40 | Search/barcode/receive/opening/issue/restock Gate B |
+| P3 Usable POS | BK21–BK25 | 24 | Atomic payment/issue/receipt/correction Gate B |
+| P4 Reports and control | BK26–BK31 | 26 | Truthful HPP, daily reconciliation/export and audit Gate B |
+| P5 Production readiness | BK32–BK36 | 34 | Protected migrations, restore, device regression, authorized pilot |
 
-| Status | Meaning |
-| --- | --- |
-| [ ] | NOT STARTED |
-| [~] | IN PROGRESS |
-| [T] | WAITING FOR TECHNICAL VERIFICATION |
-| [V] | WAITING FOR OWNER VISUAL REVIEW |
-| [x] | COMPLETE AND VERIFIED |
-| [!] | BLOCKED |
+Approximate four-week map (one executor, no automatic parallel agents):
+- Week 1, days 1–5: BK01–BK11, 40h. Owner available for complete Gate A by early day 3 and shell Gate B; integrations already available.
+- Week 2, days 6–10: BK12–BK20 (36h), begin BK21 (4h). Obtain actual scanner/printer and G2 data before their gates.
+- Week 3, days 11–15: finish BK21 (2h), BK22–BK29 (37h), begin BK30 (1h). G3 resolves before BK28 completion.
+- Week 4, days 16–20: finish BK30 (2h), BK31–BK36 (38h). G1/G4 and deployment access/authorization ready before pilot.
 
-[BE] backend/integration, [FE] prototype/frontend, [FS] full-stack/visual.
+Waiting for Gate A/B is real schedule risk. Hardware/backup access and owner answers can be collected while executor works, but gate failures do not disappear because of elapsed time. Cut already made: serials, CSV/XLSX import, Web Push, camera, advanced stock/corrections, deferred commerce/services and shift engine. Cosmetic charts/extra variants remain optional within existing tasks, not new features. If more cuts cannot preserve a usable safe POS, explicitly report that the one-month target is infeasible under actual constraints.
 
-At most one [~] at a time; currently none. [V] receives no completion credit.
+## Dependencies and execution
 
-**47 tasks in 10 phases; 39 Core tasks in R00–R07.**
-Overall progress: **0/47 = 0.00%**.
-Core progress: **0/39 = 0.00%**.
+Dependencies refer to completed tasks, including their listed owner/technical gates. Default is one active executor. Critical chain: BK01 → BK02/BK03 → BK04 → BK05 → BK06–BK25 → BK26 → BK27 → BK30 → BK31–BK36; BK28 → BK29 also joins BK30. Runtime safety is introduced before any live use.
 
-Old CP01 remains historical/unapproved and contributes no completion credit.
+With explicit coordinated staffing, BK02/BK03 can run after common UI01; BK28 can run alongside BK26/BK27 after BK25 on agreed Sale/day contracts. Independent prerequisite collection (G1–G4, tool setup, device availability) can overlap. Shared schema/token mutations require coordination; parallelism is not assumed in the 160h estimate.
 
-## Plan history
+Common READ: AGENTS, 00, this task, 01, 02, 10, plus listed docs. Common DoD: applicable schema/migration + validation + backend RBAC + audit + targeted tests/races/recovery + lint/typecheck/build + browser/mobile/device evidence + docs under [08](08-TESTING-ACCEPTANCE.md). Every meaningful UI task follows actual tool workflow in 05. Task paths are proposed domains until scaffold exists.
 
-- v1: historical 55 tasks/30 Core; v2.x: historical inventory-first plan, 65 tasks/34 Core.
-- incomplete Astra v3.0: began retail/POS replanning but retained immediate/full-payment-only assumptions and stale v2.2 tracker.
-- **v3.1**: owner-approved unified Order flow; POS fast path, DP/partial payments, reservation, partial fulfillment, service jobs/progress, shift reconciliation and finance separation.
+## Tracker
 
-- **v3.1.1**: owner-required D54 adds immutable own-shift close reports, blind-count protection and print/PDF/CSV within existing R05/R06 tasks; 47/39 unchanged.
+| ID | Status | Goal / deliverable | Depends on | Hours |
+| --- | --- | --- | --- | ---: |
+| BK01 | NOT STARTED | UI01 Foundation + Shell | None; future execution instruction required | 4 |
+| BK02 | NOT STARTED | UI02 Product Operations | BK01 | 4 |
+| BK03 | NOT STARTED | UI03 POS | BK01 | 4 |
+| BK04 | NOT STARTED | UI04 Reports | BK02, BK03 | 4 |
+| BK05 | NOT STARTED | Complete visual Gate A | BK01, BK02, BK03, BK04 | 2 |
+| BK06 | NOT STARTED | Foundation and isolated environments | BK05 | 4 |
+| BK07 | NOT STARTED | Transactional command and audit foundation | BK06 | 4 |
+| BK08 | NOT STARTED | Authentication and fixed-role enforcement | BK07 | 4 |
+| BK09 | NOT STARTED | Runtime business identity slice | BK08 | 3 |
+| BK10 | NOT STARTED | Integrated role shell Gate B | BK09 | 3 |
+| BK11 | NOT STARTED | Goods catalog vertical slice | BK10 | 4 |
+| BK12 | NOT STARTED | Canonical Product Search and creation checks | BK11 | 4 |
+| BK13 | NOT STARTED | Barcode registry and labels slice | BK12 | 3 |
+| BK14 | NOT STARTED | Ledger, balance and inventory command core | BK07, BK13 | 5 |
+| BK15 | NOT STARTED | Acquisition evidence and MWA posting | BK14 | 5 |
+| BK16 | NOT STARTED | Search-first receiving slice | BK15 | 5 |
+| BK17 | NOT STARTED | Manual goods issue slice | BK16 | 4 |
+| BK18 | NOT STARTED | Owner manual opening and cutover controls | BK17 | 3 |
+| BK19 | NOT STARTED | Current stock, history and restock slice | BK18 | 3 |
+| BK20 | NOT STARTED | Product operations/device Gate B | BK19 | 4 |
+| BK21 | NOT STARTED | Atomic full-payment Sale backend | BK20 | 6 |
+| BK22 | NOT STARTED | Integrated cashier checkout slice | BK21 | 5 |
+| BK23 | NOT STARTED | Thermal and A4 document slice | BK22 | 4 |
+| BK24 | NOT STARTED | Minimal owner correction/refund/return slice | BK23 | 5 |
+| BK25 | NOT STARTED | POS and documents/device Gate B | BK24 | 4 |
+| BK26 | NOT STARTED | Cost revision and replay completeness | BK25 | 6 |
+| BK27 | NOT STARTED | Owner period reporting slice | BK26 | 4 |
+| BK28 | NOT STARTED | Daily finalization backend | BK21, BK25 | 5 |
+| BK29 | NOT STARTED | Own daily report and export slice | BK28 | 4 |
+| BK30 | NOT STARTED | Owner log and operational history review | BK27, BK29 | 3 |
+| BK31 | NOT STARTED | Reports/audit Gate B | BK30 | 4 |
+| BK32 | NOT STARTED | Production packaging and safe maintenance | BK31 | 6 |
+| BK33 | NOT STARTED | Independent backup and isolated restore drill | BK32 | 6 |
+| BK34 | NOT STARTED | Release regression and device/performance verification | BK33 | 8 |
+| BK35 | NOT STARTED | Client policy and pilot readiness | BK34 | 6 |
+| BK36 | NOT STARTED | Authorized deployment, cutover and pilot acceptance | BK35 | 8 |
 
-## R00 — First visual contract
+## Execution cards
 
-| ID | Status | Class | Deliverable | Dependencies |
-| --- | --- | --- | --- | --- |
-| R00.1 | [ ] | FE | **RV01** brand-neutral shell/auth/role workspaces + business identity settings, fast POS skeleton and Shift Saya/report entry concept (detail in RV04); desktop/mobile/keyboard states; Gate A | Plan 3.1 acceptance satisfied — 20 September 2026 |
+Each card supplements the tracker and common DoD; no giant executor prompts needed. Use [16](16-EXECUTOR-HANDOFF.md). Evidence is empty until execution.
 
-R00.1 does not authorize production implementation.
+### BK01 — UI01 Foundation + Shell
 
-## R01 — Foundation, auth and business configuration
+- Goal: Use verified tools to establish shared foundation, login, role shells and profile pattern.
+- Depends on: None; subsequent task authorization.
+- Read: [05](05-DESIGN-SYSTEM.md), [04](04-AUTH-RBAC-SECURITY.md).
+- Main files/domain: prototypes/ui01; PRODUCT.md; DESIGN.md.
+- Acceptance/verification: UI01 desktop/mobile/keyboard states and tool critique recorded; proposed tokens consolidated.
+- Stop if: Missing 21st/Impeccable or paid-only access; stop at review, no production UI.
 
-| ID | Status | Class | Deliverable | Dependencies |
-| --- | --- | --- | --- | --- |
-| R01.1 | [ ] | BE | Next.js/TS/Drizzle/Postgres scaffold, config validation, dev/test DB, base migrations, test scripts and CI skeleton | R00.1 Gate A + explicit implementation authorization |
-| R01.2 | [ ] | BE | Better Auth, fixed roles/permissions, TOTP, sessions, backend guards, audit/security tests | R01.1 |
-| R01.3 | [ ] | FS | BusinessProfile/BusinessPolicy revisions, neutral identity settings, runtime validation, owner-only configuration | R01.2 |
-| R01.4 | [ ] | FS | Implement approved RV01 shell/auth/workspaces with real authorization; Gate B | R01.2, R01.3, RV01 |
+### BK02 — UI02 Product Operations
 
-## R02 — Goods/services, barcode and inventory foundation
+- Goal: Prototype search-first catalog, receiving/opening, issue/history/restock and labels.
+- Depends on: BK01.
+- Read: [05](05-DESIGN-SYSTEM.md), [06](06-INVENTORY-SPEC.md), [12](12-BARCODE-SCANNER.md), [14](14-BULK-IMPORT.md).
+- Main files/domain: prototypes/ui02; shared prototype patterns.
+- Acceptance/verification: All UI02 representative flows, duplicate warning and errors reuse UI01; browser evidence.
+- Stop if: Missing required UI tools or inconsistent tokens; no production UI.
 
-| ID | Status | Class | Deliverable | Dependencies |
-| --- | --- | --- | --- | --- |
-| R02.1 | [ ] | FE | **RV02** goods/services, barcode/labels, receiving, stock/history and opening-import states; Gate A | R01.4 |
-| R02.2 | [ ] | BE | Product GOODS/SERVICE, GoodsProfile, price revisions, units/categories, server search/pagination | R01.2 |
-| R02.3 | [ ] | BE | Barcode registry, manufacturer aliases, internal code generation, labels and serialized identity rules | R02.2 |
-| R02.4 | [ ] | BE | Ledger/balances/serials, receiving, non-sale issue, direct transfer, owner adjustment/reversal, idempotency/concurrency | R02.3 |
-| R02.5 | [ ] | BE | Product import + separate quantity/serial opening, freeze, cost-evidence capture and recovery | R02.4 |
-| R02.6 | [ ] | FS | Approved RV02 integrated UI, scanner/label/print checks, import/opening browser flow; Gate B | R02.1, R02.5 |
+### BK03 — UI03 POS
 
-## R03 — Orders, payments, reservation and goods fulfillment
+- Goal: Prototype cart/full cash/transfer/uncertain result/receipt/A4/refund.
+- Depends on: BK01.
+- Read: [05](05-DESIGN-SYSTEM.md), [12](12-BARCODE-SCANNER.md), [17](17-POS-SALES.md).
+- Main files/domain: prototypes/ui03; print mock documents.
+- Acceptance/verification: UI03 covers tender/change, recovery/reprint and touch/keyboard flows with tool review.
+- Stop if: Missing required UI tools; no real payment or production UI.
 
-| ID | Status | Class | Deliverable | Dependencies |
-| --- | --- | --- | --- | --- |
-| R03.1 | [ ] | FE | **RV03** order/booking, customer, DP/partial payment, reservation, partial fulfillment and service-progress interaction; Gate A | R02.6 |
-| R03.2 | [ ] | BE | Customer + Order/OrderLine/revision model, numbering, pricing snapshots and lifecycle invariants | R02.2 |
-| R03.3 | [ ] | BE | Append-only PaymentRecord/refund facts, outstanding calculation, idempotency and allowed methods | R03.2 |
-| R03.4 | [ ] | BE | Core InventoryReservation, release/consume rules, available-stock races and reconciliation | R03.2, R02.4 |
-| R03.5 | [ ] | BE | Partial GoodsFulfillment linked atomically to reservation + ledger ISSUE; 4+3+3 and serial tests | R03.3, R03.4 |
-| R03.6 | [ ] | FS | Approved RV03 order/booking/payment/reservation/fulfillment UI with real backend; Gate B | R03.1, R03.5 |
+### BK04 — UI04 Reports
 
-## R04 — Service jobs and mixed orders
+- Goal: Prototype periods/incomplete profit, daily count/race/report/export, audit/system states.
+- Depends on: BK02, BK03.
+- Read: [05](05-DESIGN-SYSTEM.md), [15](15-FINANCE-PROFITABILITY.md), [17](17-POS-SALES.md), [09](09-DEPLOYMENT-OPS.md).
+- Main files/domain: prototypes/ui04; shared report patterns.
+- Acceptance/verification: UI04 includes cash/transfer separation, stale count, final day restriction and device layouts.
+- Stop if: Missing required UI tools; unresolved G3 assumptions must remain visibly proposed.
 
-| ID | Status | Class | Deliverable | Dependencies |
-| --- | --- | --- | --- | --- |
-| R04.1 | [ ] | BE | ServiceJob scheduling and service-line linkage; no inventory entities | R03.2 |
-| R04.2 | [ ] | BE | Milestones/progress/completion events, versioning and audit | R04.1 |
-| R04.3 | [ ] | BE | ServiceCostEvidence and optional referenced goods-consumption cost path without double counting | R04.2, R02.4 |
-| R04.4 | [ ] | BE | Mixed GOODS/SERVICE order invariants, completion derivation and change/cancellation rules | R03.5, R04.2 |
-| R04.5 | [ ] | FS | Service operations/mobile views using approved RV03 patterns; real schedule/progress/completion; Gate B | R03.6, R04.4 |
+### BK05 — Complete visual Gate A
 
-## R05 — Fast POS, shifts, receipts and refunds
+- Goal: Record owner review of all four bundles and freeze exact shared baseline.
+- Depends on: BK01, BK02, BK03, BK04.
+- Read: [05](05-DESIGN-SYSTEM.md).
+- Main files/domain: DESIGN.md; prototype review register.
+- Acceptance/verification: Explicit owner approval of complete revision; source/screenshots/pattern inventory linked.
+- Stop if: Wait for owner approval; do not self-approve or start production frontend.
 
-| ID | Status | Class | Deliverable | Dependencies |
-| --- | --- | --- | --- | --- |
-| R05.1 | [ ] | FE | **RV04** final fast checkout, shift open/close, blind count, reconciliation/Laporan Shift, print/PDF/CSV/reprint/error/uncertain states, payment, receipt and refund/return; Gate A | R04.5 |
-| R05.2 | [ ] | BE | POS fast-path command through Order engine: full payment + immediate fulfillment + receipt facts atomically | R03.5, R04.4, R05.3 |
-| R05.3 | [ ] | BE | Register/CashierShift/CashEvent/opening float, source attribution, expected-cash derivation, blind count, close serialization/idempotency, immutable variance and atomic ShiftCloseReportSnapshot creation contract | R03.3 |
-| R05.4 | [ ] | BE | Receipt/payment-evidence and shift-close snapshot numbering/serializers/renderers; thermal/A4, browser print/PDF and shift CSV, allowlisted deterministic reprint/re-export and audit without financial mutation | R05.2 |
-| R05.5 | [ ] | BE | Owner-authorized commercial refund/return, bounded partials, linked stock/finance corrections | R05.2, R05.3 |
-| R05.6 | [ ] | FS | Approved RV04 cashier close/report/export/reprint UI; keyboard/mobile/HID/actual printer, RBAC/no-leak and failure recovery; POS07–POS15; Gate B | R05.1, R05.4, R05.5 |
+### BK06 — Foundation and isolated environments
 
-## R06 — Stock attention, finance and owner cockpit
+- Goal: Scaffold pinned compatible stack, isolated dev/test DB and repeatable checks.
+- Depends on: BK05.
+- Read: [02](02-ARCHITECTURE.md), [09](09-DEPLOYMENT-OPS.md).
+- Main files/domain: package/lockfile; db; tests; config; CI.
+- Acceptance/verification: Environment validation, populated migration test harness and lint/typecheck/test/build scripts run; versions/advisories verified.
+- Stop if: No authorized implementation session, missing DB isolation or unsafe inherited config.
 
-| ID | Status | Class | Deliverable | Dependencies |
-| --- | --- | --- | --- | --- |
-| R06.1 | [ ] | FE | **RV05** owner dashboard, restock attention, order/job attention, finance completeness and system states; Gate A | R05.6 |
-| R06.2 | [ ] | BE | StockHealth/AttentionEpisode/inbox/outbox/Web Push using available quantity including reservations | R03.4, R02.4 |
-| R06.3 | [ ] | BE | MWA goods costing, service direct-cost evidence, RevenueEvents from fulfillment/completion, report snapshots/completeness | R05.5, R04.3 |
-| R06.4 | [ ] | BE | Owner dashboard/report queries: order value, payments, outstanding, revenue, HPP, gross, jobs, LOW/OUT, shift close status/variance and authorized reconciliation/report drill-down | R06.2, R06.3 |
-| R06.5 | [ ] | FS | Approved RV05 real owner/operations views, periods/drill-down/incomplete/error states; Gate B | R06.1, R06.4 |
-| R06.6 | [ ] | BE | Golden finance/refund/return/cost-revision tests + cashier report/PDF/CSV no-leak matrix for acquisition cost/HPP/evidence/margin/profit/private finance | R06.5 |
+### BK07 — Transactional command and audit foundation
 
-## R07 — Deployment, recovery and Core pilot
+- Goal: Provide durable idempotency/fingerprint/result and ordered transaction helpers.
+- Depends on: BK06.
+- Read: [02](02-ARCHITECTURE.md), [03](03-DOMAIN-MODEL.md), [08](08-TESTING-ACCEPTANCE.md).
+- Main files/domain: src/modules/commands; audit; db; tests.
+- Acceptance/verification: Duplicate/conflicting key, source intent, rollback and audit failure integration tests pass.
+- Stop if: Cannot enforce transaction/immutable audit/result boundary.
 
-| ID | Status | Class | Deliverable | Dependencies |
-| --- | --- | --- | --- | --- |
-| R07.1 | [ ] | BE | Production Compose/Caddy, environment guards, worker supervision, storage, health and release procedure | R06.6 |
-| R07.2 | [ ] | BE | Encrypted off-VPS backup, isolated restore, reconciliation of orders/payments/reservations/ledger/jobs/shifts/immutable close snapshots/docs and retained render assets; measured RPO/RTO | R07.1 |
-| R07.3 | [ ] | FS | System/backup/notification operational views and real owner-device notification acceptance or documented limitation | R07.2 |
-| R07.4 | [ ] | FS | Full Core E2E/concurrency/load/mobile/scanner/printer/restore regression | R07.3 |
-| R07.5 | [ ] | FS | Cutover, opening reconciliation, SOP, real-role pilot and explicit owner production acceptance | R07.4 |
+### BK08 — Authentication and fixed-role enforcement
 
-Core requires all R00–R07 tasks [x] and no unresolved safety blocker.
+- Goal: Implement private bootstrap/invite/reset, sessions, rate limit and three roles.
+- Depends on: BK07.
+- Read: [04](04-AUTH-RBAC-SECURITY.md), [08](08-TESTING-ACCEPTANCE.md).
+- Main files/domain: src/modules/auth; db; route guards; tests.
+- Acceptance/verification: AUTH01 plus backend permission/object tests; no signup/TOTP; revoked users cannot write.
+- Stop if: Unverified auth version/security, secret exposure or role bypass.
 
-## R08 — Later operational extensions
+### BK09 — Runtime business identity slice
 
-| ID | Status | Class | Deliverable | Dependencies |
-| --- | --- | --- | --- | --- |
-| R08.1 | [ ] | FS | Guided stock opname, advanced approval and staged warehouse transit | R07.5 |
-| R08.2 | [ ] | FS | Purchasing/PO/supplier-payable workflow if client needs it | R07.5 |
-| R08.3 | [ ] | FS | QC, warranty and repair/customer-custody service workflow | R07.5 |
-| R08.4 | [ ] | FS | Camera barcode variant with manual/HID fallback; no offline mutation | R07.5 |
+- Goal: Implement owner-only BusinessProfile revisions and approved configuration form.
+- Depends on: BK08.
+- Read: [01](01-PRD.md), [04](04-AUTH-RBAC-SECURITY.md), [05](05-DESIGN-SYSTEM.md), [09](09-DEPLOYMENT-OPS.md).
+- Main files/domain: src/modules/business; profile UI; private assets.
+- Acceptance/verification: Runtime name/logo/contact/header/footer/accent changes without source edit; upload/RBAC/audit tests.
+- Stop if: Missing UI tools/Gate A or unsafe asset storage/contrast.
 
-## R09 — Later commercial/public/accounting extensions
+### BK10 — Integrated role shell Gate B
 
-| ID | Status | Class | Deliverable | Dependencies |
-| --- | --- | --- | --- | --- |
-| R09.1 | [ ] | FS | Public corporate site/catalog and first-party structured CMS | R07.5 |
-| R09.2 | [ ] | FS | RFQ/leads/quotations and conversion attribution | R09.1 |
-| R09.3 | [ ] | FS | Advanced promotions/loyalty/payment-provider integration if justified | R07.5 |
-| R09.4 | [ ] | BE | Full accounting/net-profit/multi-company scope only after separate business/accounting decision | R07.5 |
+- Goal: Integrate approved login/navigation/workspaces with real session permissions.
+- Depends on: BK09.
+- Read: [04](04-AUTH-RBAC-SECURITY.md), [05](05-DESIGN-SYSTEM.md), [08](08-TESTING-ACCEPTANCE.md).
+- Main files/domain: src/app; shared tokens/components; login/workspaces.
+- Acceptance/verification: Role routes and responsive/keyboard tests pass; owner Gate B revision recorded.
+- Stop if: Missing UI tools; wait for technical/owner evidence, no invented role metrics.
 
-## Tracker rules
+### BK11 — Goods catalog vertical slice
 
-Next eligible task is **R00.1 / RV01**, still [ ]; this Plan 3.1.1 refinement starts no prototype. R01.1 remains unauthorized until R00.1 Gate A and a separate explicit implementation instruction. Task numbering is not a substitute for dependencies: R05.3 must precede R05.2 because cash checkout requires shifts, and R05.6 requires receipt rendering from R05.4. D54 refines existing deliverables without adding tasks. R05.3 creates closing facts and the canonical snapshot atomically; R05.4 consumes that contract for rendering/export and does not become a prerequisite for R05.3. No CLOSED shift may rely on later best-effort snapshot creation.
+- Goal: Implement goods/category/unit/brand/price/minimum/active master and revisions.
+- Depends on: BK10.
+- Read: [03](03-DOMAIN-MODEL.md), [04](04-AUTH-RBAC-SECURITY.md), [05](05-DESIGN-SYSTEM.md).
+- Main files/domain: src/modules/catalog; db; product forms; tests.
+- Acceptance/verification: Role CRUD/price/precision/audit tests; approved list/detail/form; creation uses BK12 search before enabled onboarding.
+- Stop if: Missing UI tools or unsupported G2 units; no real opening yet.
 
-R02.4 establishes the inventory transaction boundary, including the stock-health integration contract in 13. R03.4 applies the same contract to reservations; R06.2 completes the evaluator/episode/inbox/outbox/delivery implementation and tests before pilot. Earlier development slices are not permission to operate live stock without these invariants. Revenue facts belong to fulfillment/completion transactions; R06.3 implements their valuation/reporting, not a second revenue source.
+### BK12 — Canonical Product Search and creation checks
 
-R01.3 uses the RV01 identity-settings contract; R07.3 uses RV05 system/recovery states. Every FS task requires Gate B, including those whose row abbreviates the gate. Later new visual interactions require a reviewed Gate A variant before implementation. Record concise revision/test/owner evidence with the affected row when work begins; no evidence or completion credit is invented here.
+- Goal: Implement one paged search reused by all contexts and duplicate-first creation.
+- Depends on: BK11.
+- Read: [12](12-BARCODE-SCANNER.md), [04](04-AUTH-RBAC-SECURITY.md), [08](08-TESTING-ACCEPTANCE.md).
+- Main files/domain: catalog/search; shared SearchPicker; query indexes.
+- Acceptance/verification: SEARCH02 plus name/SKU/category/brand and similar warning/pagination tests; exact-barcode contract defined here and tested with registry in BK13.
+- Stop if: Full-master browser fetch, duplicate bypass or cost leakage.
 
-Update only real status/evidence. Scope changes require a new plan version and corrected denominator. Never award completion credit for documentation or historical prototype artifacts.
+### BK13 — Barcode registry and labels slice
 
-Visual tasks stop at Gate A/Gate B as applicable. Tests/screenshots do not self-approve owner visual gates. Production deployment/merge/push requires explicit authorization.
+- Goal: Add manufacturer aliases/internal Code 128 and shared exact lookup.
+- Depends on: BK12.
+- Read: [12](12-BARCODE-SCANNER.md), [05](05-DESIGN-SYSTEM.md).
+- Main files/domain: catalog/barcodes; label UI/print; db; tests.
+- Acceptance/verification: SEARCH01 exact-barcode reuse/uniqueness/leading-zero tests complete; labels/reprint same identity, no stock writes.
+- Stop if: Missing UI tools/license or identity collision handling.
+
+### BK14 — Ledger, balance and inventory command core
+
+- Goal: Implement movement/balance/source constraints and ordered product locks.
+- Depends on: BK07, BK13.
+- Read: [06](06-INVENTORY-SPEC.md), [02](02-ARCHITECTURE.md), [03](03-DOMAIN-MODEL.md).
+- Main files/domain: inventory; stock schema; integration tests.
+- Acceptance/verification: INV01/02 movement/balance/audit/result rollback, last-unit/retry and reconciliation pass; cost legs added/tested in BK15.
+- Stop if: Any direct balance endpoint, negative stock or unsafe command result.
+
+### BK15 — Acquisition evidence and MWA posting
+
+- Goal: Attach known/unknown evidence and synchronous MWA allocations to movement core.
+- Depends on: BK14.
+- Read: [15](15-FINANCE-PROFITABILITY.md), [04](04-AUTH-RBAC-SECURITY.md).
+- Main files/domain: inventory/costing; db; finance tests.
+- Acceptance/verification: FIN01/02 baseline math, final-stock rounding, UNKNOWN propagation and staff write-only boundary.
+- Stop if: Guessed cost, unsafe arithmetic or historical cost disclosure.
+
+### BK16 — Search-first receiving slice
+
+- Goal: Integrate scan/search/create-resume, qty/cost/reference/review/confirm.
+- Depends on: BK15.
+- Read: [06](06-INVENTORY-SPEC.md), [12](12-BARCODE-SCANNER.md), [04](04-AUTH-RBAC-SECURITY.md), [05](05-DESIGN-SYSTEM.md).
+- Main files/domain: inventory/receiving; receiving UI; tests.
+- Acceptance/verification: SEARCH02 and INV01/02; one receipt/balance/cost/audit/result, repeat submit safe; browser flow.
+- Stop if: Missing UI tools or cost payload leak; real data requires G2.
+
+### BK17 — Manual goods issue slice
+
+- Goal: Implement scan/search/qty/mandatory non-sale reason and history.
+- Depends on: BK16.
+- Read: [06](06-INVENTORY-SPEC.md), [12](12-BARCODE-SCANNER.md), [05](05-DESIGN-SYSTEM.md).
+- Main files/domain: inventory/manual-issue; issue UI; tests.
+- Acceptance/verification: INV02; reason enforced, insufficient stock rejected, no customer-sale bypass labels.
+- Stop if: Missing UI tools, missing reason/authorization or negative stock.
+
+### BK18 — Owner manual opening and cutover controls
+
+- Goal: Implement bounded initial counts with guarded once-per-product opening.
+- Depends on: BK17.
+- Read: [14](14-BULK-IMPORT.md), [06](06-INVENTORY-SPEC.md), [10](10-DECISIONS.md).
+- Main files/domain: inventory/opening; onboarding flag/UI; tests.
+- Acceptance/verification: Atomic invalid-row rollback/retry, prior-ledger rejection, cost completeness review and global posting freeze.
+- Stop if: G2 unresolved for acceptance/real data; onboarding volume unsuitable; no implicit CSV scope.
+
+### BK19 — Current stock, history and restock slice
+
+- Goal: Deliver paged stock/history/LOW/OUT list and badge from same current query.
+- Depends on: BK18.
+- Read: [13](13-NOTIFICATIONS.md), [06](06-INVENTORY-SPEC.md), [05](05-DESIGN-SYSTEM.md).
+- Main files/domain: inventory/queries; stock/restock/history UI.
+- Acceptance/verification: STOCK01, stale/error refresh, RBAC and price/threshold audit; no private cost in operations.
+- Stop if: Missing UI tools or balance mismatch.
+
+### BK20 — Product operations/device Gate B
+
+- Goal: Validate complete search/receive/issue/opening/restock/label journey.
+- Depends on: BK19.
+- Read: [08](08-TESTING-ACCEPTANCE.md), [12](12-BARCODE-SCANNER.md), [05](05-DESIGN-SYSTEM.md).
+- Main files/domain: product/inventory browser tests; device evidence.
+- Acceptance/verification: UI02 integrated owner Gate B, actual USB/Bluetooth HID and label printer evidence.
+- Stop if: Required hardware or owner approval absent; keep pending, never simulated pass.
+
+### BK21 — Atomic full-payment Sale backend
+
+- Goal: Implement completed Sale, full payment, issue, costing, immutable receipt and day attribution.
+- Depends on: BK20.
+- Read: [17](17-POS-SALES.md), [02](02-ARCHITECTURE.md), [15](15-FINANCE-PROFITABILITY.md).
+- Main files/domain: sales; payments; cashier-day guard; receipt schema; tests.
+- Acceptance/verification: POS01/02, stock races and DAY02 guard integration; rollback every boundary; one source intent.
+- Stop if: Payment/issue split, unresolved source result or cost/stock mismatch.
+
+### BK22 — Integrated cashier checkout slice
+
+- Goal: Connect approved cart/payment/error/unknown-result interaction to atomic Sale.
+- Depends on: BK21.
+- Read: [17](17-POS-SALES.md), [12](12-BARCODE-SCANNER.md), [05](05-DESIGN-SYSTEM.md).
+- Main files/domain: POS UI; shared search/scan/cart; browser tests.
+- Acceptance/verification: POS02/03; keyboard/mobile, price review, recovery after reload, no cashier override.
+- Stop if: Missing UI tools/Gate A or unresolved command recovery.
+
+### BK23 — Thermal and A4 document slice
+
+- Goal: Render same frozen Sale as thermal/A4 commercial nota and browser PDF.
+- Depends on: BK22.
+- Read: [17](17-POS-SALES.md), [04](04-AUTH-RBAC-SECURITY.md), [05](05-DESIGN-SYSTEM.md).
+- Main files/domain: document renderers; receipt/history/reprint UI.
+- Acceptance/verification: POS03, immutable identity/number after profile edits, scoped reprint, printer-failure recovery.
+- Stop if: Missing UI tools or formal tax claim without G1.
+
+### BK24 — Minimal owner correction/refund/return slice
+
+- Goal: Implement bounded owner refund/return and eligible stock reversal/adjustment.
+- Depends on: BK23.
+- Read: [06](06-INVENTORY-SPEC.md), [15](15-FINANCE-PROFITABILITY.md), [17](17-POS-SALES.md), [04](04-AUTH-RBAC-SECURITY.md).
+- Main files/domain: corrections; owner UI; eligibility/tests.
+- Acceptance/verification: RET01/INV03, append-only history, saleable historical-cost recovery and payout evidence.
+- Stop if: Missing UI tools; unsafe dependent cost replay stays rejected until BK26; drawer payouts require G3 replan.
+
+### BK25 — POS and documents/device Gate B
+
+- Goal: Verify real counter flow, receipt/A4/reprint/corrections and recovery.
+- Depends on: BK24.
+- Read: [08](08-TESTING-ACCEPTANCE.md), [05](05-DESIGN-SYSTEM.md), [12](12-BARCODE-SCANNER.md).
+- Main files/domain: POS E2E; print/scanner evidence.
+- Acceptance/verification: UI03 owner Gate B; actual scanner/receipt printer, POS01–03 and RET01 integration pass.
+- Stop if: Missing hardware, owner approval or unresolved atomicity/privacy failure.
+
+### BK26 — Cost revision and replay completeness
+
+- Goal: Implement bounded owner evidence correction with atomic valuation revision publication.
+- Depends on: BK25.
+- Read: [15](15-FINANCE-PROFITABILITY.md), [06](06-INVENTORY-SPEC.md), [08](08-TESTING-ACCEPTANCE.md).
+- Main files/domain: finance/cost replay; owner evidence UI; tests.
+- Acceptance/verification: FIN01–03, missing→known replay/return/reversal and concurrent posting; measure 10k product movements.
+- Stop if: Missing UI tools, capacity timeout or partial revision publication; incomplete remains visible.
+
+### BK27 — Owner period reporting slice
+
+- Goal: Deliver five period presets/custom range and truthful sales/HPP/gross metrics.
+- Depends on: BK26.
+- Read: [15](15-FINANCE-PROFITABILITY.md), [13](13-NOTIFICATIONS.md), [05](05-DESIGN-SYSTEM.md).
+- Main files/domain: reports/query; owner dashboard; tests.
+- Acceptance/verification: FIN03, timezone bounds/consistent asOf, owner-only endpoints, current LOW/OUT separate.
+- Stop if: Missing UI tools or incomplete cost represented as zero profit.
+
+### BK28 — Daily finalization backend
+
+- Goal: Implement versioned physical count, day cutoff, immutable unique report.
+- Depends on: BK21, BK25.
+- Read: [17](17-POS-SALES.md), [04](04-AUTH-RBAC-SECURITY.md), [10](10-DECISIONS.md).
+- Main files/domain: cashier-day finalization; snapshots; integration tests.
+- Acceptance/verification: DAY01–04 including two-key duplicate/midnight/racing Sale and atomic snapshot rollback.
+- Stop if: G3 unresolved; need multiple sessions/reopen/shared drawer; never silently add shift engine.
+
+### BK29 — Own daily report and export slice
+
+- Goal: Integrate count/recount/finalized flow, own history and safe snapshot exports.
+- Depends on: BK28.
+- Read: [17](17-POS-SALES.md), [05](05-DESIGN-SYSTEM.md), [04](04-AUTH-RBAC-SECURITY.md).
+- Main files/domain: daily report UI/history; print/PDF/CSV; tests.
+- Acceptance/verification: DAY01/05 no private fields, formula-safe CSV, same snapshot after export failure/corrections.
+- Stop if: Missing UI tools or authorization/export leakage.
+
+### BK30 — Owner log and operational history review
+
+- Goal: Add owner date/user/type/product/reference filters across critical sources.
+- Depends on: BK27, BK29.
+- Read: [04](04-AUTH-RBAC-SECURITY.md), [05](05-DESIGN-SYSTEM.md), [08](08-TESTING-ACCEPTANCE.md).
+- Main files/domain: audit queries; log UI; history tests.
+- Acceptance/verification: AUDIT01 and pagination, linked original/correction facts, denied staff audit access.
+- Stop if: Missing UI tools, missing critical event or sensitive log payload.
+
+### BK31 — Reports/audit Gate B
+
+- Goal: Verify owner/operations/cashier reporting against approved UI04.
+- Depends on: BK30.
+- Read: [05](05-DESIGN-SYSTEM.md), [08](08-TESTING-ACCEPTANCE.md), [15](15-FINANCE-PROFITABILITY.md), [17](17-POS-SALES.md).
+- Main files/domain: reports E2E; role no-leak matrix; review evidence.
+- Acceptance/verification: UI04 owner Gate B plus FIN/DAY/AUDIT and all export no-leak tests; incomplete/stale states verified.
+- Stop if: Missing owner review or unresolved reconciliation/privacy failure.
+
+### BK32 — Production packaging and safe maintenance
+
+- Goal: Prepare private-DB HTTPS runtime and forward-migration/reconciliation/health runbook.
+- Depends on: BK31.
+- Read: [09](09-DEPLOYMENT-OPS.md), [08](08-TESTING-ACCEPTANCE.md).
+- Main files/domain: ops/compose/caddy; release/migration scripts; system UI.
+- Acceptance/verification: DB01 populated rehearsal; image/config/role smoke in isolated staging; approved system pattern.
+- Stop if: Missing UI tools for system UI; no live deployment authorization; unsafe destructive script.
+
+### BK33 — Independent backup and isolated restore drill
+
+- Goal: Configure authorized destination, encrypted backup and measured restoration.
+- Depends on: BK32.
+- Read: [09](09-DEPLOYMENT-OPS.md), [10](10-DECISIONS.md), [08](08-TESTING-ACCEPTANCE.md).
+- Main files/domain: ops/backup/restore; private runbook; system status.
+- Acceptance/verification: REC01/02 + G4 accepted measured RPO/RTO; snapshots/assets and real recovery access reconcile.
+- Stop if: G4 destination/access/cost approval absent or restore fails; no production pilot.
+
+### BK34 — Release regression and device/performance verification
+
+- Goal: Run complete risk suites on representative populated environment and real devices.
+- Depends on: BK33.
+- Read: [08](08-TESTING-ACCEPTANCE.md), [09](09-DEPLOYMENT-OPS.md).
+- Main files/domain: integration/E2E/load tests; device/release evidence.
+- Acceptance/verification: All acceptance suites, lint/typecheck/build, migration/restore and measured performance/device checks pass.
+- Stop if: Any integrity/privacy/recovery failure or missing hardware; do not waive to meet date.
+
+### BK35 — Client policy and pilot readiness
+
+- Goal: Confirm G1–G4 dispositions, real opening plan, permissions/training and release authorization.
+- Depends on: BK34.
+- Read: [01](01-PRD.md), [09](09-DEPLOYMENT-OPS.md), [10](10-DECISIONS.md), [14](14-BULK-IMPORT.md).
+- Main files/domain: operator/cashier SOP; cutover checklist; gate evidence.
+- Acceptance/verification: Owner reviews nota policy/data/cash model/recovery, signs readiness; restore/SOP accessible.
+- Stop if: Any gate open or unsafe client assumption; no real cutover yet.
+
+### BK36 — Authorized deployment, cutover and pilot acceptance
+
+- Goal: Deploy only after explicit authorization, open real stock safely and validate real-role pilot.
+- Depends on: BK35.
+- Read: [09](09-DEPLOYMENT-OPS.md), [08](08-TESTING-ACCEPTANCE.md), [14](14-BULK-IMPORT.md).
+- Main files/domain: authorized runtime; cutover/pilot evidence; handoff docs.
+- Acceptance/verification: RELEASE01; reconciled opening/sales/cash/reports/backup, system Gate B, owner production acceptance and handoff.
+- Stop if: No explicit deploy authorization or failing gate; stop writes and follow recovery, never destructive reset.
+
+## Tracker maintenance
+
+Statuses: NOT STARTED, IN PROGRESS, WAITING TECHNICAL CHECK, WAITING OWNER REVIEW, BLOCKED, COMPLETE. One active task maximum by default. Never award completion for rendering alone, documentation, historical prototype or missing device evidence. Record actual commands/results, file/revision links, owner approval and remaining blockers beside the card; preserve IDs. Scope changes update plan version/count/dependency validation. Update 00 last. No push/merge/deploy permission is implied by task completion.

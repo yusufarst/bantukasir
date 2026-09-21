@@ -1,80 +1,25 @@
 # 06 — Inventory specification
 
-Owns physical GOODS truth. SERVICES are excluded from physical stock.
+One business-wide stock pool, no Warehouse/StockLocation. Immutable StockMovement is physical truth. StockBalance is synchronously updated in the same transaction; onHand equals signed ledger sum. No reserved quantity in V1. Negative stock prohibited.
 
-## Quantity truth
+## Commands
 
-StockMovement ledger is source of truth. StockBalance is a synchronous transactional projection.
+| Type | Physical effect / required evidence |
+| --- | --- |
+| OPENING | Owner verified initial positive count, only product without prior ledger; cost evidence or UNKNOWN |
+| RECEIPT | Positive qty, acquisition cost evidence or UNKNOWN, optional source/reference |
+| SALE_ISSUE | Negative qty, exclusively from atomic completed Sale |
+| MANUAL_ISSUE | Negative qty; damaged/internal use/lost/sample/other, mandatory reason; never customer sale substitute |
+| ADJUSTMENT | Owner signed verified correction with reason/count/reference, cost evidence for positive qty |
+| REVERSAL | Owner linked inverse of eligible standalone opening/receipt/manual issue; original retained |
+| RETURN_RECEIPT | Verified saleable physical return linked to original SaleLine/issue, bounded qty, historical cost recovery |
 
-`available = onHand - reserved`
+Receiving: scan/search → existing product or authorized search-first creation → qty + cost evidence → review → confirm. New product does not create stock. Operations cost submission is write-only under [04](04-AUTH-RBAC-SECURITY.md). Missing cost is explicit UNKNOWN, not zero.
 
-For stock attention, `eligible(p)` is the sum of available quantity for goods product p across active, issue-eligible STORAGE locations. Reservation changes this aggregate without changing physical onHand; 13 owns its LOW/OUT evaluation.
+Every command validates active product, unit precision, qty/range, actor, reason, source eligibility and versions under ordered product locks. Aggregate duplicate product lines before stock checks. Append movement/cost facts, update balance, audit and durable result atomically. Concurrency on last unit yields one success and one insufficient-stock rejection. No historical backdating; keep optional document date separately from UTC server posting time/sequence.
 
-Constraints:
-- onHand cannot go negative where prohibited;
-- reserved cannot be negative or exceed eligible onHand;
-- only inventory command services write balances/reservation projections;
-- no direct balance edit endpoint;
-- no destructive ledger deletion.
+One full reversal per eligible original; prohibit direct reversal of SALE_ISSUE/RETURN_RECEIPT, use commercial correction. Reject reversal if it makes stock negative or dependent valuation cannot be safely recomputed under [15](15-FINANCE-PROFITABILITY.md). Do not silently substitute latest cost. Adjustment is a separately evidenced physical correction, never a way to erase the original.
 
-## Core movement types
+Opening is manual bounded entry first, under [14](14-BULK-IMPORT.md). G2 verifies unit/barcode/cost/serial assumptions before real data; unsupported serial/pack/batch requirements stop affected onboarding. No transfers, reservations, advanced opname or serialized identity.
 
-OPENING, RECEIPT, ISSUE, order/FULFILLMENT ISSUE, verified saleable RETURN RECEIPT, TRANSFER, ADJUSTMENT and eligible standalone REVERSAL.
-
-Commercial refund does not automatically imply physical return.
-
-## Receiving
-
-Operations chooses destination/source/reference, scans/searches GOODS, reviews a draft and confirms once. Manufacturer barcode may resolve existing product. Unknown code never auto-creates product/stock. Missing acquisition cost does not block lawful receipt.
-
-Serialized receipt validates identity and prevents duplicates.
-
-## Reservation — Core
-
-Reservation is a commercial hold, not physical movement.
-
-Order confirmation/change may reserve goods. Reservation:
-- reduces available;
-- leaves onHand unchanged;
-- links order/order-line/location;
-- supports partial release/consumption;
-- is concurrency-safe;
-- cannot exceed current eligible available quantity.
-
-Cancellation/amendment releases only remaining unneeded reservation.
-
-## Fulfillment — Core
-
-Verified handover creates order-linked ISSUE.
-
-Fulfillment command:
-1. claims idempotency;
-2. validates order/revision and remaining quantity;
-3. locks commercial/inventory records in canonical order;
-4. consumes reservation when applicable;
-5. posts immutable ISSUE;
-6. updates balance/serial/health;
-7. appends audit/result;
-8. commits once.
-
-An order for 10 may fulfill 4 + 3 + 3. Cumulative fulfillment cannot exceed effective ordered quantity.
-
-Payment state does not physically change quantity. Receiving money never posts stock.
-
-## Transfer/non-sale issue/corrections
-
-Transfer posts paired legs atomically. Non-sale issue is for genuine consumption/loss/authorized reasons, never to bypass sales.
-
-Standalone mistakes use eligible reversal or count-based adjustment. Order-linked fulfillment mistakes use linked commercial/fulfillment correction; do not independently reverse them to evade order history.
-
-## Serialized goods
-
-A serialized item has one authoritative internal identity, optional manufacturer serial/aliases, one position at a time, cannot be issued twice, and verified return reuses the original identity.
-
-## Attention, concurrency and recovery
-
-Only monitored GOODS participate in NORMAL/LOW/OUT. Core reservation affects available and therefore stock attention under 13.
-
-Use PostgreSQL transactions, ordered locks and durable idempotency receipts. Competing users for final available stock produce one success and one safe rejection.
-
-Unknown network result is not failure. Retry/status recovery returns the original result. Reconciliation can recompute balances from ledger and reservations; mismatch blocks affected posting until investigated.
+Read stock/history server-side with pagination. Operations history omits private cost; owner drill-down includes authorized evidence. Daily scheduled read-only reconciliation compares ledger and balance/cost projections; mismatch blocks affected product posting and raises owner incident. Repair requires controlled replay/rebuild from immutable facts and audit, never direct business balance editing. Lost response queries/retries original command identity.

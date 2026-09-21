@@ -1,77 +1,44 @@
-# 16 — Executor handoff
+# 16 — Antigravity / Codex executor handoff
 
-Business rules remain in canonical specs. This file owns session execution procedure.
+A fresh session continues from repository, not conversation summary. Plan 1.0 has 36 Core tasks, all NOT STARTED. Current task none; next **BK01 — UI01 Foundation + Shell**. This replanning does not authorize starting it.
 
-## Session start
+## Startup and continuity
 
-1. Check branch/commit and `git status --short`; preserve local work.
-2. Read AGENTS, 00 and the active/next row in 11.
-3. Read 01/02/10 and task-specific docs.
-4. Select exactly one task and verify dependencies/gates.
-5. Mark [~] only when work actually begins.
+1. Inspect status/branch/log; preserve local work. Read AGENTS → 00 → active/next task in 11 → 01 → 02 → 10 → task-specific docs.
+2. Select one task, verify dependencies, actual tools, scope and gates. Mark IN PROGRESS only when work begins; at most one active executor by default.
+3. Follow task metadata and common DoD. Backend/UI work is a vertical slice, not a disconnected full frontend.
+4. Record changed files, tests actually run, outcomes, missing evidence, exact owner review revision and next step. No unrun check receives credit.
+5. Update 11 status/evidence, 10 only for actual architecture decisions, and 00 LAST. Commit completed substantial work with intended files only. Do not push/merge/deploy unless explicitly authorized.
 
-## Next execution
+Statuses: NOT STARTED, IN PROGRESS, WAITING TECHNICAL CHECK, WAITING OWNER REVIEW, BLOCKED, COMPLETE. Waiting is not complete. UI approval evidence names bundle/integrated screen revision; inherited CP/RV approvals do not count.
 
-Current **Plan 3.1.1** incorporates owner-required D54 shift-close reporting; counts remain 47 total / 39 Core. The approval below is the preserved Plan 3.1 baseline, not authorization to execute this documentation-only refinement.
+## Deterministic short prompt
 
-**Plan 3.1 owner acceptance: APPROVED — 20 September 2026**, by the explicit statement “setuju Plan 3.1”. Next eligible work is **R00.1 — RV01**. It remains unstarted; this planning cleanup does not execute it.
-
-RV01 is a standalone deterministic visual/interaction prototype:
-- brand-neutral shell/auth;
-- role-specific landing hierarchy;
-- business identity/settings preview for the R01.3 configuration flow;
-- persistent desktop sidebar/mobile drawer;
-- fast POS skeleton and **Shift Saya → Tutup Shift → Laporan Shift** entry concept; detailed blind count/reconciliation/report/export interactions remain RV04/R05 under 17;
-- progressive-disclosure entry to **Pesanan / DP**;
-- relevant loading/empty/error/uncertain states.
-
-It must not depend on production API/database and must not reuse LATANSA-specific palette as the universal product identity.
-
-Browser/keyboard/mobile evidence → mark [V] → STOP for owner Gate A.
-
-Production R01.1 requires completed R00.1 with explicit owner Gate A approval plus separate explicit owner implementation authorization. Neither authorization is granted by Plan 3.1 acceptance.
-
-## Lifecycle
-
-`[ ] → [~] → [T] → [V] when visual → [x]`.
-
-BE can move [T] → [x] after required technical verification. FE/FS requiring owner review remains [V] until explicit approval.
-
-## Vertical slice rule
-
-For each production feature use only applicable steps:
-database/constraints → validation → service/transaction → RBAC → audit → UI → tests → browser/device verification.
-
-Do not build the entire frontend first.
-
-## Stop conditions
-
-Stop/report rather than guess when:
-- canonical docs conflict;
-- a safety invariant must change;
-- tax/legal invoice meaning is required but Q01 is unresolved;
-- required credential/device/recovery evidence is unavailable;
-- a destructive migration threatens history;
-- an unapproved paid dependency is required;
-- a visual Gate A/B is due;
-- requested scope materially expands beyond the active task.
-
-## Completion
-
-Run relevant lint/typecheck/tests/build only when tooling exists and the task needs them. Never claim an unrun check passed.
-
-Visual work needs actual browser/mobile evidence. Scanner/printer work needs actual device checks at the specified gate.
-
-Update task status/evidence in 11, real decisions in 10, and 00 last. Never push/merge/deploy without authorization.
-
-## Report
+Usually <=120–180 words; repository carries context. Fill from one task card rather than repeating specs:
 
 ```text
-TASK:
-STATUS:
-CHANGED:
-CHECKS:
-OWNER_REVIEW:
-BLOCKERS:
-NEXT:
+TASK: <ID + title>
+READ: AGENTS, docs/00, docs/11 task, docs/01, docs/02, docs/10, <task docs>
+GOAL: <task goal, 1–3 sentences>
+DO:
+- <main deliverable and affected domain/files>
+VERIFY:
+- <task acceptance IDs + applicable common DoD>
+STOP IF:
+- <task-specific gate/blocker; docs conflict or safety invariant cannot hold>
+UPDATE:
+- 11 status/evidence; 10 only for real decisions; 00 LAST.
+No unrelated changes. No push/merge/deploy unless authorized.
 ```
+
+Do not pre-generate dozens of large prompts. Task cards list goal/dependencies/read/files/verification/stop, making construction mechanical. Task IDs are permanent; no renumbering after work begins.
+
+## Stops
+
+Docs conflict, new scope/architecture, missing required tool or paid-only access, failed integrity/privacy check, unresolved actual policy/device/recovery gate, or destructive operation without exact authorization. Report concrete blocker and preserved work; never assume approval.
+
+Before meaningful UI work verify 21st.dev free MCP/catalog and actual Impeccable skill/CLI/integration, then follow 05. Missing setup stops that UI task. BK01–BK04 produce compact contracts; BK05 records complete owner Gate A/frozen DESIGN before production frontend. Gate B reviews real integration. Screenshots alone are not approval.
+
+Production safety in AGENTS/09 applies to all maintenance/bugfixes; generic fix/migrate/deploy is never permission to destroy data. Required stop report names why/data/alternatives/migration/backup/rollback.
+
+Final executor report: TASK, STATUS, CHANGED, CHECKS (actual evidence), GATES/BLOCKERS, COMMIT, NEXT. Leave 00 sufficient for another agent to resume without chat.

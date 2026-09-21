@@ -1,84 +1,35 @@
-# Agent rules — Retail Operations Platform
+# Agent rules — BantuKasir
 
-The repository is the sole source of truth. Explicit owner instructions supersede conflicting older assumptions only when recorded in canonical documentation.
+Repository documentation is the source of truth for **BantuKasir Plan 1.0**. This independent GOODS-only POS supersedes the inherited retail-platform plan. Do not modify the upstream LATANSA repository. Preserve unrelated local work.
 
 ## Recover context first
 
-Before substantial work:
-1. inspect `git status --short` and `git branch --show-current`;
-2. read this file and `docs/00-CURRENT-STATE.md`;
-3. read the active/next task in `docs/11-BUILD-PLAN.md`;
-4. read `docs/01-PRD.md`, `docs/02-ARCHITECTURE.md`, `docs/10-DECISIONS.md`;
-5. read task-specific canonical docs.
+Before substantial work inspect `git status --short`, branch and recent commits. Read, in order: this file; [00](docs/00-CURRENT-STATE.md); active/next task in [11](docs/11-BUILD-PLAN.md); [01](docs/01-PRD.md); [02](docs/02-ARCHITECTURE.md); [10](docs/10-DECISIONS.md); task-specific canonical docs. Never guess through a conflict or rely on chat memory. Record changed requirements before execution.
 
-Preserve local user work. Never silently reset/delete unrelated files.
+## Product and integrity
 
-## Effective product model
+- GOODS only, one business-wide stock pool, full-payment instant Sale. No Order/booking/DP, services, reservations, warehouses or shift engine in V1.
+- Exactly SUPER_ADMIN / Pemilik, OPERATIONS_ADMIN / Admin Operasional, CASHIER / Kasir. Backend role and object authorization is mandatory.
+- Immutable StockMovement is stock truth; StockBalance is its synchronous projection. Never directly edit balances or allow negative stock.
+- Completed Sale, lines, full Payment, SALE_ISSUE, balance/cost facts, ReceiptSnapshot, audit and durable command result commit atomically. Printing follows commit.
+- Scan edits a draft. A beep never posts stock. Unknown results recover the original command, never replacement sales.
+- Payments/history are append-only. Corrections/refunds preserve originals. Refund without physical return cannot increase stock.
+- Missing cost is unknown, never zero. Laba Kotor is never Laba Bersih. Acquisition cost/HPP/profit and sensitive audit/security data are owner-only; staff DTOs use allowlists.
+- Daily reconciliation is keyed by businessDate + cashier, with race-safe immutable finalization under [17](docs/17-POS-SALES.md). No shift/register/float engine.
+- Runtime BusinessProfile owns client identity and constrained accent. LATANSA assets are historical/first-client assets only.
 
-Core is a brand-neutral retail operations system for GOODS and SERVICES. A single **Order** model supports instant POS, booking, DP/partial payments, later settlement, goods reservation, partial fulfillment, mixed goods/services and scheduled service jobs with milestones/progress.
+## Protected production database — applies to ALL agents
 
-Instant POS is a fast path through the same Order engine, not a separate commercial system.
+Production contains valuable live business records. Without explicit owner approval for the **EXACT destructive operation**, NEVER DROP DATABASE/SCHEMA or populated production tables; TRUNCATE; mass DELETE business records; reset/recreate/seed demo data into production; execute destructive reset scripts/migrations; delete PostgreSQL/Docker production volumes or persistent DB directories; run `docker compose down -v` against production; delete StockMovement, completed Sales, Payments or AuditEvent history; silently rewrite historical stock/financial facts.
 
-Primary roles:
-- `SUPER_ADMIN` — Pemilik;
-- `OPERATIONS_ADMIN` — Admin Operasional;
-- `CASHIER` — Kasir.
+Generic “fix”, “deploy” or “run migration” is NOT destructive approval. Default to additive/forward migrations, expand → migrate/backfill → verify → contract, populated non-production rehearsal, backup before high-risk changes, restore readiness, transactional migration where possible and post-migration reconciliation. If destruction appears necessary, STOP and report why, data at risk, safer alternatives, migration/backfill plan, backup/restore prerequisites and rollback/recovery plan. Non-production reset requires a clearly identified target and task authorization. Full runbook: [09](docs/09-DEPLOYMENT-OPS.md).
 
-## Non-negotiable invariants
+## Design and execution
 
-- Immutable stock-movement ledger; no direct balance editing.
-- `available = onHand - reserved`; reservation never changes physical onHand.
-- Payment/DP never causes stock OUT by itself.
-- GOODS stock leaves only on verified fulfillment/issue.
-- SERVICES never create fake stock balances or ledger legs.
-- Payments are append-only; old payments are never overwritten.
-- Order, payment, goods fulfillment and service progress states are separate.
-- Cash received is not automatically revenue; revenue is not automatically cash received.
-- Missing cost is not zero. Gross profit is never labeled net profit.
-- Returns/refunds/corrections preserve original history.
-- Critical writes use DB transactions, backend RBAC, idempotency and audit.
-- No negative stock where prohibited; serialized identity cannot duplicate or issue twice.
-- A scan edits a draft; a beep never means stock changed.
-- Public DTOs exclude private cost, margin, serial, audit/security and internal warehouse data. Staff DTOs expose only role/task-authorized operational fields (including serial/location for authorized fulfillment); private cost/profit and security data remain owner-only.
+One active executor task. No unrelated refactors or hidden scope expansion. Four compact UI bundles establish a complete owner-approved Gate A before production frontend. [DESIGN](DESIGN.md) is the sole token/pattern authority; freeze its approved revision. Verify actual 21st.dev and Impeccable availability before every meaningful UI task; missing integration stops that UI task. Follow [05](docs/05-DESIGN-SYSTEM.md), not invented tool use. No paid credits/templates/services without explicit approval.
 
-## UX rule
+After Gate A, implement vertical slices: DB → validation → service → RBAC → audit → UI → tests → browser/device verification. Gate B reviews real integration. Bahasa Indonesia labels; cashier path Scan/Search → Keranjang → Bayar → Struk.
 
-Keep complexity in the system.
+Target additional software/SaaS cost approximately Rp0 using existing VPS/domain, PostgreSQL, self-hosted auth, browser print/PDF and open-source barcode. Independent backup is mandatory; document real storage cost rather than weakening recovery.
 
-Cashier default: `Scan/Search → Keranjang → Bayar → Struk`. Reveal **Pesanan / DP** fields only when needed.
-
-Operations default answers: **apa yang harus dikerjakan hari ini?**
-
-Owner default answers: **apa yang perlu perhatian dan bagaimana bisnis berjalan?**
-
-Use progressive disclosure, useful defaults, keyboard/scanner efficiency on desktop, touch efficiency on mobile and Bahasa Indonesia labels. Users do not need to understand ledger, allocations or revenue-event terminology.
-
-## Branding
-
-Do not hardcode LATANSA as product identity. Runtime `BusinessProfile` owns name, logo, contact/document identity and constrained accent configuration. Semantic success/warning/danger/focus colors remain independent from brand colors. Preserve existing LATANSA assets as first-client/historical assets only.
-
-## Cost policy
-
-Target recurring software/SaaS cost is approximately Rp0:
-- existing VPS + Docker Compose/Caddy;
-- PostgreSQL for DB/search/jobs;
-- self-hosted Better Auth;
-- browser print/print-to-PDF;
-- open-source barcode generation;
-- Web Push + in-app inbox.
-
-Do not add paid auth/database/queue/search/analytics/CMS/payment/notification SaaS without explicit approval. Reliable off-VPS backup remains mandatory; if no suitable existing destination exists, document the cost instead of weakening recovery.
-
-## Development workflow
-
-Implement vertical slices: database → validation → backend/service → RBAC → audit → UI → tests → browser/device verification.
-
-Major new interactions require a visual prototype Gate A before their production UI and Gate B after real integration. Prototypes are interleaved with the relevant slice; do not build the entire frontend first.
-
-One active task at a time. Avoid unrelated refactoring or speculative ERP expansion. Never push, merge, deploy, publish or buy services without explicit authorization.
-
-## Completion
-
-A task is not complete merely because UI renders. Relevant migrations, validation, RBAC, audit, tests, lint, typecheck, production build, browser/mobile/device checks and docs must pass.
-
-Update `docs/11-BUILD-PLAN.md` for status/evidence, `docs/10-DECISIONS.md` for real architecture decisions, and `docs/00-CURRENT-STATE.md` last after substantial work.
+Completion requires applicable migrations, validation, RBAC, audit, tests, lint/typecheck/build, browser/mobile/device checks and docs evidence. Update 11, then 10 only for real decisions, and **00 LAST**. Commit each substantial completed task; stage only intended files. Never push, merge, deploy, publish or buy services without explicit authorization. This replanning authorizes one local docs commit only; do not start its next task.

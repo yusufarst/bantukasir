@@ -1,39 +1,14 @@
-# Prototype registry
+# BantuKasir prototype registry
 
-This registry tracks visual/interaction prototypes only. It is not the build-progress tracker; `docs/11-BUILD-PLAN.md` is authoritative for task status.
+Plan 1.0; [05](../docs/05-DESIGN-SYSTEM.md) owns workflow, [DESIGN](../DESIGN.md) sole tokens/patterns, [11](../docs/11-BUILD-PLAN.md) task status.
 
-## Historical artifact
-
-`cp01-shell-auth/` exists as an earlier LATANSA-specific prototype created before the retail/order replanning.
-
-It is preserved for historical/reference purposes only:
-
-- no owner approval is carried forward;
-- it is not a production visual contract;
-- its LATANSA-specific palette/identity must not become the universal product design;
-- it contributes no Plan 3.1.1 completion credit;
-- do not delete it unless explicitly authorized.
-
-| Pattern ID | Status | Purpose | Artifact |
+| Bundle | Task | Status | Artifact / approval |
 | --- | --- | --- | --- |
-| CP01 | HISTORICAL / UNAPPROVED | Previous shell/auth exploration | Local untracked `cp01-shell-auth/REVIEW.md`; not included in this planning commit |
+| UI01 Foundation + Shell | BK01 | NOT STARTED | None |
+| UI02 Product Operations | BK02 | NOT STARTED | None |
+| UI03 POS | BK03 | NOT STARTED | None |
+| UI04 Reports | BK04 | NOT STARTED | None |
 
-## Plan 3.1.1 visual contracts
+Complete Gate A in BK05 requires all four, exact revision, actual tool/keyboard/mobile/browser evidence and explicit owner visual approval; then freeze DESIGN. Gate B follows integration. Do not build prototypes in the documentation-only replanning.
 
-`docs/05-DESIGN-SYSTEM.md` owns the current visual-contract requirements.
-
-| Pattern ID | Status | Scope |
-| --- | --- | --- |
-| RV01 | PLANNED | Brand-neutral shell/auth/role workspaces, business identity settings + fast POS skeleton and Shift Saya/report entry concept; detailed close flow remains RV04 |
-| RV02 | PLANNED | Goods/services, barcode/labels, receiving and inventory |
-| RV03 | PLANNED | Orders/bookings, DP/partial payment, reservation, fulfillment and service progress |
-| RV04 | PLANNED | Shift open/close, blind count, reconciliation/report, print/PDF/CSV/reprint/error/uncertain states, final fast checkout, payment, receipt and refund |
-| RV05 | PLANNED | Owner dashboard, stock attention, finance and system/recovery states |
-
-**Plan 3.1 owner acceptance: APPROVED — 20 September 2026.** Next eligible visual task is `R00.1 / RV01`; its planning-acceptance prerequisite is satisfied. It remains unstarted and no RV01 work is performed in this cleanup.
-
-D54 is an owner-required Plan 3.1.1 refinement; all RV contracts remain PLANNED, without visual approval or execution.
-
-RV01 must use brand-neutral product foundations with runtime `BusinessProfile`; LATANSA may be used only as a first-client configuration/demo identity.
-
-Prototype Gate A approves interaction/visual direction only. Production implementation still requires separate authorization and later Gate B approval.
+Inherited CP01/RV references are historical, contribute no completion credit and carry no approval. No cp01-shell-auth directory was present in this clean checkout during replanning; do not claim an absent local artifact exists. Preserve any historical artifacts/assets if subsequently supplied, without treating their LATANSA palette as universal identity.

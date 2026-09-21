@@ -1,47 +1,26 @@
-# Retail Operations Platform
+# BantuKasir
 
-Production-grade retail operations platform for one configurable business per deployment. The product is **not LATANSA-locked**: LATANSA may be the first configured business identity, but business name, logo, accent, document identity and contact details are runtime configuration.
+**Configurable production-grade custom POS and stock-control platform.** V1 is a focused GOODS-only POS for one business: reusable product search, barcode, recorded stock receipts/issues, full cash/transfer checkout, immutable thermal/A4 sales documents, restock visibility, owner-only HPP/gross profit and cashier daily reconciliation.
 
-Core combines fast counter POS with real-world order operations: booking, DP/partial payment, stock reservation, partial goods fulfillment, scheduled service work, progress/milestones, later settlement, barcode inventory, stock attention, cashier reconciliation with immutable own-shift print/PDF/CSV reports and owner-only truthful gross-profit reporting.
+**BantuKasir Plan 1.0:** implementation not started, **0/36 Core tasks**, no active task. Next: **BK01 — UI01 Foundation + Shell**, in a subsequent authorized session. This documentation task starts no prototype or production work. Four prototype bundles and complete owner Gate A precede production frontend.
 
-The convenience-store comparison describes operational speed only. Do not copy another retailer's branding or UI.
+Copied from `yusufarst/latansa-inventory` at `f7cecfed1fcd0b183625e49f39dfeb736ab4e3a5`. That upstream remains the full Retail Operations Platform blueprint and must not be modified. Previous approvals do not approve BantuKasir visuals; Git history preserves superseded decisions.
 
-## Current state
+Start with [AGENTS](AGENTS.md), [current state](docs/00-CURRENT-STATE.md), [build plan](docs/11-BUILD-PLAN.md) and [handoff](docs/16-EXECUTOR-HANDOFF.md).
 
-Planning version **3.1.1** incorporates owner-required D54 cashier shift-close reporting on `plan/retail-order-replan`. Production implementation has **not started**. The old LATANSA-specific CP01 is historical/unapproved and is not the visual contract for this product direction.
-
-**Plan 3.1 owner acceptance: APPROVED — 20 September 2026** (“setuju Plan 3.1”). Progress remains **0/47 overall, 0/39 Core**. Next eligible task is **R00.1 / RV01**, which stops at owner Gate A. R01.1 still needs that gate and separate explicit implementation authorization.
-
-Start with [AGENTS.md](AGENTS.md), [00 — Current state](docs/00-CURRENT-STATE.md), [11 — Build plan](docs/11-BUILD-PLAN.md), then task-specific specifications and [10 — Decisions](docs/10-DECISIONS.md).
-
-Documentation is English. User-facing UI is Bahasa Indonesia.
-
-## Canonical ownership
-
-| Document | Owns |
+| Canonical document | Owns |
 | --- | --- |
-| [01 — PRD](docs/01-PRD.md) | Outcomes, Core scope, users and UX priorities |
-| [02 — Architecture](docs/02-ARCHITECTURE.md) | Modules, transaction boundaries and infrastructure |
-| [03 — Domain model](docs/03-DOMAIN-MODEL.md) | Entities, status dimensions and lifecycle |
-| [04 — Auth/RBAC/Security](docs/04-AUTH-RBAC-SECURITY.md) | Roles, permissions, privacy and security |
-| [05 — Design system](docs/05-DESIGN-SYSTEM.md) | Brand-neutral UI, workspaces and visual gates |
-| [06 — Inventory](docs/06-INVENTORY-SPEC.md) | Ledger, reservation, fulfillment and stock safety |
-| [07 — Business flows](docs/07-BUSINESS-FLOWS.md) | Cross-module user workflows |
-| [08 — Testing](docs/08-TESTING-ACCEPTANCE.md) | Acceptance scenarios and release gates |
-| [09 — Deployment/Ops](docs/09-DEPLOYMENT-OPS.md) | Runtime, backup/recovery and operations |
-| [10 — Decisions](docs/10-DECISIONS.md) | Decision history and policy gates |
-| [11 — Build plan](docs/11-BUILD-PLAN.md) | Official sequence and progress |
-| [12 — Barcode/Scanner](docs/12-BARCODE-SCANNER.md) | Barcode identity, labels and scanning |
-| [13 — Notifications](docs/13-NOTIFICATIONS.md) | Stock attention and delivery |
-| [14 — Bulk import](docs/14-BULK-IMPORT.md) | Master/opening import |
-| [15 — Finance](docs/15-FINANCE-PROFITABILITY.md) | Payment vs revenue, costing, HPP and gross profit |
-| [16 — Executor handoff](docs/16-EXECUTOR-HANDOFF.md) | Execution rules |
-| [17 — Orders/POS/Services](docs/17-POS-SALES.md) | Orders, POS, payments, fulfillment, services, receipts and shifts |
+| [01 PRD](docs/01-PRD.md) / [PRODUCT](PRODUCT.md) | Scope and concise design context |
+| [02 Architecture](docs/02-ARCHITECTURE.md) / [03 Domain](docs/03-DOMAIN-MODEL.md) | Modules, transactions and entities |
+| [04 Security](docs/04-AUTH-RBAC-SECURITY.md) | Three roles, privacy and auth |
+| [05 UX](docs/05-DESIGN-SYSTEM.md) / [DESIGN](DESIGN.md) | Visual workflow and sole design baseline |
+| [06 Inventory](docs/06-INVENTORY-SPEC.md) / [07 Flows](docs/07-BUSINESS-FLOWS.md) | Stock truth and operations |
+| [08 Acceptance](docs/08-TESTING-ACCEPTANCE.md) / [09 Operations](docs/09-DEPLOYMENT-OPS.md) | Tests, protected DB and recovery |
+| [10 Decisions](docs/10-DECISIONS.md) / [11 Plan](docs/11-BUILD-PLAN.md) | Decisions, gates, status and schedule |
+| [12 Barcode](docs/12-BARCODE-SCANNER.md) / [13 Restock](docs/13-NOTIFICATIONS.md) | Identity, scans and LOW/OUT |
+| [14 Onboarding](docs/14-BULK-IMPORT.md) / [15 Finance](docs/15-FINANCE-PROFITABILITY.md) | Opening stock, deferred import and HPP |
+| [16 Handoff](docs/16-EXECUTOR-HANDOFF.md) / [17 POS](docs/17-POS-SALES.md) | Execution, Sale, documents and daily report |
 
-## Technology and cost
+Preferred stack: Next.js, TypeScript, PostgreSQL, Drizzle, Zod, Tailwind, shadcn/ui, Better Auth, Vitest, Playwright, Docker Compose/Caddy. Versions/security are verified and pinned during implementation; no dependencies are installed by this plan. Additional recurring software target approximately Rp0. Existing VPS/domain, hardware and independent backup capacity remain real prerequisites/costs.
 
-Preferred stack remains Next.js, TypeScript, PostgreSQL, Drizzle ORM, Zod, Tailwind CSS, shadcn/ui where useful, Lucide, Better Auth, Vitest, Playwright, Docker Compose and Caddy. Default architecture is a modular monolith with one PostgreSQL database.
-
-Target recurring **software/SaaS cost is approximately Rp0** through open-source/self-hosted components and the client's existing VPS. VPS/domain, electricity/network, scanner/printer hardware and a reliable independent backup destination are real costs and must not be presented as free.
-
-This repository is public. Never commit secrets, credentials, production data, customer data or private backup material.
+Runtime BusinessProfile configures name/logo/address/contact/receipt identity/accent without source changes. Documentation is English; UI is Bahasa Indonesia. No secrets or production data in Git. [Production destructive-operation prohibition](AGENTS.md) applies to every implementation and maintenance agent.

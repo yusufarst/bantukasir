@@ -1,61 +1,32 @@
 # 04 — Authentication, RBAC and security
 
-Backend authorization is mandatory. Hiding UI is not authorization.
+Backend permission + object scope on every request, including history/status/print/PDF/CSV/media. Hiding UI never grants security. Exactly three fixed roles; no dynamic role builder.
 
-## Roles
+| Capability | SUPER_ADMIN | OPERATIONS_ADMIN | CASHIER |
+| --- | --- | --- | --- |
+| Search/scan operational product DTO | Yes | Yes | Yes |
+| Product/category/master selling price/barcode/labels | Yes | Yes, nonnegative price with audit | No |
+| Receive/manual issue/stock/restock/operational history | Yes | Yes | No |
+| Opening/adjustment/reversal/sensitive correction | Yes | No | No |
+| POS cash/transfer/own history/own daily report | Yes | No | Yes |
+| Private acquisition cost/HPP/gross profit | Yes | No | No |
+| Refund/return and all-cashier report review | Yes | No | No |
+| Users/config/security/audit/recovery | Yes | No | No |
 
-### SUPER_ADMIN — Pemilik
+Owner checkout attributes Sale to the owner's own cashier-day, never impersonates another user. Operations has no checkout grant in this minimal baseline.
 
-Full business authority: accounts/security, BusinessProfile/policies, catalog/inventory/orders/services, sensitive corrections/refunds, private finance, audit and recovery oversight. High-risk actions require recent authentication where specified.
-
-### OPERATIONS_ADMIN — Admin Operasional
-
-Routine operations: catalog/selling prices, barcode/labels, customers/orders/bookings, receiving/non-sale issue/transfer, reservation/fulfillment, service schedules/progress, stock/restock and safe operational reports. Payment recording is allowed when the workflow authorizes it; cash requires the user's own shift.
-
-Default exclusions: acquisition cost/HPP/margin/profit, user/security administration, owner-only refund/sensitive finance correction and recovery secrets.
-
-### CASHIER — Kasir
-
-Counter work: own shift, fast POS, product/service search/scan, simple order/booking, minimal customer creation, customer payments, allowed counter fulfillment, receipts/reprints and necessary own/current transaction history.
-
-Default exclusions: stock adjustment/receiving/transfer, arbitrary price master changes, private finance, user/settings/audit administration and refund execution.
-
-## Permission model
-
-Use named backend permissions mapped to fixed roles; no dynamic role-builder UI in Core. Apply object/scope checks to register/location/order context. Reprint/recovery rechecks current authorization.
-
-### Own-shift reports — D54
-
-Named permissions for own shift read/close/report/export/reprint require the authenticated actor to own the shift and retain authorized register/location scope. CASHIER may access its own operational history and closed reports, never arbitrary coworker or company-wide reporting. OPERATIONS_ADMIN conducting its own shift has the same own-shift report scope; routine operations authority does not grant coworker reports. SUPER_ADMIN may inspect authorized shifts, close status and variance drill-down across cashiers.
-
-Allowlist shift identity, times/status, commercial counts/value/deltas, relevant outstanding, received payments/refunds by method, opening float, cash events, confirmed count/expected/variance, safe notes and transaction references under [17](17-POS-SALES.md). Before blind-count submission, every endpoint/DTO/preview/export withholds server-derived expected cash and reconciliation results. Independently permitted payment facts do not grant an expected-cash report.
-
-Reauthorize list/detail/history/print/PDF/CSV/reprint and private object downloads on every request. Reject guessed IDs, cross-user query scopes and file/cache bypasses; no shared sensitive response cache or public report URL. Staff export DTOs never include acquisition/purchase cost, HPP, cost evidence, margin, gross/net profit, private owner finance or security/audit administration fields. Report access grants no refund execution permission. Print/export request audit remains server-side; it does not grant audit administration.
+Receiving requires cost evidence or explicit UNKNOWN. Operations may **submit newly supplied cost evidence** from the incoming document (write-only field); response/history/search/export must not return that value, historical acquisition costs, valuation or HPP. Staff can instead mark “Biaya perlu dilengkapi pemilik”; owner supplies evidence later. This does not grant cost-read permission. Clear submitted sensitive fields after commit; never persist them in browser recovery storage or logs. After reload recover by server command reference, not a stored cost payload. Owner-only correction of cost evidence is audited.
 
 ## Authentication
 
-Use self-hosted Better Auth after implementation-time version/security verification:
-- no public signup;
-- individual accounts only;
-- secure invite/reset;
-- owner TOTP before pilot;
-- session revocation on disable/security change;
-- secure production cookies/origin protections;
-- rate limiting on sensitive endpoints;
-- no shared cashier/owner account.
+Self-hosted Better Auth after implementation-time compatible-version/security verification. Individual accounts, password hashing through vetted library, secure HttpOnly/Secure cookies, appropriate SameSite, trusted origin/CSRF protection, server sessions, login/reset rate limiting, no public signup. Owner bootstrap is a one-time private operator procedure; no default password/demo user in production. Single-use expiring invite/reset via securely conveyed link needs no paid email service. No token in logs. Disable/password reset/revoke invalidates sessions and privileged writes.
 
-## Sensitive data
+No TOTP/2FA in V1; auth adapter boundary permits later addition without custom cryptography. Sensitive owner refund/user/recovery/config actions require recent authentication.
 
-Owner-only by default: acquisition cost, HPP, margin/gross profit, cost evidence, recovery details and sensitive audit/security details.
+## Privacy and audit
 
-Staff/public DTOs are explicit allowlists. Never serialize a rich internal entity and rely on UI hiding.
+Allowlist DTOs separately for operational, cashier-document and owner-finance scopes. Staff must not receive purchase cost/evidence history, HPP, margin/profit, unrestricted audit/security or recovery details. No public report URLs/shared sensitive response caches. Cashier own scope comes from authenticated actor, never trusted cashierId.
 
-Instant sale requires no customer identity. Deferred order collects only data needed to identify/contact the customer and execute the order.
+Audit important successful changes within the business transaction: Sale/payment/stock/product/price/config/user/correction/finalization. Dedicated owner Log/Riwayat filters date/user/type/product/reference. Operations sees safe stock history; cashier sees own Sale/report history only. Never log passwords, tokens, session cookies or private full payloads. Retain historical actor identities and original facts.
 
-## Audit and secrets
-
-Audit successful sensitive/business mutations with actor, server time, action, entity/source, command identity and reason where required. Denied high-risk access is security logged separately.
-
-Ledger, payments, commercial history and audit are never silently deleted; corrections append new facts.
-
-Never hardcode/commit passwords, API keys, DB credentials, private keys, VPS credentials or production secrets. `.env.example` contains variable names with empty values; startup validates required configuration and fails safely.
+Validate environment at startup without displaying secret values. No secrets in Git/screenshots or NEXT_PUBLIC variables. Validate/re-encode logo uploads (PNG/JPEG/WebP, bounded dimensions/size), reject executable/SVG/HTML uploads and arbitrary URL fetching. Private storage, random immutable keys and authorized downloads. [09](09-DEPLOYMENT-OPS.md) owns recovery.

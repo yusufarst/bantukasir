@@ -1,68 +1,56 @@
-# 00 — Verified current state and handoff
+# 00 — Current state and handoff
 
-Updated **21 September 2026**, Asia/Jakarta. Updated LAST for the documentation-only Plan 3.1.1 refinement. No prototype or production work was started.
+Updated **21 September 2026**, Asia/Jakarta. Written LAST after substantive documentation changes for **BantuKasir Plan 1.0**. This checkpoint is documentation/planning only.
 
 | Item | Verified state |
 | --- | --- |
-| Product direction | Brand-neutral retail operations: GOODS + SERVICES |
-| Planning version | **3.1.1** |
-| Plan 3.1 owner acceptance | **APPROVED — 20 September 2026**; explicit owner statement: “setuju Plan 3.1” |
-| New owner refinement | **D54 / LOCKED — Cashier Shift Close Report**, incorporated from the subsequent owner requirement on 21 September 2026 |
-| Commercial model | One Order engine; instant POS fast path; deferred orders/bookings, DP/partial/later payments, reservation, partial fulfillment and service progress are Core |
+| Repository / branch | yusufarst/bantukasir / plan/bantukasir-pos-v1 |
+| Starting baseline | f7cecfed1fcd0b183625e49f39dfeb736ab4e3a5 |
+| Product | Configurable production-grade GOODS-only POS and stock control |
+| Plan | BantuKasir Plan 1.0; 36 total tasks, all 36 Core, 0/36 complete |
+| Schedule | Target 20 working days / 160 focused hours; conditional on approvals/data/tools/devices/recovery, no spare engineering capacity assumed |
+| Active executor | None |
+| Next task | **BK01 — UI01 Foundation + Shell**; NOT STARTED |
+| Implementation | NOT STARTED; no app, dependency, migration, prototype or production UI added |
+| Visual approval | No UI01–UI04 Gate A or integrated Gate B; DESIGN candidate is NOT APPROVED |
+| Authorization | One local documentation commit only; no push/merge/deploy or next-task execution |
 | Roles | SUPER_ADMIN / Pemilik; OPERATIONS_ADMIN / Admin Operasional; CASHIER / Kasir |
-| Branding | Runtime BusinessProfile; LATANSA is first-client/demo identity only |
-| Cost target | Approximately Rp0 recurring software/SaaS; infrastructure/hardware and independent recovery costs remain real |
-| Build progress | **0/47 overall; 0/39 Core**, phases R00–R09; Core R00–R07; all tasks [ ] |
-| Production implementation | **NOT STARTED**; separate authorization has not been granted |
-| Active build task | **None** |
-| Next eligible task | **R00.1 — RV01 visual contract**, still [ ]; planning-acceptance prerequisite satisfied |
-| Visual approval | No RV01–RV05 Gate A/B approval; contracts remain planned and interleaved |
-| Old CP01 | Historical/unapproved local artifact; no completion credit; preserved |
 
-## Effective rules and handoff
+## Effective source of truth
 
-Read [AGENTS](../AGENTS.md), this file, [01](01-PRD.md), [02](02-ARCHITECTURE.md), effective decisions D46–D54 in [10](10-DECISIONS.md), the next row in [11](11-BUILD-PLAN.md) and [16](16-EXECUTOR-HANDOFF.md).
+Read [AGENTS](../AGENTS.md) → this file → [11 active/next task](11-BUILD-PLAN.md) → [01 PRD](01-PRD.md) → [02 Architecture](02-ARCHITECTURE.md) → [10 Decisions](10-DECISIONS.md) → task-specific docs. [16](16-EXECUTOR-HANDOFF.md) supplies the short Antigravity prompt and continuity procedure. Repository overrides chat memory; one active task, no unrelated refactor, update 11/real decisions then 00 last.
 
-Payment, Order lifecycle, goods fulfillment and service progress remain independent. Payment never posts stock OUT; reservation reduces available only; verified goods fulfillment posts immutable ISSUE. Services never create fake stock. Payments are append-only. Revenue follows goods fulfillment/service completion, not collection of DP. Missing cost remains unknown; gross profit is not net profit.
+Core uses one stock pool, immutable StockMovement and synchronous balance. Full CASH/BANK_TRANSFER Sale atomically records lines/payment/SALE_ISSUE/cost facts/receipt/audit/durable result. Search is shared across workflows. Thermal and A4 reuse one immutable snapshot; printing follows commit. MWA HPP/gross profit is owner-only, unknown costs remain incomplete. Owner corrections append facts.
 
-D54 adds **Kasir → Shift Saya → Tutup Shift → Laporan Shift**. [17](17-POS-SALES.md) owns the stable-cutoff/blind-count close, immutable report and print/PDF/CSV contract. Commercial value, applied payments by method and physical cash are distinct. Reconciliation is per shift/register/cashier, not calendar day. [04](04-AUTH-RBAC-SECURITY.md) restricts cashier reports to authorized own-shift operational data without private cost/profit. Later corrections preserve original snapshots; export/retry never creates another transaction.
+Daily reconciliation identity is cashier + Jakarta businessDate. Activity-version validation requires recount after racing sales; finalization atomically freezes report and blocks later same-day Sales. No shift engine. G3 must validate isolated sales cash and separate owner-funded refunds. [17](17-POS-SALES.md) controls behavior.
 
-RV01 includes the Shift Saya/report entry concept in shell/workspace planning; detailed closing/report interaction remains RV04/R05. R00.1 stops at **owner Gate A**. R01.1 requires that gate plus **separate explicit implementation authorization**. Plan 3.1 acceptance and D54 grant neither visual approval nor production authorization. This refinement starts no R00.1, R01.1 or RV artifact.
+Services/deferred orders/DP/reservation/partial fulfillment/warehouses/shifts/serials/Web Push/camera/enterprise features are Later. CSV/XLSX import is also Later; bounded manual opening is Core. Full list in 01. The upstream LATANSA repository is unchanged and remains the full-platform blueprint. Historical D01–D54 approvals have no effective authority over this replacement plan; preserved in baseline Git history. Effective decisions: **BK-D01–BK-D16**.
 
-## Repository and preserved work
+## Design and tool readiness
 
-Verified branch: **plan/retail-order-replan**. Starting baseline: **acb4063**, “docs: record Plan 3.1 approval and normalize planning docs”. D01–D53 history is preserved; D54 refines D51 without replacing the unified architecture or changing task counts.
+Four compact bundles: UI01 Foundation/Shell, UI02 Product Operations, UI03 POS, UI04 Reports. BK05 records complete owner Gate A before any production frontend and freezes [DESIGN](../DESIGN.md). [PRODUCT](../PRODUCT.md) is design context. Later slices require integrated Gate B.
 
-Protected untracked items remain untouched and excluded from the commit:
+[05](05-DESIGN-SYSTEM.md) requires actual free 21st.dev MCP/catalog plus supported Impeccable skill/CLI/integration; executor verifies installations and stops UI work if unavailable. No matching callable tools were exposed in this planning session; executor setup remains unverified. No tool use or visual approval is fabricated. Planning itself needed neither UI execution nor paid access.
 
-- .agents/
-- apply-plan-3.1.ps1
-- prototypes/cp01-shell-auth/
-- scratch_img/
-- skills-lock.json
+## Verification and protected scope
 
-SHA-256 comparison confirmed protected files unchanged. Only tracked documentation/planning files changed; no application code, dependency, migration, production configuration or prototype was created. One local documentation commit is authorized; no push, merge or deployment.
+- Documentation diff/scope and rewritten contracts reviewed; all changed paths are intended Markdown planning files.
+- Strict UTF-8/mojibake, local Markdown links, table/fence structure, secret-pattern and conflict-marker checks passed before this final-state write; final pass is required before commit.
+- Tracker: 36 unique IDs, all NOT STARTED, complete execution cards, resolved dependencies, acyclic graph, 160-hour sum. All prototype/backend/integration/test/deployment tasks count toward the 50-task maximum.
+- README/AGENTS/PRD/architecture/plan agree on GOODS-only full-payment V1. Old full-platform features no longer effective Core.
+- Production destructive-operation prohibition is prominent in AGENTS and 09, including exact-operation approval, populated migration rehearsal and verified recovery.
+- Official historical LATANSA image SHA-256 remains 964e1a8644d75de8b5dbd37b4fae0e5af5f8c961f0acb60000e963ef4356f4ef. Asset bytes, .env.example and all non-documentation files remain untouched.
+- Initial working tree was clean. Historical cp01-shell-auth directory was absent in this checkout; no old prototype completion credit.
+- No application tests/build/browser/device tests run: docs-only task; no runtime success claimed.
+- One intended local commit: **docs: replan BantuKasir as focused POS v1**. Verify its identity with Git history; no push, upstream changes, merge, deployment or prototype execution.
 
-## Verification evidence
+## Remaining gates / exact next action
 
-- Full documentation diff reviewed; git diff --check passed before final state update and is required again before commit.
-- Strict UTF-8/mojibake checks passed across **22 tracked Markdown files**; local links, fences and table structure passed. Final state is rechecked before commit.
-- Programmatic tracker audit: **47 unique tasks / 39 Core / 10 phases**, all **[ ]**, dependencies resolve with no cycles. R05.3 atomically creates the close snapshot; R05.4 renders/exports it without a circular dependency.
-- D54 is reflected in requirements, architecture/domain, RBAC, UX/flows, POS07–POS15 acceptance, recovery, finance boundary, existing R05/R06 tasks and handoff. RV01 scope is entry-level only; R07.2 restores immutable shift reports.
-- Semantic review checked blind count, own-shift authorization across all output formats, no owner-finance leakage, commercial/payment/cash separation, noncash exclusion, correction immutability and uncertain/racing close recovery. This is specification verification, not a claim that future runtime tests passed.
-- AGENTS and 06/12/13/14 were assessed: existing ledger, scanner, notification and import contracts remain valid; no unrelated edits needed.
-- Plan 3.1 approval date/history and Q01/Q04/Q05 gates remain unchanged. Production is NOT STARTED.
-- Application/build/browser/device tests were **not run**: this task changes documentation only. No runtime feature is claimed complete.
-- Final staged scope and Git status are checked before the single local commit; its SHA is reported in the task result.
+| Gate | Still needed |
+| --- | --- |
+| G1 OPEN | Actual tax/legal invoice/buyer policy; commercial nota makes no formal-tax claim |
+| G2 OPEN | Units/opening volume/barcodes/cost availability/serialized need before affected real onboarding |
+| G3 OPEN | One reconciliation per cashier/day and separate cash/refund model operationally sufficient |
+| G4 OPEN | Independent backup destination/access/cost and accepted measured RPO/RTO before production |
 
-## Remaining policy gates
-
-There is no blocker to completing this Plan 3.1.1 documentation refinement or preparing R00.1 in a subsequent execution task.
-
-- **Q01 OPEN — tax/legal documents:** confirm required tax treatment, buyer identity and formal invoice needs before pilot and before enabling that behavior. Accepted retail receipt/A4 and truthful payment evidence do not claim legal/tax equivalence.
-- **Q02 RESOLVED by D46–D50:** DP, deferred/staged work and later payments are Core; initial profit reporting remains gross profit.
-- **Q03 RESOLVED by D51:** cashier shift reconciliation is Core; owner-only refund execution remains the default.
-- **Q04 — pre-pilot recovery:** accept measured RPO/RTO and verify independent backup/recovery access before pilot.
-- **Q05 — pre-import inventory validation:** verify actual units/serial normalization and any pack/batch/expiry/consignment need before importing affected real stock.
-
-Next: **R00.1 / RV01**, without resuming historical CP01. Do not start it as part of this documentation refinement.
+None blocks completion of this documentation replan. They block the corresponding execution/pilot gates in 11. Next is **BK01 — UI01 Foundation + Shell** in a subsequent authorized session, beginning with actual tool availability verification. **DO NOT START IT as part of this checkpoint.**

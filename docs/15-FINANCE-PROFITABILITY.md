@@ -1,126 +1,37 @@
-# 15 — Goods and service profitability
+# 15 — HPP and gross profit
 
-Owns management-reporting semantics, costing and completeness. This is not full accounting.
+Owner-only management reporting, not accounting/tax advice or Laba Bersih. Core uses perpetual **moving weighted average (MWA)** per interchangeable product in one stock pool. No latest-purchase-price substitute, no unknown cost treated as zero.
 
-17 owns orders/payments/fulfillment; 06 owns physical stock; 04 owns private financial access.
+## Source facts and arithmetic
 
-## Keep these concepts separate
+Acquisition evidence links to opening/receipt/positive adjustment: total landed acquisition amount, quantity, reference, actor, status KNOWN or UNKNOWN. Explicit zero needs owner-confirmed evidence/reason. Operations may submit new evidence write-only under [04](04-AUTH-RBAC-SECURITY.md); historical reads/corrections remain owner-only.
 
-| UI metric | Meaning |
-| --- | --- |
-| Nilai Pesanan | Effective confirmed order value after authorized revisions |
-| Pembayaran Masuk | Customer money recorded in the selected period; includes DP/partial/final payments |
-| Sisa Tagihan | Commercial outstanding amount on open orders; management metric, not a full accounting AR ledger |
-| Pendapatan Terealisasi | Value recognized from fulfilled GOODS and completed SERVICE obligations |
-| HPP Barang | Matched cost of fulfilled GOODS using MWA |
-| Biaya Langsung Jasa | Verified direct service costs |
-| Laba Kotor | Recognized revenue minus matched HPP/direct service cost when complete |
+For known Q units with inventory value V, receive q with total cost c:
+Q' = Q + q; V' = V + c; average = V'/Q'.
+Issue q: allocation = q × pre-issue V/Q; remove that value. Both SALE_ISSUE and non-sale issues reduce inventory value, but only SALE_ISSUE allocation contributes sales HPP. Final issue consuming all stock takes remaining V to avoid rounding residue. Decimal six-place cost arithmetic; aggregate first, round report display to IDR only. No binary float.
 
-**DP/payment received is not automatically revenue. Revenue is not automatically cash received.**
+Example: 10 units costing Rp100,000 + 10 costing Rp140,000 → 20 units/Rp240,000 → average Rp12,000. Sell 3 at Rp20,000 → sales Rp60,000, HPP Rp36,000, gross Rp24,000; remaining 17/Rp204,000. Manual issue 2 removes Rp24,000 inventory value, not sales HPP.
 
-Opening float, paid-in/out and cashier variance are cash-control facts, not revenue/profit.
+All source/cost allocations are captured in the inventory/Sale transaction using product posting sequence. A missing-cost receipt marks valuation UNKNOWN and affected subsequent HPP incomplete. Historical already-known issue allocations remain valid. If stock reaches zero, later fully known receipts can start a new known pool; missing earlier periods remain incomplete.
 
-## Cashier operational reporting boundary
+## Correcting evidence without rewriting history
 
-D54 [Laporan Shift](17-POS-SALES.md) is own-shift cash control, separate from owner profitability reports. It distinguishes commercial order value, applied payments by method and physical cash reconciliation; DP remains payment, not automatic revenue. Noncash receipts never enter expected drawer cash. Per-shift snapshots remain immutable after later corrections; calendar views aggregate shifts without summing repeated outstanding snapshots. [04](04-AUTH-RBAC-SECURITY.md) governs access. Cashier print/PDF/CSV excludes acquisition/purchase cost, HPP, cost evidence, margin, gross/net profit and private owner finance. Owner views may show shift close status/variance and authorized original-report drill-down.
+Owner appends evidence revision with reason. Under product guard, bounded deterministic replay from the affected source computes a new valuation revision and downstream allocation versions; original source and allocations remain retained. Publish the new revision/current projection atomically only after complete replay and reconciliation. Concurrent posting waits or safely rejects busy product. BK26 measures replay capacity (reference 10,000 movements per product); if timeout/cap would be exceeded, stop correction and mark affected reporting incomplete pending a reviewed recovery procedure, never partly publish or guess cost. No general asynchronous valuation platform in V1.
 
-## Recognition baseline
+Standalone reversal replays the logical cancellation of the eligible source; immutable reversal retains exact physical inverse and linked evidence, including dependent cost revisions. Reject until safely replayable. Do not apply a naive latest average to cancel an old receipt.
 
-### GOODS
+## Sale and corrections
 
-Recognize goods revenue when verified handover/fulfillment occurs. The linked inventory ISSUE and fulfillment quantity are the physical evidence. Booking, reservation, invoice/receipt rendering or DP alone is insufficient.
+Fully paid immediate verified goods handover establishes completed sales value and matched SALE_ISSUE HPP together. Cash tender is not sales value; applied payment is. Refund without return subtracts linked refund amount from sales value, does not reverse HPP or add stock. Verified saleable return restores original matched issue cost and reverses that quantity of sales HPP; unknown original cost keeps return valuation incomplete. Refund/return are bounded separately to prevent duplicate cost recovery. Damaged return is not saleable and adds no usable stock.
 
-Partial fulfillment recognizes only the fulfilled quantity/value.
+Reporting uses gross completed sales, executed refunds separately and net sales = gross sales - refunds; net HPP = sale allocations - cost of verified saleable returns; gross profit = net sales - net HPP. Original Sale/receipt remain immutable. Refunds/returns appear at their server posting date, with original reference, no hidden backdated rewrite. Non-sale losses/variance are separate operational facts, so this is sales gross profit, never net profit.
 
-### SERVICE
+## Periods and completeness
 
-Recognize service revenue on verified `ServiceCompletion` for the relevant service line/quantity. Booking, schedule, milestone progress and payment alone do not recognize revenue.
+Asia/Jakarta server boundaries converted to UTC half-open ranges. Hari Ini = local date; 7 Hari = today plus prior six dates; Bulan Ini = first of current month through now; Bulan Lalu = full previous calendar month; Custom Range = inclusive selected dates implemented as exclusive next-day end.
 
-If the business later needs separately priced/accepted milestones to recognize revenue independently, define that policy explicitly before implementation. Core does not infer it from percent progress.
+Metrics: gross sales/refunds/net sales, completed transaction count, applied cash/transfer and payouts separately, qty sold/returned, HPP/gross profit and optional margin only if complete and net sales >0. LOW/OUT is current, explicitly not period-filtered.
 
-## Goods costing
+Consistent report read snapshot includes asOf/timezone/evidence revision/completeness and unknown line count. Revenue/payment totals can display while HPP/gross/margin show **Data biaya belum lengkap**; do not exclude unknown-cost or loss-making rows to manufacture profit. Query failure is an error, not zero. Completed report valuation may change only through disclosed evidence revisions; daily cashier and receipt snapshots never change.
 
-Use perpetual moving weighted average per interchangeable GOODS SKU across company locations.
-
-```text
-Receipt q with verified cost c: Q' = Q + q; V' = V + c
-Average A = V / Q
-Fulfillment issue q: HPP allocation = q * A
-```
-
-Transfers do not change company Q/V. Unknown cost blocks downstream complete HPP for that SKU; do not continue with a guessed old average.
-
-Keep exact decimal arithmetic. Physical posting remains valid when financial cost evidence is incomplete.
-
-## Service direct cost
-
-ServiceCostEvidence may include verified direct labor, subcontract, consumed materials and other direct job cost with source/reference and version.
-
-Blank is unknown, not zero. Explicit zero requires evidence/reason.
-
-Company-stock material consumed for a service uses a real inventory issue and unique cost allocation so the same material cost is not counted twice.
-
-Service refund does not automatically erase labor/material already incurred.
-
-## Payments and outstanding
-
-PaymentRecord is append-only.
-
-For an order:
-`outstanding = effective order total - net applied customer payments`
-
-Refund/credit handling must keep signs and linkage explicit. A revision that would make outstanding negative must either include an explicit refund/credit disposition or be rejected for review.
-
-Cash tender/change may be recorded for a cash payment, but only the applied amount reduces outstanding.
-
-## Refunds and returns
-
-Original commercial/financial facts remain immutable. Corrections append linked events.
-
-- money refund without goods return: reduce commercial payment/revenue as applicable; no stock receipt;
-- verified saleable goods return: linked RETURN RECEIPT and historical-cost recovery;
-- service refund: reverse recognized service revenue only when linked to an authorized credit of completed work; incurred direct cost remains unless separately recovered/evidenced;
-- price credit: adjust effective order value and, for already recognized work, linked revenue; no stock movement or implied cash payout.
-
-Never use an inventory reversal to bypass commercial limits.
-
-Refunding unrecognized DP reverses the applied payment, not nonexistent revenue or HPP. Cancelling unperformed work adjusts effective order value through a linked revision/credit. Money payout, commercial credit and recognized-revenue correction are separate linked facts; do not subtract the same credit twice. A price credit can reduce outstanding without a cash refund; any payout appends its own PaymentRefund.
-
-## Reports and periods
-
-Periods use Asia/Jakarta business boundaries converted server-side to UTC:
-- Hari Ini
-- 7 Hari
-- Bulan Ini
-- Bulan Lalu
-- Rentang Tanggal
-
-Owner views may show:
-- order value;
-- payments received;
-- outstanding balance;
-- recognized goods/service revenue;
-- goods HPP;
-- direct service cost;
-- goods/service/combined gross profit;
-- gross margin where applicable.
-
-Current LOW/OUT and active jobs remain current-state facts and are not period-filtered unless the specific view says so.
-
-## Completeness
-
-A report snapshot records scope, watermark, evidence versions, calculatedAt and completeness.
-
-Presentation:
-- feature unavailable → hide or **Belum Aktif**;
-- revenue known but cost incomplete → show revenue plus **Data biaya belum lengkap**, no fake gross;
-- complete → show actual HPP/cost/gross;
-- failed/stale query → error/stale state, never zero.
-
-No hidden exclusion of missing-cost or loss-making transactions.
-
-## Net profit
-
-Net profit is outside Core. A truthful net-profit feature needs operating expenses, payroll, rent/utilities, depreciation, financing/interest, tax, non-sale losses/variances, liabilities/accruals and period-closing policy.
-
-Do not label gross profit or cash surplus as **Laba Bersih**.
+[17](17-POS-SALES.md) daily cash control has no private cost/profit. No AR/AP, net profit, expenses, payroll, service finance or tax accounting in Core.

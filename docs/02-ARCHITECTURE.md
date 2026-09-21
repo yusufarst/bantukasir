@@ -1,91 +1,25 @@
 # 02 — Architecture
 
-Owns module boundaries, transaction boundaries and infrastructure.
+Plan 1.0: modular monolith, one Next.js/TypeScript application and PostgreSQL database. Drizzle migrations, Zod, self-hosted Better Auth, server RBAC, first-party reporting. Verify versions/advisories and pin lockfile in BK06. No required general worker, external queue/search or notification infrastructure.
 
-## Style
+Modules: identity/access; configuration; catalog/search/barcode; inventory/costing; Sale/payment/documents; daily reconciliation; reports/audit; operations/recovery. Proposed paths: `src/modules/<domain>`, `src/components`, `src/app`, `db`, `tests`, `ops`; not existing code.
 
-Use a **modular monolith**: one Next.js/TypeScript codebase, one PostgreSQL database, same-image worker, Drizzle ORM, Zod, backend RBAC, Docker Compose and Caddy.
+## Transaction contract
 
-Do not introduce microservices, Redis, Elasticsearch, managed queues, paid auth, hosted CMS or managed databases without measured need and explicit approval.
+Critical commands require authenticated authorized actor, validated envelope, source intent ID, stable idempotency key, server fingerprint, DB transaction, audit and durable result. Key scope includes actor + operation. Same key/payload returns original result; changed payload conflicts. Unique source intent prevents a new retry key duplicating a Sale. Recovery rechecks authorization. Retain receipts with business facts.
 
-## Modules
+Use READ COMMITTED and shared lock order: command identity → actor/config guards (stable order) → cashier-day guard when applicable → existing Sale for corrections → product guards sorted by ID → balance/cost projection → append facts/result. Omit irrelevant guards; never reverse order. Disable/config writers use matching guards. Upsert unique cashier-day guard before locking; checkout/finalization share it. No human/printer/network wait inside transactions. Bounded deadlock retries reuse original identity.
 
-1. Identity & Access
-2. Business Configuration
-3. Catalog
-4. Customers
-5. Inventory
-6. Commerce / Orders
-7. Service Operations
-8. POS & Cashier
-9. Attention / Notifications
-10. Finance & Reporting
-11. Imports / Audit / Operations
+Sale transaction creates Sale/lines/full Payment/SALE_ISSUE/balances/cost source and valuation facts/ReceiptSnapshot/audit/result together. Failure at any step rolls back all. No standalone payment endpoint may leave an incomplete Sale. Cash/transfer are manually recorded evidence, not atomic bank settlement. Confirm transfer receipt before posting; uncertain outcome resolves before requesting another transfer.
 
-Public CMS/catalog/RFQ remains later and uses allowlisted projections from the same Product Master.
+Inventory commands update immutable movement and synchronous balance/cost projection atomically. [06](06-INVENTORY-SPEC.md), [15](15-FINANCE-PROFITABILITY.md), [17](17-POS-SALES.md) own details.
 
-## Command contract
+## Read boundaries
 
-Every critical mutation has authenticated actor, backend permission, validated input, idempotency where retry is possible, canonical server fingerprint, DB transaction, audit and durable result identity.
+One Product Search handles name/SKU/category/brand/exact barcode with PostgreSQL indexes and bounded server pagination. No full master fetch. Context filters/role DTOs are separate from matching logic; staff payloads/caches exclude costs. LOW/OUT derives from balance/minimumStock, without event delivery.
 
-### Instant POS fast path
+Daily report snapshot commits with physical count, cutoff/version, finalization, audit and result. Rendering/export reauthorize every request. Owner reports use a consistent DB snapshot and explicit cost completeness.
 
-A normal immediate sale may atomically compose:
-- create/confirm Order;
-- full PaymentRecord;
-- CashEvent when cash;
-- immediate GOODS fulfillment + ledger ISSUE;
-- immediate SERVICE completion only if actually performed;
-- revenue facts;
-- receipt snapshot;
-- audit/command receipt.
+## Operations
 
-Printing is after commit. Printer failure never rolls back the transaction.
-
-### Deferred order / booking
-
-Order confirmation is separate from later payment and fulfillment. It may create reservation and service schedule. Later commands append payments, goods fulfillments, service progress/completion, refunds/returns/corrections.
-
-A payment command never mutates stock simply because money arrived.
-
-### Goods fulfillment
-
-Fulfillment and its ledger ISSUE commit together. Consumed reservation is reduced in the same transaction.
-
-### Shift close and operational reporting
-
-POS & Cashier owns the [D54 close/report contract](17-POS-SALES.md). CashierShift/CashEvent and existing commercial/payment/refund facts remain the sources; ShiftCloseReportSnapshot is their immutable as-closed document, not a new financial source. Closing facts, snapshot, audit and durable result commit atomically. Rendering and export run after commit over allowlisted data; failures cannot undo closing.
-
-### Background work
-
-Use PostgreSQL-backed outbox/job tables and the same-codebase worker for push delivery, finance valuation/report publication, bounded import work and health metadata. No external queue is required for Core.
-
-## Canonical lock order
-
-command/idempotency → actor/policy → commercial aggregate → shift/register when used → locations/products → balances/reservations → serials → append-only result/audit.
-
-Task specs may refine but must not invert the global order. Every writer attributing commercial/payment/cash facts to a shift acquires its guard before appending and checks OPEN. Close uses the same guard to establish CLOSING and a stable cutoff; it reads committed immutable facts without acquiring commercial locks after the shift lock. No human counting or printer/network wait holds database locks. Uncertain original commands must resolve before finalization, as specified in 17.
-
-## Sources of truth
-
-- physical stock: StockMovement ledger;
-- reserved quantity: reservation events/records;
-- payment history: PaymentRecord/refund facts;
-- service progress: ServiceProgressEvent/milestones;
-- finance: RevenueEvent + cost allocations.
-
-Balances/status/dashboard rows are projections and must be reconcilable.
-
-## Storage and printing
-
-Use configured private local storage on the VPS for imports/business assets. Store logical object keys, never machine-specific paths.
-
-Receipt/A4 and shift-close reports use browser HTML/CSS printing and print-to-PDF. Shift reports also provide first-party UTF-8 CSV from the original snapshot, with per-request authorization and safe text escaping under 17. No paid PDF service is required.
-
-## Branding boundary
-
-Business identity is runtime data, not source-code identity. BusinessProfile may provide logo/name/document details and a contrast-validated accent. Semantic success/warning/danger/focus colors remain independent.
-
-## Cost boundary
-
-Core is designed for near-zero recurring software cost with PostgreSQL, Better Auth, browser printing, open-source barcode generation, Web Push, Caddy and the existing VPS. Reliable independent backup remains required even if it creates a small infrastructure cost.
+Immutable logo revisions use private configured storage and retained document references. BusinessProfile is runtime data; receipts freeze its revision. Browser thermal/A4/PDF and safe CSV avoid paid services. Compose runs app/PostgreSQL/Caddy plus scheduled backup/reconciliation commands. Private DB, HTTPS, separate runtime/migration/backup credentials. [09](09-DEPLOYMENT-OPS.md) binds all maintenance.

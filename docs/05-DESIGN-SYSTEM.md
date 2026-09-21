@@ -1,78 +1,32 @@
-# 05 — Design system and UX contract
+# 05 — Design workflow and visual gates
 
-Owns interaction hierarchy, brand neutrality, responsive behavior and visual review gates.
+[DESIGN.md](../DESIGN.md) is the sole visual token/component/pattern authority. [PRODUCT.md](../PRODUCT.md) supplies product context; [01](01-PRD.md) controls scope. No design approval or tool execution is claimed by this plan.
 
-## Character
+## Four compact prototype bundles
 
-Premium, modern, restrained and operational. Avoid generic AI-dashboard styling, excessive gradients/glassmorphism, excessive rounded cards, decorative charts and repeated KPI facts.
+| Bundle / task | Representative coverage |
+| --- | --- |
+| UI01 / BK01 | Foundation/type/tokens; login, shell/sidebar, all three workspaces, profile settings, desktop/mobile conventions |
+| UI02 / BK02 | Shared search, product list/detail/form/duplicate warning, receiving/opening, manual issue, stock/history/LOW/OUT, labels and correction pattern |
+| UI03 / BK03 | Search/scan/cart/cash/transfer, success/error/unknown result, thermal/A4, reprint and minimal owner refund/return |
+| UI04 / BK04 | Owner periods/HPP/incomplete profit, daily reconciliation/count race/final report/PDF/CSV/history, audit and system/backup states |
 
-Use strong typography, clear spacing, dense readable tables, useful empty/loading/error states, keyboard focus, touch targets and restrained motion. User-facing language is Bahasa Indonesia.
+Use minimal deterministic prototypes and representative states, not every screen or a disconnected production frontend. UI01 defines common components; later bundles extend only necessary patterns. [Prototype registry](../prototypes/README.md) holds artifacts/review references.
 
-## Brand-neutral foundation
+## Required tool workflow for every meaningful frontend/design task
 
-The universal UI must not depend on LATANSA or burgundy. Use neutral surfaces/high-contrast text, independent semantic success/warning/danger/info colors, visible focus and one constrained BusinessProfile accent where contrast is valid.
+1. Verify actual installed **21st.dev MCP/catalog** and **Impeccable skill/CLI/integration**, available commands, access and free usage limits in the executor environment. Read actual integration instructions. Do not treat Impeccable as MCP when it is a skill/CLI.
+2. Search the available free 21st catalog for relevant reusable patterns; inspect candidates and existing project components before inventing new ones. Record queried catalog, choices/rejections, source/license and actual usage. Do not buy/use paid AI credits/templates/component access or any paid UI service without explicit owner approval.
+3. Use actual Impeccable integration to establish/review PRODUCT and DESIGN context, critique/audit/polish meaningful screens and record resulting changes. Do not invent command names or claim a run from prose alone.
+4. Prefer existing project code, shadcn/ui and open-source ingredients. Normalize imports to canonical tokens/components; reuse before variants. Record dependencies/licenses.
+5. Verify keyboard/focus/touch/responsive/contrast/states and run consistency/anti-generic-UI review with real evidence.
 
-BusinessProfile may configure name/logo/contact/document identity and limited accent. Critical semantics never inherit brand color. Existing LATANSA assets are first-client/historical assets only.
+If either required integration is unavailable or only paid access is possible without approval, **STOP that UI task and report missing setup**. This does not block documentation-only planning. No callable matching tools were exposed in the planning session; actual executor installation is unverified. No claim of 21st/Impeccable use or setup completion.
 
-Typography: Source Sans 3 unless implementation verification selects another suitable open-source option. Icons: Lucide. Use shadcn/ui selectively; not every surface is a rounded card.
+## Gates
 
-## Progressive disclosure
+**Gate A / BK05:** owner approves complete UI01–UI04 visual language and representative workflows at an exact revision. Record evidence and freeze DESIGN baseline. Individual feedback is welcome earlier; all four are required before any production frontend. Tests/screenshots cannot self-approve. Do not start production UI with a partial gate.
 
-### Kasir
-Primary: `Scan / Cari → Keranjang → Bayar`.
+After Gate A, vertical slices integrate real backend/data/RBAC/audit/tests/UI. **Gate B:** owner reviews real role workspaces (BK10), product/stock workflow (BK20), POS/documents (BK25), reports/audit (BK31), then final pilot. Technical and owner evidence are separate; waiting review earns no completion credit. New patterns or deviations require an approved design-system revision.
 
-Normal instant sale shows no mandatory customer/schedule/reservation fields. Defaults source location/register and keeps scanner/keyboard flow fast.
-
-Secondary **Pesanan / DP** reveals customer, payment amount, schedule/due date, reservation and service-booking fields only when needed.
-
-### Admin Operasional
-Home prioritizes orders to prepare, fulfillment due, today's/late service jobs, LOW/OUT stock, incoming goods and operational exceptions.
-
-### Pemilik
-Home prioritizes critical exceptions, stock attention, active/late orders, outstanding balances, cashier variance and finance completeness.
-
-## Navigation
-
-Desktop baseline:
-- Dasbor
-- Kasir: Shift Saya → Tutup Shift → Laporan Shift; own Riwayat Shift
-- Pesanan
-- Pekerjaan
-- Pembayaran
-- Barang & Jasa
-- Inventory: Stok, Barang Masuk, Barang Keluar, Transfer, Restock, Riwayat
-- Laporan
-- Sistem: Pengguna, Audit, Profil Bisnis, Backup & Kesehatan
-
-Render only authorized/implemented items. Desktop uses persistent sidebar and compact sticky topbar where useful. Mobile uses drawer/task-first screens.
-
-## Business-language states
-
-Examples:
-- PARTIALLY_PAID → **Dibayar Sebagian**
-- PARTIAL goods → **Barang Diserahkan Sebagian**
-- IN_PROGRESS service → **Pekerjaan Berjalan**
-
-Show independent status badges only when they answer distinct questions.
-
-## Visual contracts — interleaved
-
-Major interaction families use deterministic HTML/CSS prototypes before their production UI:
-
-- **RV01** shell/auth/role workspaces, business identity/settings preview + fast POS skeleton and Shift Saya/report entry concept (detail remains RV04);
-- **RV02** goods/services, barcode/labels, receiving/inventory;
-- **RV03** order/booking, DP/partial payment, reservation, partial fulfillment, service progress;
-- **RV04** cashier open/close, blind physical count, reconciliation and Laporan Shift, print/PDF/CSV/reprint/failure/uncertain states, payment, receipt, refund and final fast checkout;
-- **RV05** owner dashboard, restock attention, finance reports and system/recovery states.
-
-Gate A approves prototype direction only. Gate B approves real integrated UI after technical/browser evidence. Prototypes are interleaved with vertical slices; all five do not block backend foundation work.
-
-## Shift-close interaction
-
-Keep Shift Saya secondary to checkout. RV04 follows the stable-cutoff/blind-count sequence in [17](17-POS-SALES.md): CLOSING and pending-command resolution, physical count/input/confirmation, committed comparison and immutable report. No expected aggregate in pre-count UI or payloads. Pause scanner capture; support keyboard and mobile counting, safe pending/retry states and distinct commercial/payment/cash report sections. Show Cetak, Simpan sebagai PDF, Ekspor CSV and authorized history/reprint after close. Export errors retain the closed state. Owner RV05 adds shift status/variance and authorized report drill-down.
-
-## Required states
-
-Significant screens cover loading, empty, validation error, denied action when relevant, stale/concurrent edit, unknown critical-command result and confirmed success.
-
-Verify keyboard/focus/reduced motion and 375/768/1024/1440/1920 widths plus useful 200% zoom behavior for affected screens.
+Navigation uses Bahasa Indonesia: Dasbor; Kasir; Produk; Stok/Barang Masuk/Barang Keluar/Restock/Riwayat; Laporan Saya; Laporan; Log/Riwayat; Pengguna/Profil Bisnis/Sistem as role permits. No unimplemented or Later menus.

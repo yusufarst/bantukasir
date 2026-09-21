@@ -1,111 +1,39 @@
-# 01 — Product requirements
+# 01 — BantuKasir product requirements
 
-Owns business outcomes, Core scope and UX priorities.
+**Plan 1.0.** One configurable business, GOODS only, IDR, Asia/Jakarta dates. Production POS in approximately 20 working days is a target subject to capacity/gates in [11](11-BUILD-PLAN.md). No runtime capability is implemented.
 
-## Positioning
+## Outcomes and Core V1
 
-A reusable, brand-neutral retail operations platform for office supplies, general merchandise and separately sold services. One company per deployment. LATANSA may be the first configured business, not the product identity.
-
-Simple transactions must feel like a fast convenience-store checkout. The same system must also handle DP, booking, partial payments, stock reservation, staged goods handover and service progress without forcing those fields into every sale.
-
-## Users
-
-| Role | Primary outcome |
+| Client problem | Required deliverable |
 | --- | --- |
-| SUPER_ADMIN / Pemilik | Understand the business, control sensitive actions, see private finance and manage configuration/recovery |
-| OPERATIONS_ADMIN / Admin Operasional | Keep goods/services, stock, bookings, fulfillment, jobs and restock work moving |
-| CASHIER / Kasir | Sell quickly, accept payments, create simple bookings/orders and issue receipts without inventory/accounting complexity |
+| Goods enter/leave unrecorded | Search-first receiving/opening, reasoned manual issue, immutable stock ledger |
+| Sales notes are manual | Atomic fully paid Sale, thermal receipt and A4 Nota Penjualan / Commercial Invoice with browser PDF |
+| Restock happens too late | minimumStock; current LOW/OUT list/badge/dashboard |
+| Sales/HPP/profit are unknown | Owner Hari Ini, 7 Hari, Bulan Ini, Bulan Lalu, Custom Range; truthful MWA HPP and Laba Kotor |
+| Products hard to find | One PostgreSQL Product Search shared by POS, receiving, issue, catalog, stock and labels |
+| Mixed barcode availability | Manufacturer aliases, internal Code 128, labels, USB/Bluetooth HID and manual input |
+| Cash cannot be reconciled | Own daily cash/transfer totals, physical count, variance, immutable report and PDF/CSV/reprint |
+| Owner lacks accountability | Filterable log of sales, payments, stock, corrections, master/security/config changes |
+| Client identity varies | Runtime name, logo, address, contact, optional email, receipt header/footer, document identity and constrained accent |
 
-Roles describe work, not family relationship. 04 owns permissions.
+Core includes individual accounts, backend RBAC, safe reset/invite, no public signup, secure sessions, rate limiting, disable/revoke, HTTPS, environment/secret safety, minimal owner refund/return/correction, independent backup/restore and actual device/pilot acceptance. No TOTP/2FA in V1.
 
-## Core
+## Exactly three roles
 
-1. Individual accounts, backend RBAC, owner TOTP, session revocation and audit.
-2. Runtime BusinessProfile for configurable business name/logo/contact/document identity/accent.
-3. One Product Master with GOODS and SERVICE; goods support QUANTITY/SERIALIZED, services never become fake stock.
-4. Selling-price revisions, categories, units, customer basics and server search/pagination.
-5. Manufacturer barcode aliases plus generated internal barcodes/labels; HID/manual scanning.
-6. Create-only product import and separate ledger-based opening stock import.
-7. Immutable goods ledger: receiving, non-sale issue, direct transfer, reservation, fulfillment, adjustment/reversal and history.
-8. LOW/OUT/NORMAL attention with deduplicated episodes and owner/operations inbox.
-9. Unified Order engine for instant POS and deferred orders/bookings.
-10. Append-only payments supporting unpaid, DP/partial and paid; optional due date; no mandatory gateway.
-11. Goods reservation and partial fulfillment. Payment never implies stock issue.
-12. Service jobs with schedule, milestones/progress and completion; no stock mutation.
-13. Mixed goods + service orders.
-14. Fast POS as a minimal-field path: scan/search → cart → pay → fulfill → receipt.
-15. Cashier shifts/opening float/cash events, blind closing count/variance, and immutable own-shift reports with browser print/PDF and CSV export under D54.
-16. Automatic receipt/payment evidence and A4 representation; reprint without duplicate transaction.
-17. Owner-authorized commercial refund/return; immutable original history.
-18. Period reporting: Hari Ini, 7 Hari, Bulan Ini, Bulan Lalu, Rentang Tanggal.
-19. Reporting separates order value, payments collected, outstanding balance, recognized revenue, HPP/direct service cost and gross profit.
-20. Backup/restore, health, controlled pilot and production deployment on the client's VPS.
+- SUPER_ADMIN / Pemilik: full access, private costs/reports/logs, users/configuration/recovery and sensitive corrections/refunds.
+- OPERATIONS_ADMIN / Admin Operasional: catalog/category/permitted selling prices, barcode/labels, receiving, manual issue, stock/restock and operational history. No private HPP/profit or security/recovery administration.
+- CASHIER / Kasir: search/scan, POS, cash/transfer recording, receipt/reprint, own transactions and daily report. No receiving, adjustment, master/price editing, private finance, users/settings/audit or history deletion.
 
-## UX success
+[04](04-AUTH-RBAC-SECURITY.md) defines the receiving cost-input boundary.
 
-### Kasir
-Default screen is **Kasir**. Normal retail sale requires no customer, schedule or reservation form.
+## UX
 
-Primary path: `scan/search → quantity → bayar → selesai/cetak`.
+Premium, elegant, restrained, fast, professional. Cashier: **Scan/Cari → Keranjang → Bayar → Struk**. No customer required. Operations: what needs receiving/restocking today? Owner: what needs attention and how is business doing? One approved design system; no decorative dashboard. Loading/empty/error/denied/stale/unknown-result states are deliverables.
 
-Secondary **Pesanan / DP** reveals only customer, payment amount, schedule/due date, reservation and service-booking fields that are actually needed.
+## Later / excluded from V1
 
-End of work: **Kasir → Shift Saya → Tutup Shift → Laporan Shift**. Count physical cash before expected cash is revealed; view/reprint/export the immutable own-shift report. Keep order value, received payments and physical cash separate. Reconciliation is per shift/register/cashier, not per calendar day. [17](17-POS-SALES.md) owns the close/report contract; [04](04-AUTH-RBAC-SECURITY.md) excludes private cost/profit and other cashiers from cashier access.
+SERVICE and mixed goods/service; ServiceJob/scheduling/milestones/progress/completion/cost; booking/DP/partial or later payment/outstanding; reservation/partial fulfillment; CRM beyond optional receipt name; warehouse/location/transfers/transit; shift/register/float/paid-in/out/handover; Web Push/episodes/outbox; camera/offline posting; serialized inventory unless G2 proves essential; pack conversion/batch/expiry/consignment; advanced opname; QC/warranty/repair custody; purchasing/PO/supplier AP; public website/catalog/CMS/RFQ/leads/quotation/WhatsApp attribution; promotions/discount engine/loyalty; gateway/QRIS/card/e-wallet; full accounting/net profit/expenses/payroll/tax accounting; multi-company/multi-currency; enterprise import/XLSX and simple CSV import (manual opening first). These are unestimated backlog topics, not hidden Plan 1.0 tasks.
 
-### Admin Operasional
-Default workspace prioritizes:
-- pesanan perlu disiapkan;
-- fulfillment/pickup due;
-- pekerjaan jasa hari ini/terlambat;
-- stok rendah/habis;
-- barang masuk;
-- operational exceptions.
+## Policy gates
 
-### Pemilik
-Default dashboard prioritizes:
-- critical exceptions;
-- stock LOW/OUT;
-- active/late orders/jobs;
-- payment received/outstanding;
-- cashier variance;
-- recognized revenue/HPP/gross profit with completeness.
-
-No decorative KPI duplication or fake charts.
-
-## Independent status dimensions
-
-An order may be `CONFIRMED + PARTIALLY_PAID + GOODS_PARTIAL + SERVICE_IN_PROGRESS`.
-
-- Order: DRAFT / CONFIRMED / CANCELLED / COMPLETED
-- Payment: UNPAID / PARTIALLY_PAID / PAID / PARTIALLY_REFUNDED / REFUNDED
-- Goods: NONE / UNFULFILLED / PARTIAL / FULFILLED
-- Service: NONE / UNSCHEDULED / SCHEDULED / IN_PROGRESS / COMPLETED
-
-03/17 own exact derivation.
-
-## Acceptance
-
-| ID | Evidence |
-| --- | --- |
-| B01 | Cashier completes normal scan-to-receipt sale without owner credentials or duplicate inventory entry |
-| B02 | Booking with DP leaves onHand unchanged and may reserve availability |
-| B03 | 10 reserved goods can fulfill 4+3+3 with exactly 10 total stock OUT |
-| B04 | Two users competing for final available stock cannot oversell |
-| B05 | Mixed goods/service order posts stock only for fulfilled GOODS |
-| B06 | Service progress/milestones never create stock movement |
-| B07 | Multiple payments preserve prior records and derive correct outstanding balance |
-| B08 | Duplicate/lost-response commands recover the original result |
-| B09 | Printer failure/reprint never duplicates order/payment/stock |
-| B10 | LOW/OUT notifications deduplicate until recovery |
-| B11 | DP/cash collected is not automatically recognized revenue |
-| B12 | Missing cost produces incomplete gross-profit state, never zero |
-| B13 | Staff/public payloads never expose owner-only cost/margin/profit |
-| B14 | Restore reconciles orders, payments, reservations, ledger, jobs, receipts and shifts |
-| B15 | Cashier/operations flows pass keyboard/mobile progressive-disclosure review |
-| B16 | Blind shift close preserves variance and immutable own-shift print/PDF/CSV; POS07–POS15 verify scope, separation, recovery and no private finance leakage |
-
-## Later unless explicitly promoted
-
-Supplier PO/AP automation; full accounting/net profit; payment gateway settlement; complex promotions/loyalty/gift cards; pack conversion/batch/expiry/consignment; staged warehouse transit/full opname; QC/warranty/repair custody; camera scanning/offline mutation; public website/catalog/RFQ/leads/quotations; multi-company/multi-currency.
-
-Formal tax/legal invoice requirements remain a pre-pilot policy gate.
+G1: tax/legal invoice policy, mandatory buyer details and treatment before pilot; commercial nota is not a formal tax invoice. G2: actual units/opening/barcodes/cost availability and serial need before affected data entry. G3: one reconciliation per cashier/day, isolated cash collection and owner refunds outside cashier cash before daily workflow/pilot. G4: actual independent backup destination and accepted measured RPO/RTO before production. Planning can finish with gates open; execution stops at the relevant gate.

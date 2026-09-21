@@ -1,133 +1,37 @@
-# 08 — Testing and acceptance
+# 08 — Acceptance and Definition of Done
 
-Tests prove behavior; they do not grant owner visual approval.
+Specifications only; no runtime tests passed in this documentation task. Use Vitest/unit, real PostgreSQL integration and Playwright/browser tests where relevant; mocks cannot prove DB races/constraints. Test changes against populated isolated non-production migrations. No production destructive test/reset.
 
-## Core risk scenarios
+| Suite | Measurable acceptance |
+| --- | --- |
+| AUTH01 | API RBAC rejects guessed routes/IDs; disable/revoke prevents new writes; reset/invite expires and is single-use |
+| AUTH02 | All staff search/history/errors/receipt/report/PDF/CSV/cache payloads omit private HPP/profit/cost history; receiving write-only cost input is not echoed |
+| SEARCH01 | Name/SKU/category/brand and exact manufacturer/internal barcode work; leading zeros preserved; aliases globally unique under concurrent create |
+| SEARCH02 | Server pagination capped at 100, stable order, no full-master fetch; receiving selects existing product; similar matches shown before create |
+| INV01 | Every physical delta has movement/source/actor/time; ledger sum equals balance; receipt/opening duplicate request posts once |
+| INV02 | Manual issue requires non-sale reason; two final-unit issues/sales cannot oversell; failure injection rolls back ledger/balance/cost/audit/result |
+| INV03 | Owner reversal preserves original; duplicate reversal/negative outcome blocked; SALE_ISSUE cannot be independently reversed |
+| POS01 | Exactly one Sale/full Payment/issue/receipt per source intent; rollback tested at every boundary; same/different-key duplicate submissions cannot duplicate |
+| POS02 | Rp75,000 total, Rp100,000 tender → Rp25,000 change/Rp75,000 applied; insufficient cash rejected; transfer full amount/reference and human confirmation |
+| POS03 | Lost response/status/reload retrieves original; disabled methods/price tampering/stale prices rejected; printer failure/reprint never duplicates facts |
+| RET01 | Cumulative refund/return bounded under races; cash/transfer refunds recorded separately; refund without return adds no stock; saleable return once at original cost |
+| STOCK01 | Minimum 5: 6 NORMAL, 5 LOW, 0 OUT; threshold edits and receipt refresh list/badge consistently; failed query is not empty/zero |
+| FIN01 | MWA example in 15 produces Rp36,000 HPP/Rp24,000 gross; fractional/final-stock rounding and manual issue valuation correct |
+| FIN02 | Unknown cost suppresses complete HPP/profit; explicit evidenced zero differs from blank; evidence revision replays downstream without rewriting original |
+| FIN03 | Refund-only retains HPP; return recovers historical cost once; failed replay publishes nothing; reports respect consistent snapshot and date boundaries |
+| DAY01 | Own-scope only including file URLs; transfer excluded from expected cash; Rp100,000 cash + Rp50,000 transfer, Rp98,000 physical → -Rp2,000 variance |
+| DAY02 | Racing Sale before finalize invalidates old count; finalize first rejects Sale; no missing successful Sale; both payment methods use same day guard |
+| DAY03 | Duplicate finalization incl. different keys yields one snapshot; conflict cannot overwrite; snapshot/audit failure rolls back finalization |
+| DAY04 | Midnight/timezone/late prior-day finalization never mixes dates; after finalization same-day Sale blocked; original uncertain Sale still recoverable |
+| DAY05 | PDF/CSV/reprint produces no financial mutation; formula-injection text safe; printer/export failure retries original snapshot; owner correction note preserves count |
+| AUDIT01 | Owner filters sales/payments/stock/product-price/user/config by date/user/type/product/reference; staff denied audit administration |
+| DB01 | Populated migration rehearsal + reconciliation pass, reviewed forward changes, exact destructive-operation prohibition enforced in scripts/runbook |
+| REC01 | Isolated real restore reconciles Sale/Payment/receipt/ledger/cost/report/source IDs/audit/assets; original snapshots reproduce |
+| REC02 | Recovery epoch rejects stale browser posting; post-backup possibly lost sales reviewed from evidence, never blind replay; measured G4 RPO/RTO |
+| UX01 | Approved tokens reused; loading/empty/error/unknown/stale/denied/success; desktop/mobile/200% zoom/keyboard/focus/reduced motion |
+| DEVICE01 | Actual USB HID, Bluetooth HID, manual input, repeated scans/CRLF/focus/disconnect and actual printed labels/receipt work; no simulated claim |
+| RELEASE01 | Gate A/B evidence, no unresolved integrity/privacy/recovery blocker, G1–G4 disposition, owner pilot acceptance |
 
-### Auth/RBAC
-- AUTH01 unauthorized API is rejected even if UI route is known.
-- AUTH02 disabled/revoked user cannot continue privileged writes.
-- AUTH03 staff DTO/export cannot reveal acquisition cost/HPP/margin/profit.
-- AUTH04 cashier cannot execute receiving/adjustment/user-admin/owner-refund actions.
+Initial non-production benchmark: 5,000 products, 100,000 movement lines, 2 concurrent cashiers. Measure on intended VPS/network: exact barcode p95 <=500 ms, product search p95 <=700 ms, 50-line Sale p95 <=2 s, ordinary period report p95 <=2 s. Document dataset/host/run count and investigate misses; do not weaken locks to pass. These are targets, not observed performance. Cost replay capacity measured separately in BK26.
 
-### Inventory/reservation
-- INV01 every physical change has ledger source, actor, time and location.
-- INV02 two users competing for final available unit cannot oversell.
-- INV03 reservation changes reserved/available but not onHand.
-- INV04 fulfillment consumes reservation and posts ISSUE atomically.
-- INV05 10 ordered may fulfill 4+3+3 but never 11.
-- INV06 serialized item cannot duplicate, issue twice or occupy two locations.
-- INV07 rollback leaves ledger/balance/reservation/serial state unchanged.
-
-### Orders/payments
-- ORD01 instant POS produces one Order, one payment, correct fulfillment and one document identity.
-- ORD02 DP changes payment/outstanding only; no automatic stock issue.
-- ORD03 repeated payment submit returns the same PaymentRecord.
-- ORD04 multiple payments remain append-only and outstanding is correct.
-- ORD05 mixed GOODS/SERVICE posts stock only for fulfilled GOODS.
-- ORD06 confirmed change preserves prior revision and cannot rewrite performed facts.
-- ORD07 lost response recovers original command, not a duplicate.
-- ORD08 overpayment/price reduction requiring refund cannot silently create negative outstanding.
-
-### Service jobs
-- SRV01 schedule/progress/milestones never change stock.
-- SRV02 service completion does not imply payment.
-- SRV03 service payment does not imply completion.
-- SRV04 missing service cost remains incomplete, not zero.
-
-### POS/shifts/documents
-- POS01 repeated quantity barcode scans increment draft predictably; serials deduplicate.
-- POS02 printer failure leaves committed order intact; reprint uses original number.
-- POS03 cash payment requires an eligible open shift and one CashEvent.
-- POS04 shift close correctly serializes against racing cash transaction.
-- POS05 blind count preserves variance; no silent balancing.
-- POS06 normal scan-to-receipt flow stays usable without deferred-order fields.
-- POS07 blind close reveals no expected aggregate through UI/API/preview/export before count submission; stable-cutoff count, expected and immutable variance persist. Rp4,600,000 expected and Rp4,590,000 count preserve −Rp10,000 without balancing.
-- POS08 authorized own-shift print/PDF/CSV/history/re-export reuse report identity and create no financial transaction; cross-cashier IDs, query scope, file URLs and revoked authorization cannot bypass ownership.
-- POS09 report separates commercial value, payments and physical cash: Rp1,000,000 order / Rp300,000 DP / Rp700,000 outstanding; later payment in another shift does not repeat order value/count. Amendments/cancellations are linked deltas. Two cashiers on one date reconcile independently; overnight shift is not split; outstanding snapshots are not summed.
-- POS10 noncash QRIS/transfer/card never inflate expected physical cash; tender/change uses applied cash once, payment-linked CashEvents are not double counted, and an unexecuted refund/credit removes no cash.
-- POS11 every cashier report/CSV/PDF/detail DTO excludes acquisition/purchase cost, HPP, cost evidence, margin, gross/net profit, private finance and security-audit data; reporting grants no owner refund power. CSV text formula/control prefixes and quoting are safe.
-- POS12 later refund/correction and changed business/method labels preserve original snapshot content/identity; current correction linkage stays separate and payout belongs to the executing later shift.
-- POS13 race payment/refund/paid-in/paid-out and other shift-attributed writes against CLOSING: each fact is included once before cutoff or safely rejected; unresolved outcomes block final close; premature counts require recount before expected cash is revealed.
-- POS14 lost/duplicate close requests, including different keys, resolve to one durable close/snapshot; conflicting count cannot overwrite it. Injected snapshot/audit/receipt failure rolls back final close; CLOSED without snapshot is impossible.
-- POS15 printer/PDF/CSV failure cannot rollback/reopen/duplicate close; retry renders the same snapshot and audit remains separate from money facts.
-
-### Refund/return
-- RET01 cumulative refund cannot exceed eligible amount.
-- RET02 returned quantity cannot exceed fulfilled quantity.
-- RET03 refund without goods return creates no stock movement.
-- RET04 saleable return posts linked receipt exactly once.
-- RET05 service refund creates no stock movement and does not erase incurred cost.
-
-### Attention
-- NOT01 minimum 5: 6→5 opens LOW once; 5→4 does not repeat.
-- NOT02 LOW→OUT emits OUT once in same episode.
-- NOT03 recovery to NORMAL resolves; later decline opens a new episode.
-- NOT04 reservation-induced LOW/OUT uses available quantity consistently.
-- NOT05 read/unread never resolves stock attention.
-
-### Finance
-- FIN01 payment/DP totals are separate from recognized revenue.
-- FIN02 GOODS revenue recognizes on verified fulfillment and matches MWA HPP.
-- FIN03 SERVICE revenue recognizes on verified completion, not booking/progress/payment.
-- FIN04 unknown goods/service cost makes gross-profit scope incomplete.
-- FIN05 no staff endpoint/export leaks owner-only finance.
-- FIN06 returns/refunds correct revenue/HPP according to linked physical facts without rewriting originals, including refund of unrecognized DP without a false revenue/HPP reversal.
-
-### Recovery
-- REC01 restored system reconciles orders, payments, documents, ledger, reservations, serials, jobs and shifts, including unique close receipts/snapshots and retained identity/template assets; original shift report content survives linked later corrections.
-- REC02 commands possibly executed after backup cutoff are not blindly replayed.
-- REC03 recovery epoch/status flow prevents stale browser envelopes from creating duplicates.
-- REC04 real restore drill measures RPO/RTO before pilot.
-
-## UX/visual acceptance
-
-Each RV prototype records purpose/action/fact inventory and anti-slop/redundancy review. Verify relevant desktop/mobile widths, keyboard/focus, reduced motion and 200% zoom.
-
-Cashier acceptance emphasizes:
-- scanner/keyboard speed;
-- totals always visible;
-- one obvious primary checkout action;
-- deferred-order fields hidden until requested;
-- unknown-result recovery does not encourage a second transaction.
-
-Operations acceptance emphasizes:
-- work due today/late first;
-- direct route to prepare/fulfill/progress/restock;
-- no owner-finance leakage.
-
-Owner acceptance emphasizes:
-- attention before decoration;
-- payments/outstanding distinct from revenue/profit;
-- incomplete finance clearly labeled;
-- no repeated KPI/chart/list facts.
-
-Gate A = owner approves prototype interaction/visual direction. Gate B = owner approves real integrated UI after technical/browser evidence.
-
-## Performance targets
-
-Initial reference dataset: 5,000 products, 20,000 serials, 100,000 ledger legs, two concurrent operators.
-
-Targets to measure on chosen host/network:
-- local typing/scan feedback ≤100 ms;
-- barcode resolve p95 ≤500 ms;
-- ordinary 100-line command p95 ≤2 s where applicable;
-- owner cockpit p95 ≤2 s;
-- active inbox refresh within 20 s on healthy network.
-
-Never weaken locks/validation to hit a target.
-
-## Completion gates
-
-Before completing relevant production tasks:
-- migrations reviewed/applied in test;
-- validation and backend RBAC tests;
-- audit behavior checked;
-- targeted concurrency/idempotency/rollback tests;
-- lint/typecheck;
-- relevant unit/integration/E2E;
-- production build;
-- affected browser/mobile/device verification;
-- secret/diff review.
-
-Core pilot additionally requires restore evidence, scanner/printer checks, owner-device notification acceptance or documented limitation, real-role workflow tests and owner acceptance. No production stock before R07.5 is accepted.
+Every applicable task DoD includes migration/constraints, validation, backend RBAC, audit, targeted unit/integration/race/recovery tests, lint/typecheck, production build, affected browser/mobile verification and docs evidence. Device checks at BK20/BK25/BK34; owner Gate B at BK10/BK20/BK25/BK31; final recovery/pilot checks at BK33–BK36. Any unrun check stays pending, not passed. Docs-only replanning requires diff/link/encoding/task-graph/scope checks, no app tests.
