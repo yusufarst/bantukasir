@@ -19,14 +19,19 @@ Specifications only; no runtime tests passed in this documentation task. Use Vit
 | FIN01 | MWA example in 15 produces Rp36,000 HPP/Rp24,000 gross; fractional/final-stock rounding and manual issue valuation correct |
 | FIN02 | Unknown cost suppresses complete HPP/profit; explicit evidenced zero differs from blank; evidence revision replays downstream without rewriting original |
 | FIN03 | Refund-only retains HPP; return recovers historical cost once; failed replay publishes nothing; reports respect consistent snapshot and date boundaries |
-| DAY01 | Own-scope only including file URLs; transfer excluded from expected cash; Rp100,000 cash + Rp50,000 transfer, Rp98,000 physical → -Rp2,000 variance |
-| DAY02 | Racing Sale before finalize invalidates old count; finalize first rejects Sale; no missing successful Sale; both payment methods use same day guard |
-| DAY03 | Duplicate finalization incl. different keys yields one snapshot; conflict cannot overwrite; snapshot/audit failure rolls back finalization |
-| DAY04 | Midnight/timezone/late prior-day finalization never mixes dates; after finalization same-day Sale blocked; original uncertain Sale still recoverable |
-| DAY05 | PDF/CSV/reprint produces no financial mutation; formula-injection text safe; printer/export failure retries original snapshot; owner correction note preserves count |
-| AUDIT01 | Owner filters sales/payments/stock/product-price/user/config by date/user/type/product/reference; staff denied audit administration |
+| SESSION01 | Cashier closes a session and opens a new one on the same business date; both immutable reports remain distinct |
+| SESSION02 | Partial unique guards prevent conflicting OPEN sessions for one logical drawer or one responsible cashier; handover requires close A then open B |
+| SESSION03 | Every completed Sale is attributed exactly once to the correct active session and cashier; Sale without eligible OPEN session is rejected before payment/stock facts |
+| SESSION04 | Rp20,000 opening + Rp100,000 cash + Rp50,000 transfer and Rp118,000 physical gives Rp120,000 expected / -Rp2,000 variance; transfer never enters expected cash |
+| SESSION05 | Sale racing with close is included once and invalidates the earlier count, or close wins and Sale is safely rejected; no successful Sale disappears |
+| SESSION06 | Duplicate/lost close requests, including different keys, produce one CLOSED session/snapshot; conflicting count cannot overwrite; snapshot/audit failure leaves session OPEN |
+| SESSION07 | Closed snapshot cannot be silently rewritten; later correction and owner review note remain linked facts |
+| SESSION08 | Print/PDF/CSV/reprint creates no Sale/Payment/StockMovement/session mutation; formula-injection text safe and export failure retries the same snapshot |
+| SESSION09 | Owner daily aggregation combines multiple sessions without double counting: period totals derive from source Sale/payment/cost facts and session variance stays per snapshot |
+| SESSION10 | Cashier cannot read/close/export another cashier's session; owner-assisted close requires current permission, recent authentication, physical count and reason |
+| AUDIT01 | Owner filters sales/payments/stock/product-price/user/config/session by date/user/type/product/session/reference; staff denied audit administration |
 | DB01 | Populated migration rehearsal + reconciliation pass, reviewed forward changes, exact destructive-operation prohibition enforced in scripts/runbook |
-| REC01 | Isolated real restore reconciles Sale/Payment/receipt/ledger/cost/report/source IDs/audit/assets; original snapshots reproduce |
+| REC01 | Isolated real restore reconciles Sale/session/Payment/receipt/ledger/cost/session report/source IDs/audit/assets; original snapshots reproduce and every CLOSED session has one report |
 | REC02 | Recovery epoch rejects stale browser posting; post-backup possibly lost sales reviewed from evidence, never blind replay; measured G4 RPO/RTO |
 | UX01 | Approved tokens reused; loading/empty/error/unknown/stale/denied/success; desktop/mobile/200% zoom/keyboard/focus/reduced motion |
 | DEVICE01 | Actual USB HID, Bluetooth HID, manual input, repeated scans/CRLF/focus/disconnect and actual printed labels/receipt work; no simulated claim |

@@ -1,10 +1,16 @@
 # 16 — Antigravity / Codex executor handoff
 
-A fresh session continues from repository, not conversation summary. Plan 1.0 has 36 Core tasks, all NOT STARTED. Current task none; next **BK01 — UI01 Foundation + Shell**. This replanning does not authorize starting it.
+A fresh session continues from repository, not conversation summary. Plan 1.1 has 36 Core tasks, all NOT STARTED. Current task none; next **BK01 — UI01 Foundation + Shell**. This replanning does not authorize starting it.
+
+## Agent operating model
+
+ChatGPT is the owner's planning/review/decision partner: clarify requirements, review architecture/task choices and Antigravity reports, identify problems, and prepare short executor prompts. ChatGPT conversation content and summaries are not implementation status. A changed decision becomes executable only after it is recorded in canonical repository docs.
+
+Antigravity is the coding executor: recover context from the repository, execute only the selected task, verify it, update evidence and 00 last, report exact checks/commit, then stop. It does not infer scope from memory, continue into the next task, self-approve visual gates, invent tests/tool use, silently change architecture, push or deploy without authorization.
 
 ## Startup and continuity
 
-1. Inspect status/branch/log; preserve local work. Read AGENTS → 00 → active/next task in 11 → 01 → 02 → 10 → task-specific docs.
+1. Inspect status/branch/log; preserve local work. Read AGENTS → 00 → active/next task in 11 → 01 → 02 → 10 → DESIGN for UI → task-specific docs → this handoff where relevant.
 2. Select one task, verify dependencies, actual tools, scope and gates. Mark IN PROGRESS only when work begins; at most one active executor by default.
 3. Follow task metadata and common DoD. Backend/UI work is a vertical slice, not a disconnected full frontend.
 4. Record changed files, tests actually run, outcomes, missing evidence, exact owner review revision and next step. No unrun check receives credit.

@@ -1,6 +1,6 @@
 # 09 — Deployment, protected data and recovery
 
-Target design only. No deployment, migration, backup job or runtime is created by Plan 1.0.
+Target design only. No deployment, migration, backup job or runtime is created by Plan 1.1.
 
 ## Protected production database — mandatory for every agent/operator
 
@@ -9,7 +9,7 @@ Production holds valuable live business records. Without explicit owner approval
 - TRUNCATE or mass DELETE business records;
 - reset/recreate production, seed demo data, execute destructive reset scripts or migrations disguised as maintenance;
 - delete PostgreSQL/Docker production volumes, persistent DB directories, or run `docker compose down -v` against production;
-- delete StockMovement, completed Sales, Payments or AuditEvent history;
+- delete StockMovement, completed Sales, Payments, receipt/session-report snapshots, AuditEvent or cost/history facts;
 - silently rewrite historical inventory/financial facts.
 
 Generic “fix”, “deploy” or “run migration” is not destructive approval. If needed, STOP and report: why; data at risk; safer alternatives; migration/backfill plan; backup/restore prerequisites; rollback/recovery plan. Non-production reset requires positively identified target and task authorization. Commands must verify environment/host/database before changing data, never infer safety from a directory name.
@@ -43,13 +43,13 @@ Real isolated restore before pilot, monthly and after major schema/storage chang
 1. Stop writes, declare incident/snapshot cutoff, preserve source read-only.
 2. Verify/decrypt chosen backup, match app/DB versions, restore into a new isolated database and storage root; never destroy original.
 3. Verify roles/extensions/constraints and referenced asset checksums.
-4. Reconcile Sale/lines/Payment/SALE_ISSUE/receipt, all stock sums/balances, acquisition/valuation revisions, refunds/returns, daily source scopes/cutoffs/count/variance/snapshots, command receipts and audit. Missing finalized snapshot or mismatched stock blocks reopening.
+4. Reconcile CashRegister/CashSession lifecycle, Sale/session attribution, lines/Payment/SALE_ISSUE/receipt, all stock sums/balances, acquisition/valuation revisions, refunds/returns, session source scopes/cutoffs/opening/expected/physical/variance/snapshots, command receipts and audit. A conflicting active-session guard, CLOSED session without exactly one snapshot, orphan Sale or mismatched stock blocks reopening.
 5. Revoke restored sessions, establish new recovery epoch. Old browser intents cannot auto-execute as new work. Review post-snapshot cash/transfer/printed documents/physical stock; missing restored result does not prove original never committed.
 6. Owner resolves missing interval from evidence using authorized append-only correction/recovery procedures, never SQL balance editing or blind payment replay.
 7. Verify auth/search/scan/posting/report/print and independently retained recovery access. Record actual RPO/RTO/data gap; owner approves traffic reopening.
 
 ## Maintenance and retention
 
-Daily read-only stock/cost/source reconciliation; failed check blocks affected posting. Backup age warning after configured schedule plus grace; disk warning at 20% free, critical 10%. Structured logs use IDs/safe errors, no full sensitive payload. No automatic deletion of ledger/Sales/Payments/audit/receipts/daily reports/cost revisions or referenced identity assets. Operational debug logs 30 days, security access logs 90 days subject to approved incident/privacy policy; expired auth tokens follow library retention without erasing historical actors. No legal compliance claim.
+Daily read-only stock/cost/source/session reconciliation; failed check blocks affected posting. Backup age warning after configured schedule plus grace; disk warning at 20% free, critical 10%. Structured logs use IDs/safe errors, no full sensitive payload. No automatic deletion of ledger/Sales/Payments/audit/receipts/session reports/cost revisions or referenced identity assets. Operational debug logs 30 days, security access logs 90 days subject to approved incident/privacy policy; expired auth tokens follow library retention without erasing historical actors. No legal compliance claim.
 
 Keep actual host/key/contact runbook privately accessible to owner/operator. G4 includes independent recovery access, measured drill and sustainable storage cost.

@@ -1,4 +1,4 @@
-# 11 — BantuKasir Plan 1.0
+# 11 — BantuKasir Plan 1.1
 
 **21 September 2026. Documentation/planning only. 36 total tasks, all 36 Core, 0/36 complete.** No active executor; all implementation/prototype tasks NOT STARTED. Hard ceiling 50 includes prototypes, integration, testing and deployment. Later topics in [01](01-PRD.md) have no task IDs/estimates and are excluded from this baseline.
 
@@ -6,30 +6,31 @@ Next: **BK01 — UI01 Foundation + Shell**, only in a subsequent authorized sess
 
 ## Capacity and phases
 
-Target maximum approximately one month / 20 working days. Bottom-up focused effort below totals **160 hours** for one experienced full-time executor; this is a constrained target, not guaranteed feasibility. Most tasks take 3–6 focused hours, final regression/pilot up to one day. Estimates include task tests/docs and specified review preparation, not waiting for external answers or unexpected rework. No spare engineering capacity is assumed. A major blocker or scope promotion invalidates the date; report it and replan, never skip safety.
+Target maximum approximately one month. Bottom-up focused effort below totals **166 hours (about 20.75 eight-hour working days)** for one experienced full-time executor; this is a constrained target, not guaranteed feasibility. The six-hour increase from Plan 1.0 covers cash-session visual states, opening/attribution, close races and daily aggregation. Most tasks take 3–7 focused hours, final regression/pilot up to one day. Estimates include task tests/docs and specified review preparation, not waiting for external answers or unexpected rework. No contingency is included. A major blocker or scope promotion invalidates the date; report it and replan, never skip safety.
 
 | Phase | Tasks | Hours | Milestone |
 | --- | --- | ---: | --- |
-| P0 Visual contract | BK01–BK05 | 18 | Four compact bundles, complete owner Gate A |
+| P0 Visual contract | BK01–BK05 | 20 | Four compact bundles including cash sessions, complete owner Gate A |
 | P1 Foundation | BK06–BK10 | 18 | Auth/config/integrated shell Gate B |
 | P2 Product and stock | BK11–BK20 | 40 | Search/barcode/receive/opening/issue/restock Gate B |
-| P3 Usable POS | BK21–BK25 | 24 | Atomic payment/issue/receipt/correction Gate B |
-| P4 Reports and control | BK26–BK31 | 26 | Truthful HPP, daily reconciliation/export and audit Gate B |
+| P3 Usable POS | BK21–BK25 | 25 | Session opening/attribution, atomic payment/issue/receipt/correction Gate B |
+| P4 Reports and control | BK26–BK31 | 29 | Truthful HPP, session close/report/daily aggregation and audit Gate B |
 | P5 Production readiness | BK32–BK36 | 34 | Protected migrations, restore, device regression, authorized pilot |
 
-Approximate four-week map (one executor, no automatic parallel agents):
-- Week 1, days 1–5: BK01–BK11, 40h. Owner available for complete Gate A by early day 3 and shell Gate B; integrations already available.
-- Week 2, days 6–10: BK12–BK20 (36h), begin BK21 (4h). Obtain actual scanner/printer and G2 data before their gates.
-- Week 3, days 11–15: finish BK21 (2h), BK22–BK29 (37h), begin BK30 (1h). G3 resolves before BK28 completion.
-- Week 4, days 16–20: finish BK30 (2h), BK31–BK36 (38h). G1/G4 and deployment access/authorization ready before pilot.
+Approximate four-week map plus six focused spillover hours (one executor, no automatic parallel agents):
+- Week 1, days 1–5: BK01–BK10 (38h), begin BK11 (2h). Owner available for complete Gate A by early day 3 and shell Gate B; integrations already available.
+- Week 2, days 6–10: finish BK11 (2h), BK12–BK20 (36h), begin BK21 (2h). Obtain actual scanner/printer and G2 data before their gates.
+- Week 3, days 11–15: finish BK21 (5h), BK22–BK28 (35h). G3 resolves before BK28 completion.
+- Week 4, days 16–20: BK29–BK35 (38h), begin BK36 (2h). G1/G4 and deployment access/authorization ready before pilot.
+- Spillover: finish BK36 (6h). Gate/rework wait is additional elapsed time; the target remains approximately one month, with no schedule padding.
 
-Waiting for Gate A/B is real schedule risk. Hardware/backup access and owner answers can be collected while executor works, but gate failures do not disappear because of elapsed time. Cut already made: serials, CSV/XLSX import, Web Push, camera, advanced stock/corrections, deferred commerce/services and shift engine. Cosmetic charts/extra variants remain optional within existing tasks, not new features. If more cuts cannot preserve a usable safe POS, explicitly report that the one-month target is infeasible under actual constraints.
+Waiting for Gate A/B is real schedule risk. Hardware/backup access and owner answers can be collected while executor works, but gate failures do not disappear because of elapsed time. Cut already made: serials, CSV/XLSX import, Web Push, camera, advanced stock/corrections, deferred commerce/services, attendance/payroll shifts, simultaneous shared drawer and paid-in/out. Lightweight cash sessions are Core. Cosmetic charts/extra variants remain optional within existing tasks, not new features. If more cuts cannot preserve a usable safe POS, explicitly report that the one-month target is infeasible under actual constraints.
 
 ## Dependencies and execution
 
 Dependencies refer to completed tasks, including their listed owner/technical gates. Default is one active executor. Critical chain: BK01 → BK02/BK03 → BK04 → BK05 → BK06–BK25 → BK26 → BK27 → BK30 → BK31–BK36; BK28 → BK29 also joins BK30. Runtime safety is introduced before any live use.
 
-With explicit coordinated staffing, BK02/BK03 can run after common UI01; BK28 can run alongside BK26/BK27 after BK25 on agreed Sale/day contracts. Independent prerequisite collection (G1–G4, tool setup, device availability) can overlap. Shared schema/token mutations require coordination; parallelism is not assumed in the 160h estimate.
+With explicit coordinated staffing, BK02/BK03 can run after common UI01; BK28 can run alongside BK26/BK27 after BK25 on agreed Sale/session contracts. Independent prerequisite collection (G1–G4, logo/tool setup, device availability) can overlap. Shared schema/token mutations require coordination; parallelism is not assumed in the 166h estimate.
 
 Common READ: AGENTS, 00, this task, 01, 02, 10, plus listed docs. Common DoD: applicable schema/migration + validation + backend RBAC + audit + targeted tests/races/recovery + lint/typecheck/build + browser/mobile/device evidence + docs under [08](08-TESTING-ACCEPTANCE.md). Every meaningful UI task follows actual tool workflow in 05. Task paths are proposed domains until scaffold exists.
 
@@ -39,8 +40,8 @@ Common READ: AGENTS, 00, this task, 01, 02, 10, plus listed docs. Common DoD: ap
 | --- | --- | --- | --- | ---: |
 | BK01 | NOT STARTED | UI01 Foundation + Shell | None; future execution instruction required | 4 |
 | BK02 | NOT STARTED | UI02 Product Operations | BK01 | 4 |
-| BK03 | NOT STARTED | UI03 POS | BK01 | 4 |
-| BK04 | NOT STARTED | UI04 Reports | BK02, BK03 | 4 |
+| BK03 | NOT STARTED | UI03 POS | BK01 | 5 |
+| BK04 | NOT STARTED | UI04 Reports | BK02, BK03 | 5 |
 | BK05 | NOT STARTED | Complete visual Gate A | BK01, BK02, BK03, BK04 | 2 |
 | BK06 | NOT STARTED | Foundation and isolated environments | BK05 | 4 |
 | BK07 | NOT STARTED | Transactional command and audit foundation | BK06 | 4 |
@@ -57,15 +58,15 @@ Common READ: AGENTS, 00, this task, 01, 02, 10, plus listed docs. Common DoD: ap
 | BK18 | NOT STARTED | Owner manual opening and cutover controls | BK17 | 3 |
 | BK19 | NOT STARTED | Current stock, history and restock slice | BK18 | 3 |
 | BK20 | NOT STARTED | Product operations/device Gate B | BK19 | 4 |
-| BK21 | NOT STARTED | Atomic full-payment Sale backend | BK20 | 6 |
+| BK21 | NOT STARTED | Cash-session opening and atomic Sale backend | BK20 | 7 |
 | BK22 | NOT STARTED | Integrated cashier checkout slice | BK21 | 5 |
 | BK23 | NOT STARTED | Thermal and A4 document slice | BK22 | 4 |
 | BK24 | NOT STARTED | Minimal owner correction/refund/return slice | BK23 | 5 |
 | BK25 | NOT STARTED | POS and documents/device Gate B | BK24 | 4 |
 | BK26 | NOT STARTED | Cost revision and replay completeness | BK25 | 6 |
 | BK27 | NOT STARTED | Owner period reporting slice | BK26 | 4 |
-| BK28 | NOT STARTED | Daily finalization backend | BK21, BK25 | 5 |
-| BK29 | NOT STARTED | Own daily report and export slice | BK28 | 4 |
+| BK28 | NOT STARTED | Lightweight cash-session close backend | BK21, BK25 | 7 |
+| BK29 | NOT STARTED | Session reports and daily aggregation slice | BK28 | 5 |
 | BK30 | NOT STARTED | Owner log and operational history review | BK27, BK29 | 3 |
 | BK31 | NOT STARTED | Reports/audit Gate B | BK30 | 4 |
 | BK32 | NOT STARTED | Production packaging and safe maintenance | BK31 | 6 |
@@ -80,12 +81,12 @@ Each card supplements the tracker and common DoD; no giant executor prompts need
 
 ### BK01 — UI01 Foundation + Shell
 
-- Goal: Use verified tools to establish shared foundation, login, role shells and profile pattern.
+- Goal: Use verified tools to establish proposed BantuKasir brand/semantic foundation, login, role shells, profile pattern and active cash-session entry/identity.
 - Depends on: None; subsequent task authorization.
 - Read: [05](05-DESIGN-SYSTEM.md), [04](04-AUTH-RBAC-SECURITY.md).
 - Main files/domain: prototypes/ui01; PRODUCT.md; DESIGN.md.
-- Acceptance/verification: UI01 desktop/mobile/keyboard states and tool critique recorded; proposed tokens consolidated.
-- Stop if: Missing 21st/Impeccable or paid-only access; stop at review, no production UI.
+- Acceptance/verification: UI01 desktop/mobile/keyboard states, real-logo availability/status and tool critique recorded; Inter/palette/session-shell patterns consolidated as proposed.
+- Stop if: Missing 21st/Impeccable or paid-only access; real BantuKasir logo remains absent when logo-specific brand approval is required; stop at review, no production UI.
 
 ### BK02 — UI02 Product Operations
 
@@ -98,20 +99,20 @@ Each card supplements the tracker and common DoD; no giant executor prompts need
 
 ### BK03 — UI03 POS
 
-- Goal: Prototype cart/full cash/transfer/uncertain result/receipt/A4/refund.
+- Goal: Prototype session open/opening cash, persistent cashier/drawer identity, cart/full cash/transfer, handover via close/new session, uncertain result, receipt/A4/refund.
 - Depends on: BK01.
 - Read: [05](05-DESIGN-SYSTEM.md), [12](12-BARCODE-SCANNER.md), [17](17-POS-SALES.md).
 - Main files/domain: prototypes/ui03; print mock documents.
-- Acceptance/verification: UI03 covers tender/change, recovery/reprint and touch/keyboard flows with tool review.
+- Acceptance/verification: UI03 covers same-day new session, A→B handover, tender/change, recovery/reprint and touch/keyboard flows with tool review; no shared active drawer implied.
 - Stop if: Missing required UI tools; no real payment or production UI.
 
 ### BK04 — UI04 Reports
 
-- Goal: Prototype periods/incomplete profit, daily count/race/report/export, audit/system states.
+- Goal: Prototype versioned session count/close/report/export, owner daily aggregation across sessions, periods/incomplete profit, audit/system states.
 - Depends on: BK02, BK03.
 - Read: [05](05-DESIGN-SYSTEM.md), [15](15-FINANCE-PROFITABILITY.md), [17](17-POS-SALES.md), [09](09-DEPLOYMENT-OPS.md).
 - Main files/domain: prototypes/ui04; shared report patterns.
-- Acceptance/verification: UI04 includes cash/transfer separation, stale count, final day restriction and device layouts.
+- Acceptance/verification: UI04 includes opening/cash/transfer/expected/physical/variance, stale-count recount, immutable session history, daily session list and device layouts.
 - Stop if: Missing required UI tools; unresolved G3 assumptions must remain visibly proposed.
 
 ### BK05 — Complete visual Gate A
@@ -258,22 +259,22 @@ Each card supplements the tracker and common DoD; no giant executor prompts need
 - Acceptance/verification: UI02 integrated owner Gate B, actual USB/Bluetooth HID and label printer evidence.
 - Stop if: Required hardware or owner approval absent; keep pending, never simulated pass.
 
-### BK21 — Atomic full-payment Sale backend
+### BK21 — Cash-session opening and atomic Sale backend
 
-- Goal: Implement completed Sale, full payment, issue, costing, immutable receipt and day attribution.
+- Goal: Implement minimal logical registers, idempotent own-session opening and completed Sale with full payment, issue, costing, immutable receipt and exact session/cashier attribution.
 - Depends on: BK20.
 - Read: [17](17-POS-SALES.md), [02](02-ARCHITECTURE.md), [15](15-FINANCE-PROFITABILITY.md).
-- Main files/domain: sales; payments; cashier-day guard; receipt schema; tests.
-- Acceptance/verification: POS01/02, stock races and DAY02 guard integration; rollback every boundary; one source intent.
+- Main files/domain: sales; payments; cash-register/session open; session guard; receipt schema; tests.
+- Acceptance/verification: POS01/02 and SESSION01–04 prerequisites: unique OPEN register/cashier, explicit opening cash, both methods attributed once, transfer excluded from expected cash; stock races/rollback every boundary; one source intent.
 - Stop if: Payment/issue split, unresolved source result or cost/stock mismatch.
 
 ### BK22 — Integrated cashier checkout slice
 
-- Goal: Connect approved cart/payment/error/unknown-result interaction to atomic Sale.
+- Goal: Connect approved session opening/identity and cart/payment/error/unknown-result interaction to atomic Sale.
 - Depends on: BK21.
 - Read: [17](17-POS-SALES.md), [12](12-BARCODE-SCANNER.md), [05](05-DESIGN-SYSTEM.md).
 - Main files/domain: POS UI; shared search/scan/cart; browser tests.
-- Acceptance/verification: POS02/03; keyboard/mobile, price review, recovery after reload, no cashier override.
+- Acceptance/verification: POS02/03 and session-required checkout; keyboard/mobile, price review, recovery after reload, no cashier override or Sale outside an own OPEN session.
 - Stop if: Missing UI tools/Gate A or unresolved command recovery.
 
 ### BK23 — Thermal and A4 document slice
@@ -296,11 +297,11 @@ Each card supplements the tracker and common DoD; no giant executor prompts need
 
 ### BK25 — POS and documents/device Gate B
 
-- Goal: Verify real counter flow, receipt/A4/reprint/corrections and recovery.
+- Goal: Verify real counter flow from session open through checkout, receipt/A4/reprint/corrections and recovery.
 - Depends on: BK24.
 - Read: [08](08-TESTING-ACCEPTANCE.md), [05](05-DESIGN-SYSTEM.md), [12](12-BARCODE-SCANNER.md).
 - Main files/domain: POS E2E; print/scanner evidence.
-- Acceptance/verification: UI03 owner Gate B; actual scanner/receipt printer, POS01–03 and RET01 integration pass.
+- Acceptance/verification: UI03 owner Gate B; actual scanner/receipt printer, POS01–03, RET01 and session opening/attribution integration pass. Detailed close/report is BK28–BK31.
 - Stop if: Missing hardware, owner approval or unresolved atomicity/privacy failure.
 
 ### BK26 — Cost revision and replay completeness
@@ -321,22 +322,22 @@ Each card supplements the tracker and common DoD; no giant executor prompts need
 - Acceptance/verification: FIN03, timezone bounds/consistent asOf, owner-only endpoints, current LOW/OUT separate.
 - Stop if: Missing UI tools or incomplete cost represented as zero profit.
 
-### BK28 — Daily finalization backend
+### BK28 — Lightweight cash-session close backend
 
-- Goal: Implement versioned physical count, day cutoff, immutable unique report.
+- Goal: Implement OPEN→CLOSED versioned physical count, race-safe cutoff and atomic immutable CashSession report without persistent CLOSING.
 - Depends on: BK21, BK25.
 - Read: [17](17-POS-SALES.md), [04](04-AUTH-RBAC-SECURITY.md), [10](10-DECISIONS.md).
-- Main files/domain: cashier-day finalization; snapshots; integration tests.
-- Acceptance/verification: DAY01–04 including two-key duplicate/midnight/racing Sale and atomic snapshot rollback.
-- Stop if: G3 unresolved; need multiple sessions/reopen/shared drawer; never silently add shift engine.
+- Main files/domain: cash-session close; snapshot; register/session constraints; integration tests.
+- Acceptance/verification: SESSION01–07 including same-day return, A→B handover, two-key duplicate, racing Sale, assisted close and atomic snapshot rollback.
+- Stop if: G3 changes opening cash/register/refund assumptions or requires shared active drawer/paid-in/out; never silently add a complex shift engine.
 
-### BK29 — Own daily report and export slice
+### BK29 — Session reports and daily aggregation slice
 
-- Goal: Integrate count/recount/finalized flow, own history and safe snapshot exports.
+- Goal: Integrate count/recount/close flow, own session history and safe snapshot exports plus owner daily aggregation over source facts and session rows.
 - Depends on: BK28.
 - Read: [17](17-POS-SALES.md), [05](05-DESIGN-SYSTEM.md), [04](04-AUTH-RBAC-SECURITY.md).
-- Main files/domain: daily report UI/history; print/PDF/CSV; tests.
-- Acceptance/verification: DAY01/05 no private fields, formula-safe CSV, same snapshot after export failure/corrections.
+- Main files/domain: session report UI/history; owner daily recap; print/PDF/CSV; tests.
+- Acceptance/verification: SESSION08–10, no private fields, formula-safe CSV, no aggregation double count and same snapshot after export failure/corrections.
 - Stop if: Missing UI tools or authorization/export leakage.
 
 ### BK30 — Owner log and operational history review
@@ -345,7 +346,7 @@ Each card supplements the tracker and common DoD; no giant executor prompts need
 - Depends on: BK27, BK29.
 - Read: [04](04-AUTH-RBAC-SECURITY.md), [05](05-DESIGN-SYSTEM.md), [08](08-TESTING-ACCEPTANCE.md).
 - Main files/domain: audit queries; log UI; history tests.
-- Acceptance/verification: AUDIT01 and pagination, linked original/correction facts, denied staff audit access.
+- Acceptance/verification: AUDIT01 and pagination including register/session, linked original/correction facts, denied staff audit access.
 - Stop if: Missing UI tools, missing critical event or sensitive log payload.
 
 ### BK31 — Reports/audit Gate B
@@ -354,7 +355,7 @@ Each card supplements the tracker and common DoD; no giant executor prompts need
 - Depends on: BK30.
 - Read: [05](05-DESIGN-SYSTEM.md), [08](08-TESTING-ACCEPTANCE.md), [15](15-FINANCE-PROFITABILITY.md), [17](17-POS-SALES.md).
 - Main files/domain: reports E2E; role no-leak matrix; review evidence.
-- Acceptance/verification: UI04 owner Gate B plus FIN/DAY/AUDIT and all export no-leak tests; incomplete/stale states verified.
+- Acceptance/verification: UI04 owner Gate B plus FIN/SESSION/AUDIT and all export no-leak tests; incomplete/stale states verified.
 - Stop if: Missing owner review or unresolved reconciliation/privacy failure.
 
 ### BK32 — Production packaging and safe maintenance

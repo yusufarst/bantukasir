@@ -18,7 +18,7 @@ Server-generated Code 128 internal token: BK-P- plus 16 uppercase Crockford Base
 
 USB/Bluetooth HID is keyboard input; no proprietary driver/WebUSB integration. Configure Enter suffix; dedicated scan field/manual Enter fallback. No timing heuristic for barcode validity. Each complete repeated code adds one base unit to draft; CR/LF empty terminators/key-repeat do not add. Preserve response order. Explicit quantity edit for fractional units. Visible delta/undo; no per-scan success toast claiming saved stock.
 
-Pause capture during dialogs/review/counting, do not steal focus from other inputs. Unknown token stays available for search; authorized catalog creation only, never automatic stock. Scanner Enter cannot confirm payment/posting. Lookup failure retains token; offline stops posting, no offline mutation queue. Camera scanning Later.
+Pause capture during dialogs/review/session cash counting, do not steal focus from other inputs. POS capture requires the authenticated actor's own eligible OPEN CashSession; scanning never opens, hands over or closes a session. Unknown token stays available for search; authorized catalog creation only, never automatic stock. Scanner Enter cannot confirm payment/posting/session close. Lookup failure retains token; offline stops posting, no offline mutation queue. Camera scanning Later.
 
 Freeze source intent/key/payload on final confirmation. SUBMITTING → confirmed COMMITTED or UNCERTAIN. Uncertain freezes edits/replacement, original status/retry only. Minimal per-tab actor-scoped recovery reference; no staff cost inputs or secrets stored. Reload reauthorizes; ordinary stale drafts revalidate products/prices. Never expire uncertain identity into a new Sale.
 

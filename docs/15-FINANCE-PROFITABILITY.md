@@ -32,6 +32,6 @@ Asia/Jakarta server boundaries converted to UTC half-open ranges. Hari Ini = loc
 
 Metrics: gross sales/refunds/net sales, completed transaction count, applied cash/transfer and payouts separately, qty sold/returned, HPP/gross profit and optional margin only if complete and net sales >0. LOW/OUT is current, explicitly not period-filtered.
 
-Consistent report read snapshot includes asOf/timezone/evidence revision/completeness and unknown line count. Revenue/payment totals can display while HPP/gross/margin show **Data biaya belum lengkap**; do not exclude unknown-cost or loss-making rows to manufacture profit. Query failure is an error, not zero. Completed report valuation may change only through disclosed evidence revisions; daily cashier and receipt snapshots never change.
+Consistent report read snapshot includes asOf/timezone/evidence revision/completeness and unknown line count. Revenue/payment totals can display while HPP/gross/margin show **Data biaya belum lengkap**; do not exclude unknown-cost or loss-making rows to manufacture profit. Query failure is an error, not zero. Completed report valuation may change only through disclosed evidence revisions; CashSession reports and receipt snapshots never change.
 
-[17](17-POS-SALES.md) daily cash control has no private cost/profit. No AR/AP, net profit, expenses, payroll, service finance or tax accounting in Core.
+[17](17-POS-SALES.md) session cash control has no private cost/profit. Owner daily recap derives financial totals from source facts and shows session variance separately; it never treats opening cash or variance as sales/profit and never sums session totals on top of the same Sales. No AR/AP, net profit, expenses, payroll, service finance or tax accounting in Core.
