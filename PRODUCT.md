@@ -4,7 +4,7 @@ Planning context for Impeccable and every UI executor. This file summarizes [01 
 
 A configurable GOODS-only POS and stock-control platform for one business. Three users: Pemilik needs truthful sales/HPP/gross profit and exceptions; Admin Operasional needs search-first receiving/stock/restock; Kasir needs scan → cart → pay → receipt plus accountable cash sessions.
 
-Desktop prioritizes HID/keyboard speed and readable operational tables; mobile prioritizes touch, search and one primary action. Bahasa Indonesia labels. Premium, elegant, modern, restrained and professional; avoid generic AI dashboards, decorative gradients/charts and duplicate KPI cards. Proposed brand direction is dark navy/charcoal-blue with teal/aqua and quiet pastel neutrals; semantic colors remain independent. The exact BantuKasir logo asset is not yet in this repository and must not be fabricated.
+Desktop prioritizes HID/keyboard speed and readable operational tables; mobile prioritizes touch, search and one primary action. Bahasa Indonesia labels. Premium, elegant, modern, restrained and professional; avoid generic AI dashboards, decorative gradients/charts and duplicate KPI cards. Proposed brand direction is dark navy/charcoal-blue with teal/aqua and quiet pastel neutrals; semantic colors remain independent. The exact BantuKasir logo asset is now present in the repository (`assets/brand/bantukasir-logo.svg`).
 
 Business identity is runtime BusinessProfile. A normal Sale requires no customer, is fully paid by cash or recorded bank transfer, and issues goods atomically. Unknown result must lead to original-result recovery. Missing cost is explicit, never optimistic profit. Staff never sees private costs.
 

@@ -2,7 +2,7 @@
 
 **21 September 2026. Optimized Plan 1.1 delivery baseline; documentation/planning only. 36 total tasks, all 36 Core, 0/36 complete.** No active executor; all implementation/prototype tasks NOT STARTED. Hard ceiling 50 includes prototypes, integration, testing and deployment. Later topics in [01](01-PRD.md) have no task IDs/estimates and are excluded from this baseline.
 
-Next: **BK01 — UI01 Foundation + Shell**, only in a subsequent authorized session. Do not start it during replanning.
+Next: **BK01 — UI01 Foundation + Shell** (WAITING OWNER REVIEW).
 
 ## Capacity and phases
 
@@ -55,7 +55,7 @@ Common READ: AGENTS, 00, this task, 01, 02, 10, plus listed docs. Common DoD: ap
 
 | ID | Status | Goal / deliverable | Engineering prerequisites | Completion hold / restriction | Hours |
 | --- | --- | --- | --- | --- | ---: |
-| BK01 | NOT STARTED | UI01 Foundation + Shell | None; future execution instruction required | UI tools; real-logo status explicit | 4 |
+| BK01 | WAITING OWNER REVIEW | UI01 Foundation + Shell | None | Owner Gate A | 4 |
 | BK02 | NOT STARTED | UI02 Product Operations | BK01 | UI tools | 4 |
 | BK03 | NOT STARTED | UI03 POS | BK01 | UI tools | 4 |
 | BK04 | NOT STARTED | UI04 Reports | BK02, BK03 | UI tools; G3 assumptions visibly provisional | 4 |
@@ -104,6 +104,7 @@ Each card supplements the tracker and common DoD; no giant executor prompts need
 - Main files/domain: prototypes/ui01; PRODUCT.md; DESIGN.md.
 - Acceptance/verification: UI01 desktop/mobile/keyboard states, real-logo availability/status and tool critique recorded; Inter/palette/session-shell patterns consolidated as proposed.
 - Stop if: Missing 21st/Impeccable or paid-only access; real BantuKasir logo remains absent when logo-specific brand approval is required; stop at review, no production UI.
+- Evidence: 21st.dev search returned references (e.g. Sidebar [id: 1627] by shadcn, Dashboard and Landing [id: 776]). Impeccable critique invoked and verified against DESIGN.md (Inter retained per brief). UI01 prototypes built in prototypes/ui01/. WAITING OWNER REVIEW.
 
 ### BK02 — UI02 Product Operations
 

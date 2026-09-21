@@ -4,7 +4,7 @@
 
 ## Brand direction and asset status
 
-The owner-selected BantuKasir direction is a clean modern wordmark using dark navy/charcoal-blue with teal/aqua on white or quiet neutral surfaces. It guides UI01 but is not a two-color UI rule. The exact BantuKasir source logo is **not present in this repository** as of Plan 1.1; only the preserved historical LATANSA asset exists. No logo review, import, color sampling or production derivative is claimed. UI01 must use the real owner-supplied source before extracting or approving brand colors.
+The owner-selected BantuKasir direction is a clean modern wordmark using dark navy/charcoal-blue with teal/aqua on white or quiet neutral surfaces. It guides UI01 but is not a two-color UI rule. The exact BantuKasir source logo is now present in this repository (`assets/brand/bantukasir-logo.svg`). UI01 must use this real owner-supplied source when extracting or approving brand colors.
 
 BusinessProfile remains the runtime identity boundary. A future client can supply its logo, document identity and a constrained accessible accent without changing source code or semantic colors.
 

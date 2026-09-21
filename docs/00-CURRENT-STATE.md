@@ -11,10 +11,10 @@ Updated **21 September 2026**, Asia/Jakarta. Written LAST after substantive docu
 | Plan | Optimized BantuKasir Plan 1.1 delivery; 36 total tasks, all 36 Core, 0/36 complete |
 | Schedule | 154 focused engineering hours / 19.25 eight-hour days; five-day weeks leave six focused hours inside 20 days, with no rework or waiting contingency |
 | Active executor | None |
-| Next task | **BK01 — UI01 Foundation + Shell**; NOT STARTED |
-| Implementation | NOT STARTED; no app, dependency, migration, prototype or production UI added |
+| Next task | **BK01 — UI01 Foundation + Shell**; WAITING OWNER REVIEW |
+| Implementation | BK01 UI01 Foundation + Shell prototypes added. WAITING OWNER REVIEW. |
 | Visual approval | No UI01–UI04 Gate A or integrated Gate B; Inter/palette/brand direction in DESIGN are PROPOSED and NOT APPROVED |
-| BantuKasir logo | Exact source asset absent from repository; no import/review/color sampling claimed |
+| BantuKasir logo | Present in repository (`assets/brand/bantukasir-logo.svg`) |
 | Authorization | One local documentation commit only; no push/merge/deploy or next-task execution |
 | Roles | SUPER_ADMIN / Pemilik; OPERATIONS_ADMIN / Admin Operasional; CASHIER / Kasir |
 
@@ -65,4 +65,4 @@ ChatGPT is the planning/review/decision partner; Antigravity executes one select
 | G3 OPEN | Actual drawer identities/labels, opening-float practice, one responsible cashier/no simultaneous sharing, owner cash-refund funding; replan if extra cash movements are required |
 | G4 OPEN | Independent backup destination/access/cost and accepted measured RPO/RTO before production |
 
-None blocks completion of this documentation replan. They block the corresponding execution/pilot gates in 11. Next is **BK01 — UI01 Foundation + Shell** in a subsequent authorized session, beginning with actual tool and real-logo availability verification. **DO NOT START IT as part of this checkpoint.**
+None blocks completion of this documentation replan. They block the corresponding execution/pilot gates in 11. Next is **BK01 — UI01 Foundation + Shell**, currently WAITING OWNER REVIEW after successful tool verification and prototype build.

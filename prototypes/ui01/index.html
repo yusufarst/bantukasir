@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BantuKasir - UI01 Prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Login State -->
+  <div id="view-login" class="app-container" style="justify-content: center; align-items: center; background-color: var(--subtle);">
+    <div class="card" style="width: 100%; max-width: 400px;">
+      <div style="text-align: center; margin-bottom: 32px;">
+        <img src="../../assets/brand/bantukasir-logo.svg" alt="BantuKasir Logo" style="height: 32px; margin-bottom: 24px;">
+        <h1 class="text-section">Masuk ke Sistem</h1>
+        <p class="text-caption">Gunakan akun Anda untuk masuk</p>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Email / Username</label>
+        <input type="text" class="form-input" placeholder="admin@bantukasir.com" value="admin@bantukasir.com">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Kata Sandi</label>
+        <input type="password" class="form-input" value="password123">
+      </div>
+
+      <button class="btn btn-primary" style="width: 100%; margin-top: 16px;" onclick="switchRole('PEMILIK')">
+        Masuk
+      </button>
+
+      <!-- Dev Controls -->
+      <div style="margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;">
+        <button class="btn btn-secondary text-caption" style="height: 28px;" onclick="switchRole('PEMILIK')">Pemilik</button>
+        <button class="btn btn-secondary text-caption" style="height: 28px;" onclick="switchRole('OPERASIONAL')">Operasional</button>
+        <button class="btn btn-secondary text-caption" style="height: 28px;" onclick="switchRole('KASIR')">Kasir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- App Shell -->
+  <div id="view-app" class="app-container hidden">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <img src="../../assets/brand/bantukasir-logo.svg" alt="BantuKasir Logo" class="logo-img">
+      </div>
+
+      <nav class="sidebar-nav" id="sidebar-nav">
+        <!-- Injected via JS based on role -->
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="nav-item" onclick="toggleProfile()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <div style="display: flex; flex-direction: column;">
+            <span class="text-control font-medium" id="user-name">User</span>
+            <span class="text-caption" id="user-role">Role</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main-content">
+      <header class="topbar">
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <button class="btn btn-secondary" style="padding: 0 8px;" onclick="toggleSidebar()" id="mobile-menu-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+          </button>
+          <h2 class="text-section" id="page-title">Dasbor</h2>
+        </div>
+
+        <div class="topbar-right">
+          <!-- Session Identity (Kasir only) -->
+          <div id="session-identity" class="session-identity hidden">
+            <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--success);"></div>
+            <span class="text-control font-medium" style="color: var(--brand-navy);">Sesi Aktif</span>
+            <span class="text-money text-caption">#S-0042</span>
+          </div>
+        </div>
+      </header>
+
+      <div class="page-content" id="page-content">
+        <!-- Content injected based on active page -->
+      </div>
+    </main>
+  </div>
+
+  <!-- Profile / Settings Dialog -->
+  <div id="dialog-profile" class="dialog-overlay hidden">
+    <div class="dialog-content">
+      <h2 class="text-section" style="margin-bottom: 24px;">Profil Pengguna</h2>
+
+      <div class="form-group">
+        <label class="form-label">Nama Lengkap</label>
+        <input type="text" class="form-input" value="Budi Santoso">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="text" class="form-input" value="budi@bantukasir.com" disabled style="background: var(--canvas);">
+      </div>
+
+      <div style="display: flex; gap: 12px; margin-top: 32px; justify-content: flex-end;">
+        <button class="btn btn-secondary" onclick="toggleProfile()">Tutup</button>
+        <button class="btn btn-danger" onclick="logout()">Keluar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
