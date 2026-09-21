@@ -2,6 +2,8 @@
 
 ## Effective baseline and historical reading rule
 
+**Current plan: 3.1.1 — 21 September 2026.** D54 records the subsequent owner-required shift-close reporting refinement of D51. D53 remains 47 total / 39 Core; the accepted Plan 3.1 baseline and approval date below are preserved. No prototype or production authorization is added.
+
 **Plan 3.1 owner acceptance: APPROVED — 20 September 2026.** The owner explicitly said “setuju Plan 3.1”. D46–D53 and the final policy register below govern the accepted unified Order baseline. R00.1 / RV01 is next eligible and remains unstarted; no visual Gate A/B or production authorization is implied.
 
 The D01–D45 decisions, assumptions, gap analysis and policy register below preserve earlier checkpoints. Their original status/“current”/“pending” wording and Pxx/Rxx references are historical where superseded. Read them with the effective overrides at the end; they are not active task dependencies or requests to approve CP01. No historical decision is erased.
@@ -170,3 +172,12 @@ The complete Plan 3.1 baseline was explicitly accepted on **20 September 2026**:
 D40's immediate/full-payment baseline is superseded by D46–D50. D44's 46/36 draft count is superseded by D53. All unaffected inventory/security/cost/backup decisions continue to apply.
 
 Effective reading of related historical details: D36's flow now includes deferred Orders; D37's cashier-only POS boundary yields to the current three-role duties in 04 (operations may record authorized payments using their own shift for cash). D39's composed sale transaction applies only to the instant Order fast path; deferred payment, goods fulfillment and service completion remain independent commands. D41's cost evidence and privacy remain, with OrderLine/fulfillment/completion references under 15/17 rather than separate Sale truth. D19's reservation timing is superseded by D48; staged transit/opname remain later. D27/D44's frontloaded prototypes and old task numbers are superseded by D53 and the interleaved tracker in 11.
+
+
+## Owner-required refinement — 21 September 2026
+
+| ID / status | Decision and impact |
+| --- | --- |
+| D54 / LOCKED — Cashier Shift Close Report | Every Core cashier shift produces an immutable closing reconciliation/report for view, print/PDF and CSV. Separate commercial order value, payments by method and physical cash reconciliation. Blind physical count precedes expected-cash disclosure. CASHIER reads/exports only authorized own-shift operational data, never acquisition/purchase cost, HPP, cost evidence, margin, gross/net profit or private owner finance. Reprint/re-export creates no transaction; later corrections never rewrite the original snapshot. |
+
+Source: the owner's explicit post-approval reporting requirement. This refines D51 in **Plan 3.1.1**, not a new commercial/accounting architecture. [17](17-POS-SALES.md) owns closing/snapshot/export semantics; [04](04-AUTH-RBAC-SECURITY.md) permissions; [08](08-TESTING-ACCEPTANCE.md) POS07–POS15; [11](11-BUILD-PLAN.md) refines existing R05/R06 deliverables. Counts remain **47 total / 39 Core**, all unstarted. D01–D53 history and Q01/Q04/Q05 gates remain intact. R00.1/RV01 remains next eligible; its entry concept includes Shift Saya/report, with detailed interaction in RV04. This instruction approves the requirement, not an unbuilt visual revision or production execution.

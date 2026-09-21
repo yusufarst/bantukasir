@@ -1,17 +1,18 @@
 # 00 — Verified current state and handoff
 
-Updated **20 September 2026**, Asia/Jakarta. Updated LAST for the accepted Plan 3.1 documentation cleanup. Planning baseline finalized; no prototype or production work was started.
+Updated **21 September 2026**, Asia/Jakarta. Updated LAST for the documentation-only Plan 3.1.1 refinement. No prototype or production work was started.
 
 | Item | Verified state |
 | --- | --- |
 | Product direction | Brand-neutral retail operations: GOODS + SERVICES |
-| Planning version | **3.1** |
+| Planning version | **3.1.1** |
 | Plan 3.1 owner acceptance | **APPROVED — 20 September 2026**; explicit owner statement: “setuju Plan 3.1” |
-| Commercial model | One Order engine; instant POS is its fast path; deferred orders/bookings, DP/partial/later payments, reservation, partial fulfillment and service progress are Core |
+| New owner refinement | **D54 / LOCKED — Cashier Shift Close Report**, incorporated from the subsequent owner requirement on 21 September 2026 |
+| Commercial model | One Order engine; instant POS fast path; deferred orders/bookings, DP/partial/later payments, reservation, partial fulfillment and service progress are Core |
 | Roles | SUPER_ADMIN / Pemilik; OPERATIONS_ADMIN / Admin Operasional; CASHIER / Kasir |
 | Branding | Runtime BusinessProfile; LATANSA is first-client/demo identity only |
 | Cost target | Approximately Rp0 recurring software/SaaS; infrastructure/hardware and independent recovery costs remain real |
-| Build progress | **0/47 overall; 0/39 Core**, phases R00–R09; Core R00–R07 |
+| Build progress | **0/47 overall; 0/39 Core**, phases R00–R09; Core R00–R07; all tasks [ ] |
 | Production implementation | **NOT STARTED**; separate authorization has not been granted |
 | Active build task | **None** |
 | Next eligible task | **R00.1 — RV01 visual contract**, still [ ]; planning-acceptance prerequisite satisfied |
@@ -20,17 +21,19 @@ Updated **20 September 2026**, Asia/Jakarta. Updated LAST for the accepted Plan 
 
 ## Effective rules and handoff
 
-Read [AGENTS](../AGENTS.md), this file, [01](01-PRD.md), [02](02-ARCHITECTURE.md), effective decisions D46–D53 in [10](10-DECISIONS.md), the next row in [11](11-BUILD-PLAN.md) and [16](16-EXECUTOR-HANDOFF.md).
+Read [AGENTS](../AGENTS.md), this file, [01](01-PRD.md), [02](02-ARCHITECTURE.md), effective decisions D46–D54 in [10](10-DECISIONS.md), the next row in [11](11-BUILD-PLAN.md) and [16](16-EXECUTOR-HANDOFF.md).
 
-Payment, Order lifecycle, goods fulfillment and service progress are independent. Payment never posts stock OUT; reservation reduces available only; verified goods fulfillment posts immutable ISSUE. Services never create fake stock. Payments are append-only. Recognized revenue follows goods fulfillment/service completion, not collection of DP. Missing cost remains unknown; gross profit is not net profit. Cashier shift reconciliation is Core.
+Payment, Order lifecycle, goods fulfillment and service progress remain independent. Payment never posts stock OUT; reservation reduces available only; verified goods fulfillment posts immutable ISSUE. Services never create fake stock. Payments are append-only. Revenue follows goods fulfillment/service completion, not collection of DP. Missing cost remains unknown; gross profit is not net profit.
 
-R00.1 produces RV01 only and stops at **owner Gate A**. R01.1 requires that gate plus **separate explicit implementation authorization**. Acceptance of Plan 3.1 grants neither visual approval nor production authorization. This cleanup does not start R00.1, R01.1 or any RV artifact.
+D54 adds **Kasir → Shift Saya → Tutup Shift → Laporan Shift**. [17](17-POS-SALES.md) owns the stable-cutoff/blind-count close, immutable report and print/PDF/CSV contract. Commercial value, applied payments by method and physical cash are distinct. Reconciliation is per shift/register/cashier, not calendar day. [04](04-AUTH-RBAC-SECURITY.md) restricts cashier reports to authorized own-shift operational data without private cost/profit. Later corrections preserve original snapshots; export/retry never creates another transaction.
+
+RV01 includes the Shift Saya/report entry concept in shell/workspace planning; detailed closing/report interaction remains RV04/R05. R00.1 stops at **owner Gate A**. R01.1 requires that gate plus **separate explicit implementation authorization**. Plan 3.1 acceptance and D54 grant neither visual approval nor production authorization. This refinement starts no R00.1, R01.1 or RV artifact.
 
 ## Repository and preserved work
 
-Verified branch: **plan/retail-order-replan**. Baseline: **44997a0**, “docs: finalize unified retail order plan 3.1”; earlier partial Astra work is preserved in **5c1af71**. Historical D01–D45 remain in 10 with explicit effective overrides; D46–D53 define the accepted Order baseline.
+Verified branch: **plan/retail-order-replan**. Starting baseline: **acb4063**, “docs: record Plan 3.1 approval and normalize planning docs”. D01–D53 history is preserved; D54 refines D51 without replacing the unified architecture or changing task counts.
 
-Existing local UTF-8 repairs were preserved and incorporated into this cleanup. Protected untracked items remain untouched and excluded from the planning commit:
+Protected untracked items remain untouched and excluded from the commit:
 
 - .agents/
 - apply-plan-3.1.ps1
@@ -38,22 +41,23 @@ Existing local UTF-8 repairs were preserved and incorporated into this cleanup. 
 - scratch_img/
 - skills-lock.json
 
-SHA-256 comparison confirmed these protected files unchanged during cleanup. The official LATANSA image is preserved; its manifest now distinguishes first-client/historical use from universal identity. No application code, dependency, migration, production configuration or new prototype was created. No push, merge or deployment is authorized by this task.
+SHA-256 comparison confirmed protected files unchanged. Only tracked documentation/planning files changed; no application code, dependency, migration, production configuration or prototype was created. One local documentation commit is authorized; no push, merge or deployment.
 
-## Cleanup and verification evidence
+## Verification evidence
 
-- Plan 3.1 acceptance recorded consistently in the current state, decisions, build plan, executor handoff, README and prototype registry.
-- Programmatic task audit: **47 unique tasks, 39 Core, 10 phases, all [ ]**; dependencies resolve and are acyclic. Shift-before-cash-checkout and receipt-before-cashier-integration dependencies are explicit; counts and scope unchanged.
-- All **22 tracked Markdown files** audited with strict UTF-8 decoding and suspicious mojibake/control-sequence scan. The Plan 3.1 section in 10 has no accidental question-mark punctuation. D01–D53 remain discoverable.
-- Active semantic audit checked Order versus POS, independent payment/stock/service/revenue facts, roles, brand neutrality, prototype mappings, historical decision boundaries and policy gates. Obsolete counts/Pxx references remain only as clearly identified history.
-- Local Markdown links/fences checked; the Product enum table delimiter was repaired. CP01 is identified as local/untracked rather than a missing committed review dependency.
-- Restore documentation now explicitly covers Orders/payments/fulfillments/services/shifts/documents and the existing recovery-epoch acceptance requirement. Reservation attention and unrecognized-DP refunds use the same accepted domain semantics across documents.
-- git diff --check passed; tracked documentation diff and status inspected. Pre-commit checks include the staged diff. The final local commit is reported in the task result; it is not a product completion claim.
-- .env.example retains **19 empty variables**. No tracked package.json/application test tooling exists; application builds, runtime/browser/device tests and restore drills were **not run**, because this task changes planning documentation only.
+- Full documentation diff reviewed; git diff --check passed before final state update and is required again before commit.
+- Strict UTF-8/mojibake checks passed across **22 tracked Markdown files**; local links, fences and table structure passed. Final state is rechecked before commit.
+- Programmatic tracker audit: **47 unique tasks / 39 Core / 10 phases**, all **[ ]**, dependencies resolve with no cycles. R05.3 atomically creates the close snapshot; R05.4 renders/exports it without a circular dependency.
+- D54 is reflected in requirements, architecture/domain, RBAC, UX/flows, POS07–POS15 acceptance, recovery, finance boundary, existing R05/R06 tasks and handoff. RV01 scope is entry-level only; R07.2 restores immutable shift reports.
+- Semantic review checked blind count, own-shift authorization across all output formats, no owner-finance leakage, commercial/payment/cash separation, noncash exclusion, correction immutability and uncertain/racing close recovery. This is specification verification, not a claim that future runtime tests passed.
+- AGENTS and 06/12/13/14 were assessed: existing ledger, scanner, notification and import contracts remain valid; no unrelated edits needed.
+- Plan 3.1 approval date/history and Q01/Q04/Q05 gates remain unchanged. Production is NOT STARTED.
+- Application/build/browser/device tests were **not run**: this task changes documentation only. No runtime feature is claimed complete.
+- Final staged scope and Git status are checked before the single local commit; its SHA is reported in the task result.
 
 ## Remaining policy gates
 
-There is no blocker to completing this documentation cleanup or preparing R00.1 in a subsequent execution task.
+There is no blocker to completing this Plan 3.1.1 documentation refinement or preparing R00.1 in a subsequent execution task.
 
 - **Q01 OPEN — tax/legal documents:** confirm required tax treatment, buyer identity and formal invoice needs before pilot and before enabling that behavior. Accepted retail receipt/A4 and truthful payment evidence do not claim legal/tax equivalence.
 - **Q02 RESOLVED by D46–D50:** DP, deferred/staged work and later payments are Core; initial profit reporting remains gross profit.
@@ -61,4 +65,4 @@ There is no blocker to completing this documentation cleanup or preparing R00.1 
 - **Q04 — pre-pilot recovery:** accept measured RPO/RTO and verify independent backup/recovery access before pilot.
 - **Q05 — pre-import inventory validation:** verify actual units/serial normalization and any pack/batch/expiry/consignment need before importing affected real stock.
 
-Next: **R00.1 / RV01**, without resuming historical CP01. Do not start it as part of this cleanup.
+Next: **R00.1 / RV01**, without resuming historical CP01. Do not start it as part of this documentation refinement.

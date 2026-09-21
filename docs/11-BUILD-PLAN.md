@@ -1,6 +1,6 @@
 # 11 — Official build plan and progress
 
-**Plan version 3.1 — 20 September 2026.**
+**Plan version 3.1.1 — 21 September 2026.** Owner-required D54 refines existing shift-close reporting; no new task or implementation authorization.
 
 **Plan 3.1 owner acceptance: APPROVED — 20 September 2026.** Evidence: the owner explicitly said “setuju Plan 3.1”. This accepts the planning baseline, not a visual revision or production implementation.
 
@@ -35,11 +35,13 @@ Old CP01 remains historical/unapproved and contributes no completion credit.
 - incomplete Astra v3.0: began retail/POS replanning but retained immediate/full-payment-only assumptions and stale v2.2 tracker.
 - **v3.1**: owner-approved unified Order flow; POS fast path, DP/partial payments, reservation, partial fulfillment, service jobs/progress, shift reconciliation and finance separation.
 
+- **v3.1.1**: owner-required D54 adds immutable own-shift close reports, blind-count protection and print/PDF/CSV within existing R05/R06 tasks; 47/39 unchanged.
+
 ## R00 — First visual contract
 
 | ID | Status | Class | Deliverable | Dependencies |
 | --- | --- | --- | --- | --- |
-| R00.1 | [ ] | FE | **RV01** brand-neutral shell/auth/role workspaces + business identity settings and fast POS skeleton; desktop/mobile/keyboard states; Gate A | Plan 3.1 acceptance satisfied — 20 September 2026 |
+| R00.1 | [ ] | FE | **RV01** brand-neutral shell/auth/role workspaces + business identity settings, fast POS skeleton and Shift Saya/report entry concept (detail in RV04); desktop/mobile/keyboard states; Gate A | Plan 3.1 acceptance satisfied — 20 September 2026 |
 
 R00.1 does not authorize production implementation.
 
@@ -88,12 +90,12 @@ R00.1 does not authorize production implementation.
 
 | ID | Status | Class | Deliverable | Dependencies |
 | --- | --- | --- | --- | --- |
-| R05.1 | [ ] | FE | **RV04** final fast checkout, shift, payment, receipt/reprint, refund/return and uncertain states; Gate A | R04.5 |
+| R05.1 | [ ] | FE | **RV04** final fast checkout, shift open/close, blind count, reconciliation/Laporan Shift, print/PDF/CSV/reprint/error/uncertain states, payment, receipt and refund/return; Gate A | R04.5 |
 | R05.2 | [ ] | BE | POS fast-path command through Order engine: full payment + immediate fulfillment + receipt facts atomically | R03.5, R04.4, R05.3 |
-| R05.3 | [ ] | BE | Register/CashierShift/CashEvent/opening float/blind closing/variance and race rules | R03.3 |
-| R05.4 | [ ] | BE | Receipt/payment-evidence snapshots, thermal/A4 browser rendering, numbering and reprint audit | R05.2 |
+| R05.3 | [ ] | BE | Register/CashierShift/CashEvent/opening float, source attribution, expected-cash derivation, blind count, close serialization/idempotency, immutable variance and atomic ShiftCloseReportSnapshot creation contract | R03.3 |
+| R05.4 | [ ] | BE | Receipt/payment-evidence and shift-close snapshot numbering/serializers/renderers; thermal/A4, browser print/PDF and shift CSV, allowlisted deterministic reprint/re-export and audit without financial mutation | R05.2 |
 | R05.5 | [ ] | BE | Owner-authorized commercial refund/return, bounded partials, linked stock/finance corrections | R05.2, R05.3 |
-| R05.6 | [ ] | FS | Approved RV04 integrated cashier UI; keyboard/HID/actual printer and recovery checks; Gate B | R05.1, R05.4, R05.5 |
+| R05.6 | [ ] | FS | Approved RV04 cashier close/report/export/reprint UI; keyboard/mobile/HID/actual printer, RBAC/no-leak and failure recovery; POS07–POS15; Gate B | R05.1, R05.4, R05.5 |
 
 ## R06 — Stock attention, finance and owner cockpit
 
@@ -102,16 +104,16 @@ R00.1 does not authorize production implementation.
 | R06.1 | [ ] | FE | **RV05** owner dashboard, restock attention, order/job attention, finance completeness and system states; Gate A | R05.6 |
 | R06.2 | [ ] | BE | StockHealth/AttentionEpisode/inbox/outbox/Web Push using available quantity including reservations | R03.4, R02.4 |
 | R06.3 | [ ] | BE | MWA goods costing, service direct-cost evidence, RevenueEvents from fulfillment/completion, report snapshots/completeness | R05.5, R04.3 |
-| R06.4 | [ ] | BE | Owner dashboard/report queries: order value, payments, outstanding, revenue, HPP, gross, jobs, LOW/OUT, shift variance | R06.2, R06.3 |
+| R06.4 | [ ] | BE | Owner dashboard/report queries: order value, payments, outstanding, revenue, HPP, gross, jobs, LOW/OUT, shift close status/variance and authorized reconciliation/report drill-down | R06.2, R06.3 |
 | R06.5 | [ ] | FS | Approved RV05 real owner/operations views, periods/drill-down/incomplete/error states; Gate B | R06.1, R06.4 |
-| R06.6 | [ ] | BE | Golden finance/refund/return/cost-revision tests + owner-only no-leak matrix | R06.5 |
+| R06.6 | [ ] | BE | Golden finance/refund/return/cost-revision tests + cashier report/PDF/CSV no-leak matrix for acquisition cost/HPP/evidence/margin/profit/private finance | R06.5 |
 
 ## R07 — Deployment, recovery and Core pilot
 
 | ID | Status | Class | Deliverable | Dependencies |
 | --- | --- | --- | --- | --- |
 | R07.1 | [ ] | BE | Production Compose/Caddy, environment guards, worker supervision, storage, health and release procedure | R06.6 |
-| R07.2 | [ ] | BE | Encrypted off-VPS backup, isolated restore, reconciliation of orders/payments/reservations/ledger/jobs/shifts/docs; measured RPO/RTO | R07.1 |
+| R07.2 | [ ] | BE | Encrypted off-VPS backup, isolated restore, reconciliation of orders/payments/reservations/ledger/jobs/shifts/immutable close snapshots/docs and retained render assets; measured RPO/RTO | R07.1 |
 | R07.3 | [ ] | FS | System/backup/notification operational views and real owner-device notification acceptance or documented limitation | R07.2 |
 | R07.4 | [ ] | FS | Full Core E2E/concurrency/load/mobile/scanner/printer/restore regression | R07.3 |
 | R07.5 | [ ] | FS | Cutover, opening reconciliation, SOP, real-role pilot and explicit owner production acceptance | R07.4 |
@@ -138,7 +140,7 @@ Core requires all R00–R07 tasks [x] and no unresolved safety blocker.
 
 ## Tracker rules
 
-Next eligible task is **R00.1 / RV01**, still [ ]; this cleanup starts no prototype. R01.1 remains unauthorized until R00.1 Gate A and a separate explicit implementation instruction. Task numbering is not a substitute for dependencies: R05.3 must precede R05.2 because cash checkout requires shifts, and R05.6 requires receipt rendering from R05.4. These dependency clarifications add no tasks or product scope.
+Next eligible task is **R00.1 / RV01**, still [ ]; this Plan 3.1.1 refinement starts no prototype. R01.1 remains unauthorized until R00.1 Gate A and a separate explicit implementation instruction. Task numbering is not a substitute for dependencies: R05.3 must precede R05.2 because cash checkout requires shifts, and R05.6 requires receipt rendering from R05.4. D54 refines existing deliverables without adding tasks. R05.3 creates closing facts and the canonical snapshot atomically; R05.4 consumes that contract for rendering/export and does not become a prerequisite for R05.3. No CLOSED shift may rely on later best-effort snapshot creation.
 
 R02.4 establishes the inventory transaction boundary, including the stock-health integration contract in 13. R03.4 applies the same contract to reservations; R06.2 completes the evaluator/episode/inbox/outbox/delivery implementation and tests before pilot. Earlier development slices are not permission to operate live stock without these invariants. Revenue facts belong to fulfillment/completion transactions; R06.3 implements their valuation/reporting, not a second revenue source.
 

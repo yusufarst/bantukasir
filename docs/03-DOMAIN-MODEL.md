@@ -74,9 +74,10 @@ Milestone progress does not itself imply payment, revenue or stock movement.
 | Register (M) | Logical cash drawer/counter |
 | CashierShift (M) | User/register OPEN → CLOSING → CLOSED |
 | CashEvent (M) | OPENING_FLOAT, PAYMENT_CASH, REFUND_CASH, PAID_IN, PAID_OUT |
-| ShiftCount / ShiftClose (M) | Blind count, expected amount, difference, review/reason |
+| ShiftCount / ShiftClose (M) | Stable cutoff, blind count, expected amount, immutable variance and durable unique close; later review/reason linked separately |
+| ShiftCloseReportSnapshot (M) | Unique close/shift document; frozen identity/template, source revisions/cutoff, commercial activity, method payments and cash reconciliation; created atomically with close; no private finance |
 
-Any role executing cash payment uses their own eligible open shift/register.
+Any role executing cash payment uses their own eligible open shift/register. Commercial confirmations/changes, payments (including noncash) and refunds handled within a shift preserve source shift/actor/register/location attribution at commit. Activity outside a shift is explicitly separate, never inferred from date. [17](17-POS-SALES.md) owns attribution and snapshot content; later corrections link new facts without rewriting a closed report.
 
 ## Derived status dimensions
 

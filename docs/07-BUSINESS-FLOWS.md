@@ -69,13 +69,13 @@ Owner/Operations act on LOW/OUT attention. Read state does not resolve it. Recei
 
 Open assigned register with counted float. Cash events derive from actual cash payments/refunds plus authorized paid-in/out.
 
-Closing blocks new cash operations, resolves uncertain attempts, collects blind count, then shows expected vs actual. Difference is retained/reviewed, never silently balanced.
+Use **Kasir → Shift Saya → Tutup Shift → Laporan Shift**. Closing establishes a stable cutoff, blocks new shift-attributed operations and resolves original uncertain attempts before blind physical counting. Confirm count → atomic close/snapshot → show expected/physical/variance → print/PDF/CSV. Difference is retained/reviewed, never silently balanced. Own shift history reuses the immutable snapshot; failure retries never create transactions. [17](17-POS-SALES.md) owns the sequence, separate commercial/payment/cash sections and per-shift (not calendar-day) attribution.
 
 ## F12 — Owner review
 
 Period: Hari Ini, 7 Hari, Bulan Ini, Bulan Lalu, Rentang Tanggal.
 
-Keep distinct: nilai pesanan, pembayaran masuk, sisa tagihan, recognized revenue, HPP/direct service cost, laba kotor, active/late orders/jobs, LOW/OUT and cashier variance. Incomplete cost is explicit.
+Keep distinct: nilai pesanan, pembayaran masuk, sisa tagihan, recognized revenue, HPP/direct service cost, laba kotor, active/late orders/jobs, LOW/OUT and cashier variance. Incomplete cost is explicit. Authorized owner drill-down shows each shift close status, variance and original report; later corrections are separate linked facts.
 
 ## F13 — Incident/recovery
 

@@ -52,6 +52,10 @@ A payment command never mutates stock simply because money arrived.
 
 Fulfillment and its ledger ISSUE commit together. Consumed reservation is reduced in the same transaction.
 
+### Shift close and operational reporting
+
+POS & Cashier owns the [D54 close/report contract](17-POS-SALES.md). CashierShift/CashEvent and existing commercial/payment/refund facts remain the sources; ShiftCloseReportSnapshot is their immutable as-closed document, not a new financial source. Closing facts, snapshot, audit and durable result commit atomically. Rendering and export run after commit over allowlisted data; failures cannot undo closing.
+
 ### Background work
 
 Use PostgreSQL-backed outbox/job tables and the same-codebase worker for push delivery, finance valuation/report publication, bounded import work and health metadata. No external queue is required for Core.
@@ -60,7 +64,7 @@ Use PostgreSQL-backed outbox/job tables and the same-codebase worker for push de
 
 command/idempotency → actor/policy → commercial aggregate → shift/register when used → locations/products → balances/reservations → serials → append-only result/audit.
 
-Task specs may refine but must not invert the global order.
+Task specs may refine but must not invert the global order. Every writer attributing commercial/payment/cash facts to a shift acquires its guard before appending and checks OPEN. Close uses the same guard to establish CLOSING and a stable cutoff; it reads committed immutable facts without acquiring commercial locks after the shift lock. No human counting or printer/network wait holds database locks. Uncertain original commands must resolve before finalization, as specified in 17.
 
 ## Sources of truth
 
@@ -76,7 +80,7 @@ Balances/status/dashboard rows are projections and must be reconcilable.
 
 Use configured private local storage on the VPS for imports/business assets. Store logical object keys, never machine-specific paths.
 
-Receipt/A4 output uses browser HTML/CSS printing and print-to-PDF by default. No paid PDF service is required.
+Receipt/A4 and shift-close reports use browser HTML/CSS printing and print-to-PDF. Shift reports also provide first-party UTF-8 CSV from the original snapshot, with per-request authorization and safe text escaping under 17. No paid PDF service is required.
 
 ## Branding boundary
 

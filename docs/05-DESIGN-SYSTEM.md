@@ -35,7 +35,7 @@ Home prioritizes critical exceptions, stock attention, active/late orders, outst
 
 Desktop baseline:
 - Dasbor
-- Kasir
+- Kasir: Shift Saya → Tutup Shift → Laporan Shift; own Riwayat Shift
 - Pesanan
 - Pekerjaan
 - Pembayaran
@@ -59,13 +59,17 @@ Show independent status badges only when they answer distinct questions.
 
 Major interaction families use deterministic HTML/CSS prototypes before their production UI:
 
-- **RV01** shell/auth/role workspaces, business identity/settings preview + fast POS skeleton;
+- **RV01** shell/auth/role workspaces, business identity/settings preview + fast POS skeleton and Shift Saya/report entry concept (detail remains RV04);
 - **RV02** goods/services, barcode/labels, receiving/inventory;
 - **RV03** order/booking, DP/partial payment, reservation, partial fulfillment, service progress;
-- **RV04** cashier shift, payment, receipt/reprint, refund and final fast-checkout states;
+- **RV04** cashier open/close, blind physical count, reconciliation and Laporan Shift, print/PDF/CSV/reprint/failure/uncertain states, payment, receipt, refund and final fast checkout;
 - **RV05** owner dashboard, restock attention, finance reports and system/recovery states.
 
 Gate A approves prototype direction only. Gate B approves real integrated UI after technical/browser evidence. Prototypes are interleaved with vertical slices; all five do not block backend foundation work.
+
+## Shift-close interaction
+
+Keep Shift Saya secondary to checkout. RV04 follows the stable-cutoff/blind-count sequence in [17](17-POS-SALES.md): CLOSING and pending-command resolution, physical count/input/confirmation, committed comparison and immutable report. No expected aggregate in pre-count UI or payloads. Pause scanner capture; support keyboard and mobile counting, safe pending/retry states and distinct commercial/payment/cash report sections. Show Cetak, Simpan sebagai PDF, Ekspor CSV and authorized history/reprint after close. Export errors retain the closed state. Owner RV05 adds shift status/variance and authorized report drill-down.
 
 ## Required states
 

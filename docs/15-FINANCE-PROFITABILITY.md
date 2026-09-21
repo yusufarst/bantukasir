@@ -20,6 +20,10 @@ Owns management-reporting semantics, costing and completeness. This is not full 
 
 Opening float, paid-in/out and cashier variance are cash-control facts, not revenue/profit.
 
+## Cashier operational reporting boundary
+
+D54 [Laporan Shift](17-POS-SALES.md) is own-shift cash control, separate from owner profitability reports. It distinguishes commercial order value, applied payments by method and physical cash reconciliation; DP remains payment, not automatic revenue. Noncash receipts never enter expected drawer cash. Per-shift snapshots remain immutable after later corrections; calendar views aggregate shifts without summing repeated outstanding snapshots. [04](04-AUTH-RBAC-SECURITY.md) governs access. Cashier print/PDF/CSV excludes acquisition/purchase cost, HPP, cost evidence, margin, gross/net profit and private owner finance. Owner views may show shift close status/variance and authorized original-report drill-down.
+
 ## Recognition baseline
 
 ### GOODS

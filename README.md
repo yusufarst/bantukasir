@@ -2,13 +2,13 @@
 
 Production-grade retail operations platform for one configurable business per deployment. The product is **not LATANSA-locked**: LATANSA may be the first configured business identity, but business name, logo, accent, document identity and contact details are runtime configuration.
 
-Core combines fast counter POS with real-world order operations: booking, DP/partial payment, stock reservation, partial goods fulfillment, scheduled service work, progress/milestones, later settlement, barcode inventory, stock attention, cashier reconciliation and truthful gross-profit reporting.
+Core combines fast counter POS with real-world order operations: booking, DP/partial payment, stock reservation, partial goods fulfillment, scheduled service work, progress/milestones, later settlement, barcode inventory, stock attention, cashier reconciliation with immutable own-shift print/PDF/CSV reports and owner-only truthful gross-profit reporting.
 
 The convenience-store comparison describes operational speed only. Do not copy another retailer's branding or UI.
 
 ## Current state
 
-Planning version **3.1** is finalized on `plan/retail-order-replan`. Production implementation has **not started**. The old LATANSA-specific CP01 is historical/unapproved and is not the visual contract for this product direction.
+Planning version **3.1.1** incorporates owner-required D54 cashier shift-close reporting on `plan/retail-order-replan`. Production implementation has **not started**. The old LATANSA-specific CP01 is historical/unapproved and is not the visual contract for this product direction.
 
 **Plan 3.1 owner acceptance: APPROVED — 20 September 2026** (“setuju Plan 3.1”). Progress remains **0/47 overall, 0/39 Core**. Next eligible task is **R00.1 / RV01**, which stops at owner Gate A. R01.1 still needs that gate and separate explicit implementation authorization.
 

@@ -42,6 +42,15 @@ Tests prove behavior; they do not grant owner visual approval.
 - POS04 shift close correctly serializes against racing cash transaction.
 - POS05 blind count preserves variance; no silent balancing.
 - POS06 normal scan-to-receipt flow stays usable without deferred-order fields.
+- POS07 blind close reveals no expected aggregate through UI/API/preview/export before count submission; stable-cutoff count, expected and immutable variance persist. Rp4,600,000 expected and Rp4,590,000 count preserve −Rp10,000 without balancing.
+- POS08 authorized own-shift print/PDF/CSV/history/re-export reuse report identity and create no financial transaction; cross-cashier IDs, query scope, file URLs and revoked authorization cannot bypass ownership.
+- POS09 report separates commercial value, payments and physical cash: Rp1,000,000 order / Rp300,000 DP / Rp700,000 outstanding; later payment in another shift does not repeat order value/count. Amendments/cancellations are linked deltas. Two cashiers on one date reconcile independently; overnight shift is not split; outstanding snapshots are not summed.
+- POS10 noncash QRIS/transfer/card never inflate expected physical cash; tender/change uses applied cash once, payment-linked CashEvents are not double counted, and an unexecuted refund/credit removes no cash.
+- POS11 every cashier report/CSV/PDF/detail DTO excludes acquisition/purchase cost, HPP, cost evidence, margin, gross/net profit, private finance and security-audit data; reporting grants no owner refund power. CSV text formula/control prefixes and quoting are safe.
+- POS12 later refund/correction and changed business/method labels preserve original snapshot content/identity; current correction linkage stays separate and payout belongs to the executing later shift.
+- POS13 race payment/refund/paid-in/paid-out and other shift-attributed writes against CLOSING: each fact is included once before cutoff or safely rejected; unresolved outcomes block final close; premature counts require recount before expected cash is revealed.
+- POS14 lost/duplicate close requests, including different keys, resolve to one durable close/snapshot; conflicting count cannot overwrite it. Injected snapshot/audit/receipt failure rolls back final close; CLOSED without snapshot is impossible.
+- POS15 printer/PDF/CSV failure cannot rollback/reopen/duplicate close; retry renders the same snapshot and audit remains separate from money facts.
 
 ### Refund/return
 - RET01 cumulative refund cannot exceed eligible amount.
@@ -66,7 +75,7 @@ Tests prove behavior; they do not grant owner visual approval.
 - FIN06 returns/refunds correct revenue/HPP according to linked physical facts without rewriting originals, including refund of unrecognized DP without a false revenue/HPP reversal.
 
 ### Recovery
-- REC01 restored system reconciles orders, payments, documents, ledger, reservations, serials, jobs and shifts.
+- REC01 restored system reconciles orders, payments, documents, ledger, reservations, serials, jobs and shifts, including unique close receipts/snapshots and retained identity/template assets; original shift report content survives linked later corrections.
 - REC02 commands possibly executed after backup cutoff are not blindly replayed.
 - REC03 recovery epoch/status flow prevents stale browser envelopes from creating duplicates.
 - REC04 real restore drill measures RPO/RTO before pilot.

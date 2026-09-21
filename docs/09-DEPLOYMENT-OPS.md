@@ -12,7 +12,7 @@ Target design only. No deployment, Compose file, running backup or job exists. U
 | Background jobs/outbox | PostgreSQL + same-codebase worker | Rp0 |
 | Search | PostgreSQL indexes/search first | Rp0 |
 | Barcode generation | Open-source library + browser print | Rp0 |
-| Receipt/A4 | HTML/CSS browser print / print-to-PDF | Rp0 |
+| Receipt/A4/shift reports | HTML/CSS browser print / print-to-PDF + first-party CSV | Rp0 |
 | Notifications | In-app inbox + Web Push | Rp0 service fee |
 | Analytics/reporting | First-party SQL/reporting | Rp0 |
 | CMS/public content later | First-party structured DB content | Rp0 |
@@ -90,13 +90,15 @@ Cheapest responsible option: an already-owned independent device/host or existin
 1. Declare incident/cutoff to owner; stop posting, external delivery and automatic import/valuation resume. Preserve the old source read-only.
 2. Select a verified backup, match checksum/version and decrypt on an isolated recovery host. Record snapshot time and potential missing transaction window.
 3. Prepare compatible PostgreSQL, roles/extensions/permissions and referenced media. Restore into a **new database**, failing on errors rather than masking partial recovery.
-4. Reconcile Orders/revisions, append-only payments/refunds, goods fulfillments and their ledger legs, service jobs/progress/completions, cashier shifts/cash events/counts, document snapshots, ledger/balances, serial positions, reservations, health/episodes/events/outbox, unique constraints and ImportCommit/CommandReceipt. Verify media checksums; run ANALYZE and controlled smoke checks.
+4. Reconcile Orders/revisions, append-only payments/refunds, goods fulfillments and their ledger legs, service jobs/progress/completions, cashier shifts/cash events/counts, unique close receipts and ShiftCloseReportSnapshots with source cutoffs/revisions, document snapshots, ledger/balances, serial positions, reservations, health/episodes/events/outbox, unique constraints and ImportCommit/CommandReceipt. Verify media checksums; run ANALYZE and controlled smoke checks.
 5. Revoke restored sessions; assess credential rotation. Establish a new recovery epoch before reopening commands so pre-restore browser envelopes cannot execute as new work. Suppress stale pre-cutoff push replay by default while preserving inbox/history. Resume delivery only after reconciliation.
 6. Reconcile physical goods, printed/payment evidence, actual money and performed service work after the snapshot. A missing restored receipt does not prove the original never committed. Decide replay/correction from evidence before resubmitting Orders/payments/fulfillments or requeuing imports; never re-charge, refund or issue by assumption and never use SQL balance edits.
 7. Finance checks sequences, evidence versions, clearing, watermarks and published pointers. Reports stay incomplete until reconciled. CMS publication pointers/assets must resolve to the restored published revisions.
 8. Owner confirms remaining business differences; operator switches traffic and validates auth/scan/commit/attention before reopening posting. Record actual RPO/RTO, backup identity, checks and follow-up.
 
 Full restore drill before pilot, monthly, and after major schema/storage/backup changes. A successful backup job alone does not pass acceptance.
+
+Shift-report restore acceptance: verify every CLOSED shift has its unique close/snapshot/command receipt, reconcile source facts and variance, and reproduce original allowlisted report content after later corrections. Retain referenced identity/logo/template revisions with snapshots. Re-export creates no money/stock facts. Print/PDF/CSV files are conveniences, not substitutes for database/media backup; later linked corrections do not overwrite restored historical snapshots.
 
 ## Health and schedules
 
@@ -121,7 +123,7 @@ A dead VPS cannot notify from itself. Before production use an independent exist
 
 | Data | Initial policy |
 | --- | --- |
-| Ledger, historical actors, business audit, receipts, episodes/events | No automatic deletion; retain for platform lifetime with traceable archive |
+| Ledger, historical actors, business audit, receipts, shift-close snapshots, episodes/events | No automatic deletion; retain for platform lifetime with traceable archive |
 | UserNotification | UI archive after 90 days; open episodes stay accessible |
 | Delivery attempts/debug logs | 30 days; final event/result links remain |
 | Security access/login logs | 90 days, restricted; incident records held until resolved |

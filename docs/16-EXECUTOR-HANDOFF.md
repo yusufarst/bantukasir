@@ -12,6 +12,8 @@ Business rules remain in canonical specs. This file owns session execution proce
 
 ## Next execution
 
+Current **Plan 3.1.1** incorporates owner-required D54 shift-close reporting; counts remain 47 total / 39 Core. The approval below is the preserved Plan 3.1 baseline, not authorization to execute this documentation-only refinement.
+
 **Plan 3.1 owner acceptance: APPROVED — 20 September 2026**, by the explicit statement “setuju Plan 3.1”. Next eligible work is **R00.1 — RV01**. It remains unstarted; this planning cleanup does not execute it.
 
 RV01 is a standalone deterministic visual/interaction prototype:
@@ -19,7 +21,7 @@ RV01 is a standalone deterministic visual/interaction prototype:
 - role-specific landing hierarchy;
 - business identity/settings preview for the R01.3 configuration flow;
 - persistent desktop sidebar/mobile drawer;
-- fast POS skeleton;
+- fast POS skeleton and **Shift Saya → Tutup Shift → Laporan Shift** entry concept; detailed blind count/reconciliation/report/export interactions remain RV04/R05 under 17;
 - progressive-disclosure entry to **Pesanan / DP**;
 - relevant loading/empty/error/uncertain states.
 

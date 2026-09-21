@@ -34,7 +34,7 @@ Roles describe work, not family relationship. 04 owns permissions.
 12. Service jobs with schedule, milestones/progress and completion; no stock mutation.
 13. Mixed goods + service orders.
 14. Fast POS as a minimal-field path: scan/search → cart → pay → fulfill → receipt.
-15. Cashier shifts/opening float/closing count/variance and cash events.
+15. Cashier shifts/opening float/cash events, blind closing count/variance, and immutable own-shift reports with browser print/PDF and CSV export under D54.
 16. Automatic receipt/payment evidence and A4 representation; reprint without duplicate transaction.
 17. Owner-authorized commercial refund/return; immutable original history.
 18. Period reporting: Hari Ini, 7 Hari, Bulan Ini, Bulan Lalu, Rentang Tanggal.
@@ -49,6 +49,8 @@ Default screen is **Kasir**. Normal retail sale requires no customer, schedule o
 Primary path: `scan/search → quantity → bayar → selesai/cetak`.
 
 Secondary **Pesanan / DP** reveals only customer, payment amount, schedule/due date, reservation and service-booking fields that are actually needed.
+
+End of work: **Kasir → Shift Saya → Tutup Shift → Laporan Shift**. Count physical cash before expected cash is revealed; view/reprint/export the immutable own-shift report. Keep order value, received payments and physical cash separate. Reconciliation is per shift/register/cashier, not per calendar day. [17](17-POS-SALES.md) owns the close/report contract; [04](04-AUTH-RBAC-SECURITY.md) excludes private cost/profit and other cashiers from cashier access.
 
 ### Admin Operasional
 Default workspace prioritizes:
@@ -100,6 +102,7 @@ An order may be `CONFIRMED + PARTIALLY_PAID + GOODS_PARTIAL + SERVICE_IN_PROGRES
 | B13 | Staff/public payloads never expose owner-only cost/margin/profit |
 | B14 | Restore reconciles orders, payments, reservations, ledger, jobs, receipts and shifts |
 | B15 | Cashier/operations flows pass keyboard/mobile progressive-disclosure review |
+| B16 | Blind shift close preserves variance and immutable own-shift print/PDF/CSV; POS07–POS15 verify scope, separation, recovery and no private finance leakage |
 
 ## Later unless explicitly promoted
 

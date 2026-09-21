@@ -24,6 +24,14 @@ Default exclusions: stock adjustment/receiving/transfer, arbitrary price master 
 
 Use named backend permissions mapped to fixed roles; no dynamic role-builder UI in Core. Apply object/scope checks to register/location/order context. Reprint/recovery rechecks current authorization.
 
+### Own-shift reports — D54
+
+Named permissions for own shift read/close/report/export/reprint require the authenticated actor to own the shift and retain authorized register/location scope. CASHIER may access its own operational history and closed reports, never arbitrary coworker or company-wide reporting. OPERATIONS_ADMIN conducting its own shift has the same own-shift report scope; routine operations authority does not grant coworker reports. SUPER_ADMIN may inspect authorized shifts, close status and variance drill-down across cashiers.
+
+Allowlist shift identity, times/status, commercial counts/value/deltas, relevant outstanding, received payments/refunds by method, opening float, cash events, confirmed count/expected/variance, safe notes and transaction references under [17](17-POS-SALES.md). Before blind-count submission, every endpoint/DTO/preview/export withholds server-derived expected cash and reconciliation results. Independently permitted payment facts do not grant an expected-cash report.
+
+Reauthorize list/detail/history/print/PDF/CSV/reprint and private object downloads on every request. Reject guessed IDs, cross-user query scopes and file/cache bypasses; no shared sensitive response cache or public report URL. Staff export DTOs never include acquisition/purchase cost, HPP, cost evidence, margin, gross/net profit, private owner finance or security/audit administration fields. Report access grants no refund execution permission. Print/export request audit remains server-side; it does not grant audit administration.
+
 ## Authentication
 
 Use self-hosted Better Auth after implementation-time version/security verification:
