@@ -1,0 +1,38 @@
+{
+  "routes": [
+    "#owner/dashboard",
+    "#owner/pos",
+    "#owner/session",
+    "#owner/produk",
+    "#owner/stok",
+    "#owner/masuk",
+    "#owner/keluar",
+    "#owner/restock",
+    "#owner/laporan",
+    "#owner/hpp",
+    "#owner/riwayat",
+    "#owner/pengguna",
+    "#owner/bisnis",
+    "#owner/sistem",
+    "#ops/dashboard",
+    "#ops/produk",
+    "#ops/stok",
+    "#ops/masuk",
+    "#ops/keluar",
+    "#ops/restock",
+    "#ops/riwayat",
+    "#cashier/pos",
+    "#cashier/session"
+  ],
+  "checks": [
+    "long cart/payment reachability, session route/cart/query retention",
+    "unknown/out barcode preserves draft",
+    "test-only null cost suppresses HPP/gross value, no profit point, tooltip disclosure",
+    "calendar roving keyboard crosses year",
+    "end before start prevented, start adjusts end with feedback, nested outside cancels draft",
+    "desktop lower navigation scroll preserved, rail account/outside no layout shift",
+    "Owner active POS hides global search, sidebar collapse retains query/session/cart",
+    "reduced motion"
+  ],
+  "errors": []
+}

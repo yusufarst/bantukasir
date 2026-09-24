@@ -1,6 +1,8 @@
 # 16 — Antigravity / Codex executor handoff
 
-A fresh session continues from repository, not conversation summary. Optimized Plan 1.1 has 36 Core tasks / 154 focused hours, all NOT STARTED. Current task none; next **BK01 — UI01 Foundation + Shell**. This replanning does not authorize starting it.
+A fresh session continues from repository, not conversation summary. Optimized Plan 1.1 has 36 Core tasks / 154 focused hours, 1 complete. BK01 — UI01 Foundation + Shell is COMPLETE. BK02–BK36 remain NOT STARTED. Read the UI01 review evidence and DESIGN.md: UI01 R6 retains Source Sans 3 based on the owner-provided LATANSA reference, owner-approved on 25 Sep 2026. Use prototypes/ui01/PATTERNS.md to reuse the approved BK-DS-UI01-r6 master candidate; no fresh foundational design pass is needed for BK02–BK04. BK02 is now the active next task; production frontend requires complete Gate A (BK05). Desktop outside clicks preserve navigation; mobile outside clicks dismiss the drawer. Read the current R6 evidence: functional date filtering, role-scoped sample CSV, ATK fixtures, priority attention and stable account navigation.
+
+Current R6 packet: [.impeccable/review/r6/REVIEW.md](../.impeccable/review/r6/REVIEW.md). Use the final continuation subpacket for current captures; earlier R6, R5 and older captures are historical. R6 final uses Indonesian long dates, compact field-driven date pickers, bounded landscape POS panels with ATK thumbnails and one local search, alongside period draft/apply and cross-year selection, interactive truthful Owner chart, simplified account destinations, stable navigation scroll and ergonomic barcode/cart entry. Hari Ini uses a daily aggregate because hourly fixture facts are absent. Read PATTERNS before reuse.
 
 ## Agent operating model
 

@@ -1,8 +1,8 @@
 # 11 — BantuKasir Plan 1.1
 
-**21 September 2026. Optimized Plan 1.1 delivery baseline; documentation/planning only. 36 total tasks, all 36 Core, 0/36 complete.** No active executor; all implementation/prototype tasks NOT STARTED. Hard ceiling 50 includes prototypes, integration, testing and deployment. Later topics in [01](01-PRD.md) have no task IDs/estimates and are excluded from this baseline.
+**25 September 2026. Optimized Plan 1.1; 36 total tasks, all 36 Core, 1/36 complete.** BK01 is COMPLETE. BK02–BK36 remain NOT STARTED. Hard ceiling 50 includes prototypes, integration, testing and deployment. Later topics in [01](01-PRD.md) have no task IDs/estimates and are excluded from this baseline.
 
-Next: **BK01 — UI01 Foundation + Shell** (WAITING OWNER REVIEW).
+Next: **BK02 — UI02 Product Operations** (NOT STARTED).
 
 ## Capacity and phases
 
@@ -55,7 +55,7 @@ Common READ: AGENTS, 00, this task, 01, 02, 10, plus listed docs. Common DoD: ap
 
 | ID | Status | Goal / deliverable | Engineering prerequisites | Completion hold / restriction | Hours |
 | --- | --- | --- | --- | --- | ---: |
-| BK01 | WAITING OWNER REVIEW | UI01 Foundation + Shell | None | Owner Gate A | 4 |
+| BK01 | COMPLETE | UI01 Foundation + Shell | None | UI01 owner-approved (Gate A remains open for UI02-UI04) | 4 |
 | BK02 | NOT STARTED | UI02 Product Operations | BK01 | UI tools | 4 |
 | BK03 | NOT STARTED | UI03 POS | BK01 | UI tools | 4 |
 | BK04 | NOT STARTED | UI04 Reports | BK02, BK03 | UI tools; G3 assumptions visibly provisional | 4 |
@@ -98,13 +98,24 @@ Each card supplements the tracker and common DoD; no giant executor prompts need
 
 ### BK01 — UI01 Foundation + Shell
 
+- **R6 continuation owner direction (24 September 2026, verified review candidate):** preserve the existing candidate; bound and align desktop/tablet POS panels with internal cart/catalog scrolling; add compact authored ATK thumbnails; suppress global search on active POS. Replace numeric visible dates globally with Indonesian long dates, and replace the two-month period workbench with compact presets and Custom Range fields opening individual anchored calendars. Apply commits the draft; cancel/dismiss preserves the active period. Verify 375/440/768/1024/1440 and landscape, routing/session/cart/sidebar/role integrity. BK01 is COMPLETE (UI01 R6 owner-approved 25 Sep 2026). BK02 is authorized to start next; full production Gate A remains open. Final continuation evidence: 40 responsive cases, five period/chart/account groups, seven POS viewports, 23 destinations, eight integrity groups and three touch/landscape groups; zero captured page errors. See [R6 final review](../.impeccable/review/r6/final/REVIEW.md).
+
+
+R6 owner request (24 September 2026), recorded before implementation: compact draft/apply period picker with arbitrary cross-month/year navigation; interactive period-aware owner trend with truthful missing-cost handling; simplified role-safe account menu; preserved navigation scroll; explicit HID barcode entry and reachable cashier summary; restrained border/surface/density refinement. Preserve R5 staged work, synthetic UI01 scope, WAITING OWNER REVIEW and all downstream holds. Initial R6 evidence (historical; continuation above supersedes affected captures): 40 responsive cases, 13 interaction groups, 23 route destinations, 5 integrity and 4 emulated-touch/identity checks passed. Actual Impeccable context/detect and free 21st catalog research are recorded in [R6 review](../.impeccable/review/r6/REVIEW.md). BK01 remains WAITING OWNER REVIEW.
+
+Owner remediation continuation (candidate R5): compact role-safe notification feed; richer own-account/profile example without self-assigned roles or theme/notification preferences; quantity decrement/increment and ergonomic mobile cart entry; stronger navy/neutral composition and balanced density. Also resolve the outstanding custom-calendar bounds, owner trend chart, stable rail account overlay and mobile bottom-navigation feedback. Scope remains UI01 synthetic interactions, not production account writes, full checkout, UI02 or full reports. Status remains WAITING OWNER REVIEW; this note records requirements before implementation. R5 verification: 36 route/viewport cases at 320/375/440/768/1024/1440px and 10 interaction groups passed with zero captured page errors. Range selection/application, notification bounds, stationary rail account, quantity totals, draft preservation, profile scope, drawer dismissal and reduced motion were checked. Historical packet: [.impeccable/review/r5/REVIEW.md](../.impeccable/review/r5/REVIEW.md). Historical R3/R4 evidence is retained; approval remains pending.
+
+R3 owner instruction: refine the existing shell with a smaller wordmark, useful top-right utilities only, Dashboard naming, functional Harian/7 Hari/1 Bulan/Custom Range filters, role-safe Lihat Laporan/export intent, meaningful KPI comparisons/status, ATK fixtures, priority attention rows, contained account popovers and restrained responsive interactions. Dates use DD MM YYYY; detailed times use hh:mm:ss. Preserve role boundaries and the desktop-stable/mobile-outside-dismiss rule. Independent UX audit fixes applied: accessible skip link, destination heading focus, search input focus, 3:1 control contrast, disabled unavailable products, semantic KPI alert variants, mobile attention prioritization, and owner dashboard hierarchy rebalancing. This authorizes UI01 remediation only; owner approval remains pending. R3 verification: 24 responsive cases and 16 interaction groups pass, including date validation, role-scoped CSV downloads, contained account menus at 320px, owner/cashier session identity and search. JavaScript syntax and staged whitespace checks pass. Historical review packet: [R3](../.impeccable/review/r3/REVIEW.md). Master candidate BK-DS-UI01-r3; WAITING OWNER REVIEW.
+
 - Goal: Use verified tools to establish proposed BantuKasir brand/semantic foundation, login, role shells, profile pattern and active cash-session entry/identity.
 - Depends on: None; subsequent task authorization.
 - Read: [05](05-DESIGN-SYSTEM.md), [04](04-AUTH-RBAC-SECURITY.md).
 - Main files/domain: prototypes/ui01; PRODUCT.md; DESIGN.md.
-- Acceptance/verification: UI01 desktop/mobile/keyboard states, real-logo availability/status and tool critique recorded; Inter/palette/session-shell patterns consolidated as proposed.
+- Acceptance/verification: UI01 desktop/mobile/keyboard states, real-logo availability/status and tool critique recorded; UI01 R3 adopts Source Sans 3 based on the owner-provided reference; palette/session-shell patterns remain proposed until visual approval.
 - Stop if: Missing 21st/Impeccable or paid-only access; real BantuKasir logo remains absent when logo-specific brand approval is required; stop at review, no production UI.
-- Evidence: 21st.dev search returned references (e.g. Sidebar [id: 1627] by shadcn, Dashboard and Landing [id: 776]). Impeccable critique invoked and verified against DESIGN.md (Inter retained per brief). UI01 prototypes built in prototypes/ui01/. WAITING OWNER REVIEW.
+- Prior R2 evidence: R2 owner-directed remediation adds shared header utilities, operational history/report actions, richer surfaces, desktop logo/rail toggle, mobile outside-dismiss drawer, bottom-anchored account popovers and existing owner capability shortcuts. Owner clarified that outside clicks preserve desktop navigation. 24 responsive cases and 12 interaction groups pass; evidence in [R2 review](../.impeccable/review/r2/REVIEW.md). The original design pass follows the read-only LATANSA CP01 visual reference, with BantuKasir identity, role-specific shells, login, profile, and cashier no-session/open-session entry. Source Sans 3 is self-hosted (OFL). Actual free 21st.dev catalog pages were inspected; no callable 21st MCP was available. Impeccable CLI context/detector and independent finish review are documented with browser evidence in [UI01 review](../prototypes/ui01/REVIEW.md). The prior R2 candidate and the copy-ready [pattern handoff](../prototypes/ui01/PATTERNS.md) establish reuse for BK02–BK04 after owner approval. Original independent review found a session-state issue; fixes were checked locally after the follow-up agents hit usage limits. All screens remain a prototype; no backend/production implementation or Gate A approval. WAITING OWNER REVIEW.
+
+Final R2 closeout verification and subsequent independent UX audit remediation (R3) on 23 September 2026 passed all checks. A final owner-directed interaction remediation (R4) implemented explicit UI controls for the desktop sidebar and mobile drawer instead of relying on brand identity as a secret toggle, preserving independent accessibility on the logo. Finance charts and notification feeds enforce owner vs. staff boundaries. The local HTTP preview returned 200; responsive cases were visually inspected. JavaScript syntax and staged whitespace checks passed. Existing evidence and local tooling remain preserved. BK01 is COMPLETE; BK02 is authorized to start next.
 
 ### BK02 — UI02 Product Operations
 

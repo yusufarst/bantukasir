@@ -1,0 +1,278 @@
+{
+  "layouts": [
+    {
+      "w": 375,
+      "route": "owner/dashboard"
+    },
+    {
+      "w": 375,
+      "route": "ops/dashboard"
+    },
+    {
+      "w": 375,
+      "route": "cashier/open"
+    },
+    {
+      "w": 375,
+      "route": "cashier/pos"
+    },
+    {
+      "w": 375,
+      "route": "owner/profile"
+    },
+    {
+      "w": 375,
+      "route": "ops/profile"
+    },
+    {
+      "w": 375,
+      "route": "cashier/profile"
+    },
+    {
+      "w": 375,
+      "route": "login"
+    },
+    {
+      "w": 440,
+      "route": "owner/dashboard"
+    },
+    {
+      "w": 440,
+      "route": "ops/dashboard"
+    },
+    {
+      "w": 440,
+      "route": "cashier/open"
+    },
+    {
+      "w": 440,
+      "route": "cashier/pos"
+    },
+    {
+      "w": 440,
+      "route": "owner/profile"
+    },
+    {
+      "w": 440,
+      "route": "ops/profile"
+    },
+    {
+      "w": 440,
+      "route": "cashier/profile"
+    },
+    {
+      "w": 440,
+      "route": "login"
+    },
+    {
+      "w": 768,
+      "route": "owner/dashboard"
+    },
+    {
+      "w": 768,
+      "route": "ops/dashboard"
+    },
+    {
+      "w": 768,
+      "route": "cashier/open"
+    },
+    {
+      "w": 768,
+      "route": "cashier/pos"
+    },
+    {
+      "w": 768,
+      "route": "owner/profile"
+    },
+    {
+      "w": 768,
+      "route": "ops/profile"
+    },
+    {
+      "w": 768,
+      "route": "cashier/profile"
+    },
+    {
+      "w": 768,
+      "route": "login"
+    },
+    {
+      "w": 1024,
+      "route": "owner/dashboard"
+    },
+    {
+      "w": 1024,
+      "route": "ops/dashboard"
+    },
+    {
+      "w": 1024,
+      "route": "cashier/open"
+    },
+    {
+      "w": 1024,
+      "route": "cashier/pos"
+    },
+    {
+      "w": 1024,
+      "route": "owner/profile"
+    },
+    {
+      "w": 1024,
+      "route": "ops/profile"
+    },
+    {
+      "w": 1024,
+      "route": "cashier/profile"
+    },
+    {
+      "w": 1024,
+      "route": "login"
+    },
+    {
+      "w": 1440,
+      "route": "owner/dashboard"
+    },
+    {
+      "w": 1440,
+      "route": "ops/dashboard"
+    },
+    {
+      "w": 1440,
+      "route": "cashier/open"
+    },
+    {
+      "w": 1440,
+      "route": "cashier/pos"
+    },
+    {
+      "w": 1440,
+      "route": "owner/profile"
+    },
+    {
+      "w": 1440,
+      "route": "ops/profile"
+    },
+    {
+      "w": 1440,
+      "route": "cashier/profile"
+    },
+    {
+      "w": 1440,
+      "route": "login"
+    }
+  ],
+  "period": [
+    {
+      "w": 375,
+      "preset": "compact/fields hidden",
+      "custom": "anchored, cross-year, apply/cancel, nested Escape",
+      "chart": "long dates",
+      "account": "stable"
+    },
+    {
+      "w": 440,
+      "preset": "compact/fields hidden",
+      "custom": "anchored, cross-year, apply/cancel, nested Escape",
+      "chart": "long dates",
+      "account": "stable"
+    },
+    {
+      "w": 768,
+      "preset": "compact/fields hidden",
+      "custom": "anchored, cross-year, apply/cancel, nested Escape",
+      "chart": "long dates",
+      "account": "stable"
+    },
+    {
+      "w": 1024,
+      "preset": "compact/fields hidden",
+      "custom": "anchored, cross-year, apply/cancel, nested Escape",
+      "chart": "long dates",
+      "account": "stable"
+    },
+    {
+      "w": 1440,
+      "preset": "compact/fields hidden",
+      "custom": "anchored, cross-year, apply/cancel, nested Escape",
+      "chart": "long dates",
+      "account": "stable"
+    }
+  ],
+  "pos": [
+    {
+      "w": 375,
+      "h": 800,
+      "images": 8,
+      "noGlobalSearch": true,
+      "cart": "bounded / retained through session"
+    },
+    {
+      "w": 440,
+      "h": 900,
+      "images": 8,
+      "noGlobalSearch": true,
+      "cart": "bounded / retained through session"
+    },
+    {
+      "w": 768,
+      "h": 1024,
+      "images": 8,
+      "noGlobalSearch": true,
+      "cart": "bounded / retained through session"
+    },
+    {
+      "w": 1024,
+      "h": 768,
+      "images": 8,
+      "noGlobalSearch": true,
+      "cart": "bounded / retained through session"
+    },
+    {
+      "w": 1440,
+      "h": 900,
+      "images": 8,
+      "noGlobalSearch": true,
+      "cart": "bounded / retained through session"
+    },
+    {
+      "w": 844,
+      "h": 390,
+      "images": 8,
+      "noGlobalSearch": true,
+      "cart": "bounded / retained through session"
+    },
+    {
+      "w": 1180,
+      "h": 820,
+      "images": 8,
+      "noGlobalSearch": true,
+      "cart": "bounded / retained through session"
+    }
+  ],
+  "routes": [
+    "#owner/dashboard",
+    "#owner/pos",
+    "#owner/session",
+    "#owner/produk",
+    "#owner/stok",
+    "#owner/masuk",
+    "#owner/keluar",
+    "#owner/restock",
+    "#owner/laporan",
+    "#owner/hpp",
+    "#owner/riwayat",
+    "#owner/pengguna",
+    "#owner/bisnis",
+    "#owner/sistem",
+    "#ops/dashboard",
+    "#ops/produk",
+    "#ops/stok",
+    "#ops/masuk",
+    "#ops/keluar",
+    "#ops/restock",
+    "#ops/riwayat",
+    "#cashier/pos",
+    "#cashier/session"
+  ],
+  "errors": []
+}
