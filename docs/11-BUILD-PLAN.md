@@ -1,8 +1,8 @@
 # 11 — BantuKasir Plan 1.1
 
-**25 September 2026. Optimized Plan 1.1; 36 total tasks, all 36 Core, 1/36 complete.** BK01 is COMPLETE. BK02–BK36 remain NOT STARTED. Hard ceiling 50 includes prototypes, integration, testing and deployment. Later topics in [01](01-PRD.md) have no task IDs/estimates and are excluded from this baseline.
+**25 September 2026. Optimized Plan 1.1; 36 total tasks, all 36 Core, 2/36 complete.** BK01 and BK02 are COMPLETE. BK03–BK36 remain NOT STARTED. Hard ceiling 50 includes prototypes, integration, testing and deployment. Later topics in [01](01-PRD.md) have no task IDs/estimates and are excluded from this baseline.
 
-Next: **BK02 — UI02 Product Operations** (NOT STARTED).
+Review: **BK03 — UI03 POS** (NOT STARTED). No active implementation; next action is BK03, Gate A remains OPEN.
 
 ## Capacity and phases
 
@@ -56,7 +56,7 @@ Common READ: AGENTS, 00, this task, 01, 02, 10, plus listed docs. Common DoD: ap
 | ID | Status | Goal / deliverable | Engineering prerequisites | Completion hold / restriction | Hours |
 | --- | --- | --- | --- | --- | ---: |
 | BK01 | COMPLETE | UI01 Foundation + Shell | None | UI01 owner-approved (Gate A remains open for UI02-UI04) | 4 |
-| BK02 | NOT STARTED | UI02 Product Operations | BK01 | UI tools | 4 |
+| BK02 | COMPLETE | UI02 Product Operations | BK01 | UI02 owner-approved (Gate A remains open for UI03-UI04) | 4 |
 | BK03 | NOT STARTED | UI03 POS | BK01 | UI tools | 4 |
 | BK04 | NOT STARTED | UI04 Reports | BK02, BK03 | UI tools; G3 assumptions visibly provisional | 4 |
 | BK05 | NOT STARTED | Complete visual Gate A | BK01, BK02, BK03, BK04 | Owner Gate A; real logo or explicit provisional-identity approval | 2 |
@@ -118,6 +118,10 @@ R3 owner instruction: refine the existing shell with a smaller wordmark, useful 
 Final R2 closeout verification and subsequent independent UX audit remediation (R3) on 23 September 2026 passed all checks. A final owner-directed interaction remediation (R4) implemented explicit UI controls for the desktop sidebar and mobile drawer instead of relying on brand identity as a secret toggle, preserving independent accessibility on the logo. Finance charts and notification feeds enforce owner vs. staff boundaries. The local HTTP preview returned 200; responsive cases were visually inspected. JavaScript syntax and staged whitespace checks passed. Existing evidence and local tooling remain preserved. BK01 is COMPLETE; BK02 is authorized to start next.
 
 ### BK02 — UI02 Product Operations
+
+Status: **COMPLETE (UI02 owner-approved on 25 Sep 2026)** — authorized 25 September 2026 from approved UI01 commit `1f62e980840c6c10e336450792e660630bd4c931`. UI02 deterministic representative states are implemented; UI01 source and logo remain unchanged. Catalog/detail/form and duplicate-safe creation, barcode/label intent, receiving with write-only Operations cost, Owner opening/correction, reasoned issue, current/low/out/restock and role-safe append-only history are approved. Product creation makes no stock; explicit confirmation alone changes synthetic quantities. No backend, real printing, import, product-image capability or BK03.
+
+Evidence: [UI02 handoff](../prototypes/ui02/README.md), [final review](../.impeccable/review/bk02/REVIEW.md), [actual tool usage](../.impeccable/review/bk02/TOOLS.md). Independent reviews led to targeted hidden-field/focus/mobile-draft/catalog-density/correction-impact fixes. Final Chromium checks: 55 responsive cases at 375/440/768/1024/1440, 8 core interaction groups, 9 extra audit groups and 21 resolved sidebar destinations; zero captured page errors. Syntax and whitespace/scope checks accompany the final staged packet. Impeccable recorded 0 primary findings and 3 disclosed inherited-shadow advisories; genuine free 21st catalog research informed pattern selection, with no catalog code imported. Owner visual approval is complete; applicable real-device/integration evidence remain open. Gate A OPEN; BK03 is NOT STARTED / NEXT; 2/36 tasks complete.
 
 - Goal: Prototype search-first catalog, receiving/opening, issue/history/restock and labels.
 - Depends on: BK01.

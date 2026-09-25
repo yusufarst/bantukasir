@@ -1,0 +1,35 @@
+[
+  {
+    "antipattern": "gpt-thin-border-wide-shadow",
+    "name": "Hairline border with wide shadow",
+    "description": "A hairline border paired with a wide, diffuse shadow is a recurring generated-UI signature. Commit to one — a defined edge or a soft elevation — rather than both at once.",
+    "severity": "advisory",
+    "category": "slop",
+    "file": "C:\\Projects\\bantukasir\\prototypes\\ui02\\index.html",
+    "line": 0,
+    "snippet": "1px border + 32px shadow blur",
+    "advisory": true
+  },
+  {
+    "antipattern": "gpt-thin-border-wide-shadow",
+    "name": "Hairline border with wide shadow",
+    "description": "A hairline border paired with a wide, diffuse shadow is a recurring generated-UI signature. Commit to one — a defined edge or a soft elevation — rather than both at once.",
+    "severity": "advisory",
+    "category": "slop",
+    "file": "C:\\Projects\\bantukasir\\prototypes\\ui02\\index.html",
+    "line": 0,
+    "snippet": "1px border + 32px shadow blur",
+    "advisory": true
+  },
+  {
+    "antipattern": "gpt-thin-border-wide-shadow",
+    "name": "Hairline border with wide shadow",
+    "description": "A hairline border paired with a wide, diffuse shadow is a recurring generated-UI signature. Commit to one — a defined edge or a soft elevation — rather than both at once.",
+    "severity": "advisory",
+    "category": "slop",
+    "file": "C:\\Projects\\bantukasir\\prototypes\\ui02\\index.html",
+    "line": 0,
+    "snippet": "1px border + 32px shadow blur",
+    "advisory": true
+  }
+]

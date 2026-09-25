@@ -1,0 +1,46 @@
+{
+  "checks": [
+    {
+      "name": "reversal hides count/cost; adjustment switches without hidden required field; impact and immutable original",
+      "pass": true
+    },
+    {
+      "name": "375 mobile draft shortcut; checkbox focus survives rerender; 44px target and confirm reachable",
+      "pass": true
+    },
+    {
+      "name": "mobile filter disclosure count, LOW/OUT distinct and restock active only",
+      "pass": true
+    },
+    {
+      "name": "master edit keeps stock, opening positive confirm, required non-sale reason",
+      "pass": true
+    },
+    {
+      "name": "create during receiving preserves draft and does not create stock",
+      "pass": true
+    },
+    {
+      "name": "loading/error/empty/recovery and no private cost echo in staff search",
+      "pass": true
+    },
+    {
+      "name": "desktop shell stable; account within sidebar and escape focus; mobile outside closes drawer",
+      "pass": true
+    },
+    {
+      "name": "resolved sidebar destinations",
+      "count": 21,
+      "pass": true
+    },
+    {
+      "name": "permitted navigation routes and denied cashier boundaries",
+      "pass": true
+    },
+    {
+      "name": "touch emulation quantity/cost and account actions",
+      "pass": true
+    }
+  ],
+  "errors": []
+}

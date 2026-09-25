@@ -1,6 +1,6 @@
 # 00 — Current state and handoff
 
-Updated **25 September 2026**, Asia/Jakarta. Written LAST after the owner-directed BK01 UI01 R6 final owner-directed continuation and verification. BK01 is approved and completed; this is not production implementation or complete Gate A visual approval.
+Updated **25 September 2026**, Asia/Jakarta. Written LAST after BK02 UI02 targeted remediation, final browser verification and documentation closeout. BK01 is approved and completed; BK02 is WAITING OWNER REVIEW. Gate A remains OPEN; this is not production implementation.
 
 | Item | Verified state |
 | --- | --- |
@@ -8,14 +8,15 @@ Updated **25 September 2026**, Asia/Jakarta. Written LAST after the owner-direct
 | Plan 1.0 baseline | 6e0c13d72cd5166f050fab9698ab71c59ca49b15 |
 | Previous Plan 1.1 checkpoint | bd8a80719f3bf46166446fb70bb36e21b732e793 |
 | Product | Configurable production-grade GOODS-only POS and stock control |
-| Plan | Optimized BantuKasir Plan 1.1 delivery; 36 total tasks, all 36 Core, 1/36 complete |
+| Plan | Optimized BantuKasir Plan 1.1 delivery; 36 total tasks, all 36 Core, 2/36 complete |
 | Schedule | 154 focused engineering hours / 19.25 eight-hour days; five-day weeks leave six focused hours inside 20 days, with no rework or waiting contingency |
-| Active executor | None |
-| Next task | **BK02 — UI02 Product Operations**; NOT STARTED |
-| Implementation | BK01 COMPLETE. UI01 representative screens and reusable master candidate BK-DS-UI01-r6 refined (including field-driven anchored calendar, Indonesian long dates, bounded landscape POS, ATK thumbnails, single POS search, interactive Owner chart and stable navigation). BK02–BK36 not started. |
+| Active executor | None; next is BK03 |
+| Current review / next action | **BK03 — UI03 POS**: NOT STARTED; start UI03 next |
+| Implementation | BK01 and BK02 are COMPLETE; approved UI01 R6 unchanged. BK02 deterministic Product Operations prototype and final evidence approved by owner. BK03–BK36 NOT STARTED; 2/36 complete. |
 | Visual approval | UI01 R6 owner-approved on 25 Sep 2026 as the master visual language. No complete Gate A or integrated Gate B. |
 | BantuKasir logo | Present in repository (`assets/brand/bantukasir-logo.svg`) |
-| Authorization | BK02 is authorized to start. Production frontend needs complete Gate A (BK05). |
+| Authorization | BK02 closeout only; no BK03 or production execution authorized. Production frontend needs complete Gate A (BK05). |
+| Local HEAD lineage | `1f62e980840c6c10e336450792e660630bd4c931` — approved BK01 UI01 R6. Preserve this local lineage; do not reset to an older remote. |
 | Roles | SUPER_ADMIN / Pemilik; OPERATIONS_ADMIN / Admin Operasional; CASHIER / Kasir |
 
 ## Effective source of truth
@@ -42,9 +43,9 @@ Four compact bundles remain UI01 Foundation/Shell, UI02 Product Operations, UI03
 
 The primary LATANSA CP01 reference remains read only. UI01 retains sidebar/topbar/activity/attention/table structure with BantuKasir identity, self-hosted Source Sans 3 adopted from the supplied reference, restrained navy/teal and independent semantics. Login, operations/owner dashboards, cashier NO_SESSION/OPEN_SESSION entry, profile/account and mobile shell are implemented as synthetic examples. Empty/error/loading states and session identity are reusable patterns; no full product-operations, checkout/receipt or report screens were added.
 
-Actual free 21st.dev catalog research covered date range, chart, cart, bottom navigation and popover patterns. No callable 21st MCP or paid installation was used. Impeccable skill 4.3.1 / bundled CLI 4.0.0 context and one detector scan ran; audit/polish playbooks guided the pass. Four advisories (three intentional overlay-shadow notices and one new boundary token) are disclosed in [R6 tool evidence](../.impeccable/review/r6/TOOLS.md). No independent R6 agent or owner approval is claimed.
+Actual free 21st.dev catalog research covered date range, chart, cart, bottom navigation and popover patterns. No callable 21st MCP or paid installation was used. Impeccable skill 4.3.1 / bundled CLI 4.0.0 context and one detector scan ran; audit/polish playbooks guided the pass. Four advisories (three intentional overlay-shadow notices and one new boundary token) are disclosed in [R6 tool evidence](../.impeccable/review/r6/TOOLS.md). That tool evidence does not itself confer owner approval; the subsequent explicit UI01 R6 approval is recorded above.
 
-## Verification and protected scope
+## Approved UI01 R6 evidence (preserved historical verification)
 
 - Current [R6 final continuation packet](../.impeccable/review/r6/final/REVIEW.md) contains 24 fresh screenshots and responsive, integrity and touch/landscape results. Initial R6, R5 and older captures are historical. Existing staged deliverables were preserved; R3 and earlier untracked evidence were not staged.
 - Browser checks passed: 40 route/viewport cases at 375/440/768/1024/1440; five period/chart/account groups; seven POS viewports including 844×390 and 1180×820; 23 permitted role destinations; eight integrity groups and three final emulated-touch/landscape groups. Zero captured page errors. Required JavaScript syntax and working/staged whitespace checks accompany closeout.
@@ -54,7 +55,19 @@ Actual free 21st.dev catalog research covered date range, chart, cart, bottom na
 - Query/cart/session survive permitted navigation and sidebar changes. Unknown/OUT/stock-cap feedback preserves the draft. Account menus remain simplified and role-safe; opening does not change rail width. Desktop outside clicks preserve navigation, mobile drawer dismisses outside; per-role navigation scroll stays stable.
 - Owner trend remains period-aligned, interactive and honest about missing costs. Hari Ini shows a daily point because hourly fixture facts are absent. Null-cost probes suppress HPP/gross figures; synthetic days without sales are explicitly zero sales, not zero unknown cost. Operations/Cashier do not receive owner financial navigation. These are prototype presentation checks, not backend RBAC.
 - Notifications retain compact priority-first stock attention and three recent activities; Cashier receives own-session information only. Existing Source Sans 3, navy/teal family, original logo, semantic colors and restrained borders remain the shared candidate.
-- UI01 synthetic scope only; no real payment/receipt, backend, migration, database operation, upstream LATANSA edit, commit, push, merge, deployment or next-BK execution. `.agents/` and old helper evidence remain untracked; `.local/` stays ignored. HEAD remains 3e30fce. Actual devices, assistive technology, scanners/printers and complete Gate A/B remain outstanding.
+- UI01 synthetic scope only; no real payment/receipt, backend, migration, database operation, upstream LATANSA edit, commit, push, merge, deployment or next-BK execution. `.agents/` and old helper evidence remain untracked; `.local/` stays ignored. That pre-commit packet preceded the approved R6 commit; current local HEAD is `1f62e980840c6c10e336450792e660630bd4c931`. Actual devices, assistive technology, scanners/printers and complete Gate A/B remain outstanding.
+
+## BK02 final candidate and verification
+
+BK02 is **COMPLETE**, with [UI02 routes and limits](../prototypes/ui02/README.md), [reuse map](../prototypes/ui02/PATTERNS.md), [final review packet](../.impeccable/review/bk02/REVIEW.md) and [truthful tool record](../.impeccable/review/bk02/TOOLS.md). UI02 loads the approved UI01 stylesheet and a shell reference copy with route adaptation; no UI01 source or brand asset changed.
+
+Representative states include catalog/search/list/detail/form, exact duplicate block and similar-product warning, barcode alias/internal label intent, receiving, write-only Operations incoming cost, owner opening, reasoned manual issue, current/LOW/OUT/restock, role-safe history and owner append-only correction/reversal. New products start at stock 0; explicit final confirmation alone changes deterministic fixture quantities. Operations review/results/history do not echo incoming cost values; Cashier cannot manage products. The static fixture harness is not production RBAC.
+
+Independent design/evidence review identified hidden reversal fields, lost checkbox focus, mobile draft reachability, catalog/fixture density and missing correction impact. Targeted fixes are complete. Final Chromium results: **55 responsive cases at 375/440/768/1024/1440; 8 core interaction groups; 9 additional audit groups; 21 resolved sidebar destinations; zero captured page errors; 14 fresh screenshots**. Node syntax and working/staged whitespace checks, UTF-8 scan and exact file inventory are recorded in the closeout evidence. Physical devices, assistive technology and label/HID hardware are not certified by these emulated checks.
+
+Actual free 21st catalog research informed filters/tables/dialogs/forms; no community source was imported. Impeccable skill 4.3.1 / CLI 4.0.0 context and one detector pass ran, with independent browser reviews. Detector: 0 primary findings and 3 disclosed inherited overlay-shadow advisories. The only new vendor code is local MIT JsBarcode 3.11.0 for Code128 preview. No paid service was used.
+
+Only intentional BK02 source, canonical documentation and the latest review packet are staged. `.agents/`, historical untracked evidence and ignored `.local/` are excluded. No product-image capability, CSV/XLSX import, warehouse/location, backend/database/migration, production frontend or BK03 was added. No commit/push/merge/deploy was performed. Gate A remains OPEN; BK03 NOT STARTED.
 
 ## Remaining gates / exact next action
 
@@ -65,4 +78,4 @@ Actual free 21st.dev catalog research covered date range, chart, cart, bottom na
 | G3 OPEN | Actual drawer identities/labels, opening-float practice, one responsible cashier/no simultaneous sharing, owner cash-refund funding; replan if extra cash movements are required |
 | G4 OPEN | Independent backup destination/access/cost and accepted measured RPO/RTO before production |
 
-These facts still block the corresponding execution/pilot gates in 11. Current handoff: **start BK02**. Implementation/documentation closeout for BK01 is COMPLETE. UI01 R6 is the approved baseline. BK02 is authorized to start; production frontend needs complete Gate A (BK05).
+These facts still block the corresponding execution/pilot gates in 11. Current handoff: **BK03 UI03 POS**. BK01 and BK02 remain COMPLETE and UI01 R6 is the approved baseline. BK03 is NOT STARTED and authorized to start next. Complete Gate A (BK05) is still required before production frontend.

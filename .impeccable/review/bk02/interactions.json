@@ -1,0 +1,37 @@
+{
+  "checks": [
+    {
+      "name": "search filters pagination/detail retain",
+      "pass": true
+    },
+    {
+      "name": "exact collision and similar creation stock0",
+      "pass": true
+    },
+    {
+      "name": "label alias collision, leading zero and intent",
+      "pass": true
+    },
+    {
+      "name": "Operations write-only review result/history cost, confirm only",
+      "pass": true
+    },
+    {
+      "name": "manual issue reason, stock bound and final delta",
+      "pass": true
+    },
+    {
+      "name": "owner opening only no ledger, zero no movement",
+      "pass": true
+    },
+    {
+      "name": "owner reversal original retained and sale blocked",
+      "pass": true
+    },
+    {
+      "name": "role switching staff boundaries",
+      "pass": true
+    }
+  ],
+  "errors": []
+}
