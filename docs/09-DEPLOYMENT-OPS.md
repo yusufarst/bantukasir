@@ -1,55 +1,66 @@
-# 09 — Deployment, protected data and recovery
+# 09 — Operasi, data production, dan recovery
 
-Target design only. No deployment, migration, backup job or runtime is created by Plan 1.1.
+**Plan 2.0.** Ini kontrak operasi; sesi rebaseline tidak membuat runtime, deployment, migration, atau backup job. [11 — Rencana dan task](11-BUILD-PLAN.md) menetapkan ownership dan hold; [08 — Penerimaan](08-TESTING-ACCEPTANCE.md) menetapkan bukti yang wajib selesai sebelum release.
 
-## Protected production database — mandatory for every agent/operator
+## Database production dilindungi untuk semua agent dan operator
 
-Production holds valuable live business records. Without explicit owner approval for the **EXACT destructive operation**, NEVER:
-- DROP DATABASE, DROP SCHEMA or DROP populated production tables;
-- TRUNCATE or mass DELETE business records;
-- reset/recreate production, seed demo data, execute destructive reset scripts or migrations disguised as maintenance;
-- delete PostgreSQL/Docker production volumes, persistent DB directories, or run `docker compose down -v` against production;
-- delete StockMovement, completed Sales, Payments, receipt/session-report snapshots, AuditEvent or cost/history facts;
-- silently rewrite historical inventory/financial facts.
+Production berisi catatan bisnis yang bernilai. Tanpa persetujuan eksplisit pemilik untuk **OPERASI DESTRUKTIF YANG PERSIS**, dilarang:
 
-Generic “fix”, “deploy” or “run migration” is not destructive approval. If needed, STOP and report: why; data at risk; safer alternatives; migration/backfill plan; backup/restore prerequisites; rollback/recovery plan. Non-production reset requires positively identified target and task authorization. Commands must verify environment/host/database before changing data, never infer safety from a directory name.
+- `DROP DATABASE`, `DROP SCHEMA`, atau drop tabel production yang berisi data;
+- `TRUNCATE` atau mass delete catatan bisnis;
+- reset/recreate production, seed demo data, atau destructive reset script/migration yang disamarkan sebagai maintenance;
+- menghapus volume PostgreSQL/Docker production, direktori DB persisten, atau menjalankan `docker compose down -v` terhadap production;
+- menghapus StockMovement, completed Sale, Payment, ReceiptSnapshot, snapshot laporan sesi, AuditEvent, atau fakta biaya/history;
+- diam-diam menulis ulang fakta stok atau keuangan historis.
 
-Default: additive/forward migrations; expand → migrate/backfill → verify → contract; populated isolated non-production rehearsal; backup before high-risk migration; restore readiness; transactional migrations where possible; post-migration row-count/constraint/business reconciliation. Runtime DB account cannot drop schema or update/delete immutable business facts. Migration credentials are separate and unavailable to web runtime. Reviewed destructive changes still require exact owner authorization.
+Instruksi umum “fix”, “deploy”, atau “run migration” bukan persetujuan destruktif. Jika operasi destruktif tampak diperlukan, STOP dan jelaskan alasan, data yang berisiko, alternatif aman, rencana migration/backfill, prasyarat backup/restore, serta rollback/recovery. Reset non-production memerlukan target yang diidentifikasi positif dan otorisasi task. Sebelum mengubah data, periksa environment, host, database, volume/storage, dan tujuan command; nama folder tidak membuktikan bahwa target aman.
 
-## Runtime and cost
+Default adalah migration additive/forward: expand → migrate/backfill → verify → contract. Rehearsal wajib memakai lingkungan non-production terisolasi yang sudah berisi data representatif. Sebelum migration berisiko, siapkan backup terverifikasi dan kesiapan restore; gunakan transaksi migration bila memungkinkan. Setelahnya verifikasi row count, constraints, integritas sumber, dan rekonsiliasi bisnis. Contract/destructive change yang sudah direview tetap memerlukan persetujuan operasi yang persis.
 
-Existing VPS/domain; Compose with Caddy/HTTPS, non-root app, private PostgreSQL and scheduled backup/reconciliation commands. No public DB port. Pin compatible image/dependency versions, no production latest tags. Separate dev/test/staging/production DBs/volumes/secrets. Run migration once as controlled job, not racing web startups.
+Role SQL runtime tidak boleh drop schema maupun update/delete fakta bisnis immutable. Migration credential terpisah dan tidak tersedia untuk web runtime; backup memakai credential tersendiri dengan akses minimum yang dibutuhkan. Pemisahan role dan privilege benar-benar diuji, termasuk denial DDL dan perubahan history dari role runtime. Jangan mengandalkan disiplin aplikasi sebagai satu-satunya perlindungan database.
 
-Approximately Rp0 additional recurring software: self-hosted auth/PostgreSQL, native search, browser print/PDF, first-party CSV, open-source barcodes and in-app restock. No paid auth/DB/search/queue/analytics/PDF/notification/UI credit service without explicit approval. Off-VPS backup capacity may cost money; do not pretend same-host backup is enough.
+## Runtime, konfigurasi, dan biaya
 
-Runtime config: app origin, DB URL, migration DB URL, auth secret/origin, storage root, backup destination/credentials/encryption recipient; private restore key stored independently from VPS. Validate required settings; no silent production defaults or NEXT_PUBLIC secrets. Existing inherited .env.example is not a validated implementation contract; BK06/BK32 reconcile it when authorized. Never commit real credentials, addresses containing secrets or production data.
+Gunakan VPS/domain yang ada; Docker Compose berisi app non-root, PostgreSQL privat, Caddy/HTTPS, dan scheduled backup/reconciliation commands. Tidak ada port DB publik. Pin versi image/dependency yang kompatibel; hindari tag production `latest`. Pisahkan database, volume, secret, dan storage dev/test/staging/production. Migration berjalan sekali sebagai controlled job, bukan berlomba pada startup beberapa web process. Detail transaksi dan lock mengikuti [02 — Arsitektur](02-ARCHITECTURE.md).
 
-Retain immutable private logo assets referenced by receipts/reports; DB manifest/checksums. No public document storage. Simple image limits: <=5 MiB, <=16 megapixels, verified PNG/JPEG/WebP, re-encode/strip metadata, no executable/SVG/HTML/remote URL fetching. Storage paths configured, never client-specific source edits.
+Target tambahan biaya software recurring sekitar Rp0: self-hosted auth/PostgreSQL, pencarian native, browser print/PDF, CSV first-party, barcode open-source, dan restock dalam aplikasi. Layanan auth/DB/search/queue/analytics/PDF/notifikasi atau kredit/template berbayar memerlukan persetujuan eksplisit. Storage backup di luar VPS dapat berbiaya; catat biaya nyata dan kapasitas berkelanjutan. Backup pada host yang sama tidak memenuhi independensi.
 
-## Release procedure
+Konfigurasi tiap proses mencakup app origin, runtime DB URL, auth secret/origin, storage root, serta setting operasional yang diperlukan. Migration DB URL hanya diberikan kepada controlled migration job; backup destination/credential dan encryption recipient hanya diberikan kepada proses backup. Private restore key disimpan dan dapat diakses secara independen dari VPS. Validasi setting wajib tanpa silent production defaults atau secret `NEXT_PUBLIC`. `.env.example` warisan belum menjadi kontrak implementasi tervalidasi; task foundation/packaging dalam [11](11-BUILD-PLAN.md) wajib menyelaraskannya. Credential, alamat yang mengandung secret, dan data production tidak masuk Git/log/screenshot. Access key DesainPakeAI tetap pada konfigurasi privat user dan bukan dependency runtime production.
 
-Gate evidence + tests/build → immutable image → backup verified → populated migration rehearsal → authorized deployment window → controlled migration → reconciliation/readiness/role smoke tests → owner pilot. Use maintenance/write-stop if schema change requires it. Code rollback only with compatible schema; otherwise forward repair or rehearsed isolated recovery. No deploy/push/merge permission is granted by a planned task row.
+“BantuKasir” adalah codename internal. Runtime BusinessProfile menyimpan identitas resmi client; source aplikasi tidak diubah untuk mengganti client. Logo produksi memakai storage privat dan immutable revision yang direferensikan receipt/report, dengan manifest DB dan checksum. Pertahankan revision yang masih direferensikan; tidak ada public document storage. Upload maksimal 5 MiB/16 megapixel, PNG/JPEG/WebP terverifikasi, re-encode dan strip metadata; tolak executable/SVG/HTML serta remote URL fetching. [04 — Keamanan](04-AUTH-RBAC-SECURITY.md) mengatur akses dan privasi; [DESIGN](../DESIGN.md) mengatur sumber visual.
 
-## Backup and G4
+## Release dan migration
 
-Owner must choose independent destination and accept measured RPO/RTO before production. Proposed starting target **RPO <=6 hours / RTO <=4 hours is UNACCEPTED**, not a client fact. If unacceptable, evaluate more frequent dumps/WAL/PITR and adjust scope/capacity before pilot.
+Urutan release: bukti gate dan tests/build → immutable image → backup terverifikasi → populated migration rehearsal → deployment window yang diotorisasi → controlled migration → reconciliation/readiness/role smoke → pilot pemilik. Gunakan maintenance/write-stop bila perubahan schema memerlukannya. Rehearsal memeriksa rollback transaction atau forward repair dan kompatibilitas versi, bukan hanya keberhasilan schema pada database kosong.
 
-Scheduled consistent PostgreSQL dump, encrypted before off-VPS transfer, checksum/archive validation and metadata (snapshot/schema/app version). Keep at least seven days of six-hour copies, four weekly and three monthly copies, subject to capacity/owner policy. Never remove last verified good copy because a new upload exists. Independent host/device/account and separately accessible recovery keys required; same VPS volume does not qualify. Back up referenced media/manifest consistently; exports/PDF are not backups.
+Code rollback hanya aman dengan schema yang kompatibel. Jika tidak, lakukan forward repair atau recovery terisolasi yang sudah direhearsal; jangan mengganti masalah release dengan reset data. Baris task atau kelulusan test tidak mengizinkan push, merge, deploy, cutover, atau perubahan infrastructure. Otorisasi release/pilot dicatat secara eksplisit; state terkini mengikuti [00](00-CURRENT-STATE.md).
 
-Real isolated restore before pilot, monthly and after major schema/storage changes. A green backup process alone does not pass. Owner system view exposes last successful backup/restore, age/failure/disk/reconciliation status, never secrets; unknown says “Belum Terverifikasi”. Independent existing host/device availability check is needed to detect dead VPS; if unavailable report gap rather than claim monitoring works.
+## Backup independen dan gate G4
 
-## Restore runbook
+Pemilik memilih destination independen dan menerima RPO/RTO hasil pengukuran sebelum production. Target awal yang diusulkan **RPO ≤6 jam / RTO ≤4 jam BELUM DISETUJUI** dan bukan fakta client. Jika tidak sesuai kebutuhan, evaluasi dump lebih sering/WAL/PITR dan ubah scope serta kapasitas sebelum pilot; jangan mengklaim kemampuan yang belum diuji.
 
-1. Stop writes, declare incident/snapshot cutoff, preserve source read-only.
-2. Verify/decrypt chosen backup, match app/DB versions, restore into a new isolated database and storage root; never destroy original.
-3. Verify roles/extensions/constraints and referenced asset checksums.
-4. Reconcile CashRegister/CashSession lifecycle, Sale/session attribution, lines/Payment/SALE_ISSUE/receipt, all stock sums/balances, acquisition/valuation revisions, refunds/returns, session source scopes/cutoffs/opening/expected/physical/variance/snapshots, command receipts and audit. A conflicting active-session guard, CLOSED session without exactly one snapshot, orphan Sale or mismatched stock blocks reopening.
-5. Revoke restored sessions, establish new recovery epoch. Old browser intents cannot auto-execute as new work. Review post-snapshot cash/transfer/printed documents/physical stock; missing restored result does not prove original never committed.
-6. Owner resolves missing interval from evidence using authorized append-only correction/recovery procedures, never SQL balance editing or blind payment replay.
-7. Verify auth/search/scan/posting/report/print and independently retained recovery access. Record actual RPO/RTO/data gap; owner approves traffic reopening.
+Backup terjadwal memakai consistent PostgreSQL dump, dienkripsi sebelum transfer keluar VPS, dengan pemeriksaan checksum/archive dan manifest yang mencatat snapshot cutoff, schema/app version, serta referenced media. Asset/logo dan manifest harus konsisten dengan snapshot DB; receipt/session snapshot dan referensi file harus dapat direstore. Ekspor/PDF bukan backup.
 
-## Maintenance and retention
+Retensi awal: minimal tujuh hari copy tiap enam jam, empat copy mingguan, dan tiga copy bulanan, tunduk pada kapasitas dan policy pemilik. Jangan menghapus copy baik terakhir yang terverifikasi hanya karena upload baru tersedia. Destination harus independen dari host/volume VPS; akses akun/device dan recovery key tersedia melalui jalur terpisah yang benar-benar dapat digunakan pemilik/operator.
 
-Daily read-only stock/cost/source/session reconciliation; failed check blocks affected posting. Backup age warning after configured schedule plus grace; disk warning at 20% free, critical 10%. Structured logs use IDs/safe errors, no full sensitive payload. No automatic deletion of ledger/Sales/Payments/audit/receipts/session reports/cost revisions or referenced identity assets. Operational debug logs 30 days, security access logs 90 days subject to approved incident/privacy policy; expired auth tokens follow library retention without erasing historical actors. No legal compliance claim.
+Lakukan restore nyata ke lingkungan terisolasi sebelum pilot, setiap bulan, dan setelah perubahan besar schema/storage. Exit code backup sukses atau upload hijau tidak memberikan kelulusan restore. View Sistem pemilik menampilkan backup/restore sukses terakhir, usia, failure, disk, dan status rekonsiliasi tanpa secret. Status yang belum dibuktikan adalah “Belum Terverifikasi”. Pemeriksaan availability dari host/device independen dibutuhkan untuk mendeteksi VPS mati; jika jalur itu belum ada, catat gap monitoring dan hold terkait, jangan menyebut monitoring lengkap.
 
-Keep actual host/key/contact runbook privately accessible to owner/operator. G4 includes independent recovery access, measured drill and sustainable storage cost.
+## Runbook restore dan interval yang hilang
+
+1. Hentikan writes, deklarasikan incident dan snapshot cutoff, lalu pertahankan sumber asli read-only.
+2. Verifikasi/dekripsi backup pilihan, cocokkan app/DB version, lalu restore ke database baru dan storage root terisolasi. Jangan menghancurkan sumber asli.
+3. Verifikasi role SQL, extension, constraints, manifest, dan checksum semua referenced asset; pastikan recovery key serta akses independen benar-benar tersedia.
+4. Rekonsiliasi lifecycle CashRegister/CashSession; atribusi Sale/session; SaleLine/Payment/SALE_ISSUE/ReceiptSnapshot; seluruh jumlah movement/balance; acquisition/valuation revision; refund/return; scope/cutoff/opening/expected/physical/variance/snapshot sesi; durable command receipts/source intent; dan audit. Active-session guard yang konflik, CLOSED tanpa tepat satu snapshot, orphan Sale, atau stok tidak cocok memblokir reopening.
+5. Revoke session hasil restore dan tetapkan recovery epoch baru. Intent browser lama tidak boleh otomatis dieksekusi sebagai pekerjaan baru. Periksa cash/transfer, dokumen yang sudah tercetak, dan stok fisik sesudah cutoff. Hilangnya hasil command pada backup tidak membuktikan bahwa transaksi asli tidak pernah commit.
+6. Pemilik menyelesaikan interval yang hilang dari evidence melalui prosedur correction/recovery append-only yang diotorisasi. Jangan mengedit balance dengan SQL, replay payment secara buta, atau membuat Sale pengganti berdasarkan asumsi.
+7. Verifikasi auth/search/scan/posting/report/print, role/object scope, epoch behavior, dan jalur recovery independen. Catat RPO/RTO yang benar-benar terukur serta data gap. Pemilik menyetujui traffic reopening.
+
+Recovery tidak boleh otomatis menganggap keadaan setelah cutoff dapat direkonstruksi. Bila evidence cash/transfer/stock tidak lengkap, catat kasus belum terselesaikan dan tahan affected posting; escalation kepada pemilik adalah bagian runbook. [06](06-INVENTORY-SPEC.md), [15](15-FINANCE-PROFITABILITY.md), dan [17](17-POS-SALES.md) mengatur fakta domain yang harus direkonsiliasi.
+
+## Maintenance, retensi, dan bukti
+
+Rekonsiliasi stok/cost/source/session berjalan read-only setiap hari; failure memblokir affected posting dan memerlukan penanganan tercatat. Warning usia backup memakai jadwal plus grace yang dikonfigurasi; warning disk pada 20% ruang bebas, critical pada 10%. Structured log memakai ID dan error aman, tanpa payload sensitif penuh.
+
+Tidak ada auto-delete ledger/Sale/Payment/audit/receipt/session report/cost revision atau identity asset yang masih direferensikan. Log debug operasional 30 hari dan security access log 90 hari mengikuti policy incident/privacy yang disetujui. Token auth kedaluwarsa mengikuti retensi library tanpa menghapus actor historis. Tidak ada klaim kepatuhan hukum otomatis.
+
+Runbook host/key/contact nyata tetap privat dan dapat diakses pemilik/operator. G4 mencakup destination independen, biaya sustainable, recovery access, restore drill, RPO/RTO diterima, dan gap monitoring. Kelulusan akhir memerlukan populated migration, privilege denial, checksum/media restore, rekonsiliasi, recovery epoch dan recovery gap, ukuran waktu nyata, serta deployment/pilot authorization sesuai [08](08-TESTING-ACCEPTANCE.md) dan [11](11-BUILD-PLAN.md). Dokumen ini tidak mengklaim check tersebut sudah lulus.

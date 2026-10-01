@@ -1,29 +1,31 @@
-# 12 — Product search, barcodes and scanner
+# 12 — Product Search, barcode dan scanner
 
-## One reusable Product Search
+**Plan 2.0.** Spesifikasi ini berlaku pada seluruh workflow yang memakai pencarian/scan; tidak mengklaim implementasi atau pengujian hardware sudah selesai.
 
-Canonical service reused by POS, receiving, manual issue, product management, stock lookup and barcode/label. Exact barcode index lookup first; SKU exact/prefix and case-insensitive name search, category and optional brand filters. PostgreSQL B-tree unique indexes for barcode/SKU plus measured native name index (e.g. pg_trgm if justified/available); no external search.
+## Satu Product Search yang dipakai bersama
 
-Bounded server pagination, default 25/max 100, stable name/ID order, context filters and canceled stale requests. Never fetch whole master to browser. Search authorization shapes allowlisted operational DTO (identity/name/unit/selling price/permitted stock); no costs. Active products selectable for posting; historical/deactivated results clearly read-only.
+Service canonical dipakai oleh POS, receiving, manual issue, product management, stock lookup dan barcode/label. Lakukan exact barcode index lookup lebih dahulu; dukung SKU exact/prefix, nama case-insensitive, kategori dan optional brand filter. Gunakan PostgreSQL B-tree unique indexes untuk barcode/SKU serta native name index yang diukur, misalnya pg_trgm bila tersedia dan dapat dibenarkan; tanpa search eksternal.
 
-Before creating, search exact barcode/SKU and show similar-name candidates using the same service. Require explicit “Tetap buat produk baru” after review; fuzzy match is warning, exact barcode/SKU collision is a hard DB rejection even under concurrency. Receiving resumes with selected existing/new product; product creation alone never receives stock.
+Pagination server dibatasi: default 25, maksimum 100, urutan nama/ID stabil, context filters dan pembatalan request stale. Jangan mengambil seluruh master ke browser. Authorization membentuk operational DTO allowlist berisi identitas/nama/unit/selling price/permitted stock, tanpa cost. Produk active dapat dipilih untuk posting; hasil historis/nonaktif ditandai read-only.
 
-## Identity
+Sebelum membuat produk, cari exact barcode/SKU dan tampilkan similar-name candidates dari service yang sama. Setelah review, wajib ada konfirmasi **Tetap buat produk baru**. Fuzzy match adalah warning; exact barcode/SKU collision adalah hard rejection database, termasuk saat create berlomba. Receiving melanjutkan dengan produk existing/new yang dipilih. Product creation tidak menerima barang atau menciptakan stock. Permission mengikuti [04](04-AUTH-RBAC-SECURITY.md).
 
-Manufacturer aliases and internal codes share globally unique tokens. Treat as strings: preserve leading zeros, case and punctuation; strip HID terminators/outer ASCII spaces only, reject internal controls/newlines, length 1–128 printable ASCII. Validate check digit for declared EAN/UPC. No pack conversion hidden in alias.
+## Identitas token
 
-Server-generated Code 128 internal token: BK-P- plus 16 uppercase Crockford Base32 characters, uniqueness retry. Reserved BK- namespace, manufacturer aliases cannot claim it. Do not recycle retired codes or regenerate on branding change. Legacy issued codes, if any proven by G2, retain identity; inherited repository contains no live code registry. Barcode contains no cost or executable command.
+Alias manufacturer dan kode internal berbagi token yang unik global. Perlakukan token sebagai string: pertahankan leading zeros, case dan punctuation; hapus hanya terminator HID/outer ASCII spaces, tolak internal controls/newlines, panjang 1–128 printable ASCII. Validasi check digit untuk declared EAN/UPC. Alias tidak menyembunyikan pack conversion.
 
-## Scanning
+Server menghasilkan token internal Code 128 dengan `BK-P-` ditambah 16 karakter uppercase Crockford Base32, disertai uniqueness retry. Namespace `BK-` reserved sehingga alias manufacturer tidak boleh mengklaimnya. Namespace teknis ini bukan identitas bisnis runtime. Jangan memakai ulang retired code atau mengganti kode saat branding berubah. Kode legacy yang benar-benar terbukti melalui G2 mempertahankan identitasnya; repository warisan bukan bukti adanya registry barcode live. Barcode tidak mengandung biaya atau executable command.
 
-USB/Bluetooth HID is keyboard input; no proprietary driver/WebUSB integration. Configure Enter suffix; dedicated scan field/manual Enter fallback. No timing heuristic for barcode validity. Each complete repeated code adds one base unit to draft; CR/LF empty terminators/key-repeat do not add. Preserve response order. Explicit quantity edit for fractional units. Visible delta/undo; no per-scan success toast claiming saved stock.
+## Input scan dan draft
 
-Pause capture during dialogs/review/session cash counting, do not steal focus from other inputs. POS capture requires the authenticated actor's own eligible OPEN CashSession; scanning never opens, hands over or closes a session. Unknown token stays available for search; authorized catalog creation only, never automatic stock. Scanner Enter cannot confirm payment/posting/session close. Lookup failure retains token; offline stops posting, no offline mutation queue. Camera scanning Later.
+USB/Bluetooth HID adalah input keyboard; tidak ada proprietary driver/WebUSB integration. Konfigurasikan suffix Enter, dedicated scan field dan manual Enter fallback. Jangan memakai timing heuristic untuk menetapkan validitas barcode. Setiap kode lengkap yang diulang menambah satu base unit ke draft; CR/LF kosong dan key-repeat tidak menambah unit. Pertahankan urutan hasil scan meskipun lookup selesai dalam urutan berbeda. Fractional unit memakai quantity edit eksplisit. Tampilkan delta/undo; feedback scan tidak mengklaim stok telah disimpan.
 
-Freeze source intent/key/payload on final confirmation. SUBMITTING → confirmed COMMITTED or UNCERTAIN. Uncertain freezes edits/replacement, original status/retry only. Minimal per-tab actor-scoped recovery reference; no staff cost inputs or secrets stored. Reload reauthorizes; ordinary stale drafts revalidate products/prices. Never expire uncertain identity into a new Sale.
+Pause capture saat dialog/review atau penghitungan kas dan jangan mengambil focus dari input lain. Capture POS memerlukan actor terautentikasi dengan CashSession OPEN miliknya yang eligible. Scan tidak membuka, menyerahkan atau menutup sesi. Token unknown tetap tersedia untuk search; hanya actor berizin yang dapat membuat master/alias, tanpa automatic stock. Scanner Enter tidak boleh mengonfirmasi pembayaran/posting/session close. Lookup gagal mempertahankan token. Offline menghentikan posting; tidak ada offline mutation queue. Camera scanning berada di Later.
 
-## Labels and evidence
+Pada final confirmation, bekukan source intent/key/payload. State request: SUBMITTING → COMMITTED yang terkonfirmasi atau UNCERTAIN. UNCERTAIN membekukan edit/penggantian dan hanya mengizinkan status/retry command awal. Simpan recovery reference minimal per-tab yang scoped ke actor, tanpa staff cost input, payload privat atau secret. Reload mengotorisasi ulang; stale draft biasa memvalidasi kembali product/price. Identitas uncertain tidak pernah kedaluwarsa menjadi Sale baru. [02](02-ARCHITECTURE.md) dan [17](17-POS-SALES.md) mengatur recovery dan atomic posting.
 
-Use license-verified open-source Code 128 library, black on white SVG, quiet zones, real mm dimensions and readable code/name/SKU. No purchase cost. Browser/OS label printing; candidate 50×30 mm requires actual printer confirmation. Print request is not proof of ink. Reprint uses same code and records request audit.
+## Label dan bukti perangkat
 
-BK20/BK25 must test manual/IME input, fast duplicate scans, CR/LF, disconnection/partial input, stale lookup, focus/virtual keyboard, USB and Bluetooth HID, printed label readability and actual receipt printer. No hardware evidence may be invented.
+Gunakan library Code 128 open-source yang lisensinya diverifikasi, SVG hitam di atas putih, quiet zones, ukuran nyata dalam mm serta code/name/SKU yang terbaca. Label tidak memuat purchase cost. Print melalui browser/OS; kandidat 50×30 mm memerlukan konfirmasi printer nyata. Print request bukan bukti tinta. Reprint memakai kode yang sama dan request-nya diaudit.
+
+Acceptance [08](08-TESTING-ACCEPTANCE.md) mencakup manual/IME input, duplicate scan cepat, CR/LF, disconnect/partial input, lookup stale/terlambat, focus/virtual keyboard, USB dan Bluetooth HID, keterbacaan label hasil cetak serta receipt printer nyata. Simulasi browser tidak dapat memberikan credit bukti hardware; catat device/driver/media serta hasil aktual dan gap yang belum diuji.

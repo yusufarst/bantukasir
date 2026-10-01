@@ -1,22 +1,10 @@
-# Official LATANSA brand assets
+# Aset identitas historis
 
-## Source manifest
+BantuKasir hanya codename internal; [DESIGN](../../DESIGN.md) dan [04](../../docs/04-AUTH-RBAC-SECURITY.md) mewajibkan BusinessProfile runtime dengan identitas client resmi. Aset di direktori ini dipertahankan tanpa perubahan binary, tetapi **tidak menjadi default branding aplikasi produksi atau authority token**.
 
-| Field | Verified value |
+| Aset | Provenance / batas penggunaan |
 | --- | --- |
-| Asset | [Official colored mark](source/latansa-official-colored-mark.png) |
-| Original filename | Untitled design (97).png |
-| Provenance | Supplied by the owner in the 20 September 2026 brand-refinement request and explicitly designated an official LATANSA asset |
-| Format / dimensions | PNG, 6250 × 6250 pixels |
-| File size | 6,680,241 bytes |
-| SHA-256 | 964e1a8644d75de8b5dbd37b4fae0e5af5f8c961f0acb60000e963ef4356f4ef |
-| Treatment | Dimensional/metallic wine-burgundy mark with rose highlights and a white background |
-| Preservation | Byte-for-byte copy of the supplied file; no crop, redraw, recoloring, background removal, regeneration or optimization |
-| Usage authority | Owner-designated official identity for LATANSA; no broader third-party license is asserted |
-| Other assets | No separate monochrome logo, wordmark or banner received in this task |
+| [LATANSA mark](source/latansa-official-colored-mark.png) | Owner menyebutnya identitas resmi LATANSA pada 20 September 2026. PNG 6250×6250, 6.680.241 byte; SHA-256 `964e1a8644d75de8b5dbd37b4fae0e5af5f8c961f0acb60000e963ef4356f4ef`. Original tetap byte-identik; tidak menyatakan lisensi pihak ketiga yang lebih luas |
+| [Logo codename](bantukasir-logo.svg) | Aset prototype BantuKasir terdahulu, bukan logo resmi client produksi |
 
-The color system and usage rules belong to [05 — Design system](../../docs/05-DESIGN-SYSTEM.md). The source image is not an application implementation or prototype. Keep this original immutable. No optimized or production derivative exists.
-
-Use the supplied mark faithfully on white. Do not apply blend modes, color filters, masks, clipping or automatic background removal. Do not imitate its metallic treatment in controls. Any future delivery optimization must retain this source and be checked for fidelity; a differently colored variant must come from the owner.
-
-CP01 is historical and carries no approval into BantuKasir Plan 1.1. This asset is preserved for LATANSA first-client/demo configuration, not as the universal product identity. No exact BantuKasir logo source exists in this repository at this checkpoint; do not treat this LATANSA mark as that asset or fabricate a replacement. Any future use must check complete-image readability, including existing whitespace, at actual sizes; request an official small-use export if necessary rather than inventing one. No monochrome variant is available or may be synthesized.
+Tidak ada approval untuk memakai LATANSA pada client lain, mengimpor palet lamanya atau mengubah original. Jika client nanti memakai logo miliknya, owner memberi sumber/izin resmi; runtime memvalidasi raster sesuai04 dan snapshot mereferensikan revision/aset privat. Tidak perlu mendesain merek atau mengoptimalkan aset ini dalam rebaseline. T04/T23/T32 menangani boundary identitas, visual dan reproduksi dokumen.

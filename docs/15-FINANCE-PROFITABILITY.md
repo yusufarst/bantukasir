@@ -1,37 +1,57 @@
-# 15 — HPP and gross profit
+# 15 — HPP dan Laba Kotor
 
-Owner-only management reporting, not accounting/tax advice or Laba Bersih. Core uses perpetual **moving weighted average (MWA)** per interchangeable product in one stock pool. No latest-purchase-price substitute, no unknown cost treated as zero.
+**Plan 2.0.** Laporan manajemen khusus Pemilik menggunakan perpetual moving weighted average (MWA) per produk yang saling dapat dipertukarkan dalam satu stock pool. HPP tidak memakai latest purchase price dan biaya unknown tidak dianggap nol. Laporan ini bukan akuntansi pajak atau Laba Bersih; permission/privacy mengikuti [04](04-AUTH-RBAC-SECURITY.md).
 
-## Source facts and arithmetic
+## Fakta sumber dan aritmetika
 
-Acquisition evidence links to opening/receipt/positive adjustment: total landed acquisition amount, quantity, reference, actor, status KNOWN or UNKNOWN. Explicit zero needs owner-confirmed evidence/reason. Operations may submit new evidence write-only under [04](04-AUTH-RBAC-SECURITY.md); historical reads/corrections remain owner-only.
+Acquisition evidence terhubung ke OPENING/RECEIPT/positive ADJUSTMENT: total landed acquisition amount, quantity, reference, actor dan status KNOWN atau UNKNOWN. Nilai nol eksplisit memerlukan evidence/reason yang dikonfirmasi Pemilik. Admin Operasional boleh mengirim evidence baru secara write-only; membaca riwayat atau mengoreksi cost tetap khusus Pemilik.
 
-For known Q units with inventory value V, receive q with total cost c:
-Q' = Q + q; V' = V + c; average = V'/Q'.
-Issue q: allocation = q × pre-issue V/Q; remove that value. Both SALE_ISSUE and non-sale issues reduce inventory value, but only SALE_ISSUE allocation contributes sales HPP. Final issue consuming all stock takes remaining V to avoid rounding residue. Decimal six-place cost arithmetic; aggregate first, round report display to IDR only. No binary float.
+Untuk Q unit known dengan inventory value V, receipt q dengan total cost c menghasilkan:
 
-Example: 10 units costing Rp100,000 + 10 costing Rp140,000 → 20 units/Rp240,000 → average Rp12,000. Sell 3 at Rp20,000 → sales Rp60,000, HPP Rp36,000, gross Rp24,000; remaining 17/Rp204,000. Manual issue 2 removes Rp24,000 inventory value, not sales HPP.
+`Q' = Q + q; V' = V + c; average = V'/Q'`
 
-All source/cost allocations are captured in the inventory/Sale transaction using product posting sequence. A missing-cost receipt marks valuation UNKNOWN and affected subsequent HPP incomplete. Historical already-known issue allocations remain valid. If stock reaches zero, later fully known receipts can start a new known pool; missing earlier periods remain incomplete.
+Issue q mengalokasikan `q × (V/Q)` menggunakan average sebelum issue dan mengurangi nilai tersebut. SALE_ISSUE maupun issue non-sale mengurangi inventory value; hanya alokasi SALE_ISSUE masuk sales HPP. Issue terakhir yang menghabiskan seluruh stock mengambil sisa V agar tidak meninggalkan rounding residue. Gunakan decimal cost arithmetic enam tempat, aggregate terlebih dahulu dan round tampilan laporan ke IDR pada akhir; tidak ada binary float.
 
-## Correcting evidence without rewriting history
+Contoh: 10 unit berbiaya Rp100.000 + 10 unit berbiaya Rp140.000 → 20 unit/Rp240.000 → average Rp12.000. Jual 3 pada Rp20.000 → penjualan Rp60.000, HPP Rp36.000, Laba Kotor Rp24.000; sisa 17/Rp204.000. Manual issue 2 mengurangi inventory value Rp24.000 tanpa menambah sales HPP.
 
-Owner appends evidence revision with reason. Under product guard, bounded deterministic replay from the affected source computes a new valuation revision and downstream allocation versions; original source and allocations remain retained. Publish the new revision/current projection atomically only after complete replay and reconciliation. Concurrent posting waits or safely rejects busy product. BK26 measures replay capacity (reference 10,000 movements per product); if timeout/cap would be exceeded, stop correction and mark affected reporting incomplete pending a reviewed recovery procedure, never partly publish or guess cost. No general asynchronous valuation platform in V1.
+Seluruh source/cost allocations dicatat dalam transaksi inventory/Sale dengan posting sequence per produk. Receipt dengan cost yang hilang membuat valuation UNKNOWN dan HPP berikutnya yang terpengaruh incomplete. Alokasi issue historis yang sebelumnya KNOWN tetap valid. Bila stock mencapai nol, receipt baru yang seluruh cost-nya KNOWN dapat memulai pool KNOWN baru; periode lama dengan evidence hilang tetap incomplete.
 
-Standalone reversal replays the logical cancellation of the eligible source; immutable reversal retains exact physical inverse and linked evidence, including dependent cost revisions. Reject until safely replayable. Do not apply a naive latest average to cancel an old receipt.
+## Revision evidence tanpa menulis ulang sejarah
 
-## Sale and corrections
+Pemilik menambahkan evidence revision dengan reason. Di bawah product guard, deterministic replay yang dibatasi dari source terpengaruh menghitung valuation revision baru serta downstream allocation versions. Source dan alokasi original tetap dipertahankan. Publish revision/current projection baru secara atomik hanya setelah seluruh replay dan rekonsiliasi selesai. Posting bersamaan menunggu atau ditolak aman ketika produk busy.
 
-Fully paid immediate verified goods handover establishes completed sales value and matched SALE_ISSUE HPP together. Cash tender is not sales value; applied payment is. Refund without return subtracts linked refund amount from sales value, does not reverse HPP or add stock. Verified saleable return restores original matched issue cost and reverses that quantity of sales HPP; unknown original cost keeps return valuation incomplete. Refund/return are bounded separately to prevent duplicate cost recovery. Damaged return is not saleable and adds no usable stock.
+Ukur kapasitas synchronous replay pada lingkungan target; reference awal 10.000 movements per produk, bukan hasil pengukuran atau jaminan. Bila timeout/cap akan terlampaui, hentikan koreksi dan tandai reporting terkait incomplete sampai tersedia prosedur recovery yang direview. Jangan mempublikasikan sebagian atau menebak cost. V1 tidak mencakup platform valuation asynchronous umum.
 
-Reporting uses gross completed sales, executed refunds separately and net sales = gross sales - refunds; net HPP = sale allocations - cost of verified saleable returns; gross profit = net sales - net HPP. Original Sale/receipt remain immutable. Refunds/returns appear at their server posting date, with original reference, no hidden backdated rewrite. Non-sale losses/variance are separate operational facts, so this is sales gross profit, never net profit.
+Standalone reversal me-replay logical cancellation atas source yang eligible. Reversal immutable mempertahankan physical inverse yang tepat, linked evidence dan dependent cost revisions. Tolak sampai replay dapat dilakukan aman; jangan memakai average terbaru secara naif untuk membatalkan receipt lama. Aturan stok/reversal mengikuti [06](06-INVENTORY-SPEC.md).
 
-## Periods and completeness
+## Sale, refund dan return
 
-Asia/Jakarta server boundaries converted to UTC half-open ranges. Hari Ini = local date; 7 Hari = today plus prior six dates; Bulan Ini = first of current month through now; Bulan Lalu = full previous calendar month; Custom Range = inclusive selected dates implemented as exclusive next-day end.
+Pembayaran penuh dan penyerahan GOODS langsung yang dikonfirmasi membentuk completed sales value serta matched SALE_ISSUE HPP bersama dalam transaksi [17](17-POS-SALES.md). Cash tender bukan sales value; applied payment adalah jumlah yang diterapkan pada Sale.
 
-Metrics: gross sales/refunds/net sales, completed transaction count, applied cash/transfer and payouts separately, qty sold/returned, HPP/gross profit and optional margin only if complete and net sales >0. LOW/OUT is current, explicitly not period-filtered.
+Refund tanpa return mengurangi sales value dengan linked refund amount, tidak membalik HPP atau menambah stock. Return fisik saleable yang diverifikasi memulihkan original matched issue cost dan membalik sales HPP untuk quantity tersebut; original cost UNKNOWN membuat return valuation tetap incomplete. Refund money dan return qty dibatasi terpisah agar cost tidak dipulihkan dua kali. Damaged/non-saleable return tidak menambah usable stock.
 
-Consistent report read snapshot includes asOf/timezone/evidence revision/completeness and unknown line count. Revenue/payment totals can display while HPP/gross/margin show **Data biaya belum lengkap**; do not exclude unknown-cost or loss-making rows to manufacture profit. Query failure is an error, not zero. Completed report valuation may change only through disclosed evidence revisions; CashSession reports and receipt snapshots never change.
+Laporan menampilkan penjualan bruto dan executed refund secara terpisah:
 
-[17](17-POS-SALES.md) session cash control has no private cost/profit. Owner daily recap derives financial totals from source facts and shows session variance separately; it never treats opening cash or variance as sales/profit and never sums session totals on top of the same Sales. No AR/AP, net profit, expenses, payroll, service finance or tax accounting in Core.
+- Penjualan neto = completed sales bruto − refund.
+- HPP neto = alokasi Sale − cost dari verified saleable returns.
+- Laba Kotor = penjualan neto − HPP neto.
+
+Sale/Payment/receipt original tetap immutable. Refund/return tampil pada server posting date dengan reference original; tidak ada hidden backdating. Kerugian non-sale dan variance kas adalah fakta operasional terpisah. Hasil ini tetap laba kotor penjualan, bukan laba bersih.
+
+## Periode, kelengkapan dan read snapshot
+
+Server memakai batas Asia/Jakarta yang dikonversi ke rentang UTC half-open:
+
+| Periode | Batas |
+| --- | --- |
+| Hari Ini | Tanggal lokal hari ini |
+| 7 Hari | Hari ini dan enam tanggal sebelumnya |
+| Bulan Ini | Awal bulan berjalan sampai sekarang |
+| Bulan Lalu | Seluruh bulan kalender sebelumnya |
+| Custom Range | Tanggal pilihan inklusif, diimplementasikan dengan exclusive next-day end |
+
+Metrik mencakup penjualan bruto/refund/neto, jumlah transaksi COMPLETED, applied cash/transfer dan payout terpisah, qty sold/returned, HPP/Laba Kotor. Margin opsional hanya tersedia bila cost complete dan penjualan neto >0. LOW/OUT adalah stok terkini, bukan metrik yang mengikuti filter periode.
+
+Read snapshot laporan konsisten memuat asOf/timezone/evidence revision/completeness serta unknown line count. Revenue/payment totals boleh tampil ketika HPP/Laba Kotor/margin menampilkan **Data biaya belum lengkap**. Jangan mengecualikan unknown-cost atau line merugi untuk membuat profit terlihat lengkap. Query gagal adalah error, bukan nol. Valuation laporan dapat berubah hanya melalui evidence revisions yang dinyatakan; ReceiptSnapshot dan CashSessionReportSnapshot tidak berubah.
+
+Rekap harian Pemilik menghitung financial totals sekali dari source facts dan menampilkan session variance terpisah menurut [17](17-POS-SALES.md). Opening cash atau variance bukan penjualan/profit; jangan menambahkan total sesi di atas Sale yang sama. Session cash report tidak memuat private cost/profit. AR/AP, Laba Bersih, expenses/payroll, service finance dan tax accounting tetap di luar Core. Acceptance numeric/UNKNOWN/replay/period/privacy mengikuti [08](08-TESTING-ACCEPTANCE.md).

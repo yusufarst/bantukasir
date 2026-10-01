@@ -1,39 +1,46 @@
-# 01 — BantuKasir product requirements
+# 01 — Produk dan batas Core
 
-**Plan 1.1.** One configurable business, GOODS only, IDR, Asia/Jakarta dates. Production POS in approximately one month is a target subject to capacity/gates in [11](11-BUILD-PLAN.md). No runtime capability is implemented.
+**Plan 2.0.** BantuKasir adalah codename internal, bukan merek client produksi. Produk adalah POS GOODS-only self-hosted untuk satu bisnis, satu stock pool, penjualan langsung dan dibayar penuh. BusinessProfile runtime menyediakan nama/logo resmi, alamat/kontak, identitas dokumen dan accent yang diizinkan. Identitas final disediakan owner kemudian.
 
-## Outcomes and Core V1
+## Hasil yang harus dicapai
 
-| Client problem | Required deliverable |
+Kasir dapat Scan/Cari → Keranjang → Bayar → Struk melalui session sendiri, tanpa oversell atau double charge saat retry. Operations dapat mengelola barang, menerima barang dan mencatat pengeluaran non-sale, dengan stock/history yang benar tanpa akses profit. Pemilik dapat melihat HPP/Laba Kotor yang jujur, accountability kas, koreksi append-only dan bukti audit; bisnis dapat dipulihkan dari backup independen.
+
+Client awal berorientasi ATK. Fixture non-production memakai barang ATK sintetis; bukan seed bisnis produksi atau data client yang diasumsikan benar. Barang tanpa gambar tetap mudah ditemukan. Upload/storage gambar produk bukan Core; upload logo bisnis dibatasi [04](04-AUTH-RBAC-SECURITY.md).
+
+## Role dan menu yang sah
+
+| Role | Workspace/capability Core |
 | --- | --- |
-| Goods enter/leave unrecorded | Search-first receiving/opening, reasoned manual issue, immutable stock ledger |
-| Sales notes are manual | Atomic fully paid Sale, thermal receipt and A4 Nota Penjualan / Commercial Invoice with browser PDF |
-| Restock happens too late | minimumStock; current LOW/OUT list/badge/dashboard |
-| Sales/HPP/profit are unknown | Owner Hari Ini, 7 Hari, Bulan Ini, Bulan Lalu, Custom Range; truthful MWA HPP and Laba Kotor |
-| Products hard to find | One PostgreSQL Product Search shared by POS, receiving, issue, catalog, stock and labels |
-| Mixed barcode availability | Manufacturer aliases, internal Code 128, labels, USB/Bluetooth HID and manual input |
-| Cash cannot be reconciled | Lightweight accountable cash sessions with opening cash, cash/transfer activity, physical count, variance, immutable report and PDF/CSV/reprint |
-| Owner lacks accountability | Filterable log of sales, payments, stock, corrections, master/security/config changes |
-| Client identity varies | Runtime name, logo, address, contact, optional email, receipt header/footer, document identity and constrained accent |
+| SUPER_ADMIN / Pemilik | Seluruh katalog/inventory; opening, cost evidence/replay/adjustment/reversal; POS dengan sesi sendiri; refund/return; laporan penjualan/HPP/Laba Kotor, semua sesi dan audit; pengguna, profil bisnis/register dan status sistem/backup |
+| OPERATIONS_ADMIN / Admin Operasional | Katalog/kategori/brand/unit/harga/minimum/active, barcode/label; receiving dengan bukti biaya baru write-only atau UNKNOWN; manual issue reason wajib; current stock, LOW/OUT dan history operasional aman; akun sendiri |
+| CASHIER / Kasir | Search/scan operational; buka/tutup sesi sendiri, cart/pembayaran tunai/transfer, Sale/history/receipt serta laporan sesi sendiri; akun sendiri. Tidak mengelola produk atau stock |
 
-Core includes individual accounts, backend RBAC, safe reset/invite, no public signup, secure sessions, rate limiting, disable/revoke, HTTPS, environment/secret safety, minimal owner refund/return/correction, independent backup/restore and actual device/pilot acceptance. No TOTP/2FA in V1.
+Backend permission dan cakupan objek adalah otoritas [04](04-AUTH-RBAC-SECURITY.md). Pemilik checkout sebagai dirinya sendiri; Admin Operasional tidak mempunyai POS/session. Menu hanya ditampilkan bila capability aktif dan dapat dipakai; template desain bukan pembuka scope.
 
-## Exactly three roles
+## Alur dan fakta utama
 
-- SUPER_ADMIN / Pemilik: full access, private costs/reports/logs, users/configuration/recovery and sensitive corrections/refunds.
-- OPERATIONS_ADMIN / Admin Operasional: catalog/category/permitted selling prices, barcode/labels, receiving, manual issue, stock/restock and operational history. No private HPP/profit or security/recovery administration.
-- CASHIER / Kasir: open/close an authorized own cash session, search/scan, POS, cash/transfer recording, receipt/reprint, own transactions and own session reports. No receiving, adjustment, master/price editing, private finance, users/settings/audit or history deletion.
+- Master produk baru stock 0. Search/scan/label tidak membuat movement; duplicate SKU/barcode diblok DB, similar match ditinjau sebelum create.
+- Receiving terpisah dari opening awal dan manual issue. Review/confirm eksplisit diperlukan; Operations tidak mendapat echo biaya yang baru dikirim.
+- Opening awal manual owner-only memakai global onboarding freeze, batas 100 row/command atomik, produk tanpa ledger, zero checklist tanpa movement; data nyata menunggu G2/cutover.
+- Sale GOODS diserahkan langsung, satu full CASH atau BANK_TRANSFER. Satu transaksi mencatat semua Sale/lines/payment/issue/balance/cost/receipt/audit/result; human transfer confirmation tidak mengklaim gateway.
+- Sesi kas: satu drawer, satu responsible cashier, satu OPEN; openingCash eksplisit termasuk Rp0. Close aman terhadap Sale racing, snapshot immutable, handover tutup A lalu buka B, kembali tanggal sama memakai sesi baru.
+- Koreksi/refund/return owner-only, reason/recent auth, original tidak berubah. Refund tanpa return tidak menambah stok. Return saleable memakai cost historis; damaged tidak menambah usable stock.
+- MWA dan UNKNOWN biaya; penjualan masih dapat dilaporkan saat HPP/Laba Kotor incomplete. Laba Kotor tidak diklaim sebagai Laba Bersih.
+- Thermal/A4 nota komersial/browser PDF, label Code128 dan laporan sesi print/PDF/CSV memakai DTO aman. Reprint snapshot asli/nomor sama, bukan transaksi baru.
+- Restock adalah current LOW/OUT list/badge, bukan notifikasi pengiriman. Query gagal/stale bukan nol atau kosong.
+- Audit, forward migration, reconciliation, backup DB+aset/template, isolated restore, recoveryEpoch dan post-backup gap review wajib sebelum release.
 
-[04](04-AUTH-RBAC-SECURITY.md) defines the receiving cost-input boundary.
+Detail unik berada di [02](02-ARCHITECTURE.md), [06](06-INVENTORY-SPEC.md), [12](12-BARCODE-SCANNER.md), [15](15-FINANCE-PROFITABILITY.md), [17](17-POS-SALES.md) dan [09](09-DEPLOYMENT-OPS.md). [08](08-TESTING-ACCEPTANCE.md) menetapkan ownership bukti, termasuk browser/mobile/a11y, actual devices dan performance.
 
-## UX
+## Batas Later / tidak diimplementasikan
 
-Premium, elegant, restrained, fast, professional. Cashier: **Buka Sesi Kas → Scan/Cari → Keranjang → Bayar → Struk → Tutup Sesi saat selesai/serah-terima**. No customer required. Operations: what needs receiving/restocking today? Owner: what needs attention and how is business doing? One approved design system; no decorative dashboard. Loading/empty/error/denied/stale/unknown-result states are deliverables.
+Services, booking/Order/DP/deferred fulfillment/reservation; warehouses/location/transfers/transit; HR/attendance/payroll/complex shifts/shared active drawer/paid-in-out/cash pickup; price override/discount engine; unpaid/split payments; AR/AP/Laba Bersih/expenses/tax accounting; serial/pack conversion/batch/expiry/consignment; supplier purchasing otomatis/CRM/leads/targets; CSV/XLSX import; gambar produk upload/storage; Web Push/email notification/outbox/worker umum; kamera scan/offline sale queue; gateway/QRIS/card/e-wallet; public signup/TOTP/dynamic roles/multi-tenant.
 
-## Later / excluded from V1
+Future method codes atau template visual tidak mengaktifkan capability tersebut. Bila kebutuhan owner ternyata mensyaratkan serial/import/tax/shared drawer, hentikan slice terkait dan catat keputusan/replan sebelum coding. Jangan mengurangi integritas untuk mengejar tanggal.
 
-SERVICE and mixed goods/service; ServiceJob/scheduling/milestones/progress/completion/cost; booking/DP/partial or later payment/outstanding; reservation/partial fulfillment; CRM beyond optional receipt name; warehouse/location/transfers/transit; attendance/HR/payroll shifts; simultaneous multi-cashier sharing of one drawer; paid-in/paid-out; mid-session responsibility transfer; Web Push/episodes/outbox; camera/offline posting; serialized inventory unless G2 proves essential; pack conversion/batch/expiry/consignment; advanced opname; QC/warranty/repair custody; purchasing/PO/supplier AP; public website/catalog/CMS/RFQ/leads/quotation/WhatsApp attribution; promotions/discount engine/loyalty; gateway/QRIS/card/e-wallet; full accounting/net profit/expenses/payroll/tax accounting; multi-company/multi-currency; enterprise import/XLSX and simple CSV import (manual opening first). These are unestimated backlog topics, not hidden Plan 1.1 tasks.
+## Kebijakan yang belum disetujui
 
-## Policy gates
+DESIGN menunggu approval visual revision sumber; G1 menunggu tax/legal nota dan buyer policy; G2 unit/opening volume/barcode/cost/serial; G3 drawer/float/handover/refund funding; G4 independent destination/recovery access/RPO/RTO; DEVICES actual scanner/printer; RELEASE akses/otorisasi dan pilot. Status di [10](10-DECISIONS.md). Owner waiting tidak menghalangi backend/test non-production yang independen, tetapi tidak memberi izin memakai asumsi untuk real cutover.
 
-G1: tax/legal invoice policy, mandatory buyer details and treatment before pilot; commercial nota is not a formal tax invoice. G2: actual units/opening/barcodes/cost availability and serial need before affected data entry. G3: identify actual physical drawer(s)/labels, confirm explicit opening-float practice, one responsible cashier per active drawer, no simultaneous sharing, and how owner cash refunds are physically funded. G4: actual independent backup destination and accepted measured RPO/RTO before production. Planning can finish with gates open; execution stops at the relevant gate.
+Biaya software/SaaS tambahan ditargetkan sekitar Rp0 dengan stack open-source/VPS/domain yang ada; biaya backup/storage dan hak DesainPakeAI nyata tetap diverifikasi. Tidak ada pembelian atau penggunaan berbayar yang diotorisasi dalam sesi ini.

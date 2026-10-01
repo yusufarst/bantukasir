@@ -1,68 +1,87 @@
-# 17 — Sale, payment, documents and lightweight cash sessions
+# 17 — Sale, pembayaran, dokumen dan sesi kas
 
-## Cash-session boundary
+**Plan 2.0.** Spesifikasi Sale GOODS-only, dokumen immutable dan pertanggungjawaban drawer. Kontrak transaksi/idempotency mengikuti [02](02-ARCHITECTURE.md), permission/object scope [04](04-AUTH-RBAC-SECURITY.md), dan acceptance/bukti aktual [08](08-TESTING-ACCEPTANCE.md). Dokumen ini tidak mengklaim runtime atau hardware telah lulus.
 
-`CashRegister` is only a logical identity for a physical cash drawer/counter. Default V1 policy is **one drawer → one OPEN session → one responsible cashier**. It is not a warehouse, employee attendance record, work schedule, payroll period or complex retail shift engine. Simultaneous cashiers sharing one physical drawer, responsibility transfer inside a session, paid-in/paid-out and cash pickups are Later.
+## Batas CashRegister dan CashSession
 
-A `CashSession` has an immutable number, register, responsible cashier, openedAt, explicit nonnegative openingCash (Rp0 is valid), activityVersion and OPEN/CLOSED status. Opening locks the register, verifies no OPEN session for that register or cashier, records the count and audit/result atomically. One business may start with one configured register; supporting several physically distinct drawers uses the same uniqueness rule and is subject to G3 confirmation.
+CashRegister hanya identitas logical untuk drawer/counter kas fisik. Kebijakan V1 adalah **satu drawer → satu sesi OPEN → satu cashier yang bertanggung jawab**. Sesi kas bukan warehouse, attendance, jadwal kerja, periode payroll atau retail shift engine kompleks. Simultaneous shared drawer, transfer tanggung jawab di dalam sesi, paid-in/paid-out dan cash pickup berada di Later.
 
-A cashier who leaves closes the session. Returning on the same date means opening a new session. Handover means close cashier A's session, then cashier B opens a new one. A session may span midnight; it remains one accountability document. Every Sale retains its server-derived Jakarta businessDate for period reporting independently of session identity.
+CashSession mempunyai nomor immutable, register, responsible cashier, openedAt, openingCash nonnegative yang eksplisit (Rp0 valid), activityVersion dan status OPEN/CLOSED. Buka sesi: Kasir/Pemilik sebagai dirinya sendiri memilih register berizin yang tersedia → menghitung/mengetik opening cash → review → confirm. Pembukaan mengunci register, memastikan tidak ada sesi OPEN untuk register maupun cashier tersebut, lalu commit sesi/count/audit/result secara atomik. Pemilik tidak mengimpersonasi cashier lain; Admin Operasional tidak memperoleh permission POS/session.
 
-## Atomic full-payment Sale
+Bisnis boleh mulai dengan satu register yang dikonfigurasi. Beberapa drawer fisik yang benar-benar berbeda mengikuti constraint yang sama dan memerlukan konfirmasi G3. Cashier pergi/selesai bekerja menutup sesi. Kembali pada tanggal sama berarti membuka sesi baru; handover menutup sesi cashier A sebelum cashier B membuka sesi baru. Sesi boleh melintasi midnight dan tetap menjadi satu dokumen pertanggungjawaban. Setiap Sale menyimpan businessDate Jakarta yang dihitung server, terpisah dari identitas sesi.
 
-GOODS only; client draft → COMPLETED Sale. No Order/booking/DP/outstanding/reservation/staged fulfillment. Optional receipt customer name only, no required customer/CRM. One payment method per Sale: CASH or BANK_TRANSFER. QRIS/card/e-wallet/gateway are disabled future capabilities; extensible method code/label does not enable them. Every checkout actor needs their own eligible OPEN CashSession, including transfer-only sales, so commercial activity and responsibility have one stable boundary.
+## Sale atomik dengan pembayaran penuh
 
-Server validates active actor/role, source intent, session/register responsibility, product/version, authoritative price, qty/unit/stock, totals and payment. Lock the OPEN session before product/stock writes and increment activityVersion with the Sale. No cashier price override/discount. Changed price asks for review, never silently changes payable total. CASH stores total/tender/change/applied amount: tender >= total, change = tender - total, applied = total. Transfer applies exact full total, records optional reference and cashier confirmation that funds were received; no gateway verification claim and no physical cash effect.
+Client draft → Sale COMPLETED untuk GOODS, pembayaran penuh dan penyerahan langsung. Order/booking/DP/outstanding/reservation/staged fulfillment berada di luar V1. Nama pelanggan pada receipt opsional; tidak ada customer wajib atau CRM. Satu payment method per Sale: CASH atau BANK_TRANSFER. QRIS/card/e-wallet/gateway adalah future capability yang nonaktif; method code/label yang extensible tidak mengaktifkannya.
 
-Final review confirms immediate goods handover. One transaction creates Sale/lines, full Payment, SALE_ISSUE, StockBalance, cost source/allocation or UNKNOWN, immutable ReceiptSnapshot, audit and durable command result. Fail anywhere → none committed. Prevent duplicate source intent even with different retry keys. No payment-only or stock-only success. Customer-bank actions happen outside DB; resolve uncertain record outcome before requesting repayment.
+Setiap actor checkout, termasuk Pemilik dan transfer-only Sale, wajib mempunyai sesi OPEN miliknya yang eligible. Server memvalidasi active actor/role, source intent, register/session responsibility, product/version, authoritative selling price, qty/unit/stock, total dan payment. Kunci sesi OPEN sebelum product/stock writes; increment activityVersion bersama Sale. Kasir tidak melakukan price override/discount. Harga berubah memerlukan review ulang, bukan perubahan payable total diam-diam.
 
-Stock insufficient/price stale/closed session is a definite rejection before payment or stock facts; review draft again with explicit new revision or a new session as applicable. Lost response is UNCERTAIN: freeze original envelope, query/retry same identity, do not create replacement. Status recovery of the original result must work after its session closes. Print after commit; print failure cannot undo Sale.
+| Method | Fakta yang direkam |
+| --- | --- |
+| CASH | total/tender/change/applied; tender >= total, change = tender − total, applied = total |
+| BANK_TRANSFER | Exact full total, optional reference dan konfirmasi cashier bahwa dana diterima; tidak mengubah physical cash atau mengklaim gateway verification |
 
-## Receipt and A4
+Scan/Cari → Keranjang → qty → pilih pembayaran penuh → review pembayaran dan konfirmasi penyerahan langsung → confirm → Struk. Final confirmation membekukan source intent/key/payload. Satu transaksi membuat Sale/lines/full Payment/SALE_ISSUE/StockBalance/cost source dan allocation atau UNKNOWN/ReceiptSnapshot/audit/durable result. Gagal di bagian mana pun → tidak ada bagian transaksi yang commit. Source intent mencegah duplikasi walau retry memakai key berbeda; tidak ada keberhasilan payment-only atau stock-only.
 
-Every Sale has unique immutable number/snapshot. Include frozen business name/logo/address/contact/header/footer/document identity, UTC time rendered in Jakarta, cashier and session number, items/SKU/unit/qty/unit price/line totals/total, method and cash tender/change. Retain identity/template assets for reproduction. Reprint same number/content with copy marker; no new Sale/Payment/movement.
+Tindakan customer/bank berlangsung di luar transaksi database. Recording transfer memerlukan human confirmation; bila hasil recording tidak pasti, pulihkan command awal sebelum meminta customer membayar/transfer ulang.
 
-Render thermal (actual 58/80 mm device decision at gate) and A4 Nota Penjualan / Commercial Invoice from same source, using browser print/PDF. No duplicate entry. No tax invoice/legal equivalence claim; G1 controls any tax/buyer-identity changes. Authorize receipt/history/reprint on each request; cashier own transactions, owner all. No private cost in document data.
+### Penolakan, hasil tidak pasti dan recovery
 
-## Minimal owner refund/return
+Stok tidak cukup, stale price atau session CLOSED adalah definite rejection sebelum payment/stock facts. Review draft lagi dengan revision eksplisit atau sesi baru yang eligible sesuai sebab penolakan. Response hilang adalah UNCERTAIN: bekukan envelope awal dan lakukan status/retry identitas yang sama; jangan membuat replacement Sale atau menyimpulkan transaksi gagal dari timeout.
 
-Original Sale → eligible lines/qty/amount → mandatory reason/recent auth → review actual payout/physical goods → confirm. Lock original Sale and affected products. Cumulative refunded amount cannot exceed original paid value, line refunds cannot exceed original line value, return qty cannot exceed issued qty minus prior returns. Partial line-value refund permitted only within remaining monetary bound; no exchange/credit-account engine.
+Recovery mengotorisasi ulang dan hasil awal yang sudah commit tetap dapat ditemukan sesudah sesinya CLOSED. Scanner Enter tidak mengonfirmasi pembayaran. Reload mempertahankan recovery reference minimal tanpa secret atau payload privat; ordinary stale draft memvalidasi ulang produk/harga. Printing dilakukan sesudah commit; printer failure tidak membatalkan Sale. Restore/recovery epoch mengikuti [09](09-DEPLOYMENT-OPS.md), tanpa blind replay intent lama.
 
-Append executed Refund evidence (CASH or BANK_TRANSFER, owner funds/reference), optional saleable RETURN_RECEIPT, historical cost recovery, audit and durable result in one transaction. Stock returned without additional money is allowed if original monetary refund already occurred; independently bounded to prevent double refund/return. Refund without physical return adds no stock; damaged/non-saleable return adds no saleable stock. Original Sale/Payment/receipt stay unchanged. Owner records correction document linked to original.
+## Receipt thermal dan A4
 
-Owner payouts use separate owner-controlled funds, never an OPEN cashier drawer in the V1 baseline. Track payout actor/time/method distinctly in owner reports. If drawer-funded refunds/cash pickups/paid-in/out or shared active cash responsibility are actually required, STOP at G3 and replan rather than silently changing session expected cash.
+Setiap Sale mempunyai satu nomor dan ReceiptSnapshot immutable. Snapshot memuat business name/logo/address/contact/header/footer/document identity yang dibekukan dari BusinessProfile runtime, identity/template/asset revision, waktu UTC yang dirender di Jakarta, cashier dan nomor sesi, item/SKU/unit/qty/unit price/line total/total, method serta tender/change CASH. BantuKasir hanya codename; perubahan nama/logo klien runtime tidak mengubah identitas dokumen lama.
 
-## Laporan Sesi Kas — primary reconciliation
+Pertahankan asset/template yang direferensikan agar dokumen dapat direproduksi. Reprint menggunakan nomor/content yang sama dengan copy marker, tanpa Sale/Payment/movement baru. Receipt/history/reprint/print/PDF/media request diotorisasi setiap kali: Kasir hanya transaksi sendiri, Pemilik seluruhnya. Document DTO tidak memuat acquisition cost/HPP/profit.
 
-Expected physical cash uses only modeled drawer facts:
+Thermal dan A4 Nota Penjualan / Commercial Invoice memakai snapshot yang sama melalui browser print/PDF, tanpa entry ulang. Ukuran thermal nyata 58/80 mm harus dikonfirmasi bersama device/media. Commercial nota tidak mengklaim legal equivalence dengan faktur pajak; G1 mengatur setiap perubahan tax/buyer-identity sebelum pilot. Print request atau penutupan print dialog bukan bukti tinta. Print failure/reprint tidak menggandakan fakta bisnis.
 
-`expectedCash = openingCash + applied CASH payments in the session`
+## Refund/return minimal oleh Pemilik
+
+Alur: pilih Sale original → line/qty/amount yang eligible → reason wajib/recent authentication → review payout yang benar-benar dilakukan dan kondisi barang fisik → confirm. Kunci Sale original serta produk terkait menurut urutan [02](02-ARCHITECTURE.md). Total refunded amount kumulatif tidak boleh melebihi paid value original; line refund tidak boleh melebihi line value; return qty tidak boleh melebihi issued qty dikurangi prior returns. Partial line-value refund hanya dalam remaining monetary bound. Tidak ada exchange/credit-account engine.
+
+Dalam satu transaksi, append executed Refund evidence (CASH/BANK_TRANSFER, owner funds/reference), optional saleable RETURN_RECEIPT, historical cost recovery, audit dan durable result. Qty dan money dibatasi terpisah di bawah lock agar retry/request berlomba tidak melakukan refund/return dua kali. Barang dapat dikembalikan tanpa tambahan money bila monetary refund original sudah dilakukan. Refund tanpa physical return tidak menambah stock; damaged/non-saleable return tidak menambah saleable stock. Sale/Payment/receipt original tetap immutable; dokumen koreksi terhubung ke original.
+
+Payout Pemilik memakai dana terpisah yang dikendalikan Pemilik, bukan drawer Kasir OPEN. Actor/waktu/method payout tampil terpisah dalam laporan Pemilik. Jika praktik nyata memerlukan drawer-funded refund, paid-in/out, cash pickup atau shared active cash responsibility, hentikan alur terkait pada G3 dan replan; jangan mengubah expectedCash secara diam-diam. Matched historical cost/UNKNOWN dan dampak HPP mengikuti [15](15-FINANCE-PROFITABILITY.md).
+
+## Laporan Sesi Kas dan expected cash
+
+Expected physical cash hanya berasal dari fakta drawer yang dimodelkan:
+
+`expectedCash = openingCash + applied CASH payments dalam sesi`
 
 `variance = physicalCash - expectedCash`
 
-BANK_TRANSFER never increases expected physical cash. Owner-funded refunds remain separate. No paid-in/paid-out, cash pickup, drawer-funded refund or hidden balancing adjustment exists in V1. Opening cash is required as an explicit nonnegative count; enter Rp0 when the business intentionally starts empty. G3 confirms that this matches real drawer practice before BK28/pilot.
+BANK_TRANSFER tidak pernah menambah expected physical cash. Owner-funded refunds terpisah. Tidak ada paid-in/out, cash pickup, drawer-funded refund atau hidden balancing adjustment dalam V1. Opening cash wajib sebagai count nonnegative yang eksplisit; masukkan Rp0 bila bisnis memang mulai kosong. G3 harus mengonfirmasi drawer/label, opening-float practice, satu responsible cashier tanpa simultaneous sharing dan funding refund Pemilik sebelum penerimaan alur sesi kas/pilot.
 
-### Race-safe close without a CLOSING state
+Contoh: opening Rp20.000 + applied CASH Rp100.000 + BANK_TRANSFER Rp50.000 dengan physical Rp118.000 menghasilkan expected Rp120.000 dan variance −Rp2.000.
 
-1. Cashier requests a close preview for the own OPEN session. Server returns session identity, current activityVersion and allowed operational totals. No database lock stays open while cash is counted. Blind counting is not a V1 requirement.
-2. User pauses checkout, counts the physical drawer, enters physicalCash and submits the frozen session ID + activityVersion + command identity. Scanner Enter cannot close the session.
-3. Close locks the same session used by checkout. If it is already CLOSED, an equivalent retry returns the original result; a conflicting payload returns conflict. If activityVersion changed, reject with **Ada transaksi baru; hitung ulang kas** and leave the session OPEN.
-4. With matching version, derive source Sale/Payment IDs, totals and expectedCash; persist physical count, variance, cutoff/closedAt, immutable CashSessionReportSnapshot, CLOSED status, audit and durable result atomically. Snapshot/audit failure leaves the session OPEN.
-5. A racing Sale that locks first commits once and increments the version, forcing recount. Close that locks first commits CLOSED, so the Sale then rejects before payment/stock facts. A successful Sale cannot disappear from the session.
-6. Resolve uncertain checkout results by their original identity before close. Already committed original results remain recoverable after CLOSED. An owner-assisted close follows the same transaction with physical count, recent authentication and mandatory reason; it never changes the responsible cashier.
+### Close yang aman saat request berlomba
 
-There is no reopen or responsibility-edit action. A count mistake receives a linked owner review note, never overwritten physical/variance facts. Another working period, even on the same business date, starts a new session. Handover closes A before B opens. Partial unique constraints prevent overlapping responsible sessions for one register or cashier.
+1. Kasir meminta preview close untuk sesi OPEN sendiri. Server mengembalikan identitas sesi, activityVersion sekarang dan operational totals yang diizinkan. Tidak ada lock database selama cash dihitung; blind counting bukan requirement V1.
+2. User menghentikan checkout sementara, menghitung physical drawer, mengisi physicalCash dan mengirim session ID + activityVersion + command identity yang dibekukan. Scan capture pause; scanner Enter tidak menutup sesi.
+3. Close mengunci sesi yang sama dengan checkout. Jika sudah CLOSED, equivalent retry termasuk key berbeda mengembalikan hasil awal; payload konflik tidak menimpa hasil. Jika activityVersion berubah, tolak dengan **Ada transaksi baru; hitung ulang kas** dan pertahankan OPEN.
+4. Dengan version yang cocok, turunkan source Sale/Payment IDs, totals dan expectedCash; commit physical count, variance, cutoff/closedAt, CashSessionReportSnapshot immutable, CLOSED, audit dan durable result secara atomik. Kegagalan snapshot/audit/result meninggalkan sesi OPEN.
+5. Sale yang memperoleh lock lebih dahulu commit sekali dan menambah version sehingga close memerlukan recount. Close yang lebih dahulu commit CLOSED membuat Sale berikutnya ditolak sebelum payment/stock facts. Sale yang sukses tidak boleh hilang dari laporan sesi.
+6. Selesaikan UNCERTAIN checkout melalui identitas awal sebelum close. Original result yang telah commit tetap recoverable sesudah CLOSED. Owner-assisted close memakai transaksi yang sama dengan current permission, physical count, recent authentication dan reason wajib; responsible cashier original tidak berubah.
 
-### Immutable session snapshot and export
+Tidak ada state persisten CLOSING, reopen atau responsibility-edit. Count mistake mendapat linked owner review note, bukan penimpaan physical/variance facts. Periode kerja berikutnya memakai sesi baru walaupun businessDate sama. Partial unique constraints mencegah sesi responsible yang bertumpuk per register/per cashier; handover menutup A sebelum membuka B.
 
-Snapshot contains report/session number, frozen business identity/template, register and cashier identities, openedAt/cutoff/closedAt, openingCash, source IDs/activityVersion, completed transaction count/value, cash and transfer applied totals, expectedCash, physicalCash, variance, close actor/reason and safe notes. It is the as-closed accountability document, not a second Sale/payment source.
+### Snapshot immutable dan export
 
-Cashier reads/prints/exports own sessions only; owner reads all; operations has no report access. Reauthorize listing/detail/print/PDF/CSV/reprint/file URLs. Allowlist excludes acquisition cost/HPP/evidence/margin/profit/security data. CSV quotes fields, preserves IDR/timezone/session context, neutralizes formula/control prefixes in text without turning negative numeric variance into a formula.
+Snapshot memuat report/session number, business identity/template/asset yang dibekukan, register/cashier identities, openedAt/cutoff/closedAt, openingCash, source IDs/activityVersion, completed transaction count/value, applied cash/transfer totals, expectedCash, physicalCash, variance, close actor/reason dan safe notes. Snapshot adalah dokumen accountability saat close, bukan sumber Sale/payment kedua.
 
-Browser print/PDF/CSV/export failure leaves CLOSED committed; retry renders the same snapshot. Export/reprint creates no Sale/Payment/StockMovement/session mutation. Audit the request separately; browser print-dialog close is not proof of ink.
+Kasir hanya membaca/print/export sesi sendiri; Pemilik seluruh sesi; Admin Operasional tidak mendapat report access. Otorisasi ulang listing/detail/print/PDF/CSV/reprint/file URL. Allowlist tidak memuat acquisition cost/HPP/evidence/margin/profit atau security data. CSV mengutip fields, mempertahankan IDR/timezone/session context dan menetralkan formula/control prefixes pada text tanpa mengubah negative numeric variance menjadi formula.
 
-## Rekap Harian owner
+Browser print/PDF/CSV/export failure tidak membatalkan CLOSED. Retry merender snapshot yang sama; export/reprint tidak membuat atau mengubah Sale/Payment/StockMovement/session. Request audit direkam terpisah. Browser print-dialog close bukan bukti tinta.
 
-Owner daily recap uses Asia/Jakarta half-open date boundaries. Sales, payment, quantity, HPP and gross profit totals derive once from source Sale/payment/cost facts by each Sale's businessDate. Do not sum session snapshot sales/payment totals on top of those sources. List sessions relevant to the date with cashier/register/open-close times/status and per-session variance; a session spanning midnight remains one session and is listed under its close date (or active section until closed) with its full span visible.
+## Rekap Harian Pemilik
 
-Later refund/correction never rewrites a closed session snapshot. Daily financial totals reflect source correction facts according to [15](15-FINANCE-PROFITABILITY.md), while the original as-closed session row/report stays reproducible and linked to later context.
+Rekap harian memakai batas Asia/Jakarta half-open. Sales/payment/qty/HPP/Laba Kotor dihitung sekali dari source Sale/payment/cost facts berdasarkan businessDate setiap Sale. Jangan menjumlahkan sales/payment session snapshot di atas sumber yang sama. Opening cash dan variance bukan revenue/profit.
+
+Tampilkan sesi yang relevan dengan cashier/register/waktu buka-tutup/status/per-session variance. Sesi lintas midnight tetap satu sesi, ditampilkan pada close date atau active section sampai ditutup, dengan seluruh rentang waktunya terlihat. Returning same-day dan handover menghasilkan beberapa report yang berbeda tanpa double counting.
+
+Refund/koreksi kemudian tidak menulis ulang closed session snapshot. Financial totals mengikuti server posting date/cost evidence revision menurut [15](15-FINANCE-PROFITABILITY.md), sementara report as-closed tetap dapat direproduksi dan terhubung ke context koreksi berikutnya. Error/stale/UNKNOWN/denied dan recovery pada seluruh surface terkait harus mempunyai bukti awal dan bukti final sesuai [08](08-TESTING-ACCEPTANCE.md).
