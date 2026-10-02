@@ -12,7 +12,7 @@ Estimasi dari nol: I1h / V3h / E1h = **5h**, tanpa owner/external waiting dan ri
 
 ## DEPENDENCY DAN HOLDS
 
-Artifact: [BU-VERIFY-001](BU-VERIFY-001.md), [BU-VERIFY-002](BU-VERIFY-002.md), [BU-VERIFY-003](BU-VERIFY-003.md), [BU-VERIFY-004](BU-VERIFY-004.md). Setiap provider harus mempunyai evidence PASS yang dibekukan pada revision kompatibel. Seluruh UI produksi menunggu BU-DESIGN-001 COMPLETE dengan approval owner atas exact revision.
+Artifact: [BU-VERIFY-001](BU-VERIFY-001.md), [BU-VERIFY-002](BU-VERIFY-002.md), [BU-VERIFY-003](BU-VERIFY-003.md), [BU-VERIFY-004](BU-VERIFY-004.md). Setiap provider harus mempunyai evidence PASS yang dibekukan pada revision kompatibel. **Gate global sebelum seluruh coding:** [P7](../planning/P7-UX-DESIGN.md) COMPLETE dengan desain aktual DesainPakeAI, approval visual owner exact revision dan [DESIGN](../../DESIGN.md)/kontrak token yang dinormalisasi; lalu P8–P11 difinalisasi ulang/FROZEN dan owner mengotorisasi Execute satu BU eksplisit. Paket saat ini REOPENED_DRAFT/PENDING_P7_APPROVAL; coding belum diotorisasi. P7 adalah provider planning, bukan dependency BU.
 
 - Seluruh readiness gate yang berlaku, termasuk DESIGN/G1–G4/DEVICES/TARGET dan evidence teknis, wajib terpenuhi. Otorisasi deployment RELEASE bukan syarat COMPLETE paket readiness ini; approval exact RELEASE menahan start/COMPLETE BU-RELEASE-002 saja.
 
@@ -28,7 +28,7 @@ Suite: RELEASE01. Bukti delivery/verifikasi terarah ini tidak memberi product su
 
 Data/tabel: Readiness matrix/cutover manifest; tanpa mutation produksi aktual.
 
-Pemeriksaan candidate final terkini/seluruh hold, pengamanan rollback/recovery serta paket review deploy exact. Gunakan FormRequest/policy/Action/DTO sesuai P4/P5/P6; jangan serialize entity Eloquent privileged. Consumer UI memakai React/Inertia/shadcn native dengan kontrak approved; provider backend yang independen tidak menunggu visual. Tidak ada capability Later.
+Pemeriksaan candidate final terkini/seluruh hold, pengamanan rollback/recovery serta paket review deploy exact. Gunakan FormRequest/policy/Action/DTO sesuai P4/P5/P6; jangan serialize entity Eloquent privileged. Consumer UI memakai React/Inertia/shadcn native dengan kontrak approved; provider backend yang independen secara teknis dapat dijadwalkan tanpa menunggu implementasi consumer UI setelah gate global terpenuhi dan BU terotorisasi; ini bukan izin coding saat paket planning masih draft. Tidak ada capability Later.
 
 ## DO
 

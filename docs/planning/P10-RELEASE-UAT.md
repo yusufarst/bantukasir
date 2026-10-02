@@ -1,6 +1,6 @@
 # P10 — Migration, release, cutover dan UAT
 
-Blueprint release dibekukan setelah review; **RELEASE NOT AUTHORIZED**, seluruh product tests NOT STARTED. [09](../09-DEPLOYMENT-OPS.md), [08](../08-TESTING-ACCEPTANCE.md), [gap register](GAPS-CHANGES.md) dan [11](../11-BUILD-PLAN.md) menetapkan gate aktual.
+**Status: REOPENED_DRAFT / PENDING_P7_APPROVAL; RELEASE NOT AUTHORIZED.** Draf release/UAT yang valid dipertahankan; tidak COMPLETE atau FROZEN. [P7](P7-UX-DESIGN.md) harus menghasilkan desain aktual DesainPakeAI, approval visual owner eksplisit atas exact revision serta [DESIGN](../../DESIGN.md)/kontrak token yang dinormalisasi, kemudian P8–P9 difinalisasi ulang dan dibekukan sebelum P10 direview/diterima ulang. Sesuaikan UAT role/state/document/device dengan kontrak visual approved; freeze P10 baru membuka finalisasi P11. Seluruh coding dan product tests tetap NOT STARTED/tidak diotorisasi; approval visual bukan izin deployment atau bukti runtime FINAL PASS. [09](../09-DEPLOYMENT-OPS.md), [08](../08-TESTING-ACCEPTANCE.md), [gap register](GAPS-CHANGES.md) dan [11](../11-BUILD-PLAN.md) menetapkan gate aktual.
 
 ## Readiness sebelum meminta otorisasi
 

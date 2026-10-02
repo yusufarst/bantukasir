@@ -1,84 +1,70 @@
 # 00 — Kondisi lokal dan handoff
 
-**Baseline P0–P11 — 2 Oktober 2026, Asia/Jakarta. Ditulis LAST** setelah specification, review/fix, mapping/DAG/estimasi dan validasi paket. Status planning **BLUEPRINT_FROZEN_WITH_HOLDS**; implementasi aplikasi belum dimulai. Freeze bukan approval visual owner, penerimaan fakta client atau bukti runtime produksi.
+**Koreksi P7 aktual — 3 Oktober2026, Asia/Jakarta. Ditulis LAST** setelah authoring DesainPakeAI, targeted fixes/browser checks, review independen, DESIGN/coverage/evidence, mapping/DAG/estimasi dan validator pre-state. **P7 WAITING OWNER VISUAL REVIEW, NOT COMPLETE**; **P8–P11 REOPENED_DRAFT / PENDING_P7_APPROVAL**. Approved revision masih null; tidak ada implementation Build Unit yang dijalankan.
 
 | Item | Fakta dan batas terkini |
 | --- | --- |
 | Repository / branch | yusufarst/bantukasir / `plan/bantukasir-pos-v1` |
-| Lineage | Parent paket ini `c4a145d5018a18d1335171fae362314133970a26` (Plan 2.0); sebelumnya `f6c9c58` approved BK02 dan `1f62e98` approved UI01 R6. SHA hasil commit paket dibaca dari Git; tidak reset ke remote |
-| Baseline aktif | Specification P0–P10 dan **28 Build Units baru; 0/28 COMPLETE, semua NOT STARTED** |
-| Traceability / acceptance | **73 Core requirement → BU + acceptance; 39 suite, 0/39 FINAL PASS** |
-| Stack dibekukan | **Laravel + Inertia + React/TypeScript + PostgreSQL + Nginx**, shadcn/ui, PHP-FPM, Vite build-time, session/cache-limiter database-backed |
-| Runtime fisik | Belum ada package/composer manifest, lockfile, app/schema/runtime produksi yang diinisialisasi. Prototype/evidence historis bukan production application |
-| Engineering dari nol | **259h = implementasi113 / verifikasi118 / evidence28**; reserve56h terpisah, total315h bila seluruh reserve terpakai |
-| Critical path | **128h**, dependency lower bound dengan resource independen, tanpa waiting; bukan kalender satu executor |
-| Kalender satu executor | Sekitar6,5 minggu×40h tanpa reserve; sekitar7,9 minggu dengan reserve. Owner/external waiting nyata ditambahkan terpisah, belum dapat diestimasi |
-| Executor berikut | Label yang diminta owner Claude Opus 5.5/xhigh; Fable 5.1/xhigh selektif. Availability belum diverifikasi; tidak dijalankan pada sesi planning |
-| Unit pertama | **BU-FOUND-001**, 8h (I4/V3/E1), tanpa dependency; belum diotorisasi/dijalankan |
-| Otorisasi sesi | Satu commit lokal planning/docs-only sesudah final scope/checks lulus, lalu STOP. Tidak mengotorisasi coding aplikasi, push/merge/deploy/purchase atau operasi produksi |
+| Lineage intake koreksi | HEAD `5e100aaa0ebda5c51fe62f23db5dea7d1d709c7e` (rebaselineP0–P11), parent `c4a145d5018a18d1335171fae362314133970a26`; sebelumnya approvedBK02 `f6c9c58` dan UI01R6 `1f62e98`. SHA commit closeout dibaca dari Git, bukan diasumsikan dalam teks ini |
+| Baseline aktif | P0–P6 frozen input; actual designP7 candidate; P8–P11 draft. **27 BU implementasi, 0/27 COMPLETE, semua NOT STARTED** |
+| Traceability / acceptance | **73 Core requirement → BU + acceptance; 39 suite, 0/39 FINAL PASS**. P7 provider CORE030/034/070 dan UI/DOC terpisah dari coding dependencies |
+| Stack input frozen | **Laravel + Inertia + React/TypeScript + PostgreSQL + Nginx**, shadcn/ui, PHP-FPM, Vite build-time, database session/cache-limiter. Tidak diganti pada koreksi desain |
+| Runtime fisik | Tidak ada package/composer manifest, app/database/schema/runtime produksi yang diinisialisasi. Actual P7 prototype ada di DesainPakeAI; official export lokal ignored hanya untuk validasi |
+| P7 candidate | **BantuKasir Design / eddb0e15-9909-44b3-8517-9239cadc65ef**, page `p7-v1`, exact revision **`sha256-b51d2975aa3a8a92`** |
+| Approval / exit | **approvedRevision=null; Owner visual approval REQUIRED**, rights dan technical validation holds belum tutup. Authoring marker DPAI bukan COMPLETE |
+| Estimasi engineering | **293h = P7desain32 + P8–P11refinalisasi8 + implementasi253(I110/V116/E27)**; reserve64(planning8+implementation56) terpisah, allowance357h |
+| Critical path | Implementasi128h; planning40+path128=168h dependency lower bound tanpa waiting. Kalender satu executor293h/40≈7,325minggu; bukan tanggal delivery atau jam yang sudah dibukukan |
+| First implementation BU | **BU-FOUND-0018h(I4/V3/E1)**, tanpa coding dependency. Tetap global planning gate + explicitExecute; belum diotorisasi/dijalankan |
+| Otorisasi / stop | Actual design correction project exact + dokumentasi/desain planning dan satu commit lokal bila aman. STOP untuk Owner visual review; tanpa app code/BU/push/merge/deploy/purchase/operasi database |
 
-## Pemulihan konteks dan eksekusi
+## Pemulihan konteks dan urutan wajib
 
-Periksa Git aktual, lalu baca [AGENTS](../AGENTS.md) → file ini → [11](11-BUILD-PLAN.md)/kartu BU terpilih → [01](01-PRD.md) → [02](02-ARCHITECTURE.md) → [10](10-DECISIONS.md) → READ specification kartu. Executor membaca [CLAUDE](../CLAUDE.md); UI membaca [DESIGN](../DESIGN.md). [P11](planning/P11-BUILD-UNITS.md) merekam freeze lintas fase; [CORE-MAP](requirements/CORE-MAP.md) dan [08](08-TESTING-ACCEPTANCE.md) menjaga traceability/acceptance.
+Periksa Git aktual, kemudian [AGENTS](../AGENTS.md) → file ini → [11](11-BUILD-PLAN.md)/kartu BU terpilih → [01](01-PRD.md) → [02](02-ARCHITECTURE.md) → [10](10-DECISIONS.md) → specification kartu; executor membaca [CLAUDE](../CLAUDE.md), UI membaca [DESIGN](../DESIGN.md). Memory chat, template atau laporan executor bukan bukti approval/runtime.
 
-Instruksi eksplisit **Execute BU-...** memilih satu unit; NEXT bukan izin otomatis. Periksa dependency artifact/PASS/revision/holds dan model harness sebelum coding. Backend/database/tests/ops non-production yang independen tidak menunggu visual; seluruh UI produksi menunggu **BU-DESIGN-001 COMPLETE dengan owner approval exact revision dan rights**. Backend COMPLETE hanya membuktikan delivery bounded, bukan product FINAL PASS.
+**P0–P6 → P7 ACTUAL DESIGN → Owner visual approval exact revision + rights + DESIGN normalized + required validation → P7 COMPLETE → P8 Quality/DoD → P9 Operations → P10 Release/UAT → P11 Build Units → implementation**. P8–P11 hanya refinalisasi/review/freeze setelah P7 COMPLETE. Draft mapping/estimasi saat ini telah dikoreksi, bukan freeze ulang downstream atau izin coding.
 
-Paket readiness BU-RELEASE-001 diselesaikan untuk review konkret sebelum meminta izin deployment. Approval exact RELEASE hanya membuka BU-RELEASE-002; readiness, commit dan Execute coding biasa tidak mengotorisasi operasi produksi.
+**BU-DESIGN-001 dihapus dari implementasi; tanggung jawab desain/approval pertama diserap P7.** UI001–004 dan DOC001 mengonsumsi P7 frozen/approved DESIGN langsung, bukan mendesain ulang lewat beberapa aplikasi prototype. Native parity/UX01/IDENTITY01/privacy tetap acceptance consumer/VERIFY002. Setelah global gate, satu instruksi explicit `Execute BU-...` diperlukan; NEXT tidak menjalankan unit otomatis.
 
-## Kebenaran fisik dan preservasi
+Backend/database/tests/ops yang independen secara teknis baru dijadwalkan setelah paket planning dibekukan dan satu BU diotorisasi. RELEASE readiness bukan deployment permission; exact target/revision/operation dan destructive approval tetap terpisah. Label model executor yang diminta sebelumnya belum diverifikasi pada harness tujuan, tidak dijalankan atau diganti diam-diam.
 
-Intake rebaseline ini bersih: **0 staged / 0 unstaged / 0 untracked**, HEAD c4a145d. Leftovers BK03 yang disebut current-state historis sebelumnya tidak ada pada intake aktual ini. Tidak menebak actor/proses yang mengubahnya, tidak merekonstruksi source UI03 dan tidak menjalankan reset/clean/restore.
+## DesainPakeAI dan candidate review
 
-Snapshot ignored `.local/rebaseline-p0-p11/before/` menyimpan dokumen awal dan manifest. **85 source/aset/evidence yang dilindungi cocok byte-for-byte dengan SHA-256 awal**, termasuk UI01/UI02, binary/logo/font/license, `.env.example` dan evidence Impeccable historis. [PRESERVATION](evidence/rebaseline-p0-p11/PRESERVATION.json) menyimpan hash non-secret; snapshot/helper ignored bukan deliverable staging.
+Skill global DesainPakeAI sudah tersedia/dibaca; **CLI global `dpai0.2.2`** dipakai tanpa install/setup/login ulang dan tanpa MCP. Sebelum context/export/mutation, project name/id exact diverifikasi; setiap mutation memakai expectedRevision. Credentials tidak disimpan pada repository/evidence/screenshot. **MULTIPLECORP tidak dipilih, dibaca, diekspor, dimutasi atau dipakai sebagai domain/aset/token/inspirasi/fallback.**
 
-40 kartu Plan 2.0 diarsipkan pada [archive](archive/plan2/README.md) dengan banner historis dan link relatif yang benar; canonical lama tersedia melalui Git parent. Requirement valid diserap ke baseline baru. Stage exact hanya root/canonical documentation, P0–P11/gap, Core/BU registries/cards, archive dan latest evidence rebaseline. Jangan stage `.local/`, `.agents/`, source prototype/aset atau unrelated work; review seluruh index sebelum commit.
+Prototype **`c8384f74-cc1b-4335-a385-2d0fac66d668` / `single-html@1`**; foundation Provenance Thread/alpha.1 hanya dari BantuKasir Design. Context intake `sha256-53257e5efa2e29e32cfb03e3b83fae1fc464cb27d4d08c9dfa3def4b2e799241`; kandidat actual final **`sha256-b51d2975aa3a8a92`**. Artefak **P7 BantuKasir V1 — kandidat lengkap**, page `p7-v1`, route `/p7-v1`, source `src/pages/p7-v1.page.html`, artboard1440×960. Delapan page CRM/sales awal dipreservasi sebagai template history, bukan V1 authority.
 
-Plan 2.0/T01–T40, Plan 1.1/Rxx/BKxx/UIxx/Gate A/B dan workflow/tooling executor lama adalah histori. Approval UI01/UI02 historis tidak menjadi approval desain produksi baru. [Registry prototype](../prototypes/README.md) hanya mengizinkan referensi state/fixture/perilaku yang relevan.
+[Buka review DesainPakeAI](https://desainpakeai.com/project/eddb0e15-9909-44b3-8517-9239cadc65ef/prototype) dan pilih P7 BantuKasir V1 — kandidat lengkap. Live browser handoff sudah menampilkan preview P7. [REVIEW](evidence/p7-correction/REVIEW.md), [BROWSER](evidence/p7-correction/BROWSER.json) dan [COVERAGE](planning/P7-COVERAGE.md) mengikat exact revision/source/hash/checks/holds. [SaaS context](evidence/p7-correction/desainpakeai-review.jpg), [Pemilik1440](evidence/p7-correction/owner-dashboard-1440.jpg), [Kasir375cart](evidence/p7-correction/mobile-cart-375.jpg), [auth375](evidence/p7-correction/auth-reset-375.jpg) adalah gambar actual candidate final.
 
-## DesainPakeAI aktual dan visual hold
+Seluruh18grup memiliki representative surface/control: authentication/link/account; shell/tigaworkspace; catalog/search/duplicate-safe create/barcode; receiving/write-onlycost; openingfreeze/zero; manualissue; stockLOW/OUT/restock/history; sessionopen/identity/close; POSdraft/cart/CASH/BANK_TRANSFER; originalreceipt/reprint/ownhistory; correction/reversal/refund/return; finance/session/audit/periods; BusinessProfile/config/users/register/status; documentpreview/export/recovery/loading/empty/error/denied/stale/UNKNOWN/UNCERTAIN/success. Present source bukan PASS semua substate. G13/G16/G17/G18 mempunyai review-only patterns yang harus menjadi backend/native consumer sesungguhnya.
 
-Skill global tersedia dan dibaca; CLI global yang sudah terpasang dipakai sebagai **`dpai 0.2.2`**. Cek awal gagal karena PATH sandbox; lokasi npm global user dipakai dalam sesi. Tidak install/setup/login ulang, tidak menyimpan credential dalam repository.
+Perbaikan Rp0/nullishreport, openingfreeze normalposting, mobileinert/trap/Escape/focusreturn, SaaSformbridge, mobilecartdock/footerflow, LOW≤minimum/currentstocksummary, receiptline snapshots dan newpassword/safeinvalidtokens telah masuk actualcandidate. Final browser b51 membuktikan0open/0close→CLOSED0/0/0, freeze receiving/checkout ditahan, native mobilefocus, authfixture/noecho credential, cart44×44/reveal tanpa posting serta shell3role×5width tanpa bodyoverflow. Checks earlier8e/6ab lainnya dicatat dengan revision asal, tidak diklaim rerunfinal seluruhnya.
 
-`dpai project current --pretty` diverifikasi sebelum `dpai context --pretty`:
+DESIGN mencatat recipe actualInter/tabularnumbers/LibreBaskervilleauthstory, semanticstatecolors, density/spacing/surfaces, sidebar232/rail72/drawer264/accountbounds, mobilecart/bottomnav serta planned routes/components shadcn. Masih draft, bukan approved design freeze. Tidak ship HTML/iframe/bridge/fakeauth sebagai aplikasi. BusinessProfile runtime nanti menentukan nama/logo client dan immutable documentidentity, bukan codename default.
 
-- **BantuKasir Design / `eddb0e15-9909-44b3-8517-9239cadc65ef`**;
-- context revision **`sha256-53257e5efa2e29e32cfb03e3b83fae1fc464cb27d4d08c9dfa3def4b2e799241`**;
-- prototype **`c8384f74-cc1b-4335-a385-2d0fac66d668`**, `single-html@1`;
-- panduan authenticated prototype-to-codebase dibaca melalui CLI untuk semantic/native mapping.
+## Validation dan preservasi
 
-Ini context teramati, bukan approval/lisensi/visual parity. Tidak ada mutation/export/MCP, layanan berbayar/pembelian atau akses project MULTIPLECORP. Verifikasi project lagi sebelum context dan setiap mutation yang nantinya diotorisasi; mismatch berarti STOP. Kerangka governance MULTIPLECORP dari diskusi owner tidak mengizinkan penggunaan domain/aset/token/project desainnya.
+`dpai preview verify --page p7-v1 --pretty`: compilePASS,782972bytes/9pages/1dependency,0diagnostics/0warnings. Flags CLI browser/layout/responsive **not-run**; CUA browser evidence actual dicatat terpisah. `dpai design lint --pretty`:0errors/39foundationwarnings. Node syntaxcheckPASS, staticrenderer41PASS; staticmock bukan browser/backend proof. Sepuluh semantic token pairs contrastPASS bukan full renderedAA. Actual zoom200% belum terbukti; percobaan keyboard tool tidak mengubah viewport/DPR.
 
-Pipeline: DesainPakeAI exact owner-approved BantuKasir Design revision → repository semantic contract/tokens → shadcn/ui → React/Inertia native. Tidak ship prototype HTML/iframe atau membangun ulang bundle UI lama. BantuKasir codename internal; nama/logo client memakai BusinessProfile runtime versioned, dengan dokumen original membekukan identity/template/aset.
+[VALIDATION](evidence/p7-correction/VALIDATION.json) adalah **PRE_CURRENT_STATE671checksPASS**,27nodeDAGacyclic/73Core/39suite/finalowners/maps/estimasi/link/UTF8/no-keypatterns/preservasi. Setelah penulisanLAST ini jalankan full/read-only validator yang mencakup00, working/stagedwhitespace dan exactindex review. Jangan membaca evidence pre-state sebagai hasil commit atau fullP7exit. LF→CRLFwarning bukan failure. Hasil finalscope/checks/commit dibaca dari Git/laporancloseout.
 
-## Kontrak inti dan holds
+Intake koreksi0staged/0unstaged/1untracked(HEAD5e100aa); resume mempertahankan partialwork. **85protectedsource/aset/evidence dan13frozeninputs byte-identical**; `plan-p0-p11-review.patch` tetap untracked/unchanged, SHA256 `a13fe0f2c4f494992ed339292c2c2bcdf7f4fc8ea85606bccd5539204ef7f03e`. `.local/`source/export/helpers dan `.agents/`bukan deliverable. Tidak reset/clean/restore/merekonstruksi prototype lama. Officialexport source/helperignored dipakai untuk validasi lokal sementara; server/tablokal dihentikan, viewport override direset.
 
-GOODS-only satu stock pool dan tepat tiga role. Product create tidak membuat stok; immutable StockMovement/projection sinkron nonnegative; biaya Operations write-only; staff DTO allowlist seluruh kanal, termasuk Inertia/history/flash/errors/cache/storage. MWA/UNKNOWN eksplisit; Laba Kotor owner-only, bukan Laba Bersih. Auth history encrypted dan key/cache lifecycle mencegah finance lama terlihat setelah pergantian actor; input biaya write-only tetap tidak dipersist meskipun terenkripsi.
+Scope closeout hanya root/canonical planning/design docs,27BUcards/registry/maps, penghapusan deferredBUdesign dan latestP7evidence. Stage path exact, preserve unrelatedindex; satu localdocs/designplanningcommit hanya setelah coherence/checks/exactscope aman. Periksa currentHEAD/status aktual sebelum dan sesudahnya. Commit dokumentasi tidak menutup owner/rights/validation holds atau membuka eksekusi.
 
-Sale langsung selesai dengan satu full CASH **atau** BANK_TRANSFER; tanpa split/mixed/partial/debt/gateway V1. Future provider seam hanya boundary arsitektur. Sale/lines/full Payment/issue/balance/cost/snapshot/audit/result commit bersama. Stable source/key/fingerprint/epoch mempertahankan original recovery; timeout/restore bukan izin replacement Sale atau pembayaran ulang.
+## Holds dan next
 
-CashSession ringan satu responsible cashier/OPEN per register dan cashier; opening0 eksplisit; close race-safe dan report immutable. Refund/return/correction mempertahankan original; refund tanpa barang fisik tidak menambah stok. Reversal/replay memvalidasi chronology dan pair tepat sekali; publikasi all-or-nothing. Guard role/object/actor/config, forward migration, independent backup/isolated restore/reconciliation/gap wajib.
-
-| Gate | Status aktual dan bagian yang tertahan |
+| Gate | Status aktual / bagian tertahan |
 | --- | --- |
-| DESIGN | PENDING — selection/rights/owner visual approval exact revision; BU-DESIGN-001 COMPLETE dan seluruh UI produksi |
-| G1 | OPEN — tax/legal commercial nota/buyer policy; acceptance dokumen client/cutover |
-| G2 | OPEN — unit/precision/master/opening volume/barcode/evidence/serial reality; data bisnis/cutover nyata |
-| G3 | OPEN — drawer/float/single responsibility/handover/count/funding refund Pemilik; workflow fisik/pilot |
-| G4 | OPEN — independent destination/key/access/cost dan measured RPO/RTO; REC final/pilot. RPO6h/RTO4h masih proposal |
-| DEVICES | PENDING — actual USB/Bluetooth HID, label/thermal/A4 printer/media/driver; hardware final |
-| TARGET | PENDING — actual authorized host/network/TLS/capacity; representatif performance/ops evidence |
-| EXECUTOR | NOT VERIFIED — availability label model yang diminta pada harness tujuan sebelum handoff |
-| RELEASE | NOT AUTHORIZED — exact target/revision/operation deploy/cutover serta owner pilot |
-| TESTS | NOT STARTED — seluruh39 suite; bukan gap keputusan owner dan bukan product PASS |
+| OWNER_VISUAL | **REQUIRED** atas exact `sha256-b51d2975aa3a8a92`; approvedRevision null. Review tiga role/modal/state/mobile/typographic density dan submit feedback/approval eksplisit |
+| RIGHTS | PENDING — entitlement foundation/template/font/aset, self-host/native derivative. Keberadaan token/font bukan license proof |
+| P7_VALIDATION | PARTIAL — actualzoom200%, fullrenderedAA/screenreader/reducedmotion/softwarekeyboard/longcontentfailurechecks serta39foundationwarnings belum tutup; tidak dianggapPASS dari CSS/screenshot |
+| P8–P11 | **REOPENED_DRAFT/PENDING_P7_APPROVAL**, belum refinal-freeze; menunggu seluruh exitP7 COMPLETE |
+| G1/G2/G3/G4 | OPEN — legalnota/clientidentity; katalog/unit/precision/openingreality; drawer/float/handover/refundfunding; independentbackup/destination/key/cost/measuredRPO/RTO |
+| DEVICES/TARGET | PENDING — physicalHID/label/thermal/A4media/driver, authorizedhost/network/TLS/performance target |
+| EXECUTOR | NOT VERIFIED — model/harness availability sebelum handoff yang diotorisasi |
+| TESTS | NOT STARTED —39suites/0FINALPASS; prototype bukan backendtransaction/RBAC/race/device/restore/performance evidence |
+| RELEASE | NOT AUTHORIZED — exact target/revision/operation dan Owner pilot belum tersedia |
 
-[GAPS](planning/GAPS-CHANGES.md) membatasi scope terdampak. Blueprint freeze tidak menutup gate owner/eksternal. Fakta baru yang mengubah bisnis membuka kembali fase/BU/acceptance/estimasi terkait; jangan mengarang fakta client. Database produksi dilindungi menurut [09](09-DEPLOYMENT-OPS.md): approval destruction EXACT terpisah, tanpa DROP/TRUNCATE/mass delete/reset/demo seed/down-v atau historical rewrite.
+[GAPS](planning/GAPS-CHANGES.md) membatasi holds. GOODS-only/satu stockpool/tigarole/fullCASHatauBANK_TRANSFER, immutableledger/MWA/UNKNOWN, Operationscostwrite-only, originalresultrecovery dan lightweightownCashSession tetap canonical. Tidak menambah scopeMULTIPLECORP/warehouse/CRM/services/booking/HR/import/produkimage/gateway. Database produksi dilindungi [09](09-DEPLOYMENT-OPS.md); tidak ada database operation pada sesi ini.
 
-## Bukti dan penutupan
-
-[REVIEW](evidence/rebaseline-p0-p11/REVIEW.md) mencatat reviewer aktual, temuan HIGH/MEDIUM/fix, boundary proof, source riset dan tooling. [VALIDATION](evidence/rebaseline-p0-p11/VALIDATION.json) adalah hasil pre-CURRENT_STATE aktual: **350 checks PASS**, DAG28 acyclic, Core73/suite39, mapping/card/registry/table/edges/effort/link/UTF-8/no credential patterns serta hash85. Mode itu mengecualikan old00; sesudah penulisan LAST ini ulangi read-only validator yang mencakup00.
-
-`git diff --check` lulus sebelum00; LF→CRLF warning Git Windows bukan failure. Finalisasi masih wajib memeriksa validator penuh, working/staged whitespace, staged UTF-8/exact scope, protected hashes dan parent/status sesudah satu commit lokal. SHA commit/result final dapat diverifikasi dari Git dan laporan closeout; jangan menafsirkan bukti pre-state sebagai klaim perintah staging/commit yang belum dijalankan.
-
-App unit/HTTP/PostgreSQL/races/browser/mobile/a11y/perangkat/migration/restore/performance/pilot tidak dijalankan atau diklaim PASS dalam planning ini. Tidak ada coding, produksi, push, merge atau deploy.
-
-Berikutnya tepat **[BU-FOUND-001 — Fondasi Laravel, React dan harness PostgreSQL terisolasi](build-units/BU-FOUND-001.md)**, **8h (I4/V3/E1)**. Sesi ini STOP setelah satu commit dokumentasi lokal yang aman. **Jangan execute BU-FOUND-001 sampai owner memberi otorisasi eksplisit.**
+**NEXT langsung: OWNER VISUAL REVIEW P7 candidate**, ditambah penutupan validation/rights holds sebelum COMPLETE. Setelah exactapproval/rights/requiredchecks dan normalisasi approvedDESIGN, refinalisasiP8→P9→P10→P11 berurutan; barulah owner dapat mengotorisasi satu [BU-FOUND-001](build-units/BU-FOUND-001.md),8h(I4/V3/E1). **Jangan execute BU atau coding aplikasi sekarang.** STOP untuk review; tanpa push/merge/deploy.

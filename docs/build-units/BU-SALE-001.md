@@ -12,7 +12,7 @@ Estimasi dari nol: I7h / V5h / E1h = **13h**, tanpa owner/external waiting dan r
 
 ## DEPENDENCY DAN HOLDS
 
-Artifact: [BU-CFG-001](BU-CFG-001.md), [BU-INV-002](BU-INV-002.md), [BU-CASH-001](BU-CASH-001.md). Setiap provider harus mempunyai evidence PASS yang dibekukan pada revision kompatibel. Seluruh UI produksi menunggu BU-DESIGN-001 COMPLETE dengan approval owner atas exact revision.
+Artifact: [BU-CFG-001](BU-CFG-001.md), [BU-INV-002](BU-INV-002.md), [BU-CASH-001](BU-CASH-001.md). Setiap provider harus mempunyai evidence PASS yang dibekukan pada revision kompatibel. **Gate global sebelum seluruh coding:** [P7](../planning/P7-UX-DESIGN.md) COMPLETE dengan desain aktual DesainPakeAI, approval visual owner exact revision dan [DESIGN](../../DESIGN.md)/kontrak token yang dinormalisasi; lalu P8–P11 difinalisasi ulang/FROZEN dan owner mengotorisasi Execute satu BU eksplisit. Paket saat ini REOPENED_DRAFT/PENDING_P7_APPROVAL; coding belum diotorisasi. P7 adalah provider planning, bukan dependency BU.
 
 - G3 untuk workflow fisik penerimaan dana serta G1 dokumen client sebelum pilot
 
@@ -28,7 +28,7 @@ Suite: POS01, POS02, POS03, FIN01, OPEN01, SESSION03, AUTH02, AUTH03, IDENTITY01
 
 Data/tabel: Sale/lines, satu full Payment, SALE_ISSUE, IssueCost matched/UNKNOWN, ReceiptSnapshot dan activityVersion session.
 
-Sale GOODS atomik dengan satu pembayaran penuh CASH atau BANK_TRANSFER, recovery original result dan read Sale/history sendiri sesuai scope. Gunakan FormRequest/policy/Action/DTO sesuai P4/P5/P6; jangan serialize entity Eloquent privileged. Consumer UI memakai React/Inertia/shadcn native dengan kontrak approved; provider backend yang independen tidak menunggu visual. Tidak ada capability Later.
+Sale GOODS atomik dengan satu pembayaran penuh CASH atau BANK_TRANSFER, recovery original result dan read Sale/history sendiri sesuai scope. Gunakan FormRequest/policy/Action/DTO sesuai P4/P5/P6; jangan serialize entity Eloquent privileged. Consumer UI memakai React/Inertia/shadcn native dengan kontrak approved; provider backend yang independen secara teknis dapat dijadwalkan tanpa menunggu implementasi consumer UI setelah gate global terpenuhi dan BU terotorisasi; ini bukan izin coding saat paket planning masih draft. Tidak ada capability Later.
 
 ## DO
 

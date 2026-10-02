@@ -12,7 +12,7 @@ Estimasi dari nol: I4h / V4h / E1h = **9h**, tanpa owner/external waiting dan ri
 
 ## DEPENDENCY DAN HOLDS
 
-Artifact: [BU-SALE-001](BU-SALE-001.md). Setiap provider harus mempunyai evidence PASS yang dibekukan pada revision kompatibel. Seluruh UI produksi menunggu BU-DESIGN-001 COMPLETE dengan approval owner atas exact revision.
+Artifact: [BU-SALE-001](BU-SALE-001.md). Setiap provider harus mempunyai evidence PASS yang dibekukan pada revision kompatibel. **Gate global sebelum seluruh coding:** [P7](../planning/P7-UX-DESIGN.md) COMPLETE dengan desain aktual DesainPakeAI, approval visual owner exact revision dan [DESIGN](../../DESIGN.md)/kontrak token yang dinormalisasi; lalu P8–P11 difinalisasi ulang/FROZEN dan owner mengotorisasi Execute satu BU eksplisit. Paket saat ini REOPENED_DRAFT/PENDING_P7_APPROVAL; coding belum diotorisasi. P7 adalah provider planning, bukan dependency BU.
 
 - G3 untuk praktik count/handover fisik
 
@@ -28,7 +28,7 @@ Suite: SESSION01, SESSION02, SESSION04, SESSION05, SESSION06, SESSION07, SESSION
 
 Data/tabel: CashSessionReportSnapshot, result CLOSED dan linked owner review notes.
 
-Close dengan preview/count/activityVersion, assisted close Pemilik beralasan dan laporan sesuai keadaan saat ditutup. Gunakan FormRequest/policy/Action/DTO sesuai P4/P5/P6; jangan serialize entity Eloquent privileged. Consumer UI memakai React/Inertia/shadcn native dengan kontrak approved; provider backend yang independen tidak menunggu visual. Tidak ada capability Later.
+Close dengan preview/count/activityVersion, assisted close Pemilik beralasan dan laporan sesuai keadaan saat ditutup. Gunakan FormRequest/policy/Action/DTO sesuai P4/P5/P6; jangan serialize entity Eloquent privileged. Consumer UI memakai React/Inertia/shadcn native dengan kontrak approved; provider backend yang independen secara teknis dapat dijadwalkan tanpa menunggu implementasi consumer UI setelah gate global terpenuhi dan BU terotorisasi; ini bukan izin coding saat paket planning masih draft. Tidak ada capability Later.
 
 ## DO
 

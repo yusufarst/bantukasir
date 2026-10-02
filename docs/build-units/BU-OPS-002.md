@@ -12,7 +12,7 @@ Estimasi dari nol: I5h / V4h / E1h = **10h**, tanpa owner/external waiting dan r
 
 ## DEPENDENCY DAN HOLDS
 
-Artifact: [BU-OPS-001](BU-OPS-001.md), [BU-SALE-002](BU-SALE-002.md), [BU-CASH-002](BU-CASH-002.md). Setiap provider harus mempunyai evidence PASS yang dibekukan pada revision kompatibel. Seluruh UI produksi menunggu BU-DESIGN-001 COMPLETE dengan approval owner atas exact revision.
+Artifact: [BU-OPS-001](BU-OPS-001.md), [BU-SALE-002](BU-SALE-002.md), [BU-CASH-002](BU-CASH-002.md). Setiap provider harus mempunyai evidence PASS yang dibekukan pada revision kompatibel. **Gate global sebelum seluruh coding:** [P7](../planning/P7-UX-DESIGN.md) COMPLETE dengan desain aktual DesainPakeAI, approval visual owner exact revision dan [DESIGN](../../DESIGN.md)/kontrak token yang dinormalisasi; lalu P8–P11 difinalisasi ulang/FROZEN dan owner mengotorisasi Execute satu BU eksplisit. Paket saat ini REOPENED_DRAFT/PENDING_P7_APPROVAL; coding belum diotorisasi. P7 adalah provider planning, bukan dependency BU.
 
 - G4 destination/key/cost independen dan measured RPO/RTO yang diterima owner untuk final
 
@@ -28,7 +28,7 @@ Suite: INV01, REC01, REC02, DB01, AUTH02. Bukti delivery/verifikasi terarah ini 
 
 Data/tabel: Status operasional/incident rekonsiliasi aman; fakta bisnis original read-only.
 
-Rekonsiliasi harian, backup database + media/template terenkripsi serta workflow restore/epoch terisolasi yang dikendalikan. Gunakan FormRequest/policy/Action/DTO sesuai P4/P5/P6; jangan serialize entity Eloquent privileged. Consumer UI memakai React/Inertia/shadcn native dengan kontrak approved; provider backend yang independen tidak menunggu visual. Tidak ada capability Later.
+Rekonsiliasi harian, backup database + media/template terenkripsi serta workflow restore/epoch terisolasi yang dikendalikan. Gunakan FormRequest/policy/Action/DTO sesuai P4/P5/P6; jangan serialize entity Eloquent privileged. Consumer UI memakai React/Inertia/shadcn native dengan kontrak approved; provider backend yang independen secara teknis dapat dijadwalkan tanpa menunggu implementasi consumer UI setelah gate global terpenuhi dan BU terotorisasi; ini bukan izin coding saat paket planning masih draft. Tidak ada capability Later.
 
 ## DO
 

@@ -1,0 +1,77 @@
+{
+  "mode": "PRE_CURRENT_STATE",
+  "status": "PASS",
+  "checks": 671,
+  "failed": [],
+  "core": 73,
+  "acceptance": 39,
+  "finalPass": 0,
+  "buildUnits": 27,
+  "hours": {
+    "implementation": [
+      110,
+      116,
+      27
+    ],
+    "total": 253,
+    "planning": 40,
+    "combined": 293,
+    "reserve": 64,
+    "allowance": 357
+  },
+  "critical": {
+    "hours": 128,
+    "path": [
+      "BU-FOUND-001",
+      "BU-IAM-001",
+      "BU-CMD-001",
+      "BU-CAT-001",
+      "BU-INV-001",
+      "BU-INV-002",
+      "BU-SALE-001",
+      "BU-SALE-002",
+      "BU-READ-002",
+      "BU-UI-004",
+      "BU-VERIFY-002",
+      "BU-RELEASE-001",
+      "BU-RELEASE-002"
+    ]
+  },
+  "topologicalOrder": [
+    "BU-FOUND-001",
+    "BU-IAM-001",
+    "BU-CMD-001",
+    "BU-CFG-001",
+    "BU-CAT-001",
+    "BU-INV-001",
+    "BU-INV-002",
+    "BU-INV-003",
+    "BU-CASH-001",
+    "BU-SALE-001",
+    "BU-CASH-002",
+    "BU-SALE-002",
+    "BU-READ-001",
+    "BU-READ-002",
+    "BU-OPS-001",
+    "BU-OPS-002",
+    "BU-UI-001",
+    "BU-UI-002",
+    "BU-UI-003",
+    "BU-UI-004",
+    "BU-DOC-001",
+    "BU-VERIFY-001",
+    "BU-VERIFY-002",
+    "BU-VERIFY-003",
+    "BU-VERIFY-004",
+    "BU-RELEASE-001",
+    "BU-RELEASE-002"
+  ],
+  "utf8Files": 107,
+  "links": 2337,
+  "protectedFiles": 85,
+  "frozenInputs": 13,
+  "untrackedPreserved": [
+    "plan-p0-p11-review.patch"
+  ],
+  "approvedRevision": null
+}

@@ -12,7 +12,7 @@ Estimasi dari nol: I4h / V3h / E1h = **8h**, tanpa owner/external waiting dan ri
 
 ## DEPENDENCY DAN HOLDS
 
-Artifact: [BU-FOUND-001](BU-FOUND-001.md). Setiap provider harus mempunyai evidence PASS yang dibekukan pada revision kompatibel. Seluruh UI produksi menunggu BU-DESIGN-001 COMPLETE dengan approval owner atas exact revision.
+Artifact: [BU-FOUND-001](BU-FOUND-001.md). Setiap provider harus mempunyai evidence PASS yang dibekukan pada revision kompatibel. **Gate global sebelum seluruh coding:** [P7](../planning/P7-UX-DESIGN.md) COMPLETE dengan desain aktual DesainPakeAI, approval visual owner exact revision dan [DESIGN](../../DESIGN.md)/kontrak token yang dinormalisasi; lalu P8–P11 difinalisasi ulang/FROZEN dan owner mengotorisasi Execute satu BU eksplisit. Paket saat ini REOPENED_DRAFT/PENDING_P7_APPROVAL; coding belum diotorisasi. P7 adalah provider planning, bukan dependency BU.
 
 - Target non-production terotorisasi untuk TLS aktual; RELEASE tidak otomatis
 
@@ -28,7 +28,7 @@ Suite: DB01, SEC01, PERF01. Bukti delivery/verifikasi terarah ini tidak memberi 
 
 Data/tabel: Role database runtime/migration/test/backup dan application grant; grant khusus domain ditambahkan setiap BU schema.
 
-Compose PHP-FPM/Nginx/PostgreSQL non-production, TLS/renewal, health dan konfigurasi keamanan. Gunakan FormRequest/policy/Action/DTO sesuai P4/P5/P6; jangan serialize entity Eloquent privileged. Consumer UI memakai React/Inertia/shadcn native dengan kontrak approved; provider backend yang independen tidak menunggu visual. Tidak ada capability Later.
+Compose PHP-FPM/Nginx/PostgreSQL non-production, TLS/renewal, health dan konfigurasi keamanan. Gunakan FormRequest/policy/Action/DTO sesuai P4/P5/P6; jangan serialize entity Eloquent privileged. Consumer UI memakai React/Inertia/shadcn native dengan kontrak approved; provider backend yang independen secara teknis dapat dijadwalkan tanpa menunggu implementasi consumer UI setelah gate global terpenuhi dan BU terotorisasi; ini bukan izin coding saat paket planning masih draft. Tidak ada capability Later.
 
 ## DO
 

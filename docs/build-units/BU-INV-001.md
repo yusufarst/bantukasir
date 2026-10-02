@@ -12,7 +12,7 @@ Estimasi dari nol: I6h / V5h / E1h = **12h**, tanpa owner/external waiting dan r
 
 ## DEPENDENCY DAN HOLDS
 
-Artifact: [BU-CAT-001](BU-CAT-001.md). Setiap provider harus mempunyai evidence PASS yang dibekukan pada revision kompatibel. Seluruh UI produksi menunggu BU-DESIGN-001 COMPLETE dengan approval owner atas exact revision.
+Artifact: [BU-CAT-001](BU-CAT-001.md). Setiap provider harus mempunyai evidence PASS yang dibekukan pada revision kompatibel. **Gate global sebelum seluruh coding:** [P7](../planning/P7-UX-DESIGN.md) COMPLETE dengan desain aktual DesainPakeAI, approval visual owner exact revision dan [DESIGN](../../DESIGN.md)/kontrak token yang dinormalisasi; lalu P8–P11 difinalisasi ulang/FROZEN dan owner mengotorisasi Execute satu BU eksplisit. Paket saat ini REOPENED_DRAFT/PENDING_P7_APPROVAL; coding belum diotorisasi. P7 adalah provider planning, bukan dependency BU.
 
 Tidak ada hold khusus untuk engineering non-production yang independen.
 
@@ -28,7 +28,7 @@ Suite: INV01, INV02, FIN01, FIN02, AUTH02. Bukti delivery/verifikasi terarah ini
 
 Data/tabel: StockMovement/lines/posting sequence, StockBalance, AcquisitionCostEvidence, ValuationRevision/IssueCost.
 
-Primitive posting fisik/biaya dengan decimal presisi dan stok nonnegative untuk seluruh consumer. Gunakan FormRequest/policy/Action/DTO sesuai P4/P5/P6; jangan serialize entity Eloquent privileged. Consumer UI memakai React/Inertia/shadcn native dengan kontrak approved; provider backend yang independen tidak menunggu visual. Tidak ada capability Later.
+Primitive posting fisik/biaya dengan decimal presisi dan stok nonnegative untuk seluruh consumer. Gunakan FormRequest/policy/Action/DTO sesuai P4/P5/P6; jangan serialize entity Eloquent privileged. Consumer UI memakai React/Inertia/shadcn native dengan kontrak approved; provider backend yang independen secara teknis dapat dijadwalkan tanpa menunggu implementasi consumer UI setelah gate global terpenuhi dan BU terotorisasi; ini bukan izin coding saat paket planning masih draft. Tidak ada capability Later.
 
 ## DO
 

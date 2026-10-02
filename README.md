@@ -2,11 +2,11 @@
 
 Codename internal untuk GOODS-only POS satu bisnis/satu stock pool; branding client final berasal dari BusinessProfile runtime. Repository berisi specification dan prototype historis; **aplikasi produksi belum dibangun**.
 
-Planning mengikuti P0–P11: governance, scope, domain, workflow kritis, architecture, security, concurrency/API/performance, UX/design, quality/DoD, operations/recovery, release/UAT, lalu Build Units. Kerangka diadaptasi dari diskusi owner; domain MULTIPLECORP tidak disalin.
+Urutan planning wajib: **P0–P6 → P7 ACTUAL DESIGN di DesainPakeAI → owner visual approval exact revision + normalisasi DESIGN → P8 Quality/DoD → P9 Operations → P10 Release/UAT → P11 Build Units → implementation**. P0–P6 tetap frozen input; P7 **WAITING OWNER VISUAL REVIEW, NOT COMPLETE**, kandidat `sha256-b51d2975aa3a8a92` pada page `p7-v1`. [Evidence aktual](docs/evidence/p7-correction/REVIEW.md) memisahkan checks bounded dari validation/rights/approval holds. P8–P11 tetap REOPENED_DRAFT/PENDING_P7_APPROVAL. Project/domain/aset/token MULTIPLECORP tidak diakses atau disalin.
 
 Mulai [AGENTS](AGENTS.md) → [CURRENT_STATE](docs/00-CURRENT-STATE.md) → [build plan](docs/11-BUILD-PLAN.md). Handoff coding di [CLAUDE](CLAUDE.md); unit pertama [BU-FOUND-001](docs/build-units/BU-FOUND-001.md) **belum diotorisasi/dijalankan**. Primary executor yang diminta: Claude Opus 5.5/xhigh; Fable 5.1/xhigh untuk eskalasi bounded secara selektif. Availability belum diuji.
 
-**28 Build Units, 73 requirement terpetakan, 39 acceptance suite, 0 FINAL PASS.** Engineering dari nol 259h (I113/V118/E28), reserve 56h terpisah; total jika seluruh reserve terpakai 315h. Waiting owner/eksternal bukan jam engineering. [11](docs/11-BUILD-PLAN.md) memuat DAG/critical path exact dan asumsi.
+**27 Build Units draft, 73 requirement terpetakan, 39 acceptance suite, 0 FINAL PASS.** BU-DESIGN-001 diserap sepenuhnya ke P7. P7 desain32h + refinalisasi P8–P11 8h + implementasi253h (I110/V116/E27) = **293h**; reserve64h terpisah, allowance357h bila seluruh reserve dipakai. Critical path teknis128h; dengan prerequisite planning40h menjadi lower bound168h. Waiting owner/eksternal tidak diketahui; angka estimasi bukan jam aktual. [11](docs/11-BUILD-PLAN.md) memuat DAG dan asumsi yang akan difinalisasi setelah P7 approved.
 
 | Canonical | Otoritas |
 | --- | --- |
@@ -22,6 +22,6 @@ Mulai [AGENTS](AGENTS.md) → [CURRENT_STATE](docs/00-CURRENT-STATE.md) → [bui
 | [10 keputusan](docs/10-DECISIONS.md), [gap/change control](docs/planning/GAPS-CHANGES.md) | Keputusan nyata, hold eksternal dan scope terdampak |
 | [Archive Plan 2.0](docs/archive/plan2/README.md), [register prototype](prototypes/README.md) | Input historis saja |
 
-Stack dipilih dari perbandingan A/B khusus produk ini, bukan preseden project lain. Tanpa Redis/queue/SSR runtime secara default; version/advisory/license dipin saat foundation. Blueprint freeze tidak menutup DESIGN/G1–G4/DEVICES/RELEASE atau membuktikan implementasi/testing.
+Stack dipilih dari perbandingan A/B khusus produk ini, bukan preseden project lain. Tanpa Redis/queue/SSR runtime secara default; version/advisory/license dipin saat foundation. **P7 actual design/OWNER VISUAL APPROVAL/DESIGN COMPLETE wajib sebelum P8–P11 freeze.** Freeze berikutnya tidak menutup G1–G4/DEVICES/RELEASE atau membuktikan implementasi/testing.
 
-Otorisasi saat ini: planning dan satu commit dokumentasi lokal; tidak menjalankan BU pertama. Lineage Git dipertahankan, source/aset/evidence historis dilindungi; keadaan fisik terkini tercatat pada 00.
+Otorisasi saat ini: koreksi docs/design-planning dan satu commit lokal yang aman. Coding menunggu P7 COMPLETE, freeze ulang P8–P11 dan Execute satu BU eksplisit; BU pertama tidak dijalankan. Lineage Git, patch untracked dan source/aset/evidence historis dipreservasi; keadaan fisik tercatat pada00.

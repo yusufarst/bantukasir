@@ -1,5 +1,7 @@
 # P8 — Testing, security tests dan Definition of Done
 
+**Status: REOPENED_DRAFT / PENDING_P7_APPROVAL.** Draf acceptance/DoD yang valid dipertahankan. P8 tidak COMPLETE atau FROZEN sampai [P7](P7-UX-DESIGN.md) mempunyai desain aktual DesainPakeAI, approval visual owner atas exact revision serta [DESIGN](../../DESIGN.md)/kontrak token yang dinormalisasi. Setelah P7 COMPLETE, sesuaikan cakupan state/role/responsive/a11y dengan kontrak approved, lakukan review/validation ulang, lalu freeze P8 sebelum melanjutkan freeze fase berikut. Seluruh coding tetap tidak diotorisasi selama paket P8–P11 belum dibekukan ulang; runtime tests seluruhnya masih NOT STARTED/PENDING.
+
 Canonical [08](../08-TESTING-ACCEPTANCE.md) memuat 39 suite/0 FINAL PASS, 73 requirement yang dipetakan dan delapan dimensi DoD. Jalur ancaman [P5](P5-SECURITY.md) dan race [P6](P6-CONCURRENCY-API.md) menjadi input test, bukan sekadar daftar pemeriksaan dalam prose.
 
 Provider menambahkan suite terarah sesuai feature dan rollback/race PostgreSQL aktual dekat implementasi. Consumer melengkapi bukti HTTP/browser/storage/export/role; verifikasi final menilai release candidate terintegrasi. Mock/prototype/screenshot hanya membuktikan scope yang memang diukur; tidak membuktikan constraint, hardware, restore atau performance.

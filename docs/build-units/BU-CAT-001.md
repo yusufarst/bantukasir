@@ -12,7 +12,7 @@ Estimasi dari nol: I5h / V4h / E1h = **10h**, tanpa owner/external waiting dan r
 
 ## DEPENDENCY DAN HOLDS
 
-Artifact: [BU-CMD-001](BU-CMD-001.md). Setiap provider harus mempunyai evidence PASS yang dibekukan pada revision kompatibel. Seluruh UI produksi menunggu BU-DESIGN-001 COMPLETE dengan approval owner atas exact revision.
+Artifact: [BU-CMD-001](BU-CMD-001.md). Setiap provider harus mempunyai evidence PASS yang dibekukan pada revision kompatibel. **Gate global sebelum seluruh coding:** [P7](../planning/P7-UX-DESIGN.md) COMPLETE dengan desain aktual DesainPakeAI, approval visual owner exact revision dan [DESIGN](../../DESIGN.md)/kontrak token yang dinormalisasi; lalu P8–P11 difinalisasi ulang/FROZEN dan owner mengotorisasi Execute satu BU eksplisit. Paket saat ini REOPENED_DRAFT/PENDING_P7_APPROVAL; coding belum diotorisasi. P7 adalah provider planning, bukan dependency BU.
 
 - G2 sebelum master client nyata
 
@@ -28,7 +28,7 @@ Suite: SEARCH01, SEARCH02, STOCK01, AUTH02, AUTH03, PERF01. Bukti delivery/verif
 
 Data/tabel: Product, Category, SellingPriceRevision, Barcode/token retired, guard product serta row StockBalance awal 0; fakta ledger/cost selanjutnya milik BU-INV-001.
 
-Pengelolaan master search-first, harga authoritative/versioned dan service search paginated yang aman per role. Gunakan FormRequest/policy/Action/DTO sesuai P4/P5/P6; jangan serialize entity Eloquent privileged. Consumer UI memakai React/Inertia/shadcn native dengan kontrak approved; provider backend yang independen tidak menunggu visual. Tidak ada capability Later.
+Pengelolaan master search-first, harga authoritative/versioned dan service search paginated yang aman per role. Gunakan FormRequest/policy/Action/DTO sesuai P4/P5/P6; jangan serialize entity Eloquent privileged. Consumer UI memakai React/Inertia/shadcn native dengan kontrak approved; provider backend yang independen secara teknis dapat dijadwalkan tanpa menunggu implementasi consumer UI setelah gate global terpenuhi dan BU terotorisasi; ini bukan izin coding saat paket planning masih draft. Tidak ada capability Later.
 
 ## DO
 

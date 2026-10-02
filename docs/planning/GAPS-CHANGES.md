@@ -1,10 +1,11 @@
 # Gap register dan change control
 
-Baseline P0–P11. Blueprint specification dapat direview/freeze dengan holds bounded; fakta yang belum ada tidak dianggap sebagai approval. Tidak ada missing fundamental fact yang menghalangi engineering non-production dari specification minimum. Acceptance client nyata berhenti pada bagian yang bergantung pada fakta berikut.
+Koreksi P7: P0–P6 tetap frozen input; **P7 desain aktual + OWNER VISUAL APPROVAL exact revision + DESIGN dinormalisasi** wajib sebelum refinalisasi/freeze P8–P11. Draft valid dipreservasi, tetapi seluruh coding belum diotorisasi. Sesudah paket frozen, holds fakta client menahan bagian yang terdampak, bukan otomatis seluruh engineering independen. Fakta yang belum ada tidak dianggap approval.
 
 | ID / kelas | Status | Fakta/evidence berikut | Scope yang tertahan / owner |
 | --- | --- | --- | --- |
-| DESIGN / OWNER_VISUAL | PENDING | Pemilihan exact revision BantuKasir Design, rights/license sumber, visual approval owner dan mapping semantic native | BU-DESIGN-001 COMPLETE, lalu seluruh UI produksi; owner/design provider |
+| DESIGN / OWNER_VISUAL | WAITING OWNER VISUAL REVIEW | Kandidat V1 BantuKasir Design `sha256-b51d2975aa3a8a92`, page `p7-v1`; [checks bounded/holds](../evidence/p7-correction/REVIEW.md). Approval owner exact revision, entitlement/rights/font/aset dan normalisasi final masih required; approvedRevision null | P7 COMPLETE, kemudian freeze ulang P8–P11 dan otorisasi coding; owner/design planner. Bukan BU implementasi |
+| P7-VALIDATION / TECHNICAL | PARTIAL / NOT VERIFIED | Lima lebar shell/role serta targeted interaction checks lulus; actual zoom200%, screen reader, software keyboard dan full rendered AA belum terverifikasi. Foundation design lint0errors/39warnings dicatat terpisah dari compiler | Exit P7 COMPLETE dan final DESIGN freeze; planner/verifier. Owner visual approval sendiri tidak mengubah Not verified menjadi PASS |
 | G1 / BUSINESS_FACT | OPEN | Policy commercial nota/tax legal/identitas buyer nyata | Acceptance dokumen client/cutover BU-DOC/RELEASE; owner |
 | G2 / BUSINESS_FACT | OPEN | Base unit/precision/katalog-volume opening/barcode/evidence biaya/kebutuhan serial; kapasitas onboarding manual | Master/opening/cutover nyata, bukan fixture backend terisolasi; owner/client |
 | G3 / BUSINESS_FACT | OPEN | Label drawer aktual/praktik float 0/single responsibility/handover/count dan dana refund Pemilik terpisah | Workflow kas/refund fisik/pilot; owner |

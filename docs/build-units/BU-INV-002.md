@@ -12,7 +12,7 @@ Estimasi dari nol: I5h / V4h / E1h = **10h**, tanpa owner/external waiting dan r
 
 ## DEPENDENCY DAN HOLDS
 
-Artifact: [BU-INV-001](BU-INV-001.md). Setiap provider harus mempunyai evidence PASS yang dibekukan pada revision kompatibel. Seluruh UI produksi menunggu BU-DESIGN-001 COMPLETE dengan approval owner atas exact revision.
+Artifact: [BU-INV-001](BU-INV-001.md). Setiap provider harus mempunyai evidence PASS yang dibekukan pada revision kompatibel. **Gate global sebelum seluruh coding:** [P7](../planning/P7-UX-DESIGN.md) COMPLETE dengan desain aktual DesainPakeAI, approval visual owner exact revision dan [DESIGN](../../DESIGN.md)/kontrak token yang dinormalisasi; lalu P8–P11 difinalisasi ulang/FROZEN dan owner mengotorisasi Execute satu BU eksplisit. Paket saat ini REOPENED_DRAFT/PENDING_P7_APPROVAL; coding belum diotorisasi. P7 adalah provider planning, bukan dependency BU.
 
 - G2 dan cutover terotorisasi sebelum count/source client nyata
 
@@ -28,7 +28,7 @@ Suite: INV01, INV02, OPEN01, AUTH02, AUTH03, SEARCH02. Bukti delivery/verifikasi
 
 Data/tabel: Source RECEIPT/MANUAL_ISSUE/OPENING, onboarding flag/zero checklist dan cost evidence.
 
-Command server dengan confirm eksplisit untuk barang masuk/issue non-sale/opening manual, tanpa import. Gunakan FormRequest/policy/Action/DTO sesuai P4/P5/P6; jangan serialize entity Eloquent privileged. Consumer UI memakai React/Inertia/shadcn native dengan kontrak approved; provider backend yang independen tidak menunggu visual. Tidak ada capability Later.
+Command server dengan confirm eksplisit untuk barang masuk/issue non-sale/opening manual, tanpa import. Gunakan FormRequest/policy/Action/DTO sesuai P4/P5/P6; jangan serialize entity Eloquent privileged. Consumer UI memakai React/Inertia/shadcn native dengan kontrak approved; provider backend yang independen secara teknis dapat dijadwalkan tanpa menunggu implementasi consumer UI setelah gate global terpenuhi dan BU terotorisasi; ini bukan izin coding saat paket planning masih draft. Tidak ada capability Later.
 
 ## DO
 

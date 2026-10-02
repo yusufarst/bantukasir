@@ -1,5 +1,7 @@
 # P9 — Infrastructure, backup, monitoring dan arsitektur deployment
 
+**Status: REOPENED_DRAFT / PENDING_P7_APPROVAL.** Kontrak operasi/backup/recovery yang valid dipertahankan sebagai draf. P9 tidak COMPLETE atau FROZEN sebelum desain aktual DesainPakeAI dan approval visual exact revision pada [P7](P7-UX-DESIGN.md), normalisasi [DESIGN](../../DESIGN.md), serta finalisasi ulang/freeze P8. Setelah gate tersebut, review dampak aset/font/template/dependency visual pada packaging, backup, restore dan resource, lalu validasi/freeze P9. Seluruh coding serta operasi infrastructure tetap tidak diotorisasi; independent backend/ops adalah hubungan dependency teknis setelah paket planning dibekukan, bukan bypass gate P7.
+
 Canonical [09](../09-DEPLOYMENT-OPS.md), runtime terpilih [P4](P4-ARCHITECTURE.md) dan kontrol ancaman [P5](P5-SECURITY.md). Aplikasi self-hosted privat berada pada VPS tujuan; fakta host/domain/access/capacity aktual yang belum tersedia tidak membenarkan klaim siap deploy.
 
 PHP-FPM + Nginx/PostgreSQL privat melalui Compose, Vite pada build time, rehearsal TLS/ACME renewal, tanpa SSR Node/Redis/queue secara default. Identity runtime/migration/test/backup terpisah; BU domain memberi privilege tabel immutable; webroot public-only/debug off/secret privat. Command/reconciliation/backup terjadwal memakai OS scheduler sederhana, tanpa platform worker generik.

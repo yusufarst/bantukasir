@@ -12,7 +12,7 @@ Estimasi dari nol: I5h / V4h / E1h = **10h**, tanpa owner/external waiting dan r
 
 ## DEPENDENCY DAN HOLDS
 
-Artifact: [BU-SALE-001](BU-SALE-001.md), [BU-INV-003](BU-INV-003.md). Setiap provider harus mempunyai evidence PASS yang dibekukan pada revision kompatibel. Seluruh UI produksi menunggu BU-DESIGN-001 COMPLETE dengan approval owner atas exact revision.
+Artifact: [BU-SALE-001](BU-SALE-001.md), [BU-INV-003](BU-INV-003.md). Setiap provider harus mempunyai evidence PASS yang dibekukan pada revision kompatibel. **Gate global sebelum seluruh coding:** [P7](../planning/P7-UX-DESIGN.md) COMPLETE dengan desain aktual DesainPakeAI, approval visual owner exact revision dan [DESIGN](../../DESIGN.md)/kontrak token yang dinormalisasi; lalu P8–P11 difinalisasi ulang/FROZEN dan owner mengotorisasi Execute satu BU eksplisit. Paket saat ini REOPENED_DRAFT/PENDING_P7_APPROVAL; coding belum diotorisasi. P7 adalah provider planning, bukan dependency BU.
 
 - G3 dana/praktik refund Pemilik sebelum acceptance payout nyata
 
@@ -28,7 +28,7 @@ Suite: RET01, FIN03, SESSION04, SESSION07, AUTH02, AUTH03. Bukti delivery/verifi
 
 Data/tabel: Evidence Refund yang executed, fakta Return serta matched RETURN_RECEIPT/revision cost allocation.
 
-Correction uang/quantity oleh Pemilik dengan batas terpisah; original Sale/Payment/receipt immutable. Gunakan FormRequest/policy/Action/DTO sesuai P4/P5/P6; jangan serialize entity Eloquent privileged. Consumer UI memakai React/Inertia/shadcn native dengan kontrak approved; provider backend yang independen tidak menunggu visual. Tidak ada capability Later.
+Correction uang/quantity oleh Pemilik dengan batas terpisah; original Sale/Payment/receipt immutable. Gunakan FormRequest/policy/Action/DTO sesuai P4/P5/P6; jangan serialize entity Eloquent privileged. Consumer UI memakai React/Inertia/shadcn native dengan kontrak approved; provider backend yang independen secara teknis dapat dijadwalkan tanpa menunggu implementasi consumer UI setelah gate global terpenuhi dan BU terotorisasi; ini bukan izin coding saat paket planning masih draft. Tidak ada capability Later.
 
 ## DO
 

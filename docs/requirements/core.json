@@ -405,12 +405,20 @@
       "units": [
         "BU-CFG-001",
         "BU-SALE-001",
-        "BU-DESIGN-001",
         "BU-UI-001",
         "BU-DOC-001"
       ],
       "acceptance": [
         "IDENTITY01"
+      ],
+      "planningProviders": [
+        {
+          "phase": "P7",
+          "source": "planning/P7-UX-DESIGN.md",
+          "contract": "../DESIGN.md",
+          "requiredStatus": "COMPLETE",
+          "approvedRevision": null
+        }
       ]
     },
     {
@@ -454,7 +462,6 @@
       "text": "Seluruh surface mengikuti approved DESIGN revision/native compositions, runtime identity dan role semantics. Loading/empty/error/denied/stale/UNKNOWN/disabled/focus/success dapat diverifikasi. Lima widths 375/440/768/1024/1440, zoom 200%, keyboard/focus/44px touch targets/reduced motion/kontras menurut DESIGN; tidak ada clipped actions atau menu capability Later yang seolah aktif.",
       "source": "08-TESTING-ACCEPTANCE.md",
       "units": [
-        "BU-DESIGN-001",
         "BU-UI-001",
         "BU-UI-002",
         "BU-UI-003",
@@ -462,6 +469,15 @@
       ],
       "acceptance": [
         "UX01"
+      ],
+      "planningProviders": [
+        {
+          "phase": "P7",
+          "source": "planning/P7-UX-DESIGN.md",
+          "contract": "../DESIGN.md",
+          "requiredStatus": "COMPLETE",
+          "approvedRevision": null
+        }
       ]
     },
     {
@@ -934,12 +950,20 @@
       "text": "Approved exact DPAI revision/rights → semantic repository tokens → native React/shadcn",
       "source": "../DESIGN.md",
       "units": [
-        "BU-DESIGN-001",
         "BU-UI-001"
       ],
       "acceptance": [
         "UX01",
         "IDENTITY01"
+      ],
+      "planningProviders": [
+        {
+          "phase": "P7",
+          "source": "planning/P7-UX-DESIGN.md",
+          "contract": "../DESIGN.md",
+          "requiredStatus": "COMPLETE",
+          "approvedRevision": null
+        }
       ]
     },
     {
@@ -1212,5 +1236,8 @@
       "final": "BU-VERIFY-002",
       "status": "NOT STARTED"
     }
-  ]
+  ],
+  "planningStatus": "REOPENED_DRAFT",
+  "planningGate": "PENDING_P7_APPROVAL",
+  "approvedRevision": null
 }

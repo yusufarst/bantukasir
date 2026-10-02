@@ -1,6 +1,6 @@
 # Handoff coding — BantuKasir
 
-Dokumen ini mengatur executor implementasi sesudah owner memilih dan mengotorisasi **satu Build Unit**. Paket P0–P11 adalah specification/blueprint; sesi rebaseline belum mengotorisasi coding aplikasi, BU pertama, push, merge, deploy atau perubahan infrastructure produksi.
+Dokumen ini mengatur executor implementasi **setelah P7 COMPLETE, P8–P11 difinalisasi ulang dan FROZEN, lalu owner memilih serta mengotorisasi satu Build Unit**. P7 COMPLETE memerlukan desain aktual DesainPakeAI, approval visual owner eksplisit atas exact revision dan DESIGN/kontrak token yang dinormalisasi. Paket P8–P11 saat ini REOPENED_DRAFT/PENDING_P7_APPROVAL; seluruh coding masih tidak diotorisasi. Sesi koreksi hanya mencakup docs/design-planning dan satu commit lokal yang aman; tidak mengotorisasi BU pertama, push, merge, deploy atau infrastructure produksi.
 
 ## Executor yang diminta owner
 
@@ -13,7 +13,7 @@ Nama tersebut adalah label/preferensi owner, bukan hasil verifikasi ketersediaan
 
 1. Periksa `git status --short`, branch, HEAD, commit terbaru, staged/unstaged/untracked. Catat target non-secret dan perubahan unrelated; jangan menghapus atau merapikannya dengan reset/restore/clean.
 2. Baca [AGENTS](AGENTS.md) → [00](docs/00-CURRENT-STATE.md) → [11](docs/11-BUILD-PLAN.md) → kartu BU yang dipilih di `docs/build-units/` → [01](docs/01-PRD.md) → [02](docs/02-ARCHITECTURE.md) → [10](docs/10-DECISIONS.md) dan seluruh READ kartu. UI juga membaca [DESIGN](DESIGN.md); acceptance [08](docs/08-TESTING-ACCEPTANCE.md), operasi [09](docs/09-DEPLOYMENT-OPS.md), traceability [CORE-MAP](docs/requirements/CORE-MAP.md), dan governance [P0](docs/planning/P0-GOVERNANCE.md).
-3. Verifikasi dependency teknis, revision provider dan hold BU. NEXT adalah informasi handoff, bukan izin otomatis. Instruksi eksplisit `Execute BU-...` memilih satu BU dan scope pada lingkungan yang diizinkan; jangan menjalankan BU berikutnya sendiri.
+3. Verifikasi evidence P7 COMPLETE dan freeze ulang P8–P11 sebelum menerima eksekusi coding; lalu periksa dependency teknis, revision provider dan hold BU. NEXT adalah informasi handoff, bukan izin otomatis. Instruksi eksplisit `Execute BU-...` memilih satu BU pada lingkungan yang diizinkan hanya setelah gate paket terpenuhi; jangan menjalankan BU berikutnya sendiri.
 4. Implementasikan kontrak repository. Jangan mendesain ulang produk, mengganti stack frozen, melonggarkan invariant/acceptance atau memperluas scope untuk membuat test lulus. Perubahan kontrak masuk canonical/change control dahulu; eskalasi keputusan bisnis mengikuti P0.
 
 Plan 2.0, T01–T40, BK/UI/Gate lama dan prototype/evidence historis hanya input/provenance. Jangan memakai completion prototype sebagai bukti produksi atau mengikuti kartu task obsolete. [11](docs/11-BUILD-PLAN.md) menetapkan Build Units aktif, dependency, effort dan exact next unit.
@@ -42,9 +42,9 @@ BusinessProfile runtime menetapkan identitas resmi client. Logo/nama BantuKasir 
 
 ## Visual dan DesainPakeAI
 
-Pipeline: `dpai` → approved **BantuKasir Design** revision → repository contract/tokens → shadcn/ui → UI produksi. Gunakan CLI global, bukan MCP. Setup/login tidak diulang setiap task. Sebelum context dan setiap mutation, verifikasi `dpai project current --pretty`: nama BantuKasir Design dan ID `eddb0e15-9909-44b3-8517-9239cadc65ef`; mismatch berarti STOP sebelum akses lanjut.
+Pipeline: **P7 desain aktual melalui `dpai` → approval visual owner atas exact BantuKasir Design revision → DESIGN/kontrak/token repository yang dinormalisasi → P8–P11 difinalisasi ulang dan FROZEN → shadcn/ui → UI produksi**. Desain dan approval pertama merupakan hasil planning P7, bukan pekerjaan yang ditunda ke executor implementasi. Gunakan CLI global, bukan MCP. Setup/login tidak diulang setiap task. Sebelum context dan setiap mutation, verifikasi `dpai project current --pretty`: nama BantuKasir Design dan ID `eddb0e15-9909-44b3-8517-9239cadc65ef`; mismatch berarti STOP sebelum akses lanjut.
 
-Jangan memilih, membaca, mengekspor, memutasi atau memakai token/aset/inspirasi project MULTIPLECORP. Revision context teramati bukan approval owner. Production UI consumer yang membutuhkan visual contract menunggu approval exact revision/rights; backend/database/tests independen tidak perlu menunggu visual. Mutation desain/layanan berbayar membutuhkan otorisasi scope.
+Jangan memilih, membaca, mengekspor, memutasi atau memakai token/aset/inspirasi project MULTIPLECORP. Revision context teramati bukan desain aktual yang selesai atau approval owner. Seluruh coding menunggu P7 COMPLETE serta freeze ulang P8–P11. Setelah itu, backend/database/tests yang independen secara teknis tidak harus menunggu implementasi consumer UI, tetapi tetap membutuhkan Execute satu BU eksplisit. Mutation desain/layanan berbayar memerlukan otorisasi scope.
 
 ## Verifikasi dan delapan dimensi DoD
 

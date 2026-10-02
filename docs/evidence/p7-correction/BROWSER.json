@@ -1,0 +1,520 @@
+{
+  "recordedOn": "2026-10-03",
+  "timezone": "Asia/Jakarta",
+  "project": {
+    "id": "eddb0e15-9909-44b3-8517-9239cadc65ef",
+    "name": "BantuKasir Design",
+    "role": "owner"
+  },
+  "prototype": {
+    "id": "c8384f74-cc1b-4335-a385-2d0fac66d668",
+    "runtime": "single-html@1",
+    "title": "BantuKasir Design Prototype"
+  },
+  "page": {
+    "id": "p7-v1",
+    "route": "/p7-v1",
+    "name": "P7 BantuKasir V1 — kandidat lengkap",
+    "source": "src/pages/p7-v1.page.html"
+  },
+  "candidateRevision": "sha256-b51d2975aa3a8a92",
+  "approvedRevision": null,
+  "p7Status": "WAITING OWNER VISUAL REVIEW",
+  "p7Complete": false,
+  "p8ToP11": "REOPENED_DRAFT/PENDING_P7_APPROVAL",
+  "sourceSha256": "147c79b6941ac42c85c251e24976349928f51d2b8f5db580f66138d00f2d5dab",
+  "officialExport": {
+    "kind": "Browser Halaman ini export from authorized SaaS P7 page; ignored local file",
+    "bytes": 730792,
+    "sha256": "b6b52472caef5b2de05af5ef9eca418fd3eb5022ba06b4e52fa20c47ad96405c"
+  },
+  "revisionChain": [
+    {
+      "step": "01-create",
+      "beforeRevision": "sha256-53257e5efa2e29e32cfb03e3b83fae1fc464cb27d4d08c9dfa3def4b2e799241",
+      "revision": "sha256-d58e8a7064166bec",
+      "exitCode": 0
+    },
+    {
+      "step": "02-info-ink",
+      "beforeRevision": "sha256-d58e8a7064166bec",
+      "revision": "sha256-879fa14789801b98",
+      "exitCode": 0
+    },
+    {
+      "step": "03-control-border",
+      "beforeRevision": "sha256-879fa14789801b98",
+      "revision": "sha256-fc7ea77ea81c0228",
+      "exitCode": 0
+    },
+    {
+      "step": "04-overview",
+      "beforeRevision": "sha256-fc7ea77ea81c0228",
+      "revision": "sha256-f1e56c4c5b2987a4",
+      "exitCode": 0
+    },
+    {
+      "step": "05-upload-v1",
+      "beforeRevision": "sha256-f1e56c4c5b2987a4",
+      "revision": "sha256-e27cf91f777f0147",
+      "exitCode": 0
+    },
+    {
+      "step": "08-targeted-review-fixes",
+      "beforeRevision": "sha256-e27cf91f777f0147",
+      "revision": "sha256-f85390de90722ffd",
+      "exitCode": 0
+    },
+    {
+      "step": "09-runtime-form-and-scan-fix",
+      "beforeRevision": "sha256-f85390de90722ffd",
+      "revision": "sha256-47794a924350b379",
+      "exitCode": 0
+    },
+    {
+      "step": "10-mobile-cart-access",
+      "beforeRevision": "sha256-47794a924350b379",
+      "revision": "sha256-04bb68b0120d9582",
+      "exitCode": 0
+    },
+    {
+      "step": "11-cart-footer-flow",
+      "beforeRevision": "sha256-04bb68b0120d9582",
+      "revision": "sha256-8e506d1cf9a0a4a2",
+      "exitCode": 0
+    },
+    {
+      "step": "12-stock-fixture-consistency",
+      "beforeRevision": "sha256-8e506d1cf9a0a4a2",
+      "revision": "sha256-4e2e5c7923dcd2a7",
+      "exitCode": 0
+    },
+    {
+      "step": "13-low-boundary",
+      "beforeRevision": "sha256-4e2e5c7923dcd2a7",
+      "revision": "sha256-6ab493837579cf88",
+      "exitCode": 0
+    },
+    {
+      "step": "15-auth-coverage",
+      "beforeRevision": "sha256-6ab493837579cf88",
+      "revision": "sha256-b51d2975aa3a8a92",
+      "exitCode": 0
+    }
+  ],
+  "compile": {
+    "bytes": 782972,
+    "diagnostics": [],
+    "layoutIssues": [],
+    "verification": {
+      "compile": "passed",
+      "browser": "not-run",
+      "layout": "not-run",
+      "responsive": "not-run"
+    },
+    "nextSuggestedTool": "finish_working_on_pages",
+    "pageCount": 9,
+    "revision": "sha256-b51d2975aa3a8a92",
+    "runtimeDependencies": 1,
+    "warnings": [],
+    "workingPageIds": [
+      "p7-v1"
+    ],
+    "diagnosticsCount": 0,
+    "diagnosticsTruncated": false,
+    "warningsCount": 0,
+    "warningsTruncated": false
+  },
+  "designLint": {
+    "revision": "sha256-b51d2975aa3a8a92",
+    "valid": true,
+    "summary": {
+      "errors": 0,
+      "warnings": 39,
+      "infos": 1
+    },
+    "hold": "Unsupported component border metadata and orphaned foundation tokens not marked fixed; candidate scoped recipes documented separately."
+  },
+  "authoringMarker": {
+    "workingPageIds": [],
+    "meaning": "DPAI authoring marker only, not P7 COMPLETE or Owner approval"
+  },
+  "browser": {
+    "kind": "CUA actual Chrome DOM/AX/screenshot tests of SaaS sandbox and unmodified official export on loopback. No production service.",
+    "finalShellChecks": [
+      {
+        "bodyWidth": 360,
+        "clientWidth": 360,
+        "heading": "Usaha dalam kendali.",
+        "innerWidth": 375,
+        "role": "Pemilik",
+        "targetWidth": 375
+      },
+      {
+        "bodyWidth": 360,
+        "clientWidth": 360,
+        "heading": "Operasional hari ini.",
+        "innerWidth": 375,
+        "role": "Admin Operasional",
+        "targetWidth": 375
+      },
+      {
+        "bodyWidth": 360,
+        "clientWidth": 360,
+        "heading": "Siap mulai melayani?",
+        "innerWidth": 375,
+        "role": "Kasir",
+        "targetWidth": 375
+      },
+      {
+        "bodyWidth": 425,
+        "clientWidth": 425,
+        "heading": "Usaha dalam kendali.",
+        "innerWidth": 440,
+        "role": "Pemilik",
+        "targetWidth": 440
+      },
+      {
+        "bodyWidth": 425,
+        "clientWidth": 425,
+        "heading": "Operasional hari ini.",
+        "innerWidth": 440,
+        "role": "Admin Operasional",
+        "targetWidth": 440
+      },
+      {
+        "bodyWidth": 425,
+        "clientWidth": 425,
+        "heading": "Siap mulai melayani?",
+        "innerWidth": 440,
+        "role": "Kasir",
+        "targetWidth": 440
+      },
+      {
+        "bodyWidth": 753,
+        "clientWidth": 753,
+        "heading": "Usaha dalam kendali.",
+        "innerWidth": 768,
+        "role": "Pemilik",
+        "targetWidth": 768
+      },
+      {
+        "bodyWidth": 753,
+        "clientWidth": 753,
+        "heading": "Operasional hari ini.",
+        "innerWidth": 768,
+        "role": "Admin Operasional",
+        "targetWidth": 768
+      },
+      {
+        "bodyWidth": 753,
+        "clientWidth": 753,
+        "heading": "Siap mulai melayani?",
+        "innerWidth": 768,
+        "role": "Kasir",
+        "targetWidth": 768
+      },
+      {
+        "bodyWidth": 1009,
+        "clientWidth": 1009,
+        "heading": "Usaha dalam kendali.",
+        "innerWidth": 1024,
+        "role": "Pemilik",
+        "targetWidth": 1024
+      },
+      {
+        "bodyWidth": 1009,
+        "clientWidth": 1009,
+        "heading": "Operasional hari ini.",
+        "innerWidth": 1024,
+        "role": "Admin Operasional",
+        "targetWidth": 1024
+      },
+      {
+        "bodyWidth": 1024,
+        "clientWidth": 1024,
+        "heading": "Siap mulai melayani?",
+        "innerWidth": 1024,
+        "role": "Kasir",
+        "targetWidth": 1024
+      },
+      {
+        "bodyWidth": 1425,
+        "clientWidth": 1425,
+        "heading": "Usaha dalam kendali.",
+        "innerWidth": 1440,
+        "role": "Pemilik",
+        "targetWidth": 1440
+      },
+      {
+        "bodyWidth": 1425,
+        "clientWidth": 1425,
+        "heading": "Operasional hari ini.",
+        "innerWidth": 1440,
+        "role": "Admin Operasional",
+        "targetWidth": 1440
+      },
+      {
+        "bodyWidth": 1440,
+        "clientWidth": 1440,
+        "heading": "Siap mulai melayani?",
+        "innerWidth": 1440,
+        "role": "Kasir",
+        "targetWidth": 1440
+      }
+    ],
+    "targetedChecks": [
+      {
+        "id": "AUTH-FINAL",
+        "revision": "sha256-b51d2975aa3a8a92",
+        "status": "PASS_BOUNDED",
+        "result": "Mismatch password: visible error and confirmation focus. Matching synthetic inputs clear and return login; six reset/invite invalid/expired/reused outcomes uniform. No real credential/auth/email operation. Mobile reset375 no body overflow; current SaaS sandbox form bridge works.",
+        "viewportWidths": [
+          375,
+          1536
+        ]
+      },
+      {
+        "id": "RP0-FINAL",
+        "revision": "sha256-b51d2975aa3a8a92",
+        "status": "PASS_BOUNDED",
+        "result": "Kasir opening0 explicit, SK-CONTOH-13; cart add/remove only draft; count0 and explicit close yields CLOSED expected0/physical0/variance0. Prior closed report not used as fallback.",
+        "viewportWidths": [
+          375,
+          1440
+        ]
+      },
+      {
+        "id": "FREEZE-FINAL",
+        "revision": "sha256-b51d2975aa3a8a92",
+        "status": "PASS_BOUNDED",
+        "result": "Owner explicitly enables onboarding freeze. Ordinary receiving review rejected with no movement; own session may open, POS cart remains draft, checkout rejected. Earlier8e manual issue also rejected.",
+        "viewportWidths": [
+          1440
+        ]
+      },
+      {
+        "id": "DRAWER-KEYBOARD-FINAL",
+        "revision": "sha256-b51d2975aa3a8a92",
+        "status": "PASS_BOUNDED",
+        "result": "375 Kasir: native AX focus logo; ShiftTab wraps to account, Tab wraps logo; Escape closes and focus returns visible Buka navigasi. Closed navigation absent from AX; workspace inert while open.",
+        "viewportWidths": [
+          375
+        ]
+      },
+      {
+        "id": "CART-FINAL",
+        "revision": "sha256-b51d2975aa3a8a92",
+        "status": "PASS_BOUNDED",
+        "result": "375 cart dock reveals and focuses BayarRp8000 without posting; minus/plus/remove44x44; footer flows below quantity. Body360/client360; no horizontal overflow. Screenshot records actual final export.",
+        "viewportWidths": [
+          375
+        ]
+      },
+      {
+        "id": "SOURCE-COVERAGE",
+        "revision": "sha256-b51d2975aa3a8a92",
+        "status": "PRESENT_BOUNDED",
+        "result": "Independent domain review:18 representative groups present,13 frozen inputs preserved. Static renderer smoke41PASS and node--check PASS; not browser/backend transaction proof."
+      },
+      {
+        "id": "ACCOUNT-SHELL",
+        "revision": "sha256-6ab493837579cf88",
+        "status": "PASS_BOUNDED",
+        "result": "Account375 menu inside sidebar0..264, x16..247.2/y462.4..752 above account764..826. Landscape667x375 menu fits39.325..283.2 with internal scroll. Desktop72rail unaffected by outside/account click; expanded232. Recipe unchanged in final auth patch."
+      },
+      {
+        "id": "STOCK-BOUNDARY",
+        "revision": "sha256-6ab493837579cf88",
+        "status": "PASS_BOUNDED",
+        "result": "Receiving Pulpen4+4→8/min8 remainsLOW. KPI/history/notification refresh to current8. OUT0 and min0 boundary source corrected; final source reviewed."
+      },
+      {
+        "id": "STOCK-FORMS",
+        "revision": "sha256-8e506d1cf9a0a4a2",
+        "status": "PASS_BOUNDED",
+        "result": "Operations negative incoming cost rejected with field focus; valid123456.50 no nominal echo review/result; receiving Kertas24→26 only confirm; non-sale issue mandatoryreason/note and26−1→25 review cancelled. Opening zero/no movement,101row rejection,freeze issue denied."
+      },
+      {
+        "id": "CATALOG",
+        "revision": "sha256-8e506d1cf9a0a4a2",
+        "status": "PASS_BOUNDED",
+        "result": "SKU search/detail/locked unit, duplicate identifier rejection, similar-name review checkbox, newATK007 master stock0/no movement; label illustration not physical scan proof."
+      },
+      {
+        "id": "PAYMENT-DOCUMENT",
+        "revision": "sha256-8e506d1cf9a0a4a2",
+        "status": "PASS_BOUNDED",
+        "result": "Full BANK_TRANSFER8000 received-funds/handover review/confirm→NT-CONTOH-0051; CASH4500 tender4000 rejected,5000→change500→NT-CONTOH-0052. Original snapshot review only, no bank/payment actual operation."
+      },
+      {
+        "id": "OWNER-CORRECTIONS",
+        "revision": "sha256-6ab493837579cf88",
+        "status": "PASS_BOUNDED_REVIEW",
+        "result": "Reversal originalMOV0042 current24/inverse-10/after14, no arbitrary qty/count. Refund16000 monetary bound independent from2-unit return; saleable/damaged distinction. No actual payout/replay/cost publication proof."
+      },
+      {
+        "id": "PERIOD-NOTIFICATION",
+        "revision": "sha256-8e506d1cf9a0a4a2",
+        "status": "PASS_BOUNDED",
+        "result": "Custom start>end invalid;1Sep..19Sep Apply; cancelled7Hari draft retains applied CustomRange. Notification328x368.4 max/internal scroll. Owner line trend/accessible table static labelled examples."
+      },
+      {
+        "id": "SHARED-STATES",
+        "revision": "sha256-6ab493837579cf88",
+        "status": "PASS_BOUNDED",
+        "result": "Owner finance13 non-normal review states rendered:loading/empty/error/denied/stale/UNKNOWN/UNCERTAIN/success/recount/replaybusy/replaycap/chronology/printfailed. Shared banner presence is not verification of every workflow transition."
+      }
+    ],
+    "scope": "Final b51 rechecks listed explicitly; earlier revision checks are not falsely promoted to final reruns."
+  },
+  "contrast": {
+    "candidateRevision": "sha256-b51d2975aa3a8a92",
+    "kind": "WCAG sRGB token-pair calculation; NOT complete rendered/accessibility audit",
+    "checks": [
+      {
+        "role": "foreground",
+        "foreground": "#121715",
+        "background": "#ffffff",
+        "minimum": 4.5,
+        "ratio": 18.117,
+        "passed": true
+      },
+      {
+        "role": "muted",
+        "foreground": "#5e6965",
+        "background": "#ffffff",
+        "minimum": 4.5,
+        "ratio": 5.7,
+        "passed": true
+      },
+      {
+        "role": "muted/inset",
+        "foreground": "#5e6965",
+        "background": "#faf8f5",
+        "minimum": 4.5,
+        "ratio": 5.377,
+        "passed": true
+      },
+      {
+        "role": "primary",
+        "foreground": "#ffffff",
+        "background": "#08090a",
+        "minimum": 4.5,
+        "ratio": 19.928,
+        "passed": true
+      },
+      {
+        "role": "success",
+        "foreground": "#006b49",
+        "background": "#e8f7f1",
+        "minimum": 4.5,
+        "ratio": 5.941,
+        "passed": true
+      },
+      {
+        "role": "warning",
+        "foreground": "#875418",
+        "background": "#fff5e4",
+        "minimum": 4.5,
+        "ratio": 5.868,
+        "passed": true
+      },
+      {
+        "role": "danger",
+        "foreground": "#aa3039",
+        "background": "#fff0f0",
+        "minimum": 4.5,
+        "ratio": 5.946,
+        "passed": true
+      },
+      {
+        "role": "info",
+        "foreground": "#285d86",
+        "background": "#eef5fb",
+        "minimum": 4.5,
+        "ratio": 6.363,
+        "passed": true
+      },
+      {
+        "role": "control border",
+        "foreground": "#818b86",
+        "background": "#ffffff",
+        "minimum": 3,
+        "ratio": 3.517,
+        "passed": true
+      },
+      {
+        "role": "focus",
+        "foreground": "#138464",
+        "background": "#ffffff",
+        "minimum": 3,
+        "ratio": 4.654,
+        "passed": true
+      }
+    ]
+  },
+  "screenshots": [
+    {
+      "file": "desainpakeai-review.jpg",
+      "candidateRevision": "sha256-b51d2975aa3a8a92",
+      "bytes": 77991,
+      "sha256": "51360c9d8ae2420e4c8ea432d432e4ca95902735f0784bd506f2d0505557eacc"
+    },
+    {
+      "file": "owner-dashboard-1440.jpg",
+      "candidateRevision": "sha256-b51d2975aa3a8a92",
+      "bytes": 104092,
+      "sha256": "030c863535141a40567766ad97a1991d44b12185151a35c8db419cb11db5a5c8"
+    },
+    {
+      "file": "mobile-cart-375.jpg",
+      "candidateRevision": "sha256-b51d2975aa3a8a92",
+      "bytes": 29358,
+      "sha256": "cc3ff06ae915fedd49df8021f81993e5ffc5db30fce0e21996b0f9c4bbc386c7"
+    },
+    {
+      "file": "auth-reset-375.jpg",
+      "candidateRevision": "sha256-b51d2975aa3a8a92",
+      "bytes": 28746,
+      "sha256": "cfc1d0025e89dbf171133551365adedfb151a097498f02bb671735f3d52a12c0"
+    }
+  ],
+  "holds": [
+    {
+      "id": "OWNER_VISUAL",
+      "status": "REQUIRED",
+      "revision": "sha256-b51d2975aa3a8a92"
+    },
+    {
+      "id": "RIGHTS",
+      "status": "PENDING",
+      "details": "Foundation/template/font/assets entitlement and production derivative/self-host permissions."
+    },
+    {
+      "id": "ZOOM200",
+      "status": "NOT VERIFIED",
+      "details": "Keyboard tool attempts did not change innerWidth/devicePixelRatio; viewport resize is not browser zoom proof."
+    },
+    {
+      "id": "ACCESSIBILITY-FULL",
+      "status": "NOT VERIFIED",
+      "details": "Complete rendered AA, screen-reader, reduced-motion render and physical mobile software-keyboard/long-content checks remain required; selected focus/targets/token pairs are bounded."
+    },
+    {
+      "id": "NATIVE-ACCEPTANCE",
+      "status": "NOT STARTED",
+      "details": "39 suites0FINALPASS:backend RBAC/DTO, realPostgreSQL/races, documents/devices/restore/performance/release."
+    }
+  ],
+  "scopeBoundaries": {
+    "productionCode": false,
+    "buildUnitExecuted": false,
+    "push": false,
+    "merge": false,
+    "deploy": false,
+    "databaseOperation": false,
+    "otherProjectAccess": false,
+    "realCredentialOrPayment": false
+  }
+}

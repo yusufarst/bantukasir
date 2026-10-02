@@ -12,7 +12,7 @@ Estimasi dari nol: I0h / V5h / E1h = **6h**, tanpa owner/external waiting dan ri
 
 ## DEPENDENCY DAN HOLDS
 
-Artifact: [BU-UI-002](BU-UI-002.md), [BU-UI-003](BU-UI-003.md), [BU-DOC-001](BU-DOC-001.md). Setiap provider harus mempunyai evidence PASS yang dibekukan pada revision kompatibel. Seluruh UI produksi menunggu BU-DESIGN-001 COMPLETE dengan approval owner atas exact revision.
+Artifact: [BU-UI-002](BU-UI-002.md), [BU-UI-003](BU-UI-003.md), [BU-DOC-001](BU-DOC-001.md). Setiap provider harus mempunyai evidence PASS yang dibekukan pada revision kompatibel. **Gate global sebelum seluruh coding:** [P7](../planning/P7-UX-DESIGN.md) COMPLETE dengan desain aktual DesainPakeAI, approval visual owner exact revision dan [DESIGN](../../DESIGN.md)/kontrak token yang dinormalisasi; lalu P8–P11 difinalisasi ulang/FROZEN dan owner mengotorisasi Execute satu BU eksplisit. Paket saat ini REOPENED_DRAFT/PENDING_P7_APPROVAL; coding belum diotorisasi. P7 adalah provider planning, bukan dependency BU.
 
 - DEVICES aktual wajib; konfirmasi media 58/80 mm/label
 
@@ -28,7 +28,7 @@ Suite: DEVICE01. Final point hanya untuk suite yang dipetakan pada 08; seluruh c
 
 Data/tabel: Witness hardware/media/OS/browser aktual; hanya data test terisolasi yang diidentifikasi.
 
-Bukti fisik USB/Bluetooth HID/manual fallback, scan label serta thermal/A4/reprint. Gunakan FormRequest/policy/Action/DTO sesuai P4/P5/P6; jangan serialize entity Eloquent privileged. Consumer UI memakai React/Inertia/shadcn native dengan kontrak approved; provider backend yang independen tidak menunggu visual. Tidak ada capability Later.
+Bukti fisik USB/Bluetooth HID/manual fallback, scan label serta thermal/A4/reprint. Gunakan FormRequest/policy/Action/DTO sesuai P4/P5/P6; jangan serialize entity Eloquent privileged. Consumer UI memakai React/Inertia/shadcn native dengan kontrak approved; provider backend yang independen secara teknis dapat dijadwalkan tanpa menunggu implementasi consumer UI setelah gate global terpenuhi dan BU terotorisasi; ini bukan izin coding saat paket planning masih draft. Tidak ada capability Later.
 
 ## DO
 

@@ -2,7 +2,7 @@
 
 Dokumen ini menetapkan kerangka planning BantuKasir **P0–P11**, berdasarkan instruksi owner terbaru. Kerangka governance, review dan kualitas dari diskusi MULTIPLECORP diadaptasi; domain, aset, token maupun project desain MULTIPLECORP tidak menjadi sumber produk BantuKasir. Plan 2.0 merupakan input historis yang dipetakan, bukan baseline task yang wajib dipertahankan.
 
-Paket ini menghasilkan specification dan Build Units. **Coding aplikasi belum diotorisasi.** Otorisasi sesi rebaseline hanya mencakup planning, dokumentasi, pemeriksaan read-only yang relevan, dan satu commit planning lokal bila keadaan repository aman. Tidak ada izin menjalankan Build Unit pertama, push, merge, deploy, pembelian atau perubahan infrastructure produksi.
+Paket ini menghasilkan specification dan Build Units. **Coding aplikasi belum diotorisasi.** P0–P6 dipertahankan sebagai input yang dibekukan; P7 dibuka kembali untuk desain aktual DesainPakeAI dan approval visual owner. P8–P11 tetap REOPENED_DRAFT/PENDING_P7_APPROVAL sampai P7 COMPLETE, lalu harus difinalisasi ulang dan dibekukan. Otorisasi sesi koreksi hanya mencakup docs/design-planning serta satu commit lokal bila keadaan repository aman. Tidak ada izin menjalankan Build Unit pertama, push, merge, deploy, pembelian atau perubahan infrastructure produksi.
 
 ## Sumber kebenaran dan pemulihan konteks
 
@@ -41,13 +41,13 @@ Planner tidak meminta izin rutin untuk tiap fase atau pilihan teknis. Jika klasi
 | P4 | Perbandingan stack, pilihan yang direview, modul, schema dan deployment boundary |
 | P5 | Threat model, authentication, authorization, privacy dan kontrol keamanan |
 | P6 | Transaction/lock/idempotency/API/performance dan retry/stale semantics |
-| P7 | IA/UX, pipeline visual bounded, responsive/a11y dan design approval boundary |
+| P7 | Desain aktual DesainPakeAI untuk BantuKasir, IA/UX serta state/role/responsive/a11y; approval visual owner atas exact revision dan DESIGN/kontrak/token yang dinormalisasi sebelum COMPLETE |
 | P8 | Testing, delapan dimensi DoD, acceptance/evidence serta final points |
 | P9 | Infrastructure, independent backup, restore, monitoring dan runbook |
 | P10 | Release/migration/cutover/UAT serta fakta/approval eksternal yang diperlukan |
 | P11 | Build Units baru dari specification cukup matang, requirement mapping, DAG, critical path, effort dan waiting |
 
-AUTO planning P0 → P11 diotorisasi tanpa pertanyaan antar fase normal. Gate fase memeriksa kelengkapan specification, keputusan yang diperlukan, review dan konsistensi. Fase berikutnya tidak boleh memakai unresolved contradiction atau asumsi bisnis mendasar sebagai fakta. P11 tidak mempertahankan T01–T40 hanya karena sudah ada; serap requirement/acceptance valid dan bentuk boundary Build Unit yang optimal dari paket baru.
+AUTO planning P0 → P11 diotorisasi tanpa pertanyaan antar fase normal. Gate fase memeriksa kelengkapan specification, keputusan yang diperlukan, review dan konsistensi. **Urutan wajib: input P0–P6 yang dibekukan → P7 desain aktual DesainPakeAI + approval visual owner eksplisit atas exact revision + normalisasi DESIGN/kontrak token → P7 COMPLETE → finalisasi ulang/freeze P8–P11 → implementasi melalui Execute satu BU eksplisit.** Draf P8–P11 yang valid tetap disimpan, tetapi tidak memperoleh freeze atau handoff-ready sebelum gate P7. Fase berikutnya tidak boleh memakai unresolved contradiction atau asumsi bisnis mendasar sebagai fakta. P11 tidak mempertahankan T01–T40 hanya karena sudah ada; serap requirement/acceptance valid dan bentuk boundary Build Unit yang optimal dari paket baru.
 
 Siklus tiap fase: baseline/intake → analisis/specification → self-review → independent adversarial review → koreksi → validasi → freeze/checkpoint dokumentasi → continuity. Reviewer berbeda dari penulis specification. Review satu paket dapat mencakup beberapa fase bila coverage dan temuan tiap fase dicatat; jangan mengaku review terpisah yang tidak dilakukan. Security, money, stock, concurrency, migration/recovery mendapat review tambahan secara selektif berdasarkan risiko atau temuan unresolved.
 
@@ -57,14 +57,14 @@ Checkpoint fase adalah rekaman specification/review/continuity, bukan izin membu
 
 | Dimensi | Makna dan bukti |
 | --- | --- |
-| Blueprint/specification reviewed atau frozen | Kontrak dan alternatif direview, temuan diselesaikan atau dibatasi sebagai dependency/hold eksplisit. Tidak membuktikan aplikasi sudah berjalan |
+| Blueprint/specification reviewed atau frozen | Kontrak dan alternatif direview, temuan diselesaikan atau dibatasi sebagai dependency/hold eksplisit. P7 wajib memenuhi desain aktual/approval visual owner/normalisasi DESIGN sebelum COMPLETE; P8–P11 tidak dapat dibekukan sebelum gate ini. Freeze tidak membuktikan aplikasi sudah berjalan |
 | Owner decision/approval | Bukti owner terhadap policy, visual revision, biaya atau release yang tepat. Review agent tidak menggantikannya |
-| Implementation | NOT STARTED sampai BU dipilih dan diotorisasi. COMPLETE memerlukan seluruh applicable acceptance/DoD dan evidence |
+| Implementation | NOT STARTED; coding hanya setelah P7 COMPLETE, P8–P11 difinalisasi ulang dan FROZEN, serta satu BU dipilih dan diotorisasi eksplisit. COMPLETE memerlukan seluruh applicable acceptance/DoD dan evidence |
 | Technical evidence | Hasil command/test nyata pada revision/target yang sesuai. Evidence awal tidak otomatis FINAL PASS terintegrasi |
 | External/physical facts | Client data, perangkat, destination/key backup, target VPS dan measured RPO/RTO hanya menjadi VERIFIED jika ada bukti aktual |
 | Release authorization | Izin exact target/revision/operation tersendiri; blueprint freeze, visual approval maupun technical PASS tidak memberikan izin deployment |
 
-Paket planning boleh membekukan kontrak generik yang benar sambil mencatat fakta client atau approval visual/device/release yang belum tersedia. Tulis hold, affected BU dan acceptance secara spesifik; jangan mengklaim seluruh fase/business policy approved atau seluruh produk COMPLETE. Jika fakta belum tersedia membuat keputusan dasar V1 tidak dapat ditentukan, catat OWNER_DECISION_REQUIRED, bukan membekukan asumsi.
+Fakta client/perangkat/backup/release yang belum tersedia tetap dicatat sebagai hold spesifik pada penerimaan terkait; freeze kontrak generik tidak mengklaim fakta tersebut verified. **Approval visual P7 merupakan pengecualian yang tidak boleh ditunda: desain aktual dan approval exact revision wajib selesai sebelum P8–P11 difinalisasi ulang atau dibekukan.** Tulis hold, BU dan acceptance terdampak; jangan mengklaim seluruh fase/business policy approved atau produk COMPLETE. Jika fakta yang hilang membuat keputusan dasar V1 tidak dapat ditentukan, catat OWNER_DECISION_REQUIRED, bukan membekukan asumsi.
 
 Stack hasil evaluasi dan review diperlakukan frozen sampai evidence baru memerlukan reopening. Pilihan B pada [02](../02-ARCHITECTURE.md) adalah Laravel + Inertia + React + TypeScript + PostgreSQL + Nginx; alasan dan alternatif tetap disimpan di dokumen arsitektur/decision log. Tidak menambah queue/cache service tanpa kebutuhan terukur.
 
@@ -78,14 +78,14 @@ Perubahan kontrak mengikuti: identifikasi → klasifikasi otoritas → impact an
 
 [11](../11-BUILD-PLAN.md) dan P11 memisahkan implementation, verification, evidence/docs, risk reserve, dependency critical path dan kapasitas satu executor. Estimasi dibangun dari nol berdasarkan scope baru; angka lama bukan target atau batas. Critical path resource-independen bukan durasi kalender satu executor.
 
-Owner/external waiting, perangkat nyata, visual approval, data/policy client, credential/target dan release authorization dipisahkan dari engineering. Ketidaktersediaan dependency menahan consumer terkait, bukan otomatis semua pekerjaan. Target biaya software recurring sekitar Rp0 tidak menghapus independent backup atau membenarkan keamanan/integritas yang lebih lemah; biaya nyata dan approval layanan dicatat.
+Owner/external waiting, perangkat nyata, visual approval, data/policy client, credential/target dan release authorization dipisahkan dari engineering. Waiting approval visual P7 menahan freeze P8–P11 dan seluruh eksekusi coding; analisis dampak/draf yang valid boleh dipertahankan tanpa mengklaim freeze. Setelah paket planning dibekukan, dependency implementasi teknis menahan consumer terkait, bukan otomatis semua pekerjaan yang sudah diotorisasi. Target biaya software recurring sekitar Rp0 tidak menghapus independent backup atau membenarkan keamanan/integritas yang lebih lemah; biaya nyata dan approval layanan dicatat.
 
 ## Handoff dan pengamanan penutupan
 
-Eksekusi nantinya mengikuti [CLAUDE](../../CLAUDE.md) dan kartu di `docs/build-units/`, mulai dari [BU-FOUND-001](../build-units/BU-FOUND-001.md) hanya sesudah owner mengotorisasi. Label executor yang diminta owner: Claude Opus 5.5, effort xhigh; eskalasi selektif Fable 5.1, effort xhigh. Ini preferensi handoff, bukan klaim model tersedia atau izin menjalankan executor sekarang.
+Eksekusi nantinya mengikuti [CLAUDE](../../CLAUDE.md) dan kartu di `docs/build-units/`, mulai dari [BU-FOUND-001](../build-units/BU-FOUND-001.md) hanya sesudah P7 COMPLETE, P8–P11 difinalisasi ulang dan FROZEN, lalu owner mengotorisasi satu BU eksplisit. Label executor yang diminta owner: Claude Opus 5.5, effort xhigh; eskalasi selektif Fable 5.1, effort xhigh. Ini preferensi handoff, bukan klaim model tersedia atau izin menjalankan executor sekarang.
 
 Setiap BU harus cukup eksplisit bagi executor lain yang mampu: purpose, dependencies, requirement, schema/actions/workflow/UI, role/object/DTO, validation, concurrency/idempotency, audit, performance, tests, acceptance, delapan dimensi DoD dan holds. Tidak otomatis melanjutkan semua BU.
 
 Penutupan planning memverifikasi encoding/link, konsistensi scope/security/design boundary, Core → BU → acceptance, DAG, effort, independent review serta exact staged scope. App/device/restore/performance checks yang belum berjalan tetap NOT STARTED/PENDING. Update [11](../11-BUILD-PLAN.md), [10](../10-DECISIONS.md) hanya untuk keputusan nyata, lalu **[00](../00-CURRENT-STATE.md) LAST**. Stage path yang disengaja; jangan `git add -A`, blind staging `.local/`/`.agents/` atau menyertakan pekerjaan unrelated.
 
-Tidak ada destructive production approval dalam planning atau kartu BU. [09](../09-DEPLOYMENT-OPS.md) tetap mewajibkan operasi exact yang disetujui owner, alternatif aman, populated rehearsal, independent backup/restore readiness dan recovery sebelum tindakan berisiko. Sesi rebaseline STOP sesudah satu commit planning lokal yang aman; tidak mengeksekusi BU pertama.
+Tidak ada destructive production approval dalam planning atau kartu BU. [09](../09-DEPLOYMENT-OPS.md) tetap mewajibkan operasi exact yang disetujui owner, alternatif aman, populated rehearsal, independent backup/restore readiness dan recovery sebelum tindakan berisiko. Sesi koreksi STOP sesudah satu commit docs/design-planning lokal yang aman; tidak mengeksekusi BU pertama. Kandidat desain yang review-ready tanpa approval owner tetap WAITING OWNER VISUAL APPROVAL; P8–P11 tetap REOPENED_DRAFT/PENDING_P7_APPROVAL.

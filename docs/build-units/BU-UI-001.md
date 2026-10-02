@@ -12,9 +12,11 @@ Estimasi dari nol: I4h / V3h / E1h = **8h**, tanpa owner/external waiting dan ri
 
 ## DEPENDENCY DAN HOLDS
 
-Artifact: [BU-IAM-001](BU-IAM-001.md), [BU-CFG-001](BU-CFG-001.md), [BU-DESIGN-001](BU-DESIGN-001.md). Provider harus mempunyai evidence compatible PASS yang dibekukan. Semua UI production menunggu BU-DESIGN-001 COMPLETE dengan owner approval exact revision.
+Artifact: [BU-IAM-001](BU-IAM-001.md), [BU-CFG-001](BU-CFG-001.md). Provider coding harus mempunyai evidence PASS yang dibekukan pada revision kompatibel.
 
-- BU-DESIGN-001 wajib COMPLETE dengan approval exact revision; identitas client aktual wajib sebelum pilot.
+Provider planning: [P7](../planning/P7-UX-DESIGN.md) COMPLETE dengan desain aktual DesainPakeAI, approval owner atas exact revision dan [DESIGN](../../DESIGN.md)/kontrak token yang dinormalisasi. Metadata: `planningProviders.phase: P7`, `requiredStatus: COMPLETE`, `approvedRevision: null` (approval belum tersedia). P7 bukan dependency coding. Paket P8–P11 saat ini REOPENED_DRAFT/PENDING_P7_APPROVAL; refinalisasi/FROZEN dan Execute eksplisit tetap wajib sebelum seluruh coding.
+
+- P7 COMPLETE dengan approval owner exact revision dan DESIGN/kontrak token dinormalisasi; paket P8–P11 difinalisasi ulang/FROZEN sebelum Execute; identitas client aktual wajib sebelum pilot.
 
 [Gap register](../planning/GAPS-CHANGES.md) memisahkan blueprint, owner facts, tests dan release authorization. Execute eksplisit satu BU tetap wajib; release/destruction/paid tools memerlukan scope authorization terpisah.
 
@@ -28,7 +30,7 @@ Suite: AUTH01, AUTH02, AUTH03, IDENTITY01, UX01, SEC01. Delivery/targeted proof 
 
 Data/tables: Consumer IAM/CFG; tidak mengakses database langsung atau menciptakan fakta bisnis di client.
 
-Shell/login/account responsive React/Inertia/shadcn serta form identitas, user dan konfigurasi Pemilik. Gunakan FormRequest/policy/Action/DTO sesuai P4/P5/P6; jangan serialize privileged Eloquent entity. UI consumer memakai native React/Inertia/shadcn approved contract; backend provider tidak menunggu visual independen. Tidak ada capability Later.
+Shell/login/account responsive React/Inertia/shadcn serta form identitas, user dan konfigurasi Pemilik. Gunakan FormRequest/policy/Action/DTO sesuai P4/P5/P6; jangan serialize privileged Eloquent entity. UI consumer memakai native React/Inertia/shadcn approved contract; provider backend yang independen secara teknis dapat dijadwalkan tanpa menunggu consumer UI setelah seluruh paket planning dibekukan dan BU terotorisasi. Tidak ada capability Later.
 
 ## DO
 

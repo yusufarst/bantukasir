@@ -640,46 +640,11 @@
       "risk": "Copy pada VPS yang sama bukan backup independen; exit code restore sukses bukan rekonsiliasi bisnis."
     },
     {
-      "id": "BU-DESIGN-001",
-      "title": "Approved DesainPakeAI revision dan repository visual contract",
-      "deps": [],
-      "h": [
-        3,
-        2,
-        1
-      ],
-      "reads": [
-        "../DESIGN.md",
-        "planning/P7-UX-DESIGN.md",
-        "01-PRD.md"
-      ],
-      "tables": "Tanpa write database; source/revision/token/mapping native repository dan evidence approval.",
-      "scope": "Sumber BantuKasir Design exact yang dipilih owner, token semantic dan kontrak komponen/state React/shadcn.",
-      "actions": [
-        "Baca skill; verifikasi dpai project current hanya pada ID yang diizinkan sebelum context/setiap mutation terotorisasi; simpan revision/provenance/evidence rights non-secret.",
-        "Review/adaptasi GOODS/role/CashSession/branding runtime, hilangkan artefak scope template; petakan typography/color/spacing/radius/elevation/motion sumber → token semantic repository/komposisi native.",
-        "Dapatkan visual approval exact revision dan rights dari owner; freeze mapping source → route/component/state, kriteria responsive/a11y dan exceptions."
-      ],
-      "tests": [
-        "Konsistensi provenance/project/revision/approval rights, mapping komponen/token native, checklist viewport/keyboard/state dan visual review owner.",
-        "Context CLI read-only; preview/parity aktual hanya saat source/target terotorisasi tersedia. Jangan mengklaim UI visual PASS dari planning ini."
-      ],
-      "ac": [
-        "UX01",
-        "IDENTITY01"
-      ],
-      "hold": [
-        "DESIGN: pemilihan exact revision/rights/approval owner WAJIB untuk COMPLETE"
-      ],
-      "risk": "Context teramati bukan approval; tanpa akses MULTIPLECORP, logo codename sebagai authority, iframe atau shipment prototype mentah."
-    },
-    {
       "id": "BU-UI-001",
       "title": "Native shared shell, autentikasi dan account/config UI",
       "deps": [
         "BU-IAM-001",
-        "BU-CFG-001",
-        "BU-DESIGN-001"
+        "BU-CFG-001"
       ],
       "h": [
         4,
@@ -713,9 +678,18 @@
         "SEC01"
       ],
       "hold": [
-        "BU-DESIGN-001 wajib COMPLETE dengan approval exact revision; identitas client aktual wajib sebelum pilot."
+        "P7 COMPLETE dengan approval owner exact revision dan DESIGN/kontrak token dinormalisasi; paket P8–P11 difinalisasi ulang/FROZEN sebelum Execute; identitas client aktual wajib sebelum pilot."
       ],
-      "risk": "History/shared props Inertia tidak boleh mengembalikan entity privileged atau credential."
+      "risk": "History/shared props Inertia tidak boleh mengembalikan entity privileged atau credential.",
+      "planningProviders": [
+        {
+          "phase": "P7",
+          "source": "planning/P7-UX-DESIGN.md",
+          "contract": "../DESIGN.md",
+          "requiredStatus": "COMPLETE",
+          "approvedRevision": null
+        }
+      ]
     },
     {
       "id": "BU-UI-002",
@@ -760,9 +734,18 @@
         "DEVICE01"
       ],
       "hold": [
-        "DESIGN prerequisite; G2 untuk acceptance onboarding nyata"
+        "P7/approved DESIGN prerequisite; paket P8–P11 difinalisasi ulang/FROZEN sebelum Execute; G2 untuk acceptance onboarding nyata"
       ],
-      "risk": "Tanpa simulasi stok client atau product create yang otomatis memposting receipt."
+      "risk": "Tanpa simulasi stok client atau product create yang otomatis memposting receipt.",
+      "planningProviders": [
+        {
+          "phase": "P7",
+          "source": "planning/P7-UX-DESIGN.md",
+          "contract": "../DESIGN.md",
+          "requiredStatus": "COMPLETE",
+          "approvedRevision": null
+        }
+      ]
     },
     {
       "id": "BU-UI-003",
@@ -812,9 +795,18 @@
         "DEVICE01"
       ],
       "hold": [
-        "DESIGN prerequisite; G3 praktik nyata; DEVICES final"
+        "P7/approved DESIGN prerequisite; paket P8–P11 difinalisasi ulang/FROZEN sebelum Execute; G3 praktik nyata; DEVICES final"
       ],
-      "risk": "Cart mobile ergonomis bukan offline queue, payment gateway atau capability POS tambahan."
+      "risk": "Cart mobile ergonomis bukan offline queue, payment gateway atau capability POS tambahan.",
+      "planningProviders": [
+        {
+          "phase": "P7",
+          "source": "planning/P7-UX-DESIGN.md",
+          "contract": "../DESIGN.md",
+          "requiredStatus": "COMPLETE",
+          "approvedRevision": null
+        }
+      ]
     },
     {
       "id": "BU-UI-004",
@@ -863,9 +855,18 @@
         "AUTH03"
       ],
       "hold": [
-        "DESIGN prerequisite; G3 praktik refund; G4 acceptance operasional aktual"
+        "P7/approved DESIGN prerequisite; paket P8–P11 difinalisasi ulang/FROZEN sebelum Execute; G3 praktik refund; G4 acceptance operasional aktual"
       ],
-      "risk": "Dashboard Pemilik kaya informasi dengan semantik tepat; template tidak mengaktifkan CRM/PO/expenses."
+      "risk": "Dashboard Pemilik kaya informasi dengan semantik tepat; template tidak mengaktifkan CRM/PO/expenses.",
+      "planningProviders": [
+        {
+          "phase": "P7",
+          "source": "planning/P7-UX-DESIGN.md",
+          "contract": "../DESIGN.md",
+          "requiredStatus": "COMPLETE",
+          "approvedRevision": null
+        }
+      ]
     },
     {
       "id": "BU-DOC-001",
@@ -907,9 +908,18 @@
         "DEVICE01"
       ],
       "hold": [
-        "G1 legal/policy buyer dan media DEVICES aktual sebelum final; DESIGN"
+        "P7/approved DESIGN prerequisite; paket P8–P11 difinalisasi ulang/FROZEN sebelum Execute; G1 legal/policy buyer dan media DEVICES aktual sebelum final"
       ],
-      "risk": "Commercial nota bukan faktur pajak atau sertifikasi regulasi."
+      "risk": "Commercial nota bukan faktur pajak atau sertifikasi regulasi.",
+      "planningProviders": [
+        {
+          "phase": "P7",
+          "source": "planning/P7-UX-DESIGN.md",
+          "contract": "../DESIGN.md",
+          "requiredStatus": "COMPLETE",
+          "approvedRevision": null
+        }
+      ]
     },
     {
       "id": "BU-VERIFY-001",
@@ -1168,5 +1178,73 @@
       ],
       "risk": "Commit planning/Execute coding task generik/izin migration bukan approval deploy produksi atau destruction."
     }
-  ]
+  ],
+  "planningStatus": "REOPENED_DRAFT",
+  "planningGate": "PENDING_P7_APPROVAL",
+  "approvedRevision": null,
+  "planningPrerequisites": {
+    "sequence": [
+      "P0-P6_FROZEN_INPUT",
+      "P7_ACTUAL_DESIGN_EXACT_OWNER_APPROVAL_DESIGN_NORMALIZED",
+      "P7_COMPLETE",
+      "P8-P11_REFINALIZED_FROZEN",
+      "EXPLICIT_EXECUTE_ONE_BU"
+    ],
+    "P7": {
+      "status": "WAITING OWNER VISUAL REVIEW",
+      "complete": false,
+      "projectId": "eddb0e15-9909-44b3-8517-9239cadc65ef",
+      "prototypePageId": "p7-v1",
+      "candidateRevision": "sha256-b51d2975aa3a8a92",
+      "approvedRevision": null,
+      "evidence": "../evidence/p7-correction/REVIEW.md"
+    },
+    "downstreamPhases": {
+      "P8": "REOPENED_DRAFT",
+      "P9": "REOPENED_DRAFT",
+      "P10": "REOPENED_DRAFT",
+      "P11": "REOPENED_DRAFT"
+    },
+    "gate": "PENDING_P7_APPROVAL"
+  },
+  "estimates": {
+    "kind": "ENGINEERING_JUDGMENT_NOT_HOURS_SPENT",
+    "planningHours": {
+      "P7": {
+        "design": 20,
+        "review": 8,
+        "normalization": 4,
+        "total": 32
+      },
+      "P8_P11": {
+        "quality": 3,
+        "operations": 1,
+        "release": 1,
+        "mappingDAG": 3,
+        "total": 8
+      },
+      "total": 40
+    },
+    "implementationHours": {
+      "implementation": 110,
+      "verification": 116,
+      "evidence": 27,
+      "total": 253
+    },
+    "combinedHours": 293,
+    "reserveHours": {
+      "planning": 8,
+      "implementation": 56,
+      "total": 64
+    },
+    "maximumAllowanceHours": 357,
+    "technicalCriticalPathHours": 128,
+    "planningPlusCriticalDependencyLowerBoundHours": 168,
+    "ownerWaitingHours": null,
+    "singleExecutor": {
+      "hours": 293,
+      "daysAt8Hours": 36.625,
+      "weeksAt40Hours": 7.325
+    }
+  }
 }

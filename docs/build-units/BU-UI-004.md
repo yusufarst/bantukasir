@@ -12,9 +12,11 @@ Estimasi dari nol: I7h / V5h / E1h = **13h**, tanpa owner/external waiting dan r
 
 ## DEPENDENCY DAN HOLDS
 
-Artifact: [BU-UI-001](BU-UI-001.md), [BU-READ-002](BU-READ-002.md), [BU-OPS-002](BU-OPS-002.md). Setiap provider harus mempunyai evidence PASS yang dibekukan pada revision kompatibel. Seluruh UI produksi menunggu BU-DESIGN-001 COMPLETE dengan approval owner atas exact revision.
+Artifact: [BU-UI-001](BU-UI-001.md), [BU-READ-002](BU-READ-002.md), [BU-OPS-002](BU-OPS-002.md). Setiap provider coding harus mempunyai evidence PASS yang dibekukan pada revision kompatibel.
 
-- DESIGN prerequisite; G3 praktik refund; G4 acceptance operasional aktual
+Provider planning: [P7](../planning/P7-UX-DESIGN.md) COMPLETE dengan desain aktual DesainPakeAI, approval owner atas exact revision dan [DESIGN](../../DESIGN.md)/kontrak token yang dinormalisasi. Metadata: `planningProviders.phase: P7`, `requiredStatus: COMPLETE`, `approvedRevision: null` (approval belum tersedia). P7 bukan dependency coding. Paket P8–P11 saat ini REOPENED_DRAFT/PENDING_P7_APPROVAL; refinalisasi/FROZEN dan Execute eksplisit tetap wajib sebelum seluruh coding.
+
+- P7/approved DESIGN prerequisite; paket P8–P11 difinalisasi ulang/FROZEN sebelum Execute; G3 praktik refund; G4 acceptance operasional aktual
 
 [Gap register](../planning/GAPS-CHANGES.md) memisahkan blueprint, owner facts, tests dan release authorization. Execute eksplisit satu BU tetap wajib; release/destruction/paid tools memerlukan scope authorization terpisah.
 
@@ -28,7 +30,7 @@ Suite: INV03, RET01, FIN02, FIN03, AUDIT01, SESSION07, SESSION09, SESSION10, AUT
 
 Data/tabel: Consumer correction/report/status operasional; fakta original tidak diedit.
 
-Workspace Pemilik kaya informasi, form correction bounded, profit/trend/filter waktu yang jujur serta seluruh session/audit/status sistem. Gunakan FormRequest/policy/Action/DTO sesuai P4/P5/P6; jangan serialize entity Eloquent privileged. Consumer UI memakai React/Inertia/shadcn native dengan kontrak approved; provider backend yang independen tidak menunggu visual. Tidak ada capability Later.
+Workspace Pemilik kaya informasi, form correction bounded, profit/trend/filter waktu yang jujur serta seluruh session/audit/status sistem. Gunakan FormRequest/policy/Action/DTO sesuai P4/P5/P6; jangan serialize entity Eloquent privileged. Consumer UI memakai React/Inertia/shadcn native dengan kontrak approved; provider backend yang independen secara teknis dapat dijadwalkan tanpa menunggu consumer UI setelah seluruh paket planning dibekukan dan BU terotorisasi. Tidak ada capability Later.
 
 ## DO
 

@@ -12,9 +12,11 @@ Estimasi dari nol: I7h / V5h / E1h = **13h**, tanpa owner/external waiting dan r
 
 ## DEPENDENCY DAN HOLDS
 
-Artifact: [BU-UI-001](BU-UI-001.md), [BU-CAT-001](BU-CAT-001.md), [BU-INV-002](BU-INV-002.md), [BU-READ-001](BU-READ-001.md). Setiap provider harus mempunyai evidence PASS yang dibekukan pada revision kompatibel. Seluruh UI produksi menunggu BU-DESIGN-001 COMPLETE dengan approval owner atas exact revision.
+Artifact: [BU-UI-001](BU-UI-001.md), [BU-CAT-001](BU-CAT-001.md), [BU-INV-002](BU-INV-002.md), [BU-READ-001](BU-READ-001.md). Setiap provider coding harus mempunyai evidence PASS yang dibekukan pada revision kompatibel.
 
-- DESIGN prerequisite; G2 untuk acceptance onboarding nyata
+Provider planning: [P7](../planning/P7-UX-DESIGN.md) COMPLETE dengan desain aktual DesainPakeAI, approval owner atas exact revision dan [DESIGN](../../DESIGN.md)/kontrak token yang dinormalisasi. Metadata: `planningProviders.phase: P7`, `requiredStatus: COMPLETE`, `approvedRevision: null` (approval belum tersedia). P7 bukan dependency coding. Paket P8–P11 saat ini REOPENED_DRAFT/PENDING_P7_APPROVAL; refinalisasi/FROZEN dan Execute eksplisit tetap wajib sebelum seluruh coding.
+
+- P7/approved DESIGN prerequisite; paket P8–P11 difinalisasi ulang/FROZEN sebelum Execute; G2 untuk acceptance onboarding nyata
 
 [Gap register](../planning/GAPS-CHANGES.md) memisahkan blueprint, owner facts, tests dan release authorization. Execute eksplisit satu BU tetap wajib; release/destruction/paid tools memerlukan scope authorization terpisah.
 
@@ -28,7 +30,7 @@ Suite: SEARCH01, SEARCH02, INV01, INV02, OPEN01, STOCK01, AUTH02, UX01, DEVICE01
 
 Data/tabel: Consumer command/query catalog/inventory; browser bukan authority stok.
 
-Search/list/detail/form/duplikasi, preview barcode, barang masuk/manual issue/opening Pemilik serta LOW/OUT/history aman per role. Gunakan FormRequest/policy/Action/DTO sesuai P4/P5/P6; jangan serialize entity Eloquent privileged. Consumer UI memakai React/Inertia/shadcn native dengan kontrak approved; provider backend yang independen tidak menunggu visual. Tidak ada capability Later.
+Search/list/detail/form/duplikasi, preview barcode, barang masuk/manual issue/opening Pemilik serta LOW/OUT/history aman per role. Gunakan FormRequest/policy/Action/DTO sesuai P4/P5/P6; jangan serialize entity Eloquent privileged. Consumer UI memakai React/Inertia/shadcn native dengan kontrak approved; provider backend yang independen secara teknis dapat dijadwalkan tanpa menunggu consumer UI setelah seluruh paket planning dibekukan dan BU terotorisasi. Tidak ada capability Later.
 
 ## DO
 

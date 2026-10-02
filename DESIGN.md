@@ -1,78 +1,108 @@
-# Kontrak visual — Baseline P0–P11
+# Kontrak visual — P7 actual design V1
 
-**Status: kandidat sumber teramati; approval visual owner belum tercatat.** Dokumen ini satu-satunya otoritas pipeline/token/pattern produksi. Nilai final dibekukan di BU-DESIGN-001 setelah owner menyetujui revision sumber yang tepat; jangan mengklaim token/visual lama sebagai approved produksi baru.
+**Status: DRAFT kandidat P7 / WAITING OWNER VISUAL REVIEW; OWNER VISUAL APPROVAL belum tercatat; `approvedRevision = null`.** Kandidat aktual sudah dirender dan diperiksa secara bounded; ini belum P7 COMPLETE atau full accessibility PASS. Dokumen repository ini akan menjadi kontrak produksi setelah seluruh exit P7 terpenuhi. P8–P11 belum frozen final. [Workflow P7](docs/planning/P7-UX-DESIGN.md), [coverage](docs/planning/P7-COVERAGE.md) dan [evidence](docs/evidence/p7-correction/REVIEW.md) menetapkan sumber, hasil dan holds.
 
-## Sumber dan provenance
+## Sumber, provenance dan boundary
 
-| Item | Fakta terverifikasi ulang 2 Oktober 2026 |
+| Item | Fakta |
 | --- | --- |
-| CLI global | `dpai 0.2.2`; gunakan `dpai`, bukan MCP |
-| Project | BantuKasir Design |
-| Project ID | `eddb0e15-9909-44b3-8517-9239cadc65ef` |
-| Foundation | Provenance Thread / alpha.1 |
-| Context revision teramati | `sha256-53257e5efa2e29e32cfb03e3b83fae1fc464cb27d4d08c9dfa3def4b2e799241` |
-| Prototype sumber | `c8384f74-cc1b-4335-a385-2d0fac66d668`, `single-html@1` |
-| Context | 32 color tokens, 10 typography tokens, 13 sections, 8 template pages |
-| Approval / rights | Approval visual owner dan entitlement/lisensi template/font/aset belum diverifikasi |
+| Tool | CLI global `dpai 0.2.2`; skill DesainPakeAI tersedia; setup tidak diulang |
+| Project | **BantuKasir Design / eddb0e15-9909-44b3-8517-9239cadc65ef** |
+| Prototype/runtime | `c8384f74-cc1b-4335-a385-2d0fac66d668` / `single-html@1` |
+| Foundation kandidat | Provenance Thread / alpha.1, hanya dari project di atas |
+| Revision intake | `sha256-53257e5efa2e29e32cfb03e3b83fae1fc464cb27d4d08c9dfa3def4b2e799241` |
+| Artefak kandidat aktual | Page `p7-v1`, route `/p7-v1`, source `src/pages/p7-v1.page.html`; tiga role dan state reviewer |
+| Revision kandidat desain aktual | **`sha256-b51d2975aa3a8a92`**; preview compiler PASS, browser checks bounded pada [evidence](docs/evidence/p7-correction/REVIEW.md) |
+| Revision approved | **null — menunggu approval eksplisit owner** |
+| Rights/template/font/aset | PENDING verifikasi entitlement/lisensi; tidak ada klaim izin dari keberadaan token saja |
 
-Halaman dashboard/transaksi/leads/target/laporan/tim/pengaturan/masuk adalah template visual. Leads, sales targets atau tim bukan capability produk Core. Adaptasi mengikuti role dan [01](docs/01-PRD.md), bukan copy perilaku template. Revision context adalah hash data teramati; bukan approval atau hasil parity browser.
+Input frozen P1–P6 menentukan bisnis. Delapan halaman template CRM/leads/target/tim sumber dipreservasi sebagai sejarah; bukan V1 dan bukan default review kandidat. Kandidat V1 harus dibuka pada artefak P7 yang dicatat evidence. Tidak mengakses/memutasi MULTIPLECORP, memakai aset/token/inspirasinya, memakai MCP, 21st.dev atau Impeccable.
 
-## Workflow CLI dan batas akses
+Sebelum context dan **setiap mutation**, cocokkan `dpai project current --pretty` nama/id exact; mismatch STOP. Ambil context revision dan guard mutation terhadap revision aktual. Jangan simpan key/credential dalam repository/evidence/screenshot. Desain dibuat/refine di DPAI, direview/diiterasi owner, approved exact revision dicatat, baru kontrak ini dinormalisasi/frozen. **BU-DESIGN-001 sepenuhnya diserap P7**; tidak ada desain yang ditunda sebagai unit coding.
 
-Skill DesainPakeAI terpasang global di `C:/Users/Yusuf Setiawan/.agents/skills/desainpakeai/SKILL.md`; baca ketika menggunakannya. Setup/login user sudah tersedia; jangan install/login ulang atau menyimpan key ke source/docs/log/screenshot. Metadata setup lokal di `.local/desainpakeai/setup.json` sengaja Git-ignored.
+Pipeline frozen kelak: **P7 DesainPakeAI owner-approved exact revision → repository DESIGN/semantic tokens → shadcn/ui → Laravel/Inertia React/TypeScript native**. Jangan ship prototype HTML, iframe, raw scoped styles, bridge attributes atau fake runtime auth sebagai aplikasi. Native route/component mapping berikut adalah kontrak kandidat untuk consumer, bukan kode yang sudah dibuat.
 
-1. Cek `dpai --version` dan `dpai project current --pretty`. Cocokkan nama **dan** ID di atas; mismatch berarti STOP sebelum context atau operasi berikutnya.
-2. Ambil `dpai context --pretty`, catat revision aktual dan panduan authenticated yang relevan melalui CLI. Jangan mengasumsikan export/compile/preview setara validasi layout.
-3. BU-DESIGN-001 mencatat foundation/revision yang dipilih owner, approval visual yang eksplisit, lisensi/entitlement dan mapping sumber ke semantic tokens. Jika belum disetujui, simpan kandidat dan WAITING OWNER REVIEW; UI produksi menunggu.
-4. Terjemahkan struktur yang disetujui langsung menjadi komponen native React/Inertia/shadcn; backend DB/tests tetap berjalan terpisah. Tidak ada iframe export, import workspace prototype atau beberapa aplikasi prototype pengganti.
-5. Sebelum **setiap mutation DesainPakeAI**, verifikasi lagi project tepat, scope otorisasi dan revision. Sesi rebaseline hanya membaca project/context, tanpa mutation/export.
+## Identitas dan semantic token kandidat
 
-**MULTIPLECORP dilarang disentuh**: jangan pilih/baca/ekspor/mutasi, gunakan aset/token/inspirasi atau fallback. Tidak ada MCP DesainPakeAI. 21st.dev dan Impeccable sudah keluar dari workflow; evidence historisnya tidak menjadi gate atau dependency.
+BantuKasir codename internal; client name/logo/contact/accent dari BusinessProfile runtime versioned. Fixture netral ATK non-production boleh. Tidak memakai logo codename/aset LATANSA sebagai default client. Original receipt/session document membekukan identity/template/assets saat commit; reprint mempertahankan snapshot.
 
-## Identitas dan semantic tokens
+| Semantic role repository | Nilai kandidat / source role | Penggunaan |
+| --- | --- | --- |
+| page/background | `#fefdfb` | Canvas hangat, tenang |
+| card/surface | `#ffffff` | Panel operasional/overlay |
+| muted/inset | `#faf8f5` | Section band/form/subtle depth |
+| foreground | `#121715` | Teks utama |
+| muted-foreground | `#5e6965` | Label sekunder yang tetap terbaca |
+| primary / on-primary | `#08090a` / `#ffffff` | Aksi utama gelap; recipe hover aktual `#27312d`, berbeda dari foundation `#1b211e` |
+| brand / active / accent ink | Foundation `#0c8c5e` / `#e8f7f1` / `#006b49` | Accent recipe terbatas; teks penting memakai ink `#006b49` |
+| focus-ring | Recipe `#138464`, outline3px | Fokus keyboard kandidat; token foundation tidak diasumsikan parity |
+| border / strong / control-border | `#ebe9e6` / `#cfcdca` / `#818b86` | Dua nilai source untuk divider/depth; control-border kandidat untuk batas kontrol bermakna≥3:1, diverifikasi saat render |
+| info / surface | `#285d86` / `#eef5fb` | Recipe yang dirender pada kandidat P7; teks/status informasi |
+| success / surface | `#006b49` / `#e8f7f1` | Recipe yang dirender; confirmed/committed |
+| warning / surface | `#875418` / `#fff5e4` | Recipe yang dirender; LOW/stale/incomplete |
+| destructive / surface | `#aa3039` / `#fff0f0` | Recipe yang dirender; OUT/rejected/destructive review |
+| chart | dark ink + brand ink, solid/dashed | Penjualan dan Laba Kotor berlabel/accessible table; owner saja |
 
-BantuKasir hanya codename. Nama/logo repository maupun aset LATANSA historis bukan visual authority/identitas default produksi. Login/shell/profile/dokumen memakai BusinessProfile runtime; fixture netral non-production boleh. Logo resmi/izin pakai dari owner diperlukan sebelum pilot. Snapshot dokumen memakai revision identitas/template/aset saat transaksi.
+Tabel membedakan foundation dengan recipe scoped yang benar-benar dirender pada `src/pages/p7-v1.page.html`. Token foundation info `#1878b8/#eaf5fc` dipreservasi; ink baru `#125c8a` tersedia tetapi recipe informasi kandidat memakai `#285d86/#eef5fb`. Control-border `#818b86` adalah tambahan foundation untuk kontrol, bukan divider. Nilai foundation yang belum dipakai tidak boleh dianggap parity kandidat. Mapping ke CSS variables/shadcn/Oklch dilakukan tanpa mengubah peran/state/contrast approved. Vivid mint/faint source tidak dipakai sebagai teks penting. Runtime accent hanya preset yang pasangan contrast/state-nya tervalidasi, bukan hex bebas. Status selalu label/icon/structure juga, bukan warna saja. Private HPP/acquisition cost/profit tidak masuk DTO/card staff.
 
-BU-DESIGN-001 membekukan mapping sumber → token semantic repository → CSS variables/shadcn. Catat nilai, peran, state, font/license, revision, contrast serta alasan adaptasi. Minimal:
+## Typography, spacing dan surfaces
 
-- background/page, surface/panel/inset/overlay; foreground utama/muted/inverse;
-- brand/accent yang dibatasi; primary/secondary/destructive; success/warning/danger/info dengan foreground pasangan;
-- border/divider/focus-ring; spacing scale/density; type hierarchy/font weights/line-height; radius; elevation; motion/duration;
-- breakpoint/layout/sidebar/drawer/navigation; chart series yang jelas dengan label/pattern, tanpa hanya mengandalkan warna.
+Kandidat yang dirender memakai **Inter** untuk body serta angka/ID dengan tabular numeric; `.p7-mono` tidak memuat font monospace tersendiri. **Libre Baskerville** terbatas pada cerita entry/auth. Geist Mono hanya tercantum pada foundation dan belum menjadi font kandidat; tidak dibekukan sebagai parity. Loader/fontfile/license dan entitlement harus dibuktikan sebelum freeze/self-host production. Fallback system sans/serif menjaga kegunaan ketika font gagal. Tidak mengunci Source Sans 3 dari UI historis.
 
-Jangan mengunci Source Sans 3, warna hijau, old radius atau logo BantuKasir sebagai requirement visual baru. Font final mengikuti sumber approved/lisensi, di-host lokal bila haknya memungkinkan. Accent runtime hanya preset yang contrast/state-nya tervalidasi; bukan hex bebas yang merusak readability. Jangan menyalin semua raw template token tanpa peran, atau mengaktifkan margin/profit untuk staff melalui shared card.
-
-## Pattern produksi yang wajib
-
-| Pattern | Kontrak fungsional/visual |
+| Peran | Recipe kandidat yang dirender |
 | --- | --- |
-| Shell / navigasi | Desktop proportional; mobile drawer dengan outside-dismiss/Escape dan focus-return. Collapse/rail bila sumber approved memakainya tidak menggeser account overlay atau kehilangan draft. Mobile navigation punya tujuan jelas dan tidak menutup tindakan utama |
-| Topbar / page header | Tinggi padat, judul dan aksi utama jelas; search satu per konteks. Utilities relevan saja, tanpa label role/ikon sidebar ganda atau tombol mati |
-| KPI / cards | Label, nilai dan secondary status/delta dengan periode/dasar nyata; bukan filler atau fabricated trend. Finance hanya owner; UNKNOWN tidak menjadi 0 |
-| Table / list | Hierarki kolom operasional, stable pagination server, alignment numeric, aksi reachable; narrow viewport memakai record layout atau scroll panel yang disengaja |
-| Form / buttons | Primary action tunggal per konteks, secondary/destructive jelas; validasi dekat field, error summary/focus, dirty draft/review/confirm. Tidak ada stock mutation dari search/create/scan |
-| Overlay / account | Bounded dalam viewport/shell, internal scroll bila perlu, anchor konsisten, role-appropriate account/settings. Tidak menyebabkan scroll/width sidebar meloncat |
-| Perhatian / notifications | Current LOW/OUT priority-first dan recent activity relevan; compact bounded panel. Tidak menciptakan engine delivery/inbox |
-| Periode / chart | Preset dan Custom Range draft terpisah dari Applied; endpoint/range validation, Apply/Cancel, keyboard/cross-month/year. Trend owner line chart bila data memadai; empty/error/incomplete jujur |
-| POS / cart | Fokus Scan/Search → cart → Bayar → receipt; minus/plus/remove jelas, jumlah/harga readable, draft preserved, total/action mobile tidak terpotong atau tertutup nav |
-| CashSession | NO_SESSION / OPEN / CLOSED, drawer/cashier/nomor/waktu/status jelas; opening 0 valid; count/recount/uncertain states berbeda; snapshot historical immutable |
-| System / history | Status aktual/freshness/error; original dan linked corrections dengan before/delta/after current stock; tidak menyiratkan history bisa diedit |
+| Page heading | 28px/600/line1.25; mobile25px. Auth25px desktop/24px mobile |
+| Section/dialog heading | Section16px/600/line1.4; panel mobile14px. Dialog20px desktop/19px mobile |
+| Body/control | Base14px/line1.5; compact form/action12px, sebagian mobile11px; label tetap eksplisit |
+| Metadata | 9–12px menurut konteks; caption12px. Keterbacaan ukuran kecil dan zoom200% masih hold review/validasi, bukan AA PASS |
+| KPI/total | KPI25px desktop,22px tablet,21px mobile dan19px di bawah400px; total cart berbeda sesuai emphasis |
+| Document/command identity | Inter dengan tabular numeric, bukan monospace; wrap/scroll sesuai komposisi |
+| Auth story | Libre Baskerville35px/400/line1.5 desktop,29px tablet; story disembunyikan pada mobile |
 
-Semua consumer mempunyai loading, empty, error, denied, stale, UNKNOWN/incomplete, submitting/disabled, definite rejected dan uncertain/recovery bila relevan. Uncertain membekukan identitas command; UI tidak menggantinya dengan transaksi baru. No private cost echo di receiving Operations. Reversal tidak menawarkan editable qty/count yang tidak relevan.
+Scale dasar4/8/12/16/20/24/32/48px dengan penyesuaian recipe. Page gutter32px desktop,24px pada composition tablet,16px mobile; panel body20px desktop/16px mobile; header18×20px desktop/16px mobile. Panel radius13px desktop/11px mobile, control8px, product card11px, account10px/menu12px, dialog15px desktop/12px mobile. Panel shadow `0 2px 4px #2d332902`, account overlay `0 10px 32px #15201b13`, dialog `0 20px 80px #06170f29`; border/divider membentuk hierarchy. Hover160ms, lift restrained pada item yang dapat dipilih; reduced-motion CSS meniadakan transisi. Nilai ini mencatat kandidat aktual, belum approved freeze.
 
-## Responsiveness, accessibility dan quality gate
+## Pattern dan states
 
-Uji browser pada **375, 440, 768, 1024, 1440 px**, short landscape dan cart/form panjang. Target touch tindakan operasional minimal 44×44 px, termasuk calendar/qty/close; label/totals tidak clipped. Zoom 200%, tab order, keyboard submit yang aman, Escape, focus trap/return, screen-reader labels dan reduced motion diuji setelah komposisi shadcn, bukan diasumsikan dari library.
+| Pattern | Kontrak kandidat |
+| --- | --- |
+| Shell | Desktop sidebar232px/icon rail72px; logo kecil toggle; outside click tetap terbuka. Mobile drawer264px dengan backdrop/Escape/focus trap-return; workspace inert saat terbuka, sidebar inert saat tertutup. Bottom nav role-safe; safe-area/cart bar tidak menutup action |
+| Header | Topbar padat; judul/aksi utama satu; search per konteks, notification/relevant controls. Tanpa label role ganda/sidebar icon redundant |
+| KPI/panel/table | Nilai + konteks/delta fixture berperiode jelas; grid proportional, numeric aligned. Narrow record layout atau intentional internal scroll berlabel; tidak body overflow |
+| Form/button | Primary tunggal, secondary/destructive berbeda; label/helper/error dekat field, summary/focus, draft/review/confirm. Stock berubah hanya explicit confirm, bukan create/search/scan |
+| Account/notification | Account popover di atas footer dalam bounds tanpa sidebar bergeser; rail memakai ikon compact dengan accessible name/title, expanded/mobile memakai label lengkap. Owner account/config lebih lengkap. Notification compact critical dulu/recent berikut, max-height/internal scroll; bukan inbox engine |
+| Period/chart | Preset/custom draft terpisah applied; Apply/Cancel, valid range≤366hari, future/ordering validation. Owner line trend/table; UNKNOWN/incomplete tidak menjadi profit0 |
+| POS | Scan/search hanya draft; plus/scan satu base unit, precision edit eksplisit, qty +/-/remove/undo44×44. Mobile cart bar48px men-scroll/fokus ke checkout, bukan membayar. Footer cart mengikuti flow pada≤950px agar tidak menutup quantity. Satu full CASH atau BANK_TRANSFER; Enter bukan confirm |
+| CashSession | NO_SESSION/OPEN/CLOSED, register/responsible cashier/nomor/waktu/status; blank opening invalid, Rp0 eksplisit valid; preview/count/recount, immutable CLOSED; no reopen |
+| Stock/correction | Receiving/opening/manual issue berbeda; reason non-sale wajib. Current before/delta/after, original immutable; reversal full sekali tanpa field qty/count bebas. Refund money/physical return bounds terpisah |
+| Sensitive/uncertain | Biaya incoming Operations write-only, no nominal echo/persistence; owner finance only. UNCERTAIN original intent/status recovery, tanpa replacement/bayar ulang; UNKNOWN biaya terpisah |
+| Feedback | Loading/skeleton; empty dengan next valid; error retry; denied; stale/freshness; UNKNOWN/incomplete; submitting/disabled; definite rejected; uncertain/recovery; success dengan original reference |
 
-Contrast minimal WCAG AA: 4.5:1 teks biasa, 3:1 teks besar dan elemen UI bermakna. Status bukan warna saja. Microinteraction restrained dan membantu feedback; tanpa animasi menghambat scan/payment/count. Tidak ada body overflow horizontal; intentional table scroll diberi affordance.
+## Responsive dan accessibility
 
-Tulisan UI Bahasa Indonesia; amount IDR, tanggal lokal **DD MM YYYY** seperti **23 09 2026**, waktu rinci **hh:mm:ss** seperti **14:25:30**, dan timezone Asia/Jakarta. ISO tetap internal. Date/time harus konsisten antar shell/filter/snapshot; fakta waktu tetap berasal dari server.
+Target375/440/768/1024/1440px, short landscape, zoom200% dan long content/cart/form. Lima lebar shell tiga role sudah diuji pada revision kandidat; short landscape/account diuji pada revision sebelumnya dengan recipe yang tidak berubah. Desktop split POS/cart, tablet adaptable, mobile satu alur dengan bottom navigation dan cart bar. Actual browser zoom200%, software keyboard perangkat nyata, screen reader serta audit AA seluruh rendered states masih NOT VERIFIED; lihat coverage/evidence. Target44×44 berlaku pada action operasional, bukan klaim semua review-only demo controls memenuhi target.
 
-Approval sumber BU-DESIGN-001 bukan bukti seluruh workflow produksi. BU-UI-001–004 dan BU-DOC-001 menguji consumer masing-masing; BU-VERIFY-002 memverifikasi responsive/a11y/privacy terintegrasi, sedangkan BU-VERIFY-003 memakai perangkat aktual. Catat parity, adaptasi dan risiko dengan revision yang tepat di [08](docs/08-TESTING-ACCEPTANCE.md) dan [11](docs/11-BUILD-PLAN.md). UI historis disimpan sebagai referensi state/fixture saja; jangan impor CSS/logo atau menganggap screenshot sebelumnya sebagai pass produksi.
+Target WCAG AA4.5:1 teks normal/3:1 teks besar dan elemen UI bermakna. Sepuluh token pairs terhitung PASS; ini bukan full rendered AA PASS. Semantic heading/landmark/label, status live, error association, focus-visible, keyboard tab order, safe submit/Escape/trap/restore dan reduced motion harus diverifikasi kembali pada native consumer. Data chart tersedia tabel. UI Bahasa Indonesia; IDR; DD MM YYYY; detail hh:mm:ss; Asia/Jakarta; tanggal fixture02 10 2026 bukan tanggal runtime authoritative.
 
+Sandbox preview DesainPakeAI memakai `allow-scripts` tanpa `allow-forms`; kandidat memakai bridge tombol review berbasis `reportValidity`/FormData. Bridge22form dan state reviewer hanya fasilitas authoring P7. Implementasi native memakai form React/Inertia/server validation yang sebenarnya, tanpa menyalin bridge atau fixture auth.
 
-## P7 blueprint dan current observation
+## Route/component mapping native kandidat
 
-[P7](docs/planning/P7-UX-DESIGN.md) membekukan IA/interaction/a11y constraints; final visual values hanya dari exact source yang dipilih dan disetujui owner. Read-only ulang 2 Oktober2026 melalui dpai0.2.2 mengonfirmasi BantuKasir Design / eddb0e15-9909-44b3-8517-9239cadc65ef, prototype c8384f74-cc1b-4335-a385-2d0fac66d668, revision sha256-53257e5efa2e29e32cfb03e3b83fae1fc464cb27d4d08c9dfa3def4b2e799241. Ini context observed, bukan approval/rights. Tidak mutation/export/MCP atau akses MULTIPLECORP.
+Path berikut logical route contract kandidat; endpoint command/policy tetap canonical P6/backend. Tidak mengotorisasi create route/code pada task ini.
 
-Panduan DesainPakeAI prototype-to-codebase dibaca via dpai guide get --topic prototype-to-codebase: native target writer, semantic mapping, fixture bukan backend contracts, foundations dahulu dan narrow/wide rendered parity dengan gaps Not verified. Sesi ini hanya specification, tidak handoff implementasi atau visual parity verification. Native target sekarang resources/js React/Inertia/shadcn; jangan ship prototype HTML/iframe/bridge attributes.
+| Route / consumer | Komponen shadcn/ui / komposisi repository |
+| --- | --- |
+| `/login`, `/password/*`, `/invite/*`, `/account` — UI001/IAM | Card, Form/Label/Input, Button, Alert, Dialog; server-auth account/recent-auth |
+| `/` role workspace — UI001 | Sidebar/Sheet, DropdownMenu, navigation/bottom bar, Breadcrumb, Badge, Tooltip; role DTO |
+| `/products`, `/products/:id`, `/products/new`, `/products/:id/edit` — UI002/CAT | Table/Card, Input/search, Select/Combobox, Pagination, Form, Dialog collision/review |
+| `/inventory/receiving`, `/inventory/opening`, `/inventory/issues` — UI002/INV | Search-first Form, Tabs, safe review Dialog, Summary, Alert; owner opening/ops write-only |
+| `/inventory/stock`, `/inventory/history` — UI002/READ | Table/mobile records, Badge LOW/OUT, filters, Pagination, freshness/unknown Alert |
+| `/pos`, `/cash-sessions/open`, `/cash-sessions/:id/close` — UI003/CASH/SALE | Product grid/search, cart rows, qty controls, Sheet/mobile cart, Dialog review/count/recovery, sticky Button |
+| `/sales`, `/sales/:id`, `/cash-sessions/:id` — UI003/READ/DOC | Scoped Table/detail, immutable summary/snapshot, receipt Card, reprint Dialog |
+| `/owner/corrections`, `/owner/refunds`, `/owner/returns` — UI004/INV/SALE | Source lookup/recent-auth Dialog, reason Form, before/delta/after, full-reversal/replay/UNKNOWN Alert |
+| `/owner/reports/*`, `/owner/audit` — UI004/READ | Line Chart + accessible Table, period Popover/Calendar/Form, Tabs, completeness/freshness, scoped exports |
+| `/owner/business`, `/owner/settings`, `/owner/system` — UI001/UI004/CFG/OPS | Form/preset Select, bounded logo input, Table/Dialog guard, read-only actual/unverified status; no unauthorized restore/reset |
+| `/owner/users` — UI001/IAM | User Table/search, invite/reset/disable/revoke Dialog, actor/role guard/recent-auth; historical identity dipertahankan |
+| `/owner/registers` — UI004/CASH001 | Register Table/Form, code/label/active dan OPEN-session edit guard; bukan warehouse/location |
+| Label/thermal58/80/A4/sessionPDFCSV — DOC001 | Repository document templates/preview, immutable identity, printer error/retry original |
+
+P7 approval membuktikan sumber desain yang dipilih, bukan consumer runtime FINAL PASS. UI001–004/DOC001 mengimplementasikan kontrak approved dalam React/Inertia; VERIFY002 menguji UX01/IDENTITY01/privacy terintegrasi, VERIFY003 perangkat nyata. Native parity/adaptasi dicatat pada revision tepat. P8–P11 refinalisasi setelah P7 COMPLETE; source/rights approval masih required.
