@@ -1,6 +1,6 @@
 # 04 — Autentikasi, RBAC, dan privasi
 
-**Plan 2.0.** Dokumen ini menetapkan kontrak keamanan, bukan bukti bahwa autentikasi atau backend sudah tersedia. [11 — Rencana dan task](11-BUILD-PLAN.md) menetapkan pemilik implementasi/verifikasi; [08 — Penerimaan](08-TESTING-ACCEPTANCE.md) menetapkan bukti kelulusan.
+**Baseline P0–P11.** Dokumen ini menetapkan kontrak keamanan, bukan bukti bahwa autentikasi atau backend sudah tersedia. [11 — Rencana dan Build Units](11-BUILD-PLAN.md) menetapkan pemilik implementasi/verifikasi; [08 — Penerimaan](08-TESTING-ACCEPTANCE.md) menetapkan bukti kelulusan.
 
 ## Otorisasi server dan tiga role tetap
 
@@ -29,7 +29,7 @@ Nilai sensitif yang dikirim tidak boleh kembali melalui response, review hasil, 
 
 ## Autentikasi dan penjagaan mutation
 
-Gunakan autentikasi self-hosted dengan Better Auth sebagai arah awal; kompatibilitas versi, advisory keamanan, adapter, dan cookie/session behavior diverifikasi serta dipin saat task foundation. Tidak ada kriptografi password/token buatan sendiri.
+Gunakan auth Laravel/Fortify self-hosted dengan database-backed server sessions; kompatibilitas versi, advisory keamanan, hashing/cookie/session behavior dipin saat BU-FOUND-001/BU-IAM-001. Scaffold bukan permission: nonaktifkan public signup/2FA/teams/WorkOS yang bukan Core. Tidak ada kriptografi password/token buatan sendiri.
 
 - Akun individual; hashing password melalui library yang tervalidasi; cookie `HttpOnly`, `Secure`, dan `SameSite` yang sesuai; server session, trusted origin/CSRF protection, serta rate limit login/reset.
 - Tidak ada public signup. Bootstrap pemilik adalah prosedur operator privat sekali pakai dengan target lingkungan yang diverifikasi; tidak ada password bawaan atau demo user di production.
@@ -56,8 +56,24 @@ Log memakai ID dan error aman. Jangan merekam password, invite/reset token, auth
 
 “BantuKasir” hanya codename internal. Identitas aplikasi produksi berasal dari runtime BusinessProfile: nama bisnis, logo resmi client, alamat, kontak, dan identitas struk/dokumen. Repository logo bukan identitas client produksi. Snapshot dokumen mempertahankan revision BusinessProfile/logo saat transaksi, termasuk setelah profil berubah.
 
-Validasi environment saat startup tanpa menampilkan nilai secret. Credential aplikasi, database, backup, dan access key DesainPakeAI tetap di konfigurasi privat; key DesainPakeAI milik user tidak disalin ke repository, docs, log, screenshot, atau variabel `NEXT_PUBLIC`. Source design/revision mengikuti [DESIGN](../DESIGN.md), terpisah dari storage logo client produksi.
+Validasi environment saat startup tanpa menampilkan nilai secret. Credential aplikasi, database, backup, dan access key DesainPakeAI tetap di konfigurasi privat; key DesainPakeAI milik user tidak disalin ke repository, docs, log, screenshot, atau variabel `VITE_*` atau bundle frontend publik. Source design/revision mengikuti [DESIGN](../DESIGN.md), terpisah dari storage logo client produksi.
 
 Upload logo hanya PNG/JPEG/WebP terverifikasi, maksimal 5 MiB dan 16 megapixel; validasi isi, re-encode, dan hapus metadata. Tolak executable/SVG/HTML dan arbitrary remote URL fetching. Gunakan storage privat dengan key acak immutable, revision yang tetap dapat direferensikan snapshot, download terotorisasi, serta manifest/checksum. Jangan menghapus aset yang masih direferensikan receipt/report. [09 — Operasi dan recovery](09-DEPLOYMENT-OPS.md) mengatur penyimpanan dan pemulihannya.
 
 Kelulusan membutuhkan bukti backend RBAC dan object authorization, termasuk request langsung lintas actor/role, race disable/config, recovery, DTO/cache/log/media/ekspor tanpa kebocoran, dan recent-auth actions. Screenshot atau mock client tidak memberi FINAL PASS; ownership serta acceptance final berada di [11](11-BUILD-PLAN.md) dan [08](08-TESTING-ACCEPTANCE.md).
+
+
+## Laravel/Inertia sensitive-channel contract
+
+Inertia page/shared props, validation errors, redirects, session flash/old input, browser history/persisted forms dan server logs wajib memakai explicit allowlists. Jangan serialize Eloquent models/evidence penuh lalu menyembunyikan field di React. Sensitive receiving cost inputs tidak boleh masuk old-input/session flash (dontFlash/redaction explicit), shared props, error/status/recovery/history/log atau client remembered form/localStorage/IndexedDB. Jalur validation failure diuji sama ketat dengan success.
+
+Setelah confirmed commit, clear cost field. Reload UNCERTAIN receiving hanya menyimpan/memakai minimal scoped command reference untuk membaca status original; tidak menyimpan biaya atau membangun replacement command. Jika original belum dapat dipastikan dan payload sensitif tak tersedia, hold/incident original intent; jangan menganggap not-found sebagai izin posting atau menagih/mengirim ulang dengan payload berbeda.
+
+## Threat controls dan acceptance
+
+[P5](planning/P5-SECURITY.md) menetapkan path×attacker×control×negative proof×BU untuk auth/bootstrap/invite/reset, command/recovery, search/history/reports, receiving write-only, config/logo/media, print/PDF/CSV, Inertia/cache/log dan backup/ops. AUTH01–03/SEC01/IDENTITY01 di08 harus membuktikan controls secara nyata. Argon2id, session regeneration/revocation, uniform enumeration-resistant errors, same-origin CSRF/rate limits, parameterized SQL/input mass-assignment allowlists, escaped output, safe local redirects, path/remote fetch denial, private uploads/downloads, HTTPS/security headers/CSP/trusted proxy, dependency advisory dan debug/secrets hardening berlaku sesuai path. Tidak mengaktifkan multi-tenant/outlet, camera, public signup atau 2FA karena checklist eksternal.
+
+
+## Pergantian actor dan privasi browser history
+
+Enkripsi history autentikasi Inertia wajib dengan mekanisme versi yang dipin. Clear/rotate history keys pada logout, pergantian actor dan revoke yang teramati; bersihkan remembered forms/query cache/client state serta gunakan response sensitif private/no-store. Halaman sensitif yang kembali melalui Back/Forward/bfcache harus memvalidasi ulang actor/permission sebelum menampilkan cached data, sehingga akun staff tidak melihat finance Pemilik sebelumnya. Server tetap mengotorisasi semua request; client history protection bukan pengganti policies. Incoming receiving cost write-only tetap NEVER persisted, walaupun history lain dienkripsi. AUTH02/SEC01 dan IAM/UI-001/VERIFY-002 menguji Pemilik→logout→staff→Back/Forward/reload/bfcache. [Official Inertia history encryption](https://inertiajs.com/docs/v3/security/history-encryption) mendasari kontrol ini; API versi aktual diverifikasi saat foundation.

@@ -1,0 +1,1172 @@
+{
+  "baseline": "P0-P11",
+  "date": "2026-10-02",
+  "status": "IMPLEMENTATION_NOT_STARTED",
+  "first": "BU-FOUND-001",
+  "reserveHours": 56,
+  "units": [
+    {
+      "id": "BU-FOUND-001",
+      "title": "Fondasi Laravel, React dan harness PostgreSQL terisolasi",
+      "deps": [],
+      "h": [
+        4,
+        3,
+        1
+      ],
+      "reads": [
+        "02-ARCHITECTURE.md",
+        "04-AUTH-RBAC-SECURITY.md",
+        "09-DEPLOYMENT-OPS.md",
+        "planning/P4-ARCHITECTURE.md"
+      ],
+      "tables": "Schema auth/session library dan tabel harness test minimum; belum schema bisnis.",
+      "scope": "Fondasi modular monolith Laravel/Inertia/React/TypeScript/shadcn, toolchain Composer/npm, PostgreSQL non-production dan guard target test.",
+      "actions": [
+        "Verifikasi versi kompatibel/advisory/lisensi, pin composer.lock dan satu npm lockfile; gunakan starter React resmi sebagai scaffold yang diperiksa, nonaktifkan signup/2FA/teams yang bukan Core.",
+        "Sediakan scripts lint/analyse/unit/PostgreSQL/race/typecheck/build/E2E, environment validation dan health tanpa secret; PHP-FPM runtime, Vite build-time, SSR nonaktif.",
+        "Pisahkan credential runtime/migration/test. Siapkan harness dua koneksi/proses, fixture committed dan failure injection; buktikan transaksi/rollback sederhana pada PostgreSQL nyata."
+      ],
+      "tests": [
+        "Fresh isolated startup/build, konfigurasi invalid ditolak tanpa secret, koneksi dan rollback PostgreSQL nyata; test runner menolak target production.",
+        "composer validate; composer lint; composer analyse; composer test:unit; composer test:postgres; npm run lint; npm run typecheck; npm run build. Scripts harus tersedia dari BU ini."
+      ],
+      "ac": [
+        "DB01",
+        "SEC01"
+      ],
+      "hold": [],
+      "risk": "Scaffold resmi bukan implementasi domain; default SQLite/RefreshDatabase bukan bukti race."
+    },
+    {
+      "id": "BU-IAM-001",
+      "title": "Autentikasi, lifecycle akun dan otorisasi tiga role",
+      "deps": [
+        "BU-FOUND-001"
+      ],
+      "h": [
+        5,
+        4,
+        1
+      ],
+      "reads": [
+        "04-AUTH-RBAC-SECURITY.md",
+        "planning/P5-SECURITY.md"
+      ],
+      "tables": "User, library auth/session/token dan actor guard; identitas historis dipertahankan.",
+      "scope": "Server session/Fortify, private owner bootstrap, invite/reset/revoke, own-account dan capability/object policies tepat tiga role.",
+      "actions": [
+        "Implementasikan bootstrap privat tanpa default account, token invite/reset expiring single-use, account disable/revoke, password/session hardening dan recent auth.",
+        "Terapkan role dan cakupan server pada direct routes/media/status; actor berasal session; Operations tidak POS dan Cashier tidak product-management.",
+        "Gunakan guard actor bersama dengan command consumer; seragamkan login/reset error untuk enumeration, regenerate session dan deny mass assignment/unsafe redirects.",
+        "Sediakan kontrol server Inertia untuk enkripsi history terautentikasi, lifecycle clear/rotate key pada logout/pergantian actor/revoke yang teramati, serta respons sensitif private/no-store. Uji kontrak server dengan HTTP tanpa menunggu UI produksi. Consumer remembered forms/query cache/Back/Forward/bfcache dibangun pada BU-UI-001; biaya receiving write-only tidak pernah dipersist meskipun dienkripsi."
+      ],
+      "tests": [
+        "Negative/positive HTTP tests semua role, ID tebakan, session fixation/expiry/CSRF/origin/rate-limit/token reuse/revoke, recent auth dan unsafe body fields.",
+        "composer test:unit; composer test:postgres; composer test:race untuk harness revoke-vs-command; composer analyse. COMPLETE unit ini memakai bukti server terarah, tanpa menunggu browser UI yang belum dibuat.",
+        "Uji flag history encryption, signal clear/key lifecycle, headers, session regeneration/revocation dan DTO aman melalui HTTP. Bukti browser pergantian actor milik BU-UI-001; bukti lengkap finance Pemilik→staff milik BU-VERIFY-002. Bukti server awal bukan AUTH02 FINAL PASS."
+      ],
+      "ac": [
+        "AUTH01",
+        "AUTH02",
+        "AUTH03",
+        "SEC01"
+      ],
+      "hold": [],
+      "risk": "Fortify menyediakan mekanisme; policies, disable races dan safe DTO tetap kode domain yang wajib diuji."
+    },
+    {
+      "id": "BU-CMD-001",
+      "title": "Command identity, audit atomik dan original-result recovery",
+      "deps": [
+        "BU-IAM-001"
+      ],
+      "h": [
+        5,
+        4,
+        1
+      ],
+      "reads": [
+        "02-ARCHITECTURE.md",
+        "planning/P6-CONCURRENCY-API.md",
+        "09-DEPLOYMENT-OPS.md"
+      ],
+      "tables": "CommandReceipt, identitas source intent, recovery epoch, AuditEvent dan guard actor/config berurutan.",
+      "scope": "Primitive konkret bagi stock/Sale/CashSession/config; bukan platform event atau queue generik.",
+      "actions": [
+        "Validasi envelope/fingerprint server, key sesuai scope actor + operation dan uniqueness source intent; facts/audit/result atomik. Payload sama mengembalikan original; payload berubah menghasilkan conflict.",
+        "Sediakan status/recovery aman yang diotorisasi ulang dan error code deterministik; result hilang/timeout tidak memberi izin command pengganti.",
+        "Terapkan urutan lock dan retry deadlock bounded dengan identitas awal, tanpa efek eksternal dalam transaksi; recovery epoch menolak stale intent setelah restore."
+      ],
+      "tests": [
+        "Race duplikasi key sama/berbeda, fingerprint conflict, rollback audit/result gagal, race revoke/config, status dengan ID actor tebakan, recovery response hilang dan stale epoch.",
+        "composer test:postgres dan composer test:race dengan dua proses/connection; failure injection setiap write primitive."
+      ],
+      "ac": [
+        "AUTH02",
+        "AUTH03",
+        "INV01",
+        "POS01",
+        "POS03",
+        "AUDIT01",
+        "REC02"
+      ],
+      "hold": [],
+      "risk": "CommandReceipt tidak dibersihkan memakai TTL yang membuka kembali source intent lama."
+    },
+    {
+      "id": "BU-CFG-001",
+      "title": "BusinessProfile, config guards dan logo revision privat",
+      "deps": [
+        "BU-CMD-001"
+      ],
+      "h": [
+        4,
+        3,
+        1
+      ],
+      "reads": [
+        "02-ARCHITECTURE.md",
+        "04-AUTH-RBAC-SECURITY.md",
+        "../DESIGN.md"
+      ],
+      "tables": "BusinessProfileRevision/pointer current, revision aset/template immutable dan guard config.",
+      "scope": "Identitas client runtime dan config bounded; codename/logo repository bukan default client.",
+      "actions": [
+        "Validasi nama/alamat/kontak/header/footer/accent bounded; revision immutable dan lock writer config bersama consumer.",
+        "Upload hanya PNG/JPEG/WebP terverifikasi ≤5 MiB/16MP, re-encode/metadata stripped/key privat immutable; tolak SVG/HTML/executable/fetch URL/path traversal.",
+        "Sediakan DTO/config/download media terotorisasi serta reference aset yang dipertahankan untuk snapshot dokumen; jangan hapus original yang direferensikan."
+      ],
+      "tests": [
+        "MIME/content malformed, polyglot, oversize, pixel cap, remote URL, aset tebakan dan path tidak aman; race config melawan command dan read revision yang dipertahankan.",
+        "composer test:postgres; composer test:race; decoding gambar/batas resource dan test penolakan route media."
+      ],
+      "ac": [
+        "AUTH02",
+        "AUTH03",
+        "IDENTITY01",
+        "SEC01"
+      ],
+      "hold": [
+        "DESIGN untuk accent final dan UI; identitas client aktual sebelum cutover"
+      ],
+      "risk": "Input profil tidak membuka storage gambar produk atau layanan fetch logo jarak jauh."
+    },
+    {
+      "id": "BU-CAT-001",
+      "title": "Master barang, harga, Product Search dan registry barcode",
+      "deps": [
+        "BU-CMD-001"
+      ],
+      "h": [
+        5,
+        4,
+        1
+      ],
+      "reads": [
+        "01-PRD.md",
+        "06-INVENTORY-SPEC.md",
+        "12-BARCODE-SCANNER.md",
+        "04-AUTH-RBAC-SECURITY.md"
+      ],
+      "tables": "Product, Category, SellingPriceRevision, Barcode/token retired, guard product serta row StockBalance awal 0; fakta ledger/cost selanjutnya milik BU-INV-001.",
+      "scope": "Pengelolaan master search-first, harga authoritative/versioned dan service search paginated yang aman per role.",
+      "actions": [
+        "Katalog/category/base unit/brand opsional/harga/minimum/active; pembuatan produk selalu stok 0; precision unit tidak berubah setelah movement pertama.",
+        "Search exact barcode lalu SKU/name/category/brand, default 25/maksimal 100 dengan urutan name/ID stabil; review similar candidates; collision exact SKU/barcode ditolak tegas.",
+        "Token string mempertahankan leading zeros/case/punctuation, check digit yang dinyatakan, namespace BK-P yang dicadangkan/generator code dengan retry unik/token retired tidak dipakai ulang; DTO operasional aman bagi tiga role.",
+        "Sediakan schema balance awal 0 yang kompatibel dengan kontrak numeric/guard INV sebelum product create; test consumer movement pertama dilengkapi BU-INV-001 dan verifikasi final."
+      ],
+      "tests": [
+        "Collision master/alias concurrent, product create stok 0, guard unit-lock yang sesuai; race movement pertama pada final bersama consumer INV, revision harga authoritative, precision/overflow, write role terlarang dan tidak ada field privat.",
+        "composer test:postgres; composer test:race; query plan/pagination representatif; consumer UI setelah BU-UI-002/003."
+      ],
+      "ac": [
+        "SEARCH01",
+        "SEARCH02",
+        "STOCK01",
+        "AUTH02",
+        "AUTH03",
+        "PERF01"
+      ],
+      "hold": [
+        "G2 sebelum master client nyata"
+      ],
+      "risk": "Search tidak mengambil seluruh master ke browser; tanpa gambar/import/warehouse."
+    },
+    {
+      "id": "BU-INV-001",
+      "title": "Immutable ledger, balance sinkron dan MWA UNKNOWN",
+      "deps": [
+        "BU-CAT-001"
+      ],
+      "h": [
+        6,
+        5,
+        1
+      ],
+      "reads": [
+        "02-ARCHITECTURE.md",
+        "06-INVENTORY-SPEC.md",
+        "15-FINANCE-PROFITABILITY.md"
+      ],
+      "tables": "StockMovement/lines/posting sequence, StockBalance, AcquisitionCostEvidence, ValuationRevision/IssueCost.",
+      "scope": "Primitive posting fisik/biaya dengan decimal presisi dan stok nonnegative untuk seluruh consumer.",
+      "actions": [
+        "Append movement, update balance/cost, audit/result secara atomik; aggregate produk duplikat dan lock ID stabil; constraints/privileges storage melindungi original.",
+        "Implementasikan numeric/BigDecimal canonical string, precision quantity 0–3, half-up per baris IDR integer, cost enam desimal/residual; pin batas schema dan tolak overflow.",
+        "MWA receipt/issue dan valuation non-sale; UNKNOWN berbeda dari zero; allocation lama yang known tetap valid; stok 0 → receipt known hanya memulai pool baru, tanpa latest price."
+      ],
+      "tests": [
+        "Contoh MWA pada 15, fractional/zero/residual/overflow, chronology UNKNOWN, aggregate line duplikat, race issue unit terakhir dan rollback setiap write.",
+        "composer test:unit; composer test:postgres; composer test:race; rekonsiliasi signed ledger/balance/value sebelum dan sesudah."
+      ],
+      "ac": [
+        "INV01",
+        "INV02",
+        "FIN01",
+        "FIN02",
+        "AUTH02"
+      ],
+      "hold": [],
+      "risk": "Projection dapat direbuild dari fakta melalui rekonsiliasi berizin; tidak ada direct business balance editing."
+    },
+    {
+      "id": "BU-INV-002",
+      "title": "Receiving, manual issue dan opening owner-only",
+      "deps": [
+        "BU-INV-001"
+      ],
+      "h": [
+        5,
+        4,
+        1
+      ],
+      "reads": [
+        "06-INVENTORY-SPEC.md",
+        "04-AUTH-RBAC-SECURITY.md",
+        "15-FINANCE-PROFITABILITY.md"
+      ],
+      "tables": "Source RECEIPT/MANUAL_ISSUE/OPENING, onboarding flag/zero checklist dan cost evidence.",
+      "scope": "Command server dengan confirm eksplisit untuk barang masuk/issue non-sale/opening manual, tanpa import.",
+      "actions": [
+        "Receiving untuk produk existing/search-first dengan quantity/evidence biaya baru/UNKNOWN/reference; Operations write-only tanpa echo/flash/history/log/storage.",
+        "Manual issue wajib reason non-sale dan quantity/onHand valid; jangan dijadikan pengganti Sale.",
+        "Onboarding freeze Pemilik memakai shared guard; ≤100 baris atomik/tanpa ledger sebelumnya/sekali per produk; zero checklist tanpa movement; lepas flag setelah rekonsiliasi direview."
+      ],
+      "tests": [
+        "Role ditolak, tanpa echo sensitif di seluruh response/error/session, reason hilang, 101/baris invalid rollback seluruh command, race opening key sama/berbeda dan consumer freeze melawan Sale.",
+        "composer test:postgres; composer test:race; privasi HTTP response/old input/session flash aktual; recovery receiving UNCERTAIN tanpa biaya tersimpan."
+      ],
+      "ac": [
+        "INV01",
+        "INV02",
+        "OPEN01",
+        "AUTH02",
+        "AUTH03",
+        "SEARCH02"
+      ],
+      "hold": [
+        "G2 dan cutover terotorisasi sebelum count/source client nyata"
+      ],
+      "risk": "Cost input UI berizin tidak memberi staff permission baca atau payload biaya pada recovery client."
+    },
+    {
+      "id": "BU-INV-003",
+      "title": "Owner adjustment, evidence revision dan reversal/replay berbatas",
+      "deps": [
+        "BU-INV-002"
+      ],
+      "h": [
+        7,
+        5,
+        1
+      ],
+      "reads": [
+        "06-INVENTORY-SPEC.md",
+        "15-FINANCE-PROFITABILITY.md",
+        "04-AUTH-RBAC-SECURITY.md"
+      ],
+      "tables": "Revision cost/allocation, link source ADJUSTMENT/REVERSAL dan pointer current valuation.",
+      "scope": "Correction Pemilik dengan reason/recent authentication yang mempertahankan original dan publikasi revision atomik.",
+      "actions": [
+        "Revision cost evidence Pemilik dan replay deterministik bounded; posting product menunggu atau ditolak saat busy; publikasi all-or-nothing.",
+        "Standalone full reversal yang eligible hanya sekali dengan inverse fisik tepat/link source/cost revision; tolak direct reversal SALE_ISSUE/RETURN_RECEIPT, balance negatif atau chronology dependent invalid.",
+        "Adjustment positif memerlukan cost/UNKNOWN; rekonsiliasi current/historical; fallback cap/timeout incomplete tanpa publikasi partial.",
+        "Pasangan original + REVERSAL dihitung tepat sekali: ledger fisik mempertahankan original dan inverse; replay valuation membatalkan source logical lalu melewati inverse pasangannya. Jangan menjumlahkan cancellation dan inverse untuk kedua kali; validasi seluruh prefix dependent dan link revision biaya."
+      ],
+      "tests": [
+        "Race reversal key berbeda, chronology receipt/issue/return dependent, byte/fakta original dipertahankan, failure replay/publication, posting concurrent dan permission/recent authentication.",
+        "composer test:unit; composer test:postgres; composer test:race; evidence memori/durasi bounded final pada BU-VERIFY-004.",
+        "Fixture: OPEN10/cost100 + RECEIPT10/cost200 + ISSUE5 → physical15/value225/issuecost75. Reverse RECEIPT10 → physical5/value50/revised issuecost50, allocation75 original dipertahankan. Receipt10→issue10→receipt20/current20: reversal pertama current10 tetapi prefix logical invalid; tolak dan rollback seluruh fakta/publication."
+      ],
+      "ac": [
+        "INV03",
+        "FIN02",
+        "FIN03",
+        "AUTH02",
+        "AUTH03",
+        "PERF01"
+      ],
+      "hold": [],
+      "risk": "Referensi 10.000 movement bukan jaminan terukur; replay tidak aman/melebihi cap ditolak dan reporting incomplete."
+    },
+    {
+      "id": "BU-CASH-001",
+      "title": "Logical register dan pembukaan sesi kas sendiri",
+      "deps": [
+        "BU-CMD-001"
+      ],
+      "h": [
+        3,
+        3,
+        1
+      ],
+      "reads": [
+        "17-POS-SALES.md",
+        "04-AUTH-RBAC-SECURITY.md"
+      ],
+      "tables": "CashRegister, CashSession OPEN dan partial unique per register/per responsible cashier.",
+      "scope": "Akuntabilitas ringan dengan satu cashier penanggung jawab, bukan shift/warehouse.",
+      "actions": [
+        "Setup register bounded oleh Pemilik; pilih register available/authorized; Kasir/Pemilik open sebagai dirinya sendiri dengan count eksplisit termasuk Rp0.",
+        "Lock register/actor, unique OPEN per register dan cashier; tanpa impersonation/shared active drawer/edit tanggung jawab.",
+        "Record nomor session/openedAt/float/audit/result atomik; tolak Operations serta count kas blank/negatif.",
+        "Pemilik mengelola register code/label/active dengan recent authentication, audit dan guard register yang sesuai. Perubahan hanya saat tidak ada session OPEN; snapshot historis mempertahankan identitas lama."
+      ],
+      "tests": [
+        "Open concurrent pada register sama atau register berbeda oleh cashier sama, intent duplikat, nilai 0 eksplisit/blank/negatif, register/actor tebakan dan rollback failure audit/result.",
+        "composer test:postgres; composer test:race; role/object policies."
+      ],
+      "ac": [
+        "SESSION01",
+        "SESSION02",
+        "SESSION03",
+        "SESSION10",
+        "AUTH03"
+      ],
+      "hold": [
+        "G3 sebelum praktik drawer fisik/pilot"
+      ],
+      "risk": "Sesi baru tanggal sama sah; opening tidak menciptakan Sale."
+    },
+    {
+      "id": "BU-SALE-001",
+      "title": "Sale full-payment atomik dan receipt snapshot",
+      "deps": [
+        "BU-CFG-001",
+        "BU-INV-002",
+        "BU-CASH-001"
+      ],
+      "h": [
+        7,
+        5,
+        1
+      ],
+      "reads": [
+        "17-POS-SALES.md",
+        "15-FINANCE-PROFITABILITY.md",
+        "02-ARCHITECTURE.md",
+        "planning/P6-CONCURRENCY-API.md"
+      ],
+      "tables": "Sale/lines, satu full Payment, SALE_ISSUE, IssueCost matched/UNKNOWN, ReceiptSnapshot dan activityVersion session.",
+      "scope": "Sale GOODS atomik dengan satu pembayaran penuh CASH atau BANK_TRANSFER, recovery original result dan read Sale/history sendiri sesuai scope.",
+      "actions": [
+        "Wajib session OPEN sendiri yang eligible untuk Kasir/Pemilik, termasuk Sale transfer-only; validasi server atas harga/version/active/stock/quantity/total; tanpa override/split.",
+        "Sale/lines/Payment/issue/balance/cost/snapshot/audit/result atomik; satu full applied payment, CASH tender/change dan BANK_TRANSFER dengan konfirmasi manusia atas penerimaan penuh dana.",
+        "Capture identity/template/assets saat commit; boundary provider masa depan terpisah dari core, tanpa callback/webhook/status asynchronous; otorisasi ulang status original setelah CLOSED.",
+        "Sediakan read API list/detail/status/receipt Sale milik actor (seluruhnya bagi Pemilik berizin), dengan pagination/DTO operasional tanpa cost leak. Close/report history milik actor disediakan BU-CASH-002."
+      ],
+      "tests": [
+        "Aritmetika pembayaran penuh, mixed/partial/metode unknown ditolak, unit terakhir/dua cashier, race freeze/revoke/config/price, failure setiap write atomik, source sama/key berbeda/response hilang/recovery setelah CLOSED.",
+        "composer test:unit; composer test:postgres; composer test:race; count/rekonsiliasi sebelum dan sesudah serta result DTO aman.",
+        "Request langsung atas ID Sale/receipt tebakan dan read finance/cost oleh staff ditolak; list/detail Sale sendiri/status original tetap benar setelah CLOSED."
+      ],
+      "ac": [
+        "POS01",
+        "POS02",
+        "POS03",
+        "FIN01",
+        "OPEN01",
+        "SESSION03",
+        "AUTH02",
+        "AUTH03",
+        "IDENTITY01",
+        "PAYEXT01",
+        "PERF01"
+      ],
+      "hold": [
+        "G3 untuk workflow fisik penerimaan dana serta G1 dokumen client sebelum pilot"
+      ],
+      "risk": "Recording bank transfer bukan settlement bank; uncertainty tidak mengizinkan permintaan pembayaran ulang."
+    },
+    {
+      "id": "BU-CASH-002",
+      "title": "Race-safe close dan immutable session report",
+      "deps": [
+        "BU-SALE-001"
+      ],
+      "h": [
+        4,
+        4,
+        1
+      ],
+      "reads": [
+        "17-POS-SALES.md",
+        "04-AUTH-RBAC-SECURITY.md"
+      ],
+      "tables": "CashSessionReportSnapshot, result CLOSED dan linked owner review notes.",
+      "scope": "Close dengan preview/count/activityVersion, assisted close Pemilik beralasan dan laporan sesuai keadaan saat ditutup.",
+      "actions": [
+        "Preview tanpa human database lock; session lock/version sama dengan checkout; version stale memerlukan recount dan session tetap OPEN.",
+        "Commit physical/expected/variance/cutoff/source IDs/snapshot/CLOSED/audit/result atomik; close ekuivalen dengan key berbeda mengembalikan result awal; count konflik ditolak.",
+        "Expected cash berasal dari opening + applied CASH; transfer/refund Pemilik terpisah; tanpa reopen/CLOSING/penimpaan tanggung jawab oleh Pemilik; review note terpisah.",
+        "Sediakan read API list/detail/history laporan session milik actor dan seluruhnya bagi Pemilik berizin dengan pagination/DTO aman. UI POS tidak bergantung pada finance Pemilik untuk history session sendiri."
+      ],
+      "tests": [
+        "Sale menang melawan close atau close menang melawan Sale, close ekuivalen/konflik concurrent, version stale, rollback failure snapshot, recovery UNCERTAIN setelah CLOSED, midnight/kembali pada tanggal sama/handover.",
+        "composer test:postgres; composer test:race; referensi expected Rp120.000/variance −Rp2.000 dan bukti snapshot immutable.",
+        "Request langsung history/report session cashier lain ditolak; read own/all-owner berizin benar setelah CLOSED dan snapshot immutable tetap sama."
+      ],
+      "ac": [
+        "SESSION01",
+        "SESSION02",
+        "SESSION04",
+        "SESSION05",
+        "SESSION06",
+        "SESSION07",
+        "SESSION10",
+        "AUTH03"
+      ],
+      "hold": [
+        "G3 untuk praktik count/handover fisik"
+      ],
+      "risk": "Close tidak boleh kehilangan Sale sukses atau mengubah atribusi original."
+    },
+    {
+      "id": "BU-SALE-002",
+      "title": "Bounded owner refund dan verified physical return",
+      "deps": [
+        "BU-SALE-001",
+        "BU-INV-003"
+      ],
+      "h": [
+        5,
+        4,
+        1
+      ],
+      "reads": [
+        "17-POS-SALES.md",
+        "15-FINANCE-PROFITABILITY.md",
+        "06-INVENTORY-SPEC.md"
+      ],
+      "tables": "Evidence Refund yang executed, fakta Return serta matched RETURN_RECEIPT/revision cost allocation.",
+      "scope": "Correction uang/quantity oleh Pemilik dengan batas terpisah; original Sale/Payment/receipt immutable.",
+      "actions": [
+        "Reason/recent authentication/payout executed terkonfirmasi dari dana Pemilik; lock Sale original dan product; batas monetary/line/quantity tersisa terpisah.",
+        "Refund-only tidak menambah stok atau membalik HPP; verified saleable return memulihkan matched historical cost sekali; UNKNOWN tetap incomplete; damaged tidak menjadi usable stock.",
+        "Append correction/audit/result atomik; return setelah refund tetap dalam batas quantity; tanpa exchange/credit/drawer paid-out engine."
+      ],
+      "tests": [
+        "Race refund/return kumulatif/duplikasi/key berbeda, batas uang/quantity terpisah, rollback failure, saleable/damaged/refund-only dan konsistensi revision biaya original.",
+        "composer test:unit; composer test:postgres; composer test:race; snapshot original tidak berubah."
+      ],
+      "ac": [
+        "RET01",
+        "FIN03",
+        "SESSION04",
+        "SESSION07",
+        "AUTH02",
+        "AUTH03"
+      ],
+      "hold": [
+        "G3 dana/praktik refund Pemilik sebelum acceptance payout nyata"
+      ],
+      "risk": "Payout nyata berlangsung di luar database; result recording UNCERTAIN dipulihkan, bukan pembayaran kedua."
+    },
+    {
+      "id": "BU-READ-001",
+      "title": "Current stock, LOW/OUT dan safe operational history",
+      "deps": [
+        "BU-INV-002"
+      ],
+      "h": [
+        3,
+        3,
+        1
+      ],
+      "reads": [
+        "06-INVENTORY-SPEC.md",
+        "04-AUTH-RBAC-SECURITY.md",
+        "12-BARCODE-SCANNER.md"
+      ],
+      "tables": "Read index pada movement/current balance/product minimum; tanpa ledger baru.",
+      "scope": "Query stok/restock/history operasional awal untuk consumer UI inventory tanpa menunggu finance Pemilik.",
+      "actions": [
+        "Baca onHand/minimum committed dalam query konsisten; NORMAL/LOW/OUT, minimum 0/produk baru stok 0/filter inactive dan last-refreshed time.",
+        "History operasional memakai pagination/DTO aman untuk Pemilik/Operations; Kasir hanya stok yang diizinkan, bukan history pengelolaan movement.",
+        "Refresh consumer setelah mutation/focus/≤30 detik saat aktif; failure/stale/mismatch dinyatakan jelas, bukan zero/empty/Normal fiktif."
+      ],
+      "tests": [
+        "Threshold 5: 6 NORMAL, 5/1 LOW, 0 OUT; minimum 0/inactive/product baru 0, receipt/perubahan threshold/read/query failure; history/error/cache tanpa cost.",
+        "composer test:postgres; HTTP negative role/object tests dan query plan bounded; consumer browser BU-UI-002."
+      ],
+      "ac": [
+        "STOCK01",
+        "INV01",
+        "AUTH02"
+      ],
+      "hold": [],
+      "risk": "Provider read operasional tidak bergantung pada finance/refund/report session agar UI inventory tidak tertahan consumer lain."
+    },
+    {
+      "id": "BU-READ-002",
+      "title": "Owner finance, sesi dan audit reads dengan scope ketat",
+      "deps": [
+        "BU-SALE-002",
+        "BU-CASH-002"
+      ],
+      "h": [
+        5,
+        4,
+        1
+      ],
+      "reads": [
+        "15-FINANCE-PROFITABILITY.md",
+        "17-POS-SALES.md",
+        "06-INVENTORY-SPEC.md",
+        "04-AUTH-RBAC-SECURITY.md"
+      ],
+      "tables": "Read index/view dari source immutable serta projection current; bukan ledger alternatif.",
+      "scope": "Read finance/audit/seluruh session Pemilik dan dokumen/history Kasir sendiri, dengan periode/pagination bounded.",
+      "actions": [
+        "Snapshot laporan konsisten dengan asOf/timezone/cost revision/completeness; HPP/profit UNKNOWN tidak ditampilkan sebagai angka lengkap, revenue tetap jujur; tanggal half-open Jakarta.",
+        "Total harian dari Sale/payment dihitung sekali; variance/opening session bukan revenue; midnight span/laporan as-closed dipertahankan; correction kemudian memakai tanggal posting.",
+        "Otorisasi ulang read Sale/session sendiri, history/export/media/status; staff memakai allowlist DTO, Pemilik mempunyai grant eksplisit."
+      ],
+      "tests": [
+        "Batas periode/custom/month/leap/midnight/beberapa session tanpa double count, UNKNOWN/refund/revision, query failure bukan zero, ID tebakan ditolak pada setiap channel read/status.",
+        "composer test:postgres; query plan; test DTO/error/cache aman; performance final BU-VERIFY-004."
+      ],
+      "ac": [
+        "FIN02",
+        "FIN03",
+        "AUDIT01",
+        "SESSION07",
+        "SESSION09",
+        "SESSION10",
+        "AUTH02",
+        "PERF01"
+      ],
+      "hold": [],
+      "risk": "Stok historis tidak dibuat dari metrik sales/current LOW; snapshot konsisten tidak memakai statistik response dari waktu berbeda."
+    },
+    {
+      "id": "BU-OPS-001",
+      "title": "Packaging self-host, Nginx TLS dan SQL privilege protection",
+      "deps": [
+        "BU-FOUND-001"
+      ],
+      "h": [
+        4,
+        3,
+        1
+      ],
+      "reads": [
+        "09-DEPLOYMENT-OPS.md",
+        "planning/P4-ARCHITECTURE.md",
+        "04-AUTH-RBAC-SECURITY.md"
+      ],
+      "tables": "Role database runtime/migration/test/backup dan application grant; grant khusus domain ditambahkan setiap BU schema.",
+      "scope": "Compose PHP-FPM/Nginx/PostgreSQL non-production, TLS/renewal, health dan konfigurasi keamanan.",
+      "actions": [
+        "Database privat, webroot hanya public, APP_DEBUG false, validasi secret/credential SQL terpisah serta readiness test tanpa data/leak.",
+        "Rehearsal TLS/ACME provisioning/renewal pada target terisolasi terotorisasi; kompatibilitas header/CSP dan resource request bounded; tanpa SSR/Redis/worker umum.",
+        "Template permission menolak DROP dan mutation tabel immutable; BU schema wajib menambah grant/negative test; hanya non-production sampai release diotorisasi."
+      ],
+      "tests": [
+        "Boot Compose terisolasi, serangan URL/secret/static path, rehearsal header/cookie/TLS renewal, DDL runtime terlarang; fixture data pada target test eksplisit.",
+        "composer analyse; npm run build; health container/config terisolasi; TLS aktual bila target tersedia, PENDING bila access belum ada."
+      ],
+      "ac": [
+        "DB01",
+        "SEC01",
+        "PERF01"
+      ],
+      "hold": [
+        "Target non-production terotorisasi untuk TLS aktual; RELEASE tidak otomatis"
+      ],
+      "risk": "Packaging bukan approval deploy. Jangan expose PostgreSQL, .env, vendor, debug route atau direktori backup."
+    },
+    {
+      "id": "BU-OPS-002",
+      "title": "Reconciliation, independent backup dan restore tooling",
+      "deps": [
+        "BU-OPS-001",
+        "BU-SALE-002",
+        "BU-CASH-002"
+      ],
+      "h": [
+        5,
+        4,
+        1
+      ],
+      "reads": [
+        "09-DEPLOYMENT-OPS.md",
+        "06-INVENTORY-SPEC.md",
+        "15-FINANCE-PROFITABILITY.md"
+      ],
+      "tables": "Status operasional/incident rekonsiliasi aman; fakta bisnis original read-only.",
+      "scope": "Rekonsiliasi harian, backup database + media/template terenkripsi serta workflow restore/epoch terisolasi yang dikendalikan.",
+      "actions": [
+        "Bandingkan seluruh relationship ledger/balance/cost/Sale/payment/receipt/session; mismatch memblokir writes terdampak, dengan incident Pemilik dan replay yang dikendalikan.",
+        "Jadwalkan backup terenkripsi independen dengan manifest/checksum/media/aset/template immutable yang direferensikan; recovery key/access terpisah dan status Pemilik aman, bukan sukses statis.",
+        "Restore ke target terisolasi baru dengan original dipertahankan; validasi/revoke/ubah epoch/review gap/measured RPO/RTO; target guard untuk operasi privileged serta perlindungan destruction database."
+      ],
+      "tests": [
+        "Aset corrupt/hilang, backup stale, disk dan incident terdeteksi; status runtime tanpa secret; backup nyata kecil + targeted isolated restore, populated final di BU-VERIFY-001.",
+        "Command backup/restore/rekonsiliasi terisolasi dengan target eksplisit; bandingkan manifest/jumlah source, tanpa blind replay setelah epoch berubah."
+      ],
+      "ac": [
+        "INV01",
+        "REC01",
+        "REC02",
+        "DB01",
+        "AUTH02"
+      ],
+      "hold": [
+        "G4 destination/key/cost independen dan measured RPO/RTO yang diterima owner untuk final"
+      ],
+      "risk": "Copy pada VPS yang sama bukan backup independen; exit code restore sukses bukan rekonsiliasi bisnis."
+    },
+    {
+      "id": "BU-DESIGN-001",
+      "title": "Approved DesainPakeAI revision dan repository visual contract",
+      "deps": [],
+      "h": [
+        3,
+        2,
+        1
+      ],
+      "reads": [
+        "../DESIGN.md",
+        "planning/P7-UX-DESIGN.md",
+        "01-PRD.md"
+      ],
+      "tables": "Tanpa write database; source/revision/token/mapping native repository dan evidence approval.",
+      "scope": "Sumber BantuKasir Design exact yang dipilih owner, token semantic dan kontrak komponen/state React/shadcn.",
+      "actions": [
+        "Baca skill; verifikasi dpai project current hanya pada ID yang diizinkan sebelum context/setiap mutation terotorisasi; simpan revision/provenance/evidence rights non-secret.",
+        "Review/adaptasi GOODS/role/CashSession/branding runtime, hilangkan artefak scope template; petakan typography/color/spacing/radius/elevation/motion sumber → token semantic repository/komposisi native.",
+        "Dapatkan visual approval exact revision dan rights dari owner; freeze mapping source → route/component/state, kriteria responsive/a11y dan exceptions."
+      ],
+      "tests": [
+        "Konsistensi provenance/project/revision/approval rights, mapping komponen/token native, checklist viewport/keyboard/state dan visual review owner.",
+        "Context CLI read-only; preview/parity aktual hanya saat source/target terotorisasi tersedia. Jangan mengklaim UI visual PASS dari planning ini."
+      ],
+      "ac": [
+        "UX01",
+        "IDENTITY01"
+      ],
+      "hold": [
+        "DESIGN: pemilihan exact revision/rights/approval owner WAJIB untuk COMPLETE"
+      ],
+      "risk": "Context teramati bukan approval; tanpa akses MULTIPLECORP, logo codename sebagai authority, iframe atau shipment prototype mentah."
+    },
+    {
+      "id": "BU-UI-001",
+      "title": "Native shared shell, autentikasi dan account/config UI",
+      "deps": [
+        "BU-IAM-001",
+        "BU-CFG-001",
+        "BU-DESIGN-001"
+      ],
+      "h": [
+        4,
+        3,
+        1
+      ],
+      "reads": [
+        "../DESIGN.md",
+        "04-AUTH-RBAC-SECURITY.md",
+        "planning/P7-UX-DESIGN.md"
+      ],
+      "tables": "Consumer IAM/CFG; tidak mengakses database langsung atau menciptakan fakta bisnis di client.",
+      "scope": "Shell/login/account responsive React/Inertia/shadcn serta form identitas, user dan konfigurasi Pemilik.",
+      "actions": [
+        "Tampilkan menu sesuai capability tiga role; desktop rail stabil, drawer mobile menutup melalui outside-click/Escape, account popover/footer bounded dan profil sesuai role.",
+        "Integrasikan login/reset/invite/expired/denied/recent-auth serta form lifecycle user/config/media dengan route nyata; setiap kontrol mempunyai tujuan yang benar.",
+        "Gunakan semantic tokens dan runtime brand yang disetujui; sediakan loading/empty/error/stale/focus. Props/flash/old input/storage browser tidak menyimpan secret atau data privileged untuk staff.",
+        "Integrasikan lifecycle history terenkripsi dari IAM; clear/rotate keys, remembered forms, query cache dan state client pada logout/pergantian actor/revoke yang teramati. Back/Forward/bfcache memvalidasi ulang actor sebelum merender data sensitif. Biaya receiving write-only tidak pernah dipersist; consumer receiving memverifikasinya pada BU-UI-002."
+      ],
+      "tests": [
+        "Playwright memeriksa route allowed/denied, guessed ID/direct network, cookies/CSRF, focus reset, error draft dan upload konfigurasi; 375/440/768/1024/1440px, zoom 200%, keyboard dan touch.",
+        "npm run lint; npm run typecheck; npm run test:unit; npm run build; npm run test:e2e; backend checks terarah.",
+        "Uji logout/pergantian actor/Back/Forward/reload/bfcache pada shell dan data akun/config yang sudah tersedia, termasuk pembersihan remembered forms/query cache. Finance belum menjadi dependency unit ini; seluruh consumer finance Pemilik→staff diverifikasi FINAL pada BU-VERIFY-002."
+      ],
+      "ac": [
+        "AUTH01",
+        "AUTH02",
+        "AUTH03",
+        "IDENTITY01",
+        "UX01",
+        "SEC01"
+      ],
+      "hold": [
+        "BU-DESIGN-001 wajib COMPLETE dengan approval exact revision; identitas client aktual wajib sebelum pilot."
+      ],
+      "risk": "History/shared props Inertia tidak boleh mengembalikan entity privileged atau credential."
+    },
+    {
+      "id": "BU-UI-002",
+      "title": "Product Operations lengkap: katalog, receipt, opening dan current stock",
+      "deps": [
+        "BU-UI-001",
+        "BU-CAT-001",
+        "BU-INV-002",
+        "BU-READ-001"
+      ],
+      "h": [
+        7,
+        5,
+        1
+      ],
+      "reads": [
+        "06-INVENTORY-SPEC.md",
+        "12-BARCODE-SCANNER.md",
+        "04-AUTH-RBAC-SECURITY.md",
+        "../DESIGN.md"
+      ],
+      "tables": "Consumer command/query catalog/inventory; browser bukan authority stok.",
+      "scope": "Search/list/detail/form/duplikasi, preview barcode, barang masuk/manual issue/opening Pemilik serta LOW/OUT/history aman per role.",
+      "actions": [
+        "Demo ATK hanya terisolasi; error duplikasi/stok/version dari server nyata, search-first create stok 0; tanpa gambar/import/warehouse.",
+        "State review/confirm receiving/manual issue/opening berbeda; biaya Operations write-only tanpa echo pada review/error/flash/history/restore; reason non-sale wajib.",
+        "Draft/confirm mobile terjangkau, refresh restock current ≤30 detik/focus/mutation, stale bukan empty; opening hanya Pemilik dengan count/zero checklist/rekonsiliasi."
+      ],
+      "tests": [
+        "Draft browser → review → confirm → fakta benar-benar tersimpan → history; duplicate/stale/denied/recovery reference receiving UNCERTAIN setelah reload tanpa cost tersimpan; opening 101/baris gagal.",
+        "Lima viewport/touch/focus/zoom 200%; test cost leak pada props/body/error/storage network aktual; command PostgreSQL terarah dan npm run test:e2e."
+      ],
+      "ac": [
+        "SEARCH01",
+        "SEARCH02",
+        "INV01",
+        "INV02",
+        "OPEN01",
+        "STOCK01",
+        "AUTH02",
+        "UX01",
+        "DEVICE01"
+      ],
+      "hold": [
+        "DESIGN prerequisite; G2 untuk acceptance onboarding nyata"
+      ],
+      "risk": "Tanpa simulasi stok client atau product create yang otomatis memposting receipt."
+    },
+    {
+      "id": "BU-UI-003",
+      "title": "POS draft/scanner, full payment, open/close dan own-history UI",
+      "deps": [
+        "BU-UI-001",
+        "BU-SALE-001",
+        "BU-CASH-002"
+      ],
+      "h": [
+        7,
+        5,
+        1
+      ],
+      "reads": [
+        "17-POS-SALES.md",
+        "12-BARCODE-SCANNER.md",
+        "04-AUTH-RBAC-SECURITY.md",
+        "../DESIGN.md"
+      ],
+      "tables": "Consumer session OPEN/Sale/close/status/history sendiri; draft hanya di client.",
+      "scope": "Desktop/tablet/mobile Kasir terfokus dengan cart/quantity/payment/identitas session ergonomis dan recovery original.",
+      "actions": [
+        "NO_SESSION dengan opening float 0 eksplisit; identitas session OPEN milik actor tetap; ordered HID scan/manual/IME/quantity plus-minus/remove-undo/token unknown dipertahankan; pause capture pada dialog/count.",
+        "Satu metode penuh CASH atau BANK_TRANSFER dengan konfirmasi dana nyata, review harga authoritative; scanner Enter tidak membayar; bekukan submit intent dan pulihkan original melalui status/reload saat UNCERTAIN.",
+        "Close preview/count/activityVersion/recount/laporan CLOSED immutable/history sendiri; aksi penting mobile terjangkau, cart panjang/keyboard/drawer tidak terpotong."
+      ],
+      "tests": [
+        "Checkout nyata sukses/definite rejection/stok terakhir/harga stale/closed/timeout/double click/reload original lalu link print; CASH tender/change dan BANK_TRANSFER tanpa dampak laci.",
+        "Own-session menolak actor lain, race close melawan Sale PostgreSQL serta state browser, scan partial/repeated/CRLF/focus/order/zoom 200%/lima viewport; perangkat nyata final terpisah."
+      ],
+      "ac": [
+        "SEARCH03",
+        "POS01",
+        "POS02",
+        "POS03",
+        "SESSION01",
+        "SESSION02",
+        "SESSION03",
+        "SESSION04",
+        "SESSION05",
+        "SESSION06",
+        "SESSION10",
+        "AUTH02",
+        "UX01",
+        "PAYEXT01",
+        "DEVICE01"
+      ],
+      "hold": [
+        "DESIGN prerequisite; G3 praktik nyata; DEVICES final"
+      ],
+      "risk": "Cart mobile ergonomis bukan offline queue, payment gateway atau capability POS tambahan."
+    },
+    {
+      "id": "BU-UI-004",
+      "title": "Owner corrections, finance/session/audit dan system UI",
+      "deps": [
+        "BU-UI-001",
+        "BU-READ-002",
+        "BU-OPS-002"
+      ],
+      "h": [
+        7,
+        5,
+        1
+      ],
+      "reads": [
+        "06-INVENTORY-SPEC.md",
+        "15-FINANCE-PROFITABILITY.md",
+        "17-POS-SALES.md",
+        "09-DEPLOYMENT-OPS.md",
+        "../DESIGN.md"
+      ],
+      "tables": "Consumer correction/report/status operasional; fakta original tidak diedit.",
+      "scope": "Workspace Pemilik kaya informasi, form correction bounded, profit/trend/filter waktu yang jujur serta seluruh session/audit/status sistem.",
+      "actions": [
+        "Reason/recent authentication/eligibility refund-return/reversal; reversal tanpa field quantity/count yang tidak relevan; summary fisik before/after adjustment berbeda dari fakta historis original.",
+        "Custom Range dengan Apply/Cancel/validasi/range half-open nyata; line chart trend + data accessible, UNKNOWN tanpa profit fiktif; source sales dihitung sekali/variance terpisah.",
+        "Consumer session/history sendiri yang diizinkan aman bagi staff; backup/rekonsiliasi/status Pemilik memakai evidence aktual dan Belum Terverifikasi bila belum diukur; reuse UI1 untuk account/user/tindakan config.",
+        "Sediakan form register code/label/active Pemilik yang memakai API BU-CASH-001, recent authentication dan audit. Tolak perubahan saat register mempunyai session OPEN; tanpa shift/drawer-sharing engine."
+      ],
+      "tests": [
+        "Correction append aktual/original tidak berubah, batas uang/quantity, replay ditolak/incomplete, beberapa session/midnight tanpa double count, custom cross-year/leap/Apply-Cancel.",
+        "Staff ditolak pada network/data/export/media aktual; tabel panjang/legend/focus/lima viewport/zoom 200%; failure/stale status tidak tampak sukses.",
+        "Test create/edit/active register Pemilik, wrong role/direct ID/recent authentication; race writer register melawan session open dan identitas historis dipertahankan."
+      ],
+      "ac": [
+        "INV03",
+        "RET01",
+        "FIN02",
+        "FIN03",
+        "AUDIT01",
+        "SESSION07",
+        "SESSION09",
+        "SESSION10",
+        "AUTH02",
+        "UX01",
+        "AUTH03"
+      ],
+      "hold": [
+        "DESIGN prerequisite; G3 praktik refund; G4 acceptance operasional aktual"
+      ],
+      "risk": "Dashboard Pemilik kaya informasi dengan semantik tepat; template tidak mengaktifkan CRM/PO/expenses."
+    },
+    {
+      "id": "BU-DOC-001",
+      "title": "Code128 label, thermal/A4 nota dan immutable session exports",
+      "deps": [
+        "BU-UI-001",
+        "BU-READ-002"
+      ],
+      "h": [
+        4,
+        4,
+        1
+      ],
+      "reads": [
+        "12-BARCODE-SCANNER.md",
+        "17-POS-SALES.md",
+        "04-AUTH-RBAC-SECURITY.md",
+        "../DESIGN.md"
+      ],
+      "tables": "Consumer revision Receipt/SessionReport/Profile/aset/template original; request audit terpisah.",
+      "scope": "Browser print/PDF dan CSV session aman dengan identitas/nomor original committed yang sama serta code label aktual.",
+      "actions": [
+        "Verifikasi/pin license library label; quiet zone/mm/Code128/SKU terbaca tanpa biaya privat; token retired tetap dipertahankan.",
+        "Thermal 58/80 mm dan A4 commercial nota dari ReceiptSnapshot yang sama sesuai policy client owner; identity/template/assets lama tetap sesudah config berubah/correction.",
+        "Sale/session/media/reprint sendiri sesuai scope, copy marker, retry print failure tanpa mutation; quote/neutralisasi formula teks CSV mempertahankan variance angka negatif."
+      ],
+      "tests": [
+        "Snapshot sebelum dan sesudah profile/cost/session/refund berubah tetap identik; wrong role lewat request langsung/object/export/media ditolak; kasus CSV/text/logo XSS/path berbahaya.",
+        "Browser print/render PDF/content CSV aktual/failure reprint; bukti perangkat ditunda ke BU-VERIFY-003. Penutupan dialog print bukan bukti tinta."
+      ],
+      "ac": [
+        "POS03",
+        "SESSION07",
+        "SESSION08",
+        "SESSION10",
+        "IDENTITY01",
+        "AUTH02",
+        "SEC01",
+        "DEVICE01"
+      ],
+      "hold": [
+        "G1 legal/policy buyer dan media DEVICES aktual sebelum final; DESIGN"
+      ],
+      "risk": "Commercial nota bukan faktur pajak atau sertifikasi regulasi."
+    },
+    {
+      "id": "BU-VERIFY-001",
+      "title": "Final populated migration dan independent restore/recovery acceptance",
+      "deps": [
+        "BU-OPS-002",
+        "BU-DOC-001",
+        "BU-UI-004"
+      ],
+      "h": [
+        0,
+        7,
+        1
+      ],
+      "reads": [
+        "09-DEPLOYMENT-OPS.md",
+        "08-TESTING-ACCEPTANCE.md",
+        "planning/P10-RELEASE-UAT.md"
+      ],
+      "tables": "Schema final pada database populated terisolasi; original dipertahankan; restore ke target baru.",
+      "scope": "FINAL DB01/REC01/REC02 pada candidate terintegrasi, destination/key backup aktual dan review gap.",
+      "actions": [
+        "Forward migration expand/backfill/verify/contract direview pada populated target terisolasi; snapshot/count/rekonsiliasi/privilege denial serta rollback/recovery readiness.",
+        "Backup database/aset/template terenkripsi independen aktual/checksum; restore ke target baru, seluruh source/projection/snapshot/actor/session/command cocok.",
+        "Revoke + recovery epoch baru, stale intent ditolak, evidence gap setelah cutoff direview; catat RPO/RTO aktual dan penerimaan owner/G4."
+      ],
+      "tests": [
+        "Migration/restore/rekonsiliasi/epoch nyata dan DDL/mutation fakta runtime terlarang; tanpa command destruktif produksi.",
+        "Rerun evidence terdampak hanya bila perubahan kode/data/config signifikan; fixture/mock tidak menutup FINAL."
+      ],
+      "ac": [
+        "DB01",
+        "REC01",
+        "REC02"
+      ],
+      "hold": [
+        "G4 WAJIB untuk FINAL, target/access/key independen aktual; tanpa destruction produksi"
+      ],
+      "risk": "G4 OPEN mempertahankan WAITING; simulasi restore tidak membuat COMPLETE."
+    },
+    {
+      "id": "BU-VERIFY-002",
+      "title": "Final integrated business, RBAC/privacy, security dan UX acceptance",
+      "deps": [
+        "BU-UI-002",
+        "BU-UI-003",
+        "BU-UI-004",
+        "BU-DOC-001"
+      ],
+      "h": [
+        0,
+        8,
+        1
+      ],
+      "reads": [
+        "08-TESTING-ACCEPTANCE.md",
+        "04-AUTH-RBAC-SECURITY.md",
+        "../DESIGN.md"
+      ],
+      "tables": "Fakta PostgreSQL serta kanal network/output pada kandidat terintegrasi; hanya target test terisolasi.",
+      "scope": "Penerimaan final seluruh workflow bisnis, RBAC/privasi, security dan UX pada revision terintegrasi; final operasi/perangkat/performance/release mempunyai unit tersendiri.",
+      "actions": [
+        "Jalankan suite terarah yang telah tersedia lintas consumer, ketiga role dan object scope: status/cache/errors/log/props/flash/history/print/PDF/CSV/media/browser storage.",
+        "Uji race last-unit/source/key/close/revoke/config/refund/replay dan browser flow lengkap sampai persisted result; original immutable dan privasi biaya wajib terjaga.",
+        "Periksa threat paths, dependency advisories, static analysis serta responsive 375/440/768/1024/1440px, zoom 200%, keyboard/touch/reduced motion/contrast."
+      ],
+      "tests": [
+        "Jalankan composer lint, composer analyse, composer test:unit, composer test:postgres, composer test:race; npm run lint, npm run typecheck, npm run test:unit, npm run build, npm run test:e2e; seluruh test role/ancaman yang berlaku.",
+        "Laporkan hasil tiap suite dan hold tersisa. Consumer atau jalur yang belum diuji tidak memperoleh FINAL PASS; bukti perangkat fisik tetap milik BU-VERIFY-003.",
+        "Uji seluruh consumer finance Pemilik→logout→staff→Back/Forward/reload/bfcache serta invalidasi session/remembered/query cache dan no-leak seluruh kanal. Ini bukti terintegrasi AUTH02/SEC01 FINAL, berbeda dari HTTP IAM dan shell proof awal."
+      ],
+      "ac": [
+        "AUTH01",
+        "AUTH02",
+        "AUTH03",
+        "SEARCH01",
+        "SEARCH02",
+        "SEARCH03",
+        "INV01",
+        "INV02",
+        "INV03",
+        "OPEN01",
+        "POS01",
+        "POS02",
+        "POS03",
+        "RET01",
+        "STOCK01",
+        "FIN01",
+        "FIN02",
+        "FIN03",
+        "SESSION01",
+        "SESSION02",
+        "SESSION03",
+        "SESSION04",
+        "SESSION05",
+        "SESSION06",
+        "SESSION07",
+        "SESSION08",
+        "SESSION09",
+        "SESSION10",
+        "AUDIT01",
+        "IDENTITY01",
+        "UX01",
+        "SEC01",
+        "PAYEXT01"
+      ],
+      "hold": [
+        "Approval DESIGN dan seluruh hold bisnis yang berlaku wajib tersedia sebelum penerimaan final produk terkait."
+      ],
+      "risk": "Final fan-in memakai suite provider yang nyata; defect signifikan memakai reserve atau memerlukan reestimasi."
+    },
+    {
+      "id": "BU-VERIFY-003",
+      "title": "Final scanner dan label/receipt printer nyata",
+      "deps": [
+        "BU-UI-002",
+        "BU-UI-003",
+        "BU-DOC-001"
+      ],
+      "h": [
+        0,
+        5,
+        1
+      ],
+      "reads": [
+        "12-BARCODE-SCANNER.md",
+        "17-POS-SALES.md",
+        "08-TESTING-ACCEPTANCE.md"
+      ],
+      "tables": "Witness hardware/media/OS/browser aktual; hanya data test terisolasi yang diidentifikasi.",
+      "scope": "Bukti fisik USB/Bluetooth HID/manual fallback, scan label serta thermal/A4/reprint.",
+      "actions": [
+        "Catat scanner/printer/driver/browser/media/code/revision; buktikan repeated/partial/disconnect/CRLF/IME/focus/dialog/count guard.",
+        "Print Code128/quiet zone dan scan nyata dengan identitas label benar; thermal/A4/reprint snapshot lama nyata terbaca/aman/tanpa fakta bisnis duplikat.",
+        "Keyboard/cart touch/payment/count mobile pada device aktual; jangan mengklaim emulasi sebagai hardware PASS."
+      ],
+      "tests": [
+        "Scan dan dokumen fisik dengan witness terkait exact revision; count source Sale/payment/stock tidak menambah fakta.",
+        "Gap perangkat/perangkat tidak tersedia tetap WAITING EXTERNAL; acceptance operator dicatat."
+      ],
+      "ac": [
+        "DEVICE01"
+      ],
+      "hold": [
+        "DEVICES aktual wajib; konfirmasi media 58/80 mm/label"
+      ],
+      "risk": "Penutupan dialog print browser bukan cetak fisik."
+    },
+    {
+      "id": "BU-VERIFY-004",
+      "title": "Final representative VPS performance dan bounded replay capacity",
+      "deps": [
+        "BU-UI-003",
+        "BU-UI-004",
+        "BU-OPS-001"
+      ],
+      "h": [
+        0,
+        5,
+        1
+      ],
+      "reads": [
+        "08-TESTING-ACCEPTANCE.md",
+        "15-FINANCE-PROFITABILITY.md",
+        "planning/P6-CONCURRENCY-API.md"
+      ],
+      "tables": "Dataset/index representatif terisolasi; tanpa seed/reset client nyata.",
+      "scope": "p95 lookup/search/Sale 50 baris/report, dua cashier dan kapasitas replay sinkron all-or-nothing.",
+      "actions": [
+        "Seed fixture hanya pada database test yang diidentifikasi/diotorisasi: 5.000 product/100.000 movement/dua cashier; catat host/network/config/run count/distribution.",
+        "Ukur target barcode ≤500 ms/search ≤700 ms/Sale 50 baris ≤2 s/report ≤2 s; ukur referensi replay 10.000 movement untuk waktu/memori/cap/concurrency/fallback incomplete.",
+        "Verifikasi count/ledger/balance/cost/snapshot sebelum dan sesudah; selidiki failure tanpa melonggarkan lock/privasi/atomicity."
+      ],
+      "tests": [
+        "Benchmark/query plan/resource usage aktual yang repeatable serta rekonsiliasi; target bukan SLA diterima atau klaim hasil sampai diukur.",
+        "Target tidak representatif tetap PENDING; tuning hanya bottleneck aktual bounded, rerun checks terdampak."
+      ],
+      "ac": [
+        "PERF01"
+      ],
+      "hold": [
+        "Host/network non-production representatif yang diotorisasi"
+      ],
+      "risk": "Target throughput tidak mengotorisasi infrastructure tambahan atau jalan pintas keamanan."
+    },
+    {
+      "id": "BU-RELEASE-001",
+      "title": "Readiness, cutover/UAT package dan owner gates",
+      "deps": [
+        "BU-VERIFY-001",
+        "BU-VERIFY-002",
+        "BU-VERIFY-003",
+        "BU-VERIFY-004"
+      ],
+      "h": [
+        1,
+        3,
+        1
+      ],
+      "reads": [
+        "planning/P10-RELEASE-UAT.md",
+        "09-DEPLOYMENT-OPS.md",
+        "08-TESTING-ACCEPTANCE.md"
+      ],
+      "tables": "Readiness matrix/cutover manifest; tanpa mutation produksi aktual.",
+      "scope": "Pemeriksaan candidate final terkini/seluruh hold, pengamanan rollback/recovery serta paket review deploy exact.",
+      "actions": [
+        "Konfirmasi DESIGN/G1/G2/G3/G4/DEVICES dan seluruh suite FINAL kecuali RELEASE aktual; tidak ada risiko integrity/privacy/recovery unresolved.",
+        "Siapkan training/skenario UAT identitas/master/opening/count/device/report/backup/recovery aktual dan verifikasi label harness operator.",
+        "Siapkan exact target/revision/operation serta checklist migration/cutover/rollback dan permintaan otorisasi sebagai langkah terakhir; readiness bukan deployment."
+      ],
+      "tests": [
+        "Dry-run cutover/rekonsiliasi terisolasi; seluruh manifest/revision/link evidence/training/runbook direview owner.",
+        "Readiness COMPLETE saja tidak memberikan access/write produksi; RELEASE01 tetap PENDING sampai unit berikut diotorisasi."
+      ],
+      "ac": [
+        "RELEASE01"
+      ],
+      "hold": [
+        "Seluruh readiness gate yang berlaku, termasuk DESIGN/G1–G4/DEVICES/TARGET dan evidence teknis, wajib terpenuhi. Otorisasi deployment RELEASE bukan syarat COMPLETE paket readiness ini; approval exact RELEASE menahan start/COMPLETE BU-RELEASE-002 saja."
+      ],
+      "risk": "Jangan memberi RELEASE01 FINAL untuk persiapan saja."
+    },
+    {
+      "id": "BU-RELEASE-002",
+      "title": "Authorized production cutover, owner pilot dan handoff",
+      "deps": [
+        "BU-RELEASE-001"
+      ],
+      "h": [
+        3,
+        4,
+        1
+      ],
+      "reads": [
+        "planning/P10-RELEASE-UAT.md",
+        "09-DEPLOYMENT-OPS.md",
+        "08-TESTING-ACCEPTANCE.md"
+      ],
+      "tables": "Target produksi aktual terotorisasi owner; hanya forward/additive, history dipertahankan.",
+      "scope": "Operasi release exact yang disetujui, pilot workflow/rekonsiliasi role operasional serta acceptance produksi owner.",
+      "actions": [
+        "Periksa approval exact target/revision/migration/operation; independent backup/restore readiness; tanpa operasi destruktif tanpa approval exact terpisah.",
+        "Cutover identity/master/opening manual dengan freeze/count/rekonsiliasi/enable yang diotorisasi; jangan seed demo/reset produksi; lalu pilot seluruh role/Sale/session/dokumen/refund bila sesuai.",
+        "Rekonsiliasi stock/cash/transfer/Sale/payment/cost/session/report/audit/backup fisik, performance target terukur, acceptance owner serta handoff access/private key."
+      ],
+      "tests": [
+        "Witness pilot/device/dokumen/reprint/backup aktual terotorisasi dengan evidence versi release candidate; rollback hanya memakai strategi aman setelah writes.",
+        "Catat biaya/RPO/RTO/incident tersisa nyata dan acceptance owner; gate gagal menghentikan release terdampak."
+      ],
+      "ac": [
+        "RELEASE01"
+      ],
+      "hold": [
+        "Otorisasi RELEASE explicit exact WAJIB; destruction TIDAK tersirat"
+      ],
+      "risk": "Commit planning/Execute coding task generik/izin migration bukan approval deploy produksi atau destruction."
+    }
+  ]
+}

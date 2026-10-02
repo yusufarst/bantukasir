@@ -1,43 +1,51 @@
-# Aturan agent — Plan 2.0
+# Aturan agent — Baseline P0–P11
 
-Dokumentasi repository adalah sumber kebenaran **Plan 2.0**. BantuKasir hanya codename internal untuk POS GOODS-only; nama/logo client produksi berasal dari BusinessProfile runtime. Plan 1.1, R01–R18, BK01–BK36, UI01–UI04, Gate A/B dan workflow executor lama adalah riwayat, bukan prasyarat aktif. Jangan mengubah upstream LATANSA atau menghapus pekerjaan lokal yang tidak terkait.
+Repository canonical adalah sumber kebenaran BantuKasir, codename internal untuk GOODS-only POS. Instruksi owner terbaru mengadopsi kerangka governance/planning/review MULTIPLECORP dari diskusi terlampir, **bukan domain bisnis, aset, token atau project desainnya**. Plan 2.0/T01–T40, Plan 1.1/Rxx/BKxx/UIxx/Gate A/B menjadi histori. Jangan mengubah upstream LATANSA atau menghapus pekerjaan lokal yang tidak terkait.
 
-## Pemulihan konteks dan batas eksekusi
+## Recovery, authority dan scope eksekusi
 
-Periksa `git status --short`, branch, HEAD, commit terbaru, staged/unstaged/untracked sebelum bekerja. Baca berurutan: file ini → [00](docs/00-CURRENT-STATE.md) → task aktif/berikut di [11](docs/11-BUILD-PLAN.md) beserta kartu `docs/tasks/Txx.md` → [01](docs/01-PRD.md) → [02](docs/02-ARCHITECTURE.md) → [10](docs/10-DECISIONS.md) → [DESIGN](DESIGN.md) untuk UI → spesifikasi yang dirujuk kartu. Jangan mengandalkan ingatan chat atau menganggap laporan executor sebagai bukti.
+Periksa `git status --short`, branch, HEAD, commit terbaru serta staged/unstaged/untracked terlebih dahulu. Baca file ini → [00](docs/00-CURRENT-STATE.md) → [11](docs/11-BUILD-PLAN.md)/BU terpilih → [01](docs/01-PRD.md) → [02](docs/02-ARCHITECTURE.md) → [10](docs/10-DECISIONS.md) → specification kartu; UI membaca [DESIGN](DESIGN.md). Coding executor membaca [CLAUDE](CLAUDE.md). Memory chat atau laporan executor bukan evidence.
 
-Instruksi “Execute Txx” memilih **satu task** dan mengotorisasi scope implementasinya pada lingkungan yang diizinkan. Satu executor aktif; pekerjaan independen boleh dijalankan saat task lain menunggu owner bila dependency teknisnya memenuhi [11](docs/11-BUILD-PLAN.md). Jangan otomatis melanjutkan task berikutnya. Perubahan requirement masuk dokumen canonical sebelum eksekusi.
+Planning P0 → P11 secara autonomous diotorisasi dalam sesi rebaseline ini, tanpa konfirmasi rutin antar fase. [P0](docs/planning/P0-GOVERNANCE.md) mengatur AUTONOMOUS, PLANNER-DETERMINED PRODUCT SUPPORT dan OWNER_DECISION_REQUIRED. Capability tambahan memerlukan masalah konkret, alternatif lebih sederhana, biaya implementasi dan dampak operasi. Perubahan material pada makna bisnis, visibility, uang/stok, legalitas atau biaya nyata memerlukan keputusan owner.
 
-Kondisi fisik awal: prototype dan evidence BK03 masih staged/unstaged; jangan mencampurnya dengan task baru. Inspeksi dan stage path task secara eksplisit. Jangan `git add -A`, reset/clean/restore atau menimpa source lama demi merapikan status.
+Blueprint freeze membekukan specification yang direview; bukan owner visual approval, fakta client, implementation COMPLETE atau FINAL PASS. [Gap/change register](docs/planning/GAPS-CHANGES.md) memisahkan holds dan scope terdampak. Perubahan requirement masuk canonical/decision/mapping/BU/acceptance sebelum coding; buka kembali fase terdampak, review dan reestimasi.
+
+Eksekusi nantinya memerlukan instruksi eksplisit **Execute BU-...** untuk satu unit dengan dependency artifact yang kompatibel dan PASS. Satu primary coding executor; independent review boleh paralel. Jangan otomatis melanjutkan unit berikut. Label yang diminta owner: Claude Opus 5.5/effort xhigh; Fable 5.1/effort xhigh secara selektif untuk masalah bounded berisiko tinggi. Verifikasi availability saat handoff; jangan mengaku model telah digunakan atau menggantinya diam-diam.
+
+Inspeksi dan stage path exact. Jangan `git add -A`, reset/clean/restore, menimpa source lama atau mencampur index yang tidak terkait. Git terkini adalah fakta fisik; klaim leftovers dalam histori tidak membuktikan file masih ada.
 
 ## Produk, integritas dan privasi
 
-- GOODS saja, satu stock pool, Sale langsung dibayar penuh CASH/BANK_TRANSFER. Tidak ada Order/booking/DP/services/reservation/warehouse/HR atau shift engine kompleks.
-- Tepat SUPER_ADMIN/Pemilik, OPERATIONS_ADMIN/Admin Operasional, CASHIER/Kasir. Server auth, backend RBAC, scope objek dan actor/config guard wajib; menu tersembunyi bukan keamanan.
-- StockMovement immutable adalah kebenaran fisik; StockBalance projection sinkron. Tidak ada direct balance editing atau negative stock.
-- Sale, lines, full Payment, SALE_ISSUE, balance/cost facts, ReceiptSnapshot, audit dan durable command result commit bersama. Scan hanya mengubah draft; cetak setelah commit.
-- Key/fingerprint/source intent/recovery epoch menjaga duplikasi dan original-result recovery. Timeout tidak mengotorisasi replacement Sale, pembayaran ulang atau blind replay setelah restore.
-- Fakta payment/history append-only; koreksi/refund/return mempertahankan original. Refund tanpa barang fisik tidak menambah stok.
-- MWA, UNKNOWN eksplisit, Laba Kotor bukan Laba Bersih. Acquisition cost/HPP/profit dan audit/security/recovery sensitif hanya Pemilik. DTO staff memakai allowlist, termasuk error/status/cache/log/media/export. Biaya baru Operations write-only.
-- CashSession ringan: satu drawer, satu responsible cashier, satu OPEN; opening cash eksplisit termasuk Rp0, close race-safe OPEN → CLOSED dengan immutable report. Tidak ada reopen, responsibility overwrite, shared active drawer atau paid-in/out.
-- BusinessProfile/config/logo runtime dibatasi, terotorisasi dan versioned; dokumen membekukan identity/template/assets asli. Logo codename repository bukan default client produksi.
+- GOODS saja, satu stock pool, tepat tiga role: SUPER_ADMIN/Pemilik, OPERATIONS_ADMIN/Admin Operasional, CASHIER/Kasir. Server auth/policies/object scope dan actor/config guards wajib.
+- Product/category/barcode/search, receiving, opening khusus Pemilik, manual issue dengan reason non-sale, LOW/OUT. Pembuatan master tetap stok 0; unit/precision terkunci sesudah movement pertama.
+- StockMovement immutable adalah kebenaran fisik; StockBalance projection sinkron nonnegative. Tidak ada direct balance edit atau stok negatif.
+- Sale langsung dibayar penuh, satu CASH **atau** BANK_TRANSFER. Tidak ada mixed/split/partial/debt. Konfirmasi manusia atas penerimaan penuh dana transfer bukan settlement gateway.
+- Sale/lines/full Payment/SALE_ISSUE/balance/cost atau UNKNOWN/ReceiptSnapshot/audit/durable result commit bersama. Scan hanya mengubah draft; print sesudah commit.
+- Key/fingerprint/source intent/recovery epoch stabil mencegah duplikasi. UNCERTAIN/status yang tidak ditemukan/timeout bukan izin Sale pengganti, pembayaran ulang atau blind replay setelah restore. Pulihkan original, termasuk setelah CashSession CLOSED.
+- MWA memakai perhitungan decimal presisi; UNKNOWN eksplisit; Laba Kotor bukan Laba Bersih. Cost evidence/allocations/revisions immutable; replay bounded dan all-or-nothing. Refund/return/correction menjaga original dan biaya historis; refund tanpa verified saleable return tidak menambah stok.
+- Biaya perolehan/HPP/profit serta audit/security/recovery sensitif hanya Pemilik. Allowlist DTO staff mencakup HTML/Inertia props/shared props/flash/old input/history/errors/status/cache/log/media/export/browser storage. Biaya incoming Operations write-only, tanpa echo atau payload biaya pada recovery.
+- CashSession ringan: satu drawer/satu responsible cashier/satu OPEN per register dan per cashier; opening cash eksplisit termasuk Rp0; session sendiri termasuk Pemilik/Sale transfer-only; OPEN → CLOSED race-safe dengan laporan immutable. Tidak ada reopen/responsibility overwrite/shared active drawer/paid-in/out.
+- Identity/logo/template/accent BusinessProfile runtime bounded dan versioned; dokumen original mempertahankan revision/aset. Logo codename repository bukan authority default client.
+- Future PaymentProvider seam hanya boundary arsitektur. Tidak mengimplementasikan callback/webhook/QRIS/asynchronous payment/gateway V1. Seluruh capability Later di 01 tetap tidak aktif.
 
-## Desain dan tooling
+## Stack dan desain
 
-Pipeline aktif: **DesainPakeAI → foundation/revision yang dipilih dan disetujui owner → kontrak/token repository → shadcn/ui → Next.js native**. [DESIGN](DESIGN.md) menetapkan boundary; backend/database/tests tidak menunggu visual. T24 dan UI berikutnya memerlukan T23 COMPLETE dengan approval revision yang tepat. Tidak ada rebuild melalui beberapa aplikasi prototype.
+Stack dipilih setelah comparison/review: **Laravel + Inertia + React/TypeScript + PostgreSQL + Nginx**, shadcn/ui/Tailwind, PHP-FPM, Vite pada build time dan session database. Modular monolith memakai policies/FormRequests/Actions/DTO aman dan decimal presisi; tanpa SSR Node/Redis/queue/microservices secara default. [P4](docs/planning/P4-ARCHITECTURE.md) mencatat alasan, alternatif, testing/ops/maintenance. Pin versi/advisory/license kompatibel yang terverifikasi dalam BU-FOUND-001; freeze stack dibuka hanya berdasarkan evidence/change control.
 
-Gunakan CLI global `dpai`, bukan MCP. Sebelum context dan terutama sebelum setiap mutation, verifikasi `dpai project current --pretty`: **BantuKasir Design / eddb0e15-9909-44b3-8517-9239cadc65ef**. Simpan revision context, jangan kredensial. **MULTIPLECORP tidak boleh dipilih, dibaca, diekspor, dimutasi atau dipakai sebagai inspirasi/fallback/aset/token.** Project mismatch berarti STOP sebelum akses lanjut. Mutation desain, layanan berbayar dan pembelian memerlukan otorisasi scope; setup user tidak diulang setiap task. 21st.dev/Impeccable tidak lagi menjadi requirement, gate atau tooling aktif.
+Pipeline: DesainPakeAI → owner-approved exact BantuKasir Design revision → kontrak/token semantic repository → shadcn/ui → UI produksi React/Inertia native. **BU-DESIGN-001 harus COMPLETE sebelum UI produksi**; backend/database/tests/ops independen tidak menunggu visual.
 
-## Database produksi dilindungi — seluruh agent
+Gunakan CLI global `dpai`, bukan MCP; setup user tidak diulang tiap task. Sebelum context dan setiap mutation yang diotorisasi, `dpai project current --pretty` harus menunjukkan **BantuKasir Design / eddb0e15-9909-44b3-8517-9239cadc65ef**. Simpan revision, bukan credential. MULTIPLECORP tidak boleh dipilih/dibaca/diekspor/dimutasi atau dipakai sebagai inspirasi visual/fallback/aset/token. Mismatch → STOP sebelum akses lanjut. Mutation desain/layanan berbayar/pembelian memerlukan otorisasi scope. 21st.dev/Impeccable bukan tooling/gate aktif.
 
-Tanpa approval owner untuk **operasi destruktif yang EXACT**, jangan DROP DATABASE/SCHEMA/populated tables, TRUNCATE, mass DELETE, reset/recreate/seed demo produksi, hapus ledger/Sale/Payment/AuditEvent atau menulis ulang fakta historis, hapus DB/Docker volume/persistent directory, maupun menjalankan `docker compose down -v`. “Fix”, “deploy” dan “run migration” bukan approval destruktif.
+## Database produksi dilindungi
 
-Gunakan forward/additive migrations: expand → migrate/backfill → verify → contract; rehearsal pada non-production populated yang jelas; backup/restore siap sebelum risiko tinggi; transactional migration bila sesuai; rekonsiliasi sesudahnya. Bila destruction tampak perlu, STOP dan laporkan alasan, data berisiko, alternatif aman, migration/backfill, backup/restore, rollback/recovery. Reset fixture hanya pada DB test yang diidentifikasi dan diotorisasi. Runbook: [09](docs/09-DEPLOYMENT-OPS.md).
+Tanpa approval owner untuk operasi destruktif **EXACT**, jangan DROP database/schema/populated tables, TRUNCATE, mass DELETE, reset/recreate/demo seed produksi, hapus ledger/Sale/Payment/AuditEvent/history, tulis ulang fakta historis, hapus database/Docker volume/persistent directory atau `docker compose down -v`. Fix/deploy/run migration bukan approval destruktif.
 
-## Penutupan task
+Gunakan forward/additive expand → migrate/backfill → verify → contract, populated rehearsal terisolasi, independent backup/restore readiness, transaksi bila sesuai dan rekonsiliasi. Jika destruction tampak perlu, STOP: jelaskan data berisiko, alasan, alternatif, migration/backfill, backup/restore dan rollback/recovery. Reset fixture hanya pada test database yang diidentifikasi dan diotorisasi. [09](docs/09-DEPLOYMENT-OPS.md) adalah runbook.
 
-Penuhi VERIFY/ACCEPTANCE kartu: unit, PostgreSQL nyata untuk constraints/rollback/races, RBAC/privasi, lint/typecheck/build, browser/mobile/a11y, dan device/recovery/performance bila relevan. Mock/screenshot bukan bukti transaksi; early tests bukan FINAL PASS [08](docs/08-TESTING-ACCEPTANCE.md). Jangan mengarang hasil.
+## DoD, evidence dan closeout
 
-Catat revision/commands/target non-secret/hasil/holds. Update [11](docs/11-BUILD-PLAN.md), [10](docs/10-DECISIONS.md) hanya untuk keputusan nyata, lalu **[00](docs/00-CURRENT-STATE.md) LAST**. Commit lokal task hanya setelah hasil koheren, checks lulus dan path scope bersih; preservasi index unrelated. Jangan push/merge/deploy/publish/beli tanpa otorisasi eksplisit. Target biaya tambahan sekitar Rp0 tidak boleh menghapus kebutuhan independent backup; catat biaya nyata.
+Penuhi delapan dimensi [08](docs/08-TESTING-ACCEPTANCE.md): BUSINESS, UI/UX, BACKEND, DATABASE, SECURITY, DATA INTEGRITY, PERFORMANCE, VERIFICATION. Gunakan PostgreSQL nyata untuk constraints/rollback/races; privasi role lintas channel; PHP static checks dan TypeScript lint/typecheck/build; browser/mobile/a11y; perangkat/restore/performance aktual bila relevan. Mock/screenshot/bukti awal bukan FINAL PASS; jangan mengarang hasil.
 
-Rebaseline ini hanya mengotorisasi **satu local docs-only commit**, lalu STOP. Belum ada otorisasi menjalankan T01 atau task coding lain.
+Catat revision/commands/target non-secret/dataset/results/reviewer/fixes/holds; update 11 dan 10 untuk keputusan nyata, lalu **00 LAST**. Stage path yang disengaja dan review seluruh index. Commit lokal task hanya untuk scope terotorisasi, hasil koheren dan checks lulus. Jangan push/merge/deploy/publish/beli tanpa otorisasi eksplisit. Target biaya tambahan sekitar Rp0 tidak menghapus independent backup; catat biaya nyata.
+
+Sesi rebaseline ini mengotorisasi **satu commit lokal planning/docs-only**, lalu STOP. Tidak mengotorisasi coding aplikasi, BU-FOUND-001 atau unit lain, infrastructure/database produksi, push maupun deploy.

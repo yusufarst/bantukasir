@@ -1,0 +1,1216 @@
+{
+  "baseline": "P0-P11",
+  "requirements": [
+    {
+      "id": "CORE-001",
+      "text": "Backend role/object scope menolak route/ID tebakan pada ketiga role; actor berasal dari session. Session expired/tampered, CSRF/origin/rate limit, disable/revoke, invite/reset expiring dan single-use, bootstrap privat tanpa default/demo account teruji.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-IAM-001",
+        "BU-UI-001"
+      ],
+      "acceptance": [
+        "AUTH01"
+      ]
+    },
+    {
+      "id": "CORE-002",
+      "text": "Allowlist ketiga role berlaku pada search/detail/history, validation error/status/recovery, receipt/report/print/PDF/CSV/media, cache dan logs. Staff tidak menerima acquisition cost/history/HPP/profit atau sensitive security/recovery details; original-result recovery yang berizin tetap tersedia. Incoming cost write-only tidak di-echo atau disimpan dalam browser recovery. Logout/actor change/Back/Forward/reload/bfcache tidak menampilkan finance/cache Pemilik kepada staff; history encryption/invalidation tidak membolehkan stored write-only cost.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-IAM-001",
+        "BU-CMD-001",
+        "BU-CFG-001",
+        "BU-CAT-001",
+        "BU-INV-001",
+        "BU-INV-002",
+        "BU-INV-003",
+        "BU-SALE-001",
+        "BU-SALE-002",
+        "BU-READ-001",
+        "BU-READ-002",
+        "BU-OPS-002",
+        "BU-UI-001",
+        "BU-UI-002",
+        "BU-UI-003",
+        "BU-UI-004",
+        "BU-DOC-001"
+      ],
+      "acceptance": [
+        "AUTH02"
+      ]
+    },
+    {
+      "id": "CORE-003",
+      "text": "Disable/reset/revoke, role/config/payment-method/profile/onboarding writer dan business command memakai matching ordered guards. Real PostgreSQL race membuktikan perubahan yang menang diterapkan pada validasi; request yang tidak lagi sah ditolak sebelum facts dan snapshot memakai revision yang benar. Command yang lebih dahulu commit tetap konsisten/audited. Recent authentication dan recovery reauthorization tetap berlaku.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-IAM-001",
+        "BU-CMD-001",
+        "BU-CFG-001",
+        "BU-CAT-001",
+        "BU-INV-002",
+        "BU-INV-003",
+        "BU-CASH-001",
+        "BU-SALE-001",
+        "BU-CASH-002",
+        "BU-SALE-002",
+        "BU-UI-001"
+      ],
+      "acceptance": [
+        "AUTH03"
+      ]
+    },
+    {
+      "id": "CORE-004",
+      "text": "Nama/SKU/kategori/brand dan exact manufacturer/internal barcode bekerja; leading zeros/case/punctuation dipertahankan, declared EAN/UPC check digit tervalidasi. SKU/barcode unik global di bawah concurrent create; retired token tidak direcycle.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-CAT-001",
+        "BU-UI-002"
+      ],
+      "acceptance": [
+        "SEARCH01"
+      ]
+    },
+    {
+      "id": "CORE-005",
+      "text": "Shared Product Search default 25/max 100 dengan stable name/ID order, context/active filter dan tanpa full-master fetch. Receiving memilih existing product; similar matches ditinjau sebelum create, exact collision hard reject, create product tetap stock 0; base unit/precision tidak dapat diubah setelah movement pertama, termasuk race edit/posting pertama.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-CAT-001",
+        "BU-INV-002",
+        "BU-UI-002"
+      ],
+      "acceptance": [
+        "SEARCH02"
+      ]
+    },
+    {
+      "id": "CORE-006",
+      "text": "Late/stale lookup tidak mengubah pilihan/draft secara keliru; hasil complete scan berurutan. Manual/IME, repeated code satu base unit, empty CR/LF/key-repeat, unknown token retained, disconnect/partial input dan focus/dialog/count guards teruji. Scan hanya draft; scanner Enter tidak posting/bayar/close; offline tidak mengantre mutation.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-UI-003"
+      ],
+      "acceptance": [
+        "SEARCH03"
+      ]
+    },
+    {
+      "id": "CORE-007",
+      "text": "Setiap physical delta memiliki immutable movement/source/actor/server time/posting sequence; ledger sum = synchronous balance. Receipt/opening same/different-key retry posts once. Rekonsiliasi mismatch terdeteksi dan memblokir affected posting; repair berizin tanpa direct balance edit.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-CMD-001",
+        "BU-INV-001",
+        "BU-INV-002",
+        "BU-READ-001",
+        "BU-OPS-002",
+        "BU-UI-002"
+      ],
+      "acceptance": [
+        "INV01"
+      ]
+    },
+    {
+      "id": "CORE-008",
+      "text": "Manual issue wajib reason non-sale. Aggregate duplicate product lines sebelum stock check; last-unit concurrent issue/Sale tidak oversell. Failure injection pada setiap movement/balance/cost/audit/result boundary me-rollback seluruh command; qty/precision/range/overflow dan active/version guard teruji.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-INV-001",
+        "BU-INV-002",
+        "BU-UI-002"
+      ],
+      "acceptance": [
+        "INV02"
+      ]
+    },
+    {
+      "id": "CORE-009",
+      "text": "Owner reversal mempertahankan original, hanya satu full reversal eligible standalone source, exact inverse dan linked valuation. Duplicate/different-key/negative/unsafe replay ditolak; SALE_ISSUE/RETURN_RECEIPT tidak dapat direversal mandiri. Adjustment/revision append-only memakai reason/permission/recent auth.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-INV-003",
+        "BU-UI-004"
+      ],
+      "acceptance": [
+        "INV03"
+      ]
+    },
+    {
+      "id": "CORE-010",
+      "text": "Persistent onboarding flag memblokir ordinary inventory/Sale termasuk race. Maksimal 100 rows atomik, 101 ditolak, invalid row rollback seluruh command, sekali per produk/no prior ledger/disjoint commands. Zero count hanya checklist tanpa movement; qty/cost/UNKNOWN/reference review dan owner reconciliation sebelum flag dilepas; human count tanpa DB lock.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-INV-002",
+        "BU-SALE-001",
+        "BU-UI-002"
+      ],
+      "acceptance": [
+        "OPEN01"
+      ]
+    },
+    {
+      "id": "CORE-011",
+      "text": "Tepat satu completed Sale/lines/full Payment/SALE_ISSUE/balance/cost atau UNKNOWN/ReceiptSnapshot/audit/durable result per source intent. Same/different-key duplicates dan failure injection setiap boundary tidak menciptakan partial payment/stock success; owner/cashier wajib own eligible OPEN session.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-CMD-001",
+        "BU-SALE-001",
+        "BU-UI-003"
+      ],
+      "acceptance": [
+        "POS01"
+      ]
+    },
+    {
+      "id": "CORE-012",
+      "text": "Total Rp75.000, tender Rp100.000 menghasilkan change Rp25.000 dan applied Rp75.000; insufficient cash ditolak. BANK_TRANSFER exact full total dengan optional reference dan human receipt confirmation, tanpa physical cash effect. Tidak ada split/partial payment, gateway verification atau cashier price override.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-SALE-001",
+        "BU-UI-003"
+      ],
+      "acceptance": [
+        "POS02"
+      ]
+    },
+    {
+      "id": "CORE-013",
+      "text": "Definite rejection membolehkan review draft; UNCERTAIN membekukan original intent/key/payload tanpa replacement/charging ulang. Lost response/status/reload memulihkan original termasuk sesudah CLOSED; reauthorization tetap berlaku. Disabled method/price tampering/stale price ditolak; print failure/reprint tidak menduplikasi fakta.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-CMD-001",
+        "BU-SALE-001",
+        "BU-UI-003",
+        "BU-DOC-001"
+      ],
+      "acceptance": [
+        "POS03"
+      ]
+    },
+    {
+      "id": "CORE-014",
+      "text": "Cumulative refund money dan return qty dibatasi terpisah di bawah race/locks; retained original Sale/Payment/receipt. Executed CASH/BANK_TRANSFER owner-funded payouts terpisah. Refund-only tidak menambah stock dan mempertahankan HPP; saleable return memulihkan original matched cost sekali, return setelah refund dibolehkan dalam bound, damaged/non-saleable tidak menambah usable stock.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-SALE-002",
+        "BU-UI-004"
+      ],
+      "acceptance": [
+        "RET01"
+      ]
+    },
+    {
+      "id": "CORE-015",
+      "text": "Minimum 5: 6 NORMAL, 5/1 LOW, 0 OUT; minimum 0 tanpa interval LOW, active new product 0 adalah OUT. Audited threshold edit/receipt/inactive filter memperbarui current badge/list konsisten. Mutation/focus/interval ≤30 detik refresh; failed query menampilkan stale/error/last refresh, bukan empty/zero/Normal.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-CAT-001",
+        "BU-READ-001",
+        "BU-UI-002"
+      ],
+      "acceptance": [
+        "STOCK01"
+      ]
+    },
+    {
+      "id": "CORE-016",
+      "text": "Contoh MWA di15 menghasilkan sales Rp60.000/HPP Rp36.000/Laba Kotor Rp24.000. Qty 0–3 desimal, six-place decimal cost, integer-IDR half-up sekali per line, aggregate/overflow, fractional/final-stock residual dan non-sale issue valuation benar; tidak memakai binary float/latest purchase price.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-INV-001",
+        "BU-SALE-001"
+      ],
+      "acceptance": [
+        "FIN01"
+      ]
+    },
+    {
+      "id": "CORE-017",
+      "text": "Blank/UNKNOWN berbeda dari evidenced zero. Unknown receipt membuat downstream valuation/HPP incomplete, known historical allocations tetap valid; saldo 0 lalu receipt KNOWN membuka pool KNOWN baru tanpa melengkapi periode lama. Owner evidence revision/replay append-only tidak menimpa sources; incomplete HPP/profit/margin tidak ditampilkan sebagai complete/zero.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-INV-001",
+        "BU-INV-003",
+        "BU-READ-002",
+        "BU-UI-004"
+      ],
+      "acceptance": [
+        "FIN02"
+      ]
+    },
+    {
+      "id": "CORE-018",
+      "text": "Refund-only mempertahankan HPP; saleable return mengambil original issue cost sekali, UNKNOWN tetap incomplete. Deterministic bounded replay/concurrent posting dan failed publication menghasilkan all-or-nothing. Reports memakai consistent asOf/revision/completeness/unknown line count dan half-open Jakarta periods; corrections server posting date, tanpa backdating/net-profit claim.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-INV-003",
+        "BU-SALE-002",
+        "BU-READ-002",
+        "BU-UI-004"
+      ],
+      "acceptance": [
+        "FIN03"
+      ]
+    },
+    {
+      "id": "CORE-019",
+      "text": "Cashier menutup sesi lalu membuka sesi baru pada businessDate yang sama; immutable report keduanya berbeda. Returning same-day bukan reopen atau overwrite sesi lama.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-CASH-001",
+        "BU-CASH-002",
+        "BU-UI-003"
+      ],
+      "acceptance": [
+        "SESSION01"
+      ]
+    },
+    {
+      "id": "CORE-020",
+      "text": "Partial unique constraints mencegah overlapping OPEN per logical register dan per responsible cashier, termasuk concurrent open. Handover close A lalu open B; tidak ada simultaneous shared drawer/responsibility edit.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-CASH-001",
+        "BU-CASH-002",
+        "BU-UI-003"
+      ],
+      "acceptance": [
+        "SESSION02"
+      ]
+    },
+    {
+      "id": "CORE-021",
+      "text": "Setiap completed Sale, termasuk transfer-only, teratribusi sekali ke own active session/register/cashier yang benar. Tanpa eligible OPEN session ditolak sebelum payment/stock; opening explicit Rp0 sah dan blank ditolak; opening/scanning tidak membuat Sale.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-CASH-001",
+        "BU-SALE-001",
+        "BU-UI-003"
+      ],
+      "acceptance": [
+        "SESSION03"
+      ]
+    },
+    {
+      "id": "CORE-022",
+      "text": "Opening Rp20.000 + CASH Rp100.000 + BANK_TRANSFER Rp50.000 dan physical Rp118.000 menghasilkan expected Rp120.000/variance −Rp2.000. Opening/physical cash wajib nonnegative. Transfer/owner refund/opening/variance tidak menjadi sales/profit atau hidden cash adjustment.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-CASH-002",
+        "BU-SALE-002",
+        "BU-UI-003"
+      ],
+      "acceptance": [
+        "SESSION04"
+      ]
+    },
+    {
+      "id": "CORE-023",
+      "text": "Sale-vs-close memakai lock/activityVersion yang sama: Sale menang tercakup sekali dan meminta recount; close menang membuat Sale ditolak sebelum facts. Tidak ada successful Sale yang hilang, tidak ada human count lock atau persistent CLOSING; UNCERTAIN checkout diselesaikan sebelum close.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-CASH-002",
+        "BU-UI-003"
+      ],
+      "acceptance": [
+        "SESSION05"
+      ]
+    },
+    {
+      "id": "CORE-024",
+      "text": "Duplicate/lost close termasuk key berbeda menghasilkan satu CLOSED/snapshot/result. Conflicting count tidak menimpa; stale activityVersion meminta hitung ulang dan tetap OPEN. Failure snapshot/audit/result rollback mempertahankan OPEN; original result tetap recoverable setelah CLOSED.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-CASH-002",
+        "BU-UI-003"
+      ],
+      "acceptance": [
+        "SESSION06"
+      ]
+    },
+    {
+      "id": "CORE-025",
+      "text": "Closed snapshot/count/variance/cutoff/source IDs/identity/template tidak dapat ditulis ulang/reopen. Count mistake menerima linked owner review note; later refund/return/correction tetap fakta terhubung dan tidak mengubah laporan as-closed.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-CASH-002",
+        "BU-SALE-002",
+        "BU-READ-002",
+        "BU-UI-004",
+        "BU-DOC-001"
+      ],
+      "acceptance": [
+        "SESSION07"
+      ]
+    },
+    {
+      "id": "CORE-026",
+      "text": "Print/PDF/CSV/reprint tidak membuat/mengubah Sale/Payment/StockMovement/session; export failure retry snapshot asli. CSV mengutip text dan menetralkan formula/control prefix, mempertahankan negative numeric variance/IDR/timezone/session context. Request audit terpisah; print dialog bukan bukti tinta.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-DOC-001"
+      ],
+      "acceptance": [
+        "SESSION08"
+      ]
+    },
+    {
+      "id": "CORE-027",
+      "text": "Owner daily totals berasal sekali dari source Sale/payment/cost berdasarkan tiap businessDate, tanpa menambahkan session totals. Beberapa sesi/same-day handover tidak double count. Midnight session tetap satu report close-date/full-span atau active section; variance per snapshot terpisah dari revenue/profit.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-READ-002",
+        "BU-UI-004"
+      ],
+      "acceptance": [
+        "SESSION09"
+      ]
+    },
+    {
+      "id": "CORE-028",
+      "text": "Cashier tidak membaca/close/export sesi cashier lain; actor scope server berlaku di route/status/media/file. Operations tidak mempunyai session/POS report grant. Owner-assisted close memerlukan current permission/recent auth/physical count/reason dan mempertahankan responsible cashier asli.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-CASH-001",
+        "BU-CASH-002",
+        "BU-READ-002",
+        "BU-UI-003",
+        "BU-UI-004",
+        "BU-DOC-001"
+      ],
+      "acceptance": [
+        "SESSION10"
+      ]
+    },
+    {
+      "id": "CORE-029",
+      "text": "Owner log memfilter Sale/payment/stock/product/price/user/config/session/correction menurut date/user/type/product/session/reference. Audit successful change berada dalam business transaction; original actor/history dipertahankan. Operations hanya safe stock history, cashier own Sale/session; unrestricted/security audit staff ditolak, tanpa secret/full private payload logs.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-CMD-001",
+        "BU-READ-002",
+        "BU-UI-004"
+      ],
+      "acceptance": [
+        "AUDIT01"
+      ]
+    },
+    {
+      "id": "CORE-030",
+      "text": "BusinessProfile runtime/codename terpisah; name/logo/contact/email opsional/header/footer/document identity/accent tervalidasi memakai immutable revision/current pointer. Private logo PNG/JPEG/WebP ≤5 MiB/16 megapixels dire-encode/metadata stripped; SVG/HTML/URL fetch ditolak. Perubahan profile/template/logo tidak mengubah original Sale/session reprint; retained assets/media reauthorization teruji.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-CFG-001",
+        "BU-SALE-001",
+        "BU-DESIGN-001",
+        "BU-UI-001",
+        "BU-DOC-001"
+      ],
+      "acceptance": [
+        "IDENTITY01"
+      ]
+    },
+    {
+      "id": "CORE-031",
+      "text": "Reviewed forward migration/expand→backfill→verify→contract dijalankan sekali pada populated isolated target dengan constraint/row-count/business reconciliation dan backup/restore readiness. Target guard dan runtime privilege menolak DROP/UPDATE/DELETE immutable facts; credential migration terpisah. Tidak ada production reset/seed/mass deletion/down-v tanpa exact destructive approval.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-FOUND-001",
+        "BU-OPS-001",
+        "BU-OPS-002"
+      ],
+      "acceptance": [
+        "DB01"
+      ]
+    },
+    {
+      "id": "CORE-032",
+      "text": "Real independent encrypted backup/isolated restore ke target baru memverifikasi DB/media/template manifest/checksum dan seluruh actor/register/session/Sale/lines/Payment/issue/receipt/ledger/balance/cost revisions/refund/return/source intent/CommandReceipt/audit. Original snapshot/asset dapat direproduksi; tiap CLOSED tepat satu report, active uniqueness/attribution benar; mismatch memblokir reopening.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-OPS-002"
+      ],
+      "acceptance": [
+        "REC01"
+      ]
+    },
+    {
+      "id": "CORE-033",
+      "text": "Restore revoke sessions dan recovery epoch menolak stale browser posting. Possibly lost post-cutoff sales diperiksa dari cash/transfer/printed/physical evidence; missing restored result bukan bukti tidak pernah commit, tanpa blind replay/direct balance edit. Independent key/access tersedia; G4 menerima measured RPO/RTO dan data gap, bukan target asumsi.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-CMD-001",
+        "BU-OPS-002"
+      ],
+      "acceptance": [
+        "REC02"
+      ]
+    },
+    {
+      "id": "CORE-034",
+      "text": "Seluruh surface mengikuti approved DESIGN revision/native compositions, runtime identity dan role semantics. Loading/empty/error/denied/stale/UNKNOWN/disabled/focus/success dapat diverifikasi. Lima widths 375/440/768/1024/1440, zoom 200%, keyboard/focus/44px touch targets/reduced motion/kontras menurut DESIGN; tidak ada clipped actions atau menu capability Later yang seolah aktif.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-DESIGN-001",
+        "BU-UI-001",
+        "BU-UI-002",
+        "BU-UI-003",
+        "BU-UI-004"
+      ],
+      "acceptance": [
+        "UX01"
+      ]
+    },
+    {
+      "id": "CORE-035",
+      "text": "USB HID dan Bluetooth HID nyata, manual/IME/repeated/CRLF/focus/dialog/count/disconnect/partial/unknown fallback bekerja. Actual manufacturer/internal labels scannable; actual label/receipt thermal/A4 printers/driver/media/reprint berfungsi tanpa duplicate facts. Catat device/OS/browser/revision dan physical proof; emulator/print dialog tidak mendapat FINAL PASS.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-UI-002",
+        "BU-UI-003",
+        "BU-DOC-001",
+        "BU-VERIFY-003"
+      ],
+      "acceptance": [
+        "DEVICE01"
+      ]
+    },
+    {
+      "id": "CORE-036",
+      "text": "Benchmark isolated representative intended VPS/network: 5.000 products/100.000 movement lines/2 concurrent cashiers; barcode p95 ≤500 ms, search ≤700 ms, 50-line Sale ≤2 s, ordinary period report ≤2 s. Ukur synchronous replay reference 10.000 movements/product terpisah dengan timeout/cap/incomplete safety. Dataset/host/config/run count/latency/reconciliation nyata; misses tidak diselesaikan dengan melemahkan guard.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-CAT-001",
+        "BU-INV-003",
+        "BU-SALE-001",
+        "BU-READ-002",
+        "BU-OPS-001",
+        "BU-VERIFY-004"
+      ],
+      "acceptance": [
+        "PERF01"
+      ]
+    },
+    {
+      "id": "CORE-037",
+      "text": "Semua FINAL acceptance terkini dan approval DESIGN/workflow/G1–G4/DEVICES selesai tanpa integrity/privacy/recovery blocker. BU-RELEASE-001 readiness bukan deployment. Exact target/revision/operation memperoleh deployment authorization; authorized cutover mempertahankan records, real pilot role/Sale/session/stock/report/reprint/backup reconciliation dan owner production acceptance/handoff tercatat.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-RELEASE-001",
+        "BU-RELEASE-002"
+      ],
+      "acceptance": [
+        "RELEASE01"
+      ]
+    },
+    {
+      "id": "CORE-038",
+      "text": "Threat-path tests nyata menolak enumeration/fixation/CSRF/XSS/SQL injection/mass assignment/unsafe redirects/path traversal/remote URL fetching, invalid upload/download serta unsafe headers/config. Argon2id/session/cookie/HTTPS/CSP/headers/rate limit/secret/flash/history/cache/log/output privacy terpenuhi; dependency/advisory reviewed. Tidak ada public signup/2FA/tenant scope baru.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-FOUND-001",
+        "BU-IAM-001",
+        "BU-CFG-001",
+        "BU-OPS-001",
+        "BU-UI-001",
+        "BU-DOC-001"
+      ],
+      "acceptance": [
+        "SEC01"
+      ]
+    },
+    {
+      "id": "CORE-039",
+      "text": "Payment core mempunyai method/type boundary eksplisit yang dapat diextend melalui reviewed forward migration/provider adapter kelak. V1 tetap tepat satu full CASH atau BANK_TRANSFER, server allowlist menolak future methods/mixed/partial, tanpa gateway callbacks/webhooks/QRIS/async-payment states/tables aktif.",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-SALE-001",
+        "BU-UI-003"
+      ],
+      "acceptance": [
+        "PAYEXT01"
+      ]
+    },
+    {
+      "id": "CORE-040",
+      "text": "GOODS-only, satu bisnis dan satu business-wide stock pool; scope Later tidak aktif",
+      "source": "01-PRD.md",
+      "units": [
+        "BU-CAT-001",
+        "BU-INV-001",
+        "BU-SALE-001"
+      ],
+      "acceptance": [
+        "SEARCH02",
+        "INV01",
+        "POS01"
+      ]
+    },
+    {
+      "id": "CORE-041",
+      "text": "Tepat tiga role; backend capability/object scope dan actor guards",
+      "source": "04-AUTH-RBAC-SECURITY.md",
+      "units": [
+        "BU-IAM-001",
+        "BU-CMD-001"
+      ],
+      "acceptance": [
+        "AUTH01",
+        "AUTH03"
+      ]
+    },
+    {
+      "id": "CORE-042",
+      "text": "Catalog/category/harga/barcode search-first; produk baru stock0",
+      "source": "12-BARCODE-SCANNER.md",
+      "units": [
+        "BU-CAT-001",
+        "BU-UI-002"
+      ],
+      "acceptance": [
+        "SEARCH01",
+        "SEARCH02"
+      ]
+    },
+    {
+      "id": "CORE-043",
+      "text": "Receiving terpisah dari opening dan manual issue; konfirmasi eksplisit",
+      "source": "06-INVENTORY-SPEC.md",
+      "units": [
+        "BU-INV-002",
+        "BU-UI-002"
+      ],
+      "acceptance": [
+        "INV01",
+        "OPEN01"
+      ]
+    },
+    {
+      "id": "CORE-044",
+      "text": "Manual issue wajib alasan non-sale; tidak menggantikan Sale",
+      "source": "06-INVENTORY-SPEC.md",
+      "units": [
+        "BU-INV-002",
+        "BU-UI-002"
+      ],
+      "acceptance": [
+        "INV02"
+      ]
+    },
+    {
+      "id": "CORE-045",
+      "text": "Owner opening manual ≤100 rows atomik/no prior ledger/freeze; zero checklist bukan movement",
+      "source": "06-INVENTORY-SPEC.md",
+      "units": [
+        "BU-INV-002",
+        "BU-UI-002"
+      ],
+      "acceptance": [
+        "OPEN01"
+      ]
+    },
+    {
+      "id": "CORE-046",
+      "text": "LOW/OUT/restock current balance, min0/new product OUT dan failed refresh stale",
+      "source": "06-INVENTORY-SPEC.md",
+      "units": [
+        "BU-CAT-001",
+        "BU-READ-001",
+        "BU-UI-002"
+      ],
+      "acceptance": [
+        "STOCK01"
+      ]
+    },
+    {
+      "id": "CORE-047",
+      "text": "StockMovement immutable dan balance sinkron nonnegative; semua posting atomik",
+      "source": "06-INVENTORY-SPEC.md",
+      "units": [
+        "BU-INV-001",
+        "BU-CMD-001"
+      ],
+      "acceptance": [
+        "INV01",
+        "INV02"
+      ]
+    },
+    {
+      "id": "CORE-048",
+      "text": "MWA HPP dengan UNKNOWN eksplisit dan exact decimal/rounding/residual",
+      "source": "15-FINANCE-PROFITABILITY.md",
+      "units": [
+        "BU-INV-001",
+        "BU-SALE-001"
+      ],
+      "acceptance": [
+        "FIN01",
+        "FIN02"
+      ]
+    },
+    {
+      "id": "CORE-049",
+      "text": "HPP/Laba Kotor/evidence/audit sensitif hanya Pemilik; profit incomplete tidak direka",
+      "source": "15-FINANCE-PROFITABILITY.md",
+      "units": [
+        "BU-READ-002",
+        "BU-UI-004"
+      ],
+      "acceptance": [
+        "AUTH02",
+        "FIN02",
+        "FIN03"
+      ]
+    },
+    {
+      "id": "CORE-050",
+      "text": "Operations biaya baru write-only tanpa echo/flash/old-input/props/history/cache/log/browser storage",
+      "source": "04-AUTH-RBAC-SECURITY.md",
+      "units": [
+        "BU-INV-002",
+        "BU-UI-002"
+      ],
+      "acceptance": [
+        "AUTH02",
+        "SEC01"
+      ]
+    },
+    {
+      "id": "CORE-051",
+      "text": "Register/CashSession ringan: one OPEN per register dan per cashier, responsible actor tetap",
+      "source": "17-POS-SALES.md",
+      "units": [
+        "BU-CASH-001",
+        "BU-CASH-002",
+        "BU-UI-004"
+      ],
+      "acceptance": [
+        "SESSION02",
+        "SESSION10"
+      ]
+    },
+    {
+      "id": "CORE-052",
+      "text": "Opening cash eksplisit Rp0 sah; handover close→open, same-day sesi baru",
+      "source": "17-POS-SALES.md",
+      "units": [
+        "BU-CASH-001",
+        "BU-CASH-002",
+        "BU-UI-003"
+      ],
+      "acceptance": [
+        "SESSION01",
+        "SESSION03"
+      ]
+    },
+    {
+      "id": "CORE-053",
+      "text": "Sale full-payment tepat satu CASH atau BANK_TRANSFER; tidak split/partial/mixed",
+      "source": "17-POS-SALES.md",
+      "units": [
+        "BU-SALE-001",
+        "BU-UI-003"
+      ],
+      "acceptance": [
+        "POS01",
+        "POS02"
+      ]
+    },
+    {
+      "id": "CORE-054",
+      "text": "BANK_TRANSFER dikonfirmasi operasional dana penuh diterima; tidak bank/gateway settlement",
+      "source": "17-POS-SALES.md",
+      "units": [
+        "BU-SALE-001",
+        "BU-UI-003"
+      ],
+      "acceptance": [
+        "POS02"
+      ]
+    },
+    {
+      "id": "CORE-055",
+      "text": "Future payment provider seam tanpa callbacks/webhooks/QRIS/async state V1",
+      "source": "planning/P4-ARCHITECTURE.md",
+      "units": [
+        "BU-SALE-001",
+        "BU-UI-003"
+      ],
+      "acceptance": [
+        "PAYEXT01",
+        "POS02"
+      ]
+    },
+    {
+      "id": "CORE-056",
+      "text": "Atomic Sale/lines/Payment/SALE_ISSUE/balance/cost/snapshot/audit/durable result",
+      "source": "17-POS-SALES.md",
+      "units": [
+        "BU-SALE-001"
+      ],
+      "acceptance": [
+        "POS01"
+      ]
+    },
+    {
+      "id": "CORE-057",
+      "text": "Original-result recovery same intent/key termasuk CLOSED, source intent lintas key dan fingerprint conflict",
+      "source": "planning/P6-CONCURRENCY-API.md",
+      "units": [
+        "BU-CMD-001",
+        "BU-SALE-001",
+        "BU-UI-003"
+      ],
+      "acceptance": [
+        "POS03",
+        "SESSION06"
+      ]
+    },
+    {
+      "id": "CORE-058",
+      "text": "Sale-close race shared lock/activityVersion; recount, immutable as-closed snapshot",
+      "source": "17-POS-SALES.md",
+      "units": [
+        "BU-CASH-002",
+        "BU-UI-003"
+      ],
+      "acceptance": [
+        "SESSION05",
+        "SESSION06",
+        "SESSION07"
+      ]
+    },
+    {
+      "id": "CORE-059",
+      "text": "Expected opening+applied CASH; transfer/owner funds/variance bukan sales atau drawer adjustment",
+      "source": "17-POS-SALES.md",
+      "units": [
+        "BU-CASH-002",
+        "BU-SALE-002",
+        "BU-READ-002"
+      ],
+      "acceptance": [
+        "SESSION04",
+        "SESSION09"
+      ]
+    },
+    {
+      "id": "CORE-060",
+      "text": "Bounded refund money/return qty separate, owner reason/recent auth, retained original/historical cost",
+      "source": "17-POS-SALES.md",
+      "units": [
+        "BU-SALE-002",
+        "BU-UI-004"
+      ],
+      "acceptance": [
+        "RET01",
+        "FIN03"
+      ]
+    },
+    {
+      "id": "CORE-061",
+      "text": "Standalone reversal exact full once, correction append-only dan bounded deterministic replay",
+      "source": "15-FINANCE-PROFITABILITY.md",
+      "units": [
+        "BU-INV-003",
+        "BU-UI-004"
+      ],
+      "acceptance": [
+        "INV03",
+        "FIN03"
+      ]
+    },
+    {
+      "id": "CORE-062",
+      "text": "Thermal receipt/A4 commercial nota/session PDF/CSV/Code128 label same snapshot dan safe reprint",
+      "source": "17-POS-SALES.md",
+      "units": [
+        "BU-DOC-001"
+      ],
+      "acceptance": [
+        "SESSION08",
+        "IDENTITY01",
+        "DEVICE01"
+      ]
+    },
+    {
+      "id": "CORE-063",
+      "text": "Runtime BusinessProfile branding/logo/template revision, original document assets retained",
+      "source": "02-ARCHITECTURE.md",
+      "units": [
+        "BU-CFG-001",
+        "BU-DOC-001"
+      ],
+      "acceptance": [
+        "IDENTITY01"
+      ]
+    },
+    {
+      "id": "CORE-064",
+      "text": "Audit business atomik, historical actors retained dan sensitive read scoped",
+      "source": "04-AUTH-RBAC-SECURITY.md",
+      "units": [
+        "BU-CMD-001",
+        "BU-READ-002"
+      ],
+      "acceptance": [
+        "AUDIT01",
+        "AUTH02"
+      ]
+    },
+    {
+      "id": "CORE-065",
+      "text": "Protected populated forward migration dan runtime immutable-history privileges",
+      "source": "09-DEPLOYMENT-OPS.md",
+      "units": [
+        "BU-OPS-001",
+        "BU-VERIFY-001"
+      ],
+      "acceptance": [
+        "DB01"
+      ]
+    },
+    {
+      "id": "CORE-066",
+      "text": "Independent encrypted DB+media/template backup, real isolated restore/revoke/epoch/data-gap review",
+      "source": "09-DEPLOYMENT-OPS.md",
+      "units": [
+        "BU-OPS-002",
+        "BU-VERIFY-001"
+      ],
+      "acceptance": [
+        "REC01",
+        "REC02"
+      ]
+    },
+    {
+      "id": "CORE-067",
+      "text": "Kasir ergonomic search/scan/cart +/-/payment/session mobile; scan hanya draft dan Enter bukan confirm",
+      "source": "12-BARCODE-SCANNER.md",
+      "units": [
+        "BU-UI-003"
+      ],
+      "acceptance": [
+        "SEARCH03",
+        "UX01",
+        "DEVICE01"
+      ]
+    },
+    {
+      "id": "CORE-068",
+      "text": "Secure auth/HTTP/input/output/media/session threat controls dan dependency/config audit",
+      "source": "04-AUTH-RBAC-SECURITY.md",
+      "units": [
+        "BU-IAM-001",
+        "BU-CFG-001",
+        "BU-OPS-001",
+        "BU-VERIFY-002"
+      ],
+      "acceptance": [
+        "SEC01",
+        "AUTH01",
+        "AUTH02"
+      ]
+    },
+    {
+      "id": "CORE-069",
+      "text": "Owner finance trend/time periods/custom apply-cancel, consistent asOf/UNKNOWN, no double count",
+      "source": "15-FINANCE-PROFITABILITY.md",
+      "units": [
+        "BU-READ-002",
+        "BU-UI-004"
+      ],
+      "acceptance": [
+        "FIN03",
+        "SESSION09",
+        "UX01"
+      ]
+    },
+    {
+      "id": "CORE-070",
+      "text": "Approved exact DPAI revision/rights → semantic repository tokens → native React/shadcn",
+      "source": "../DESIGN.md",
+      "units": [
+        "BU-DESIGN-001",
+        "BU-UI-001"
+      ],
+      "acceptance": [
+        "UX01",
+        "IDENTITY01"
+      ]
+    },
+    {
+      "id": "CORE-071",
+      "text": "Actual USB/Bluetooth scanners dan physical label/thermal/A4 print proof",
+      "source": "12-BARCODE-SCANNER.md",
+      "units": [
+        "BU-VERIFY-003"
+      ],
+      "acceptance": [
+        "DEVICE01"
+      ]
+    },
+    {
+      "id": "CORE-072",
+      "text": "Representative target benchmark dan bounded replay measured capacity, no integrity shortcut",
+      "source": "08-TESTING-ACCEPTANCE.md",
+      "units": [
+        "BU-VERIFY-004"
+      ],
+      "acceptance": [
+        "PERF01"
+      ]
+    },
+    {
+      "id": "CORE-073",
+      "text": "Exact authorized release/pilot/UAT reconciliation dengan owner acceptance",
+      "source": "planning/P10-RELEASE-UAT.md",
+      "units": [
+        "BU-RELEASE-001",
+        "BU-RELEASE-002"
+      ],
+      "acceptance": [
+        "RELEASE01"
+      ]
+    }
+  ],
+  "acceptance": [
+    {
+      "id": "AUTH01",
+      "text": "Backend role/object scope menolak route/ID tebakan pada ketiga role; actor berasal dari session. Session expired/tampered, CSRF/origin/rate limit, disable/revoke, invite/reset expiring dan single-use, bootstrap privat tanpa default/demo account teruji.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "AUTH02",
+      "text": "Allowlist ketiga role berlaku pada search/detail/history, validation error/status/recovery, receipt/report/print/PDF/CSV/media, cache dan logs. Staff tidak menerima acquisition cost/history/HPP/profit atau sensitive security/recovery details; original-result recovery yang berizin tetap tersedia. Incoming cost write-only tidak di-echo atau disimpan dalam browser recovery. Logout/actor change/Back/Forward/reload/bfcache tidak menampilkan finance/cache Pemilik kepada staff; history encryption/invalidation tidak membolehkan stored write-only cost.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "AUTH03",
+      "text": "Disable/reset/revoke, role/config/payment-method/profile/onboarding writer dan business command memakai matching ordered guards. Real PostgreSQL race membuktikan perubahan yang menang diterapkan pada validasi; request yang tidak lagi sah ditolak sebelum facts dan snapshot memakai revision yang benar. Command yang lebih dahulu commit tetap konsisten/audited. Recent authentication dan recovery reauthorization tetap berlaku.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "SEARCH01",
+      "text": "Nama/SKU/kategori/brand dan exact manufacturer/internal barcode bekerja; leading zeros/case/punctuation dipertahankan, declared EAN/UPC check digit tervalidasi. SKU/barcode unik global di bawah concurrent create; retired token tidak direcycle.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "SEARCH02",
+      "text": "Shared Product Search default 25/max 100 dengan stable name/ID order, context/active filter dan tanpa full-master fetch. Receiving memilih existing product; similar matches ditinjau sebelum create, exact collision hard reject, create product tetap stock 0; base unit/precision tidak dapat diubah setelah movement pertama, termasuk race edit/posting pertama.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "SEARCH03",
+      "text": "Late/stale lookup tidak mengubah pilihan/draft secara keliru; hasil complete scan berurutan. Manual/IME, repeated code satu base unit, empty CR/LF/key-repeat, unknown token retained, disconnect/partial input dan focus/dialog/count guards teruji. Scan hanya draft; scanner Enter tidak posting/bayar/close; offline tidak mengantre mutation.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "INV01",
+      "text": "Setiap physical delta memiliki immutable movement/source/actor/server time/posting sequence; ledger sum = synchronous balance. Receipt/opening same/different-key retry posts once. Rekonsiliasi mismatch terdeteksi dan memblokir affected posting; repair berizin tanpa direct balance edit.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "INV02",
+      "text": "Manual issue wajib reason non-sale. Aggregate duplicate product lines sebelum stock check; last-unit concurrent issue/Sale tidak oversell. Failure injection pada setiap movement/balance/cost/audit/result boundary me-rollback seluruh command; qty/precision/range/overflow dan active/version guard teruji.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "INV03",
+      "text": "Owner reversal mempertahankan original, hanya satu full reversal eligible standalone source, exact inverse dan linked valuation. Duplicate/different-key/negative/unsafe replay ditolak; SALE_ISSUE/RETURN_RECEIPT tidak dapat direversal mandiri. Adjustment/revision append-only memakai reason/permission/recent auth.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "OPEN01",
+      "text": "Persistent onboarding flag memblokir ordinary inventory/Sale termasuk race. Maksimal 100 rows atomik, 101 ditolak, invalid row rollback seluruh command, sekali per produk/no prior ledger/disjoint commands. Zero count hanya checklist tanpa movement; qty/cost/UNKNOWN/reference review dan owner reconciliation sebelum flag dilepas; human count tanpa DB lock.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "POS01",
+      "text": "Tepat satu completed Sale/lines/full Payment/SALE_ISSUE/balance/cost atau UNKNOWN/ReceiptSnapshot/audit/durable result per source intent. Same/different-key duplicates dan failure injection setiap boundary tidak menciptakan partial payment/stock success; owner/cashier wajib own eligible OPEN session.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "POS02",
+      "text": "Total Rp75.000, tender Rp100.000 menghasilkan change Rp25.000 dan applied Rp75.000; insufficient cash ditolak. BANK_TRANSFER exact full total dengan optional reference dan human receipt confirmation, tanpa physical cash effect. Tidak ada split/partial payment, gateway verification atau cashier price override.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "POS03",
+      "text": "Definite rejection membolehkan review draft; UNCERTAIN membekukan original intent/key/payload tanpa replacement/charging ulang. Lost response/status/reload memulihkan original termasuk sesudah CLOSED; reauthorization tetap berlaku. Disabled method/price tampering/stale price ditolak; print failure/reprint tidak menduplikasi fakta.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "RET01",
+      "text": "Cumulative refund money dan return qty dibatasi terpisah di bawah race/locks; retained original Sale/Payment/receipt. Executed CASH/BANK_TRANSFER owner-funded payouts terpisah. Refund-only tidak menambah stock dan mempertahankan HPP; saleable return memulihkan original matched cost sekali, return setelah refund dibolehkan dalam bound, damaged/non-saleable tidak menambah usable stock.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "STOCK01",
+      "text": "Minimum 5: 6 NORMAL, 5/1 LOW, 0 OUT; minimum 0 tanpa interval LOW, active new product 0 adalah OUT. Audited threshold edit/receipt/inactive filter memperbarui current badge/list konsisten. Mutation/focus/interval ≤30 detik refresh; failed query menampilkan stale/error/last refresh, bukan empty/zero/Normal.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "FIN01",
+      "text": "Contoh MWA di15 menghasilkan sales Rp60.000/HPP Rp36.000/Laba Kotor Rp24.000. Qty 0–3 desimal, six-place decimal cost, integer-IDR half-up sekali per line, aggregate/overflow, fractional/final-stock residual dan non-sale issue valuation benar; tidak memakai binary float/latest purchase price.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "FIN02",
+      "text": "Blank/UNKNOWN berbeda dari evidenced zero. Unknown receipt membuat downstream valuation/HPP incomplete, known historical allocations tetap valid; saldo 0 lalu receipt KNOWN membuka pool KNOWN baru tanpa melengkapi periode lama. Owner evidence revision/replay append-only tidak menimpa sources; incomplete HPP/profit/margin tidak ditampilkan sebagai complete/zero.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "FIN03",
+      "text": "Refund-only mempertahankan HPP; saleable return mengambil original issue cost sekali, UNKNOWN tetap incomplete. Deterministic bounded replay/concurrent posting dan failed publication menghasilkan all-or-nothing. Reports memakai consistent asOf/revision/completeness/unknown line count dan half-open Jakarta periods; corrections server posting date, tanpa backdating/net-profit claim.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "SESSION01",
+      "text": "Cashier menutup sesi lalu membuka sesi baru pada businessDate yang sama; immutable report keduanya berbeda. Returning same-day bukan reopen atau overwrite sesi lama.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "SESSION02",
+      "text": "Partial unique constraints mencegah overlapping OPEN per logical register dan per responsible cashier, termasuk concurrent open. Handover close A lalu open B; tidak ada simultaneous shared drawer/responsibility edit.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "SESSION03",
+      "text": "Setiap completed Sale, termasuk transfer-only, teratribusi sekali ke own active session/register/cashier yang benar. Tanpa eligible OPEN session ditolak sebelum payment/stock; opening explicit Rp0 sah dan blank ditolak; opening/scanning tidak membuat Sale.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "SESSION04",
+      "text": "Opening Rp20.000 + CASH Rp100.000 + BANK_TRANSFER Rp50.000 dan physical Rp118.000 menghasilkan expected Rp120.000/variance −Rp2.000. Opening/physical cash wajib nonnegative. Transfer/owner refund/opening/variance tidak menjadi sales/profit atau hidden cash adjustment.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "SESSION05",
+      "text": "Sale-vs-close memakai lock/activityVersion yang sama: Sale menang tercakup sekali dan meminta recount; close menang membuat Sale ditolak sebelum facts. Tidak ada successful Sale yang hilang, tidak ada human count lock atau persistent CLOSING; UNCERTAIN checkout diselesaikan sebelum close.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "SESSION06",
+      "text": "Duplicate/lost close termasuk key berbeda menghasilkan satu CLOSED/snapshot/result. Conflicting count tidak menimpa; stale activityVersion meminta hitung ulang dan tetap OPEN. Failure snapshot/audit/result rollback mempertahankan OPEN; original result tetap recoverable setelah CLOSED.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "SESSION07",
+      "text": "Closed snapshot/count/variance/cutoff/source IDs/identity/template tidak dapat ditulis ulang/reopen. Count mistake menerima linked owner review note; later refund/return/correction tetap fakta terhubung dan tidak mengubah laporan as-closed.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "SESSION08",
+      "text": "Print/PDF/CSV/reprint tidak membuat/mengubah Sale/Payment/StockMovement/session; export failure retry snapshot asli. CSV mengutip text dan menetralkan formula/control prefix, mempertahankan negative numeric variance/IDR/timezone/session context. Request audit terpisah; print dialog bukan bukti tinta.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "SESSION09",
+      "text": "Owner daily totals berasal sekali dari source Sale/payment/cost berdasarkan tiap businessDate, tanpa menambahkan session totals. Beberapa sesi/same-day handover tidak double count. Midnight session tetap satu report close-date/full-span atau active section; variance per snapshot terpisah dari revenue/profit.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "SESSION10",
+      "text": "Cashier tidak membaca/close/export sesi cashier lain; actor scope server berlaku di route/status/media/file. Operations tidak mempunyai session/POS report grant. Owner-assisted close memerlukan current permission/recent auth/physical count/reason dan mempertahankan responsible cashier asli.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "AUDIT01",
+      "text": "Owner log memfilter Sale/payment/stock/product/price/user/config/session/correction menurut date/user/type/product/session/reference. Audit successful change berada dalam business transaction; original actor/history dipertahankan. Operations hanya safe stock history, cashier own Sale/session; unrestricted/security audit staff ditolak, tanpa secret/full private payload logs.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "IDENTITY01",
+      "text": "BusinessProfile runtime/codename terpisah; name/logo/contact/email opsional/header/footer/document identity/accent tervalidasi memakai immutable revision/current pointer. Private logo PNG/JPEG/WebP ≤5 MiB/16 megapixels dire-encode/metadata stripped; SVG/HTML/URL fetch ditolak. Perubahan profile/template/logo tidak mengubah original Sale/session reprint; retained assets/media reauthorization teruji.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "DB01",
+      "text": "Reviewed forward migration/expand→backfill→verify→contract dijalankan sekali pada populated isolated target dengan constraint/row-count/business reconciliation dan backup/restore readiness. Target guard dan runtime privilege menolak DROP/UPDATE/DELETE immutable facts; credential migration terpisah. Tidak ada production reset/seed/mass deletion/down-v tanpa exact destructive approval.",
+      "final": "BU-VERIFY-001",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "REC01",
+      "text": "Real independent encrypted backup/isolated restore ke target baru memverifikasi DB/media/template manifest/checksum dan seluruh actor/register/session/Sale/lines/Payment/issue/receipt/ledger/balance/cost revisions/refund/return/source intent/CommandReceipt/audit. Original snapshot/asset dapat direproduksi; tiap CLOSED tepat satu report, active uniqueness/attribution benar; mismatch memblokir reopening.",
+      "final": "BU-VERIFY-001",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "REC02",
+      "text": "Restore revoke sessions dan recovery epoch menolak stale browser posting. Possibly lost post-cutoff sales diperiksa dari cash/transfer/printed/physical evidence; missing restored result bukan bukti tidak pernah commit, tanpa blind replay/direct balance edit. Independent key/access tersedia; G4 menerima measured RPO/RTO dan data gap, bukan target asumsi.",
+      "final": "BU-VERIFY-001",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "UX01",
+      "text": "Seluruh surface mengikuti approved DESIGN revision/native compositions, runtime identity dan role semantics. Loading/empty/error/denied/stale/UNKNOWN/disabled/focus/success dapat diverifikasi. Lima widths 375/440/768/1024/1440, zoom 200%, keyboard/focus/44px touch targets/reduced motion/kontras menurut DESIGN; tidak ada clipped actions atau menu capability Later yang seolah aktif.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "DEVICE01",
+      "text": "USB HID dan Bluetooth HID nyata, manual/IME/repeated/CRLF/focus/dialog/count/disconnect/partial/unknown fallback bekerja. Actual manufacturer/internal labels scannable; actual label/receipt thermal/A4 printers/driver/media/reprint berfungsi tanpa duplicate facts. Catat device/OS/browser/revision dan physical proof; emulator/print dialog tidak mendapat FINAL PASS.",
+      "final": "BU-VERIFY-003",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "PERF01",
+      "text": "Benchmark isolated representative intended VPS/network: 5.000 products/100.000 movement lines/2 concurrent cashiers; barcode p95 ≤500 ms, search ≤700 ms, 50-line Sale ≤2 s, ordinary period report ≤2 s. Ukur synchronous replay reference 10.000 movements/product terpisah dengan timeout/cap/incomplete safety. Dataset/host/config/run count/latency/reconciliation nyata; misses tidak diselesaikan dengan melemahkan guard.",
+      "final": "BU-VERIFY-004",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "RELEASE01",
+      "text": "Semua FINAL acceptance terkini dan approval DESIGN/workflow/G1–G4/DEVICES selesai tanpa integrity/privacy/recovery blocker. BU-RELEASE-001 readiness bukan deployment. Exact target/revision/operation memperoleh deployment authorization; authorized cutover mempertahankan records, real pilot role/Sale/session/stock/report/reprint/backup reconciliation dan owner production acceptance/handoff tercatat.",
+      "final": "BU-RELEASE-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "SEC01",
+      "text": "Threat-path tests nyata menolak enumeration/fixation/CSRF/XSS/SQL injection/mass assignment/unsafe redirects/path traversal/remote URL fetching, invalid upload/download serta unsafe headers/config. Argon2id/session/cookie/HTTPS/CSP/headers/rate limit/secret/flash/history/cache/log/output privacy terpenuhi; dependency/advisory reviewed. Tidak ada public signup/2FA/tenant scope baru.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    },
+    {
+      "id": "PAYEXT01",
+      "text": "Payment core mempunyai method/type boundary eksplisit yang dapat diextend melalui reviewed forward migration/provider adapter kelak. V1 tetap tepat satu full CASH atau BANK_TRANSFER, server allowlist menolak future methods/mixed/partial, tanpa gateway callbacks/webhooks/QRIS/async-payment states/tables aktif.",
+      "final": "BU-VERIFY-002",
+      "status": "NOT STARTED"
+    }
+  ]
+}

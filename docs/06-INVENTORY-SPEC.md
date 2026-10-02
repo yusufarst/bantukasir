@@ -1,6 +1,6 @@
 # 06 — Stok, opening dan perhatian restock
 
-**Plan 2.0.** Satu stock pool untuk seluruh bisnis; tidak ada Warehouse/StockLocation atau reserved quantity. StockMovement immutable adalah kebenaran fisik. StockBalance diperbarui sinkron dalam transaksi yang sama; onHand sama dengan jumlah signed ledger. Stok negatif dilarang. Dokumen ini adalah spesifikasi, bukan bukti runtime sudah tersedia.
+**Baseline P0–P11.** Satu stock pool untuk seluruh bisnis; tidak ada Warehouse/StockLocation atau reserved quantity. StockMovement immutable adalah kebenaran fisik. StockBalance diperbarui sinkron dalam transaksi yang sama; onHand sama dengan jumlah signed ledger. Stok negatif dilarang. Dokumen ini adalah spesifikasi, bukan bukti runtime sudah tersedia.
 
 ## Command fisik
 
@@ -69,3 +69,8 @@ Incident: hentikan posting terkait → pulihkan durable original result atau ver
 CSV/XLSX import, import worker/staging/job framework, warehouse/location/transfers/transit, reservation, advanced opname, serial/pack conversion/batch/expiry/consignment dan purchasing otomatis berada di Later. Web Push, inbox episodes, outbox/worker, provider retry/delivery guarantees dan camera notifications juga Later. Current LOW/OUT tidak membuat purchase order atau notifikasi perangkat.
 
 Jika CSV dipromosikan melalui replan, boundary keselamatan awal adalah UTF-8 create-only product import yang terpisah dari opening: header ketat, barcode sebagai teks, preview/duplicate errors, size/row caps, per-file atomic posting, idempotency dan revalidation. Jangan melakukan silent upsert/skip, partial business commits, mengabaikan unknown column, menerima spreadsheet formula atau menciptakan stock dari master import. XLSX, enterprise queues dan migration tool besar tetap belum direncanakan. Boundary ini bukan capability aktif atau otorisasi implementasi.
+
+
+## Batas chronology dan sensitive recovery
+
+Reversal/replay tidak boleh menghasilkan historical prefix stock/valuation yang invalid meskipun current physical inverse tidak negatif. Source/allocation/return cost revision links direkonsiliasi sebelum publication; original sources/allocations tetap. Receiving UNCERTAIN sesudah reload memakai safe original command status tanpa menyimpan/replay staff cost payload menurut04; missing result tetap incident/uncertain, bukan command baru.

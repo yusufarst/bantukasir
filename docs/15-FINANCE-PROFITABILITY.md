@@ -1,6 +1,6 @@
 # 15 — HPP dan Laba Kotor
 
-**Plan 2.0.** Laporan manajemen khusus Pemilik menggunakan perpetual moving weighted average (MWA) per produk yang saling dapat dipertukarkan dalam satu stock pool. HPP tidak memakai latest purchase price dan biaya unknown tidak dianggap nol. Laporan ini bukan akuntansi pajak atau Laba Bersih; permission/privacy mengikuti [04](04-AUTH-RBAC-SECURITY.md).
+**Baseline P0–P11.** Laporan manajemen khusus Pemilik menggunakan perpetual moving weighted average (MWA) per produk yang saling dapat dipertukarkan dalam satu stock pool. HPP tidak memakai latest purchase price dan biaya unknown tidak dianggap nol. Laporan ini bukan akuntansi pajak atau Laba Bersih; permission/privacy mengikuti [04](04-AUTH-RBAC-SECURITY.md).
 
 ## Fakta sumber dan aritmetika
 
@@ -55,3 +55,15 @@ Metrik mencakup penjualan bruto/refund/neto, jumlah transaksi COMPLETED, applied
 Read snapshot laporan konsisten memuat asOf/timezone/evidence revision/completeness serta unknown line count. Revenue/payment totals boleh tampil ketika HPP/Laba Kotor/margin menampilkan **Data biaya belum lengkap**. Jangan mengecualikan unknown-cost atau line merugi untuk membuat profit terlihat lengkap. Query gagal adalah error, bukan nol. Valuation laporan dapat berubah hanya melalui evidence revisions yang dinyatakan; ReceiptSnapshot dan CashSessionReportSnapshot tidak berubah.
 
 Rekap harian Pemilik menghitung financial totals sekali dari source facts dan menampilkan session variance terpisah menurut [17](17-POS-SALES.md). Opening cash atau variance bukan penjualan/profit; jangan menambahkan total sesi di atas Sale yang sama. Session cash report tidak memuat private cost/profit. AR/AP, Laba Bersih, expenses/payroll, service finance dan tax accounting tetap di luar Core. Acceptance numeric/UNKNOWN/replay/period/privacy mengikuti [08](08-TESTING-ACCEPTANCE.md).
+
+
+## Constraint replay dependent facts
+
+Sebelum publication, replay memvalidasi seluruh affected chronology, signed physical prefix, known/UNKNOWN pool boundaries dan matched issue/return allocation revision references. Return mengacu pada cost revision source yang konsisten dan tidak memulihkan cost dua kali. Unsafe chronology, inconsistent links atau cap/timeout menolak publication seluruh revision; retained originals/current published revision tetap valid dan affected reporting dinyatakan incomplete.
+
+
+## Pasangan reversal dihitung sekali
+
+Physical ledger selalu mempertahankan original + inverse REVERSAL. Valuation revision replay membatalkan source original secara logical dan melewati inverse pasangannya; jangan menghapus original lalu menerapkan inverse sekali lagi. Semua pasangan/source/return allocation links diperiksa sebelum satu atomic publication.
+
+Fixture analytical untuk test INV-003: OPEN10 dengan totalcost100 + RECEIPT10 totalcost200 + ISSUE5 menghasilkan physical15/value225/issuecost75. Full reverse RECEIPT10 yang eligible menghasilkan physical5/value50/revised issuecost50; original allocation75 tetap tersimpan. Invalid prefix: RECEIPT10→ISSUE10→RECEIPT20/current20; physical inverse10 tampak current10 nonnegative, tetapi logical cancellation membuat historical issue tanpa stock. Tolak seluruh reversal/replay sebelum commit, tanpa movement/publication parsial. Ini test specification, bukan test aplikasi yang sudah dijalankan.

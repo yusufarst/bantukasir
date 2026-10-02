@@ -1,6 +1,6 @@
 # 12 — Product Search, barcode dan scanner
 
-**Plan 2.0.** Spesifikasi ini berlaku pada seluruh workflow yang memakai pencarian/scan; tidak mengklaim implementasi atau pengujian hardware sudah selesai.
+**Baseline P0–P11.** Spesifikasi ini berlaku pada seluruh workflow yang memakai pencarian/scan; tidak mengklaim implementasi atau pengujian hardware sudah selesai.
 
 ## Satu Product Search yang dipakai bersama
 

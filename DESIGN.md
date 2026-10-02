@@ -1,6 +1,6 @@
-# Kontrak visual — Plan 2.0
+# Kontrak visual — Baseline P0–P11
 
-**Status: kandidat sumber teramati; approval visual owner belum tercatat.** Dokumen ini satu-satunya otoritas pipeline/token/pattern produksi. Nilai final dibekukan di T23 setelah owner menyetujui revision sumber yang tepat; jangan mengklaim token/visual lama sebagai approved produksi baru.
+**Status: kandidat sumber teramati; approval visual owner belum tercatat.** Dokumen ini satu-satunya otoritas pipeline/token/pattern produksi. Nilai final dibekukan di BU-DESIGN-001 setelah owner menyetujui revision sumber yang tepat; jangan mengklaim token/visual lama sebagai approved produksi baru.
 
 ## Sumber dan provenance
 
@@ -23,8 +23,8 @@ Skill DesainPakeAI terpasang global di `C:/Users/Yusuf Setiawan/.agents/skills/d
 
 1. Cek `dpai --version` dan `dpai project current --pretty`. Cocokkan nama **dan** ID di atas; mismatch berarti STOP sebelum context atau operasi berikutnya.
 2. Ambil `dpai context --pretty`, catat revision aktual dan panduan authenticated yang relevan melalui CLI. Jangan mengasumsikan export/compile/preview setara validasi layout.
-3. T23 mencatat foundation/revision yang dipilih owner, approval visual yang eksplisit, lisensi/entitlement dan mapping sumber ke semantic tokens. Jika belum disetujui, simpan kandidat dan WAITING OWNER REVIEW; UI produksi menunggu.
-4. Terjemahkan struktur yang disetujui langsung menjadi komponen native Next.js/shadcn; backend DB/tests tetap berjalan terpisah. Tidak ada iframe export, import workspace prototype atau beberapa aplikasi prototype pengganti.
+3. BU-DESIGN-001 mencatat foundation/revision yang dipilih owner, approval visual yang eksplisit, lisensi/entitlement dan mapping sumber ke semantic tokens. Jika belum disetujui, simpan kandidat dan WAITING OWNER REVIEW; UI produksi menunggu.
+4. Terjemahkan struktur yang disetujui langsung menjadi komponen native React/Inertia/shadcn; backend DB/tests tetap berjalan terpisah. Tidak ada iframe export, import workspace prototype atau beberapa aplikasi prototype pengganti.
 5. Sebelum **setiap mutation DesainPakeAI**, verifikasi lagi project tepat, scope otorisasi dan revision. Sesi rebaseline hanya membaca project/context, tanpa mutation/export.
 
 **MULTIPLECORP dilarang disentuh**: jangan pilih/baca/ekspor/mutasi, gunakan aset/token/inspirasi atau fallback. Tidak ada MCP DesainPakeAI. 21st.dev dan Impeccable sudah keluar dari workflow; evidence historisnya tidak menjadi gate atau dependency.
@@ -33,7 +33,7 @@ Skill DesainPakeAI terpasang global di `C:/Users/Yusuf Setiawan/.agents/skills/d
 
 BantuKasir hanya codename. Nama/logo repository maupun aset LATANSA historis bukan visual authority/identitas default produksi. Login/shell/profile/dokumen memakai BusinessProfile runtime; fixture netral non-production boleh. Logo resmi/izin pakai dari owner diperlukan sebelum pilot. Snapshot dokumen memakai revision identitas/template/aset saat transaksi.
 
-T23 membekukan mapping sumber → token semantic repository → CSS variables/shadcn. Catat nilai, peran, state, font/license, revision, contrast serta alasan adaptasi. Minimal:
+BU-DESIGN-001 membekukan mapping sumber → token semantic repository → CSS variables/shadcn. Catat nilai, peran, state, font/license, revision, contrast serta alasan adaptasi. Minimal:
 
 - background/page, surface/panel/inset/overlay; foreground utama/muted/inverse;
 - brand/accent yang dibatasi; primary/secondary/destructive; success/warning/danger/info dengan foreground pasangan;
@@ -66,6 +66,13 @@ Uji browser pada **375, 440, 768, 1024, 1440 px**, short landscape dan cart/form
 
 Contrast minimal WCAG AA: 4.5:1 teks biasa, 3:1 teks besar dan elemen UI bermakna. Status bukan warna saja. Microinteraction restrained dan membantu feedback; tanpa animasi menghambat scan/payment/count. Tidak ada body overflow horizontal; intentional table scroll diberi affordance.
 
-Tulisan UI Bahasa Indonesia; amount IDR, tanggal lokal lengkap seperti **23 September 2026**, detailed time **14:25:30** dan timezone Asia/Jakarta. ISO tetap internal. Date/time harus konsisten antar shell/filter/snapshot; historical prototype format bukan authority baru.
+Tulisan UI Bahasa Indonesia; amount IDR, tanggal lokal **DD MM YYYY** seperti **23 09 2026**, waktu rinci **hh:mm:ss** seperti **14:25:30**, dan timezone Asia/Jakarta. ISO tetap internal. Date/time harus konsisten antar shell/filter/snapshot; fakta waktu tetap berasal dari server.
 
-Approval sumber T23 bukan bukti seluruh workflow produksi. T24–T32/T40 menguji consumer masing-masing, T35 final responsive/a11y/privacy, T36 actual devices. Track parity/adaptasi/risk dengan revision yang tepat di [08](docs/08-TESTING-ACCEPTANCE.md) dan [11](docs/11-BUILD-PLAN.md). UI historis disimpan sebagai referensi state/fixture saja; jangan impor CSS/logo atau menganggap screenshot sebelumnya sebagai pass produksi.
+Approval sumber BU-DESIGN-001 bukan bukti seluruh workflow produksi. BU-UI-001–004 dan BU-DOC-001 menguji consumer masing-masing; BU-VERIFY-002 memverifikasi responsive/a11y/privacy terintegrasi, sedangkan BU-VERIFY-003 memakai perangkat aktual. Catat parity, adaptasi dan risiko dengan revision yang tepat di [08](docs/08-TESTING-ACCEPTANCE.md) dan [11](docs/11-BUILD-PLAN.md). UI historis disimpan sebagai referensi state/fixture saja; jangan impor CSS/logo atau menganggap screenshot sebelumnya sebagai pass produksi.
+
+
+## P7 blueprint dan current observation
+
+[P7](docs/planning/P7-UX-DESIGN.md) membekukan IA/interaction/a11y constraints; final visual values hanya dari exact source yang dipilih dan disetujui owner. Read-only ulang 2 Oktober2026 melalui dpai0.2.2 mengonfirmasi BantuKasir Design / eddb0e15-9909-44b3-8517-9239cadc65ef, prototype c8384f74-cc1b-4335-a385-2d0fac66d668, revision sha256-53257e5efa2e29e32cfb03e3b83fae1fc464cb27d4d08c9dfa3def4b2e799241. Ini context observed, bukan approval/rights. Tidak mutation/export/MCP atau akses MULTIPLECORP.
+
+Panduan DesainPakeAI prototype-to-codebase dibaca via dpai guide get --topic prototype-to-codebase: native target writer, semantic mapping, fixture bukan backend contracts, foundations dahulu dan narrow/wide rendered parity dengan gaps Not verified. Sesi ini hanya specification, tidak handoff implementasi atau visual parity verification. Native target sekarang resources/js React/Inertia/shadcn; jangan ship prototype HTML/iframe/bridge attributes.

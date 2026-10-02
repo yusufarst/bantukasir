@@ -1,0 +1,40 @@
+{
+  "mode": "pre-CURRENT_STATE",
+  "baseline": "P0-P11",
+  "units": 28,
+  "requirements": 73,
+  "acceptance": 39,
+  "finalPass": 0,
+  "hours": [
+    113,
+    118,
+    28
+  ],
+  "total": 259,
+  "reserve": 56,
+  "critical": {
+    "hours": 128,
+    "path": [
+      "BU-FOUND-001",
+      "BU-IAM-001",
+      "BU-CMD-001",
+      "BU-CAT-001",
+      "BU-INV-001",
+      "BU-INV-002",
+      "BU-SALE-001",
+      "BU-SALE-002",
+      "BU-READ-002",
+      "BU-UI-004",
+      "BU-VERIFY-002",
+      "BU-RELEASE-001",
+      "BU-RELEASE-002"
+    ]
+  },
+  "protectedOK": 85,
+  "mdFiles": 101,
+  "localLinks": 2257,
+  "encodingFiles": 105,
+  "checks": 350,
+  "pass": true,
+  "errors": []
+}

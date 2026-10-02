@@ -1,6 +1,6 @@
 # 01 — Produk dan batas Core
 
-**Plan 2.0.** BantuKasir adalah codename internal, bukan merek client produksi. Produk adalah POS GOODS-only self-hosted untuk satu bisnis, satu stock pool, penjualan langsung dan dibayar penuh. BusinessProfile runtime menyediakan nama/logo resmi, alamat/kontak, identitas dokumen dan accent yang diizinkan. Identitas final disediakan owner kemudian.
+**Baseline P0–P11.** [P1](planning/P1-PRODUCT.md) dan [CORE-MAP](requirements/CORE-MAP.md) menyediakan phase/traceability; Plan 2.0 adalah input historis, bukan plan execution. BantuKasir adalah codename internal, bukan merek client produksi. Produk adalah POS GOODS-only self-hosted untuk satu bisnis, satu stock pool, penjualan langsung dan dibayar penuh. BusinessProfile runtime menyediakan nama/logo resmi, alamat/kontak, identitas dokumen dan accent yang diizinkan. Identitas final disediakan owner kemudian.
 
 ## Hasil yang harus dicapai
 
@@ -23,7 +23,7 @@ Backend permission dan cakupan objek adalah otoritas [04](04-AUTH-RBAC-SECURITY.
 - Master produk baru stock 0. Search/scan/label tidak membuat movement; duplicate SKU/barcode diblok DB, similar match ditinjau sebelum create.
 - Receiving terpisah dari opening awal dan manual issue. Review/confirm eksplisit diperlukan; Operations tidak mendapat echo biaya yang baru dikirim.
 - Opening awal manual owner-only memakai global onboarding freeze, batas 100 row/command atomik, produk tanpa ledger, zero checklist tanpa movement; data nyata menunggu G2/cutover.
-- Sale GOODS diserahkan langsung, satu full CASH atau BANK_TRANSFER. Satu transaksi mencatat semua Sale/lines/payment/issue/balance/cost/receipt/audit/result; human transfer confirmation tidak mengklaim gateway.
+- Sale GOODS diserahkan langsung, satu full CASH atau BANK_TRANSFER. Satu transaksi mencatat semua Sale/lines/payment/issue/balance/cost/receipt/audit/result; human transfer confirmation tidak mengklaim gateway. Tepat satu full-payment CASH atau BANK_TRANSFER; mixed/split/partial/installment/credit/multiple instruments ditolak. Method/provider boundary dapat diextend kelak tanpa callback/webhook/QRIS/asynchronous payment V1.
 - Sesi kas: satu drawer, satu responsible cashier, satu OPEN; openingCash eksplisit termasuk Rp0. Close aman terhadap Sale racing, snapshot immutable, handover tutup A lalu buka B, kembali tanggal sama memakai sesi baru.
 - Koreksi/refund/return owner-only, reason/recent auth, original tidak berubah. Refund tanpa return tidak menambah stok. Return saleable memakai cost historis; damaged tidak menambah usable stock.
 - MWA dan UNKNOWN biaya; penjualan masih dapat dilaporkan saat HPP/Laba Kotor incomplete. Laba Kotor tidak diklaim sebagai Laba Bersih.

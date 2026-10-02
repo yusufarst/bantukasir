@@ -1,8 +1,8 @@
 # 02 — Arsitektur dan model domain
 
-**Plan 2.0.** Dokumen ini adalah kontrak target, bukan bukti bahwa runtime, schema atau migration telah diimplementasikan. Arsitektur tetap modular monolith: satu aplikasi Next.js/TypeScript dan PostgreSQL, Drizzle untuk migration, Zod untuk validasi, Better Auth self-hosted, RBAC server dan laporan internal. Saat implementasi, verifikasi kompatibilitas versi serta advisory keamanan dan pin dependency/lockfile. Core tidak memerlukan worker umum, queue, search eksternal atau infrastruktur pengiriman notifikasi.
+**Baseline P0–P11.** Kontrak target, bukan bukti runtime/schema/migration sudah diimplementasikan. Stack dipilih dari first-principles comparison/review [P4](planning/P4-ARCHITECTURE.md): **Laravel + Inertia + React/TypeScript + PostgreSQL + Nginx**, shadcn/ui/Tailwind, PHP-FPM dan Vite build-time. Auth Fortify/session database, FormRequest allowlists, policies/object scope, explicit application Actions/domain services dan safe DTO. Tidak ada default Redis/queue/SSR Node/Octane/search eksternal atau microservices. Verify/pin compatible versions/advisories/licenses saat BU-FOUND-001; keputusan stack frozen, reopen hanya berdasarkan evidence/change control.
 
-Modul: identitas/akses; konfigurasi; katalog/search/barcode; inventory/costing; Sale/payment/dokumen; sesi kas/rekonsiliasi; laporan/audit; operasi/recovery. Struktur yang diusulkan: `src/modules/<domain>`, `src/components`, `src/app`, `db`, `tests`, `ops`; ini bukan klaim bahwa source tersebut sudah ada.
+Modular monolith: identity/access; configuration; catalog/search/barcode; inventory/costing; Sale/payment/documents; cash accountability; scoped read/report/audit; operations/recovery. Target struktur app/Domain/<Module>, app/Actions/<Module>, app/Http/Controllers, app/Http/Requests, app/Policies, app/Models, app/Queries, app/DTO, resources/js/pages/components/layouts/types, database/migrations, tests, ops. Satu dependency graph application Actions yang jelas; model observer/ORM middleware bukan transaction boundary bisnis. Struktur ini belum ada sebagai aplikasi produksi.
 
 ## Model domain
 
@@ -20,7 +20,7 @@ Satu bisnis dan satu stock pool untuk GOODS yang saling dapat dipertukarkan. Ban
 | AcquisitionCostEvidence | Sumber receipt/opening/positive adjustment, amount diketahui atau UNKNOWN, reference dan revision khusus Pemilik |
 | InventoryValuation / IssueCost | Projection MWA serta alokasi issue immutable/versioned atau UNKNOWN; terhubung dengan evidence revision |
 | Sale / SaleLine | Nomor/source intent unik, actor/cashier, CashSession wajib, waktu UTC dan businessDate Jakarta; item/unit/qty/price/total immutable |
-| Payment | Tepat satu pembayaran penuh per Sale COMPLETED; CASH atau BANK_TRANSFER; tender/change untuk CASH |
+| Payment | Tepat satu pembayaran penuh per Sale COMPLETED; method/type eksplisit CASH atau BANK_TRANSFER untuk V1, tender/change CASH, immutable applied amount. Future provider extension terisolasi/additive tanpa async integration V1 |
 | ReceiptSnapshot | Unik per Sale; nomor asli, identity/template revision, lines/payment yang aman; tanpa biaya privat |
 | Refund / Return | Terhubung ke Sale/lines asli, qty/amount dibatasi, actor/reason, metode/reference payout yang telah dilakukan dan optional return movement |
 | CashRegister | Identitas minimal drawer/counter fisik: code/label unik dan active; bukan warehouse, daftar attendance atau register engine kompleks |
@@ -71,4 +71,14 @@ Setiap history/status/print/PDF/CSV/media request diotorisasi ulang. Laporan fin
 
 BusinessProfile runtime memiliki identity/contact/document configuration dan accent yang dibatasi menurut [DESIGN](../DESIGN.md). Revision logo memakai storage privat yang dikonfigurasi, key immutable dan reference dokumen yang dipertahankan; receipt/report membekukan identity/template/asset revision untuk reproduksi. Validasi upload dan privacy mengikuti [04](04-AUTH-RBAC-SECURITY.md).
 
-Browser thermal/A4/PDF dan CSV yang aman mendukung dokumen tanpa layanan berbayar. Compose menargetkan aplikasi/PostgreSQL/Caddy serta command backup/rekonsiliasi terjadwal; PostgreSQL privat, HTTPS dan credential runtime/migration/backup terpisah. Tidak ada secret dalam client payload/source publik. Target biaya software tambahan mendekati Rp0 tidak menghapus kebutuhan backup independen dan biaya storage yang nyata. Semua maintenance, migration, release dan restore mengikuti [09](09-DEPLOYMENT-OPS.md). Acceptance teknis dan bukti per surface mengikuti [08](08-TESTING-ACCEPTANCE.md).
+Browser thermal/A4/PDF dan CSV yang aman mendukung dokumen tanpa layanan berbayar. Compose menargetkan PHP-FPM/Nginx/PostgreSQL serta command backup/rekonsiliasi terjadwal; PostgreSQL privat, HTTPS dan credential runtime/migration/backup terpisah. Tidak ada secret dalam client payload/source publik. Target biaya software tambahan mendekati Rp0 tidak menghapus kebutuhan backup independen dan biaya storage yang nyata. Semua maintenance, migration, release dan restore mengikuti [09](09-DEPLOYMENT-OPS.md). Acceptance teknis dan bukti per surface mengikuti [08](08-TESTING-ACCEPTANCE.md).
+
+
+## Payment extension boundary dan schema delivery
+
+V1 mem-pin method allowlist/check CASH/BANK_TRANSFER serta uniqueness satu full Payment/Sale; applied=Sale total dan facts atomik. Application Actions memakai explicit PaymentMechanism boundary yang tervalidasi. Future provider-specific references/status/metadata/callback-verification berada pada adapter dan forward/additive schema extension yang direview nanti. Tidak membuat placeholder provider tables/controllers/async statuses atau menerima metode belum aktif di V1. Completed Sale tidak berubah menjadi pending akibat seam tersebut.
+
+Quantity/cost memakai PostgreSQL numeric dan canonical decimal strings/Brick Math, bukan float atau Eloquent numeric coercion. Schema BU mem-pin storage precision/magnitude dan request maxima matching, overflow rejection dan raw additive SQL constraints bila Laravel schema builder tidak mencukupi. Partial uniqueness OPEN, immutable-history privileges dan failure/race constraints tetap evidence PostgreSQL nyata. [P6](planning/P6-CONCURRENCY-API.md) memberi HTTP/command/race/performance contract; [P2](planning/P2-DOMAIN.md) memetakan domain.
+
+
+Read API untuk objek sendiri disediakan provider domain: BU-SALE-001 menyediakan own-Sale list/detail/status/receipt; BU-CASH-002 menyediakan own-session/report list/detail/history. BU-READ-001 menyediakan stok/history operasional, sedangkan BU-READ-002 menyediakan finance/all-session/audit Pemilik. UI tidak menciptakan otoritas query sendiri. Konfigurasi register code/label/active oleh Pemilik memakai register guard yang sesuai, recent auth dan audit, hanya saat tidak ada OPEN; identitas snapshot historis tetap dipertahankan.

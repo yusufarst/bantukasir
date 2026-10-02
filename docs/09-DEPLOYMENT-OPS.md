@@ -1,6 +1,6 @@
 # 09 — Operasi, data production, dan recovery
 
-**Plan 2.0.** Ini kontrak operasi; sesi rebaseline tidak membuat runtime, deployment, migration, atau backup job. [11 — Rencana dan task](11-BUILD-PLAN.md) menetapkan ownership dan hold; [08 — Penerimaan](08-TESTING-ACCEPTANCE.md) menetapkan bukti yang wajib selesai sebelum release.
+**Baseline P0–P11.** Ini kontrak operasi; sesi rebaseline tidak membuat runtime, deployment, migration, atau backup job. [11 — Rencana dan task](11-BUILD-PLAN.md) menetapkan ownership dan hold; [08 — Penerimaan](08-TESTING-ACCEPTANCE.md) menetapkan bukti yang wajib selesai sebelum release.
 
 ## Database production dilindungi untuk semua agent dan operator
 
@@ -21,7 +21,7 @@ Role SQL runtime tidak boleh drop schema maupun update/delete fakta bisnis immut
 
 ## Runtime, konfigurasi, dan biaya
 
-Gunakan VPS/domain yang ada; Docker Compose berisi app non-root, PostgreSQL privat, Caddy/HTTPS, dan scheduled backup/reconciliation commands. Tidak ada port DB publik. Pin versi image/dependency yang kompatibel; hindari tag production `latest`. Pisahkan database, volume, secret, dan storage dev/test/staging/production. Migration berjalan sekali sebagai controlled job, bukan berlomba pada startup beberapa web process. Detail transaksi dan lock mengikuti [02 — Arsitektur](02-ARCHITECTURE.md).
+Gunakan VPS/domain yang ada; Docker Compose berisi app non-root, PostgreSQL privat, Nginx/HTTPS, dan scheduled backup/reconciliation commands. Tidak ada port DB publik. Pin versi image/dependency yang kompatibel; hindari tag production `latest`. Pisahkan database, volume, secret, dan storage dev/test/staging/production. Migration berjalan sekali sebagai controlled job, bukan berlomba pada startup beberapa web process. Detail transaksi dan lock mengikuti [02 — Arsitektur](02-ARCHITECTURE.md).
 
 Target tambahan biaya software recurring sekitar Rp0: self-hosted auth/PostgreSQL, pencarian native, browser print/PDF, CSV first-party, barcode open-source, dan restock dalam aplikasi. Layanan auth/DB/search/queue/analytics/PDF/notifikasi atau kredit/template berbayar memerlukan persetujuan eksplisit. Storage backup di luar VPS dapat berbiaya; catat biaya nyata dan kapasitas berkelanjutan. Backup pada host yang sama tidak memenuhi independensi.
 
@@ -64,3 +64,8 @@ Rekonsiliasi stok/cost/source/session berjalan read-only setiap hari; failure me
 Tidak ada auto-delete ledger/Sale/Payment/audit/receipt/session report/cost revision atau identity asset yang masih direferensikan. Log debug operasional 30 hari dan security access log 90 hari mengikuti policy incident/privacy yang disetujui. Token auth kedaluwarsa mengikuti retensi library tanpa menghapus actor historis. Tidak ada klaim kepatuhan hukum otomatis.
 
 Runbook host/key/contact nyata tetap privat dan dapat diakses pemilik/operator. G4 mencakup destination independen, biaya sustainable, recovery access, restore drill, RPO/RTO diterima, dan gap monitoring. Kelulusan akhir memerlukan populated migration, privilege denial, checksum/media restore, rekonsiliasi, recovery epoch dan recovery gap, ukuran waktu nyata, serta deployment/pilot authorization sesuai [08](08-TESTING-ACCEPTANCE.md) dan [11](11-BUILD-PLAN.md). Dokumen ini tidak mengklaim check tersebut sudah lulus.
+
+
+## Runtime selected dan TLS responsibility
+
+PHP-FPM+Nginx menyajikan public web root Laravel; Vite membangun React/TypeScript assets sebelum release, tanpa SSR Node runtime. Composer/npm lockfiles dan image/runtime versions pinned; APP_DEBUG=false, private PostgreSQL dan no secret/runtime data dalam public root. Nginx tidak memberi automatic certificate lifecycle: operator menyediakan ACME issuance/renewal teruji pada target authorized, certificate reload/expiry monitoring, CSP/header compatibility dan trusted proxy whitelist. Tanpa actual proof, TLS/host acceptance PENDING. Backup dan reconciliation scheduled commands memakai OS scheduler sederhana, tanpa generic queue/Redis.

@@ -1,6 +1,6 @@
 # 17 — Sale, pembayaran, dokumen dan sesi kas
 
-**Plan 2.0.** Spesifikasi Sale GOODS-only, dokumen immutable dan pertanggungjawaban drawer. Kontrak transaksi/idempotency mengikuti [02](02-ARCHITECTURE.md), permission/object scope [04](04-AUTH-RBAC-SECURITY.md), dan acceptance/bukti aktual [08](08-TESTING-ACCEPTANCE.md). Dokumen ini tidak mengklaim runtime atau hardware telah lulus.
+**Baseline P0–P11.** Spesifikasi Sale GOODS-only, dokumen immutable dan pertanggungjawaban drawer. Kontrak transaksi/idempotency mengikuti [02](02-ARCHITECTURE.md), permission/object scope [04](04-AUTH-RBAC-SECURITY.md), dan acceptance/bukti aktual [08](08-TESTING-ACCEPTANCE.md). Dokumen ini tidak mengklaim runtime atau hardware telah lulus.
 
 ## Batas CashRegister dan CashSession
 
@@ -85,3 +85,8 @@ Rekap harian memakai batas Asia/Jakarta half-open. Sales/payment/qty/HPP/Laba Ko
 Tampilkan sesi yang relevan dengan cashier/register/waktu buka-tutup/status/per-session variance. Sesi lintas midnight tetap satu sesi, ditampilkan pada close date atau active section sampai ditutup, dengan seluruh rentang waktunya terlihat. Returning same-day dan handover menghasilkan beberapa report yang berbeda tanpa double counting.
 
 Refund/koreksi kemudian tidak menulis ulang closed session snapshot. Financial totals mengikuti server posting date/cost evidence revision menurut [15](15-FINANCE-PROFITABILITY.md), sementara report as-closed tetap dapat direproduksi dan terhubung ke context koreksi berikutnya. Error/stale/UNKNOWN/denied dan recovery pada seluruh surface terkait harus mempunyai bukti awal dan bukti final sesuai [08](08-TESTING-ACCEPTANCE.md).
+
+
+## Future payment seam tanpa scope gateway
+
+[P4](planning/P4-ARCHITECTURE.md) membekukan core method/type boundary dan future provider adapter/additive extension. V1 tidak mempunyai callback/webhook/provider integration/QRIS/pending-payment state. Server tetap menolak unknown method, mixed instruments dan partial amount; satu completed Sale selalu full-paid/final. Optional transfer reference adalah human evidence, bukan provider status. New gateway workflow kelak memerlukan product/integrity specification dan review baru.

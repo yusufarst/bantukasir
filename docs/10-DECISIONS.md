@@ -1,42 +1,41 @@
-# 10 — Keputusan efektif dan gates owner
+# 10 — Keputusan efektif baseline P0–P11
 
-**Plan 2.0, 1–2 Oktober 2026.** Register ini menggantikan keputusan delivery/visual Plan 1.1, proposal R01–R18 dan BK-Dxx yang tercatat di Git. Invariant produk yang masih aktif dipindahkan ke spesifikasi canonical; histori tidak memperoleh authority untuk scope atau approval visual baru. Ini keputusan perencanaan, bukan bukti aplikasi sudah diimplementasikan.
+2 Oktober 2026. Register ini menggantikan keputusan eksekusi Plan 2.0/P2-Dxx, tanpa menghapus histori atau invariant valid. Instruksi owner terbaru mengotorisasi autonomous planning P0–P11, pilihan stack A/B dari prinsip pertama, Build Units baru dan satu commit planning lokal. Tidak ada izin coding aplikasi atau operasi produksi.
 
-## Keputusan efektif
-
-| ID | Keputusan |
-| --- | --- |
-| P2-D01 | GOODS-only, satu bisnis/satu stock pool, tepat tiga role; full instant Sale CASH/BANK_TRANSFER. Scope dan Later mengikuti [01](01-PRD.md) |
-| P2-D02 | Modular monolith Next.js/TypeScript/PostgreSQL/Drizzle/Zod, Better Auth self-hosted, shadcn/ui, Vitest/real PostgreSQL/Playwright, Compose/Caddy. Verify/pin versi/advisory saat T01, tanpa worker/queue/search eksternal/enterprise framework |
-| P2-D03 | StockMovement immutable + balance sinkron nonnegative, atomic Sale lengkap, source intent/original recovery, actor/config guards. DB constraints/races/rollback wajib; [02](02-ARCHITECTURE.md) |
-| P2-D04 | MWA/UNKNOWN/append-only cost revision + bounded synchronous replay; refund/return/reversal menjaga original dan historical cost. Biaya/HPP/profit hanya owner; Operations bukti baru write-only; [04](04-AUTH-RBAC-SECURITY.md), [15](15-FINANCE-PROFITABILITY.md) |
-| P2-D05 | CashSession lightweight single responsible cashier/drawer, explicit opening float termasuk 0, OPEN→CLOSED, race-safe cutoff/snapshot; refund dana owner terpisah. Physical practice tetap menunggu G3; [17](17-POS-SALES.md) |
-| P2-D06 | BantuKasir adalah codename, bukan branding produksi. BusinessProfile runtime versioned dan private official logo; receipt/session snapshot mempertahankan revision/aset/template. Logo repository tidak menjadi default client |
-| P2-D07 | Visual lama sepenuhnya superseded. Pipeline DesainPakeAI → sumber yang dipilih/disetujui owner → kontrak/token repo → shadcn/ui → Next.js native. Tidak ada Gate A/B, mandatory 21st.dev/Impeccable atau executor Antigravity |
-| P2-D08 | Hanya project DesainPakeAI BantuKasir Design / `eddb0e15-9909-44b3-8517-9239cadc65ef`; CLI `dpai`, no MCP. MULTIPLECORP tidak disentuh. Context terbaru teramati, approval/rights belum dianggap selesai; [DESIGN](../DESIGN.md) |
-| P2-D09 | Backend/tests/ops non-production independen dari visual approval. T23 approval contract prerequisite frontend T24. Satu task executor aktif, tidak otomatis lanjut. Wait owner bukan jam engineering |
-| P2-D10 | Manual opening owner-only batas 100 row/command, global onboarding freeze dan once/no prior ledger; zero checklist tanpa movement. CSV/XLSX/serial Later. G2 menilai kecocokan client sebelum cutover |
-| P2-D11 | 40 coding task baru, 236h engineering, critical path 93h dengan resource independen, reserve 48h terpisah; bukan target 154/172h. Ownership acceptance dan final point di [08](08-TESTING-ACCEPTANCE.md)/[11](11-BUILD-PLAN.md) |
-| P2-D12 | Production DB protected, forward populated migration, reconciliation, independent encrypted DB+media/template backup, isolated restore, revoke/recoveryEpoch/gap review. RPO6h/RTO4h adalah proposal, belum diterima owner; [09](09-DEPLOYMENT-OPS.md) |
-| P2-D13 | Hapus metadata visual aktif lama serta merge dokumen duplikat sesudah audit kebutuhan; simpan source/fixtures/evidence prototype untuk referensi perilaku saja. Staging BK03 existing dipertahankan terpisah melalui snapshot dan docs-only path commit |
-| P2-D14 | Rebaseline mengotorisasi satu local documentation commit saja. T01 belum dimulai. Push/merge/deploy/purchase/production infra/DB destruction tidak diotorisasi |
-
-## Gates — seluruhnya belum ditutup
-
-| Gate | Kondisi aktual / yang harus owner berikan | Menahan |
+| ID | Kelas / sumber | Keputusan efektif dan alasan |
 | --- | --- | --- |
-| DESIGN | CLI/project/context READY. Foundation Provenance Thread alpha.1 dan revision teramati di DESIGN; final selection/visual approval exact revision serta entitlement/font/assets rights **PENDING** | T23 COMPLETE dan T24/UI produksi; backend tidak tertahan |
-| G1 | **OPEN**: tax/legal invoice, buyer identity policy, penggunaan nota komersial tanpa klaim faktur pajak | Penerimaan dokumen client T32/T38 dan pilot T39 |
-| G2 | **OPEN**: unit/precision, volume master/opening manual, barcode nyata, bukti cost/UNKNOWN dan serial requirements | Data client nyata/opening cutover; fixture terisolasi tetap boleh |
-| G3 | **OPEN**: jumlah/identitas drawer fisik, float termasuk 0, satu responsible cashier, handover tutup→buka dan dana refund owner | Penerimaan physical practice T14/T17/T29/T38; bukan prototype-mock pass |
-| G4 | **OPEN**: destination independen, biaya/akses backup dan recovery key/operator; measured/accepted RPO/RTO | T33 destination actual, T34 FINAL recovery, T38/T39 |
-| DEVICES | **PENDING**: USB HID, Bluetooth HID, label printer dan receipt printer beserta driver/media aktual | T36 FINAL perangkat; emulator tidak menggantikan |
-| RELEASE | **NOT AUTHORIZED**: VPS/domain/secrets/target, deployment approval exact revision/operation dan owner pilot | T37 target benchmark bila akses diperlukan; T39 deployment/pilot |
+| D-001 | OWNER_DECISION_REQUIRED → RESOLVED, instruksi terbaru | Adopsi kerangka governance/planning/review/quality/DoD/continuity/BU dari diskusi; tidak menyalin domain/aset/token/project MULTIPLECORP. P0–P11 autonomous tanpa pertanyaan rutin antar fase |
+| D-002 | OWNER, scope mandatory | V1 minimum: GOODS, satu stock pool, tepat tiga role, catalog/search/barcode/receipt/opening/manual issue/LOW-OUT, ledger/balance/MWA/Laba Kotor Pemilik/akuntabilitas kas/full Sale/dokumen/correction/audit/recovery/branding runtime; Later tidak aktif |
+| D-003 | OWNER, policy pembayaran eksplisit | Satu completed Sale = satu pembayaran penuh CASH **atau** BANK_TRANSFER. Tanpa mixed/split/partial/debt/beberapa instrumen. Transfer dikonfirmasi manusia; boundary provider masa depan hanya arsitektur, tanpa callback/QRIS/webhook/state asynchronous V1 |
+| D-004 | AUTONOMOUS, review khusus produk | Pilih modular monolith Laravel/Inertia/React/TypeScript/PostgreSQL/Nginx dari nol. Integrasi auth/validation/policies/HTTP + database tests memberi keuntungan foundation; A full TypeScript/Caddy tetap layak, tetapi kalah dalam integrasi aplikasi privat ini. PHP + TypeScript/Composer + NPM/FPM/TLS renewal menambah maintenance. [P4](planning/P4-ARCHITECTURE.md) mencatat sumber resmi/tradeoff/penilaian estimasi kecepatan. Stack dibekukan sesudah review paket; versi dipin pada BU-FOUND-001 |
+| D-005 | AUTONOMOUS, infrastructure minimum | Session/cache-limiter database-backed, Vite pada build time, PHP-FPM/Nginx/PostgreSQL privat dan scheduler command. Tanpa SSR Node/Redis/queue/Octane/microservices secara default. Independent backup tetap wajib |
+| D-006 | AUTONOMOUS, integritas | Ledger immutable/balance sinkron nonnegative; Sale lengkap atomik + snapshot/audit/result; MWA decimal presisi/UNKNOWN; source intent/key/fingerprint/epoch; guard berurutan yang sesuai serta retry transaksi bounded |
+| D-007 | AUTONOMOUS, otoritas/privasi | Policies/object scope/pemeriksaan actor/config aktual + allowlist DTO per role pada seluruh HTML/Inertia/flash/old input/history/errors/status/cache/log/media/export/storage. Biaya incoming Operations write-only; Kasir tanpa pengelolaan master |
+| D-008 | AUTONOMOUS, semantik correction | Original dipertahankan; batas refund uang/return quantity fisik terpisah; biaya historis dipulihkan sekali; alasan Pemilik/recent authentication, revision cost/allocation/replay bounded/publikasi all-or-nothing; chronology tidak aman ditolak |
+| D-009 | AUTONOMOUS, akuntabilitas | Register/session ringan: satu OPEN per register DAN per cashier; session sendiri termasuk Pemilik/Sale transfer-only; opening 0 eksplisit; shared lock/activityVersion close/snapshot CLOSED immutable. Tanpa reopen/penimpaan tanggung jawab/shared drawer/paid-out |
+| D-010 | OWNER arah desain + AUTONOMOUS kontrak | Exact approved BantuKasir Design revision/rights DPAI → token semantic repository → shadcn/React Inertia native. Codename/logo sementara; identitas client BusinessProfile versioned. MULTIPLECORP Design dilarang disentuh. Context teramati bukan approval |
+| D-011 | OWNER policy executor | Primary handoff Claude Opus 5.5/xhigh; eskalasi Fable 5.1/xhigh selektif untuk risiko tinggi yang bounded. Label permintaan bukan klaim tersedia/dijalankan. BU portable tanpa memory chat; availability diverifikasi saat eksekusi |
+| D-012 | AUTONOMOUS, redesign delivery | 28 BU baru dari boundary risiko/provider-consumer; 73 Core terpetakan; 39 suite/0 FINAL PASS. Engineering baru 259h (I113/V118/E28) + reserve 56h; critical path lower bound 128h. Operational read independen agar UI inventory tidak menunggu finance. Tidak mempertahankan ID T/boundary/236h lama |
+| D-013 | AUTONOMOUS, pendukung keamanan | Threat-path model P5 + SEC01; Argon2id/guard aktual/session regeneration/revoke/CSRF/header/CSP/upload/DTO/advisory test. Recent auth 15 menit/inactivity 30 menit/absolute 12 jam/rate bounds adalah default teknis yang direview terhadap G3/host aktual |
+| D-014 | AUTONOMOUS, change/freeze | Freeze blueprint specification sesudah self/independent review/fix/validation; visual/client/hardware/backup tests/release yang pending tidak ditutup. Buka kembali fase/requirement/BU/suite/DAG/estimasi terdampak bila evidence berubah |
+| D-015 | OWNER otorisasi + keselamatan | Satu commit planning lokal hanya dengan scope path exact yang aman; tidak menjalankan BU pertama. Coding berikutnya memerlukan satu BU eksplisit; otorisasi push/deploy/pembelian/destruction exact terpisah |
+| D-016 | AUTONOMOUS, preservasi | Input Plan 2.0 pada Git c4a145d dan 40 kartu diarsipkan; intake terkini bersih, klaim BK03 lama menjadi histori. Hash 85 source/aset/evidence yang dilindungi tidak berubah; tanpa cleanup/reconstruct pekerjaan yang tidak terkait |
 
-Source readiness tidak sama dengan visual approval. Owner approval visual tidak menggantikan correctness/RBAC/device/recovery. G1–G4 yang berubah menjadi layanan/serial/shared drawer/tax accounting membutuhkan keputusan/replan scope, bukan bypass. Tunggu hanya pekerjaan yang betul-betul bergantung pada jawaban; technical dependencies di [11](11-BUILD-PLAN.md).
+## Alasan PLANNER-DETERMINED PRODUCT SUPPORT
 
-## Bukti penutupan gate
+Mekanisme pendukung berikut diperlukan untuk correctness produk minimum; bukan capability enterprise baru. Effort terintegrasi sudah dimasukkan dalam estimasi unit, bukan fee/provider usage yang dianggap approved.
 
-Catat tanggal/owner, jawaban, target/revision non-secret, link evidence, requirement yang berubah dan affected tasks. Jangan menempel credential atau private recovery contact ke docs publik. FINAL PASS suite teknis tidak otomatis menutup gate owner. RELEASE01 baru final sesudah actual authorized pilot T39.
+| Keputusan | Masalah yang dicegah / alasan | Alternatif lebih sederhana dan mengapa gagal | Biaya implementasi / dampak operasional |
+| --- | --- | --- | --- |
+| Durable identity/result/epoch/atomic audit | Sale/payment/stock ganda saat retry/restore; race actor/config dan hasil tidak pasti yang tidak dapat dipulihkan | Tombol disabled/key di memory/menu tersembunyi tidak melindungi reload/dua proses/restore | BU-CMD-001 10h + test consumer domain; result/status server dan review incident, tanpa layanan eksternal |
+| Revision cost evidence/replay bounded/rekonsiliasi | Profit keliru/history ditimpa/invers tidak aman/biaya dipulihkan dua kali | Harga terbaru/direct balance/history edit menghilangkan conserved facts | INV003 13h + READ/ops/final tests; correction tidak aman/melebihi cap ditolak atau incomplete; workflow alasan Pemilik |
+| Onboarding freeze/once/zero checklist | Opening bersamaan dengan Sale/stok duplikat/movement zero palsu | Count spreadsheet manual tanpa guard tidak menyediakan fakta atomik | Termasuk INV002 10h/UI consumer; count freeze bisnis eksplisit, tanpa human database lock/import engine |
+| Independent backup/restore target baru/epoch | Kehilangan host/volume/akun, aset corrupt dan blind replay setelah restore | Copy pada VPS yang sama/exit code sukses bukan recoverability independen | OPS002 10h/final VERIFY001 8h; destination/key/operator/cost aktual G4, target Rp0 tidak menutup requirement |
 
-Keputusan berikutnya memakai ID P2-D15 dan seterusnya hanya jika mengubah kontrak nyata. Jangan mencatat “no commit/staging only” sebagai keputusan produk atau mengubah approval pending menjadi approved berdasarkan report executor.
+## Gate owner/eksternal
+
+[Gap register](planning/GAPS-CHANGES.md) memegang status canonical: DESIGN PENDING; G1–G4 OPEN; DEVICES/TARGET PENDING; EXECUTOR NOT VERIFIED; RELEASE NOT AUTHORIZED. RPO 6 jam/RTO 4 jam adalah proposal, bukan SLA yang diterima. Penutupan gate mencatat tanggal/owner/evidence/target revision/requirement terdampak; credential/private key/contact privat tidak masuk dokumen publik.
+
+Jika kebutuhan aktual memerlukan multi-warehouse/serial/import/drawer-funded refund/tanggung jawab bersama/tax accounting material, klasifikasikan OWNER_DECISION_REQUIRED dan replan scope terdampak dahulu. Kontrak minimum terkini tidak dibypass oleh template desain/fixture/default library atau kalender.
+
+Keputusan baru memakai D-017 dan seterusnya hanya untuk pilihan kontrak nyata; status staging/no-commit sementara bukan keputusan produk. Exact context revision dan hasil read tooling berada pada 00/evidence, bukan visual approval.
