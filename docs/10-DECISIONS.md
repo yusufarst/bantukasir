@@ -22,6 +22,8 @@
 | D-016 | AUTONOMOUS, preservasi | Input Plan 2.0 pada Git c4a145d dan40 kartu diarsipkan; intake rebaseline terdahulu bersih. Intake koreksi HEAD5e100aa memiliki satu patch untracked yang dipreservasi. Hash85 source/aset/evidence tidak berubah; tanpa cleanup/reconstruct pekerjaan tidak terkait |
 | D-017 | OWNER, koreksi struktur P7 sebelum implementasi | P7 melakukan **ACTUAL DESIGN** V1 di BantuKasir Design saja, dari frozen P1–P6; iterasi/review, **OWNER VISUAL APPROVAL exact revision** dan normalisasi DESIGN/token/mapping shadcn menjadi exit COMPLETE. P8–P11 dibuka kembali sebagai draft lalu refinalisasi/freeze berurutan setelah P7 COMPLETE; semua coding tetap belum diotorisasi. BU-DESIGN-001 dihapus dari implementasi, tanggung jawab diserap P7; UI/DOC mengonsumsi P7 frozen langsung. Estimasi32h P7 +8h refinalisasi +253h implementasi=293h; reserve64h terpisah; technical path128h/planning+path168h. Bukan scope bisnis baru, approval template, produksi atau jam aktual |
 
+| D-018 | OWNER, revisi kandidat P7 sebelum visual approval | Tanggal UI memakai nama bulan Indonesia lengkap dan detail waktu bertitik; supersede hanya kalimat format presentasi P3, tanpa perubahan fakta UTC/Jakarta/query. Foto nyata ATK contoh/fallback pada list/search/detail/edit/POS, tanpa uploader/storage atau perluasan scope produk. Menu Pemilik Barang keluar eksplisit menuju manual issue non-sale. Titik tren interaktif pointer/keyboard/touch dengan tanggal dan nilai serta satu dataset tabel. Arah revisi ini bukan OWNER VISUAL APPROVAL; kandidat exact terbaru dan bukti pada00/P7, approvedRevision tetap null dan P8–P11 tetap draft. |
+
 ## Alasan PLANNER-DETERMINED PRODUCT SUPPORT
 
 Mekanisme pendukung berikut diperlukan untuk correctness produk minimum; bukan capability enterprise baru. Effort terintegrasi sudah dimasukkan dalam estimasi unit, bukan fee/provider usage yang dianggap approved.
@@ -39,4 +41,4 @@ Mekanisme pendukung berikut diperlukan untuk correctness produk minimum; bukan c
 
 Jika kebutuhan aktual memerlukan multi-warehouse/serial/import/drawer-funded refund/tanggung jawab bersama/tax accounting material, klasifikasikan OWNER_DECISION_REQUIRED dan replan scope terdampak dahulu. Kontrak minimum terkini tidak dibypass oleh template desain/fixture/default library atau kalender.
 
-Keputusan baru memakai D-018 dan seterusnya hanya untuk pilihan kontrak nyata; status staging/no-commit sementara bukan keputusan produk. Exact candidate/context revision dan hasil tooling berada pada00/evidence; approvedRevision tetap null sampai owner menyatakan approval atas sumber tepat.
+Keputusan baru memakai D-019 dan seterusnya hanya untuk pilihan kontrak nyata; status staging/no-commit sementara bukan keputusan produk. Exact candidate/context revision dan hasil tooling berada pada00/evidence; approvedRevision tetap null sampai owner menyatakan approval atas sumber tepat.

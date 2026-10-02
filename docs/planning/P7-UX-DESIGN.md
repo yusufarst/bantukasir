@@ -1,12 +1,12 @@
 # P7 — Desain UI/UX V1 aktual sebelum freeze implementasi
 
-**Status: WAITING OWNER VISUAL REVIEW — kandidat; P7 NOT COMPLETE. OWNER VISUAL APPROVAL belum ada.** Kandidat aktual `sha256-b51d2975aa3a8a92`, page `p7-v1` pada prototype `c8384f74-cc1b-4335-a385-2d0fac66d668`, sudah melalui compile dan browser checks bounded. `approvedRevision = null`; rights dan validation holds pada [coverage](P7-COVERAGE.md) tetap terbuka. P7 adalah pekerjaan desain aktual, bukan sekadar UX specification atau BU implementasi. P0–P6 tetap input frozen; P8–P11 tetap draft sampai P7 COMPLETE. Scope minimum V1 dan stack tidak berubah.
+**Status: WAITING OWNER VISUAL REVIEW — kandidat; P7 NOT COMPLETE. OWNER VISUAL APPROVAL belum ada.** Kandidat aktual `sha256-bef01d649ea91b2b`, page `p7-v1` pada prototype `c8384f74-cc1b-4335-a385-2d0fac66d668`, sudah melalui compile dan browser checks bounded. `approvedRevision = null`; rights dan validation holds pada [coverage](P7-COVERAGE.md) tetap terbuka. P7 adalah pekerjaan desain aktual, bukan sekadar UX specification atau BU implementasi. P0–P6 tetap input frozen; P8–P11 tetap draft sampai P7 COMPLETE. Scope minimum V1 dan stack tidak berubah.
 
 ## Urutan dan input wajib
 
 **P0–P6 → P7 ACTUAL DESIGN → P8 Quality/DoD → P9 Operations → P10 Release/UAT → P11 Build Units → implementation.** Review awal P8–P11 tetap dipreservasi, tetapi bukan freeze final. Semua coding belum diotorisasi; setelah seluruh fase COMPLETE/frozen masih perlu instruksi satu `Execute BU-...` eksplisit.
 
-Input desain: [P1 produk](P1-PRODUCT.md), [P2 domain](P2-DOMAIN.md), [P3 workflow](P3-CRITICAL-WORKFLOWS.md), [P4 arsitektur](P4-ARCHITECTURE.md), [P5 security](P5-SECURITY.md), [P6 concurrency/API](P6-CONCURRENCY-API.md). Detail canonical: [01](../01-PRD.md), [02](../02-ARCHITECTURE.md), [04](../04-AUTH-RBAC-SECURITY.md), [06](../06-INVENTORY-SPEC.md), [12](../12-BARCODE-SCANNER.md), [15](../15-FINANCE-PROFITABILITY.md), [17](../17-POS-SALES.md). Ketigabelas input dipertahankan byte-identical pada koreksi ini.
+Input desain: [P1 produk](P1-PRODUCT.md), [P2 domain](P2-DOMAIN.md), [P3 workflow](P3-CRITICAL-WORKFLOWS.md), [P4 arsitektur](P4-ARCHITECTURE.md), [P5 security](P5-SECURITY.md), [P6 concurrency/API](P6-CONCURRENCY-API.md). Detail canonical: [01](../01-PRD.md), [02](../02-ARCHITECTURE.md), [04](../04-AUTH-RBAC-SECURITY.md), [06](../06-INVENTORY-SPEC.md), [12](../12-BARCODE-SCANNER.md), [15](../15-FINANCE-PROFITABILITY.md), [17](../17-POS-SALES.md). Koreksi awal mempertahankan ketigabelas input byte-identical. Revisi Owner D-018 sekarang mengganti satu kalimat presentasi tanggal/waktu P3; dua belas input lain tetap byte-identical, semua invariant bisnis tetap.
 
 ## Workflow aktual P7
 
@@ -26,7 +26,7 @@ Input desain: [P1 produk](P1-PRODUCT.md), [P2 domain](P2-DOMAIN.md), [P3 workflo
 
 | Role | Workspace V1 |
 | --- | --- |
-| Pemilik / SUPER_ADMIN | Katalog/inventori/opening/correction; POS/session sendiri; finance/session/audit; pengguna/config/BusinessProfile/register/status sistem |
+| Pemilik / SUPER_ADMIN | Katalog/inventori/opening/Barang keluar non-sale/correction; POS/session sendiri; finance/session/audit; pengguna/config/BusinessProfile/register/status sistem |
 | Admin Operasional / OPERATIONS_ADMIN | Katalog/search/barcode, receiving/manual issue, stock/LOW/OUT/history aman, akun sendiri; tanpa POS/session/finance/audit sensitif; biaya incoming write-only |
 | Kasir / CASHIER | Own session/open/close, search/scan/cart/full payment/receipt/own Sale history/report, akun sendiri; tanpa product management |
 
@@ -38,7 +38,7 @@ Desktop logo toggle expanded/icon rail; outside click mempertahankan navigasi. D
 
 Kasir: Scan/Cari → draft +/-/remove/undo → review satu pembayaran penuh → confirm → receipt. Cart/action mobile terjangkau; scan dijeda pada form/dialog/count, Enter tidak confirm. UNCERTAIN mempertahankan original command, tanpa bayar ulang/replacement Sale. Opening Rp0 eksplisit; close recount/CLOSED immutable jelas. Operations review/result/error/recovery tidak echo nominal biaya.
 
-Owner report memakai line trend/accessible table, asOf/completeness/revision dan UNKNOWN tanpa Rp0 palsu. Periode draft/applied terpisah, Custom Range Apply/Cancel/validasi. DD MM YYYY, hh:mm:ss, Asia/Jakarta. Identitas client memakai BusinessProfile runtime; BantuKasir codename.
+Owner report memakai line trend/accessible table, asOf/completeness/revision dan UNKNOWN tanpa Rp0 palsu. Periode draft/applied terpisah, Custom Range Apply/Cancel/validasi. Tanggal Indonesia dengan nama bulan lengkap; detail waktu bertitik (01 Oktober 2026, 09.15.00), Asia/Jakarta. Identitas client memakai BusinessProfile runtime; BantuKasir codename.
 
 Minimum render375/440/768/1024/1440 px, short landscape, zoom200%, konten/cart/form panjang; touch44×44, keyboard/focus/Escape/return/reduced motion; WCAG AA4.5:1 teks/3:1 UI bermakna. Native React/Inertia/shadcn consumer mengulangi parity/a11y/privacy. Fixture tidak membuktikan PostgreSQL/HTTP/auth/RBAC/device/backup.
 
@@ -51,4 +51,4 @@ Minimum render375/440/768/1024/1440 px, short landscape, zoom200%, konten/cart/f
 
 P7 **32h engineering: desain aktual20 + review/iterasi8 + normalisasi/evidence4**; reserve desain8h terpisah. Waiting owner/lisensi dan putaran di luar allowance tidak diketahui, bukan jam yang telah dibukukan. Refinalisasi P8–P11 **8h** terpisah; [11](../11-BUILD-PLAN.md) menghitung total.
 
-BU-DESIGN-001 dihapus dari register aktif karena tanggung jawabnya sepenuhnya diserap P7. UI/DOC mengonsumsi P7 COMPLETE/DESIGN exact-approved langsung; UX01/IDENTITY01 FINAL tetap diuji pada aplikasi terintegrasi. Artefak/revision/check aktual pada [evidence koreksi](../evidence/p7-correction/REVIEW.md). Kandidat pertama bukan P7 COMPLETE.
+BU-DESIGN-001 dihapus dari register aktif karena tanggung jawabnya sepenuhnya diserap P7. UI/DOC mengonsumsi P7 COMPLETE/DESIGN exact-approved langsung; UX01/IDENTITY01 FINAL tetap diuji pada aplikasi terintegrasi. Artefak/revision/check aktual pada [evidence koreksi](../evidence/p7-owner-r1/REVIEW.md). Kandidat pertama bukan P7 COMPLETE.

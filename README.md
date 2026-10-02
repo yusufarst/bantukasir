@@ -2,7 +2,7 @@
 
 Codename internal untuk GOODS-only POS satu bisnis/satu stock pool; branding client final berasal dari BusinessProfile runtime. Repository berisi specification dan prototype historis; **aplikasi produksi belum dibangun**.
 
-Urutan planning wajib: **P0–P6 → P7 ACTUAL DESIGN di DesainPakeAI → owner visual approval exact revision + normalisasi DESIGN → P8 Quality/DoD → P9 Operations → P10 Release/UAT → P11 Build Units → implementation**. P0–P6 tetap frozen input; P7 **WAITING OWNER VISUAL REVIEW, NOT COMPLETE**, kandidat `sha256-b51d2975aa3a8a92` pada page `p7-v1`. [Evidence aktual](docs/evidence/p7-correction/REVIEW.md) memisahkan checks bounded dari validation/rights/approval holds. P8–P11 tetap REOPENED_DRAFT/PENDING_P7_APPROVAL. Project/domain/aset/token MULTIPLECORP tidak diakses atau disalin.
+Urutan planning wajib: **P0–P6 → P7 ACTUAL DESIGN di DesainPakeAI → owner visual approval exact revision + normalisasi DESIGN → P8 Quality/DoD → P9 Operations → P10 Release/UAT → P11 Build Units → implementation**. P0–P6 tetap frozen input; P7 **WAITING OWNER VISUAL REVIEW, NOT COMPLETE**, kandidat `sha256-bef01d649ea91b2b` pada page `p7-v1`. [Evidence aktual](docs/evidence/p7-owner-r1/REVIEW.md) memisahkan checks bounded dari validation/rights/approval holds. P8–P11 tetap REOPENED_DRAFT/PENDING_P7_APPROVAL. Project/domain/aset/token MULTIPLECORP tidak diakses atau disalin.
 
 Mulai [AGENTS](AGENTS.md) → [CURRENT_STATE](docs/00-CURRENT-STATE.md) → [build plan](docs/11-BUILD-PLAN.md). Handoff coding di [CLAUDE](CLAUDE.md); unit pertama [BU-FOUND-001](docs/build-units/BU-FOUND-001.md) **belum diotorisasi/dijalankan**. Primary executor yang diminta: Claude Opus 5.5/xhigh; Fable 5.1/xhigh untuk eskalasi bounded secara selektif. Availability belum diuji.
 

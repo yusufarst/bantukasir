@@ -1,0 +1,611 @@
+{
+  "task": "P7 owner four-note design revision",
+  "project": {
+    "name": "BantuKasir Design",
+    "id": "eddb0e15-9909-44b3-8517-9239cadc65ef"
+  },
+  "prototypeId": "c8384f74-cc1b-4335-a385-2d0fac66d668",
+  "pageId": "p7-v1",
+  "sourcePath": "src/pages/p7-v1.page.html",
+  "candidateRevision": "sha256-bef01d649ea91b2b",
+  "approvedRevision": null,
+  "status": "WAITING OWNER VISUAL REVIEW",
+  "headIntake": "f7c02df129c1a98a4caec2f902d2cb2bffb492e5",
+  "sourceHash": "c85ac24c4e784c4e3b0aaef81ab27312906853801a5b11b37cefa41f5f2e8212",
+  "sourceByteEquality": "Remote equals local after CRLF/LF normalization",
+  "beforeRevision": "sha256-b51d2975aa3a8a92",
+  "revisionChain": [
+    {
+      "step": "17-owner-four-notes",
+      "projectId": "eddb0e15-9909-44b3-8517-9239cadc65ef",
+      "beforeRevision": "sha256-b51d2975aa3a8a92",
+      "afterRevision": "sha256-dce66544fc614ae5",
+      "exitCode": 0
+    },
+    {
+      "step": "18-chart-touch-focus",
+      "projectId": "eddb0e15-9909-44b3-8517-9239cadc65ef",
+      "beforeRevision": "sha256-dce66544fc614ae5",
+      "afterRevision": "sha256-fca956a464596dbd",
+      "exitCode": 0
+    },
+    {
+      "step": "19-chart-tooltip-targets",
+      "projectId": "eddb0e15-9909-44b3-8517-9239cadc65ef",
+      "beforeRevision": "sha256-fca956a464596dbd",
+      "afterRevision": "sha256-efc7bc48218ee063",
+      "exitCode": 0
+    },
+    {
+      "step": "21-chart-escape-focus",
+      "projectId": "eddb0e15-9909-44b3-8517-9239cadc65ef",
+      "beforeRevision": "sha256-efc7bc48218ee063",
+      "afterRevision": "sha256-bef01d649ea91b2b",
+      "exitCode": 0
+    }
+  ],
+  "compile": {
+    "bytes": 792726,
+    "diagnostics": [],
+    "layoutIssues": [],
+    "verification": {
+      "compile": "passed",
+      "browser": "not-run",
+      "layout": "not-run",
+      "responsive": "not-run"
+    },
+    "nextSuggestedTool": "finish_working_on_pages",
+    "pageCount": 9,
+    "revision": "sha256-bef01d649ea91b2b",
+    "runtimeDependencies": 1,
+    "warnings": [],
+    "workingPageIds": [
+      "p7-v1"
+    ],
+    "diagnosticsCount": 0,
+    "diagnosticsTruncated": false,
+    "warningsCount": 0,
+    "warningsTruncated": false
+  },
+  "authoringFinished": {
+    "step": "22-finish-owner-candidate",
+    "projectId": "eddb0e15-9909-44b3-8517-9239cadc65ef",
+    "projectName": "BantuKasir Design",
+    "beforeRevision": "sha256-bef01d649ea91b2b",
+    "arguments": [
+      "work",
+      "finish",
+      "--page",
+      "p7-v1"
+    ],
+    "exitCode": 0,
+    "result": "{\n  \"alreadyFinishedPageIds\": [],\n  \"finishedPageIds\": [\n    \"p7-v1\"\n  ],\n  \"revision\": \"sha256-bef01d649ea91b2b\",\n  \"workingPageIds\": []\n}"
+  },
+  "syntaxCheck": {
+    "command": "node --check .local/p7-owner-r1/candidate.script.js",
+    "result": "PASS"
+  },
+  "rendererSmoke": {
+    "kind": "Static renderer smoke, NOT browser or backend proof",
+    "checks": 41,
+    "passed": true,
+    "results": [
+      {
+        "role": "SUPER_ADMIN",
+        "route": "dashboard",
+        "render": "PASS",
+        "h1": 1
+      },
+      {
+        "role": "SUPER_ADMIN",
+        "route": "catalog",
+        "render": "PASS",
+        "h1": 1
+      },
+      {
+        "role": "SUPER_ADMIN",
+        "route": "inventory",
+        "render": "PASS",
+        "h1": 1
+      },
+      {
+        "role": "SUPER_ADMIN",
+        "route": "receiving",
+        "render": "PASS",
+        "h1": 1
+      },
+      {
+        "role": "SUPER_ADMIN",
+        "route": "opening",
+        "render": "PASS",
+        "h1": 1
+      },
+      {
+        "role": "SUPER_ADMIN",
+        "route": "issue",
+        "render": "PASS",
+        "h1": 1
+      },
+      {
+        "role": "SUPER_ADMIN",
+        "route": "pos",
+        "render": "PASS",
+        "h1": 1
+      },
+      {
+        "role": "SUPER_ADMIN",
+        "route": "sales",
+        "render": "PASS",
+        "h1": 1
+      },
+      {
+        "role": "SUPER_ADMIN",
+        "route": "finance",
+        "render": "PASS",
+        "h1": 1
+      },
+      {
+        "role": "SUPER_ADMIN",
+        "route": "sessions",
+        "render": "PASS",
+        "h1": 1
+      },
+      {
+        "role": "SUPER_ADMIN",
+        "route": "audit",
+        "render": "PASS",
+        "h1": 1
+      },
+      {
+        "role": "SUPER_ADMIN",
+        "route": "settings",
+        "render": "PASS",
+        "h1": 1
+      },
+      {
+        "role": "SUPER_ADMIN",
+        "route": "account",
+        "render": "PASS",
+        "h1": 1
+      },
+      {
+        "role": "SUPER_ADMIN",
+        "route": "auth",
+        "render": "PASS",
+        "h1": 1
+      },
+      {
+        "role": "OPERATIONS_ADMIN",
+        "route": "dashboard",
+        "render": "PASS",
+        "h1": 1
+      },
+      {
+        "role": "OPERATIONS_ADMIN",
+        "route": "catalog",
+        "render": "PASS",
+        "h1": 1
+      },
+      {
+        "role": "OPERATIONS_ADMIN",
+        "route": "inventory",
+        "render": "PASS",
+        "h1": 1
+      },
+      {
+        "role": "OPERATIONS_ADMIN",
+        "route": "receiving",
+        "render": "PASS",
+        "h1": 1
+      },
+      {
+        "role": "OPERATIONS_ADMIN",
+        "route": "issue",
+        "render": "PASS",
+        "h1": 1
+      },
+      {
+        "role": "OPERATIONS_ADMIN",
+        "route": "account",
+        "render": "PASS",
+        "h1": 1
+      },
+      {
+        "role": "OPERATIONS_ADMIN",
+        "route": "auth",
+        "render": "PASS",
+        "h1": 1
+      },
+      {
+        "role": "CASHIER",
+        "route": "pos",
+        "render": "PASS",
+        "h1": 1
+      },
+      {
+        "role": "CASHIER",
+        "route": "sales",
+        "render": "PASS",
+        "h1": 1
+      },
+      {
+        "role": "CASHIER",
+        "route": "sessions",
+        "render": "PASS",
+        "h1": 1
+      },
+      {
+        "role": "CASHIER",
+        "route": "account",
+        "render": "PASS",
+        "h1": 1
+      },
+      {
+        "role": "CASHIER",
+        "route": "auth",
+        "render": "PASS",
+        "h1": 1
+      },
+      {
+        "case": "Zero physical / expected count preserved",
+        "render": "PASS"
+      },
+      {
+        "scenario": "loading",
+        "render": "PASS"
+      },
+      {
+        "scenario": "empty",
+        "render": "PASS"
+      },
+      {
+        "scenario": "error",
+        "render": "PASS"
+      },
+      {
+        "scenario": "denied",
+        "render": "PASS"
+      },
+      {
+        "scenario": "stale",
+        "render": "PASS"
+      },
+      {
+        "scenario": "unknown",
+        "render": "PASS"
+      },
+      {
+        "scenario": "uncertain",
+        "render": "PASS"
+      },
+      {
+        "scenario": "success",
+        "render": "PASS"
+      },
+      {
+        "scenario": "recount",
+        "render": "PASS"
+      },
+      {
+        "scenario": "replay-busy",
+        "render": "PASS"
+      },
+      {
+        "scenario": "replay-cap",
+        "render": "PASS"
+      },
+      {
+        "scenario": "chronology",
+        "render": "PASS"
+      },
+      {
+        "scenario": "print-error",
+        "render": "PASS"
+      },
+      {
+        "case": "Mobile inert markup closed / open",
+        "render": "PASS"
+      }
+    ]
+  },
+  "browser": {
+    "sourceRevision": "sha256-efc7bc48218ee063",
+    "finalRevision": "sha256-bef01d649ea91b2b",
+    "compatibility": "Final changes only Escape focus restoration; final Escape rechecked live.",
+    "chartEvidence": [
+      {
+        "label": "26 September 2026, Penjualan Rp600.000",
+        "clickText": "26 September 2026\nPenjualan\nRp600.000\nLaba Kotor\nRp145.000",
+        "keyText": "26 September 2026\nPenjualan\nRp600.000\nLaba Kotor\nRp145.000",
+        "pass": true
+      },
+      {
+        "label": "26 September 2026, Laba Kotor Rp145.000",
+        "clickText": "26 September 2026\nPenjualan\nRp600.000\nLaba Kotor\nRp145.000",
+        "keyText": "26 September 2026\nPenjualan\nRp600.000\nLaba Kotor\nRp145.000",
+        "pass": true
+      },
+      {
+        "label": "27 September 2026, Penjualan Rp1.220.000",
+        "clickText": "27 September 2026\nPenjualan\nRp1.220.000\nLaba Kotor\nRp365.000",
+        "keyText": "27 September 2026\nPenjualan\nRp1.220.000\nLaba Kotor\nRp365.000",
+        "pass": true
+      },
+      {
+        "label": "27 September 2026, Laba Kotor Rp365.000",
+        "clickText": "27 September 2026\nPenjualan\nRp1.220.000\nLaba Kotor\nRp365.000",
+        "keyText": "27 September 2026\nPenjualan\nRp1.220.000\nLaba Kotor\nRp365.000",
+        "pass": true
+      },
+      {
+        "label": "28 September 2026, Penjualan Rp900.000",
+        "clickText": "28 September 2026\nPenjualan\nRp900.000\nLaba Kotor\nRp270.000",
+        "keyText": "28 September 2026\nPenjualan\nRp900.000\nLaba Kotor\nRp270.000",
+        "pass": true
+      },
+      {
+        "label": "28 September 2026, Laba Kotor Rp270.000",
+        "clickText": "28 September 2026\nPenjualan\nRp900.000\nLaba Kotor\nRp270.000",
+        "keyText": "28 September 2026\nPenjualan\nRp900.000\nLaba Kotor\nRp270.000",
+        "pass": true
+      },
+      {
+        "label": "29 September 2026, Penjualan Rp1.950.000",
+        "clickText": "29 September 2026\nPenjualan\nRp1.950.000\nLaba Kotor\nRp670.000",
+        "keyText": "29 September 2026\nPenjualan\nRp1.950.000\nLaba Kotor\nRp670.000",
+        "pass": true
+      },
+      {
+        "label": "29 September 2026, Laba Kotor Rp670.000",
+        "clickText": "29 September 2026\nPenjualan\nRp1.950.000\nLaba Kotor\nRp670.000",
+        "keyText": "29 September 2026\nPenjualan\nRp1.950.000\nLaba Kotor\nRp670.000",
+        "pass": true
+      },
+      {
+        "label": "30 September 2026, Penjualan Rp1.450.000",
+        "clickText": "30 September 2026\nPenjualan\nRp1.450.000\nLaba Kotor\nRp475.000",
+        "keyText": "30 September 2026\nPenjualan\nRp1.450.000\nLaba Kotor\nRp475.000",
+        "pass": true
+      },
+      {
+        "label": "30 September 2026, Laba Kotor Rp475.000",
+        "clickText": "30 September 2026\nPenjualan\nRp1.450.000\nLaba Kotor\nRp475.000",
+        "keyText": "30 September 2026\nPenjualan\nRp1.450.000\nLaba Kotor\nRp475.000",
+        "pass": true
+      },
+      {
+        "label": "01 Oktober 2026, Penjualan Rp2.200.000",
+        "clickText": "01 Oktober 2026\nPenjualan\nRp2.200.000\nLaba Kotor\nRp865.000",
+        "keyText": "01 Oktober 2026\nPenjualan\nRp2.200.000\nLaba Kotor\nRp865.000",
+        "pass": true
+      },
+      {
+        "label": "01 Oktober 2026, Laba Kotor Rp865.000",
+        "clickText": "01 Oktober 2026\nPenjualan\nRp2.200.000\nLaba Kotor\nRp865.000",
+        "keyText": "01 Oktober 2026\nPenjualan\nRp2.200.000\nLaba Kotor\nRp865.000",
+        "pass": true
+      },
+      {
+        "label": "02 Oktober 2026, Penjualan Rp2.450.000",
+        "clickText": "02 Oktober 2026\nPenjualan\nRp2.450.000\nLaba Kotor\nRp970.000",
+        "keyText": "02 Oktober 2026\nPenjualan\nRp2.450.000\nLaba Kotor\nRp970.000",
+        "pass": true
+      },
+      {
+        "label": "02 Oktober 2026, Laba Kotor Rp970.000",
+        "clickText": "02 Oktober 2026\nPenjualan\nRp2.450.000\nLaba Kotor\nRp970.000",
+        "keyText": "02 Oktober 2026\nPenjualan\nRp2.450.000\nLaba Kotor\nRp970.000",
+        "pass": true
+      }
+    ],
+    "mobileChartEvidence": [
+      {
+        "label": "Rincian 26 September 2026",
+        "text": "26 September 2026\nPenjualan\nRp600.000\nLaba Kotor\nRp145.000",
+        "height": 44
+      },
+      {
+        "label": "Rincian 27 September 2026",
+        "text": "27 September 2026\nPenjualan\nRp1.220.000\nLaba Kotor\nRp365.000",
+        "height": 44
+      },
+      {
+        "label": "Rincian 28 September 2026",
+        "text": "28 September 2026\nPenjualan\nRp900.000\nLaba Kotor\nRp270.000",
+        "height": 44
+      },
+      {
+        "label": "Rincian 29 September 2026",
+        "text": "29 September 2026\nPenjualan\nRp1.950.000\nLaba Kotor\nRp670.000",
+        "height": 44
+      },
+      {
+        "label": "Rincian 30 September 2026",
+        "text": "30 September 2026\nPenjualan\nRp1.450.000\nLaba Kotor\nRp475.000",
+        "height": 44
+      },
+      {
+        "label": "Rincian 01 Oktober 2026",
+        "text": "01 Oktober 2026\nPenjualan\nRp2.200.000\nLaba Kotor\nRp865.000",
+        "height": 44
+      },
+      {
+        "label": "Rincian 02 Oktober 2026",
+        "text": "02 Oktober 2026\nPenjualan\nRp2.450.000\nLaba Kotor\nRp970.000",
+        "height": 44
+      }
+    ]
+  },
+  "additionalBrowserChecks": [
+    {
+      "check": "Tab focuses SVG point and reveals date/both values",
+      "result": "PASS",
+      "revision": "sha256-efc7bc48218ee063"
+    },
+    {
+      "check": "Dismiss restores focus and hides tooltip without re-opening",
+      "result": "PASS",
+      "revision": "sha256-efc7bc48218ee063"
+    },
+    {
+      "check": "Escape from dismiss button restores point focus",
+      "result": "PASS",
+      "revision": "sha256-bef01d649ea91b2b"
+    },
+    {
+      "check": "Two thumbnail photos load at naturalWidth 500",
+      "result": "PASS",
+      "revision": "sha256-bef01d649ea91b2b"
+    },
+    {
+      "check": "Detail and edit main photo naturalWidth 500",
+      "result": "PASS",
+      "revision": "sha256-efc7bc48218ee063"
+    },
+    {
+      "check": "Absent photo placeholder and failed-photo state naturalWidth 0, hidden image, Foto gagal dimuat",
+      "result": "PASS",
+      "revision": "sha256-efc7bc48218ee063"
+    },
+    {
+      "check": "Cashier POS name search Pulpen shows photo, opening Rp0 explicit",
+      "result": "PASS",
+      "revision": "sha256-efc7bc48218ee063"
+    },
+    {
+      "check": "Owner Barang keluar menu navigates to non-sale form desktop/mobile, reason/review/confirm separate",
+      "result": "PASS",
+      "revision": "sha256-bef01d649ea91b2b"
+    },
+    {
+      "check": "Operations photo detail has sell price/stock/token, no HPP/profit; Cashier no catalog/issue management",
+      "result": "PASS",
+      "revision": "sha256-efc7bc48218ee063"
+    },
+    {
+      "check": "Period picker full-month labels, no native date inputs, Custom Range calendar choices/apply",
+      "result": "PASS bounded",
+      "revision": "sha256-efc7bc48218ee063"
+    },
+    {
+      "check": "Final mobile Custom Range long-date button bounds, zero native date fields",
+      "result": "PASS bounded",
+      "revision": "sha256-bef01d649ea91b2b",
+      "measurements": {
+        "preset": 390,
+        "innerWidth": 389,
+        "dialogOffsetWidth": 329,
+        "dialogClientWidth": 299,
+        "dialogScrollWidth": 299,
+        "dateInputs": 0,
+        "dateLabels": [
+          "02 Oktober 2026",
+          "02 Oktober 2026"
+        ]
+      }
+    }
+  ],
+  "responsive": {
+    "kind": "SaaS preset iframe checks, not full five-width/state rerun",
+    "presets": [
+      1440,
+      820,
+      390
+    ],
+    "measured": [
+      {
+        "preset": 390,
+        "innerWidth": 389,
+        "clientWidth": 362,
+        "scrollWidth": 362
+      },
+      {
+        "preset": 820,
+        "innerWidth": 819,
+        "clientWidth": 792,
+        "scrollWidth": 792
+      }
+    ],
+    "bodyOverflow": "None observed on changed catalog/detail/POS/owner issue/chart surfaces",
+    "mobileChartControls": {
+      "count": 7,
+      "minHeight": 44
+    },
+    "priorFiveWidthEvidence": "../p7-correction/BROWSER.json"
+  },
+  "photos": [
+    {
+      "productId": 2,
+      "product": "Pulpen gel 0,5 mm hitam",
+      "source": "https://commons.wikimedia.org/wiki/File:GelPen.jpg",
+      "author": "PiccoloNamek",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+      "asset": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/GelPen.jpg/500px-GelPen.jpg",
+      "edited": false
+    },
+    {
+      "productId": 3,
+      "product": "Buku tulis A5 40 lembar",
+      "source": "https://commons.wikimedia.org/wiki/File:Spiral_notebook_with_subject_dividers_-_Flickr_-_theilr.jpg",
+      "author": "theilr",
+      "license": "CC BY-SA 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0/",
+      "asset": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Spiral_notebook_with_subject_dividers_-_Flickr_-_theilr.jpg/500px-Spiral_notebook_with_subject_dividers_-_Flickr_-_theilr.jpg",
+      "edited": false
+    }
+  ],
+  "presentationSupersession": {
+    "file": "docs/planning/P3-CRITICAL-WORKFLOWS.md",
+    "beforeHash": "b97925e5ee4d62f707059b629493ebc31a10fc7fe1586507963de26bd353ea73",
+    "afterHash": "f57fdc6f42c5b0f0e23e9aaab9a912fa2759b95d8f8d5934bdd4cac0bbbc165e",
+    "beforeText": "Formatting UI memakai DD MM YYYY dan hh:mm:ss untuk detail waktu sesuai kontrak desain.",
+    "afterText": "Formatting UI memakai tanggal Indonesia dengan nama bulan lengkap (01 Oktober 2026) dan waktu detail bertitik (01 Oktober 2026, 09.15.00), sesuai arahan Owner D-018; format presentasi ini menggantikan DD MM YYYY/hh:mm:ss, tanpa mengubah UTC, businessDate atau semantik query.",
+    "decision": "D-018",
+    "scope": "Single UI formatting sentence; business scope/invariants unchanged"
+  },
+  "holds": [
+    "Exact Owner visual approval required",
+    "Foundation/template/font/native derivative entitlement not verified",
+    "Actual client photos/media ownership/production source pending; these are category fixtures",
+    "Full rendered AA/screenreader/actual 200 percent zoom/software keyboard/long content states not verified",
+    "P8-P11 remain reopened draft; all coding not started"
+  ],
+  "scopeRecord": "Flags scope merekam proses authoring/revisi visual sebelum checkpoint lokal yang kemudian diotorisasi Owner. Status staging/commit checkpoint dibaca dari Git dan laporan penutupan; checkpoint bukan persetujuan visual.",
+  "scope": {
+    "productionCode": false,
+    "buildUnitExecuted": false,
+    "multiplecorpAccess": false,
+    "productUploadStorageAdded": false,
+    "commit": false,
+    "staging": false,
+    "pushMergeDeploy": false
+  },
+  "screenshots": [
+    {
+      "file": "catalog-desktop.png",
+      "revision": "sha256-bef01d649ea91b2b",
+      "sha256": "d09e2553cfb9d2ddcf1db57cb0f362c5d1163c268d6afa0a76fc99dca378b656"
+    },
+    {
+      "file": "product-detail-desktop.png",
+      "revision": "sha256-bef01d649ea91b2b",
+      "sha256": "bfdccfe43e2109a3dd9403298a40c4c2d68320d63e278d12f3692f0de96b867d"
+    },
+    {
+      "file": "owner-chart-desktop.png",
+      "revision": "sha256-bef01d649ea91b2b",
+      "sha256": "7f378ef81db5944c62a60ba4ffc569c67d2227b1bfb3c9d5a79036234c172dcb"
+    },
+    {
+      "file": "owner-issue-mobile.png",
+      "revision": "sha256-bef01d649ea91b2b",
+      "sha256": "2a72688e62b64bda8769df179b979a3a50125c9dd8694b88569d1d3c27dda3c4"
+    },
+    {
+      "file": "pos-mobile.png",
+      "revision": "sha256-bef01d649ea91b2b",
+      "sha256": "01f1b487f09fa66197a256a4dbd67e14b7714c2513982767c3ad8981a49da83a"
+    }
+  ]
+}

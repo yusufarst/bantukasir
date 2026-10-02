@@ -1,6 +1,6 @@
 # Kontrak visual — P7 actual design V1
 
-**Status: DRAFT kandidat P7 / WAITING OWNER VISUAL REVIEW; OWNER VISUAL APPROVAL belum tercatat; `approvedRevision = null`.** Kandidat aktual sudah dirender dan diperiksa secara bounded; ini belum P7 COMPLETE atau full accessibility PASS. Dokumen repository ini akan menjadi kontrak produksi setelah seluruh exit P7 terpenuhi. P8–P11 belum frozen final. [Workflow P7](docs/planning/P7-UX-DESIGN.md), [coverage](docs/planning/P7-COVERAGE.md) dan [evidence](docs/evidence/p7-correction/REVIEW.md) menetapkan sumber, hasil dan holds.
+**Status: DRAFT kandidat P7 / WAITING OWNER VISUAL REVIEW; OWNER VISUAL APPROVAL belum tercatat; `approvedRevision = null`.** Kandidat aktual sudah dirender dan diperiksa secara bounded; ini belum P7 COMPLETE atau full accessibility PASS. Dokumen repository ini akan menjadi kontrak produksi setelah seluruh exit P7 terpenuhi. P8–P11 belum frozen final. [Workflow P7](docs/planning/P7-UX-DESIGN.md), [coverage](docs/planning/P7-COVERAGE.md) dan [evidence](docs/evidence/p7-owner-r1/REVIEW.md) menetapkan sumber, hasil dan holds.
 
 ## Sumber, provenance dan boundary
 
@@ -12,7 +12,7 @@
 | Foundation kandidat | Provenance Thread / alpha.1, hanya dari project di atas |
 | Revision intake | `sha256-53257e5efa2e29e32cfb03e3b83fae1fc464cb27d4d08c9dfa3def4b2e799241` |
 | Artefak kandidat aktual | Page `p7-v1`, route `/p7-v1`, source `src/pages/p7-v1.page.html`; tiga role dan state reviewer |
-| Revision kandidat desain aktual | **`sha256-b51d2975aa3a8a92`**; preview compiler PASS, browser checks bounded pada [evidence](docs/evidence/p7-correction/REVIEW.md) |
+| Revision kandidat desain aktual | **`sha256-bef01d649ea91b2b`**; preview compiler PASS, browser checks bounded pada [evidence](docs/evidence/p7-owner-r1/REVIEW.md) |
 | Revision approved | **null — menunggu approval eksplisit owner** |
 | Rights/template/font/aset | PENDING verifikasi entitlement/lisensi; tidak ada klaim izin dari keberadaan token saja |
 
@@ -70,18 +70,19 @@ Scale dasar4/8/12/16/20/24/32/48px dengan penyesuaian recipe. Page gutter32px de
 | KPI/panel/table | Nilai + konteks/delta fixture berperiode jelas; grid proportional, numeric aligned. Narrow record layout atau intentional internal scroll berlabel; tidak body overflow |
 | Form/button | Primary tunggal, secondary/destructive berbeda; label/helper/error dekat field, summary/focus, draft/review/confirm. Stock berubah hanya explicit confirm, bukan create/search/scan |
 | Account/notification | Account popover di atas footer dalam bounds tanpa sidebar bergeser; rail memakai ikon compact dengan accessible name/title, expanded/mobile memakai label lengkap. Owner account/config lebih lengkap. Notification compact critical dulu/recent berikut, max-height/internal scroll; bukan inbox engine |
-| Period/chart | Preset/custom draft terpisah applied; Apply/Cancel, valid range≤366hari, future/ordering validation. Owner line trend/table; UNKNOWN/incomplete tidak menjadi profit0 |
+| Period/chart | Preset/custom draft terpisah applied; tombol tanggal Indonesia membuka calendar, Apply/Cancel dan validasi≤366hari/future/ordering. Owner line trend/table dari satu dataset; 14 titik hover/click/focus/Enter/Space, tooltip tanggal+Penjualan/Laba Kotor, Escape/dismiss memulihkan fokus. Overlay tidak memblokir titik; mobile tujuh kontrol tanggal44px. UNKNOWN/incomplete tidak menjadi profit0 |
+| Foto barang | Dua foto contoh kategori ATK nyata beratribusi; thumbnail katalog/list/search/POS/cart, foto utama detail/edit. object-fit:contain, alt, ukuran stabil; Foto belum tersedia / Foto gagal dimuat tanpa menutup nama/SKU/barcode/stok. Foto opsional dan bukan identitas SKU client. Visual fixture, tanpa uploader/storage/API; upload produk tetap Later, perlu scope media produksi terpisah |
 | POS | Scan/search hanya draft; plus/scan satu base unit, precision edit eksplisit, qty +/-/remove/undo44×44. Mobile cart bar48px men-scroll/fokus ke checkout, bukan membayar. Footer cart mengikuti flow pada≤950px agar tidak menutup quantity. Satu full CASH atau BANK_TRANSFER; Enter bukan confirm |
 | CashSession | NO_SESSION/OPEN/CLOSED, register/responsible cashier/nomor/waktu/status; blank opening invalid, Rp0 eksplisit valid; preview/count/recount, immutable CLOSED; no reopen |
-| Stock/correction | Receiving/opening/manual issue berbeda; reason non-sale wajib. Current before/delta/after, original immutable; reversal full sekali tanpa field qty/count bebas. Refund money/physical return bounds terpisah |
+| Stock/correction | Pemilik memiliki menu Barang keluar eksplisit menuju manual issue; Operations tetap memiliki jalur, Kasir tidak. Receiving/opening/manual issue berbeda; reason non-sale wajib. Current before/delta/after, original immutable; reversal full sekali tanpa field qty/count bebas. Refund money/physical return bounds terpisah |
 | Sensitive/uncertain | Biaya incoming Operations write-only, no nominal echo/persistence; owner finance only. UNCERTAIN original intent/status recovery, tanpa replacement/bayar ulang; UNKNOWN biaya terpisah |
 | Feedback | Loading/skeleton; empty dengan next valid; error retry; denied; stale/freshness; UNKNOWN/incomplete; submitting/disabled; definite rejected; uncertain/recovery; success dengan original reference |
 
 ## Responsive dan accessibility
 
-Target375/440/768/1024/1440px, short landscape, zoom200% dan long content/cart/form. Lima lebar shell tiga role sudah diuji pada revision kandidat; short landscape/account diuji pada revision sebelumnya dengan recipe yang tidak berubah. Desktop split POS/cart, tablet adaptable, mobile satu alur dengan bottom navigation dan cart bar. Actual browser zoom200%, software keyboard perangkat nyata, screen reader serta audit AA seluruh rendered states masih NOT VERIFIED; lihat coverage/evidence. Target44×44 berlaku pada action operasional, bukan klaim semua review-only demo controls memenuhi target.
+Target375/440/768/1024/1440px, short landscape, zoom200% dan long content/cart/form. Lima lebar shell tiga role diuji pada kandidat b51; revisi empat catatan diuji pada preset SaaS desktop1440/tablet820/mobile390, bukan rerun matriks lima lebar seluruh state; short landscape/account diuji pada revision sebelumnya dengan recipe yang tidak berubah. Desktop split POS/cart, tablet adaptable, mobile satu alur dengan bottom navigation dan cart bar. Actual browser zoom200%, software keyboard perangkat nyata, screen reader serta audit AA seluruh rendered states masih NOT VERIFIED; lihat coverage/evidence. Target44×44 berlaku pada action operasional, bukan klaim semua review-only demo controls memenuhi target.
 
-Target WCAG AA4.5:1 teks normal/3:1 teks besar dan elemen UI bermakna. Sepuluh token pairs terhitung PASS; ini bukan full rendered AA PASS. Semantic heading/landmark/label, status live, error association, focus-visible, keyboard tab order, safe submit/Escape/trap/restore dan reduced motion harus diverifikasi kembali pada native consumer. Data chart tersedia tabel. UI Bahasa Indonesia; IDR; DD MM YYYY; detail hh:mm:ss; Asia/Jakarta; tanggal fixture02 10 2026 bukan tanggal runtime authoritative.
+Target WCAG AA4.5:1 teks normal/3:1 teks besar dan elemen UI bermakna. Sepuluh token pairs terhitung PASS; ini bukan full rendered AA PASS. Semantic heading/landmark/label, status live, error association, focus-visible, keyboard tab order, safe submit/Escape/trap/restore dan reduced motion harus diverifikasi kembali pada native consumer. Data chart tersedia tabel. UI Bahasa Indonesia; IDR; tanggal 01 Oktober 2026 dengan nama bulan lengkap; tanggal+waktu 01 Oktober 2026, 09.15.00 (hh.mm.ss); Asia/Jakarta. ISO hanya nilai internal, bukan label tanggal. Tanggal fixture bukan waktu runtime authoritative.
 
 Sandbox preview DesainPakeAI memakai `allow-scripts` tanpa `allow-forms`; kandidat memakai bridge tombol review berbasis `reportValidity`/FormData. Bridge22form dan state reviewer hanya fasilitas authoring P7. Implementasi native memakai form React/Inertia/server validation yang sebenarnya, tanpa menyalin bridge atau fixture auth.
 
@@ -93,7 +94,7 @@ Path berikut logical route contract kandidat; endpoint command/policy tetap cano
 | --- | --- |
 | `/login`, `/password/*`, `/invite/*`, `/account` — UI001/IAM | Card, Form/Label/Input, Button, Alert, Dialog; server-auth account/recent-auth |
 | `/` role workspace — UI001 | Sidebar/Sheet, DropdownMenu, navigation/bottom bar, Breadcrumb, Badge, Tooltip; role DTO |
-| `/products`, `/products/:id`, `/products/new`, `/products/:id/edit` — UI002/CAT | Table/Card, Input/search, Select/Combobox, Pagination, Form, Dialog collision/review |
+| `/products`, `/products/:id`, `/products/new`, `/products/:id/edit` — UI002/CAT | Table/Card, thumbnail/fallback gambar opsional, Input/search, Select/Combobox, Pagination, Form, Dialog collision/review |
 | `/inventory/receiving`, `/inventory/opening`, `/inventory/issues` — UI002/INV | Search-first Form, Tabs, safe review Dialog, Summary, Alert; owner opening/ops write-only |
 | `/inventory/stock`, `/inventory/history` — UI002/READ | Table/mobile records, Badge LOW/OUT, filters, Pagination, freshness/unknown Alert |
 | `/pos`, `/cash-sessions/open`, `/cash-sessions/:id/close` — UI003/CASH/SALE | Product grid/search, cart rows, qty controls, Sheet/mobile cart, Dialog review/count/recovery, sticky Button |

@@ -1195,9 +1195,9 @@
       "complete": false,
       "projectId": "eddb0e15-9909-44b3-8517-9239cadc65ef",
       "prototypePageId": "p7-v1",
-      "candidateRevision": "sha256-b51d2975aa3a8a92",
+      "candidateRevision": "sha256-bef01d649ea91b2b",
       "approvedRevision": null,
-      "evidence": "../evidence/p7-correction/REVIEW.md"
+      "evidence": "../evidence/p7-owner-r1/REVIEW.md"
     },
     "downstreamPhases": {
       "P8": "REOPENED_DRAFT",

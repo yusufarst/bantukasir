@@ -1,8 +1,8 @@
 # 08 — Acceptance dan Definition of Done
 
-Baseline P0–P11 — **39 suite Core, 0/39 FINAL PASS, semua NOT STARTED**. 27 Build Units implementasi di [11](11-BUILD-PLAN.md). Koreksi docs/design-planning mempunyai bounded prototype browser evidence pada [review P7](evidence/p7-correction/REVIEW.md), bukan app tests, native UX01, migration, restore, benchmark, device atau pilot PASS.
+Baseline P0–P11 — **39 suite Core, 0/39 FINAL PASS, semua NOT STARTED**. 27 Build Units implementasi di [11](11-BUILD-PLAN.md). Koreksi docs/design-planning mempunyai bounded prototype browser evidence pada [review P7](evidence/p7-owner-r1/REVIEW.md), bukan app tests, native UX01, migration, restore, benchmark, device atau pilot PASS.
 
-**Status P8: REOPENED_DRAFT / PENDING_P7_APPROVAL.** Paket acceptance dipertahankan sebagai draf. [P7](planning/P7-UX-DESIGN.md) harus memperoleh approval visual owner atas exact revision, rights dan normalisasi DESIGN/token sebelum COMPLETE; `approvedRevision: null` berarti approval belum tersedia. Kandidat aktual `sha256-b51d2975aa3a8a92` telah dirender/diperiksa secara bounded dan menunggu review Owner; zoom200% serta full rendered accessibility belum terverifikasi. P8–P11 baru dapat direview ulang dan FROZEN setelah gate P7. Seluruh coding tetap tidak diotorisasi sampai paket tersebut dibekukan dan owner mengotorisasi Execute satu BU.
+**Status P8: REOPENED_DRAFT / PENDING_P7_APPROVAL.** Paket acceptance dipertahankan sebagai draf. [P7](planning/P7-UX-DESIGN.md) harus memperoleh approval visual owner atas exact revision, rights dan normalisasi DESIGN/token sebelum COMPLETE; `approvedRevision: null` berarti approval belum tersedia. Kandidat aktual `sha256-bef01d649ea91b2b` telah dirender/diperiksa secara bounded dan menunggu review Owner; zoom200% serta full rendered accessibility belum terverifikasi. P8–P11 baru dapat direview ulang dan FROZEN setelah gate P7. Seluruh coding tetap tidak diotorisasi sampai paket tersebut dibekukan dan owner mengotorisasi Execute satu BU.
 
 ## Bukti terarah versus final
 
