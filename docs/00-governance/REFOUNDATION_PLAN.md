@@ -8,14 +8,14 @@ How the BantuKasir planning set is being rebuilt on AICWDF-4.3. The reasoning is
 - Rebuild what an executor and a shop need and the earlier planning lacked: a real requirement register, glossary and lifecycle rules, a logical schema, route and interaction contracts, a design built from user tasks and plain language, and bounded Tasks.
 - One step at a time. Each step ends in a checkpoint and waits for the Owner. No step authorizes the next.
 - Business meaning changes only through an Owner decision.
-- When a subject is rebuilt, its legacy document is removed in the same step.
+- When a subject is rebuilt, its legacy document stops being authoritative in the same step: it is removed, or marked superseded and removed in a later step (SOURCE_OF_TRUTH section 4).
 
 ## 2. Steps
 
 | Step | Content | Framework phases | Needs from the Owner | Status |
 | --- | --- | --- | --- | --- |
 | RF-0 | Analysis report and Owner answers to the first questions | — | — | DONE — decisions D-019 to D-025 |
-| RF-1 | Governance and structure: the new layout; rules, source of truth, decisions, open items, toolchain, cost and data-safety documents; handoff; legacy documents moved unchanged; legacy trees retired. No change to business content. | P0 | Authorization (given, D-026); acceptance of the result | IN PROGRESS — see CURRENT_HANDOFF |
+| RF-1 | Governance and structure: the new layout; rules, source of truth, decisions, open items, toolchain, cost and data-safety documents; handoff; legacy documents moved unchanged; legacy trees retired. No change to business content. | P0 | Authorization (D-026, D-029); acceptance of the result (D-030) | DONE — checkpoint `3c94f4f`, accepted by D-030 |
 | RF-2 | Product and domain: merged product blueprint; requirement register with real requirement statements; glossary in Indonesian and English; entity lifecycle matrix; domain rules | P1, P2 | Answers to questions 8 to 15 and 19; authorization | NOT AUTHORIZED |
 | RF-3 | Architecture, security and technical rules: merged documents; ADRs; logical database schema; authentication profile; hosting topology | P4, P5, P6 | Answers to questions 5, 6, 7 and 18; authorization | NOT AUTHORIZED |
 | RF-4 | P7 rebuild: tasks per role; information architecture; page inventory; navigation contracts; terminology and copy deck; design system; key screens in the BantuKasir design project | P7 | Authorization; review at gates P7-G1, P7-G2, P7-G3 | NOT AUTHORIZED |
@@ -42,7 +42,7 @@ Useful visual tokens from the former candidate are carried forward as input (D-0
 
 | Phase | Status | Authoritative content today |
 | --- | --- | --- |
-| P0 | Being re-founded in RF-1 | `docs/00-governance/` (current) |
+| P0 | Re-founded in RF-1 | `docs/00-governance/` (current) |
 | P1 | Legacy content in force; revalidation pending | `docs/01-product/legacy/` |
 | P2 | Legacy content in force; revalidation pending | `docs/02-domain/legacy/`, entity table in `docs/04-architecture/legacy/02-ARCHITECTURE.md` |
 | P3 | Legacy workflows in force; route and interaction contracts do not exist | `docs/03-workflows/legacy/` |
@@ -63,6 +63,6 @@ RF-1 is carried out in two parts (D-021, D-026, D-028).
 
 **Part B — implementation executor on Windows, one bounded instruction.** Confirm the baseline; create and verify the safety bundle (D-027); validate Part A independently; remove the 128 retired files with `git rm`; remove the `upstream` remote; stage exact paths; create one local commit under the Owner's identity; report and stop. No push, no merge, no change to `main`; the patch file and the stash are left untouched.
 
-**RF-1 is complete** only when the checkpoint commit exists, the planning architect has checked the executor's report against the repository, and the Owner has accepted the result.
+**RF-1 is complete** only when the checkpoint commit exists, the planning architect has checked the executor's report against the repository, and the Owner has accepted the result. All three conditions were met on 3 October 2026 (D-030).
 
 **Not part of RF-1:** any change to product, domain, workflow, architecture, security, testing, operations or release content; translation of legacy documents; design work; route or interaction contracts; ADRs; Tasks; `.env.example`, `.gitignore`; any change under `assets/` other than the two link targets of D-028; tool installation; deleting the patch; dropping the stash; push, merge, or any change to `main`; application code.

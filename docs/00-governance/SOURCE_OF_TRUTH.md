@@ -172,4 +172,4 @@ No Build Unit may be executed. There is no Task baseline. `EXECUTION_CONTEXT.md`
 
 ## 4. One document per subject
 
-When a CURRENT document is written for a subject, the legacy document for that subject is removed in the same step, and this map and LEGACY_INDEX are updated. Two documents must never both claim authority for the same subject.
+When a CURRENT document is written for a subject, the legacy document for that subject stops being authoritative in the same step. It is either removed in that step, or kept for comparison with the status LEGACY — SUPERSEDED and removed in a later step. This map and LEGACY_INDEX are updated in the same step. Two documents must never both claim authority for the same subject.
