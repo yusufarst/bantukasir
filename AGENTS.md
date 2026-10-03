@@ -4,7 +4,7 @@ Stable rules for every agent that works in this repository. This file does not d
 
 ## 1. What this repository is
 
-BantuKasir is the internal codename of a goods-only point-of-sale system for one business with one stock pool. There is no application code yet. The repository holds planning documents and is being re-founded on the AICWDF-4.3 framework (decision D-019).
+BantuKasir is the internal codename of a goods-only point-of-sale system. Each installation serves one business with one stock pool; separate shops use separate installations (D-038). There is no application code yet. The repository holds planning documents and is being re-founded on the AICWDF-4.3 framework (decision D-019).
 
 ## 2. Authority
 
@@ -58,7 +58,7 @@ The Owner works on Windows. Before treating a tracked file as modified, check wh
 | Role | Who | Notes |
 | --- | --- | --- |
 | Owner | Yusuf Arif Setiawan | Final authority (section 2). |
-| Planning architect and reviewer | Fable 5.1, effort xhigh | Plans, prepares one bounded instruction at a time, reviews executor reports against the repository. |
-| Implementation executor | Claude Opus 5.5, effort xhigh, in Claude Code Desktop on Windows | Executes only the one authorized instruction, validates, reports evidence, stops. |
+| Planning agent (planner and reviewer) | Claude Project Chat; model and effort per D-031 | Plans, prepares one bounded instruction at a time, reviews executor reports against the repository. |
+| Implementation executor | Claude Code or Claude Desktop on Windows; model and effort per D-031 | Executes only the one authorized instruction, validates, reports evidence, stops. |
 
-The model names are the Owner's choice (D-023), not a claim that a model is available. If the named model is not available, say so and wait; do not substitute silently. Executor reports are evidence to be checked, not truth. There is no automatic advancement from one step or Task to the next.
+Models and effort follow D-031: Opus 5.5 is the default for planning and execution, with effort High, XHigh or Max chosen for the task; Fable 5.1 is used only for escalation. Every handoff between the planning agent and the executor states Agent, Model, Effort, Session, Reason and Escalation, and the handoff never authorizes the next task. Instructions to agents are in English; communication with the Owner is in Bahasa Indonesia. A model name is the Owner's request, not a claim that the model is available: if the named model or effort is not available, say so and wait; do not substitute silently. Executor reports are evidence to be checked, not truth. There is no automatic advancement from one step or Task to the next.

@@ -42,7 +42,7 @@ Nothing is deployed. The inventory lists what production is expected to need.
 | Item | Note |
 | --- | --- |
 | DesainPakeAI design tool | Used for P7 design work. Its plan, credits and entitlements have not been verified. Anything that may consume paid credit needs the Owner's authorization. |
-| AI planning and execution agents | Chosen by the Owner (D-023). Not a runtime dependency of the product. |
+| AI planning and execution agents | Chosen by the Owner (D-031). Not a runtime dependency of the product. |
 
 ## 5. Paid-service exception registry
 

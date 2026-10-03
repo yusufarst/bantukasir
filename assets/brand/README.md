@@ -1,10 +1,9 @@
-# Aset identitas historis
+# Brand assets
 
-BantuKasir hanya codename internal; [DESIGN](../../docs/07-ux-design/legacy/DESIGN.md) dan [04](../../docs/05-security/legacy/04-AUTH-RBAC-SECURITY.md) mewajibkan BusinessProfile runtime dengan identitas client resmi. Aset di direktori ini dipertahankan tanpa perubahan binary, tetapi **tidak menjadi default branding aplikasi produksi atau authority token**.
+This folder holds no client identity. BantuKasir is the product and internal codebase name. Each installation serves one shop, and that shop's name, logo, address, contact, receipt and document header and footer, and accent come from its runtime BusinessProfile, not from this repository ([D-038](../../docs/00-governance/DECISIONS.md)).
 
-| Aset | Provenance / batas penggunaan |
+| Asset | Status |
 | --- | --- |
-| [LATANSA mark](source/latansa-official-colored-mark.png) | Owner menyebutnya identitas resmi LATANSA pada 20 September 2026. PNG 6250×6250, 6.680.241 byte; SHA-256 `964e1a8644d75de8b5dbd37b4fae0e5af5f8c961f0acb60000e963ef4356f4ef`. Original tetap byte-identik; tidak menyatakan lisensi pihak ketiga yang lebih luas |
-| [Logo codename](bantukasir-logo.svg) | Aset prototype BantuKasir terdahulu, bukan logo resmi client produksi |
+| [bantukasir-logo.svg](bantukasir-logo.svg) | Codename prototype asset from the earlier planning. Not a client logo and not a production default. |
 
-Tidak ada approval untuk memakai LATANSA pada client lain, mengimpor palet lamanya atau mengubah original. Jika client nanti memakai logo miliknya, owner memberi sumber/izin resmi; runtime memvalidasi raster sesuai04 dan snapshot mereferensikan revision/aset privat. Tidak perlu mendesain merek atau mengoptimalkan aset ini dalam rebaseline. BU-CFG-001/BU-DESIGN-001/BU-DOC-001 menangani boundary identitas, visual dan reproduksi dokumen.
+The LATANSA mark that was kept here (`source/latansa-official-colored-mark.png`, 6,680,241 bytes, SHA-256 `964e1a8644d75de8b5dbd37b4fae0e5af5f8c961f0acb60000e963ef4356f4ef`) was removed from the current tree under D-038. It remains in Git history; the last commit that contains it is `77f6676`. Git history was not rewritten, so copies already published, including on the public GitHub repository, still exist. Its presence in the repository was never authorization to use that brand for any client. A client logo is supplied by that client and uploaded through BusinessProfile at installation.

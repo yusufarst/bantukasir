@@ -10,7 +10,7 @@ Status values: `APPROVED` (Owner approved), `RECORDED` (no Owner approval requir
 | FD-02 | English interface strings deferred beyond V1 | PROPOSED — depends on question 5, deferred by the Owner (D-020) |
 | FD-03 | Google sign-in off | PROPOSED — question 6 |
 | FD-04 | No email-based password reset or verification | PROPOSED — question 6 |
-| FD-05 | Point-of-sale screen designed counter-first | PROPOSED — question 15 |
+| FD-05 | Point-of-sale screen designed for PC and tablet first | APPROVED — D-039 (product and design decision; not device acceptance) |
 | FD-06 | Hosting other than the framework default | PROPOSED — question 7 |
 | FD-07 | Dedicated final-verification Tasks kept | RECORDED |
 | FD-08 | Build Unit identifiers replaced by `TASK-NNN` | RECORDED |
@@ -75,14 +75,16 @@ OWNER APPROVAL REQUIRED: YES — not yet decided
 ## FD-05
 
 ```text
-FRAMEWORK DEVIATION: Point-of-sale screen designed counter-first
+FRAMEWORK DEVIATION: Point-of-sale screen designed for PC and tablet first
 AICWDF RULE: §18, §27 — mobile-first
-BANTUKASIR REASON: The cashier's primary tool would be a counter computer or tablet with a
-  barcode scanner and keyboard (to be confirmed by the Owner)
-BENEFIT: Fastest path for the most frequent task
-RISK: Phone use of the till is secondary; it must still work at 375 px. Owner and Operations
-  screens stay mobile-first
-OWNER APPROVAL REQUIRED: YES — not yet decided
+BANTUKASIR REASON: The first client's cashiers will use a PC and a tablet in production (OF-02).
+  The PC is used with a physical keyboard and a USB HID barcode scanner; the tablet runs the
+  full primary cashier workflow with touch and Bluetooth HID scanners (D-039)
+BENEFIT: Fastest path for the most frequent task on the devices the shop actually uses
+RISK: The phone is not a primary cashier device. Owner and Operations screens follow the
+  framework rule. This approval is a product and design decision only: real PC, tablet,
+  scanner, printer and browser compatibility must still pass the DEVICES gate
+OWNER APPROVAL REQUIRED: YES — approved by D-039
 ```
 
 ## FD-06

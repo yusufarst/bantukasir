@@ -34,6 +34,17 @@ Rules for every `legacy/` document:
 - Links inside it are not maintained and may point at paths that no longer exist. Use [LEGACY_INDEX](LEGACY_INDEX.md) to find where a file went.
 - Statements inside it about status, authorization or "next step" are historical. Current status and authorization are only in CURRENT_HANDOFF.
 - Its identifiers (`BU-…`, `CORE-…`, acceptance suite names, `G1`–`G4`) remain valid references until the rebuilt documents replace them.
+- Where a later decision in [DECISIONS](DECISIONS.md) changes a rule written in a legacy document, the decision prevails (section 1). The legacy text is not edited. Known cases:
+
+| Legacy document | Rule that no longer applies | Decision |
+| --- | --- | --- |
+| `docs/01-product/legacy/01-PRD.md` | CASH or BANK_TRANSFER only; CSV import and product photo upload on the "Later" list | D-036, D-037 |
+| `docs/02-domain/legacy/06-INVENTORY-SPEC.md` | Purchase cost entered by Operations is write-only; no CSV product import | D-033, D-037 |
+| `docs/02-domain/legacy/15-FINANCE-PROFITABILITY.md` | Write-only cost evidence for Operations; every intermediate valuation and allocation version kept on each cost revision so that an earlier report can be re-displayed exactly | D-033, D-034 |
+| `docs/02-domain/legacy/17-POS-SALES.md` | CASH or BANK_TRANSFER only; refunds paid from Owner funds, never the drawer; expected cash without refunds | D-035, D-036 |
+| `docs/03-workflows/legacy/P3-CRITICAL-WORKFLOWS.md` | An ordinary sale passes a separate review step; no CSV import; expected cash without refunds | D-035, D-037, D-040 |
+| `docs/04-architecture/legacy/02-ARCHITECTURE.md` | A new issue-cost allocation version kept for every cost revision | D-034 |
+| `docs/05-security/legacy/04-AUTH-RBAC-SECURITY.md` | Purchase cost entered by Operations is write-only | D-033 |
 
 ## 3. Document map
 
@@ -167,7 +178,7 @@ No Build Unit may be executed. There is no Task baseline. `EXECUTION_CONTEXT.md`
 
 | Path | Subject | Status |
 | --- | --- | --- |
-| `assets/brand/` (3 files) | Historical brand assets, including a logo of another brand. Its `README.md` predates the re-foundation and is not authoritative; RF-1 changed only its two links to moved documents (D-028, OPEN_ITEMS T-13). | Under review — OPEN_ITEMS question 14 |
+| `assets/brand/` (2 files) | `bantukasir-logo.svg`, a codename prototype asset, and a `README.md` that describes it. No client identity is kept in the repository; each installation's shop identity comes from its BusinessProfile (D-038). The LATANSA mark was removed from the current tree under D-038 and remains only in Git history (last in commit `77f6676`). | CURRENT (README.md); historical asset (logo) |
 | `.env.example`, `.gitignore` | Left over from an earlier stack | Stale — rebuilt when implementation is authorized (OPEN_ITEMS T-02) |
 
 ## 4. One document per subject

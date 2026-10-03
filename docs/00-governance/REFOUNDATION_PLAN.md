@@ -16,7 +16,7 @@ How the BantuKasir planning set is being rebuilt on AICWDF-4.3. The reasoning is
 | --- | --- | --- | --- | --- |
 | RF-0 | Analysis report and Owner answers to the first questions | — | — | DONE — decisions D-019 to D-025 |
 | RF-1 | Governance and structure: the new layout; rules, source of truth, decisions, open items, toolchain, cost and data-safety documents; handoff; legacy documents moved unchanged; legacy trees retired. No change to business content. | P0 | Authorization (D-026, D-029); acceptance of the result (D-030) | DONE — checkpoint `3c94f4f`, accepted by D-030 |
-| RF-2 | Product and domain: merged product blueprint; requirement register with real requirement statements; glossary in Indonesian and English; entity lifecycle matrix; domain rules | P1, P2 | Answers to questions 8 to 15 and 19; authorization | NOT AUTHORIZED |
+| RF-2 | Product and domain: merged product blueprint; requirement register with real requirement statements; glossary in Indonesian and English; entity lifecycle matrix; domain rules | P1, P2 | Answers to questions 8 to 15 and 19 (given: D-032 to D-040); authorization | NOT AUTHORIZED |
 | RF-3 | Architecture, security and technical rules: merged documents; ADRs; logical database schema; authentication profile; hosting topology | P4, P5, P6 | Answers to questions 5, 6, 7 and 18; authorization | NOT AUTHORIZED |
 | RF-4 | P7 rebuild: tasks per role; information architecture; page inventory; navigation contracts; terminology and copy deck; design system; key screens in the BantuKasir design project | P7 | Authorization; review at gates P7-G1, P7-G2, P7-G3 | NOT AUTHORIZED |
 | RF-5 | Workflows completed with route contracts and interaction contracts | P3 | Authorization | NOT AUTHORIZED |
@@ -43,9 +43,9 @@ Useful visual tokens from the former candidate are carried forward as input (D-0
 | Phase | Status | Authoritative content today |
 | --- | --- | --- |
 | P0 | Re-founded in RF-1 | `docs/00-governance/` (current) |
-| P1 | Legacy content in force; revalidation pending | `docs/01-product/legacy/` |
-| P2 | Legacy content in force; revalidation pending | `docs/02-domain/legacy/`, entity table in `docs/04-architecture/legacy/02-ARCHITECTURE.md` |
-| P3 | Legacy workflows in force; route and interaction contracts do not exist | `docs/03-workflows/legacy/` |
+| P1 | Legacy content in force, amended by D-032 to D-040 (SOURCE_OF_TRUTH section 2) | `docs/01-product/legacy/` |
+| P2 | Legacy content in force, amended by D-032 to D-040 (SOURCE_OF_TRUTH section 2) | `docs/02-domain/legacy/`, entity table in `docs/04-architecture/legacy/02-ARCHITECTURE.md` |
+| P3 | Legacy workflows in force, amended by D-035, D-037 and D-040; route and interaction contracts do not exist | `docs/03-workflows/legacy/` |
 | P4 | Legacy content in force; no logical schema | `docs/04-architecture/legacy/` |
 | P5 | Legacy content in force; no authentication profile | `docs/05-security/legacy/` |
 | P6 | Legacy content in force | `docs/06-api-performance/legacy/` |
