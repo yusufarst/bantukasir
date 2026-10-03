@@ -1,27 +1,44 @@
-# BantuKasir — Baseline P0–P11
+# BantuKasir
 
-Codename internal untuk GOODS-only POS satu bisnis/satu stock pool; branding client final berasal dari BusinessProfile runtime. Repository berisi specification dan prototype historis; **aplikasi produksi belum dibangun**.
+BantuKasir is the internal codename of a goods-only point-of-sale system for one business with one stock pool: product catalogue and barcode search, receiving and stock control, a cashier till with cash sessions, receipts, corrections and refunds, owner reporting, and backup and recovery. The client's public name and branding are not "BantuKasir".
 
-Urutan planning wajib: **P0–P6 → P7 ACTUAL DESIGN di DesainPakeAI → owner visual approval exact revision + normalisasi DESIGN → P8 Quality/DoD → P9 Operations → P10 Release/UAT → P11 Build Units → implementation**. P0–P6 tetap frozen input; P7 **WAITING OWNER VISUAL REVIEW, NOT COMPLETE**, kandidat `sha256-bef01d649ea91b2b` pada page `p7-v1`. [Evidence aktual](docs/evidence/p7-owner-r1/REVIEW.md) memisahkan checks bounded dari validation/rights/approval holds. P8–P11 tetap REOPENED_DRAFT/PENDING_P7_APPROVAL. Project/domain/aset/token MULTIPLECORP tidak diakses atau disalin.
+**There is no application yet.** This repository contains planning documents only. It is being re-founded on the AICWDF-4.3 delivery framework; the earlier planning documents are kept under `legacy/` folders until each subject is rebuilt.
 
-Mulai [AGENTS](AGENTS.md) → [CURRENT_STATE](docs/00-CURRENT-STATE.md) → [build plan](docs/11-BUILD-PLAN.md). Handoff coding di [CLAUDE](CLAUDE.md); unit pertama [BU-FOUND-001](docs/build-units/BU-FOUND-001.md) **belum diotorisasi/dijalankan**. Primary executor yang diminta: Claude Opus 5.5/xhigh; Fable 5.1/xhigh untuk eskalasi bounded secara selektif. Availability belum diuji.
+## Where to start
 
-**27 Build Units draft, 73 requirement terpetakan, 39 acceptance suite, 0 FINAL PASS.** BU-DESIGN-001 diserap sepenuhnya ke P7. P7 desain32h + refinalisasi P8–P11 8h + implementasi253h (I110/V116/E27) = **293h**; reserve64h terpisah, allowance357h bila seluruh reserve dipakai. Critical path teknis128h; dengan prerequisite planning40h menjadi lower bound168h. Waiting owner/eksternal tidak diketahui; angka estimasi bukan jam aktual. [11](docs/11-BUILD-PLAN.md) memuat DAG dan asumsi yang akan difinalisasi setelah P7 approved.
-
-| Canonical | Otoritas |
+| If you want to know | Read |
 | --- | --- |
-| [Paket P0–P11](docs/planning/P11-BUILD-UNITS.md) | Register fase/review/freeze dan delivery |
-| [01 PRD](docs/01-PRD.md) | Core minimum/Later/role/workflow |
-| [02 architecture/domain](docs/02-ARCHITECTURE.md), [P4 evaluasi stack](docs/planning/P4-ARCHITECTURE.md) | Laravel/Inertia/React/TypeScript/PostgreSQL/Nginx terpilih; invariant schema/transaksi |
-| [04 security](docs/04-AUTH-RBAC-SECURITY.md), [P5 threat model](docs/planning/P5-SECURITY.md) | Auth/policies/object scope, DTO dan jalur ancaman |
-| [06 inventory](docs/06-INVENTORY-SPEC.md), [12 search/barcode](docs/12-BARCODE-SCANNER.md) | Ledger fisik/stock/search/HID |
-| [15 costing](docs/15-FINANCE-PROFITABILITY.md), [17 Sale/session](docs/17-POS-SALES.md) | MWA/UNKNOWN, pembayaran penuh/session atomik, correction/dokumen |
-| [DESIGN](DESIGN.md) | Exact approved DPAI revision → token semantic → UI React/shadcn native |
-| [08 acceptance/DoD](docs/08-TESTING-ACCEPTANCE.md), [CORE-MAP](docs/requirements/CORE-MAP.md) | Setiap requirement Core → BU + acceptance final |
-| [09 ops](docs/09-DEPLOYMENT-OPS.md), [P10 release/UAT](docs/planning/P10-RELEASE-UAT.md) | Database dilindungi, independent backup/restore dan cutover terotorisasi |
-| [10 keputusan](docs/10-DECISIONS.md), [gap/change control](docs/planning/GAPS-CHANGES.md) | Keputusan nyata, hold eksternal dan scope terdampak |
-| [Archive Plan 2.0](docs/archive/plan2/README.md), [register prototype](prototypes/README.md) | Input historis saja |
+| The rules for working here | [AGENTS.md](AGENTS.md) |
+| The current state and the next authorized action | [docs/handoff/CURRENT_HANDOFF.md](docs/handoff/CURRENT_HANDOFF.md) |
+| Which document is authoritative for a subject | [docs/00-governance/SOURCE_OF_TRUTH.md](docs/00-governance/SOURCE_OF_TRUTH.md) |
+| What has been decided | [docs/00-governance/DECISIONS.md](docs/00-governance/DECISIONS.md) |
+| What is still open | [docs/00-governance/OPEN_ITEMS.md](docs/00-governance/OPEN_ITEMS.md) |
+| The re-foundation steps | [docs/00-governance/REFOUNDATION_PLAN.md](docs/00-governance/REFOUNDATION_PLAN.md) |
+| Where older material went | [docs/00-governance/LEGACY_INDEX.md](docs/00-governance/LEGACY_INDEX.md) |
 
-Stack dipilih dari perbandingan A/B khusus produk ini, bukan preseden project lain. Tanpa Redis/queue/SSR runtime secara default; version/advisory/license dipin saat foundation. **P7 actual design/OWNER VISUAL APPROVAL/DESIGN COMPLETE wajib sebelum P8–P11 freeze.** Freeze berikutnya tidak menutup G1–G4/DEVICES/RELEASE atau membuktikan implementasi/testing.
+## Layout
 
-Otorisasi saat ini: koreksi docs/design-planning dan satu commit lokal yang aman. Coding menunggu P7 COMPLETE, freeze ulang P8–P11 dan Execute satu BU eksplisit; BU pertama tidak dijalankan. Lineage Git, patch untracked dan source/aset/evidence historis dipreservasi; keadaan fisik tercatat pada00.
+```text
+AGENTS.md, CLAUDE.md, README.md
+docs/
+  00-governance/       rules, source of truth, decisions, open items, toolchain, cost, data safety
+  01-product/          product scope and requirements
+  02-domain/           domain model and business rules
+  03-workflows/        critical workflows, route and interaction contracts
+  04-architecture/     architecture, stack, schema
+  05-security/         security model
+  06-api-performance/  concurrency, idempotency, API and performance rules
+  07-ux-design/        information architecture, copy, design system
+  08-testing/          test strategy and acceptance
+  09-operations/       infrastructure, backup and restore
+  10-release/          release and rollback
+  11-tasks/            execution context, Task plan and Tasks
+  handoff/             current handoff
+assets/brand/          historical brand assets (under review)
+```
+
+Folders `01` to `11` currently contain only a `legacy/` subfolder holding the earlier documents for that subject, in Indonesian. New documents are added as each re-foundation step is authorized and completed.
+
+## Stack (planned, nothing installed)
+
+Laravel, Inertia, React with TypeScript, shadcn/ui with Tailwind CSS, PostgreSQL and Nginx, as a modular monolith. Versions are pinned when implementation is authorized.

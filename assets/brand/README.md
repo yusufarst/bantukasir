@@ -1,6 +1,6 @@
 # Aset identitas historis
 
-BantuKasir hanya codename internal; [DESIGN](../../DESIGN.md) dan [04](../../docs/04-AUTH-RBAC-SECURITY.md) mewajibkan BusinessProfile runtime dengan identitas client resmi. Aset di direktori ini dipertahankan tanpa perubahan binary, tetapi **tidak menjadi default branding aplikasi produksi atau authority token**.
+BantuKasir hanya codename internal; [DESIGN](../../docs/07-ux-design/legacy/DESIGN.md) dan [04](../../docs/05-security/legacy/04-AUTH-RBAC-SECURITY.md) mewajibkan BusinessProfile runtime dengan identitas client resmi. Aset di direktori ini dipertahankan tanpa perubahan binary, tetapi **tidak menjadi default branding aplikasi produksi atau authority token**.
 
 | Aset | Provenance / batas penggunaan |
 | --- | --- |

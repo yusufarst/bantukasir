@@ -1,51 +1,64 @@
-# Aturan agent — Baseline P0–P11
+# AGENTS.md — BantuKasir
 
-Repository canonical adalah sumber kebenaran BantuKasir, codename internal untuk GOODS-only POS. Instruksi owner terbaru mengadopsi kerangka governance/planning/review MULTIPLECORP dari diskusi terlampir, **bukan domain bisnis, aset, token atau project desainnya**. Plan 2.0/T01–T40, Plan 1.1/Rxx/BKxx/UIxx/Gate A/B menjadi histori. Jangan mengubah upstream LATANSA atau menghapus pekerjaan lokal yang tidak terkait.
+Stable rules for every agent that works in this repository. This file does not describe the current state of the work; that is in [CURRENT_HANDOFF](docs/handoff/CURRENT_HANDOFF.md). Nothing in this file grants permission to do a specific piece of work.
 
-## Recovery, authority dan scope eksekusi
+## 1. What this repository is
 
-Periksa `git status --short`, branch, HEAD, commit terbaru serta staged/unstaged/untracked terlebih dahulu. Baca file ini → [00](docs/00-CURRENT-STATE.md) → [11](docs/11-BUILD-PLAN.md)/BU terpilih → [01](docs/01-PRD.md) → [02](docs/02-ARCHITECTURE.md) → [10](docs/10-DECISIONS.md) → specification kartu; UI membaca [DESIGN](DESIGN.md). Coding executor membaca [CLAUDE](CLAUDE.md). Memory chat atau laporan executor bukan evidence.
+BantuKasir is the internal codename of a goods-only point-of-sale system for one business with one stock pool. There is no application code yet. The repository holds planning documents and is being re-founded on the AICWDF-4.3 framework (decision D-019).
 
-Planning P0 → P11 secara autonomous diotorisasi dalam sesi rebaseline ini, tanpa konfirmasi rutin antar fase. P0–P6 dipertahankan sebagai input yang dibekukan. **P7 wajib menghasilkan desain aktual melalui DesainPakeAI, approval visual owner eksplisit atas exact revision, serta DESIGN/kontrak token yang dinormalisasi. Baru setelah P7 COMPLETE, P8–P11 dapat difinalisasi ulang dan dibekukan.** Approval P7 adalah gate wajib, bukan konfirmasi fase rutin. [P0](docs/planning/P0-GOVERNANCE.md) mengatur AUTONOMOUS, PLANNER-DETERMINED PRODUCT SUPPORT dan OWNER_DECISION_REQUIRED. Capability tambahan memerlukan masalah konkret, alternatif lebih sederhana, biaya implementasi dan dampak operasi. Perubahan material pada makna bisnis, visibility, uang/stok, legalitas atau biaya nyata memerlukan keputusan owner.
+## 2. Authority
 
-Blueprint freeze membekukan specification yang direview; bukan bukti runtime, fakta client, implementation COMPLETE atau FINAL PASS. Untuk P7, review dokumen atau context teramati tidak mencukupi: freeze memerlukan desain aktual, approval visual owner atas revision yang tepat dan kontrak DESIGN yang dinormalisasi. Paket P8–P11 tetap draft sampai gate P7 terpenuhi. [Gap/change register](docs/planning/GAPS-CHANGES.md) memisahkan holds dan scope terdampak. Perubahan requirement masuk canonical/decision/mapping/BU/acceptance sebelum coding; buka kembali fase terdampak, review dan reestimasi.
+1. **Owner.** Final authority on business policy, product scope, money and payment meaning, inventory meaning, roles and authorization, legal and tax behaviour, accepted risk, recurring cost, destructive operations and major workflow.
+2. **AICWDF-4.3.** The operating framework for how this project is planned, executed, validated, released and maintained. The binding subset is written into [docs/00-governance](docs/00-governance/PROJECT_RULES.md). Approved departures are in [FRAMEWORK_DEVIATIONS](docs/00-governance/FRAMEWORK_DEVIATIONS.md).
+3. **Repository.** The durable source of project state. [SOURCE_OF_TRUTH](docs/00-governance/SOURCE_OF_TRUTH.md) says which document is authoritative for each subject.
+4. **Chat, model memory, summaries, executor reports.** Supporting evidence only. A decision made in chat does not exist for this project until it is written into [DECISIONS](docs/00-governance/DECISIONS.md).
 
-Eksekusi nantinya memerlukan **P7 COMPLETE, P8–P11 difinalisasi ulang dan FROZEN**, lalu instruksi eksplisit **Execute BU-...** untuk satu unit dengan dependency artifact yang kompatibel dan PASS. Semua coding masih tidak diotorisasi; instruksi Execute tidak boleh melewati prasyarat paket tersebut. Satu primary coding executor; independent review boleh paralel. Jangan otomatis melanjutkan unit berikut. Label yang diminta owner: Claude Opus 5.5/effort xhigh; Fable 5.1/effort xhigh secara selektif untuk masalah bounded berisiko tinggi. Verifikasi availability saat handoff; jangan mengaku model telah digunakan atau menggantinya diam-diam.
+When two sources conflict, do not choose silently. Follow the hierarchy in SOURCE_OF_TRUTH; if it does not settle the matter, stop and report.
 
-Inspeksi dan stage path exact. Jangan `git add -A`, reset/clean/restore, menimpa source lama atau mencampur index yang tidak terkait. Git terkini adalah fakta fisik; klaim leftovers dalam histori tidak membuktikan file masih ada.
+## 3. What to read
 
-## Produk, integritas dan privasi
+Every agent, in this order:
 
-- GOODS saja, satu stock pool, tepat tiga role: SUPER_ADMIN/Pemilik, OPERATIONS_ADMIN/Admin Operasional, CASHIER/Kasir. Server auth/policies/object scope dan actor/config guards wajib.
-- Product/category/barcode/search, receiving, opening khusus Pemilik, manual issue dengan reason non-sale, LOW/OUT. Pembuatan master tetap stok 0; unit/precision terkunci sesudah movement pertama.
-- StockMovement immutable adalah kebenaran fisik; StockBalance projection sinkron nonnegative. Tidak ada direct balance edit atau stok negatif.
-- Sale langsung dibayar penuh, satu CASH **atau** BANK_TRANSFER. Tidak ada mixed/split/partial/debt. Konfirmasi manusia atas penerimaan penuh dana transfer bukan settlement gateway.
-- Sale/lines/full Payment/SALE_ISSUE/balance/cost atau UNKNOWN/ReceiptSnapshot/audit/durable result commit bersama. Scan hanya mengubah draft; print sesudah commit.
-- Key/fingerprint/source intent/recovery epoch stabil mencegah duplikasi. UNCERTAIN/status yang tidak ditemukan/timeout bukan izin Sale pengganti, pembayaran ulang atau blind replay setelah restore. Pulihkan original, termasuk setelah CashSession CLOSED.
-- MWA memakai perhitungan decimal presisi; UNKNOWN eksplisit; Laba Kotor bukan Laba Bersih. Cost evidence/allocations/revisions immutable; replay bounded dan all-or-nothing. Refund/return/correction menjaga original dan biaya historis; refund tanpa verified saleable return tidak menambah stok.
-- Biaya perolehan/HPP/profit serta audit/security/recovery sensitif hanya Pemilik. Allowlist DTO staff mencakup HTML/Inertia props/shared props/flash/old input/history/errors/status/cache/log/media/export/browser storage. Biaya incoming Operations write-only, tanpa echo atau payload biaya pada recovery.
-- CashSession ringan: satu drawer/satu responsible cashier/satu OPEN per register dan per cashier; opening cash eksplisit termasuk Rp0; session sendiri termasuk Pemilik/Sale transfer-only; OPEN → CLOSED race-safe dengan laporan immutable. Tidak ada reopen/responsibility overwrite/shared active drawer/paid-in/out.
-- Identity/logo/template/accent BusinessProfile runtime bounded dan versioned; dokumen original mempertahankan revision/aset. Logo codename repository bukan authority default client.
-- Future PaymentProvider seam hanya boundary arsitektur. Tidak mengimplementasikan callback/webhook/QRIS/asynchronous payment/gateway V1. Seluruh capability Later di 01 tetap tidak aktif.
+1. this file;
+2. [docs/handoff/CURRENT_HANDOFF.md](docs/handoff/CURRENT_HANDOFF.md) — current state, next authorized action, what is not authorized;
+3. [docs/00-governance/SOURCE_OF_TRUTH.md](docs/00-governance/SOURCE_OF_TRUTH.md) — the document map;
+4. only the documents the map names for the work in hand.
 
-## Stack dan desain
+Implementation executors will additionally read `docs/11-tasks/EXECUTION_CONTEXT.md`, `docs/11-tasks/TASK_PLAN.md` and the active Task. Those files do not exist yet. They are created when the Task baseline is planned (step RF-7 of the [re-foundation plan](docs/00-governance/REFOUNDATION_PLAN.md)). Until they exist and the Owner authorizes implementation, there is no Task to execute.
 
-Stack dipilih setelah comparison/review: **Laravel + Inertia + React/TypeScript + PostgreSQL + Nginx**, shadcn/ui/Tailwind, PHP-FPM, Vite pada build time dan session database. Modular monolith memakai policies/FormRequests/Actions/DTO aman dan decimal presisi; tanpa SSR Node/Redis/queue/microservices secara default. [P4](docs/planning/P4-ARCHITECTURE.md) mencatat alasan, alternatif, testing/ops/maintenance. Pin versi/advisory/license kompatibel yang terverifikasi dalam BU-FOUND-001; freeze stack dibuka hanya berdasarkan evidence/change control.
+## 4. Before any work
 
-Pipeline: **P7 desain aktual DesainPakeAI → approval visual owner atas exact BantuKasir Design revision → DESIGN/kontrak/token semantic repository yang dinormalisasi → P8–P11 difinalisasi ulang dan FROZEN → shadcn/ui → UI produksi React/Inertia native**. Tidak menunda desain atau approval pertama ke Build Unit implementasi. Backend/database/tests/ops yang independen secara teknis dapat dijadwalkan tanpa menunggu consumer UI hanya setelah paket planning dibekukan dan satu BU diotorisasi; prinsip ini bukan izin coding selama P7/P8–P11 belum selesai.
+Inspect the branch, HEAD, staged, unstaged and untracked files, and the stash. Compare with CURRENT_HANDOFF. If the repository differs materially from what the handoff records, stop and report; do not repair it.
 
-Gunakan CLI global `dpai`, bukan MCP; setup user tidak diulang tiap task. Sebelum context dan setiap mutation yang diotorisasi, `dpai project current --pretty` harus menunjukkan **BantuKasir Design / eddb0e15-9909-44b3-8517-9239cadc65ef**. Simpan revision, bukan credential. MULTIPLECORP tidak boleh dipilih/dibaca/diekspor/dimutasi atau dipakai sebagai inspirasi visual/fallback/aset/token. Mismatch → STOP sebelum akses lanjut. Mutation desain/layanan berbayar/pembelian memerlukan otorisasi scope. 21st.dev/Impeccable bukan tooling/gate aktif.
+The Owner works on Windows. Before treating a tracked file as modified, check whether the difference is only CRLF versus LF. Do not rewrite files to normalize line endings.
 
-## Database produksi dilindungi
+## 5. Rules
 
-Tanpa approval owner untuk operasi destruktif **EXACT**, jangan DROP database/schema/populated tables, TRUNCATE, mass DELETE, reset/recreate/demo seed produksi, hapus ledger/Sale/Payment/AuditEvent/history, tulis ulang fakta historis, hapus database/Docker volume/persistent directory atau `docker compose down -v`. Fix/deploy/run migration bukan approval destruktif.
+1. Do only what the current authorization in CURRENT_HANDOFF allows. Completing one step never authorizes the next.
+2. No application code, schema, dependency installation or infrastructure work until the Owner explicitly authorizes the implementation phase.
+3. Stop and ask the Owner before deciding anything that changes business meaning, money or payment behaviour, stock behaviour, roles or authorization, legal or tax behaviour, V1 scope, a major workflow, recurring cost, accepted risk, destructive data behaviour or release risk. Ordinary technical and planning choices are yours to make and record.
+4. Do not keep an old decision merely because it was once approved, and do not change genuine business meaning silently. Classify doubtful older decisions as `OWNER_REVALIDATION_REQUIRED` and ask a precise question. Open items are in [OPEN_ITEMS](docs/00-governance/OPEN_ITEMS.md).
+5. MULTIPLECORP is a separate project. Never inspect it, copy its domain model, interface or assets, mutate it, or use it as evidence or inspiration.
+6. Design work uses only the BantuKasir design project recorded in [TOOLCHAIN](docs/00-governance/TOOLCHAIN.md). Verify the project identity before every access; on a mismatch, stop. Do not claim a design tool was used when it was not.
+7. Money is never floating point. Quantities are exact. Historical money and stock facts are append-only and are corrected by linked compensating records, never by rewriting. One source of truth per fact. Critical money and stock actions are transactional, with explicit concurrency and idempotency behaviour.
+8. Authorization is deny by default and enforced on the server. Hiding a control in the interface is not authorization.
+9. Never commit or expose `.env` files, credentials, API keys, tokens, private keys, production secrets or database passwords.
+10. Production data is protected. Follow [PRODUCTION_DATA_SAFETY](docs/00-governance/PRODUCTION_DATA_SAFETY.md). Nothing destructive is done to production data without the Owner's approval of that exact operation. No production operation of any kind is authorized today.
+11. Git: never rewrite published history; never force push; never repair unexpected divergence on your own; stage exact paths and never use `git add -A`; do not use reset, clean or restore to tidy the tree; do not push, merge or deploy without explicit authorization for that action.
+12. Commits use only the Owner's configured Git identity. Never add an attribution trailer or any mention of an AI model, agent or tool to a commit (`Co-Authored-By`, `Generated-By`, `Assisted-By` and similar). Do not rewrite old commits to remove past attribution.
+13. The target for additional recurring production cost is zero. A paid service is a stop condition that needs the Owner's approval. See [COST_POLICY](docs/00-governance/COST_POLICY.md).
+14. Agent-facing repository documents are written in English. The interface is Indonesian first. V1 localization is not yet decided (D-020).
+15. Files under any `legacy/` folder are pre-re-foundation documents. Do not edit them. They are replaced, not patched, when their subject is rebuilt.
+16. Evidence, not assertion. Do not report a check as passed unless it was run. Do not invent approvals, test results, timestamps or tool output.
+17. Record real decisions in DECISIONS, framework departures in FRAMEWORK_DEVIATIONS, and open questions in OPEN_ITEMS, in the same piece of work that produced them.
+18. Before stopping, update CURRENT_HANDOFF last, so that a new agent with no chat history can continue.
 
-Gunakan forward/additive expand → migrate/backfill → verify → contract, populated rehearsal terisolasi, independent backup/restore readiness, transaksi bila sesuai dan rekonsiliasi. Jika destruction tampak perlu, STOP: jelaskan data berisiko, alasan, alternatif, migration/backfill, backup/restore dan rollback/recovery. Reset fixture hanya pada test database yang diidentifikasi dan diotorisasi. [09](docs/09-DEPLOYMENT-OPS.md) adalah runbook.
+## 6. Roles
 
-## DoD, evidence dan closeout
+| Role | Who | Notes |
+| --- | --- | --- |
+| Owner | Yusuf Arif Setiawan | Final authority (section 2). |
+| Planning architect and reviewer | Fable 5.1, effort xhigh | Plans, prepares one bounded instruction at a time, reviews executor reports against the repository. |
+| Implementation executor | Claude Opus 5.5, effort xhigh, in Claude Code Desktop on Windows | Executes only the one authorized instruction, validates, reports evidence, stops. |
 
-Penuhi delapan dimensi [08](docs/08-TESTING-ACCEPTANCE.md): BUSINESS, UI/UX, BACKEND, DATABASE, SECURITY, DATA INTEGRITY, PERFORMANCE, VERIFICATION. Gunakan PostgreSQL nyata untuk constraints/rollback/races; privasi role lintas channel; PHP static checks dan TypeScript lint/typecheck/build; browser/mobile/a11y; perangkat/restore/performance aktual bila relevan. Mock/screenshot/bukti awal bukan FINAL PASS; jangan mengarang hasil.
-
-Catat revision/commands/target non-secret/dataset/results/reviewer/fixes/holds; update 11 dan 10 untuk keputusan nyata, lalu **00 LAST**. Stage path yang disengaja dan review seluruh index. Commit lokal task hanya untuk scope terotorisasi, hasil koheren dan checks lulus. Jangan push/merge/deploy/publish/beli tanpa otorisasi eksplisit. Target biaya tambahan sekitar Rp0 tidak menghapus independent backup; catat biaya nyata.
-
-Sesi koreksi ini mengotorisasi **satu commit lokal docs/design-planning** bila scope aman, lalu STOP. P7 yang belum memperoleh approval visual owner tetap IN PROGRESS atau WAITING OWNER VISUAL APPROVAL sesuai evidence; P8–P11 tetap REOPENED_DRAFT/PENDING_P7_APPROVAL. Tidak mengotorisasi coding aplikasi, BU-FOUND-001 atau unit lain, infrastructure/database produksi, push maupun deploy.
+The model names are the Owner's choice (D-023), not a claim that a model is available. If the named model is not available, say so and wait; do not substitute silently. Executor reports are evidence to be checked, not truth. There is no automatic advancement from one step or Task to the next.
