@@ -4,7 +4,7 @@ The single log of decisions for BantuKasir. A decision made in conversation does
 
 ## 1. How to use this log
 
-- Identifiers are permanent and continue the original numbering. The next free identifier is **D-041**.
+- Identifiers are permanent and continue the original numbering. The next free identifier is **D-048**.
 - "Source" says who decided: **Owner**, or **Planner** (a planning agent acting on its own authority under the rules of the time).
 - "Status" says whether the decision is in force today. `REVALIDATION PENDING` means the decision still applies but the Owner has been asked to re-confirm it; the item number refers to [OPEN_ITEMS](OPEN_ITEMS.md).
 - D-001 to D-018 were recorded on 2 and 3 October 2026 in the former register, now [legacy/10-DECISIONS.md](legacy/10-DECISIONS.md). The table below summarizes them in English. For the exact meaning of D-001 to D-018 the original Indonesian wording governs; for whether a decision is in force, this log governs.
@@ -35,7 +35,7 @@ The single log of decisions for BantuKasir. A decision made in conversation does
 
 ## 3. Decisions under the re-foundation (D-019 onward)
 
-All by the Owner (Asia/Jakarta). D-019 to D-025 answer the questions of the [re-foundation analysis report](records/REFOUNDATION_ANALYSIS_2026-10-03.md) (3 October 2026). D-026 to D-030 authorize and accept RF-1 (3 October 2026). D-031 to D-040 come from the Owner decision session held after RF-1 (3 and 4 October 2026); their full terms are in section 6.
+All by the Owner (Asia/Jakarta). D-019 to D-025 answer the questions of the [re-foundation analysis report](records/REFOUNDATION_ANALYSIS_2026-10-03.md) (3 October 2026). D-026 to D-030 authorize and accept RF-1 (3 October 2026). D-031 to D-040 come from the Owner decision session held after RF-1 (3 and 4 October 2026). D-041 authorizes RF-2 (4 October 2026). D-042 to D-045 answer questions 21 to 24, which the planning agent asked while drafting RF-2; D-046 and D-047 answer questions 27 and 28, which came from the independent adversarial review of RF-2 (all 4 October 2026). The full terms of D-031 to D-047 are in section 6.
 
 | ID | Decision | Effect |
 | --- | --- | --- |
@@ -61,6 +61,13 @@ All by the Owner (Asia/Jakarta). D-019 to D-025 answer the questions of the [re-
 | D-038 | One shop or many (question 14): BantuKasir is installed separately for each shop; one business and one stock pool per installation; not multi-tenant; client-neutral code; shop identity from BusinessProfile with revisions. The LATANSA mark leaves the current tree in the next authorized repository change; Git history is not rewritten. | Resolves R-10 and T-13. Confirms and scopes D-010. Confirms D-002 per installation. |
 | D-039 | The counter (question 15): PC and tablet are both primary production cashier devices with equivalent cashier capabilities; the phone is not a primary cashier device. Receipt templates: thermal 58 mm, thermal 80 mm and A4 through browser print. V1 calculates no tax. Sign-in sessions: 30 minutes of inactivity, 12 hours absolute, never changing a CashSession. | Resolves R-14 and confirms the D-013 timeouts. Approves FD-05 as a product and design decision; it is not device acceptance. First-store facts stay open (OF-02; gates G1, G3, DEVICES). |
 | D-040 | Confirming a sale (question 19): an ordinary Sale is confirmed on one payment screen with one final action; for BANK_TRANSFER and STATIC_QRIS that action states that the funds were received. Server-side integrity is unchanged. Other mutations keep their review steps. | Resolves R-07. Amends the legacy P3 rule for ordinary Sale checkout only. |
+| D-041 | RF-2 is authorized as one documentation checkpoint on baseline `4af59a5423298d25d672923279439951fc67ea4d`, the governance checkpoint that records D-031 to D-040, which the Owner accepted on 4 October 2026 after the planning agent's review. Scope: eight CURRENT product and domain documents and changes to seven existing files; superseded legacy documents stay byte-identical and are marked superseded through SOURCE_OF_TRUTH and LEGACY_INDEX; T-16 and every unknown first-store fact and open question stay open. The authorization also clarifies the D-031 workflow. RF-3 is not authorized. | Governance; no product or domain content of its own. Authorizes RF-2 ([REFOUNDATION_PLAN](REFOUNDATION_PLAN.md) section 6). Where the planning agent's RF-2 authorization packet differs from these terms, these terms prevail. |
+| D-042 | Lifecycle of master data and configuration (question 21): no deletion in V1. Categories, products, cash registers and users are only deactivated and reactivated — categories and products by the Owner or OPERATIONS_ADMIN, cash registers and users by the Owner. The file of a replaced or removed product photo is kept: no longer shown, included in backups. BusinessProfile revisions are never deleted. | Applied in DOMAIN_MODEL section 11.1, CATALOG_BARCODE and REQUIREMENTS (REQ-ACC-10, REQ-CAT-10, REQ-CAT-12, REQ-OPS-05). Retired barcodes stay under their existing rule and question 26 (R-17). |
+| D-043 | Personal data of former staff (question 22): the Owner may anonymize a deactivated account. It is not a deletion; the internal identity and audit relationships remain; historical records are never rewritten. | Terms in section 6. Applied in DOMAIN_MODEL section 8 (BR-USR-11, BR-USR-12) and REQUIREMENTS REQ-ACC-11. An anonymized account cannot be reactivated (D-042). |
+| D-044 | Retention of business records (question 23): records that form the basis of bookkeeping or of business and tax records are kept at least 10 years; this is a minimum, not a deletion deadline; V1 has no deletion feature for them. | Terms in section 6. Applied in DOMAIN_MODEL section 12 (BR-KEEP-03 to BR-KEEP-08) and REQUIREMENTS REQ-OPS-05. Data classes outside this rule are not decided (OPEN_ITEMS T-17 c). |
+| D-045 | Drawer-funded refund and expected cash (question 24): a drawer-funded CASH refund is allowed only when its amount is at most the selected OPEN session's current expected cash; expected cash never becomes negative because of a refund. | Terms in section 6. Applied in SALES_CASH (BR-RFD-15, BR-RFD-16) and REQUIREMENTS REQ-RFD-08. D-035 stays in force. |
+| D-046 | Timing of the drawer payout for a drawer-funded refund (question 27): cash is taken from the drawer only after the refund has committed, with the D-045 check first; if the outcome is uncertain, the status of the original refund is checked first and no cash is taken until the refund is recorded. | Terms in section 6. Applied in SALES_CASH (BR-RFD-05, BR-RFD-07, BR-RFD-14, BR-RFD-17, BR-CASH-07, BR-CASH-16) and REQUIREMENTS REQ-RFD-03, REQ-RFD-09. Owner-funded and BANK_TRANSFER refunds still record the payout actually made. D-035 and D-045 stay in force. |
+| D-047 | What OPERATIONS_ADMIN sees after an Owner cost correction (question 28): on a confirmed receiving document, OPERATIONS_ADMIN sees the current cost after the Owner's correction, the mark "Dikoreksi Pemilik" and the cost at confirmation; the reason for the correction, cost of goods sold, margin, profit and inventory value stay hidden. | Terms in section 6. Applied in INVENTORY BR-INV-15, COSTING BR-COST-07 and REQUIREMENTS REQ-INV-05, REQ-COST-04. Correcting cost after confirmation stays Owner-only (D-033, D-034). |
 
 ## 4. Facts supplied by the Owner
 
@@ -75,7 +82,7 @@ All by the Owner (Asia/Jakarta). D-019 to D-025 answer the questions of the [re-
 | --- | --- | --- |
 | The RF-1 safety bundle is on the same physical drive as the repository. | Owner | D-027 |
 
-## 6. Terms of D-031 to D-040
+## 6. Terms of D-031 to D-047
 
 The Owner gave these decisions with detailed limits. The limits below are part of each decision.
 
@@ -201,3 +208,96 @@ Open facts (not decided): the number of products at go-live, and whether the ini
 - Scanner Enter never triggers the final action, and the control is never focused or wired so that a scanner terminator can submit the Sale.
 - On the tablet the final action has an adequate touch target and is placed away from ordinary cart interactions. On the PC keyboard and scanner efficiency stays high. The final action shows distinct enabled, submitting, committed, rejected and uncertain states. After a successful commit the committed receipt or result is shown, with no further confirmation step.
 - This applies to ordinary Sale checkout only. Corrections, Owner refunds and returns, receiving, opening stock and CashSession close keep their review and confirmation steps. It is not a rule that every business mutation becomes one action.
+
+### D-041 — RF-2 authorization
+
+Scope:
+
+- RF-2 is one documentation checkpoint on baseline `4af59a5423298d25d672923279439951fc67ea4d`.
+- It creates exactly eight CURRENT documents: `docs/01-product/PRODUCT_BLUEPRINT.md`, `docs/01-product/REQUIREMENTS.md`, `docs/02-domain/GLOSSARY.md`, `docs/02-domain/DOMAIN_MODEL.md`, `docs/02-domain/CATALOG_BARCODE.md`, `docs/02-domain/INVENTORY.md`, `docs/02-domain/COSTING.md` and `docs/02-domain/SALES_CASH.md`.
+- It changes only `docs/00-governance/SOURCE_OF_TRUTH.md`, `docs/00-governance/LEGACY_INDEX.md`, `docs/00-governance/OPEN_ITEMS.md`, `docs/00-governance/DECISIONS.md`, `docs/00-governance/REFOUNDATION_PLAN.md`, `docs/handoff/CURRENT_HANDOFF.md` and the root `README.md`.
+- Superseded legacy documents are not deleted in RF-2. They stay byte-identical and their status is set through SOURCE_OF_TRUTH and LEGACY_INDEX.
+- The deferred root README wording (T-13), the note that D-023 is superseded (question 4) and the handoff "Next step" wording are cleaned up only because those files are already changed by RF-2. This is not a separate remediation.
+
+Boundary. RF-2 is documentation consolidation only. It does not write application code, design database schemas or migrations, start RF-3, redesign authentication, design page flows or interface layouts, create the P7 replacement, rewrite the test suite, repartition Build Units or Tasks, deploy or operate production, push, merge, rebase or rewrite Git history, update the safety bundle, or decide any unresolved Owner or client fact by assumption.
+
+D-031 workflow clarification:
+
+- Opus 5.5 remains the default for planning and execution.
+- Effort may be High, XHigh or Max according to the actual complexity and risk.
+- Fable 5.1 is escalation only: when Opus 5.5 cannot resolve the task reliably, or when an exceptionally difficult independent review is genuinely justified. Escalation is not restricted to cases where the Owner explicitly asks for it, and it is never chosen silently for convenience.
+- RF-2 planning: Planning agent, Opus 5.5, effort XHigh, new chat. The fresh-session adversarial review of COSTING, INVENTORY and SALES_CASH may use Opus 5.5 at effort Max if the actual complexity justifies it.
+
+T-16. T-16 stays an unresolved design issue. RF-2 may document the decided invariants: immutable original Sale and StockMovement facts; append-only cost correction evidence; bounded deterministic moving-weighted-average replay; atomic publication; UNKNOWN is never zero; a saleable return restores the original issue-linked cost exactly once; corrected current reporting reflects the latest valid cost evidence. RF-2 must not decide whether the issue-cost allocation captured at Sale commit is an immutable original fact or a replaceable, recomputable derived value, how an at-commit value and a corrected derived value are represented, or the schema representation. If resolving either of the first two becomes necessary, the planning agent stops and asks the Owner one question at a time.
+
+Unknown facts. The go-live product count, whether an initial spreadsheet exists, shared-device practice, drawer count, opening float, actual printer and paper width, PKP/PPN status, whether LATANSA is the first installation, questions 5, 6, 7, 18 and 20, items N-01, N-03, N-04 and N-05, and T-14, T-15 and T-16 stay UNKNOWN or OPEN. If lifecycle or retention work needs a business decision — hard deletion of unused master data, anonymization of former staff, retention of business records, or any other unresolved business meaning — the planning agent stops and asks the Owner one question at a time instead of choosing a policy.
+
+Validation before any executor handoff:
+
+- every applicable decision D-001 to D-041 is traceable to at least one CURRENT rule or requirement, or classified as non-product/domain;
+- every CORE-001 to CORE-073 maps to a CURRENT requirement or is retired with a written reason; no capability disappears silently;
+- lifecycle matrices hold an explicit value in every cell, with OPEN or UNRESOLVED and the item where a decision is pending; no policy is invented to fill a cell;
+- the glossary keeps one concept to one canonical English term plus the provisional Indonesian shop term;
+- money and quantity invariants stay exact: whole rupiah, half-up rounding once per line, six-decimal cost, no floating point, UNKNOWN is not zero;
+- superseded legacy files stay byte-identical; no secret or private client data is introduced; link integrity passes, with the document count re-derived;
+- COSTING, INVENTORY and SALES_CASH receive an independent adversarial review before the executor instruction is prepared.
+
+Safety note. The accepted baseline and the two RF-1 commits before it (`3c94f4f`, `77f6676`, `4af59a5`) exist only in the local repository and are not in the pre-RF-1 safety bundle. The risk stays visible in the RF-2 handoff and report. This is not an authorization to push or to refresh the bundle.
+
+Workflow: planning in a fresh chat; reading the canonical governance and the applicable legacy product and domain sources; writing the RF-2 working tree without staging or committing; one Owner question at a time at a stop condition; self-review and the separate adversarial review; a concise Bahasa Indonesia summary for the Owner; then exactly one deterministic English executor instruction for one local RF-2 checkpoint commit, which the planning agent does not execute itself. RF-3 remains not authorized.
+
+### D-042 — Lifecycle of master data and configuration
+
+- There is no deletion of master data or configuration in V1, neither soft nor permanent.
+- Categories and products are deactivated and reactivated by the Owner or OPERATIONS_ADMIN; cash registers and users by the Owner.
+- The file of a replaced or removed product photo is kept: it is no longer shown and stays in backups.
+- BusinessProfile revisions are never deleted.
+- Consequences accepted with the choice: data-entry mistakes are handled by deactivation; inactive records accumulate behind filters; photo backups are slightly larger.
+
+### D-043 — Personal data of former staff
+
+- Anonymization is for the Owner only, and only after the user account has been deactivated.
+- It is not a hard delete. The stable internal user identity and every audit relationship remain.
+- Personal and profile fields may be replaced with a neutral, non-personal label where applicable. Which sign-in identifier fields are affected is not decided here; it follows question 6.
+- Historical business records stay immutable. Sales, ReceiptSnapshots, cash session reports, refunds, audit events and other records keep the actor identity and display information that applied when they were created, where the existing decisions require historical reproduction. Anonymizing the current user profile never rewrites them.
+- The anonymization needs a reason and is audited permanently with the Owner as actor and its time.
+- An anonymized account stays deactivated and is never reused for another person. A former staff member who is employed again gets a new user account; the anonymized identity is never reconnected silently.
+- This is product lifecycle policy only. It is not a claim of full legal compliance and not a substitute for legal advice about personal-data deletion requests.
+
+### D-044 — Retention of business records
+
+- Business books, records, documents and electronic data that form the basis of bookkeeping or of business and tax records are retained for at least 10 years.
+- The 10-year period is a minimum retention rule, not an automatic deletion deadline. There is no universal "delete after 10 years" rule.
+- V1 has no automatic expiry, purge, archival deletion or scheduled deletion of business records.
+- Immutable transactional and audit facts never become deletable merely because 10 years have passed.
+- After the minimum period, any future archival or deletion capability needs a separate Owner decision, legal and compliance revalidation, an explicit data classification, and safeguards for historical references, audit, reconciliation and document reproduction.
+- Data classes not covered by the bookkeeping rule may have their own lifecycle and retention rules; none is decided in RF-2.
+- This product rule is not a claim that BantuKasir by itself guarantees legal or tax compliance.
+
+### D-045 — Drawer-funded refund and expected cash
+
+- A drawer-funded CASH refund is allowed only when the refund amount is at most the current expected cash of the selected OPEN cash session. Equality is valid: expected cash may become exactly Rp0. Expected cash never becomes negative as the result of a refund.
+- There is no Owner override that lets a selected drawer go below zero.
+- If the selected drawer's expected cash is not sufficient, that funding source is rejected before commit. The Owner may then explicitly choose another eligible OPEN cash session whose expected cash is sufficient, or the Owner's own funds.
+- Drawers and funding sources are never switched automatically. One refund is never split silently across several drawers, or between a drawer and the Owner's funds: a cash refund has one explicitly selected funding source unless a separate future decision introduces split payout.
+- No general cash top-up, paid-in, cash adjustment or negative-drawer mechanism is created as a workaround.
+- The guard rests on the system's expected-cash record; it does not claim that the physical cash has been counted.
+- D-035 stays in force: a drawer-funded refund is linked to exactly one OPEN cash session, reduces its expected cash, increments its activity version, is shown separately in its session report and never rewrites a CLOSED session.
+
+### D-046 — Timing of the drawer payout for a drawer-funded refund
+
+- For a drawer-funded refund, cash is taken from the drawer only after the system has committed the refund.
+- Order: the Owner selects the drawer; the system checks the D-045 bound and commits the refund; only then is the cash taken from the drawer and handed over. A D-045 refusal therefore happens before any cash leaves the drawer.
+- If the outcome is uncertain, the Owner first checks the status of the original refund; no cash is taken until the refund is recorded.
+- Consequences accepted with the choice: the drawer always matches the records; a D-045 refusal comes before any cash leaves; the cashier never carries the difference; a session close cannot precede a refund whose cash has already left the drawer.
+- Owner-funded refunds and BANK_TRANSFER refunds are not affected; both still record the payout actually made.
+- Raised by the independent adversarial review of RF-2 (finding F-06).
+
+### D-047 — What OPERATIONS_ADMIN sees after an Owner cost correction
+
+- After the Owner corrects the cost of a confirmed receiving document, OPERATIONS_ADMIN sees on that document the current cost after the correction, the mark "Dikoreksi Pemilik" and the cost recorded at confirmation. Example: 10 pcs confirmed at Rp5.000 per piece and corrected by the Owner to Rp5.500: OPERATIONS_ADMIN sees Rp5.500, the mark and Rp5.000.
+- The reason for the correction stays Owner-only. Cost of goods sold, margin, profit and inventory value stay hidden from OPERATIONS_ADMIN (D-033).
+- The question covered both correcting and completing a cost after confirmation; completing an UNKNOWN cost follows the same rules (D-034).
+- Who may correct does not change: after confirmation only the Owner corrects cost (D-033, D-034).
+- Consequences accepted with the choice: it matches the wording of D-033 (purchase cost on receiving documents); the document always shows the cost in force, so the next supplier invoice can be matched correctly; no cost-of-goods-sold or profit data is exposed.
+- Raised by the independent adversarial review of RF-2 (finding F-05). Interface labels are provisional until gate P7-G2.

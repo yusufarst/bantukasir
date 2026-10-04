@@ -135,11 +135,30 @@ The ignored folders `.local/` and `.agents/` are not tracked, not part of any co
 | --- | --- | --- |
 | `D-001` … `D-018` | Decisions before the re-foundation | [DECISIONS](DECISIONS.md); original wording in `legacy/10-DECISIONS.md` |
 | `BU-…` (27) | Build Units | `docs/11-tasks/legacy/build-units/` — input only, not executable |
-| `CORE-001` … `CORE-073` | Core requirement entries | `docs/01-product/legacy/requirements/` — input only |
-| `AUTH01`, `POS01`, … (39) | Acceptance suites | `docs/08-testing/legacy/08-TESTING-ACCEPTANCE.md` |
+| `CORE-001` … `CORE-073` | Core requirement entries | Superseded in RF-2 by the requirement register. [REQUIREMENTS](../01-product/REQUIREMENTS.md) section 21 maps every entry to the requirements that carry it, or records why it was retired. The original entries stay in `docs/01-product/legacy/requirements/` |
+| `AUTH01`, `POS01`, … (39) | Acceptance suites | `docs/08-testing/legacy/08-TESTING-ACCEPTANCE.md`; cited as test references by REQUIREMENTS until RF-6 |
 | `G1` … `G4`, `DEVICES`, `TARGET`, `EXECUTOR`, `RELEASE` | Business and external gates | [OPEN_ITEMS](OPEN_ITEMS.md) section 3 |
 | `P7-G01` … `P7-G18` | Capability groups of the former design coverage matrix | `docs/07-ux-design/legacy/P7-COVERAGE.md` — input only |
 | `T01` … `T40` | Plan 2.0 task cards | Git history only: `git show 604d925:docs/archive/plan2/tasks/T01.md` |
 | `UI01`, `UI02`, `UI03`, `BK01`–`BK03`, `R6`, Gate A/B | Earlier prototype rounds | Git history only (section 3); UI03 in the stash (section 4) |
 
 The gates of the rebuilt P7 are named `P7-G1`, `P7-G2` and `P7-G3` (D-025). They are unrelated to the legacy capability groups `P7-G01` to `P7-G18`.
+
+## 7. Documents superseded in RF-2
+
+RF-2 (D-041) wrote the CURRENT product and domain documents. The legacy documents below stay in the working tree, byte-identical, with the status LEGACY — SUPERSEDED in [SOURCE_OF_TRUTH](SOURCE_OF_TRUTH.md). They are removed only by a later authorized step; Git history keeps them in any case.
+
+| Legacy document | Superseded by |
+| --- | --- |
+| `docs/01-product/legacy/01-PRD.md` | `docs/01-product/PRODUCT_BLUEPRINT.md` and `docs/01-product/REQUIREMENTS.md` |
+| `docs/01-product/legacy/P1-PRODUCT.md` | `docs/01-product/PRODUCT_BLUEPRINT.md` |
+| `docs/01-product/legacy/requirements/core.json` | `docs/01-product/REQUIREMENTS.md` (section 21) |
+| `docs/01-product/legacy/requirements/CORE-MAP.md` | `docs/01-product/REQUIREMENTS.md` (section 21) |
+| `docs/02-domain/legacy/P2-DOMAIN.md` | `docs/02-domain/DOMAIN_MODEL.md` |
+| `docs/02-domain/legacy/06-INVENTORY-SPEC.md` | `docs/02-domain/INVENTORY.md` |
+| `docs/02-domain/legacy/12-BARCODE-SCANNER.md` | `docs/02-domain/CATALOG_BARCODE.md` for domain rules; the scanner screen behaviour is input only for RF-4 and RF-5 |
+| `docs/02-domain/legacy/15-FINANCE-PROFITABILITY.md` | `docs/02-domain/COSTING.md` |
+| `docs/02-domain/legacy/17-POS-SALES.md` | `docs/02-domain/SALES_CASH.md` for domain rules; receipt and screen layouts are input only for RF-4 and RF-5 |
+| `docs/04-architecture/legacy/02-ARCHITECTURE.md` — domain part only (entity table, numbers and time) | `docs/02-domain/DOMAIN_MODEL.md`; the architecture part stays in force until RF-3 |
+
+New identifiers written in RF-2: requirements `REQ-<area>-<nn>` in REQUIREMENTS, and domain rules `BR-<area>-<nn>` in the domain documents.

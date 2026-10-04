@@ -10,6 +10,8 @@ BantuKasir is the internal codename of a goods-only point-of-sale system for one
 | --- | --- |
 | The rules for working here | [AGENTS.md](AGENTS.md) |
 | The current state and the next authorized action | [docs/handoff/CURRENT_HANDOFF.md](docs/handoff/CURRENT_HANDOFF.md) |
+| What the product is and must do | [docs/01-product/PRODUCT_BLUEPRINT.md](docs/01-product/PRODUCT_BLUEPRINT.md), [docs/01-product/REQUIREMENTS.md](docs/01-product/REQUIREMENTS.md) |
+| The business rules and terms | [docs/02-domain/DOMAIN_MODEL.md](docs/02-domain/DOMAIN_MODEL.md), [docs/02-domain/GLOSSARY.md](docs/02-domain/GLOSSARY.md) |
 | Which document is authoritative for a subject | [docs/00-governance/SOURCE_OF_TRUTH.md](docs/00-governance/SOURCE_OF_TRUTH.md) |
 | What has been decided | [docs/00-governance/DECISIONS.md](docs/00-governance/DECISIONS.md) |
 | What is still open | [docs/00-governance/OPEN_ITEMS.md](docs/00-governance/OPEN_ITEMS.md) |
@@ -34,10 +36,10 @@ docs/
   10-release/          release and rollback
   11-tasks/            execution context, Task plan and Tasks
   handoff/             current handoff
-assets/brand/          historical brand assets (under review)
+assets/brand/          codename prototype logo and its README; no client identity (D-038)
 ```
 
-Folders `01` to `11` currently contain only a `legacy/` subfolder holding the earlier documents for that subject, in Indonesian. New documents are added as each re-foundation step is authorized and completed.
+Folders `01` and `02` hold the current product and domain documents written in RF-2, next to a `legacy/` subfolder with the superseded earlier documents. Folders `03` to `11` still contain only a `legacy/` subfolder holding the earlier documents for that subject, in Indonesian. New documents are added as each re-foundation step is authorized and completed.
 
 ## Stack (planned, nothing installed)
 

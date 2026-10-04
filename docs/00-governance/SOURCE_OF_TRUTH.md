@@ -33,18 +33,22 @@ Rules for every `legacy/` document:
 - It is in Indonesian and is not edited. It is replaced as a whole when its subject is rebuilt.
 - Links inside it are not maintained and may point at paths that no longer exist. Use [LEGACY_INDEX](LEGACY_INDEX.md) to find where a file went.
 - Statements inside it about status, authorization or "next step" are historical. Current status and authorization are only in CURRENT_HANDOFF.
-- Its identifiers (`BU-…`, `CORE-…`, acceptance suite names, `G1`–`G4`) remain valid references until the rebuilt documents replace them.
-- Where a later decision in [DECISIONS](DECISIONS.md) changes a rule written in a legacy document, the decision prevails (section 1). The legacy text is not edited. Known cases:
+- Its identifiers (`BU-…`, acceptance suite names, `G1`–`G4`) remain valid references until the rebuilt documents replace them. `CORE-…` identifiers were replaced in RF-2 by the requirement register; [REQUIREMENTS](../01-product/REQUIREMENTS.md) section 21 maps each of them.
+- A LEGACY — SUPERSEDED document has no authority at all. Its rules apply only as far as the CURRENT document that replaced it carries them.
+- Where a CURRENT product or domain document (`docs/01-product/`, `docs/02-domain/`) and a legacy document still in force for another subject disagree on a product or domain rule, the CURRENT document prevails. The legacy text is not edited.
+- While OPEN_ITEMS T-16 is open, any legacy statement, in force or superseded, that would settle T-16 (a) or (b) — for example that original issue-cost allocations are kept, versioned or immutable, or which allocation revision a return uses — carries no authority on that point. [COSTING](../02-domain/COSTING.md) section 10 lists those found in RF-2. The rest of the legacy rule each belongs to keeps its status.
+- Where a later decision in [DECISIONS](DECISIONS.md) changes a rule written in a legacy document still in force, the decision prevails (section 1). The legacy text is not edited. Known cases:
 
-| Legacy document | Rule that no longer applies | Decision |
+| Legacy document still in force | Rule that no longer applies | Decision |
 | --- | --- | --- |
-| `docs/01-product/legacy/01-PRD.md` | CASH or BANK_TRANSFER only; CSV import and product photo upload on the "Later" list | D-036, D-037 |
-| `docs/02-domain/legacy/06-INVENTORY-SPEC.md` | Purchase cost entered by Operations is write-only; no CSV product import | D-033, D-037 |
-| `docs/02-domain/legacy/15-FINANCE-PROFITABILITY.md` | Write-only cost evidence for Operations; every intermediate valuation and allocation version kept on each cost revision so that an earlier report can be re-displayed exactly | D-033, D-034 |
-| `docs/02-domain/legacy/17-POS-SALES.md` | CASH or BANK_TRANSFER only; refunds paid from Owner funds, never the drawer; expected cash without refunds | D-035, D-036 |
-| `docs/03-workflows/legacy/P3-CRITICAL-WORKFLOWS.md` | An ordinary sale passes a separate review step; no CSV import; expected cash without refunds | D-035, D-037, D-040 |
-| `docs/04-architecture/legacy/02-ARCHITECTURE.md` | A new issue-cost allocation version kept for every cost revision | D-034 |
+| `docs/03-workflows/legacy/P3-CRITICAL-WORKFLOWS.md` | An ordinary sale passes a separate review step; CASH or BANK_TRANSFER only; no CSV import; refunds from the Owner's funds only and expected cash without refunds; executed payout evidence reviewed before a drawer-funded refund commits; Operations sees no receiving cost after submitting it | D-033, D-035, D-036, D-037, D-040, D-046, D-047 |
+| `docs/04-architecture/legacy/02-ARCHITECTURE.md` (architecture part) | A new issue-cost allocation version kept for every cost revision, as a requirement (D-034 does not require keeping earlier derived values; whether an allocation is an original fact or a derived value is OPEN — T-16); CASH and BANK_TRANSFER as the only methods | D-034, D-036 |
+| `docs/04-architecture/legacy/P4-ARCHITECTURE.md` | CASH or BANK_TRANSFER only; cost entered by Operations is write-only | D-033, D-036 |
 | `docs/05-security/legacy/04-AUTH-RBAC-SECURITY.md` | Purchase cost entered by Operations is write-only | D-033 |
+| `docs/05-security/legacy/P5-SECURITY.md` | Receiving cost of Operations handled as write-only | D-033 |
+| `docs/06-api-performance/legacy/P6-CONCURRENCY-API.md` | CASH and BANK_TRANSFER as the only methods | D-036 |
+| `docs/08-testing/legacy/08-TESTING-ACCEPTANCE.md` (draft) | Suites AUTH02 (write-only cost), RET01 and SESSION04 (refunds from Owner funds only; expected cash without refunds), POS02 and PAYEXT01 (no QRIS), UX01 (approval of the former design revision) | D-024, D-025, D-033, D-035, D-036 |
+| `docs/10-release/legacy/P10-RELEASE-UAT.md` (draft) | Receiving cost of Operations write-only | D-033 |
 
 ## 3. Document map
 
@@ -80,21 +84,29 @@ Rules for every `legacy/` document:
 
 | Path | Subject | Status | Replaced in |
 | --- | --- | --- | --- |
-| [legacy/01-PRD.md](../01-product/legacy/01-PRD.md) | Product scope, roles, key flows, "Later" list | LEGACY — IN FORCE | RF-2 |
-| [legacy/P1-PRODUCT.md](../01-product/legacy/P1-PRODUCT.md) | Phase summary of the above | LEGACY — IN FORCE | RF-2 |
-| [legacy/requirements/core.json](../01-product/legacy/requirements/core.json), [CORE-MAP.md](../01-product/legacy/requirements/CORE-MAP.md) | 73 Core requirement entries and their mapping | LEGACY — INPUT ONLY | RF-2 |
+| [PRODUCT_BLUEPRINT.md](../01-product/PRODUCT_BLUEPRINT.md) | Problem, goals, users, roles and capabilities, journeys, V1 scope and exclusions, non-functional summary, release boundary, unknown first-store facts | CURRENT (RF-2) | — |
+| [REQUIREMENTS.md](../01-product/REQUIREMENTS.md) | Requirement register with acceptance criteria; CORE-001 to CORE-073 mapping; decision traceability | CURRENT (RF-2) | — |
+| [legacy/01-PRD.md](../01-product/legacy/01-PRD.md) | Former product scope, roles, key flows, "Later" list | LEGACY — SUPERSEDED by PRODUCT_BLUEPRINT and REQUIREMENTS | RF-2; removal in a later authorized step |
+| [legacy/P1-PRODUCT.md](../01-product/legacy/P1-PRODUCT.md) | Former phase summary | LEGACY — SUPERSEDED by PRODUCT_BLUEPRINT | RF-2; removal in a later authorized step |
+| [legacy/requirements/core.json](../01-product/legacy/requirements/core.json), [CORE-MAP.md](../01-product/legacy/requirements/CORE-MAP.md) | Former 73 Core requirement entries and their mapping | LEGACY — SUPERSEDED by REQUIREMENTS (section 21 maps every entry) | RF-2; removal in a later authorized step |
 
 ### docs/02-domain — P2
 
 | Path | Subject | Status | Replaced in |
 | --- | --- | --- | --- |
-| [legacy/P2-DOMAIN.md](../02-domain/legacy/P2-DOMAIN.md) | Domain boundaries and invariants | LEGACY — IN FORCE | RF-2 |
-| [legacy/06-INVENTORY-SPEC.md](../02-domain/legacy/06-INVENTORY-SPEC.md) | Stock movements, opening stock, restock attention | LEGACY — IN FORCE | RF-2 |
-| [legacy/12-BARCODE-SCANNER.md](../02-domain/legacy/12-BARCODE-SCANNER.md) | Product search, barcode tokens, scanner input | LEGACY — IN FORCE | RF-2 |
-| [legacy/15-FINANCE-PROFITABILITY.md](../02-domain/legacy/15-FINANCE-PROFITABILITY.md) | Cost of goods and gross profit | LEGACY — IN FORCE | RF-2 |
-| [legacy/17-POS-SALES.md](../02-domain/legacy/17-POS-SALES.md) | Sale, payment, receipts, cash sessions | LEGACY — IN FORCE | RF-2 |
+| [GLOSSARY.md](../02-domain/GLOSSARY.md) | One English term and one provisional Indonesian shop term per concept | CURRENT (RF-2); Indonesian terms provisional until gate P7-G2 | — |
+| [DOMAIN_MODEL.md](../02-domain/DOMAIN_MODEL.md) | Domain map: entities, relationships, states, global invariants, numbers and time, commands, users, audit, BusinessProfile, lifecycle matrix, retention | CURRENT (RF-2) | — |
+| [CATALOG_BARCODE.md](../02-domain/CATALOG_BARCODE.md) | Products, categories, prices, barcodes, Product Search, scanning, labels, CSV product import, product photos | CURRENT (RF-2) | — |
+| [INVENTORY.md](../02-domain/INVENTORY.md) | Stock movements and balance, receiving, manual issue, opening stock, adjustment, reversal, stock attention, reconciliation | CURRENT (RF-2) | — |
+| [COSTING.md](../02-domain/COSTING.md) | Cost evidence and visibility, moving weighted average, corrections and replay, gross profit reporting; open design issue T-16 | CURRENT (RF-2) | — |
+| [SALES_CASH.md](../02-domain/SALES_CASH.md) | Sale, payment and its confirmation, receipts, cash registers and sessions, expected cash, refunds and returns, daily summary | CURRENT (RF-2) | — |
+| [legacy/P2-DOMAIN.md](../02-domain/legacy/P2-DOMAIN.md) | Former domain boundaries and invariants | LEGACY — SUPERSEDED by DOMAIN_MODEL | RF-2; removal in a later authorized step |
+| [legacy/06-INVENTORY-SPEC.md](../02-domain/legacy/06-INVENTORY-SPEC.md) | Former stock specification | LEGACY — SUPERSEDED by INVENTORY | RF-2; removal in a later authorized step |
+| [legacy/12-BARCODE-SCANNER.md](../02-domain/legacy/12-BARCODE-SCANNER.md) | Former search, barcode and scanner specification | LEGACY — SUPERSEDED by CATALOG_BARCODE for domain rules; its scanner screen behaviour is LEGACY — INPUT ONLY for RF-4 and RF-5 | RF-2; removal after RF-5 |
+| [legacy/15-FINANCE-PROFITABILITY.md](../02-domain/legacy/15-FINANCE-PROFITABILITY.md) | Former cost and gross profit specification | LEGACY — SUPERSEDED by COSTING | RF-2; removal in a later authorized step |
+| [legacy/17-POS-SALES.md](../02-domain/legacy/17-POS-SALES.md) | Former sale, payment, receipt and cash session specification | LEGACY — SUPERSEDED by SALES_CASH for domain rules; its receipt and screen layouts are LEGACY — INPUT ONLY for RF-4 and RF-5 | RF-2; removal after RF-5 |
 
-The entity table of the domain model is inside `docs/04-architecture/legacy/02-ARCHITECTURE.md`.
+The domain part of `docs/04-architecture/legacy/02-ARCHITECTURE.md` (its entity table and its numbers and time) is superseded by DOMAIN_MODEL.
 
 ### docs/03-workflows — P3
 
@@ -108,7 +120,7 @@ Route contracts and interaction contracts do not exist yet (RF-5).
 
 | Path | Subject | Status | Replaced in |
 | --- | --- | --- | --- |
-| [legacy/02-ARCHITECTURE.md](../04-architecture/legacy/02-ARCHITECTURE.md) | Architecture, domain entities, transaction and locking contract | LEGACY — IN FORCE | RF-2 (domain part), RF-3 (architecture part) |
+| [legacy/02-ARCHITECTURE.md](../04-architecture/legacy/02-ARCHITECTURE.md) | Architecture, transaction and locking contract; its domain part (entity table, numbers and time) | Architecture part: LEGACY — IN FORCE. Domain part: LEGACY — SUPERSEDED by DOMAIN_MODEL (RF-2) | RF-3 (architecture part) |
 | [legacy/P4-ARCHITECTURE.md](../04-architecture/legacy/P4-ARCHITECTURE.md) | Stack comparison and choice, modules, constraints | LEGACY — IN FORCE | RF-3 |
 
 A logical database schema does not exist yet (RF-3).
