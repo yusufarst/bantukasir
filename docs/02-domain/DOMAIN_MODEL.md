@@ -9,7 +9,7 @@
 | Terms | [GLOSSARY](GLOSSARY.md) |
 | Requirements | [REQUIREMENTS](../01-product/REQUIREMENTS.md) |
 
-This document is the map of the BantuKasir business domain: the entities, who owns them, how they relate, their states, the invariants that hold across the whole system, the lifecycle of every important entity, retention and audit. It is a specification, not a database schema. Tables, keys and constraints are designed in RF-3B (OPEN_ITEMS T-03).
+This document is the map of the BantuKasir business domain: the entities, who owns them, how they relate, their states, the invariants that hold across the whole system, the lifecycle of every important entity, retention and audit. It is a specification, not a database schema; tables, keys and constraints are [SCHEMA](../04-architecture/SCHEMA.md) (RF-3B).
 
 ## 1. How to read this document
 
@@ -25,8 +25,8 @@ This document is the map of the BantuKasir business domain: the entities, who ow
 | --- | --- | --- |
 | L-PRD | [01-PRD](../01-product/legacy/01-PRD.md) | LEGACY — SUPERSEDED by the P1 documents |
 | L-P2 | [P2-DOMAIN](legacy/P2-DOMAIN.md) | LEGACY — SUPERSEDED by this document |
-| L-02 | [02-ARCHITECTURE](../04-architecture/legacy/02-ARCHITECTURE.md) | Domain part SUPERSEDED by this document (RF-2); §Constraint database and the schema-delivery part of §Payment extension boundary dan schema delivery LEGACY — IN FORCE until RF-3B; every other part SUPERSEDED by the RF-3A documents ([LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 8) |
-| L-P4 | [P4-ARCHITECTURE](../04-architecture/legacy/P4-ARCHITECTURE.md) | §Schema, immutability dan constraints LEGACY — IN FORCE until RF-3B; §Testing implications and §Deployment, operasi dan maintenance LEGACY — INPUT ONLY for RF-6; every other part SUPERSEDED by the RF-3A documents (LEGACY_INDEX section 8) |
+| L-02 | [02-ARCHITECTURE](../04-architecture/legacy/02-ARCHITECTURE.md) | LEGACY — SUPERSEDED: the domain part by this document (RF-2), the architecture parts by the RF-3A documents, §Constraint database and the schema-delivery part of §Payment extension boundary dan schema delivery by SCHEMA (RF-3B; plan decision P-6, effective when the Owner accepts the RF-3B checkpoint) ([LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) sections 8 and 9) |
+| L-P4 | [P4-ARCHITECTURE](../04-architecture/legacy/P4-ARCHITECTURE.md) | LEGACY — SUPERSEDED — §Schema, immutability dan constraints by SCHEMA (RF-3B; P-6, effective when the Owner accepts the RF-3B checkpoint), the other parts by the RF-3A documents — except §Testing implications and §Deployment, operasi dan maintenance, LEGACY — INPUT ONLY for RF-6, and §Sumber primer, RECORD (LEGACY_INDEX sections 8 and 9) |
 | L-06 | [06-INVENTORY-SPEC](legacy/06-INVENTORY-SPEC.md) | LEGACY — SUPERSEDED by INVENTORY |
 | L-12 | [12-BARCODE-SCANNER](legacy/12-BARCODE-SCANNER.md) | LEGACY — SUPERSEDED by CATALOG_BARCODE |
 | L-15 | [15-FINANCE-PROFITABILITY](legacy/15-FINANCE-PROFITABILITY.md) | LEGACY — SUPERSEDED by COSTING |
@@ -82,7 +82,7 @@ The attributes listed are the business attributes that rules depend on. They are
 | AcquisitionCostEvidence | The cost recorded for stock that enters through OPENING, RECEIPT or a positive ADJUSTMENT | Total amount, quantity, status KNOWN or UNKNOWN, reference, actor | COSTING |
 | Cost correction | An append-only Owner fact that corrects or completes acquisition cost after posting | Cost source, old value, new value, actor, time, reason | COSTING |
 | Inventory valuation | The current, corrected moving-weighted-average value and quantity of a product | Product, value, known or unknown status | COSTING |
-| Issue-cost allocation | The cost assigned to an issued quantity (sale, manual issue, negative adjustment) | Issue, amount or UNKNOWN | COSTING (see the OPEN — T-16 section) |
+| Issue-cost allocation | The cost assigned to an issued quantity (sale, manual issue, negative adjustment) | Issue; amount or UNKNOWN at commit, an immutable fact; the current corrected amount, a projection that each replay replaces (D-060); for a saleable return, the link to the original issue allocation (D-061) | COSTING; [ADR-008](../adr/ADR-008-cost-allocation-representation.md) |
 | Sale | A completed, fully paid sale of goods handed over directly | Number, source intent, actor, cash session, server time, business date, total | SALES_CASH |
 | SaleLine | One product line of a Sale | Product, unit, quantity, unit price applied, line total | SALES_CASH |
 | Payment | The one full payment of a Sale | Method, applied amount; tendered amount and change for CASH; optional reference for BANK_TRANSFER and STATIC_QRIS | SALES_CASH |
@@ -105,7 +105,7 @@ The attributes listed are the business attributes that rules depend on. They are
 - A Refund and a Return point to the original Sale and its lines. A saleable Return is received by a RETURN_RECEIPT movement. A drawer-funded CASH refund points to exactly one CashSession that was OPEN when the refund committed; its cash is paid out from that drawer afterwards (D-035, D-046).
 - A CashSession belongs to one CashRegister and one responsible User, and has at most one CashSessionReportSnapshot, created when it closes. Owner review notes point to that snapshot (L-17).
 - A ReceiptSnapshot and a CashSessionReportSnapshot point to the BusinessProfileRevision in force when they were created (D-038).
-- Every AuditEvent and Command result points to the acting User (D-032). The only exceptions are events written by an operator procedure or a scheduled command, which name that procedure or command as their actor (SECURITY_MODEL section 14); how such an actor is stored is designed in RF-3B.
+- Every AuditEvent and Command result points to the acting User (D-032). The only exceptions are events written by an operator procedure or a scheduled command, which name that procedure or command as their actor (SECURITY_MODEL section 14); such an actor is stored as SCHEMA section 3.4 describes.
 
 ## 5. States and transitions
 
@@ -123,7 +123,7 @@ The attributes listed are the business attributes that rules depend on. They are
 | Confirmed command request (client view) | SUBMITTING → COMMITTED, REJECTED or UNCERTAIN | UNCERTAIN freezes the original intent until its result is recovered. HELD is a form of UNCERTAIN in which the request is never repeated, because the server reported an identity conflict, which its actor or the Owner resolves, or an intent from before a restore, which the Owner checks under the restore runbook (ADR-007 section 5). | L-P3, L-12, D-040; ADR-007 |
 | Acquisition cost | KNOWN, UNKNOWN | UNKNOWN becomes known only through an Owner cost correction (D-034) or, before confirmation of a receiving document, by editing that document (D-033). | D-033, D-034, L-15 |
 | Stock attention | NORMAL, LOW, OUT | Derived from the current balance and minimum stock; never stored as a separate truth. | L-06 |
-| Reporting completeness | COMPLETE, INCOMPLETE | Derived from cost status; a rejected cost correction marks the affected reporting incomplete (COSTING BR-COST-27). How that mark is recorded, scoped, audited and cleared is OPEN — T-17 i. | L-15, D-034 |
+| Reporting completeness | COMPLETE, INCOMPLETE | Derived from cost status; a rejected cost correction marks the affected reporting incomplete (COSTING BR-COST-27), which also states how the mark is recorded, scoped, audited and cleared (T-17 i, resolved in RF-3B). | L-15, D-034 |
 
 ## 6. Global invariants
 
@@ -147,7 +147,7 @@ The attributes listed are the business attributes that rules depend on. They are
 | --- | --- | --- |
 | BR-NUM-01 | Money is Indonesian rupiah in whole rupiah. A selling price and every payable total are integers. A line total is quantity × unit price, rounded half-up once per line to whole rupiah; the Sale total is the sum of its line totals. | L-02 §Angka dan waktu, D-006 |
 | BR-NUM-02 | Quantities are exact, in the product's base unit, with 0 to 3 decimal places fixed by the product's quantity precision. The real precisions of the first store are part of gate G2. | L-02, L-06 |
-| BR-NUM-03 | Cost values are exact decimals with six fractional digits. Aggregation happens before rounding; rounding to rupiah happens only for report display, at the end. The rounding rule used when a cost value is computed to six decimals and when a cost figure is rounded for display is OPEN — T-17 e, to be set in RF-3B; the final-issue rule of COSTING guarantees no residue whatever the rule. | L-15, L-P6 |
+| BR-NUM-03 | Cost values are exact decimals with six fractional digits. A cost value computed by multiplication and division is rounded half-up (ties away from zero) to six fractional digits, once, at the end of its computation. Aggregation happens before rounding; rounding to whole rupiah happens only for report display, half-up (ties away from zero, also for a negative figure such as a loss), at the end. The final-issue rule (COSTING BR-COST-11) and the cumulative rule for partial returns (ADR-008 section 5) leave no residue. | L-15, L-P6; T-17 e (RF-3B, D-059); ADR-008 |
 | BR-NUM-04 | No binary floating point is used for money, cost or quantity anywhere: storage, calculation, transport (decimal strings) or display. Values outside the supported range are rejected, never truncated. The ranges are in TECHNICAL_RULES section 11 and the representations in ADR-006. | AGENTS rule 7, L-02, L-P6, ADR-006 |
 | BR-NUM-05 | Every fact carries the server's UTC time. The business date is the Asia/Jakarta calendar date computed by the server. An optional document date is stored separately and never backdates a physical or financial fact. | L-02, L-06, L-17 |
 | BR-NUM-06 | Report periods are Asia/Jakarta dates converted to half-open UTC ranges; an inclusive custom range ends at the start of the next day, exclusive. | L-15, L-02 |
@@ -174,7 +174,7 @@ The attributes listed are the business attributes that rules depend on. They are
 | BR-USR-09 | A deactivated user's identity stays attached to everything that user did. | L-02, L-04 §Audit |
 | BR-USR-10 | The Owner may reactivate a deactivated account that has not been anonymized, but never a SUPER_ADMIN account (D-048). Accounts are never deleted, softly or permanently. | D-042, D-048 |
 | BR-USR-11 | The Owner, and only the Owner, may anonymize an account, and only after it has been deactivated. Anonymization replaces personal and profile fields with a neutral, non-personal label where applicable; the sign-in email is replaced by a unique, unusable placeholder and the password is made unusable (SECURITY_MODEL SEC-ACC-09). It is not a deletion: the stable internal user identity and every audit relationship remain. The action needs a reason and is audited permanently with the Owner as actor and its time. An anonymized account stays deactivated and is never reused for another person; a former staff member who returns gets a new account, never the anonymized one. | D-043, D-049 |
-| BR-USR-12 | Anonymization changes only the current User profile. It never rewrites a historical record: Sales, ReceiptSnapshots, cash session reports, refunds, returns, audit events and every other record keep the actor identity and display information they recorded when they were created, so that every record the decisions require to reproduce exactly (receipts, session reports) still does. Which display information each record captures is designed in RF-3B within this rule. This is product lifecycle policy, not a claim of legal compliance or a substitute for legal advice on personal-data requests. | D-043, D-035, D-038 |
+| BR-USR-12 | Anonymization changes only the current User profile. It never rewrites a historical record: Sales, ReceiptSnapshots, cash session reports, refunds, returns, audit events and every other record keep the actor identity and display information they recorded when they were created, so that every record the decisions require to reproduce exactly (receipts, session reports) still does. The records that name a user as actor, cashier or responsible person — those listed in SCHEMA section 3.5 — capture that user's display name as it was when the record was created. This is product lifecycle policy, not a claim of legal compliance or a substitute for legal advice on personal-data requests. | D-043, D-035, D-038 |
 
 ## 9. Audit
 
@@ -239,7 +239,7 @@ For every record that is a historical money or stock fact, "Hard delete: NO" mea
 | AcquisitionCostEvidence | YES — with its OPENING, RECEIPT or positive ADJUSTMENT (L-15) | NO after posting; corrected only by a cost correction (D-034) | N/A | N/A | NO (facts kept) | NO (facts kept, D-034) | NO |
 | Cost correction | YES — Owner only (D-034) | NO (D-034) | N/A | N/A | NO | NO (D-034) | NO |
 | Inventory valuation (current) | YES — system | Only by posting and by an atomically published replay (D-034) | N/A | N/A | N/A | Superseded derived values: YES — V1 need not keep earlier derived projections (D-034); this never permits deleting an original fact or a correction | N/A |
-| Issue-cost allocation | YES — system, with the issue (D-006, D-040) | OPEN — T-16 (a) | N/A | N/A | OPEN — T-16 (a) | OPEN — T-16 (a) | N/A |
+| Issue-cost allocation | YES — system, with the issue: the fact recorded at commit and its projection (D-006, D-040, D-060); for a saleable return, the linked return allocation and its projection, with the return (D-061) | The fact: NO — immutable (D-060). The projection: only by an atomically published replay, which replaces it (D-034, D-060, D-061) | N/A | N/A | NO (facts kept) | The fact: NO (facts kept). Superseded projected values are not kept (D-034) | N/A |
 
 ### 11.3 Sales and cash
 
@@ -272,7 +272,6 @@ For every record that is a historical money or stock fact, "Hard delete: NO" mea
 | Item | Subject | Where |
 | --- | --- | --- |
 | Question 29 | A drawer-funded refund committed but its cash not yet taken when the session is counted and closed | SALES_CASH BR-RFD-17 |
-| T-16 | Representation of issue-cost allocations: the one captured at Sale commit, and those of MANUAL_ISSUE and negative ADJUSTMENT | Section 11.2; COSTING |
-| T-17 | Lifecycle details without business meaning, settled in RF-3B (e, g, i) or RF-5 (a, b, d, f, h); T-17 c is resolved by D-054 | Sections 5, 7, 11 and 12 |
+| T-17 | Lifecycle details without business meaning, settled in RF-5 (a, b, d, f, h); T-17 c is resolved by D-054, and T-17 e, g and i in RF-3B | Sections 5, 11 and 12 |
 
-Questions 21 to 24 and 27 to 28, asked during RF-2, are answered by D-042 to D-047. Questions 25, 6, 26 and 31 (R-17) and question 30, asked before RF-3A, are answered by D-048, D-049, D-051, D-052 and D-054.
+Questions 21 to 24 and 27 to 28, asked during RF-2, are answered by D-042 to D-047. Questions 25, 6, 26 and 31 (R-17) and question 30, asked before RF-3A, are answered by D-048, D-049, D-051, D-052 and D-054. Questions 33, 34 and 32, asked before RF-3B, are answered by D-060 to D-062; T-16 is resolved by D-060, D-061 and ADR-008.

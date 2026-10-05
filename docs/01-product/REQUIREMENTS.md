@@ -8,7 +8,7 @@
 | Product | [PRODUCT_BLUEPRINT](PRODUCT_BLUEPRINT.md) |
 | Domain rules | [DOMAIN_MODEL](../02-domain/DOMAIN_MODEL.md), [CATALOG_BARCODE](../02-domain/CATALOG_BARCODE.md), [INVENTORY](../02-domain/INVENTORY.md), [COSTING](../02-domain/COSTING.md), [SALES_CASH](../02-domain/SALES_CASH.md) |
 
-The requirement register of BantuKasir V1. Each requirement says what the product must do, how acceptance is judged, where the requirement comes from, and which legacy acceptance suite tests it today. Section 21 maps every legacy CORE entry to these requirements; section 22 traces every decision D-001 to D-057.
+The requirement register of BantuKasir V1. Each requirement says what the product must do, how acceptance is judged, where the requirement comes from, and which legacy acceptance suite tests it today. Section 21 maps every legacy CORE entry to these requirements; section 22 traces every decision D-001 to D-063.
 
 ## 1. How to read this register
 
@@ -17,7 +17,7 @@ The requirement register of BantuKasir V1. Each requirement says what the produc
 - **Acceptance criteria** are the observable conditions that must pass with real evidence (PRODUCT_BLUEPRINT section 11).
 - **Source** names decisions, legacy documents (keys in DOMAIN_MODEL section 2) and rules. No requirement exists without a source.
 - **Tests** names the legacy acceptance suites in `docs/08-testing/legacy/08-TESTING-ACCEPTANCE.md`, which remain the test references until RF-6. `NEW` means no legacy suite covers the requirement; RF-6 adds coverage. Several suites were written before D-033 to D-040; where a suite's text conflicts with a requirement here, the requirement prevails. Known cases: AUTH02 (write-only cost for OPERATIONS_ADMIN, superseded by D-033); RET01 and SESSION04 (refunds from Owner funds only and expected cash without refunds, superseded by D-035); POS02 and PAYEXT01 (no QRIS, superseded by D-036); UX01 (approval of the former design revision, superseded by D-024 and D-025).
-- **Decisions taken during RF-2 and before RF-3A.** Questions 21 to 24 and 27 to 28 were asked during RF-2 and answered by D-042 to D-047; questions 25, 6, 5, 26, 31, 7 and 30 were answered before RF-3A by D-048 to D-054. Section 20 lists the requirements these decisions shape. No requirement is pending.
+- **Decisions taken during RF-2 and before RF-3A.** Questions 21 to 24 and 27 to 28 were asked during RF-2 and answered by D-042 to D-047; questions 25, 6, 5, 26, 31, 7 and 30 were answered before RF-3A by D-048 to D-054. Section 20 lists the requirements these decisions shape. Questions 33, 34 and 32 were answered before RF-3B by D-060 to D-062; they change no requirement (section 22). No requirement is pending.
 - **Words.** "Session" alone means a cash session; a sign-in session is always named in full (DOMAIN_MODEL section 1).
 
 ## 2. Scope
@@ -112,7 +112,7 @@ The requirement register of BantuKasir V1. Each requirement says what the produc
 | REQ-COST-07 | A refund without return keeps cost of goods sold and stock; a saleable return restores the cost tied to the original sale issue, for the returned quantity, once (incomplete while that cost is UNKNOWN); a damaged return restores no cost; a later correction updates the related valuation without a new return, a new movement or a double recovery. | The RET01 and FIN03 cases pass, plus a correction after a return that recovers cost exactly once. | D-034, D-035, L-15; BR-COST-17 to BR-COST-19 | RET01, FIN03 |
 | REQ-COST-08 | A reversal cancels its source logically in the replay and skips the paired inverse; an old receipt is never reversed at the latest average cost. | The COSTING section 8 reversal fixture gives physical 5, value 50 and issue cost 50 in the corrected projection. | L-15; BR-COST-32, BR-COST-33 | INV03 |
 | REQ-COST-09 | After a correction, Owner reports show corrected figures, also for earlier periods; receipts and session reports never change; original facts and correction history stay; earlier derived projections need not be kept. | Last month's cost of goods sold shows the corrected value; an earlier receipt and session report are unchanged; the Owner can read both the original evidence and the correction. | D-034; BR-COST-21, BR-COST-29 to BR-COST-31 | FIN03, SESSION07 |
-| REQ-COST-10 | A completed Sale records each line's issue-cost allocation, or UNKNOWN, in the Sale transaction. This requirement does not depend on the open design question T-16. | After commit every line has an allocation or UNKNOWN; a failure rolls back the allocation with the Sale. | D-006, D-040, L-17; BR-COST-16 | POS01, FIN01 |
+| REQ-COST-10 | A completed Sale records each line's issue-cost allocation, or UNKNOWN, in the Sale transaction. This requirement does not depend on how the allocation is represented (D-060; ADR-008). | After commit every line has an allocation or UNKNOWN; a failure rolls back the allocation with the Sale. | D-006, D-040, L-17; BR-COST-16 | POS01, FIN01 |
 
 ## 9. Sales
 
@@ -344,7 +344,7 @@ Every legacy Core entry CORE-001 to CORE-073 (`core.json`, `CORE-MAP.md`) is map
 
 ## 22. Decision traceability
 
-Every decision D-001 to D-057 is either traced to at least one requirement or rule, or classified as having no product or domain content.
+Every decision D-001 to D-063 is either traced to at least one requirement or rule, or classified as having no product or domain content.
 
 | Decision | Product or domain content | Traced to |
 | --- | --- | --- |
@@ -381,7 +381,7 @@ Every decision D-001 to D-057 is either traced to at least one requirement or ru
 | D-031 | Agent model, effort and handoff convention | Non-product/domain — agent workflow |
 | D-032 | CASHIER and OPERATIONS_ADMIN on one account | REQ-ACC-02, REQ-SALE-01, REQ-RFD-01, REQ-AUD-01; BR-USR-02, BR-USR-08 |
 | D-033 | Purchase cost and OPERATIONS_ADMIN; UNKNOWN never zero | REQ-INV-04, REQ-INV-05, REQ-COST-03, REQ-COST-04; BR-INV-14, BR-INV-15, BR-COST-03, BR-COST-07 |
-| D-034 | Owner-only cost correction with bounded replay; originals and history retained | REQ-COST-05 to REQ-COST-10; BR-COST-16 to BR-COST-31; COSTING section 10 (T-16) |
+| D-034 | Owner-only cost correction with bounded replay; originals and history retained | REQ-COST-05 to REQ-COST-10; BR-COST-16 to BR-COST-31; COSTING section 10 (T-16, resolved by D-060 and D-061) |
 | D-035 | Refunds and returns: Owner only, drawer or Owner funds, expected cash, activity version | REQ-RFD-01 to REQ-RFD-07, REQ-CASH-05, REQ-CASH-09, REQ-CASH-13; BR-RFD-01 to BR-RFD-13, BR-CASH-12 |
 | D-036 | CASH, BANK_TRANSFER, STATIC_QRIS; no discount or price change at the till | REQ-PAY-01 to REQ-PAY-05, REQ-SALE-02, REQ-CAT-08, REQ-RPT-01; BR-PAY-01 to BR-PAY-07, BR-SALE-05, BR-CAT-13 |
 | D-037 | CSV import of new products; one optional photo | REQ-CAT-09, REQ-CAT-10, REQ-OPS-01, REQ-NFR-07; BR-CAT-37 to BR-CAT-49 |
@@ -405,7 +405,13 @@ Every decision D-001 to D-057 is either traced to at least one requirement or ru
 | D-055 | RF-3A authorization, including the acceptance of RF-2 and plan decisions P-1 to P-5 | Non-product/domain — governance |
 | D-056 | Residual risk of Owner-issued one-time links accepted for V1; no other authentication channel | REQ-ACC-05 (the controls are unchanged); SECURITY_MODEL THR-21 |
 | D-057 | Second review of the RF-3A report; scope amendment for the localization wording of AGENTS and PROJECT_RULES | Non-product/domain — governance |
+| D-058 | Acceptance of the RF-3A checkpoint; final second review PASS; process note on D-031 | Non-product/domain — governance |
+| D-059 | RF-3B authorization, including plan decisions P-6 to P-9 | Non-product/domain — governance |
+| D-060 | Issue-cost allocation at commit is an immutable fact; replay results are a separate, replaceable projection used by reports | REQ-COST-07, REQ-COST-09, REQ-COST-10; BR-COST-14, BR-COST-16; COSTING section 10; ADR-008 |
+| D-061 | A saleable return is linked to the original issue allocation and recomputed with it; cost restored exactly once | REQ-COST-07; BR-COST-17, BR-COST-18, BR-RFD-11; ADR-008 |
+| D-062 | Sale and cash session numbers: unique, allocated in increasing order, gaps allowed, with the Asia/Jakarta business date | REQ-DOC-01; BR-DOC-01, BR-CASH-04; SCHEMA section 6 |
+| D-063 | Second review of RF-3B: when the "reporting incomplete" mark is written (D-034); corrections and reversals refused on a reconciliation-blocked product; the number's date part is not a sort key; question 35 deferred | REQ-COST-06, REQ-INV-12, REQ-DOC-01; BR-COST-27, BR-INV-45, BR-INV-46, BR-DOC-01; SCHEMA sections 5.8, 6 and 8 |
 
 ## 23. Counts
 
-Re-derived from this register: 23 sections; 134 requirement rows in sections 2 to 19, all with distinct identifiers; no requirement pending; 73 legacy CORE entries, of which 72 are mapped (13 of them adapted by later decisions) and 1 is retired (section 21); 57 decisions, of which 37 are traced to requirements or rules and 20 are classified as non-product/domain (section 22).
+Re-derived from this register: 23 sections; 134 requirement rows in sections 2 to 19, all with distinct identifiers; no requirement pending; 73 legacy CORE entries, of which 72 are mapped (13 of them adapted by later decisions) and 1 is retired (section 21); 63 decisions, of which 41 are traced to requirements or rules and 22 are classified as non-product/domain (section 22).

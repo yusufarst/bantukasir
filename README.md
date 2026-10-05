@@ -12,7 +12,7 @@ BantuKasir is the internal codename of a goods-only point-of-sale system for one
 | The current state and the next authorized action | [docs/handoff/CURRENT_HANDOFF.md](docs/handoff/CURRENT_HANDOFF.md) |
 | What the product is and must do | [docs/01-product/PRODUCT_BLUEPRINT.md](docs/01-product/PRODUCT_BLUEPRINT.md), [docs/01-product/REQUIREMENTS.md](docs/01-product/REQUIREMENTS.md) |
 | The business rules and terms | [docs/02-domain/DOMAIN_MODEL.md](docs/02-domain/DOMAIN_MODEL.md), [docs/02-domain/GLOSSARY.md](docs/02-domain/GLOSSARY.md) |
-| How it is built and secured | [docs/04-architecture/ARCHITECTURE.md](docs/04-architecture/ARCHITECTURE.md), [docs/05-security/SECURITY_MODEL.md](docs/05-security/SECURITY_MODEL.md), [docs/06-api-performance/TECHNICAL_RULES.md](docs/06-api-performance/TECHNICAL_RULES.md), [docs/adr/README.md](docs/adr/README.md) |
+| How it is built and secured | [docs/04-architecture/ARCHITECTURE.md](docs/04-architecture/ARCHITECTURE.md), [docs/04-architecture/SCHEMA.md](docs/04-architecture/SCHEMA.md), [docs/05-security/SECURITY_MODEL.md](docs/05-security/SECURITY_MODEL.md), [docs/06-api-performance/TECHNICAL_RULES.md](docs/06-api-performance/TECHNICAL_RULES.md), [docs/adr/README.md](docs/adr/README.md) |
 | Which document is authoritative for a subject | [docs/00-governance/SOURCE_OF_TRUTH.md](docs/00-governance/SOURCE_OF_TRUTH.md) |
 | What has been decided | [docs/00-governance/DECISIONS.md](docs/00-governance/DECISIONS.md) |
 | What is still open | [docs/00-governance/OPEN_ITEMS.md](docs/00-governance/OPEN_ITEMS.md) |
@@ -41,7 +41,7 @@ docs/
 assets/brand/          codename prototype logo and its README; no client identity (D-038)
 ```
 
-Folders `01` and `02` hold the current product and domain documents written in RF-2, and folders `04`, `05` and `06` the current architecture, security and technical-rule documents written in RF-3A. Each sits next to a `legacy/` subfolder with the earlier documents for that subject, in Indonesian; most are superseded, and the database schema and constraint parts of the architecture documents stay in force until RF-3B. Folders `03` and `07` to `11` still contain only a `legacy/` subfolder. `docs/adr/` holds the architecture decision records. New documents are added as each re-foundation step is authorized and completed.
+Folders `01` and `02` hold the current product and domain documents written in RF-2, and folders `04`, `05` and `06` the current architecture, security and technical-rule documents written in RF-3A, with the logical database schema (`docs/04-architecture/SCHEMA.md`) written in RF-3B. Each sits next to a `legacy/` subfolder with the earlier documents for that subject, in Indonesian; they are superseded, apart from the inputs kept for later steps, and the schema and constraint parts of the legacy architecture documents become superseded when the Owner accepts the RF-3B checkpoint. Folders `03` and `07` to `11` still contain only a `legacy/` subfolder. `docs/adr/` holds the architecture decision records. New documents are added as each re-foundation step is authorized and completed.
 
 ## Stack (planned, nothing installed)
 

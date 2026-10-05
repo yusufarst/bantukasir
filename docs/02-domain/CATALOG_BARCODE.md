@@ -19,12 +19,12 @@ The conventions of DOMAIN_MODEL section 1 apply: rules are `BR-CAT-nn`, every ru
 | BR-CAT-02 | The Owner and OPERATIONS_ADMIN create and edit products, categories, selling prices and barcodes, and print labels. CASHIER manages no master data. On a combined account the right comes from its OPERATIONS_ADMIN functions. | L-04, D-007, D-032, D-036 |
 | BR-CAT-03 | Creating a product never creates stock: a new product starts with on-hand quantity 0 and no movement. Scanning, printing a label or hearing a scanner beep never posts stock. | L-06, L-12 |
 | BR-CAT-04 | Before a product is created, the shared Product Search is run for the exact barcode and SKU and shows similar names. A similar name is a warning; going ahead needs the explicit confirmation "Tetap buat produk baru". An exact SKU or barcode collision is always refused, also when two creations race. | L-12, L-P3 |
-| BR-CAT-05 | The SKU is text (leading zeros are kept) and unique across all products. The normalization applied before SKU comparison is OPEN — T-17 g, to be set in RF-3B. | L-02, D-037, CORE-004 |
+| BR-CAT-05 | The SKU is text (leading zeros are kept) and unique across all products. Before it is stored, outer whitespace is removed, as from all text; the rest is kept exactly as typed, including letter case. Control characters are refused, and the length is 1 to 64 characters. Two SKUs that differ only in letter case are the same SKU and cannot both exist (T-17 g; [SCHEMA](../04-architecture/SCHEMA.md) section 5.6). | L-02, D-037, CORE-004; TECHNICAL_RULES section 11.3 |
 | BR-CAT-06 | The base unit is the unit in which the product is stocked, received, issued and sold. There is no pack conversion: a barcode alias never stands for a pack of several base units. The real units and precisions of the first store are part of gate G2. | L-12, L-PRD §Batas Later, L-06 |
 | BR-CAT-07 | The base unit and quantity precision cannot change after the product's first stock movement, including when the edit races with that first posting. | L-02, L-06, CORE-005 |
 | BR-CAT-08 | Only an active product can be received, issued, adjusted or sold. An inactive product stays visible, read-only, in search results, history and documents. Products are deactivated and reactivated, never deleted. | L-12, L-06, D-042 |
 | BR-CAT-09 | Every product belongs to one category. The Owner and OPERATIONS_ADMIN create, rename, deactivate and reactivate categories. An inactive category cannot be chosen for a product; deactivating it changes no product. Categories are never deleted. | L-P3 §Katalog, L-PRD, L-04, D-042 |
-| BR-CAT-10 | Brand is an optional attribute of a product, usable as a search filter. Whether brands are kept as a managed list is a schema choice in RF-3B and carries no business rule. | L-02, L-12 |
+| BR-CAT-10 | Brand is an optional attribute of a product, usable as a search filter. It is a free-text attribute, not a managed list (SCHEMA section 5.6); this choice carries no business rule. | L-02, L-12 |
 | BR-CAT-11 | Minimum stock is a non-negative quantity in the product's precision. Changing it is validated and audited, creates no movement and immediately changes the product's stock attention state (INVENTORY). | L-06 |
 
 ## 2. Selling price
@@ -49,7 +49,7 @@ The conventions of DOMAIN_MODEL section 1 apply: rules are `BR-CAT-nn`, every ru
 | BR-CAT-22 | The Owner and OPERATIONS_ADMIN add aliases, generate internal codes and retire tokens; retiring a token records its reason (BR-CAT-52). Only the Owner corrects a misassignment (BR-CAT-50, BR-CAT-51). CASHIER never creates a product or an alias, also not from an unknown scanned token. | L-12, L-06, L-04, D-051, D-052 |
 | BR-CAT-50 | The Owner, and only the Owner, may move a manufacturer barcode that is active on the wrong product to the correct product. In one audited action, with a mandatory reason and recent authentication, the mapping on the wrong product is retired as a misassignment and the same token is attached to the correct product. The mapping history — from which product to which, when, by whom and why — is kept. Earlier Sales stay on the product of that time, because Sale lines reference the product, not the token. | D-051 |
 | BR-CAT-51 | The Owner, and only the Owner, may attach a manufacturer barcode that is already retired to the correct product, only as a verified misassignment correction: the token is a manufacturer barcode, never a `BK-P-…` code; its retirement is recorded as a misassignment; its earlier product mapping is traceable; a correction reason is mandatory; recent authentication is required; the earlier mapping history stays and is audited; after the correction the token is active on exactly one product. | D-052 |
-| BR-CAT-52 | Retiring a token records whether it was retired as a misassignment or for another reason. The retirement record is history and is never rewritten (BR-AUD-03); a correction adds a new, audited mapping fact. A token is active on at most one product at a time (BR-CAT-16). The exact list of retirement reasons and their Indonesian labels are interface copy, approved at gate P7-G2; only the distinction between a misassignment and another reason is a rule. How mappings, their history and the retirement reason are stored is designed in RF-3B. | D-052, D-051, BR-AUD-03 |
+| BR-CAT-52 | Retiring a token records whether it was retired as a misassignment or for another reason. The retirement record is history and is never rewritten (BR-AUD-03); a correction adds a new, audited mapping fact. A token is active on at most one product at a time (BR-CAT-16). The exact list of retirement reasons and their Indonesian labels are interface copy, approved at gate P7-G2; only the distinction between a misassignment and another reason is a rule. Mappings, their history and the retirement reason are stored as SCHEMA section 5.6 describes. | D-052, D-051, BR-AUD-03 |
 
 ## 4. Product Search
 
@@ -115,9 +115,8 @@ Pack conversion, serial numbers, batches, expiry dates and consignment; XLSX imp
 
 | Item | Subject |
 | --- | --- |
-| T-17 g | Normalization of SKU text before comparison (RF-3B) |
 | T-17 h | A CSV row that names a category that does not exist yet |
 | Gate G2 | Real units, precisions, barcodes and product volume of the first store |
 | Gate DEVICES | Real scanners and label printer |
 
-Revalidation item R-17 (questions 26 and 31) is resolved by D-051 and D-052; T-17 c (question 30) by D-054.
+Revalidation item R-17 (questions 26 and 31) is resolved by D-051 and D-052; T-17 c (question 30) by D-054; T-17 g in RF-3B (BR-CAT-05).

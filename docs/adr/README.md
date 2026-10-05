@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-3A under D-055, 4 October 2026 (Asia/Jakarta) |
+| Status | CURRENT — written in RF-3A under D-055, 4 October 2026 (Asia/Jakarta); index extended in RF-3B under D-059, 5 October 2026 |
 | Phase | P0 policy and P4 index |
 | Framework | AICWDF-4.3 §4 (deviation record), §11 (ADR policy in P0), §15 (ADRs for major changes) |
 | Authority | Rank 4 in [SOURCE_OF_TRUTH](../00-governance/SOURCE_OF_TRUTH.md) section 1, below the decisions in [DECISIONS](../00-governance/DECISIONS.md) and the governance documents |
@@ -64,7 +64,7 @@ Rules for the fields:
 
 - Identifiers are `ADR-NNN`, three digits, permanent and never reused.
 - The file name is `ADR-NNN-short-title.md` in this folder.
-- The next free identifier is **ADR-008**. No ADR is authorized beyond ADR-007 until a later step is authorized (D-055).
+- The next free identifier is **ADR-009**. No ADR is authorized beyond ADR-008 until a later step is authorized (D-059).
 
 ## 5. Index
 
@@ -77,5 +77,6 @@ Rules for the fields:
 | [ADR-005](ADR-005-localization-architecture.md) | Localization architecture | ACCEPTED | D-050 (Owner); D-020 |
 | [ADR-006](ADR-006-exact-numbers.md) | Exact numbers | ACCEPTED | D-006 (Planner); AGENTS rule 7 |
 | [ADR-007](ADR-007-command-identity-and-idempotency.md) | Command identity and idempotency | ACCEPTED | D-006 (Planner), D-040 (Owner) |
+| [ADR-008](ADR-008-cost-allocation-representation.md) | Issue-cost allocation representation | ACCEPTED | D-060, D-061 (Owner); D-034, D-035 |
 
-All seven were written in RF-3A (D-055). They record decisions that were already in force or that the Owner took before RF-3A was authorized; they add no business meaning.
+ADR-001 to ADR-007 were written in RF-3A (D-055). They record decisions that were already in force or that the Owner took before RF-3A was authorized. ADR-008 was written in RF-3B (D-059) and records the representation that follows from the Owner's decisions D-060 and D-061. None adds business meaning.

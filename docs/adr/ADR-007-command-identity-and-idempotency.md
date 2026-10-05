@@ -35,9 +35,9 @@ The commands that the domain documents call critical — Sale checkout; cash ses
 
 ### 2. The durable result is written with the facts
 
-The server records the command's durable result in the **same transaction** as the business facts (BR-CMD-01, BR-DOM-04): actor, operation, key, intent, fingerprint, epoch, outcome, the facts it created and the time. The command's identity is the **first** write of the transaction ([TECHNICAL_RULES](../06-api-performance/TECHNICAL_RULES.md) section 7, step 1), so that a second request with the same identity waits for the first one instead of running beside it; the outcome and the created facts are linked to that identity before commit. Logically, the pair (actor, operation, key) is unique and the pair (operation, intent) is unique. How the identity, the outcome and the links are stored — within the immutability and privilege rules of [ARCHITECTURE](../04-architecture/ARCHITECTURE.md) section 9 — is designed in RF-3B. Command results are kept as long as the facts they belong to (DOMAIN_MODEL section 11.3).
+The server records the command's durable result in the **same transaction** as the business facts (BR-CMD-01, BR-DOM-04): actor, operation, key, intent, fingerprint, epoch, outcome, the facts it created and the time. The command's identity is the **first** write of the transaction ([TECHNICAL_RULES](../06-api-performance/TECHNICAL_RULES.md) section 7, step 1), so that a second request with the same identity waits for the first one instead of running beside it; the outcome and the created facts are linked to that identity before commit. Logically, the pair (actor, operation, key) is unique and the pair (operation, intent) is unique. How the identity, the outcome and the links are stored — within the immutability and privilege rules of [ARCHITECTURE](../04-architecture/ARCHITECTURE.md) section 9 — is [SCHEMA](../04-architecture/SCHEMA.md) section 5.3 (RF-3B). Command results are kept as long as the facts they belong to (DOMAIN_MODEL section 11.3).
 
-A **definite rejection** (validation or domain refusal) writes no business fact, audit event or command result: the transaction, including the identity record, rolls back (BR-SALE-19). A security log entry may be written outside it; whether the mark that reporting is incomplete after a rejected cost correction is written is OPEN — T-17 i (RF-3B). The client never resubmits a rejected identity; after the user reviews, a new confirmation creates a new intent and key.
+A **definite rejection** (validation or domain refusal) writes no business fact, audit event or command result: the transaction, including the identity record, rolls back (BR-SALE-19). A security log entry may be written outside it. The mark that affected reporting is incomplete after a cost correction refused because its replay cannot be done safely is written after the rollback, with its audit event, in a transaction of its own (SCHEMA section 5.8; T-17 i). The client never resubmits a rejected identity; after the user reviews, a new confirmation creates a new intent and key.
 
 ### 3. Outcomes
 
@@ -103,7 +103,7 @@ DEVIATION:         NONE — AICWDF §17 requires explicit idempotency, retries a
 OWNER APPROVAL:    NOT REQUIRED — D-006 is a planner decision in force; D-040 (Owner) sets the user-visible rule
 REASON:            no duplicate money or stock facts under retries and lost responses
 RISK:              a client that discards the frozen request while UNCERTAIN; mitigated by the resolution fence
-MIGRATION IMPACT:  none — the storage of command results is designed in RF-3B
+MIGRATION IMPACT:  none — the storage of command results is SCHEMA section 5.3 (RF-3B)
 ROLLBACK IMPACT:   none
 ```
 
@@ -113,5 +113,5 @@ No version-sensitive framework fact is used in this ADR. PostgreSQL behaviour re
 
 ## Related
 
-- [TECHNICAL_RULES](../06-api-performance/TECHNICAL_RULES.md) sections 3, 4, 7, 8 and 9; [DOMAIN_MODEL](../02-domain/DOMAIN_MODEL.md) section 7; [SALES_CASH](../02-domain/SALES_CASH.md) section 4.
+- [TECHNICAL_RULES](../06-api-performance/TECHNICAL_RULES.md) sections 3, 4, 7, 8 and 9; [DOMAIN_MODEL](../02-domain/DOMAIN_MODEL.md) section 7; [SALES_CASH](../02-domain/SALES_CASH.md) section 4; [SCHEMA](../04-architecture/SCHEMA.md) section 5.3.
 - Superseded legacy content: `docs/04-architecture/legacy/02-ARCHITECTURE.md` §Kontrak command dan idempotency; `docs/04-architecture/legacy/P4-ARCHITECTURE.md` §Transaksi, locking dan original-result recovery (identity part); `docs/06-api-performance/legacy/P6-CONCURRENCY-API.md` §Kontrak HTTP dan command (envelope part).

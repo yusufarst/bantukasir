@@ -3,14 +3,14 @@
 | | |
 | --- | --- |
 | Status | CURRENT — written in RF-3A under D-055, 4 October 2026 (Asia/Jakarta) |
-| Phase | P4 — application architecture (the logical database schema is RF-3B) |
-| Replaces | The architecture part of `docs/04-architecture/legacy/02-ARCHITECTURE.md` and of `docs/04-architecture/legacy/P4-ARCHITECTURE.md`, except their schema and database-constraint parts, which stay LEGACY — IN FORCE until RF-3B ([LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 8) |
-| Decisions | D-004, D-005, D-006, D-036, D-038, D-053, D-054; [ADR-001](../adr/ADR-001-stack-and-modular-monolith.md) to [ADR-007](../adr/ADR-007-command-identity-and-idempotency.md) |
-| Related | [STACK_AND_MODULES](STACK_AND_MODULES.md), [SECURITY_MODEL](../05-security/SECURITY_MODEL.md), [TECHNICAL_RULES](../06-api-performance/TECHNICAL_RULES.md), [DOMAIN_MODEL](../02-domain/DOMAIN_MODEL.md) |
+| Phase | P4 — application architecture; the logical database schema is [SCHEMA](SCHEMA.md) (RF-3B) |
+| Replaces | The architecture part of `docs/04-architecture/legacy/02-ARCHITECTURE.md` and of `docs/04-architecture/legacy/P4-ARCHITECTURE.md`; their schema and database-constraint parts are replaced by [SCHEMA](SCHEMA.md) (RF-3B) ([LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) sections 8 and 9) |
+| Decisions | D-004, D-005, D-006, D-036, D-038, D-053, D-054, D-060, D-061; [ADR-001](../adr/ADR-001-stack-and-modular-monolith.md) to [ADR-008](../adr/ADR-008-cost-allocation-representation.md) |
+| Related | [STACK_AND_MODULES](STACK_AND_MODULES.md), [SCHEMA](SCHEMA.md), [SECURITY_MODEL](../05-security/SECURITY_MODEL.md), [TECHNICAL_RULES](../06-api-performance/TECHNICAL_RULES.md), [DOMAIN_MODEL](../02-domain/DOMAIN_MODEL.md) |
 
 How BantuKasir is built: its context, layers, units of work, read models, the payment, media and document boundaries, runtime constraints and database privilege separation. It enforces the product and domain rules and adds no business meaning. Every rule names its source: a decision `D-…`, a CURRENT document, or a legacy source key from [DOMAIN_MODEL](../02-domain/DOMAIN_MODEL.md) section 2. Rules are numbered `ARC-nn`.
 
-Not in this document: tables, columns, keys, constraints and the mapping of invariants to database enforcement (RF-3B, OPEN_ITEMS T-03); route and interaction contracts (RF-5); infrastructure runbooks, backup design and the branch model (RF-6).
+Not in this document: tables, columns, keys, constraints and the mapping of invariants to database enforcement ([SCHEMA](SCHEMA.md)); route and interaction contracts (RF-5); infrastructure runbooks, backup design and the branch model (RF-6).
 
 ## 1. System context
 
@@ -61,13 +61,13 @@ One installation serves one business with one stock pool; another shop has its o
 | ID | Read model | Rule | Source |
 | --- | --- | --- | --- |
 | ARC-20 | Stock balance | A synchronous projection of the stock movements, updated in the same transaction as each movement; never edited directly; rebuilt only by the controlled reconciliation procedure from immutable movements. | BR-INV-03, BR-DOM-03, L-06 |
-| ARC-21 | Inventory valuation and corrected cost projection | The current moving-weighted-average valuation per product, changed by postings and by a replay that publishes all corrected values atomically. How issue-cost allocations and corrected values are represented is OPEN — T-16, RF-3B. | D-034, BR-COST-25, COSTING section 10 |
+| ARC-21 | Inventory valuation and corrected cost projection | The current moving-weighted-average valuation per product, changed by postings and by a replay that publishes all corrected values atomically. Each issue-cost allocation is an immutable fact recorded at commit, with a separately stored projection that a replay replaces; a saleable return's allocation is linked to the original issue allocation and recomputed with it ([ADR-008](../adr/ADR-008-cost-allocation-representation.md); SCHEMA section 5.8). | D-034, D-060, D-061, BR-COST-25, ADR-008 |
 | ARC-22 | Stock attention | Derived from the current balance and minimum stock in one query; never stored as a second truth. | BR-INV-40, BR-INV-41 |
 | ARC-23 | Product Search | Queries over products and barcode tokens with PostgreSQL's own indexes, server-paged, one matching logic shared by every workflow, results built per role. | BR-CAT-23 to BR-CAT-27, L-02 §Batas read |
-| ARC-24 | Reports (finance report, daily summary) | Computed from source facts — Sales, payments, refunds, returns, cost allocations and corrections — in one read-only snapshot per report, with its as-of time and completeness; session snapshot totals are never added on top. How a report identifies the cost-evidence state it reflects is RF-3B. | BR-COST-34 to BR-COST-38, BR-RPT-01, TECHNICAL_RULES TR-TX-07 |
+| ARC-24 | Reports (finance report, daily summary) | Computed from source facts — Sales, payments, refunds, returns, cost allocations and corrections — in one read-only snapshot per report, with its as-of time and completeness; session snapshot totals are never added on top. Reports read allocation projections, not the facts recorded at commit; a report identifies the cost-evidence state it reflects by its snapshot, which is its as-of time, and the time of the latest cost correction published before it, counts the UNKNOWN rows behind every cost total and states how many products carry an active "reporting incomplete" mark (ADR-008 section 6; SCHEMA section 5.8). | BR-COST-34 to BR-COST-38, BR-RPT-01, TECHNICAL_RULES TR-TX-07 |
 | ARC-25 | Receipt snapshot and cash session report snapshot | Immutable accountability documents written in the transaction of the Sale or the close; they are not a second source of totals. | BR-DOC-01, BR-CASH-20, BR-DOM-03 |
 | ARC-26 | Daily reconciliation | A scheduled read-only comparison of movements with balances and cost projections. A mismatch is recorded as an incident and blocks the product's postings through a command; repair is a controlled rebuild from facts. | BR-INV-45, BR-INV-46 |
-| ARC-27 | Expected cash | Derived from the session's committed facts (opening cash, applied CASH payments, drawer-funded refunds) under the session lock whenever a command depends on it. If RF-3B adds a maintained projection, it is updated in the same transaction and reconciled. | D-035, D-045, BR-CASH-12 |
+| ARC-27 | Expected cash | Derived from the session's committed facts (opening cash, applied CASH payments, drawer-funded refunds) under the session lock whenever a command depends on it. RF-3B adds no maintained expected-cash projection (SCHEMA guard G-05). | D-035, D-045, BR-CASH-12 |
 
 ## 5. Payment boundary
 
@@ -115,7 +115,7 @@ One installation serves one business with one stock pool; another shop has its o
 | --- | --- | --- |
 | ARC-70 | The application connects with a **runtime role** that cannot change the schema and cannot update or delete immutable business facts (stock movements, Sales and their lines, payments, receipt snapshots, refunds, returns, cost evidence and corrections, session report snapshots, audit events, command results). It may change only mutable projections and master data, and append facts. | PRODUCTION_DATA_SAFETY section 3, L-P4 §Schema, immutability dan constraints, L-09 |
 | ARC-71 | A separate **migration role** is available only to the controlled migration job; a separate **backup role** has the minimum read access the backup needs. | PRODUCTION_DATA_SAFETY section 3, L-09 |
-| ARC-72 | The exact grants per table are designed in RF-3B, and the separation is proven by tests in which the runtime role is refused schema changes and changes to history. | PRODUCTION_DATA_SAFETY section 3, REQ-OPS-02 |
+| ARC-72 | The exact grants per table are SCHEMA section 10, and the separation is proven by tests in which the runtime role is refused schema changes and changes to history. | PRODUCTION_DATA_SAFETY section 3, REQ-OPS-02 |
 
 ## 10. Configuration and identity
 
@@ -133,9 +133,9 @@ One installation serves one business with one stock pool; another shop has its o
 | ARC-91 | The Owner's system status shows the last backup and restore, their age, failures, disk space and reconciliation, and "Belum Terverifikasi" for anything unproven. | REQ-OPS-04, L-09 |
 | ARC-92 | Uptime checking from outside the server, error tracking and monitoring are designed in RF-6 at zero additional cost unless the Owner approves otherwise. | COST_POLICY, AICWDF §20 |
 
-## 12. Boundary with RF-3B and later steps
+## 12. Boundary with later steps
 
-- RF-3B designs the logical schema, the mapping of invariants to constraints, locks, guards and tests, the representation of issue-cost allocations (T-16) and items T-17 e, g and i. Until it is accepted, the schema and database-constraint parts of `02-ARCHITECTURE` §Constraint database and of `P4-ARCHITECTURE` §Schema, immutability dan constraints remain LEGACY — IN FORCE.
+- RF-3B designed the logical schema ([SCHEMA](SCHEMA.md)), the mapping of invariants to constraints, locks, guards and tests, the representation of issue-cost allocations ([ADR-008](../adr/ADR-008-cost-allocation-representation.md), T-16) and items T-17 e, g and i. The schema and database-constraint parts of `02-ARCHITECTURE` and `P4-ARCHITECTURE` are superseded by SCHEMA under plan decision P-6, effective when the Owner accepts the RF-3B checkpoint.
 - RF-4 builds on ADR-005 (localization) and on the capabilities of SECURITY_MODEL section 6 for navigation per role.
 - RF-5 writes route and interaction contracts within TECHNICAL_RULES.
 - RF-6 writes infrastructure, backup and release documents within ADR-002 and ADR-003, and rebuilds the test strategy; the testing and deployment sections of `P4-ARCHITECTURE` are its input only.

@@ -164,7 +164,8 @@ The first client has confirmed that its cashiers will use both a PC and a tablet
 | Question 18 | Backup destination, cost and recovery key | RF-6 (plan decision P-3) |
 | Question 20 | Who may operate on production | RF-6 |
 | Question 29 | A drawer-funded refund committed but its cash not yet taken when the session is counted and closed | RF-5 |
+| Question 35 | Whether the same product on two lines of one checkout stays as two receipt lines or is combined into one (raised in RF-3B) | RF-5 |
 
-Questions 25, 6, 5, 26, 31, 7 and 30 were answered before RF-3A by D-048 to D-054; question 7 decided the hosting topology only, and the server facts stay in gate TARGET (section 13). Questions 21 to 24 and 27 to 28, raised during RF-2, were answered by D-042 to D-047 ([OPEN_ITEMS](../00-governance/OPEN_ITEMS.md)).
+Questions 25, 6, 5, 26, 31, 7 and 30 were answered before RF-3A by D-048 to D-054; question 7 decided the hosting topology only, and the server facts stay in gate TARGET (section 13). Questions 21 to 24 and 27 to 28, raised during RF-2, were answered by D-042 to D-047 ([OPEN_ITEMS](../00-governance/OPEN_ITEMS.md)). Questions 33, 34 and 32 were answered before RF-3B by D-060 to D-062 — the cost recorded at a sale and after a correction, the cost a return restores after a correction, and the numbering of Sales and cash sessions; none changes a requirement.
 
 Input carried to RF-4 (D-018): interactive trend-chart points showing date and value.

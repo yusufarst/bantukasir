@@ -214,3 +214,33 @@ Legacy technical rules changed or retired in RF-3A, with the reason:
 | L-02, L-P6: after a restore, a new recovery epoch stops old browser intents | Kept and made precise: the restore sets an epoch value never issued before, and a command whose epoch differs from the current one is refused (ADR-007 section 6) | A counter would reissue an epoch already given to browsers when the same backup is restored twice |
 
 New identifiers written in RF-3A: `ADR-NNN` in `docs/adr/`; `ARC-nn` in ARCHITECTURE; `STK-nn` in STACK_AND_MODULES; `SEC-<area>-nn`, `CAP-nn` and `THR-nn` in SECURITY_MODEL; `TR-<area>-nn` and `RACE-nn` in TECHNICAL_RULES; `BR-CAT-50` to `BR-CAT-52` in CATALOG_BARCODE; `REQ-ACC-12`, `REQ-CAT-13` and `REQ-OPS-06` in REQUIREMENTS.
+
+## 9. Documents superseded in RF-3B
+
+RF-3B (D-059) wrote the logical database schema, [SCHEMA](../04-architecture/SCHEMA.md), and [ADR-008](../adr/ADR-008-cost-allocation-representation.md). Under plan decision P-6 the final status of the two legacy P4 documents is written in the RF-3B checkpoint and takes effect when the Owner accepts it. All the legacy files stay in the working tree, byte-identical; they are removed only by a later authorized step.
+
+| Legacy document and section | Status after RF-3B | Carried by |
+| --- | --- | --- |
+| `02-ARCHITECTURE` §Constraint database | LEGACY — SUPERSEDED | SCHEMA sections 5, 8 and 9 (SCHEMA section 14 traces each statement) |
+| `02-ARCHITECTURE` §Payment extension boundary dan schema delivery — schema delivery (raw SQL constraints, partial uniqueness, immutable-history privileges, real PostgreSQL evidence) | LEGACY — SUPERSEDED | SCHEMA sections 10 and 13 (SCH-51), section 9.4 |
+| `02-ARCHITECTURE`, whole document | **LEGACY — SUPERSEDED** | DOMAIN_MODEL (RF-2); ARCHITECTURE, STACK_AND_MODULES, SECURITY_MODEL, TECHNICAL_RULES and ADR-001 to ADR-007 (RF-3A, section 8); SCHEMA and ADR-008 (RF-3B) |
+| `P4-ARCHITECTURE` §Schema, immutability dan constraints | LEGACY — SUPERSEDED | SCHEMA (SCHEMA section 14 traces each statement) |
+| `P4-ARCHITECTURE`, whole document | **LEGACY — SUPERSEDED**, except §Testing implications and §Deployment, operasi dan maintenance (LEGACY — INPUT ONLY for RF-6; ADR-002 and ADR-003 prevail where the deployment section differs) and §Sumber primer yang diverifikasi saat planning (RECORD) | ADR-001 to ADR-008, ARCHITECTURE, STACK_AND_MODULES, SECURITY_MODEL, TECHNICAL_RULES, SCHEMA |
+| The legacy statements listed in COSTING section 10 (L-15, L-02, L-P2, L-P3, L-P6, L-06, L-17, L-08; Build Units BU-INV-003, BU-SALE-002) | Each received its disposition — adopted or rejected, with its reason — in ADR-008; the status of its parent document is unchanged by that disposition | ADR-008 section "Legacy statements listed in COSTING section 10" |
+
+This settles plan decision P-5 for the two documents: no legacy document is now in force for the subject of P4.
+
+Legacy schema rules changed or made concrete in RF-3B, with the reason:
+
+| Legacy rule | Change | Reason |
+| --- | --- | --- |
+| L-P4: "Unik normalized SKU" | Made concrete: outer whitespace removed before storage; letter case kept as typed; uniqueness without regard to letter case; no control characters; 1 to 64 characters (SCHEMA section 5.6; CATALOG_BARCODE BR-CAT-05) | T-17 g, a technical reading the Owner accepted for RF-3B planning (D-059) |
+| L-02, L-P4: a barcode token unique globally and never reused | Changed before RF-3B: a token is unique and active on at most one product; a manufacturer token retired as a misassignment may be re-attached by the Owner's correction; `BK-P-…` codes are never reused (SCHEMA section 5.6) | D-051, D-052 |
+| L-P4: "satu full Payment ... per completed Sale" | Kept, with the three methods of D-036 (SCHEMA section 5.9) | D-036 |
+| L-P4, L-02: "Sale number" unique and immutable, with no generation rule | Kept, with the generation rule of D-062: unique per installation, taken inside the committing transaction, increasing in allocation order, gaps allowed, with the Asia/Jakarta business date as a readable part (SCHEMA section 6) | D-062 |
+| L-02 entity table: CashRegister "code/label unik" | Made concrete: the register code is unique without regard to letter case; the label is not unique (SCHEMA section 5.10) | Carried from the legacy entity table as the code's identity rule; reported to the Owner with the RF-3B report |
+| L-02: cumulative refund and return bounds held by aggregate checks under lock | Kept and strengthened: running totals with check constraints under the original Sale lock (SCHEMA section 5.9) | Data integrity first (PROJECT_RULES section 2) |
+
+No legacy schema rule is dropped without a written reason.
+
+New identifiers written in RF-3B: `ADR-008` in `docs/adr/`; `SCH-nn` rules and `G-nn` guards in SCHEMA; questions 32 to 35 in OPEN_ITEMS.

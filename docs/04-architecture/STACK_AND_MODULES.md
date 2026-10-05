@@ -6,7 +6,7 @@
 | Phase | P4 — application architecture |
 | Replaces | The stack, module and structure sections of `docs/04-architecture/legacy/P4-ARCHITECTURE.md` and the module paragraph of `docs/04-architecture/legacy/02-ARCHITECTURE.md` ([LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 8) |
 | Decisions | D-004, D-005, D-050; [ADR-001](../adr/ADR-001-stack-and-modular-monolith.md), [ADR-002](../adr/ADR-002-minimum-runtime-infrastructure.md), [ADR-004](../adr/ADR-004-authentication.md), [ADR-005](../adr/ADR-005-localization-architecture.md), [ADR-006](../adr/ADR-006-exact-numbers.md), [ADR-007](../adr/ADR-007-command-identity-and-idempotency.md) |
-| Related | [ARCHITECTURE](ARCHITECTURE.md), [TOOLCHAIN](../00-governance/TOOLCHAIN.md) |
+| Related | [ARCHITECTURE](ARCHITECTURE.md), [SCHEMA](SCHEMA.md), [TOOLCHAIN](../00-governance/TOOLCHAIN.md) |
 
 The technology stack and its version policy, the module map with entity ownership and dependencies, the directory layout, and the rule against speculative abstraction. Rules are numbered `STK-nn`; module names are permanent.
 
@@ -47,8 +47,8 @@ One application, one database. Modules are folders and namespaces with an owner 
 | Configuration | BusinessProfile, BusinessProfileRevision | Shop identity with immutable revisions and the current pointer | DOMAIN_MODEL section 10 |
 | Catalog | Category, Product, SellingPriceRevision, Barcode and its mapping history, product photo reference, CSV product import | Master data, prices, barcode tokens and their correction (D-051, D-052), Product Search, label data, CSV import | CATALOG_BARCODE |
 | Inventory | StockMovement, StockBalance, receiving document, manual issue, opening stock and onboarding state, adjustment, reversal, posting block | Every physical stock change, onboarding freeze, stock attention, reconciliation | INVENTORY |
-| Costing | AcquisitionCostEvidence, cost correction, inventory valuation, issue-cost allocation | Moving weighted average, UNKNOWN handling, replay, cost visibility | COSTING (representation of allocations: T-16, RF-3B) |
-| Sales | Sale, SaleLine, Payment, ReceiptSnapshot, Refund, Return | Checkout, payment methods (ARCHITECTURE section 5), refunds and returns with their bounds | SALES_CASH sections 1 to 5 and 8 |
+| Costing | AcquisitionCostEvidence, cost correction, inventory valuation, issue-cost allocation facts and projections, cost-incomplete marks | Moving weighted average, UNKNOWN handling, replay, cost visibility | COSTING; representation of allocations [ADR-008](../adr/ADR-008-cost-allocation-representation.md) |
+| Sales | Sale, SaleLine, Payment, ReceiptSnapshot, Refund, Return, and the running totals of refunds and returns | Checkout, payment methods (ARCHITECTURE section 5), refunds and returns with their bounds | SALES_CASH sections 1 to 5 and 8 |
 | Cash | CashRegister, CashSession, CashSessionReportSnapshot, Owner review note | Session open and close, activity version, expected cash, session reports | SALES_CASH sections 6 and 7 |
 | Documents | Template versions | Rendering receipts, session reports and labels from snapshots; CSV exports; print and export audit | SALES_CASH section 5, BR-AUD-06 |
 | Reporting | — (read only) | Finance report, daily summary, stock history, audit log views, per-role DTOs | COSTING section 9, SALES_CASH section 9 |
@@ -109,7 +109,7 @@ resources/js/
   layouts/
   lib/                        t(), formatters, exact-number helpers, command client (ADR-005, ADR-006, ADR-007)
   types/                      DTO and translation-key types
-database/migrations/          forward-only migrations (schema designed in RF-3B)
+database/migrations/          forward-only migrations (schema: docs/04-architecture/SCHEMA.md)
 tests/
   Unit/  Feature/  Concurrency/  Browser/
 ```

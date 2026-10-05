@@ -4,7 +4,7 @@ The single log of decisions for BantuKasir. A decision made in conversation does
 
 ## 1. How to use this log
 
-- Identifiers are permanent and continue the original numbering. The next free identifier is **D-058**.
+- Identifiers are permanent and continue the original numbering. The next free identifier is **D-064**.
 - "Source" says who decided: **Owner**, or **Planner** (a planning agent acting on its own authority under the rules of the time).
 - "Status" says whether the decision is in force today. `REVALIDATION PENDING` means the decision still applies but the Owner has been asked to re-confirm it; the item number refers to [OPEN_ITEMS](OPEN_ITEMS.md).
 - D-001 to D-018 were recorded on 2 and 3 October 2026 in the former register, now [legacy/10-DECISIONS.md](legacy/10-DECISIONS.md). The table below summarizes them in English. For the exact meaning of D-001 to D-018 the original Indonesian wording governs; for whether a decision is in force, this log governs.
@@ -35,7 +35,7 @@ The single log of decisions for BantuKasir. A decision made in conversation does
 
 ## 3. Decisions under the re-foundation (D-019 onward)
 
-All by the Owner (Asia/Jakarta). D-019 to D-025 answer the questions of the [re-foundation analysis report](records/REFOUNDATION_ANALYSIS_2026-10-03.md) (3 October 2026). D-026 to D-030 authorize and accept RF-1 (3 October 2026). D-031 to D-040 come from the Owner decision session held after RF-1 (3 and 4 October 2026). D-041 authorizes RF-2 (4 October 2026). D-042 to D-045 answer questions 21 to 24, which the planning agent asked while drafting RF-2; D-046 and D-047 answer questions 27 and 28, which came from the independent adversarial review of RF-2 (all 4 October 2026). D-048 to D-054 answer questions 25, 6, 5, 26, 31, 7 and 30, which the planning agent asked after the Owner reviewed its RF-3 pre-authorization package and before RF-3A was authorized; D-055 authorizes RF-3A (all 4 October 2026). D-056 and D-057 record the Owner's second review of the RF-3A report (4 October 2026). The full terms of D-031 to D-057 are in section 6.
+All by the Owner (Asia/Jakarta). D-019 to D-025 answer the questions of the [re-foundation analysis report](records/REFOUNDATION_ANALYSIS_2026-10-03.md) (3 October 2026). D-026 to D-030 authorize and accept RF-1 (3 October 2026). D-031 to D-040 come from the Owner decision session held after RF-1 (3 and 4 October 2026). D-041 authorizes RF-2 (4 October 2026). D-042 to D-045 answer questions 21 to 24, which the planning agent asked while drafting RF-2; D-046 and D-047 answer questions 27 and 28, which came from the independent adversarial review of RF-2 (all 4 October 2026). D-048 to D-054 answer questions 25, 6, 5, 26, 31, 7 and 30, which the planning agent asked after the Owner reviewed its RF-3 pre-authorization package and before RF-3A was authorized; D-055 authorizes RF-3A (all 4 October 2026). D-056 and D-057 record the Owner's second review of the RF-3A report (4 October 2026). D-058 records the Owner's acceptance of the RF-3A checkpoint; D-059 authorizes RF-3B; D-060 to D-062 answer questions 33, 34 and 32, which the planning agent asked, in that order set by the Owner, after the Owner reviewed its RF-3B pre-authorization package and before RF-3B was authorized (all 5 October 2026). D-063 records the Owner's second review of the RF-3B report (6 October 2026). The full terms of D-031 to D-063 are in section 6.
 
 | ID | Decision | Effect |
 | --- | --- | --- |
@@ -78,6 +78,12 @@ All by the Owner (Asia/Jakarta). D-019 to D-025 answer the questions of the [re-
 | D-055 | RF-3A is authorized on baseline `0c4945d001daf76723568f015e69b6f6c43342fb`, the RF-2 checkpoint, which the Owner accepted on 4 October 2026 after the planning agent's review. The authorization records the plan decisions P-1 to P-5 (P-5 with the Owner's clarification) and D-048 to D-054. RF-3B is not authorized. | Governance; no product or domain content of its own. Completes RF-2 (D-041). Authorizes RF-3A ([REFOUNDATION_PLAN](REFOUNDATION_PLAN.md) section 7). Terms in section 6. Scope amended by D-057 (T-18). |
 | D-056 | Residual risk of Owner-issued one-time links (OPEN_ITEMS N-06; SECURITY_MODEL THR-21): accepted for V1 under the existing controls. It authorizes no email delivery, one-time code, two-factor authentication, passkey or other authentication channel. | Terms in section 6. Resolves N-06. Recorded in section 5 and in SECURITY_MODEL THR-21. |
 | D-057 | Second review of the RF-3A report: RF-3A is substantively accepted, subject to one narrow governance remediation before any executor checkpoint instruction; the report's reading of the onboarding freeze for saleable returns is accepted, with no new rule and no question 32; the RF-3A scope is amended so that the stale localization wording of AGENTS.md and PROJECT_RULES is corrected (T-18). RF-3B is not authorized. | Governance. Amends the scope of D-055. Resolves T-18. Terms in section 6. |
+| D-058 | Acceptance of the RF-3A checkpoint, commit `ee67b3aac58f24198fd8f617410e824bc7ca1119`, on 5 October 2026 after the planning agent's review of the executor's report; the Owner's final second review of the amended RF-3A report was PASS; a process note on D-031. | Governance. RF-3A (D-055, D-057) is complete: P5 and P6 are complete, and P4 in its architecture part. Terms in section 6. |
+| D-059 | RF-3B is authorized on baseline `ee67b3aac58f24198fd8f617410e824bc7ca1119`, the accepted RF-3A checkpoint, with the RF-3B pre-authorization package (revision 2) and the Owner's recorded answers as the controlling scope. Plan decisions P-6 to P-9 are approved. RF-4 is not authorized. | Governance; no product or domain content of its own. Authorizes RF-3B ([REFOUNDATION_PLAN](REFOUNDATION_PLAN.md) section 8). Terms in section 6. |
+| D-060 | Issue-cost allocation at commit (question 33): the allocation recorded when a Sale commits — and likewise for MANUAL_ISSUE and negative ADJUSTMENT — is an immutable original fact, which may be UNKNOWN; the result of a correction replay is stored separately as a derived projection that each replay replaces; Owner reports use the projection. | Terms in section 6. Resolves T-16 (a). Applied in ADR-008, SCHEMA section 5.8, COSTING (BR-COST-14, BR-COST-16, section 10), DOMAIN_MODEL section 11.2, ARCHITECTURE ARC-21 and ARC-24, and TECHNICAL_RULES RACE-11. |
+| D-061 | Cost restored by a saleable return after a later correction (question 34): the return references a link to the original issue allocation; a correction replay recomputes the linked issue and return projections together; the cost is restored exactly once; the value at return commit stays as a fact. Within D-034 and D-035. | Terms in section 6. Resolves T-16 (b); with ADR-008, T-16 (c). Applied in ADR-008, SCHEMA sections 5.8 and 5.9, COSTING (BR-COST-17, section 10), SALES_CASH BR-RFD-11 and TECHNICAL_RULES RACE-10 and RACE-11. |
+| D-062 | Sale and cash session numbering (question 32): unique per installation, generated by the server inside the committing transaction, monotonically allocated, gaps permitted, with a readable Asia/Jakarta business-date part; "monotonically increasing" means allocation order, not commit order. | Terms in section 6. Applied in SCHEMA section 6, TECHNICAL_RULES TR-TX-10, SALES_CASH BR-DOC-01 and BR-CASH-04, and PRODUCT_BLUEPRINT section 14. |
+| D-063 | Second review of the RF-3B report: PASS at working-tree level, with clarifications. Accepted interpretation of D-034 for the "reporting incomplete" mark: a cost correction that cannot obtain the product guard before its replay starts is `SERVICE_BUSY`, not a rejection, writes no mark and is repeated with the same command identity; a refused reversal writes no mark; a correction refused because the product is reconciliation-blocked writes no further mark. Cost corrections and reversals stay refused while a product is reconciliation-blocked, until the Owner reopens it. The installation-wide sequence is the monotonic authority for numbers; the date part is not a chronological sort key. Question 35 is deferred to before RF-5. The reviewer's SQL in a disposable sandbox is accepted for this run only. | Terms in section 6. Applied in COSTING BR-COST-27, TECHNICAL_RULES TR-TIME-01 and TR-TX-10, SCHEMA sections 5.8, 5.9, 6 and guard G-11, and ADR-008 section 4.3. RF-4 is not authorized. |
 
 ## 4. Facts supplied by the Owner
 
@@ -96,7 +102,7 @@ All by the Owner (Asia/Jakarta). D-019 to D-025 answer the questions of the [re-
 | The Owner account, like every account, has no second authentication factor in V1. | Owner | D-049 |
 | Whoever holds a staff member's one-time link, including the Owner who issued it, can set that person's password and act under their identity until the staff member notices. Controls: single use, 60-minute expiry, shown once and only to its issuer, revocable, issuance and use audited, staff handover guidance and reporting of a password they did not set. | Owner | D-056 |
 
-## 6. Terms of D-031 to D-057
+## 6. Terms of D-031 to D-063
 
 The Owner gave these decisions with detailed limits. The limits below are part of each decision.
 
@@ -467,3 +473,93 @@ The Owner reviewed the RF-3A report a second time on 4 October 2026. The full wo
 - Scope amendment of D-055, to resolve OPEN_ITEMS T-18: `AGENTS.md` and `docs/00-governance/PROJECT_RULES.md` may be changed, only in their stale localization wording, to match D-050 — translation keys from the first implementation Task; V1 ships Bahasa Indonesia only; no language switcher in V1; English is a later scope addition that needs its own authorization; hard-coded user-facing copy stays prohibited. No other rule in those files changes.
 - After the remediation, the planning agent re-runs the consistency checks and a targeted independent verification and returns the amended RF-3A report for a final second review. The executor checkpoint instruction is prepared only after that review. Nothing is staged or committed in the meantime.
 - RF-3B is NOT AUTHORIZED. RF-4 and every later step are NOT AUTHORIZED.
+
+### D-058 — Acceptance of the RF-3A checkpoint
+
+The Owner's statement begins: "I accept the RF-3A checkpoint at commit: ee67b3aac58f24198fd8f617410e824bc7ca1119". Its full wording is held in the Owner's Claude Project; these terms are its record in the repository.
+
+- The RF-3A checkpoint, commit `ee67b3aac58f24198fd8f617410e824bc7ca1119` (parent `0c4945d001daf76723568f015e69b6f6c43342fb`), is accepted on 5 October 2026, after the planning agent's review of the executor's report. RF-3A is accepted and complete at this checkpoint (D-055, D-057; [REFOUNDATION_PLAN](REFOUNDATION_PLAN.md) section 7).
+- The Owner's final second review of the amended RF-3A report, on 5 October 2026, was PASS: the working-tree content after the D-056 and D-057 remediation was accepted, and exactly one checkpoint instruction was authorized; the executor carried it out as that commit.
+- Process note on D-031: Opus 5.5 is the default planning model and Fable 5.1 is used only for escalation. Future handoffs and reviews use Opus 5.5 unless escalation is materially required and its reason is recorded. The note does not invalidate the accepted checkpoint.
+- Model provenance: the Owner stated that the session that reviewed the RF-3A checkpoint and prepared the RF-3B pre-authorization package used Opus 5.5 at effort XHigh; that statement is the recorded provenance. No escalation and no escalation reason are recorded for that session.
+- The acceptance was recorded first in the Owner's Claude Project only, at the Owner's instruction, and is carried into the repository in the RF-3B working tree (D-059), so that the file hashes of the RF-3A report stayed valid for its checkpoint.
+- With the acceptance, P5 and P6 are complete, and P4 is complete in its architecture part; the logical schema is RF-3B.
+
+### D-059 — RF-3B authorization
+
+The Owner's authorization begins: "I explicitly authorize RF-3B only." Its full wording is held in the Owner's Claude Project; these terms are its record in the repository.
+
+- Baseline: `ee67b3aac58f24198fd8f617410e824bc7ca1119` on `plan/bantukasir-pos-v1`, the accepted RF-3A checkpoint (D-058).
+- Controlling scope: the planning agent's RF-3B pre-authorization package, revision 2, and the Owner's recorded answers to questions 33, 34 and 32 (D-060 to D-062).
+- Plan decisions taken on the package and approved:
+  - P-6: the final supersession status of `02-ARCHITECTURE` and `P4-ARCHITECTURE` is written in the RF-3B checkpoint and takes effect when the Owner accepts it. `02-ARCHITECTURE` becomes LEGACY — SUPERSEDED as a whole. `P4-ARCHITECTURE` becomes LEGACY — SUPERSEDED except §Testing implications and §Deployment, operasi dan maintenance (LEGACY — INPUT ONLY for RF-6) and §Sumber primer yang diverifikasi saat planning (RECORD). No legacy file is deleted. This completes P-5.
+  - P-7: PostgreSQL DDL may appear in `docs/04-architecture/SCHEMA.md` only as specification text for constraints; it is not a migration and is never executed.
+  - P-8: ADR-008 is limited to the representation of issue-cost allocations, including the rounding residue of T-17 e; there is no ADR-009. Its prerequisite — the Owner's explicit decision of T-16 (a) and (b) before ADR-008 freezes their representation — is met by D-060 and D-061.
+  - P-9: RF-3B is written by Opus 5.5 in a fresh session and reviewed adversarially by a fresh Opus 5.5 session; Fable 5.1 only for escalation with a written reason; model provenance is recorded accurately (D-031).
+- The Owner accepted items 3 to 6 of section 5.2 of the package — the T-17 e rounding rule, the T-17 g SKU normalization, the T-17 i mark and its clearing, and writing that mark after the rollback — as technical interpretations for RF-3B planning, provided the adversarial review shows that they change no business meaning. Items 1 and 2 (T-16 a and b) were not accepted as silent interpretations and became questions 33 and 34.
+- Scope:
+  - create `docs/04-architecture/SCHEMA.md` and `docs/adr/ADR-008-cost-allocation-representation.md`;
+  - resolve T-03, T-16 (c), T-17 e, g and i, and the CURRENT statements assigned to RF-3B;
+  - apply questions 33 and 34 in ADR-008 and the logical schema;
+  - map persistent invariants to database constraints, ordered locks, application guards and required tests;
+  - finalize the legacy P4 supersession status under P-6;
+  - record D-058 to D-062.
+- Retention distinction, to be preserved: retained immutable business and audit facts are not hard-deleted or rewritten; lifecycle-governed ephemeral technical data may expire or be cleaned up only where an existing decision permits or requires it.
+- Numbering clarification (part of D-062): "monotonically increasing" means allocation or sequence order and does not require strict chronological commit ordering between concurrent transactions; no global cross-cashier serialization lock is introduced merely to make receipt-number order match commit order; gaps after aborted or rolled-back work are valid and are not errors. If an implementation would need stronger ordering semantics, the planning agent stops and asks the Owner.
+- T-17 i remains a stop condition if its clearing semantics would introduce new business meaning. If any table, column, constraint or enforcement rule needs business meaning not already decided, the planning agent stops and asks exactly one Owner question.
+- Execution method set by the Owner: planning agent Opus 5.5, effort Max, in a fresh session; verify the baseline and current official PostgreSQL and Laravel documentation first; write the working tree only, with no staging or commit; self-review and a fresh independent adversarial review focused on schema constraints, concurrency, the UNKNOWN cost state, issue and return replay, the boundary between immutable facts and projections, and database privileges; run the complete validation plan of the package; return the RF-3B report and the adversarial-review evidence for the Owner's second review. No executor checkpoint instruction is prepared yet.
+- Holds: no push, merge, rebase, pull request or change to `main`; no refresh of the safety bundle; no editing or deletion of legacy files; no application code, migration, executed SQL, installation, deployment, production operation, account or purchase; no ADR other than ADR-008; no RF-4 or later work; questions 18, 20 and 29, item N-01 and the other deferred items are not answered; no real IP address, domain, provider identity, credential, key or backup location.
+- RF-4 and every later step are NOT AUTHORIZED.
+
+### D-060 — Issue-cost allocation at commit (question 33)
+
+The Owner's choice on the question card: **"A — Fakta asli + proyeksi (Rekomendasi)"** — "Alokasi saat jual disimpan sebagai fakta immutable (bisa UNKNOWN); hasil replay disimpan terpisah sebagai nilai turunan yang diganti tiap replay; laporan memakai nilai turunan. Audit bisa menampilkan biaya saat jual dan biaya setelah koreksi; tidak ada sejarah yang ditulis ulang; dua nilai per alokasi."
+
+- The issue-cost allocation recorded when a Sale commits is an immutable original fact, including its UNKNOWN status when the cost is not yet known. The same applies to the allocations of MANUAL_ISSUE and negative ADJUSTMENT, which reduce inventory value but never enter cost of goods sold.
+- The result of a correction replay is stored separately as a derived value — the projection — which each replay replaces and publishes atomically. Owner reports use the projection (D-034: corrected figures based on the latest cost evidence).
+- Consequences accepted with the choice: the audit can show, for every line, the cost known at the time of sale and the cost after correction; no historical record is rewritten; each allocation holds two values, so slightly more storage.
+- Unchanged: profit reports use the latest cost evidence (D-034); receipts and session reports never change; Sale, StockMovement and correction facts stay immutable; UNKNOWN is never zero.
+- Options declined: B — a derived value only, overwritten in place (the per-line history is lost; close to rewriting history); C — every replay version kept (not required by D-034 or BR-COST-29; the most storage and complexity).
+- Resolves T-16 (a). The representation is ADR-008.
+
+### D-061 — Cost restored by a saleable return after a later correction (question 34)
+
+The Owner's choice on the question card: **"A — Tertaut, dihitung ulang (Rekomendasi)"** — "Retur merujuk tautan ke alokasi issue asli; saat replay koreksi, issue dan retur yang terhubung dihitung ulang bersama. Pemulihan tetap tepat satu kali, tanpa pemulihan ganda, valuasi konsisten (invarian 6, BR-COST-18). Nilai saat retur tersimpan sebagai fakta. Di dalam D-034/D-035."
+
+- A saleable return references a link to the original issue allocation rather than copying its value.
+- When a correction replay runs, the issue allocation and the linked return allocation are recomputed together: the cost tied to the original sale issue is restored exactly once, no cost is recovered twice and the valuation stays consistent (COSTING section 10, invariant 6; BR-COST-18).
+- The value recorded when the return committed stays as an immutable fact, consistent with D-060.
+- A return of an issue whose cost was UNKNOWN becomes complete through the same replay when the cost is completed (BR-COST-22).
+- Worked example given with the question: 10 units issued at Rp100, 2 returned, the cost later corrected to Rp120. The return's recovery is recomputed from Rp200 to Rp240, net cost of goods sold is Rp960 (8 × Rp120) and the two returned units are valued at Rp240.
+- Consequence accepted with the choice: the profit of the period in which the return happened is corrected along with the sale, which is the D-034 principle. No existing decision changes; D-034 and D-035 stay in force.
+- Options declined: B — the recovery frozen at its value at return time (inconsistent valuation; D-034 and D-035 would need revalidation); C — the return valued at the moving average at return time, detached from the issue (changes the meaning of cost of goods sold).
+- Resolves T-16 (b). The representation, the enforcement of "exactly once" and the rounding of several partial returns of one line (T-17 e) are ADR-008.
+
+### D-062 — Sale and cash session numbering (question 32)
+
+The Owner's choice on the question card: **"A — Unik, naik, boleh bercelah (Rekomendasi)"**.
+
+- A Sale number is unique per installation, generated by the server inside the Sale transaction, always increasing, with gaps allowed after a rolled-back transaction, and carries the Asia/Jakarta business date as its readable part (for example `YYYYMMDD-nnnnnn`, such as `20261005-000123`), with no branch prefix.
+- Cash session numbers follow the same pattern.
+- The document prefix or label stays with the BusinessProfile (BR-CFG-01, document identity).
+- Consequences accepted with the choice: two cashiers never wait on one number lock; a cancelled or failed checkout can leave a gap in the sequence; the numbers are still unique and in order.
+- Clarification given with the RF-3B authorization (D-059): "monotonically increasing" means allocation or sequence order; it does not require strict chronological commit ordering between concurrent transactions; no global cross-cashier serialization lock is introduced to make receipt-number order match commit order; gaps after aborted or rolled-back work are valid and are not errors.
+- Unchanged: every Sale has exactly one number, immutable once committed (BR-DOC-01; legacy L-17 and L-02); V1 documents are not tax invoices (BR-DOC-03); the session report keeps its meaning (BR-CASH-20).
+- Options declined: B — a gapless sequence per business day, serializing every checkout on one point; C — a gapless sequence per register.
+- How a number is generated is [SCHEMA](../04-architecture/SCHEMA.md) section 6.
+
+### D-063 — Second review of the RF-3B report
+
+The Owner's statement begins: "Final second review result: RF-3B is substantively PASS at the working-tree level, with the following Owner clarifications accepted before checkpoint preparation." Its full wording is held in the Owner's Claude Project; these terms are its record in the repository.
+
+- **Result.** The RF-3B working tree (D-059) passes the Owner's second review, with the clarifications below. The planning agent prepares exactly one checkpoint instruction for the Owner's review; it is not executed until the Owner sends it.
+- **The "reporting incomplete" mark (T-17 i) — accepted interpretation of D-034.**
+  - A cost correction or completion that cannot obtain the product guard before its replay starts is answered `SERVICE_BUSY`. It is not a completed `REPLAY_REJECTED` decision, writes no mark, and is repeated or resolved with the same command identity (TECHNICAL_RULES TR-RETRY-02; ADR-007).
+  - A refused reversal writes no mark.
+  - A cost correction refused because the product is already reconciliation-blocked writes no further mark; the reconciliation block remains the controlling incident (BR-INV-45).
+  - This settles D-034's "unresolved conflict or concurrency issue" for pre-replay lock contention: the mark follows only a replay that ran and was refused (SCHEMA section 5.8; COSTING BR-COST-27).
+- **Reconciliation-blocked products.** Cost corrections and reversals stay refused while a product is reconciliation-blocked. They resume only after the Owner has completed the controlled recovery and reconciliation path and reopened the product (BR-INV-46). No replay is published on top of a projection already found unsafe (SCHEMA guard G-11).
+- **Numbering (D-062).** The installation-wide sequence is the monotonic authority. The readable Asia/Jakarta date part is not a global chronological sort key: around midnight, concurrent transactions may produce numbers whose date parts appear out of chronological order. No global cross-cashier serialization lock is introduced (SCHEMA SCH-25).
+- **Question 35** — whether repeated occurrences of the same product in one Sale are stored as separate lines or combined — is deferred to before RF-5. RF-3B stays schema-neutral on it and decides no receipt or cart behaviour.
+- **Process.** The independent reviewer's execution of SQL against a disposable PostgreSQL sandbox instance — no BantuKasir database or production data touched, no statement of SCHEMA.md executed, no RF-3B conclusion depending on it — is accepted as a non-blocking process deviation for this run only. It does not broaden D-059: future planning and review work executes no SQL unless the Owner explicitly authorizes it.
+- No schema semantics change beyond these clarifications, which the working tree already applied. RF-4 and every later step are NOT AUTHORIZED.

@@ -41,7 +41,7 @@ Sources: L-06 §Command fisik, L-15, D-034, D-035. Shop terms are provisional un
 | --- | --- | --- |
 | BR-INV-06 | Every posting command validates, under product locks taken in a fixed order: the product is active; quantities respect its precision and range; the actor is active and authorized; a required reason is present; the source is eligible; the expected versions match. The lock order is in TECHNICAL_RULES section 7. | L-06, L-02, TECHNICAL_RULES |
 | BR-INV-07 | Lines of the same product in one command are added together before the stock check. | L-06, CORE-008 |
-| BR-INV-08 | A posting writes its movements, the cost records COSTING requires for it (acquisition cost evidence, or an issue-cost allocation or UNKNOWN), balances, valuation, audit event and durable result in one transaction. A failure anywhere, including in writing cost, audit or result, leaves no movement and no balance change. Whether an issue-cost allocation is an original fact or a derived value is OPEN — T-16 (COSTING section 10). | L-06, D-006 |
+| BR-INV-08 | A posting writes its movements, the cost records COSTING requires for it (acquisition cost evidence, or an issue-cost allocation or UNKNOWN), balances, valuation, audit event and durable result in one transaction. A failure anywhere, including in writing cost, audit or result, leaves no movement and no balance change. An issue-cost allocation is an immutable fact recorded at commit, with a separately stored projection that a replay replaces (D-060; [ADR-008](../adr/ADR-008-cost-allocation-representation.md)). | L-06, D-006, D-060 |
 | BR-INV-09 | A retry with the same or a different key posts once. A lost response is recovered through the status or retry of the original command, never by posting a replacement movement. | L-06, BR-CMD-02, BR-CMD-03 |
 | BR-INV-10 | Every posting passes a review with an explicit confirmation (BR-CMD-04). Searching, entering quantities and reviewing create no movement. | L-P3, BR-DOM-09 |
 | BR-INV-11 | The onboarding freeze (section 6) applies to ordinary stock postings and Sales. OPENING is entered while onboarding is on; products created after onboarding enter stock through RECEIPT (BR-INV-16). A reconciliation block on the product (section 11) applies to every posting. | L-06, L-P3 |
@@ -137,9 +137,10 @@ Warehouses, locations, transfers and goods in transit; reservations; advanced st
 
 | Item | Subject |
 | --- | --- |
-| T-16 | Whether an issue-cost allocation (sale, manual issue, negative adjustment) is an original fact or a derived value (COSTING section 10) |
 | T-17 a | Whether an unconfirmed receiving document is held on the server |
 | T-17 b | Correcting an onboarding entry before the flag is released: a zero-count checklist entry, or a wrong positive OPENING |
 | Gate G2 | Real units, precisions, opening volume, barcodes and availability of cost evidence |
+
+T-16 was resolved in RF-3B by D-060, D-061 and ADR-008 (COSTING section 10).
 
 Stock records are business records: they are kept at least 10 years and V1 has no function that deletes them (D-044, DOMAIN_MODEL section 12).
