@@ -35,7 +35,7 @@ BantuKasir V1 is not: a multi-tenant or multi-outlet system; a warehouse system;
 
 | User | Description | Device |
 | --- | --- | --- |
-| Owner (SUPER_ADMIN) | The shop owner. Sets up the shop, enters opening stock, corrects cost, handles refunds and returns, reads all reports and the audit log, manages users and cash registers. May also sell, in the Owner's own cash session. | Any supported device; Owner screens follow the framework's mobile-first rule (FD-05) |
+| Owner (SUPER_ADMIN) | The shop owner; exactly one active Owner account per installation (D-048). Sets up the shop, enters opening stock, corrects cost, handles refunds and returns, reads all reports and the audit log, manages users and cash registers. May also sell, in the Owner's own cash session. | Any supported device; Owner screens follow the framework's mobile-first rule (FD-05) |
 | OPERATIONS_ADMIN | Manages the catalogue, receives goods, records non-sale issues and watches stock. | Any supported device (FD-05) |
 | CASHIER | Sells at the till in their own cash session, opens and closes that session, prints receipts. | PC with physical keyboard and USB HID scanner, or tablet with touch and Bluetooth HID scanner (D-039) |
 
@@ -43,12 +43,13 @@ One account may hold CASHIER and OPERATIONS_ADMIN together (D-032). The first cl
 
 ## 5. Roles and what each may do
 
-This is the product statement of who may do what. Server-side enforcement, object scope and the detailed permission matrix are security content: they stay in `docs/05-security/legacy/04-AUTH-RBAC-SECURITY.md` until RF-3 and must agree with this table; where that legacy table predates a decision below, the decision prevails (SOURCE_OF_TRUTH section 2).
+This is the product statement of who may do what. Server-side enforcement, object scope and the detailed permission matrix are security content: they are in [SECURITY_MODEL](../05-security/SECURITY_MODEL.md) section 6, which must agree with this table.
 
 | Capability | Owner | OPERATIONS_ADMIN | CASHIER |
 | --- | --- | --- | --- |
 | Search and scan products (operational view, never cost) | Yes | Yes | Yes, at the till |
 | Products, categories, selling prices, barcodes, labels, product photos, CSV product import | Yes | Yes | No (sees thumbnails) |
+| Correct a manufacturer barcode attached to the wrong product: move it, or re-attach one retired as a misassignment | Yes (D-051, D-052) | No | No |
 | Receiving; purchase cost on receiving documents, editable until confirmation; after an Owner correction, the current cost with the Owner's mark | Yes | Yes (D-033, D-047) | No |
 | Manual issue ("Barang keluar") | Yes (explicit entry, D-018) | Yes | No |
 | Current stock, stock attention, operational stock history | Yes | Yes, without cost except receiving purchase cost | Only the stock needed at checkout |
@@ -57,10 +58,10 @@ This is the product statement of who may do what. Server-side enforcement, objec
 | Sell at the till; open, close and read their own cash session; own sales and receipts | Yes, in the Owner's own session | No | Yes |
 | Refunds and returns, paid from the drawer of an OPEN session or the Owner's own funds | Yes (D-035) | No | No |
 | All cash sessions and reports, Owner-assisted close, review notes | Yes | No | No |
-| Users and roles (including deactivation, reactivation and anonymization of former staff, D-042, D-043), BusinessProfile, cash registers, system status, audit log | Yes | No | No |
+| Users and roles (including deactivation, reactivation and anonymization of former staff, and anonymization of a former Owner account, D-042, D-043, D-048), BusinessProfile, cash registers, system status, audit log | Yes | No | No |
 | Own account | Yes | Yes | Yes |
 
-A combined account has the union of the CASHIER and OPERATIONS_ADMIN columns and never any Owner right (D-032). Master data is deactivated and reactivated, never deleted (D-042). Sources: L-04 §Otorisasi server, L-PRD §Role, D-018, D-032, D-033, D-035, D-036, D-037, D-042, D-043, D-047.
+A combined account has the union of the CASHIER and OPERATIONS_ADMIN columns and never any Owner right (D-032). Master data is deactivated and reactivated, never deleted (D-042). There is exactly one active Owner account: no function of the product creates a second Owner account or assigns SUPER_ADMIN, and the Owner cannot deactivate or anonymize the only active Owner account; Owner recovery and replacement are operator procedures on the server (D-048). Sources: L-04 §Otorisasi server, L-PRD §Role, D-018, D-032, D-033, D-035, D-036, D-037, D-042, D-043, D-047, D-048, D-051, D-052.
 
 ## 6. Primary journeys
 
@@ -91,13 +92,13 @@ In V1 (D-002 as amended by D-032, D-036, D-037, D-038):
 - receipts for thermal 58 mm, thermal 80 mm and A4 by browser print, reprints;
 - Owner-only refunds and returns, paid from the drawer of an OPEN cash session (never beyond its expected cash, and only after the refund is recorded; D-035, D-045, D-046) or the Owner's own funds;
 - audit; reports for each role; BusinessProfile with revisions; independent backup and recovery;
-- lifecycle: master data deactivated and reactivated, never deleted; Owner-only anonymization of former staff accounts; business records kept at least 10 years (D-042 to D-044).
+- lifecycle: master data deactivated and reactivated, never deleted; Owner-only anonymization of former staff accounts and of a former Owner account (D-048); business records kept at least 10 years (D-042 to D-044).
 
 ## 8. Outside V1
 
-Services, bookings, orders, deposits, deferred fulfilment and reservations; warehouses, locations, transfers and goods in transit; HR, attendance, payroll, complex shifts, shared active drawers, paid-in, paid-out and cash pickups; price overrides and discount engines; unpaid, split or partial payments; accounts receivable and payable, net profit, expenses and tax accounting; serial numbers, pack conversion, batches, expiry dates and consignment; automatic supplier purchasing, CRM, leads and targets; XLSX import and any import of stock or cost; product photo galleries and bulk image import; Web Push, email notifications, outbox and general background workers; camera scanning and offline sales; payment gateways, dynamic QRIS, cards and e-wallets; public sign-up, two-factor authentication, dynamic roles and multi-tenancy; tax calculation; the phone as a primary cashier device; deleting master data or business records, and any archival-delete or expiry of records; splitting one refund across several funding sources; cash top-ups.
+Services, bookings, orders, deposits, deferred fulfilment and reservations; warehouses, locations, transfers and goods in transit; HR, attendance, payroll, complex shifts, shared active drawers, paid-in, paid-out and cash pickups; price overrides and discount engines; unpaid, split or partial payments; accounts receivable and payable, net profit, expenses and tax accounting; serial numbers, pack conversion, batches, expiry dates and consignment; automatic supplier purchasing, CRM, leads and targets; XLSX import and any import of stock or cost; product photo galleries and bulk image import; Web Push, email notifications, outbox and general background workers; camera scanning and offline sales; payment gateways, dynamic QRIS, cards and e-wallets; public sign-up, two-factor authentication, Google sign-in, any email sent by the application, dynamic roles and multi-tenancy; an English interface and a language switcher; tax calculation; the phone as a primary cashier device; deleting master data or business records, and any archival-delete or expiry of records; splitting one refund across several funding sources; cash top-ups.
 
-Sources: L-PRD §Batas Later as amended by D-036 (static QRIS moved into V1) and D-037 (CSV product import and product photos moved into V1); D-038; D-039; D-042; D-044; D-045. A future method code or a design template never activates any of these (L-PRD). If a real shop turns out to need one of them, the affected work stops for an Owner decision before any implementation (L-PRD, L-06).
+Sources: L-PRD §Batas Later as amended by D-036 (static QRIS moved into V1) and D-037 (CSV product import and product photos moved into V1); D-038; D-039; D-042; D-044; D-045; D-049; D-050. A future method code or a design template never activates any of these (L-PRD). If a real shop turns out to need one of them, the affected work stops for an Owner decision before any implementation (L-PRD, L-06).
 
 ## 9. Requirements
 
@@ -107,14 +108,14 @@ Functional and non-functional requirements, each with its acceptance criteria an
 
 | Subject | Requirement | Status |
 | --- | --- | --- |
-| Language | Indonesian is the default interface language, in plain Indonesian. English in V1 is question 5. | Decided (D-020); English DEFERRED (FD-02) |
+| Language | Indonesian is the only V1 interface language, in plain Indonesian. Every text uses translation keys from the first Task; there is no language switcher; English is a later, separate scope decision. | Decided (D-020, D-050); FD-02 approved |
 | Devices | PC and tablet are primary cashier devices with equivalent cashier capabilities; the phone is not. | Decided (D-039, FD-05); real devices not yet accepted (gate DEVICES) |
 | Printing | Browser-print receipt templates for 58 mm, 80 mm and A4. | Decided (D-039); real printer and paper width UNKNOWN |
-| Sign-in | Sign-in sessions end after 30 minutes of inactivity and 12 hours at most; recent authentication within 15 minutes for sensitive Owner actions. | Decided (D-013, D-039); sign-in method is question 6 |
-| Performance | Barcode lookup p95 ≤ 500 ms, product search ≤ 700 ms, 50-line Sale ≤ 2 s, period report ≤ 2 s with two concurrent cashiers. | Proposed targets, not measured; dataset waits for gate G2 (T-09) |
-| Recovery | Independent backup outside the server; RPO ≤ 6 h and RTO ≤ 4 h. | Backup mandatory (D-005); objectives are proposals only (gate G4, question 18) |
+| Sign-in | Email and password; the email is never verified and no email is sent; no Google sign-in; Owner-issued one-time links for a staff member's first password and reset; Owner recovery by an operator procedure; password profile AICWDF-COMPAT-8; no two-factor authentication. Sign-in sessions end after 30 minutes of inactivity and 12 hours at most; recent authentication within 15 minutes for sensitive Owner actions. | Decided (D-013, D-039, D-049) |
+| Performance | Barcode lookup p95 ≤ 500 ms, product search ≤ 700 ms, 50-line Sale ≤ 2 s, period report ≤ 2 s with two concurrent cashiers. | Proposed targets, not measured; a provisional dataset, labelled as an assumption, is in TECHNICAL_RULES section 13 until gate G2 (T-09) |
+| Recovery | Independent backup outside the server; RPO ≤ 6 h and RTO ≤ 4 h. | Backup mandatory (D-005); objectives are proposals only (gate G4, question 18 before RF-6) |
 | Cost | No additional recurring production cost without Owner approval. | Decided (COST_POLICY) |
-| Security and integrity | Deny-by-default server authorization; threat controls; exact money and quantities; append-only facts; transactional and idempotent critical actions. | Decided (AGENTS rules 7 and 8, D-006, D-007, D-013) |
+| Security and integrity | Deny-by-default server authorization; threat controls; exact money and quantities; append-only facts; transactional and idempotent critical actions. | Decided (AGENTS rules 7 and 8, D-006, D-007, D-013); detailed in SECURITY_MODEL and TECHNICAL_RULES |
 | Tax | V1 calculates no tax and claims no equivalence with a tax invoice. | Decided (D-039); PKP/PPN status of the first store UNKNOWN (gate G1) |
 | Accessibility | Keyboard use, visible focus, 200 % zoom, screen reader, on-screen keyboard, long content, contrast, usable touch targets. | Validation requirements for the rebuilt design (OPEN_ITEMS section 3); targets set in RF-4 |
 | Retention | Business records kept at least 10 years, as a minimum and not a deletion deadline; no deletion feature in V1; not a claim of legal or tax compliance. | Decided (D-044) |
@@ -152,7 +153,7 @@ These are recorded as UNKNOWN. Nothing in the product depends on guessing them (
 | Receipt printer and paper width | DEVICES |
 | PKP/PPN status and tax-document needs | G1 |
 | Whether LATANSA is the first installation | Open fact; it changes nothing in the product (D-038) |
-| The server: provider, size, other services, staging | Question 7, gate TARGET |
+| The server: provider, size, other services, and whether the domain is already on Cloudflare (the topology is decided: D-053) | Gate TARGET |
 
 The first client has confirmed that its cashiers will use both a PC and a tablet (OF-02); the devices themselves are not yet verified.
 
@@ -160,14 +161,10 @@ The first client has confirmed that its cashiers will use both a PC and a tablet
 
 | Item | Subject | Needed before |
 | --- | --- | --- |
-| Question 5 | English in the interface (FD-02) | RF-3 |
-| Question 6 | Sign-in method, password rule and reset delivery | RF-3 |
-| Question 18 | Backup destination, cost and recovery key | RF-3 |
+| Question 18 | Backup destination, cost and recovery key | RF-6 (plan decision P-3) |
 | Question 20 | Who may operate on production | RF-6 |
-| Question 25 | Whether more than one account may hold SUPER_ADMIN | RF-3 |
-| Question 26 | Correcting a manufacturer barcode attached to the wrong product (revalidation item R-17) | RF-3 |
 | Question 29 | A drawer-funded refund committed but its cash not yet taken when the session is counted and closed | RF-5 |
 
-Questions 21 to 24 and 27 to 28, raised during RF-2, were answered by D-042 to D-047 ([OPEN_ITEMS](../00-governance/OPEN_ITEMS.md)).
+Questions 25, 6, 5, 26, 31, 7 and 30 were answered before RF-3A by D-048 to D-054; question 7 decided the hosting topology only, and the server facts stay in gate TARGET (section 13). Questions 21 to 24 and 27 to 28, raised during RF-2, were answered by D-042 to D-047 ([OPEN_ITEMS](../00-governance/OPEN_ITEMS.md)).
 
 Input carried to RF-4 (D-018): interactive trend-chart points showing date and value.

@@ -47,7 +47,7 @@ The Owner works on Windows. Before treating a tracked file as modified, check wh
 11. Git: never rewrite published history; never force push; never repair unexpected divergence on your own; stage exact paths and never use `git add -A`; do not use reset, clean or restore to tidy the tree; do not push, merge or deploy without explicit authorization for that action.
 12. Commits use only the Owner's configured Git identity. Never add an attribution trailer or any mention of an AI model, agent or tool to a commit (`Co-Authored-By`, `Generated-By`, `Assisted-By` and similar). Do not rewrite old commits to remove past attribution.
 13. The target for additional recurring production cost is zero. A paid service is a stop condition that needs the Owner's approval. See [COST_POLICY](docs/00-governance/COST_POLICY.md).
-14. Agent-facing repository documents are written in English. The interface is Indonesian first. V1 localization is not yet decided (D-020).
+14. Agent-facing repository documents are written in English. V1 ships in Bahasa Indonesia only, with no language switcher. All user-facing copy comes through translation keys from the first implementation Task; hard-coded user-facing copy is prohibited. English is a later scope addition that needs its own Owner decision (D-020, D-050).
 15. Files under any `legacy/` folder are pre-re-foundation documents. Do not edit them. They are replaced, not patched, when their subject is rebuilt.
 16. Evidence, not assertion. Do not report a check as passed unless it was run. Do not invent approvals, test results, timestamps or tool output.
 17. Record real decisions in DECISIONS, framework departures in FRAMEWORK_DEVIATIONS, and open questions in OPEN_ITEMS, in the same piece of work that produced them.

@@ -159,6 +159,58 @@ RF-2 (D-041) wrote the CURRENT product and domain documents. The legacy document
 | `docs/02-domain/legacy/12-BARCODE-SCANNER.md` | `docs/02-domain/CATALOG_BARCODE.md` for domain rules; the scanner screen behaviour is input only for RF-4 and RF-5 |
 | `docs/02-domain/legacy/15-FINANCE-PROFITABILITY.md` | `docs/02-domain/COSTING.md` |
 | `docs/02-domain/legacy/17-POS-SALES.md` | `docs/02-domain/SALES_CASH.md` for domain rules; receipt and screen layouts are input only for RF-4 and RF-5 |
-| `docs/04-architecture/legacy/02-ARCHITECTURE.md` — domain part only (entity table, numbers and time) | `docs/02-domain/DOMAIN_MODEL.md`; the architecture part stays in force until RF-3 |
+| `docs/04-architecture/legacy/02-ARCHITECTURE.md` — domain part only (entity table, numbers and time) | `docs/02-domain/DOMAIN_MODEL.md`; its other parts are dealt with in RF-3A and RF-3B (section 8) |
 
 New identifiers written in RF-2: requirements `REQ-<area>-<nn>` in REQUIREMENTS, and domain rules `BR-<area>-<nn>` in the domain documents.
+
+## 8. Documents superseded in RF-3A
+
+RF-3A (D-055) wrote the CURRENT architecture, security and technical-rule documents and ADR-001 to ADR-007. Supersession is set per section and per checkpoint (plan decision P-5): no legacy document is shown as fully superseded while any of its parts is still the authority. All the legacy files stay in the working tree, byte-identical; they are removed only by a later authorized step.
+
+| Legacy document and section | Status after RF-3A | Carried by |
+| --- | --- | --- |
+| `02-ARCHITECTURE` introduction (stack, authentication, layers, no Redis, queue or SSR) | LEGACY — SUPERSEDED | ADR-001, ADR-002, ADR-004; STACK_AND_MODULES section 1; ARCHITECTURE section 2 |
+| `02-ARCHITECTURE` modular monolith paragraph and target structure | LEGACY — SUPERSEDED | STACK_AND_MODULES sections 2 and 3 |
+| `02-ARCHITECTURE` §Model domain and §Angka dan waktu | LEGACY — SUPERSEDED in RF-2 | DOMAIN_MODEL (section 7 of this index); number representation also ADR-006 |
+| `02-ARCHITECTURE` §Constraint database | **LEGACY — IN FORCE until RF-3B** | SCHEMA (RF-3B) |
+| `02-ARCHITECTURE` §Kontrak command dan idempotency | LEGACY — SUPERSEDED | ADR-007; TECHNICAL_RULES section 3 |
+| `02-ARCHITECTURE` §Urutan lock dan batas transaksi | LEGACY — SUPERSEDED | TECHNICAL_RULES sections 6 and 7 |
+| `02-ARCHITECTURE` §Batas read dan projection | LEGACY — SUPERSEDED | ARCHITECTURE section 4; TECHNICAL_RULES sections 11 and 12; SECURITY_MODEL section 5 |
+| `02-ARCHITECTURE` §Runtime, asset dan operasi | LEGACY — SUPERSEDED | ARCHITECTURE sections 6, 8 and 9; ADR-002; ADR-003; SECURITY_MODEL sections 8 and 13 |
+| `02-ARCHITECTURE` §Payment extension boundary dan schema delivery — the payment paragraph and the number representation | LEGACY — SUPERSEDED | ARCHITECTURE section 5; ADR-006 |
+| `02-ARCHITECTURE` same section — schema delivery (raw SQL constraints, partial uniqueness, immutable-history privileges, real PostgreSQL evidence) | **LEGACY — IN FORCE until RF-3B** | SCHEMA (RF-3B); the privilege principle is also ARCHITECTURE section 9 |
+| `02-ARCHITECTURE` last paragraph (read API providers per Build Unit; cash register configuration) | LEGACY — SUPERSEDED | Module ownership in STACK_AND_MODULES section 2; register configuration in SALES_CASH BR-CASH-02 and TECHNICAL_RULES section 7. The assignment of read APIs to Build Units is not carried: Build Units are input only for RF-7 |
+| `P4-ARCHITECTURE` introduction, §Konteks dan kriteria pemilihan, §Perbandingan minimum A dan B | LEGACY — SUPERSEDED | ADR-001 |
+| `P4-ARCHITECTURE` §Dampak kecepatan dan biaya tradeoff | LEGACY — SUPERSEDED | ADR-001 (consequences). The hour estimates are not carried: effort is estimated in RF-7 |
+| `P4-ARCHITECTURE` §Pembekuan dan pin versi | LEGACY — SUPERSEDED | ADR-001; STACK_AND_MODULES STK-01 and STK-02 |
+| `P4-ARCHITECTURE` §Struktur modular minimal | LEGACY — SUPERSEDED | STACK_AND_MODULES; ARCHITECTURE sections 2 and 3 |
+| `P4-ARCHITECTURE` §Schema, immutability dan constraints | **LEGACY — IN FORCE until RF-3B**, except its statement that barcode tokens are never reused (D-051, D-052; SOURCE_OF_TRUTH section 2) | SCHEMA (RF-3B) |
+| `P4-ARCHITECTURE` §Angka dan waktu exact | LEGACY — SUPERSEDED | ADR-006; TECHNICAL_RULES section 11; DOMAIN_MODEL section 7. Its statement about which cost a saleable return uses has no authority while T-16 is open (COSTING section 10) |
+| `P4-ARCHITECTURE` §Transaksi, locking dan original-result recovery | LEGACY — SUPERSEDED | TECHNICAL_RULES sections 6 to 9; ADR-007 |
+| `P4-ARCHITECTURE` §Payment boundary dan kesiapan provider kelak | LEGACY — SUPERSEDED | ARCHITECTURE section 5, with the methods of D-036 |
+| `P4-ARCHITECTURE` §Keamanan dan privacy implications | LEGACY — SUPERSEDED | SECURITY_MODEL; ADR-004. Its write-only cost rule was already superseded by D-033 |
+| `P4-ARCHITECTURE` §Testing implications | LEGACY — INPUT ONLY for RF-6 | The test strategy (RF-6) |
+| `P4-ARCHITECTURE` §Deployment, operasi dan maintenance | LEGACY — INPUT ONLY for RF-6; ADR-002 and ADR-003 prevail where it differs | RF-6 |
+| `P4-ARCHITECTURE` §Sumber primer yang diverifikasi saat planning | RECORD — no rule | Current sources are recorded in each ADR |
+| `P4-ARCHITECTURE` §History Inertia, pergantian actor dan privasi browser, and its cache paragraph | LEGACY — SUPERSEDED | SECURITY_MODEL section 7; ADR-002 |
+| `04-AUTH-RBAC-SECURITY`, whole document | LEGACY — SUPERSEDED | SECURITY_MODEL; ADR-004 |
+| `P5-SECURITY`, whole document | LEGACY — SUPERSEDED | SECURITY_MODEL |
+| `P6-CONCURRENCY-API`, whole document | LEGACY — SUPERSEDED | TECHNICAL_RULES; ADR-007 |
+
+The final status of `02-ARCHITECTURE` and `P4-ARCHITECTURE` is settled after RF-3B is accepted (P-5).
+
+Legacy technical rules changed or retired in RF-3A, with the reason:
+
+| Legacy rule | Change | Reason |
+| --- | --- | --- |
+| L-P6: at most 100 distinct product lines per request | 200 lines per Sale, 500 per receiving document, 200 per manual issue or adjustment (TECHNICAL_RULES section 11.2); 100 rows per opening command stay (BR-INV-25) | A limit must never constrain a plausible shop operation (BR-NUM-04) |
+| L-P5: limits for public password-reset requests (3 per hour per identity, 10 per IP, 100 global) | Retired | There is no public reset request (D-049); one-time link submissions have their own limits (SECURITY_MODEL section 11) |
+| L-P4, L-09: Docker Compose packaging; Nginx-managed certificate renewal | Replaced | The hosting topology is Cloudflare, VPS and Coolify (D-053, ADR-003) |
+| L-04, L-P4, L-P5: purchase cost entered by Operations is write-only | Not carried | Superseded by D-033 before RF-3A |
+| L-P4, L-P6: CASH or BANK_TRANSFER only | Not carried | Superseded by D-036 before RF-3A |
+| L-P6 race "Replay melawan posting": "source and allocation stable and versioned" | Not carried as a rule | It would settle T-16 (a) (COSTING section 10); TECHNICAL_RULES RACE-11 keeps the rest of the rule |
+| L-P4: Fortify chosen from the version notes of the time; 12-character password in the former design candidate | Replaced | Fortify confirmed from current documentation (ADR-004); password profile AICWDF-COMPAT-8 (D-049) |
+| L-P6, L-04: a record missing after an uncertain outcome stays UNCERTAIN or becomes an incident; "not found" is never permission for a replacement | Kept and refined: within one recovery epoch, a resolution that writes a fence makes NOT_COMMITTED a server fact, after which a new draft is allowed (ADR-007 section 4); a missing result alone still permits nothing (a lost command reference also needs the hard time bound of TECHNICAL_RULES TR-TIME-03); after a restore such intents are refused `EPOCH_STALE` and handled by the restore runbook | The fence guarantees that the original can never commit afterwards, so a new draft cannot duplicate it; BR-CMD-03 is kept (ADR-007 section 4) |
+| L-02, L-P6: after a restore, a new recovery epoch stops old browser intents | Kept and made precise: the restore sets an epoch value never issued before, and a command whose epoch differs from the current one is refused (ADR-007 section 6) | A counter would reissue an epoch already given to browsers when the same backup is restored twice |
+
+New identifiers written in RF-3A: `ADR-NNN` in `docs/adr/`; `ARC-nn` in ARCHITECTURE; `STK-nn` in STACK_AND_MODULES; `SEC-<area>-nn`, `CAP-nn` and `THR-nn` in SECURITY_MODEL; `TR-<area>-nn` and `RACE-nn` in TECHNICAL_RULES; `BR-CAT-50` to `BR-CAT-52` in CATALOG_BARCODE; `REQ-ACC-12`, `REQ-CAT-13` and `REQ-OPS-06` in REQUIREMENTS.

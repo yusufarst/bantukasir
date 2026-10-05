@@ -30,12 +30,17 @@ Nothing is deployed. The inventory lists what production is expected to need.
 | Item | Funded by | Recurring cost | Status |
 | --- | --- | --- | --- |
 | Domain | Client | Client-funded | Not yet identified |
-| Server (VPS) | Client | Client-funded | Not yet identified — OPEN_ITEMS question 7, gate TARGET |
+| Server (VPS) | Client | Client-funded | Topology decided (D-053, ADR-003); provider and size not yet identified — gate TARGET |
+| Cloudflare (DNS and proxy) | — | Expected 0 (D-053) | Plan for the actual domain to be verified at gate TARGET; a paid plan needs the Owner's approval |
+| Coolify (self-hosted, open source) on the same server | — | 0 | Planned (D-053, ADR-003) |
+| Staging environment on the same server | — | 0 additional (D-053) | Planned; uses the production server's resources |
 | Application stack (Laravel, PostgreSQL, Nginx, open-source packages) | — | 0 | Planned |
 | Authentication, search, PDF and print, CSV export, barcode generation | — | 0 (native or open-source, self-hosted) | Planned |
-| Email delivery | — | 0 if no mail service is used | Open — question 6, deviation FD-04 |
-| Independent backup destination outside the server | To be decided | May be greater than 0 | Open — question 18, gate G4. Requires Owner approval if paid. |
+| Email delivery | — | 0 — the application sends no email | Decided — D-049, FD-04 approved |
+| Independent backup destination outside the server | To be decided | May be greater than 0 | Open — question 18, needed before RF-6 (plan decision P-3, D-055), gate G4. Requires Owner approval if paid. |
 | Uptime check from outside the server | To be decided | Expected 0 | To be designed in RF-6 |
+
+Free-tier record (AICWDF §4C.4): the Cloudflare plan's limits, its behaviour at quota, lock-in, the exit path (DNS only, or moving the domain's DNS elsewhere) and data portability are recorded in RF-6, when the configuration is designed.
 
 ## 4. Development-time costs (not production dependencies)
 

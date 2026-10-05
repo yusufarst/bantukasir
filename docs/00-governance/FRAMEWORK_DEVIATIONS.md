@@ -7,11 +7,11 @@ Status values: `APPROVED` (Owner approved), `RECORDED` (no Owner approval requir
 | ID | Subject | Status |
 | --- | --- | --- |
 | FD-01 | Restructure the repository instead of preserving its layout | APPROVED — D-019 |
-| FD-02 | English interface strings deferred beyond V1 | PROPOSED — depends on question 5, deferred by the Owner (D-020) |
-| FD-03 | Google sign-in off | PROPOSED — question 6 |
-| FD-04 | No email-based password reset or verification | PROPOSED — question 6 |
+| FD-02 | English interface strings deferred beyond V1 | APPROVED — D-050 |
+| FD-03 | Google sign-in off | APPROVED — D-049 |
+| FD-04 | No email-based password reset or verification | APPROVED — D-049 |
 | FD-05 | Point-of-sale screen designed for PC and tablet first | APPROVED — D-039 (product and design decision; not device acceptance) |
-| FD-06 | Hosting other than the framework default | PROPOSED — question 7 |
+| FD-06 | Hosting other than the framework default | WITHDRAWN — D-053 adopted the framework topology |
 | FD-07 | Dedicated final-verification Tasks kept | RECORDED |
 | FD-08 | Build Unit identifiers replaced by `TASK-NNN` | RECORDED |
 
@@ -40,7 +40,9 @@ BANTUKASIR REASON: One Indonesian shop with Indonesian-speaking staff
 BENEFIT: No translation or second-language layout testing on every interface Task
 RISK: Later retrofit; mitigated by building translation keys and a bilingual glossary from
   the first Task
-OWNER APPROVAL REQUIRED: YES — not yet decided
+OWNER APPROVAL REQUIRED: YES — approved, D-050: V1 Indonesian only, translation keys from the
+  first Task, no language switcher; English later as a separate scope decision; mechanism in
+  ADR-005
 ```
 
 ## FD-03
@@ -55,7 +57,7 @@ BANTUKASIR REASON: Invite-only staff accounts on a shared counter device; staff 
 BENEFIT: Simpler authentication; no Google Cloud credentials or account-linking rules
 RISK: Loss of a convenience for the Owner; can be added later behind the authentication
   boundary
-OWNER APPROVAL REQUIRED: YES — not yet decided
+OWNER APPROVAL REQUIRED: YES — approved, D-049
 ```
 
 ## FD-04
@@ -69,7 +71,8 @@ BANTUKASIR REASON: Zero recurring cost means no mail service; accounts are creat
 BENEFIT: No mail dependency or cost
 RISK: If the Owner is locked out, recovery needs server access; the procedure must be
   documented and rehearsed
-OWNER APPROVAL REQUIRED: YES — not yet decided
+OWNER APPROVAL REQUIRED: YES — approved, D-049; the Owner recovery procedure is designed in
+  SECURITY_MODEL section 14 and rehearsed before the pilot
 ```
 
 ## FD-05
@@ -97,7 +100,8 @@ BANTUKASIR REASON: The legacy operations documents assume a generic VPS with han
 BENEFIT: None by default; the planner proposes adopting the framework topology unless the
   server cannot support it
 RISK: Hand-built TLS and deployment are extra work and extra failure points
-OWNER APPROVAL REQUIRED: YES if deviating — not yet decided
+OWNER APPROVAL REQUIRED: YES if deviating — not needed: the Owner adopted the framework topology
+  (D-053, ADR-003); this deviation is WITHDRAWN
 ```
 
 ## FD-07
@@ -130,7 +134,7 @@ Changes that bring the project into line with the framework. They are planning a
 
 | Action | Framework rule | Step |
 | --- | --- | --- |
-| Adopt password profile AICWDF-COMPAT-8 in place of the 12-character minimum shown in the former design candidate, unless an external binding requirement applies | §4A.5 | RF-3 |
+| Adopt password profile AICWDF-COMPAT-8 in place of the 12-character minimum shown in the former design candidate, unless an external binding requirement applies | §4A.5 | Applied in RF-3A (D-049; SECURITY_MODEL section 2, ADR-004) |
 | Zero-touch production rule: coding agents never connect to or run anything against production; a controlled executor applies approved migrations | §29, §30 | **Not applied — pending Owner decision** (question 20, R-16; see [PRODUCTION_DATA_SAFETY](PRODUCTION_DATA_SAFETY.md) section 5). It changes who operates a production release, so it is not a planner decision. If the Owner keeps the earlier rule instead, that is a deviation needing explicit approval (§41) and is recorded here as FD-09. |
 | Use the framework Task statuses in place of the legacy status vocabularies | §19 | RF-6, RF-7 |
 | Defer Graphify until code exists | §6.4 | Recorded in [TOOLCHAIN](TOOLCHAIN.md) |

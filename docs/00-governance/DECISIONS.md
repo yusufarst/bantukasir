@@ -4,7 +4,7 @@ The single log of decisions for BantuKasir. A decision made in conversation does
 
 ## 1. How to use this log
 
-- Identifiers are permanent and continue the original numbering. The next free identifier is **D-048**.
+- Identifiers are permanent and continue the original numbering. The next free identifier is **D-058**.
 - "Source" says who decided: **Owner**, or **Planner** (a planning agent acting on its own authority under the rules of the time).
 - "Status" says whether the decision is in force today. `REVALIDATION PENDING` means the decision still applies but the Owner has been asked to re-confirm it; the item number refers to [OPEN_ITEMS](OPEN_ITEMS.md).
 - D-001 to D-018 were recorded on 2 and 3 October 2026 in the former register, now [legacy/10-DECISIONS.md](legacy/10-DECISIONS.md). The table below summarizes them in English. For the exact meaning of D-001 to D-018 the original Indonesian wording governs; for whether a decision is in force, this log governs.
@@ -17,16 +17,16 @@ The single log of decisions for BantuKasir. A decision made in conversation does
 | D-001 | Owner | Adopt the governance, planning, review, quality, continuity and Build Unit framework from an earlier discussion; never copy the MULTIPLECORP domain, assets, tokens or design project. P0 to P11 may be planned without routine questions between phases. | **SUPERSEDED by D-019** as to the framework and as to planning without per-phase authorization. The prohibition on any use of MULTIPLECORP material is **IN FORCE**. |
 | D-002 | Owner | V1 minimum scope: goods only; one stock pool; exactly three roles; catalogue, search and barcode; receiving, opening stock and manual issue; low and out-of-stock attention; stock ledger and balance; moving weighted average cost and owner-only gross profit; cash accountability; fully paid sale; documents; corrections; audit; recovery; runtime client branding. Everything on the "Later" list is inactive. | **IN FORCE, AMENDED** by D-032 (one account may hold CASHIER and OPERATIONS_ADMIN), D-036 (payment methods), D-037 (CSV product import and product photos in V1) and D-038 (one business and one stock pool per installation). R-01, R-05, R-06 and R-08 resolved. |
 | D-003 | Owner | One completed sale has exactly one full payment, cash or bank transfer. No mixed, split, partial or credit payment and no second instrument. A transfer is confirmed by a person. A future payment-provider boundary is architectural only: no callback, QRIS, webhook or asynchronous payment state in V1. | **IN FORCE, AMENDED by D-036**: the methods are CASH, BANK_TRANSFER and STATIC_QRIS (static, manually confirmed); one full payment per sale and no gateway, callback, webhook or asynchronous state stay. R-06 resolved. |
-| D-004 | Planner | Modular monolith on Laravel, Inertia, React with TypeScript, PostgreSQL and Nginx, chosen by comparison with a full-TypeScript alternative. Versions are pinned at the foundation unit. | **IN FORCE.** Identical to the AICWDF-4.3 default stack. To be recorded as an ADR in RF-3. |
-| D-005 | Planner | Minimum infrastructure: database-backed sessions and rate limiter; Vite at build time; PHP-FPM, Nginx and private PostgreSQL; scheduled commands. No SSR Node, Redis, queue, Octane or microservices by default. An independent backup is mandatory. | **IN FORCE.** Hosting topology under **REVALIDATION** (R-12). To be recorded as an ADR in RF-3. |
-| D-006 | Planner | Integrity: immutable stock ledger with a synchronous non-negative balance; the whole sale is one atomic transaction including snapshot, audit and result; exact decimal cost with explicit UNKNOWN; command identity by source intent, key, fingerprint and recovery epoch; ordered guards and bounded retries. | **IN FORCE.** |
+| D-004 | Planner | Modular monolith on Laravel, Inertia, React with TypeScript, PostgreSQL and Nginx, chosen by comparison with a full-TypeScript alternative. Versions are pinned at the foundation unit. | **IN FORCE.** Identical to the AICWDF-4.3 default stack. Recorded as ADR-001 in RF-3A (D-055). |
+| D-005 | Planner | Minimum infrastructure: database-backed sessions and rate limiter; Vite at build time; PHP-FPM, Nginx and private PostgreSQL; scheduled commands. No SSR Node, Redis, queue, Octane or microservices by default. An independent backup is mandatory. | **IN FORCE** within the hosting topology of D-053 (R-12 resolved). Recorded as ADR-002 in RF-3A (D-055); the topology is ADR-003. |
+| D-006 | Planner | Integrity: immutable stock ledger with a synchronous non-negative balance; the whole sale is one atomic transaction including snapshot, audit and result; exact decimal cost with explicit UNKNOWN; command identity by source intent, key, fingerprint and recovery epoch; ordered guards and bounded retries. | **IN FORCE.** Recorded as ADR-006 (exact numbers) and ADR-007 (command identity) in RF-3A (D-055). |
 | D-007 | Planner | Authority and privacy: policies, object scope and actor and configuration checks; per-role data allowlists on every output channel. Purchase cost entered by the Operations role is write-only. The Cashier has no master-data management. | Allowlists and server authorization **IN FORCE**. Write-only cost **SUPERSEDED by D-033**. R-03 resolved. |
 | D-008 | Planner | Corrections: the original is preserved; the money refund bound and the physical return quantity bound are separate; historical cost is restored once; Owner reason and recent authentication; cost revisions with bounded all-or-nothing replay; unsafe chronology is rejected. | **IN FORCE, AMENDED**: earlier derived valuations by D-034; the source of refund money by D-035. Preserved originals, separate money and quantity bounds, one-time restoration of historical cost, Owner reason and recent authentication, bounded all-or-nothing replay and rejection of unsafe chronology stay. R-04 and R-09 resolved. |
 | D-009 | Planner | Cash accountability: one open session per register and per cashier; everyone, including the Owner and for transfer-only sales, sells in their own session; opening cash is explicit, zero allowed; race-safe close with an immutable report. No reopening, no change of responsibility, no shared drawer, no paid-out. | **IN FORCE, AMENDED by D-035**: a drawer-funded CASH refund linked to the original Sale is the one permitted drawer outflow; no general paid-in or paid-out. R-04 resolved. R-14 resolved by D-039. |
 | D-010 | Owner (direction), Planner (contract) | Design pipeline: an exact Owner-approved revision in the BantuKasir design project, then repository semantic tokens, then native shadcn/ui with React and Inertia. "BantuKasir" and its logo are a codename; client identity comes from a versioned runtime business profile. The MULTIPLECORP design project must never be touched. Observing a design context is not approval. | Pipeline **ADAPTED by D-024 and D-025**. Runtime client identity **IN FORCE, confirmed and scoped by D-038** (one business per installation). R-10 resolved. MULTIPLECORP prohibition **IN FORCE**. |
 | D-011 | Owner | Executor: Claude Opus 5.5, effort xhigh. Fable 5.1, effort xhigh, selectively for bounded high-risk problems. The labels are a request, not a claim of availability; work units must be portable without chat memory. | **SUPERSEDED by D-031** as to models and effort. Portability of work without chat memory stays in force, and a model name remains a request, not a claim of availability (AGENTS.md section 6). |
 | D-012 | Planner | Delivery plan of 27 Build Units with hour estimates, 73 Core requirement entries and 39 acceptance suites. | **NOT EXECUTABLE.** To be superseded by the Task baseline in RF-7. The Build Units are input only. |
-| D-013 | Planner | Security support: threat-path model; Argon2id; session regeneration and revocation; CSRF; headers and CSP; upload rules; advisory checks. Technical defaults: recent authentication 15 minutes, inactivity 30 minutes, absolute session 12 hours, stated rate limits. | **IN FORCE.** Session timeouts confirmed by D-039 (R-14 resolved). The upload rules also cover CSV product import and product photos (D-037). Password rule to be set by the authentication profile in RF-3 (R-02). |
+| D-013 | Planner | Security support: threat-path model; Argon2id; session regeneration and revocation; CSRF; headers and CSP; upload rules; advisory checks. Technical defaults: recent authentication 15 minutes, inactivity 30 minutes, absolute session 12 hours, stated rate limits. | **IN FORCE.** Session timeouts confirmed by D-039 (R-14 resolved). The upload rules also cover CSV product import and product photos (D-037). Password rule set by D-049 (AICWDF-COMPAT-8; R-02 resolved); the security support is carried by SECURITY_MODEL and ADR-004 (RF-3A). |
 | D-014 | Planner | Review, fix and validation come before any freeze. P7 must be complete before P8 to P11 are frozen. Client, hardware, backup and release holds stay open. Affected work is reopened when evidence changes. | **IN FORCE** as to review before freeze and the order P7 before P8 to P11. The form of P7 approval is now **D-025**. |
 | D-015 | Owner | One local planning commit with an exact, safe path scope; no Build Unit executed; push, deploy, purchase and destruction need separate authorization. | **CONSUMED.** The authorization was used; it grants nothing today. The safety limits are restated in AGENTS.md. |
 | D-016 | Planner | Preservation: Plan 2.0 inputs remain in Git and its 40 task cards are archived in the tree; an unrelated untracked patch is preserved; protected sources, assets and evidence are kept byte-identical; no clean-up of unrelated work. | **SUPERSEDED by D-019** as to keeping legacy trees in the working tree. Preservation of the patch and the stash continues under **D-022**. |
@@ -35,12 +35,12 @@ The single log of decisions for BantuKasir. A decision made in conversation does
 
 ## 3. Decisions under the re-foundation (D-019 onward)
 
-All by the Owner (Asia/Jakarta). D-019 to D-025 answer the questions of the [re-foundation analysis report](records/REFOUNDATION_ANALYSIS_2026-10-03.md) (3 October 2026). D-026 to D-030 authorize and accept RF-1 (3 October 2026). D-031 to D-040 come from the Owner decision session held after RF-1 (3 and 4 October 2026). D-041 authorizes RF-2 (4 October 2026). D-042 to D-045 answer questions 21 to 24, which the planning agent asked while drafting RF-2; D-046 and D-047 answer questions 27 and 28, which came from the independent adversarial review of RF-2 (all 4 October 2026). The full terms of D-031 to D-047 are in section 6.
+All by the Owner (Asia/Jakarta). D-019 to D-025 answer the questions of the [re-foundation analysis report](records/REFOUNDATION_ANALYSIS_2026-10-03.md) (3 October 2026). D-026 to D-030 authorize and accept RF-1 (3 October 2026). D-031 to D-040 come from the Owner decision session held after RF-1 (3 and 4 October 2026). D-041 authorizes RF-2 (4 October 2026). D-042 to D-045 answer questions 21 to 24, which the planning agent asked while drafting RF-2; D-046 and D-047 answer questions 27 and 28, which came from the independent adversarial review of RF-2 (all 4 October 2026). D-048 to D-054 answer questions 25, 6, 5, 26, 31, 7 and 30, which the planning agent asked after the Owner reviewed its RF-3 pre-authorization package and before RF-3A was authorized; D-055 authorizes RF-3A (all 4 October 2026). D-056 and D-057 record the Owner's second review of the RF-3A report (4 October 2026). The full terms of D-031 to D-057 are in section 6.
 
 | ID | Decision | Effect |
 | --- | --- | --- |
 | D-019 | Full restructure of the repository to the AICWDF-4.3 layout. | Framework deviation FD-01 approved. Supersedes D-001 (framework) and D-016 (legacy trees). AICWDF-4.3 as the operating framework is stated in the Owner's Project instructions. Adopting the framework does not by itself approve a framework rule that changes business, authorization or release meaning; each such change is a revalidation item in [OPEN_ITEMS](OPEN_ITEMS.md) until the Owner decides it. |
-| D-020 | Agent-facing repository documents are in English. Indonesian remains the primary interface language. Localization for V1 will be finalized separately. | Resolves R-15. Question 5 and deviation FD-02 stay open by the Owner's choice. |
+| D-020 | Agent-facing repository documents are in English. Indonesian remains the primary interface language. Localization for V1 will be finalized separately. | Resolves R-15. Question 5 and deviation FD-02 stayed open by the Owner's choice until D-050, which answers question 5 and approves FD-02. |
 | D-021 | The planning architect may write planning and re-foundation documents directly into the working tree, with no commits and no other Git mutations. Claude Opus 5.5 xhigh on Windows independently validates and creates the checkpoint commit. | Defines how re-foundation changes are applied. The executor's model and effort follow D-031. |
 | D-022 | Housekeeping. (a) `plan-p0-p11-review.patch` is not deleted during RF-1; it is kept until RF-1 and the legacy mapping are independently validated. (b) `stash@{0}` is not dropped during RF-1; it is kept until its unique content is verified as safely recoverable elsewhere. (c) The `upstream` remote pointing at `latansa-inventory` is unrelated legacy state and is removed by the Windows executor during checkpoint work. (d) No push during RF-1; `main` is not modified; no merge. After the re-founded baseline is reviewed and explicitly approved, a later pull request may replace the obsolete `main`. | Applied in RF-1. Items (a) and (b) are extended by D-030. |
 | D-023 | Planning architect: Fable 5.1, effort xhigh. Implementation executor: Claude Opus 5.5, effort xhigh. | Confirms D-011. **SUPERSEDED by D-031.** |
@@ -68,6 +68,16 @@ All by the Owner (Asia/Jakarta). D-019 to D-025 answer the questions of the [re-
 | D-045 | Drawer-funded refund and expected cash (question 24): a drawer-funded CASH refund is allowed only when its amount is at most the selected OPEN session's current expected cash; expected cash never becomes negative because of a refund. | Terms in section 6. Applied in SALES_CASH (BR-RFD-15, BR-RFD-16) and REQUIREMENTS REQ-RFD-08. D-035 stays in force. |
 | D-046 | Timing of the drawer payout for a drawer-funded refund (question 27): cash is taken from the drawer only after the refund has committed, with the D-045 check first; if the outcome is uncertain, the status of the original refund is checked first and no cash is taken until the refund is recorded. | Terms in section 6. Applied in SALES_CASH (BR-RFD-05, BR-RFD-07, BR-RFD-14, BR-RFD-17, BR-CASH-07, BR-CASH-16) and REQUIREMENTS REQ-RFD-03, REQ-RFD-09. Owner-funded and BANK_TRANSFER refunds still record the payout actually made. D-035 and D-045 stay in force. |
 | D-047 | What OPERATIONS_ADMIN sees after an Owner cost correction (question 28): on a confirmed receiving document, OPERATIONS_ADMIN sees the current cost after the Owner's correction, the mark "Dikoreksi Pemilik" and the cost at confirmation; the reason for the correction, cost of goods sold, margin, profit and inventory value stay hidden. | Terms in section 6. Applied in INVENTORY BR-INV-15, COSTING BR-COST-07 and REQUIREMENTS REQ-INV-05, REQ-COST-04. Correcting cost after confirmation stays Owner-only (D-033, D-034). |
+| D-048 | Number of Owner accounts (question 25): exactly one active Owner (SUPER_ADMIN) account; Owner recovery and replacement by documented operator procedure. | Terms in section 6. Applied in SECURITY_MODEL (SEC-ACC-01, section 14), ADR-004, DOMAIN_MODEL BR-USR-04 and REQUIREMENTS REQ-ACC-12. How the single active Owner is stored is designed in RF-3B. |
+| D-049 | Sign-in profile (question 6): email and password, the email not verified and never sent; no Google sign-in; Owner-issued one-time links for a staff member's first password and reset; Owner recovery by operator command; password profile AICWDF-COMPAT-8; no two-factor authentication; sign-in sessions per D-013 and D-039. FD-03 and FD-04 approved. | Terms in section 6. Resolves R-02. Applied in SECURITY_MODEL section 2, ADR-004, FRAMEWORK_DEVIATIONS, COST_POLICY, DOMAIN_MODEL BR-USR-03 and BR-USR-11, and REQUIREMENTS REQ-ACC-05 and REQ-ACC-11. |
+| D-050 | English in the interface (question 5): translation keys from the first Task; V1 Indonesian only, with no language switcher; English later as a separate scope decision. FD-02 approved. | Terms in section 6. Resolves R-13 and settles the open localization point of D-020. Applied in ADR-005, STACK_AND_MODULES, FRAMEWORK_DEVIATIONS and REQUIREMENTS REQ-NFR-01. |
+| D-051 | Misassigned manufacturer barcode (question 26): the Owner may move an active manufacturer barcode from the wrong product to the correct one, audited, with a reason and recent authentication; internal `BK-P-…` codes are never reused. | Terms in section 6. Resolves R-17 together with D-052. Applied in CATALOG_BARCODE BR-CAT-19, BR-CAT-22 and BR-CAT-50, DOMAIN_MODEL BR-USR-07 and the Barcode lifecycle, SECURITY_MODEL CAP-07 and REQUIREMENTS REQ-CAT-05 and REQ-CAT-13. Storage in RF-3B. |
+| D-052 | Re-attaching a retired manufacturer barcode (question 31, follow-up of 26): retired manufacturer barcodes are not generally reusable; re-attachment happens only as the Owner's verified misassignment correction (traceable prior mapping, mandatory reason, immutable history and audit, recent authentication, at most one active mapping); manufacturer barcodes retired for another reason stay unusable; `BK-P-…` codes are never reused; recording a retirement reason is the enforcement mechanism; reason labels are P7 copy. | Terms in section 6. Applied in CATALOG_BARCODE BR-CAT-19, BR-CAT-51 and BR-CAT-52, DOMAIN_MODEL (Barcode states and lifecycle), SECURITY_MODEL CAP-06 and CAP-07, GLOSSARY and REQUIREMENTS REQ-CAT-13. Storage of mappings, history and retirement reason in RF-3B. |
+| D-053 | Hosting topology (question 7): Cloudflare, VPS, Coolify; staging on the same VPS with separate database, storage and secrets; FD-06 withdrawn; server facts stay UNKNOWN in gate TARGET. | Terms in section 6. Resolves R-12. D-005 stays in force inside this topology. Applied in ADR-002, ADR-003, ARCHITECTURE, FRAMEWORK_DEVIATIONS, COST_POLICY and REQUIREMENTS REQ-OPS-06. |
+| D-054 | Uploaded CSV import files (question 30, from T-17 c): the original CSV import file is not kept after the command reaches its final lifecycle outcome; the import result is kept in the audit; temporary handling and bounded cleanup are technical detail. | Terms in section 6. Resolves T-17 c. Applied in CATALOG_BARCODE BR-CAT-40, DOMAIN_MODEL BR-KEEP-07, SECURITY_MODEL section 13, ARCHITECTURE ARC-43 and REQUIREMENTS REQ-CAT-09. |
+| D-055 | RF-3A is authorized on baseline `0c4945d001daf76723568f015e69b6f6c43342fb`, the RF-2 checkpoint, which the Owner accepted on 4 October 2026 after the planning agent's review. The authorization records the plan decisions P-1 to P-5 (P-5 with the Owner's clarification) and D-048 to D-054. RF-3B is not authorized. | Governance; no product or domain content of its own. Completes RF-2 (D-041). Authorizes RF-3A ([REFOUNDATION_PLAN](REFOUNDATION_PLAN.md) section 7). Terms in section 6. Scope amended by D-057 (T-18). |
+| D-056 | Residual risk of Owner-issued one-time links (OPEN_ITEMS N-06; SECURITY_MODEL THR-21): accepted for V1 under the existing controls. It authorizes no email delivery, one-time code, two-factor authentication, passkey or other authentication channel. | Terms in section 6. Resolves N-06. Recorded in section 5 and in SECURITY_MODEL THR-21. |
+| D-057 | Second review of the RF-3A report: RF-3A is substantively accepted, subject to one narrow governance remediation before any executor checkpoint instruction; the report's reading of the onboarding freeze for saleable returns is accepted, with no new rule and no question 32; the RF-3A scope is amended so that the stale localization wording of AGENTS.md and PROJECT_RULES is corrected (T-18). RF-3B is not authorized. | Governance. Amends the scope of D-055. Resolves T-18. Terms in section 6. |
 
 ## 4. Facts supplied by the Owner
 
@@ -81,8 +91,12 @@ All by the Owner (Asia/Jakarta). D-019 to D-025 answer the questions of the [re-
 | Risk | Accepted by | Reference |
 | --- | --- | --- |
 | The RF-1 safety bundle is on the same physical drive as the repository. | Owner | D-027 |
+| Staging runs on the same server as production and shares its resources and machine risk. | Owner | D-053 |
+| If the single Owner is locked out, only a person with technical access to the server can restore access, through the documented operator procedure. | Owner | D-048, D-049 |
+| The Owner account, like every account, has no second authentication factor in V1. | Owner | D-049 |
+| Whoever holds a staff member's one-time link, including the Owner who issued it, can set that person's password and act under their identity until the staff member notices. Controls: single use, 60-minute expiry, shown once and only to its issuer, revocable, issuance and use audited, staff handover guidance and reporting of a password they did not set. | Owner | D-056 |
 
-## 6. Terms of D-031 to D-047
+## 6. Terms of D-031 to D-057
 
 The Owner gave these decisions with detailed limits. The limits below are part of each decision.
 
@@ -301,3 +315,155 @@ Workflow: planning in a fresh chat; reading the canonical governance and the app
 - Who may correct does not change: after confirmation only the Owner corrects cost (D-033, D-034).
 - Consequences accepted with the choice: it matches the wording of D-033 (purchase cost on receiving documents); the document always shows the cost in force, so the next supplier invoice can be matched correctly; no cost-of-goods-sold or profit data is exposed.
 - Raised by the independent adversarial review of RF-2 (finding F-05). Interface labels are provisional until gate P7-G2.
+
+### D-048 — Number of Owner accounts
+
+- There is exactly one Owner (SUPER_ADMIN) account per installation. Because accounts are never deleted (D-042), this means exactly one **active** SUPER_ADMIN account at any time.
+- One person is accountable for every Owner-only action, and the audit trail stays simple.
+- If the Owner forgets the password or is locked out, access is restored through a documented operator procedure on the server, which needs a person with technical access to the server.
+- Replacing the person who is the Owner, for example when the shop changes hands, is also a documented operator procedure. The former Owner account is deactivated, never deleted, and may then be anonymized by the new Owner (D-043).
+- No function of the product creates a second Owner account or assigns SUPER_ADMIN, and the Owner cannot deactivate or anonymize the only active Owner account through the product.
+- A second Owner, if one is ever needed, is a small additive change that needs its own Owner decision; going from several Owners back to one would be much harder.
+- The operator procedures are designed in RF-3A (SECURITY_MODEL section 14), written as runbooks and rehearsed before the pilot (RF-6). Who may carry them out on production follows question 20.
+- Option declined: more than one Owner account.
+
+### D-049 — Sign-in profile
+
+The Owner approved this profile:
+
+1. The sign-in identifier is an email address. It is not verified, and the application never sends email.
+2. No Google sign-in (FD-03 approved).
+3. A staff member's first password: the Owner creates the account and a short-lived one-time link, handed to the staff member directly, not by email.
+4. A staff password reset: the Owner creates a one-time reset link (FD-04 approved).
+5. The Owner's forgotten password or lockout: an operator command on the server, documented and rehearsed (FD-04).
+6. Password profile AICWDF-COMPAT-8: at least 8 characters with uppercase, lowercase, a number and a symbol; paste and password managers allowed; no forced periodic rotation. It is a usability choice, not a claim of NIST compliance, and it replaces the "minimum 12 characters" of the former design candidate.
+7. No two-factor authentication, passkey, magic link or one-time code in V1.
+8. Sign-in sessions as D-013 and D-039.
+
+- The implementation is Laravel-native authentication (AICWDF §4A.1), a technical choice recorded in ADR-004.
+- The expiry of the one-time links, the rate limits, the uniqueness rule of the email identifier and the neutral value used on anonymization are security design in SECURITY_MODEL. How a link is shown for handover (for example copy or a QR code) is interface design for RF-4 and RF-5.
+- Consequences accepted with the choice: no email service and no cost; the single Owner's lockout risk is handled by an operator procedure that must be rehearsed before the pilot; the staff email is stored as the sign-in identifier and is replaced on anonymization (D-043).
+- Options declined: a username created by the Owner instead of an email; Google sign-in for existing accounts.
+- Resolves R-02.
+
+### D-050 — English in the interface
+
+- Every interface text uses translation keys from the first Task; hard-coded user-facing copy is forbidden (AICWDF §4B.4).
+- V1 ships Indonesian only, with no language switcher and no second-language translation or testing.
+- Adding English later is a scope change that needs its own Owner decision.
+- FD-02 is approved as an Owner-approved deviation from AICWDF §4B.2.
+- The localization mechanism is chosen in RF-3A from current official documentation (ADR-005). The date and time presentation of D-018 is unchanged. The copy is approved at gate P7-G2.
+- Options declined: Indonesian and English both shipped and tested in V1; no localization architecture.
+- Resolves R-13.
+
+### D-051 — Moving a misassigned manufacturer barcode
+
+- The Owner, and only the Owner, may move a manufacturer barcode that is active on the wrong product to the correct product.
+- The barcode on the wrong product is retired with the reason "misassigned" ("salah pasang"), and the same token is attached to the correct product, as one audited Owner action.
+- The mapping history — from which product to which, when, by whom and why — is kept and audited. Recent authentication and a reason are required.
+- Earlier Sales stay recorded on the product of that time, because Sale lines reference the product, not the token.
+- Internal `BK-P-…` codes are never reused.
+- A token is active on at most one product at a time; uniqueness applies to active mappings, and the mapping history is kept. The storage is designed in RF-3B.
+- Example given with the question: manufacturer barcode `8991234567890` of "Pulpen Biru 0,5" attached by mistake to "Pulpen Hitam 0,5" is moved to "Pulpen Biru 0,5"; the cashier can scan the original packaging again and history stays intact.
+- Options declined: a retired token is never reused (A); OPERATIONS_ADMIN may also move a barcode (C).
+
+### D-052 — Re-attaching a retired manufacturer barcode
+
+The Owner answered question 31 in these words:
+
+> Boleh hanya sebagai koreksi salah-pasang yang terverifikasi.
+>
+> Barcode pabrik yang sudah dipensiunkan tidak boleh digunakan kembali secara umum. Pengecualian hanya bila Pemilik sedang memperbaiki pemetaan barcode yang terbukti salah sesuai Q26:
+>
+> - hanya Pemilik;
+> - token harus barcode pabrik, bukan kode internal BK-P;
+> - harus ada produk asal/pemetaan lama yang dapat ditelusuri;
+> - alasan koreksi wajib dicatat;
+> - riwayat pemetaan lama tetap dipertahankan dan diaudit;
+> - token hanya boleh aktif pada satu produk pada satu waktu;
+> - koreksi memindahkan token ke produk yang benar sebagai satu koreksi terkontrol, bukan membuka mekanisme umum "reuse retired barcode";
+> - barcode yang dipensiunkan karena alasan lain tetap tidak dapat dipakai kembali;
+> - kode internal BK-P tidak pernah didaur ulang.
+
+Terms:
+
+- A retired manufacturer barcode is not reusable in general.
+- The only exception is the Owner's controlled correction of a proven misassignment under D-051, also when the token was already retired: only the Owner; the token is a manufacturer barcode, never an internal `BK-P-…` code; the earlier product or mapping is traceable; a correction reason is mandatory; the earlier mapping history is kept and audited; the token is active on at most one product at a time; recent authentication is required. The correction moves the token to the correct product as one controlled correction and opens no general mechanism for reusing retired barcodes.
+- A manufacturer barcode retired for any other reason stays unusable.
+- Internal `BK-P-…` codes are never recycled.
+- Retiring a token records its reason. A retired token is eligible for the correction only when its retirement is recorded as a misassignment and its earlier mapping is traceable. Recording the retirement reason is the enforcement mechanism. The retirement record is history and is not rewritten (BR-AUD-03); the correction adds a new, audited mapping fact.
+- The exact list of retirement reasons and their Indonesian labels are interface copy (gate P7-G2); only the distinction between a misassignment and any other reason is a rule.
+
+### D-053 — Hosting topology
+
+- The framework default topology is adopted: the domain through Cloudflare, then a VPS, then Coolify (self-hosted, open source), which manages containers, routing and TLS certificates.
+- Staging runs on the same VPS, with a database, storage and secrets separate from production.
+- FD-06 is withdrawn: the framework topology is adopted, so no deviation is approved. R-12 is resolved.
+- D-005 stays in force inside this topology: PHP-FPM and Nginx in the application container, private PostgreSQL, scheduled commands, no Redis, queue or server-side rendering, and an independent backup is mandatory. The container layout is recorded in ADR-003.
+- Decided by plan decision P-2 and not asked: the provider, CPU, memory and disk, other services on the server and whether the domain is already on Cloudflare stay UNKNOWN in gate TARGET until verified.
+- Fact given with the question and verified on 4 October 2026 in the official Coolify documentation: Coolify itself needs at least 2 CPU cores, 2 GB of memory and 10 GB of disk, excluding the application, its databases and staging.
+- Consequences accepted with the choice: no additional cost beyond the client-funded VPS and domain; automatic TLS and deployment through one interface; a staging environment before production; the VPS must be large enough for Coolify, production and staging together (gate TARGET); staging on the same machine shares its resources and machine risk (section 5).
+- Not decided here: the branch and environment model, CI, the Cloudflare and Coolify configuration and the infrastructure runbooks (RF-6, T-10); the backup destination (question 18, before RF-6); who may operate on production (question 20). No account, purchase or installation is made.
+- Options declined: hand-built Compose, Nginx and manual TLS (FD-06); staging on a second VPS (an additional cost).
+
+### D-054 — Uploaded CSV import files
+
+- The uploaded CSV file is not kept after the import command reaches its final lifecycle outcome: committed, or refused at confirmation, or cancelled.
+- The import result is kept in the audit: the products created, a row summary, the file checksum, the actor and the time.
+- Between upload, preview and confirmation (D-037) the file is held only as temporary working data of that command. An upload that is never confirmed is removed by bounded housekeeping. Temporary handling and cleanup are technical details (SECURITY_MODEL section 13, ARCHITECTURE ARC-43).
+- The original file is never a retained business record and cannot be downloaded again from the system; the shop keeps its own copy if it wants one. It is outside the bookkeeping rule of D-044.
+- The checksum also supports the idempotency of D-037.
+- Options declined: kept privately for a period, then deleted automatically; kept like a business record.
+- Resolves T-17 c.
+
+### D-055 — RF-3A authorization
+
+The Owner's authorization begins: "I explicitly authorize RF-3A only." Its full wording is held in the Owner's Claude Project; these terms are its record in the repository.
+
+Recorded with it:
+
+- **Acceptance of RF-2.** The Owner accepted the RF-2 checkpoint, commit `0c4945d001daf76723568f015e69b6f6c43342fb`, on 4 October 2026, after the planning agent's review of the executor's report. RF-2 (D-041) is complete. The two non-blocking observations of that review need no remediation; the wording of SOURCE_OF_TRUTH for legacy documents 12 and 17 is harmonized in RF-3A (plan decision P-4).
+- **Plan decisions** taken on the planning agent's RF-3 pre-authorization package:
+  - P-1: RF-3 is split into RF-3A (architecture, security and technical-rule foundation) and RF-3B (logical schema). RF-3B needs the acceptance of the RF-3A checkpoint and a separate authorization.
+  - P-2: question 7 decides only the hosting topology; server facts stay UNKNOWN in gate TARGET until verified.
+  - P-3: question 18 becomes a prerequisite of RF-6. RF-3 carries only the decided backup constraints and chooses no destination, provider, cost or real key.
+  - P-4: two wording cleanups go into the relevant RF-3 change: "removal in a later authorized step, not before RF-5" for legacy documents 12 and 17 in SOURCE_OF_TRUTH; the open-decision list of PRODUCT_BLUEPRINT section 14 reflects question 7 correctly.
+  - P-5, with the Owner's clarification: legacy supersession is set per subject and per checkpoint. In RF-3A, `P4-ARCHITECTURE` and `02-ARCHITECTURE` are not marked fully SUPERSEDED while their schema and database-constraint parts are still the authority; those parts stay LEGACY — IN FORCE until RF-3B, and the final status is settled after RF-3B is accepted. No legacy file is deleted.
+- **Decisions D-048 to D-054**, the Owner's answers to questions 25, 6, 5, 26, 31, 7 and 30.
+
+Scope of RF-3A:
+
+- Baseline: `0c4945d001daf76723568f015e69b6f6c43342fb` on `plan/bantukasir-pos-v1`.
+- Twelve new CURRENT files: `docs/04-architecture/ARCHITECTURE.md`, `docs/04-architecture/STACK_AND_MODULES.md`, `docs/05-security/SECURITY_MODEL.md`, `docs/06-api-performance/TECHNICAL_RULES.md`, `docs/adr/README.md` and ADR-001 to ADR-007.
+- Changes, only in the parts that concern RF-3A, to: SOURCE_OF_TRUTH, LEGACY_INDEX, OPEN_ITEMS, this log, REFOUNDATION_PLAN, FRAMEWORK_DEVIATIONS, COST_POLICY, CURRENT_HANDOFF, the root README, PRODUCT_BLUEPRINT, REQUIREMENTS, DOMAIN_MODEL, CATALOG_BARCODE, INVENTORY and COSTING (not COSTING section 10); GLOSSARY and SALES_CASH only where a statement becomes false.
+- Legacy supersession per P-5: `04-AUTH-RBAC-SECURITY` and `P5-SECURITY` SUPERSEDED by SECURITY_MODEL; `P6-CONCURRENCY-API` SUPERSEDED by TECHNICAL_RULES; `02-ARCHITECTURE` and `P4-ARCHITECTURE` marked section by section ([LEGACY_INDEX](LEGACY_INDEX.md) section 8). Nothing under any `legacy/` folder changes.
+- For question 31 the approved rule is kept in substance: retired manufacturer barcodes are not generally reusable; re-attachment is only an Owner-controlled, verified misassignment correction with a traceable prior mapping, a mandatory reason, immutable history and audit, recent authentication and at most one active mapping; manufacturer barcodes retired for another reason stay unusable; internal `BK-P-…` codes are never reused. Recording a retirement reason is an acceptable enforcement mechanism; exact Indonesian reason labels stay P7 copy.
+- For question 30, temporary handling needed for upload, preview and confirmation, and bounded cleanup, are technical detail. The original CSV must not become a retained business record after the command reaches its final lifecycle outcome.
+
+Boundary. RF-3A must not create or write `docs/04-architecture/SCHEMA.md`; must not create ADR-008; must not decide or implement the representation of cost allocations (T-16, including its part (c)); must not perform the invariant-to-schema work of RF-3B; must not resolve T-17 e, g or i; and must not fully supersede the schema and database-constraint parts of `P4-ARCHITECTURE` or `02-ARCHITECTURE`. No schema or migration, application code, version pin, P7 work, route or interaction contract, test-suite rewrite or Task repartition.
+
+Execution method: planning agent Opus 5.5, effort XHigh, new chat; the RF-3A working tree is written without staging or committing; current official documentation is verified for version-sensitive Laravel, localization and Coolify details; self-review and a fresh independent adversarial review come before any executor instruction; the planning agent stops and asks exactly one Owner question when a new business meaning is required; the full RF-3A report goes to the Owner for a second review, and the executor instruction is prepared only after that review.
+
+Holds that remain: no push, merge, rebase, pull request or change to `main`; no refresh of the safety bundle; no deletion or editing of legacy files; no application code, migrations, deployment, accounts or purchases; no RF-3B, RF-4 or later step; no real IP address, domain, provider identity, credential, backup key or backup location in the public repository.
+
+Safety note. Commits `3c94f4f`, `77f6676`, `4af59a5`, `0c4945d` and the RF-3A checkpoint exist only in the local repository and are not in the pre-RF-1 safety bundle. This is recorded so that the risk stays visible; it is not an authorization to push or to refresh the bundle.
+
+RF-3B is NOT AUTHORIZED. RF-4 and every later step are NOT AUTHORIZED.
+
+### D-056 — Residual risk of Owner-issued one-time links
+
+- Whoever holds a staff member's one-time link — including the Owner who issued it — can set that person's password and act under that person's identity until the staff member notices. The risk is inherent in the sign-in profile of D-049; the independent adversarial review of RF-3A recorded it (SECURITY_MODEL THR-21, OPEN_ITEMS N-06).
+- The Owner accepts it as a residual V1 risk under the existing controls: the link is single use; it expires after 60 minutes; it is shown only once, to its issuer; it can be revoked; its issuance and use are audited; staff receive handover guidance and report a password they did not set.
+- The threat stays visible in SECURITY_MODEL.
+- This acceptance does not authorize email delivery, one-time codes, two-factor authentication, passkeys or any other authentication channel.
+
+### D-057 — Second review of the RF-3A report
+
+The Owner reviewed the RF-3A report a second time on 4 October 2026. The full wording is held in the Owner's Claude Project; these terms are its record in the repository.
+
+- RF-3A is substantively accepted, subject to one narrow governance remediation before any executor checkpoint instruction.
+- The report's interpretation of the onboarding freeze is accepted; no new rule restates it and no question 32 is asked. While onboarding is on, ordinary stock postings and Sales are refused (BR-INV-24); a RETURN_RECEIPT that restores saleable stock is an ordinary stock posting and is therefore refused; a monetary refund with no stock posting is not blocked by this rule; OPENING remains the onboarding exception already defined by the inventory rules (BR-INV-11). TECHNICAL_RULES section 7.2 applies this reading.
+- The residual risk of Owner-issued one-time links is accepted (D-056).
+- Scope amendment of D-055, to resolve OPEN_ITEMS T-18: `AGENTS.md` and `docs/00-governance/PROJECT_RULES.md` may be changed, only in their stale localization wording, to match D-050 — translation keys from the first implementation Task; V1 ships Bahasa Indonesia only; no language switcher in V1; English is a later scope addition that needs its own authorization; hard-coded user-facing copy stays prohibited. No other rule in those files changes.
+- After the remediation, the planning agent re-runs the consistency checks and a targeted independent verification and returns the amended RF-3A report for a final second review. The executor checkpoint instruction is prepared only after that review. Nothing is staged or committed in the meantime.
+- RF-3B is NOT AUTHORIZED. RF-4 and every later step are NOT AUTHORIZED.

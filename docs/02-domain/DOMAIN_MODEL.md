@@ -9,7 +9,7 @@
 | Terms | [GLOSSARY](GLOSSARY.md) |
 | Requirements | [REQUIREMENTS](../01-product/REQUIREMENTS.md) |
 
-This document is the map of the BantuKasir business domain: the entities, who owns them, how they relate, their states, the invariants that hold across the whole system, the lifecycle of every important entity, retention and audit. It is a specification, not a database schema. Tables, keys and constraints are designed in RF-3 (OPEN_ITEMS T-03).
+This document is the map of the BantuKasir business domain: the entities, who owns them, how they relate, their states, the invariants that hold across the whole system, the lifecycle of every important entity, retention and audit. It is a specification, not a database schema. Tables, keys and constraints are designed in RF-3B (OPEN_ITEMS T-03).
 
 ## 1. How to read this document
 
@@ -25,15 +25,16 @@ This document is the map of the BantuKasir business domain: the entities, who ow
 | --- | --- | --- |
 | L-PRD | [01-PRD](../01-product/legacy/01-PRD.md) | LEGACY — SUPERSEDED by the P1 documents |
 | L-P2 | [P2-DOMAIN](legacy/P2-DOMAIN.md) | LEGACY — SUPERSEDED by this document |
-| L-02 | [02-ARCHITECTURE](../04-architecture/legacy/02-ARCHITECTURE.md) | Domain part SUPERSEDED by this document; architecture part LEGACY — IN FORCE until RF-3 |
+| L-02 | [02-ARCHITECTURE](../04-architecture/legacy/02-ARCHITECTURE.md) | Domain part SUPERSEDED by this document (RF-2); §Constraint database and the schema-delivery part of §Payment extension boundary dan schema delivery LEGACY — IN FORCE until RF-3B; every other part SUPERSEDED by the RF-3A documents ([LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 8) |
+| L-P4 | [P4-ARCHITECTURE](../04-architecture/legacy/P4-ARCHITECTURE.md) | §Schema, immutability dan constraints LEGACY — IN FORCE until RF-3B; §Testing implications and §Deployment, operasi dan maintenance LEGACY — INPUT ONLY for RF-6; every other part SUPERSEDED by the RF-3A documents (LEGACY_INDEX section 8) |
 | L-06 | [06-INVENTORY-SPEC](legacy/06-INVENTORY-SPEC.md) | LEGACY — SUPERSEDED by INVENTORY |
 | L-12 | [12-BARCODE-SCANNER](legacy/12-BARCODE-SCANNER.md) | LEGACY — SUPERSEDED by CATALOG_BARCODE |
 | L-15 | [15-FINANCE-PROFITABILITY](legacy/15-FINANCE-PROFITABILITY.md) | LEGACY — SUPERSEDED by COSTING |
 | L-17 | [17-POS-SALES](legacy/17-POS-SALES.md) | LEGACY — SUPERSEDED by SALES_CASH |
 | L-P3 | [P3-CRITICAL-WORKFLOWS](../03-workflows/legacy/P3-CRITICAL-WORKFLOWS.md) | LEGACY — IN FORCE until RF-5 |
-| L-04 | [04-AUTH-RBAC-SECURITY](../05-security/legacy/04-AUTH-RBAC-SECURITY.md) | LEGACY — IN FORCE until RF-3 |
-| L-P5 | [P5-SECURITY](../05-security/legacy/P5-SECURITY.md) | LEGACY — IN FORCE until RF-3 |
-| L-P6 | [P6-CONCURRENCY-API](../06-api-performance/legacy/P6-CONCURRENCY-API.md) | LEGACY — IN FORCE until RF-3 |
+| L-04 | [04-AUTH-RBAC-SECURITY](../05-security/legacy/04-AUTH-RBAC-SECURITY.md) | LEGACY — SUPERSEDED by SECURITY_MODEL (RF-3A) |
+| L-P5 | [P5-SECURITY](../05-security/legacy/P5-SECURITY.md) | LEGACY — SUPERSEDED by SECURITY_MODEL (RF-3A) |
+| L-P6 | [P6-CONCURRENCY-API](../06-api-performance/legacy/P6-CONCURRENCY-API.md) | LEGACY — SUPERSEDED by TECHNICAL_RULES (RF-3A) |
 | L-08 | [08-TESTING-ACCEPTANCE](../08-testing/legacy/08-TESTING-ACCEPTANCE.md) | LEGACY — DRAFT until RF-6 |
 | L-09 | [09-DEPLOYMENT-OPS](../09-operations/legacy/09-DEPLOYMENT-OPS.md) | LEGACY — DRAFT until RF-6 |
 | PDS | [PRODUCTION_DATA_SAFETY](../00-governance/PRODUCTION_DATA_SAFETY.md) | CURRENT |
@@ -46,7 +47,7 @@ Legacy documents are in Indonesian. A citation such as "L-17 §Laporan Sesi Kas"
 
 | Area | Owns | Authoritative document |
 | --- | --- | --- |
-| Identity and access | User, roles, sign-in session, recent authentication, audit attribution | This document (sections 8 and 9); enforcement detail in L-04 until RF-3 |
+| Identity and access | User, roles, sign-in session, recent authentication, audit attribution | This document (sections 8 and 9); enforcement in [SECURITY_MODEL](../05-security/SECURITY_MODEL.md) |
 | Configuration | BusinessProfile and its revisions, logo asset | This document (section 10) |
 | Catalogue | Category, Product, selling price and its changes, barcode tokens, product photo, CSV product import, labels, Product Search | [CATALOG_BARCODE](CATALOG_BARCODE.md) |
 | Inventory | Stock movements of every type, stock balance, receiving, manual issue, opening stock and onboarding, adjustment, reversal, stock attention, reconciliation | [INVENTORY](INVENTORY.md) |
@@ -62,12 +63,12 @@ The attributes listed are the business attributes that rules depend on. They are
 
 | Entity | Meaning | Key business attributes | Detailed rules |
 | --- | --- | --- | --- |
-| User | An individual account of a person working in the shop | Name, sign-in identifier, roles, active or deactivated | Section 8 |
+| User | An individual account of a person working in the shop | Name, sign-in identifier (an email address, D-049), roles, active, deactivated or anonymized | Section 8 |
 | Sign-in session | An authenticated browser session of a user (not a cash session) | User, start, last activity, end | Section 8 |
 | BusinessProfileRevision | One immutable version of the shop identity | Shop name, logo, address, contact, optional email, receipt and document header and footer, document identity, constrained accent; which revision is current | Section 10 |
 | Category | A grouping of products | Name | CATALOG_BARCODE |
 | Product | A goods item the shop sells from its one stock pool | SKU, name, category, optional brand, base unit, quantity precision, current selling price, minimum stock, active or inactive, version, optional photo | CATALOG_BARCODE |
-| Barcode | A token that identifies exactly one product: a manufacturer alias or an internal code | Token text, kind, product, active or retired | CATALOG_BARCODE |
+| Barcode | A token that identifies exactly one product: a manufacturer alias or an internal code | Token text, kind (manufacturer or internal), product, active or retired, retirement reason (a misassignment or another reason, D-052), mapping history (D-051) | CATALOG_BARCODE |
 | SellingPriceRevision | One recorded selling price of a product and when it applied | Amount in rupiah, actor, time | CATALOG_BARCODE |
 | Product photo | The one optional primary photo of a product, with its thumbnail | Image, product | CATALOG_BARCODE |
 | CSV product import | One confirmed import of new products from a CSV file | Rows, validation result, durable result | CATALOG_BARCODE |
@@ -104,22 +105,22 @@ The attributes listed are the business attributes that rules depend on. They are
 - A Refund and a Return point to the original Sale and its lines. A saleable Return is received by a RETURN_RECEIPT movement. A drawer-funded CASH refund points to exactly one CashSession that was OPEN when the refund committed; its cash is paid out from that drawer afterwards (D-035, D-046).
 - A CashSession belongs to one CashRegister and one responsible User, and has at most one CashSessionReportSnapshot, created when it closes. Owner review notes point to that snapshot (L-17).
 - A ReceiptSnapshot and a CashSessionReportSnapshot point to the BusinessProfileRevision in force when they were created (D-038).
-- Every AuditEvent and Command result points to the acting User (D-032).
+- Every AuditEvent and Command result points to the acting User (D-032). The only exceptions are events written by an operator procedure or a scheduled command, which name that procedure or command as their actor (SECURITY_MODEL section 14); how such an actor is stored is designed in RF-3B.
 
 ## 5. States and transitions
 
 | Entity | States | Transitions and guards | Source |
 | --- | --- | --- | --- |
-| User | ACTIVE, DEACTIVATED, ANONYMIZED | The Owner deactivates and reactivates; deactivation ends sign-in sessions and mutation rights. The Owner may anonymize a deactivated account; an anonymized account stays deactivated for good and is never reactivated or reused. Invitation and reset states belong to the authentication profile (question 6, RF-3). | L-04, L-P3, D-042, D-043 |
+| User | ACTIVE, DEACTIVATED, ANONYMIZED | The Owner deactivates and reactivates; deactivation ends sign-in sessions and mutation rights. The Owner may anonymize a deactivated account; an anonymized account stays deactivated for good and is never reactivated or reused. One-time links for the first password and for a reset belong to the authentication profile (D-049, SECURITY_MODEL section 3). Exactly one account is the active Owner (D-048). | L-04, L-P3, D-042, D-043, D-048, D-049 |
 | Category | ACTIVE, INACTIVE | The Owner or OPERATIONS_ADMIN deactivates and reactivates. An inactive category cannot be chosen for a product; deactivating it changes no product. | D-042 |
 | Product | ACTIVE, INACTIVE | Owner or OPERATIONS_ADMIN switches the active flag. Only an active product can be posted or sold; inactive products stay readable in history. | L-PRD, L-12, L-06 |
-| Barcode | ACTIVE, RETIRED | Owner or OPERATIONS_ADMIN retires a barcode. A retired token is never used again. | L-02, L-12; revalidation R-17 |
+| Barcode | ACTIVE, RETIRED | Owner or OPERATIONS_ADMIN retires a barcode, recording whether it was a misassignment or another reason. A retired token is never used again in general. Only the Owner may move a manufacturer token active on the wrong product to the correct one, or re-attach a manufacturer token retired as a misassignment whose earlier mapping is traceable, with a reason and recent authentication; a token is active on at most one product; internal `BK-P-…` codes are never reused (CATALOG_BARCODE BR-CAT-19, BR-CAT-50 to BR-CAT-52). | L-02, L-12, D-051, D-052 |
 | CashRegister | ACTIVE, INACTIVE | Owner changes code, label or active flag only while no session is OPEN on it. | L-02 |
 | Receiving document | Being entered or reviewed → CONFIRMED (posted) | Before confirmation OPERATIONS_ADMIN and the Owner may change it, including cost (D-033). Confirmation posts one RECEIPT; afterwards it never changes. Whether an unconfirmed document is held on the server is OPEN (T-17 a). | D-033, L-06 |
 | Onboarding | OFF, ON | The Owner sets ON at a documented cutover and releases it after reconciliation, through the shared guard. | L-06 |
 | Sale | COMPLETED | There is no stored draft, pending or partially paid Sale. The client draft becomes a COMPLETED Sale in one transaction or not at all. | L-02, L-17 |
 | CashSession | OPEN → CLOSED | Close is atomic, checks the activity version, and is final: no reopening, no CLOSING state, no change of the responsible user. | L-17, D-009 |
-| Confirmed command request (client view) | SUBMITTING → COMMITTED, REJECTED or UNCERTAIN | UNCERTAIN freezes the original intent until its result is recovered. | L-P3, L-12, D-040 |
+| Confirmed command request (client view) | SUBMITTING → COMMITTED, REJECTED or UNCERTAIN | UNCERTAIN freezes the original intent until its result is recovered. HELD is a form of UNCERTAIN in which the request is never repeated, because the server reported an identity conflict, which its actor or the Owner resolves, or an intent from before a restore, which the Owner checks under the restore runbook (ADR-007 section 5). | L-P3, L-12, D-040; ADR-007 |
 | Acquisition cost | KNOWN, UNKNOWN | UNKNOWN becomes known only through an Owner cost correction (D-034) or, before confirmation of a receiving document, by editing that document (D-033). | D-033, D-034, L-15 |
 | Stock attention | NORMAL, LOW, OUT | Derived from the current balance and minimum stock; never stored as a separate truth. | L-06 |
 | Reporting completeness | COMPLETE, INCOMPLETE | Derived from cost status; a rejected cost correction marks the affected reporting incomplete (COSTING BR-COST-27). How that mark is recorded, scoped, audited and cleared is OPEN — T-17 i. | L-15, D-034 |
@@ -132,7 +133,7 @@ The attributes listed are the business attributes that rules depend on. They are
 | BR-DOM-02 | Historical money and stock facts are append-only. They are corrected only by new, linked correcting records, never by editing or deleting the original. | AGENTS rule 7, D-006, D-034, D-035 |
 | BR-DOM-03 | One source of truth per fact. The movement ledger is the truth for stock; StockBalance is its synchronous projection. Sale and Payment facts are the truth for sales and payments; receipts and session reports are accountability documents, never a second source of totals. | AGENTS rule 7, L-02, L-06, L-17 |
 | BR-DOM-04 | Every critical money or stock action is one database transaction that writes its facts, projections, audit event and durable result together, or writes nothing. | D-006, L-02 |
-| BR-DOM-05 | Concurrency is explicit: database constraints together with ordered locks keep every rule true when requests race, and each known race has a defined outcome. The lock order and race table are in L-02 §Urutan lock and L-P6 §Matriks race (in force until RF-3). | D-006, L-02, L-P6 |
+| BR-DOM-05 | Concurrency is explicit: database constraints together with ordered locks keep every rule true when requests race, and each known race has a defined outcome. The lock order and the race matrix are in [TECHNICAL_RULES](../06-api-performance/TECHNICAL_RULES.md) sections 7 and 8. | D-006, L-02, L-P6, TECHNICAL_RULES |
 | BR-DOM-06 | The server decides the actor, the authoritative price, totals, the responsible cashier, the stock balance and the cost scope. Values for these sent by the browser are never trusted. | L-P3, L-P6, L-04 |
 | BR-DOM-07 | Authorization is deny by default, enforced on the server for every request, including reads, status, recovery, print, export and media, with object scope. Hiding a control is not authorization. | AGENTS rule 8, D-007, L-04 |
 | BR-DOM-08 | UNKNOWN is never zero. An unknown cost is shown as unknown; a failed or stale query is shown as failed or stale, never as zero, empty or "Normal". | D-033, D-034, L-P3, L-06 |
@@ -146,8 +147,8 @@ The attributes listed are the business attributes that rules depend on. They are
 | --- | --- | --- |
 | BR-NUM-01 | Money is Indonesian rupiah in whole rupiah. A selling price and every payable total are integers. A line total is quantity × unit price, rounded half-up once per line to whole rupiah; the Sale total is the sum of its line totals. | L-02 §Angka dan waktu, D-006 |
 | BR-NUM-02 | Quantities are exact, in the product's base unit, with 0 to 3 decimal places fixed by the product's quantity precision. The real precisions of the first store are part of gate G2. | L-02, L-06 |
-| BR-NUM-03 | Cost values are exact decimals with six fractional digits. Aggregation happens before rounding; rounding to rupiah happens only for report display, at the end. The rounding rule used when a cost value is computed to six decimals and when a cost figure is rounded for display is set in RF-3 (T-17 e); the final-issue rule of COSTING guarantees no residue whatever the rule. | L-15, L-P6 |
-| BR-NUM-04 | No binary floating point is used for money, cost or quantity anywhere: storage, calculation, transport (decimal strings) or display. Values outside the supported range are rejected, never truncated. The ranges are fixed in RF-3. | AGENTS rule 7, L-02, L-P6 |
+| BR-NUM-03 | Cost values are exact decimals with six fractional digits. Aggregation happens before rounding; rounding to rupiah happens only for report display, at the end. The rounding rule used when a cost value is computed to six decimals and when a cost figure is rounded for display is OPEN — T-17 e, to be set in RF-3B; the final-issue rule of COSTING guarantees no residue whatever the rule. | L-15, L-P6 |
+| BR-NUM-04 | No binary floating point is used for money, cost or quantity anywhere: storage, calculation, transport (decimal strings) or display. Values outside the supported range are rejected, never truncated. The ranges are in TECHNICAL_RULES section 11 and the representations in ADR-006. | AGENTS rule 7, L-02, L-P6, ADR-006 |
 | BR-NUM-05 | Every fact carries the server's UTC time. The business date is the Asia/Jakarta calendar date computed by the server. An optional document date is stored separately and never backdates a physical or financial fact. | L-02, L-06, L-17 |
 | BR-NUM-06 | Report periods are Asia/Jakarta dates converted to half-open UTC ranges; an inclusive custom range ends at the start of the next day, exclusive. | L-15, L-02 |
 | BR-NUM-07 | Dates are shown with the full Indonesian month name and dotted time, for example `01 Oktober 2026, 09.15.00`. This is presentation only; it changes no stored time, business date or period. | D-018, L-P3 |
@@ -164,16 +165,16 @@ The attributes listed are the business attributes that rules depend on. They are
 | --- | --- | --- |
 | BR-USR-01 | Accounts are individual. There are exactly three fixed roles: SUPER_ADMIN (Owner), OPERATIONS_ADMIN and CASHIER. There are no custom or dynamic roles. | D-002, D-032 |
 | BR-USR-02 | One account may hold CASHIER and OPERATIONS_ADMIN together and then has the union of their permissions. SUPER_ADMIN is never combined with another role. No right reserved to the Owner is reachable through the combination. | D-032 |
-| BR-USR-03 | Only the Owner creates accounts. There is no public sign-up. The first Owner account is created by a private one-time operator procedure; there is no default or demo account. The sign-in method, password rule and reset delivery are question 6 (OPEN, before RF-3). | L-04, L-P3 |
-| BR-USR-04 | Only the Owner assigns roles; nobody assigns a role to themselves. After a role change no old permission survives in a sign-in session or cache. Whether more than one account may hold SUPER_ADMIN is question 25 (OPEN, before RF-3). | L-04, L-P3 |
+| BR-USR-03 | Only the Owner creates staff accounts. There is no public sign-up. The first Owner account is created by a private one-time operator procedure; there is no default or demo account. Sign-in is by email and password: the email is never verified and the application sends no email; there is no Google sign-in; a staff member sets the first password, and a reset password, through a short-lived one-time link that the Owner creates and hands over directly; the Owner's own recovery is an operator procedure; the password profile is AICWDF-COMPAT-8; there is no two-factor authentication (SECURITY_MODEL section 2). | L-04, L-P3, D-048, D-049 |
+| BR-USR-04 | Only the Owner assigns roles; nobody assigns a role to themselves. After a role change no old permission survives in a sign-in session or cache. There is exactly one active SUPER_ADMIN account at any time: no function of the product creates a second Owner account or assigns SUPER_ADMIN, and the Owner cannot deactivate or anonymize the only active Owner account; Owner recovery and Owner replacement are documented operator procedures (SECURITY_MODEL section 14). | L-04, L-P3, D-048 |
 | BR-USR-05 | Deactivating an account ends its sign-in sessions and its right to change anything, and is enforced under the same guard as racing commands: a command that passed a check before the deactivation does not commit after it. | L-04, CORE-003 |
 | BR-USR-06 | A sign-in session ends after 30 minutes of inactivity and after 12 hours at most. Signing out, or a sign-in session ending, never closes, transfers or otherwise changes a cash session. | D-039, D-013 |
-| BR-USR-07 | Sensitive Owner actions need authentication within the last 15 minutes: refunds and returns, cost corrections, adjustments and reversals, user management, recovery, sensitive configuration and Owner-assisted close. | D-013, D-008, D-035, L-04, L-P5 |
+| BR-USR-07 | Sensitive Owner actions need authentication within the last 15 minutes: refunds and returns, cost corrections, adjustments and reversals, barcode misassignment corrections, user management, recovery, sensitive configuration and Owner-assisted close. The full list is the recent-authentication column of SECURITY_MODEL section 6. | D-013, D-008, D-035, D-051, L-04, L-P5 |
 | BR-USR-08 | Every action is attributed to the one identity of the user who performed it, including on a combined account. | D-032 |
 | BR-USR-09 | A deactivated user's identity stays attached to everything that user did. | L-02, L-04 §Audit |
-| BR-USR-10 | The Owner may reactivate a deactivated account that has not been anonymized. Accounts are never deleted, softly or permanently. | D-042 |
-| BR-USR-11 | The Owner, and only the Owner, may anonymize an account, and only after it has been deactivated. Anonymization replaces personal and profile fields with a neutral, non-personal label where applicable; which sign-in identifier fields are affected follows the authentication profile (question 6). It is not a deletion: the stable internal user identity and every audit relationship remain. The action needs a reason and is audited permanently with the Owner as actor and its time. An anonymized account stays deactivated and is never reused for another person; a former staff member who returns gets a new account, never the anonymized one. | D-043 |
-| BR-USR-12 | Anonymization changes only the current User profile. It never rewrites a historical record: Sales, ReceiptSnapshots, cash session reports, refunds, returns, audit events and every other record keep the actor identity and display information they recorded when they were created, so that every record the decisions require to reproduce exactly (receipts, session reports) still does. Which display information each record captures is designed in RF-3 within this rule. This is product lifecycle policy, not a claim of legal compliance or a substitute for legal advice on personal-data requests. | D-043, D-035, D-038 |
+| BR-USR-10 | The Owner may reactivate a deactivated account that has not been anonymized, but never a SUPER_ADMIN account (D-048). Accounts are never deleted, softly or permanently. | D-042, D-048 |
+| BR-USR-11 | The Owner, and only the Owner, may anonymize an account, and only after it has been deactivated. Anonymization replaces personal and profile fields with a neutral, non-personal label where applicable; the sign-in email is replaced by a unique, unusable placeholder and the password is made unusable (SECURITY_MODEL SEC-ACC-09). It is not a deletion: the stable internal user identity and every audit relationship remain. The action needs a reason and is audited permanently with the Owner as actor and its time. An anonymized account stays deactivated and is never reused for another person; a former staff member who returns gets a new account, never the anonymized one. | D-043, D-049 |
+| BR-USR-12 | Anonymization changes only the current User profile. It never rewrites a historical record: Sales, ReceiptSnapshots, cash session reports, refunds, returns, audit events and every other record keep the actor identity and display information they recorded when they were created, so that every record the decisions require to reproduce exactly (receipts, session reports) still does. Which display information each record captures is designed in RF-3B within this rule. This is product lifecycle policy, not a claim of legal compliance or a substitute for legal advice on personal-data requests. | D-043, D-035, D-038 |
 
 ## 9. Audit
 
@@ -191,7 +192,7 @@ The attributes listed are the business attributes that rules depend on. They are
 | ID | Rule | Source |
 | --- | --- | --- |
 | BR-CFG-01 | Each installation has one BusinessProfile: shop name, logo, address, contact, optional email, receipt and document header and footer, document identity and a constrained accent colour. | D-038, L-02, CORE-030 |
-| BR-CFG-02 | Every change creates a new immutable BusinessProfileRevision; a current pointer selects the revision in force. Revisions are never deleted. Only the Owner changes the BusinessProfile; the change is audited. Whether a given change counts as sensitive configuration needing recent authentication is set by the authentication profile in RF-3. | L-02, L-04, D-038, D-042 |
+| BR-CFG-02 | Every change creates a new immutable BusinessProfileRevision; a current pointer selects the revision in force. Revisions are never deleted. Only the Owner changes the BusinessProfile; the change is audited. Every BusinessProfile change needs recent authentication (SECURITY_MODEL section 6). | L-02, L-04, D-038, D-042 |
 | BR-CFG-03 | Every receipt and document keeps the revision in force when it was created. Later changes never alter it. A logo file referenced by a historical document is never overwritten in place. | D-038, L-17 |
 | BR-CFG-04 | A logo is PNG, JPEG or WebP, at most 5 MiB and 16 megapixels, verified by content, re-encoded and stripped of metadata; SVG, HTML and fetching from a remote URL are refused. Logos are stored privately and served only to authorized requests. | L-04, CORE-030 |
 | BR-CFG-05 | Only the configuration and revision mechanism needed for one business per installation is built. | D-038 |
@@ -216,12 +217,12 @@ For every record that is a historical money or stock fact, "Hard delete: NO" mea
 
 | Entity | Create | Edit | Archive | Restore | Soft delete | Hard delete | Anonymize |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| User | YES — Owner, by invitation; the first Owner by the private bootstrap procedure (L-04, L-P3) | YES — the user: own allowed account fields; Owner: roles, never self-assigned (L-P3, L-04, D-032) | YES — Owner deactivates (L-04) | YES — Owner reactivates, unless the account was anonymized (D-042, D-043) | NO (D-042) | NO (D-042) | YES — Owner only, after deactivation, with a reason; permanent; never rewrites history (D-043) |
+| User | YES — Owner creates staff accounts, each with a one-time first-password link (D-049); the first Owner by the private bootstrap procedure; a replacement Owner by the Owner replacement procedure; exactly one active Owner account (D-048, L-04, L-P3) | YES — the user: own password; Owner: staff roles (never self-assigned, never SUPER_ADMIN), staff display name and email, and the Owner's own display name and email (L-P3, L-04, D-032, D-048, SECURITY_MODEL SEC-ACC-10) | YES — Owner deactivates a staff account; the only active Owner account is deactivated only by the Owner replacement procedure (L-04, D-048) | YES — Owner reactivates, unless the account was anonymized or is a SUPER_ADMIN account (D-042, D-043, D-048) | NO (D-042) | NO (D-042) | YES — Owner only, after deactivation, with a reason; permanent; never rewrites history (D-043) |
 | Sign-in session | YES — on sign-in (L-04) | NO | N/A — ends by sign-out, timeout or revocation (D-039, L-04) | N/A | N/A | YES — expired sign-in session records follow the library's retention, never removing the historical actor (L-09 §Maintenance) | N/A — holds no personal data beyond the user reference |
 | BusinessProfileRevision | YES — Owner (D-038, L-02) | NO — immutable; a change creates a new revision (L-02, CORE-030) | N/A — older revisions stay as history | N/A — no source defines making an older revision current again; the Owner creates a new revision | NO (D-042) | NO (D-042, D-038) | N/A — shop identity, frozen in documents (D-038) |
 | Category | YES — Owner, Ops (L-PRD, L-04) | YES — Owner, Ops (L-PRD, L-04) | YES — Owner, Ops deactivate (D-042) | YES — Owner, Ops reactivate (D-042) | NO (D-042) | NO (D-042) | N/A — no personal data |
 | Product | YES — Owner, Ops, search-first or by CSV import; starts with stock 0 (L-12, L-06, D-037) | YES — Owner, Ops; price only through a price change; base unit and precision locked after the first movement (L-02, D-036) | YES — Owner, Ops set it inactive (L-PRD) | YES — Owner, Ops set it active again (L-PRD, D-042) | NO (D-042) | NO (D-042; facts kept) | N/A — no personal data |
-| Barcode | YES — Owner, Ops: manufacturer alias or generated internal code (L-12, L-04) | NO — a token is never changed; it is retired and another is added (L-12) | YES — Owner, Ops retire it (L-02, L-12) | NO — a retired token is never used again (L-02, L-12, CORE-004); revalidation R-17 | N/A — retirement is the only removal | NO — the record is what prevents a retired token from being recycled (L-02, CORE-004) | N/A |
+| Barcode | YES — Owner, Ops: manufacturer alias or generated internal code (L-12, L-04) | NO — a token is never changed; it is retired and another is added; the Owner's misassignment correction moves a manufacturer token between products as a new mapping (L-12, D-051) | YES — Owner, Ops retire it, recording whether it was a misassignment or another reason (L-02, L-12, D-052) | Owner only, as a misassignment correction: a manufacturer token retired as a misassignment, with a traceable earlier mapping, may be re-attached to the correct product (D-052). Otherwise NO: a retired token is never used again, and `BK-P-…` codes never (L-02, L-12, CORE-004, D-051, D-052) | N/A — retirement is the only removal | NO — the record and its mapping history are what prevent a retired token from being reused (L-02, CORE-004, D-052) | N/A |
 | SellingPriceRevision | YES — Owner, Ops, by a price change in master data (D-036) | NO (L-02) | N/A | N/A — a new price change can set any amount | NO — price changes are durable and audited (D-036) | NO (D-036) | N/A |
 | Product photo | YES — Owner, Ops upload (D-037) | YES — Owner, Ops replace it (D-037) | N/A | N/A | N/A | Removing the photo from the product: YES — Owner, Ops; a product without a photo stays valid (D-037). The file of a replaced or removed photo: NO — it is kept, no longer shown, and stays in backups (D-042) | N/A |
 | CashRegister | YES — Owner (L-02) | YES — Owner, code and label, only while no session is OPEN on it; snapshots keep the old identity (L-02) | YES — Owner, only while no session is OPEN (L-02) | YES — Owner (L-02, D-042) | NO (D-042) | NO (D-042; facts kept) | N/A |
@@ -263,18 +264,15 @@ For every record that is a historical money or stock fact, "Hard delete: NO" mea
 | BR-KEEP-04 | V1 has no automatic expiry, purge, archival deletion or scheduled deletion of business records, and no manual deletion function for them. Immutable transactional and audit facts never become deletable because the minimum period has passed. | D-044 |
 | BR-KEEP-05 | Any future archival or deletion capability needs a separate Owner decision, legal and compliance revalidation, an explicit data classification, and safeguards for historical references, audit, reconciliation and document reproduction. | D-044 |
 | BR-KEEP-06 | Master data and configuration — users, categories, products, barcodes, cash registers, BusinessProfile revisions and the files of replaced or removed product photos — are never deleted in V1; they are deactivated or retired. | D-042, L-02 |
-| BR-KEEP-07 | Data classes outside the bookkeeping rule may get their own lifecycle and retention rules; RF-2 decides none of them. Named so far: the uploaded CSV import file (T-17 c, an Owner decision); operational logs (debug and security access logs) and backup copies, which stay in L-09 until RF-6. Expired authentication tokens follow the library's retention and never remove a historical actor. | D-044, L-09 |
+| BR-KEEP-07 | Data classes outside the bookkeeping rule may get their own lifecycle and retention rules; RF-2 decided none of them. The uploaded CSV import file is temporary working data of its command and is not kept after the command's final outcome; the import result is kept in the audit (D-054). Operational logs (debug and security access logs) and backup copies stay in L-09 until RF-6. Expired authentication tokens and one-time links follow the library's retention and never remove a historical actor. | D-044, D-054, L-09 |
 | BR-KEEP-08 | These are product lifecycle rules. BantuKasir by itself does not guarantee legal or tax compliance. | D-044, D-043 |
 
 ## 13. Open items referenced in this document
 
 | Item | Subject | Where |
 | --- | --- | --- |
-| Question 6 | Sign-in method, password rule, reset delivery; which sign-in identifier fields anonymization affects | Section 8 |
-| Question 25 | Whether more than one account may hold SUPER_ADMIN | Section 8 |
 | Question 29 | A drawer-funded refund committed but its cash not yet taken when the session is counted and closed | SALES_CASH BR-RFD-17 |
-| R-17 (question 26) | Correcting a manufacturer barcode attached to the wrong product | Section 11.1 |
 | T-16 | Representation of issue-cost allocations: the one captured at Sale commit, and those of MANUAL_ISSUE and negative ADJUSTMENT | Section 11.2; COSTING |
-| T-17 | Lifecycle details settled in RF-3 or RF-5 without business meaning, except T-17 c, which the Owner decides | Sections 5, 7, 11 and 12 |
+| T-17 | Lifecycle details without business meaning, settled in RF-3B (e, g, i) or RF-5 (a, b, d, f, h); T-17 c is resolved by D-054 | Sections 5, 7, 11 and 12 |
 
-Questions 21 to 24 and 27 to 28, asked during RF-2, are answered by D-042 to D-047.
+Questions 21 to 24 and 27 to 28, asked during RF-2, are answered by D-042 to D-047. Questions 25, 6, 26 and 31 (R-17) and question 30, asked before RF-3A, are answered by D-048, D-049, D-051, D-052 and D-054.

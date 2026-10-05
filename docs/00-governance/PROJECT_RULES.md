@@ -113,7 +113,7 @@ The Owner works on Windows. Some tracked files have CRLF in the working tree and
 
 ## 11. Language
 
-Agent-facing repository documents are in English (D-020). Technical identifiers are in English. The user interface is Indonesian first; whether English ships in V1 is open. Documents under `legacy/` remain in their original Indonesian until they are rebuilt.
+Agent-facing repository documents are in English (D-020). Technical identifiers are in English. The user interface of V1 is Bahasa Indonesia only, with no language switcher. All user-facing copy goes through translation keys from the first implementation Task, and hard-coded user-facing copy is prohibited; the mechanism is ADR-005. English is a later scope addition that needs its own Owner decision (D-050). Documents under `legacy/` remain in their original Indonesian until they are rebuilt.
 
 ## 12. Quality check before closing a piece of authorized work
 
