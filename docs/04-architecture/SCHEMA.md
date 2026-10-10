@@ -1582,6 +1582,7 @@ Checked on 5 and 6 October 2026. The documentation pages served as "current" wer
 | Collation | The reindex step after an upgrade of the collation library (SCH-14) | RF-6 |
 | Reconciliation incidents | How a difference in a running total or an active barcode mapping is handled (G-03; BR-INV-46); the reconciliation's schedule | RF-6 |
 | Cost recovery procedure | The reviewed recovery procedure that may clear a cost-incomplete mark (section 5.8) | RF-6 |
+| Question 18 | The backup destination and method; the backup role receives the minimum that method needs (SCH-42) | RF-6 |
 | Question 20 | Who runs operator procedures and runbook steps on production (SCH-46) | RF-6 |
 | SEC-LOG-05 | Retention of `security_log_entries` | RF-6 |
 | Reconciliation and backup status | Where the daily reconciliation run and backup status for the Owner's system status are stored (REQ-OPS-04) | RF-6 |

@@ -350,6 +350,7 @@ Each run records the versions, configuration, indexes, host, dataset, run count,
 | --- | --- | --- |
 | T-17 a, b, d, f, h | Lifecycle details for workflows | RF-5 |
 | Question 29 | A committed drawer-funded refund whose cash was not taken before close | RF-5 |
+| Question 35 | Whether the same product on two lines of one checkout is stored as two lines or combined, and so how many submitted lines a checkout may carry (section 11.2) | RF-5 |
 | T-09, gate G2 | Final benchmark dataset | When G2 is known |
 | Gate TARGET | The real server for PERF01 | Before PERF01 |
 

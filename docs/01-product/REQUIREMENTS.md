@@ -8,7 +8,7 @@
 | Product | [PRODUCT_BLUEPRINT](PRODUCT_BLUEPRINT.md) |
 | Domain rules | [DOMAIN_MODEL](../02-domain/DOMAIN_MODEL.md), [CATALOG_BARCODE](../02-domain/CATALOG_BARCODE.md), [INVENTORY](../02-domain/INVENTORY.md), [COSTING](../02-domain/COSTING.md), [SALES_CASH](../02-domain/SALES_CASH.md) |
 
-The requirement register of BantuKasir V1. Each requirement says what the product must do, how acceptance is judged, where the requirement comes from, and which legacy acceptance suite tests it today. Section 21 maps every legacy CORE entry to these requirements; section 22 traces every decision D-001 to D-063.
+The requirement register of BantuKasir V1. Each requirement says what the product must do, how acceptance is judged, where the requirement comes from, and which legacy acceptance suite tests it today. Section 21 maps every legacy CORE entry to these requirements; section 22 traces every decision D-001 to D-065.
 
 ## 1. How to read this register
 
@@ -344,7 +344,7 @@ Every legacy Core entry CORE-001 to CORE-073 (`core.json`, `CORE-MAP.md`) is map
 
 ## 22. Decision traceability
 
-Every decision D-001 to D-063 is either traced to at least one requirement or rule, or classified as having no product or domain content.
+Every decision D-001 to D-065 is either traced to at least one requirement or rule, or classified as having no product or domain content.
 
 | Decision | Product or domain content | Traced to |
 | --- | --- | --- |
@@ -411,7 +411,9 @@ Every decision D-001 to D-063 is either traced to at least one requirement or ru
 | D-061 | A saleable return is linked to the original issue allocation and recomputed with it; cost restored exactly once | REQ-COST-07; BR-COST-17, BR-COST-18, BR-RFD-11; ADR-008 |
 | D-062 | Sale and cash session numbers: unique, allocated in increasing order, gaps allowed, with the Asia/Jakarta business date | REQ-DOC-01; BR-DOC-01, BR-CASH-04; SCHEMA section 6 |
 | D-063 | Second review of RF-3B: when the "reporting incomplete" mark is written (D-034); corrections and reversals refused on a reconciliation-blocked product; the number's date part is not a sort key; question 35 deferred | REQ-COST-06, REQ-INV-12, REQ-DOC-01; BR-COST-27, BR-INV-45, BR-INV-46, BR-DOC-01; SCHEMA sections 5.8, 6 and 8 |
+| D-064 | Acceptance of the RF-3B checkpoint; two documentation notes; Git-based file searches in checkpoint instructions | Non-product/domain — governance |
+| D-065 | Repository visibility (private); safety copies and their policy; the bookkeeping change | Non-product/domain — governance |
 
 ## 23. Counts
 
-Re-derived from this register: 23 sections; 134 requirement rows in sections 2 to 19, all with distinct identifiers; no requirement pending; 73 legacy CORE entries, of which 72 are mapped (13 of them adapted by later decisions) and 1 is retired (section 21); 63 decisions, of which 41 are traced to requirements or rules and 22 are classified as non-product/domain (section 22).
+Re-derived from this register: 23 sections; 134 requirement rows in sections 2 to 19, all with distinct identifiers; no requirement pending; 73 legacy CORE entries, of which 72 are mapped (13 of them adapted by later decisions) and 1 is retired (section 21); 65 decisions, of which 41 are traced to requirements or rules and 24 are classified as non-product/domain (section 22).
