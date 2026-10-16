@@ -8,7 +8,7 @@
 | Product | [PRODUCT_BLUEPRINT](PRODUCT_BLUEPRINT.md) |
 | Domain rules | [DOMAIN_MODEL](../02-domain/DOMAIN_MODEL.md), [CATALOG_BARCODE](../02-domain/CATALOG_BARCODE.md), [INVENTORY](../02-domain/INVENTORY.md), [COSTING](../02-domain/COSTING.md), [SALES_CASH](../02-domain/SALES_CASH.md) |
 
-The requirement register of BantuKasir V1. Each requirement says what the product must do, how acceptance is judged, where the requirement comes from, and which legacy acceptance suite tests it today. Section 21 maps every legacy CORE entry to these requirements; section 22 traces every decision D-001 to D-065.
+The requirement register of BantuKasir V1. Each requirement says what the product must do, how acceptance is judged, where the requirement comes from, and which legacy acceptance suite tests it today. Section 21 maps every legacy CORE entry to these requirements; section 22 traces every decision D-001 to D-076.
 
 ## 1. How to read this register
 
@@ -242,7 +242,7 @@ The requirement register of BantuKasir V1. Each requirement says what the produc
 | --- | --- | --- | --- | --- |
 | REQ-UX-01 | Every user-facing surface implements the artifacts the Owner approved at gates P7-G1 (navigation and page structure), P7-G2 (terminology and copy) and P7-G3 (visual direction and key screens). Nothing from the former design candidate counts as approved. | Each surface traces to an approved artifact recorded in DECISIONS. | D-024, D-025, D-017, D-010 | UX01, IDENTITY01 |
 | REQ-UX-02 | Every surface has verifiable loading, empty, error, denied, stale, unknown-cost, uncertain, disabled, focus and success states; no visible control is without behaviour; nothing outside V1 looks active. | State checks per surface; zero dead interactions (AICWDF §25). | L-08 UX01, AICWDF §14.3; BR-DOM-08 | UX01 |
-| REQ-UX-03 | The rebuilt design is validated for keyboard-only use with visible focus, 200 % browser zoom, screen reader, on-screen keyboard, long content and full rendered contrast, and for touch targets usable in production on the tablet. Exact targets are set in RF-4. | Each check recorded on the approved design and on the build. | OPEN_ITEMS section 3, D-039, D-040, L-08 UX01 | UX01 |
+| REQ-UX-03 | The rebuilt design is validated for keyboard-only use with visible focus, 200 % browser zoom, screen reader, on-screen keyboard, long content and full rendered contrast, and for touch targets usable in production on the tablet. The exact targets are set in [ADAPTIVE_AND_ACCESSIBILITY](../07-ux-design/ADAPTIVE_AND_ACCESSIBILITY.md) (RF-4A, D-070). | Each check recorded on the approved design and on the build. | OPEN_ITEMS section 3, D-039, D-040, L-08 UX01 | UX01 |
 
 ## 20. Requirements shaped by decisions taken during RF-2 and before RF-3A
 
@@ -344,7 +344,7 @@ Every legacy Core entry CORE-001 to CORE-073 (`core.json`, `CORE-MAP.md`) is map
 
 ## 22. Decision traceability
 
-Every decision D-001 to D-065 is either traced to at least one requirement or rule, or classified as having no product or domain content.
+Every decision D-001 to D-076 is either traced to at least one requirement or rule, or classified as having no product or domain content.
 
 | Decision | Product or domain content | Traced to |
 | --- | --- | --- |
@@ -413,7 +413,18 @@ Every decision D-001 to D-065 is either traced to at least one requirement or ru
 | D-063 | Second review of RF-3B: when the "reporting incomplete" mark is written (D-034); corrections and reversals refused on a reconciliation-blocked product; the number's date part is not a sort key; question 35 deferred | REQ-COST-06, REQ-INV-12, REQ-DOC-01; BR-COST-27, BR-INV-45, BR-INV-46, BR-DOC-01; SCHEMA sections 5.8, 6 and 8 |
 | D-064 | Acceptance of the RF-3B checkpoint; two documentation notes; Git-based file searches in checkpoint instructions | Non-product/domain — governance |
 | D-065 | Repository visibility (private); safety copies and their policy; the bookkeeping change | Non-product/domain — governance |
+| D-066 | Acceptance of the bookkeeping checkpoint; the executor runs Claude Opus 5.5 at effort Max | Non-product/domain — governance |
+| D-067 | One Sale line per product (question 35): the cart combines repeated additions; the server refuses a request that names a product twice | REQ-SALE-03, REQ-SALE-05, REQ-DOC-01, REQ-RFD-02, REQ-INV-02; BR-SALE-06, BR-SALE-16, BR-INV-07, BR-RFD-03 |
+| D-068 | Refund cash still in the drawer at close (question 29): variance kept, linked Owner review note, handover before the next opening count | REQ-CASH-09, REQ-RFD-04, REQ-RFD-09; BR-CASH-16, BR-CASH-19, BR-RFD-09, BR-RFD-17 |
+| D-069 | T-17 a, d, f and h: receiving drafts in page memory; deactivation of a staff account that holds an OPEN session; append-only review notes; CSV category names refused when missing or ambiguous | REQ-INV-04, REQ-ACC-06, REQ-ACC-10, REQ-CASH-09, REQ-CASH-11, REQ-CAT-09; BR-INV-17, BR-CASH-11, BR-CASH-18, BR-CASH-19, BR-CAT-38, BR-CAT-42 |
+| D-070 | RF-4A authorization, including plan decisions P-10 to P-15 | Non-product/domain — governance |
+| D-071 | At most one initial stock onboarding period per business-data lifecycle (question 36, finding F-03): no new onboarding after the first release; later corrections by adjustment, reversal or cost correction | REQ-INV-07, REQ-INV-08, REQ-INV-09, REQ-COST-05; BR-INV-16, BR-INV-24, BR-INV-29, BR-INV-31, BR-INV-34, BR-COST-20 |
+| D-072 | Onboarding and a restore of earlier business data (question 37): a released onboarding is not reopened or continued by restoring an older backup; a period never released may continue as the same original period; an unverifiable state is held until the Owner's restore reconciliation | REQ-INV-07, REQ-CMD-03; BR-INV-24, BR-CMD-06 |
+| D-073 | Server-authoritative recovery of a request refused as EPOCH_STALE after a restore: the status check stays available; a reference is released only by a verified outcome or an audited reconciliation with a safe fence; the re-application of SEC-OP-04 stays possible | REQ-CMD-01, REQ-CMD-03, REQ-SALE-08, REQ-UX-02; BR-CMD-03, BR-CMD-06; SECURITY_MODEL SEC-OP-04 |
+| D-074 | Duplicate actions across devices, browsers or cleared browser data: not an accepted risk; RF-5 proposes the backend mitigation and its tests | REQ-SALE-08, REQ-CMD-01, REQ-RFD-09; BR-SALE-20, BR-CMD-03 |
+| D-075 | Remediation of the RF-4A independent final review; the planning agent's G1 proposals accepted: the combined account's Stok home, no role switcher, "Tunai" preselected, provisional shortcuts and breakpoints | REQ-UX-03, REQ-SALE-04; the rest is governance |
+| D-076 | Repository visibility (public); the publication guard before any push; RF-4A extended to record it | Non-product/domain — governance |
 
 ## 23. Counts
 
-Re-derived from this register: 23 sections; 134 requirement rows in sections 2 to 19, all with distinct identifiers; no requirement pending; 73 legacy CORE entries, of which 72 are mapped (13 of them adapted by later decisions) and 1 is retired (section 21); 65 decisions, of which 41 are traced to requirements or rules and 24 are classified as non-product/domain (section 22).
+Re-derived from this register: 23 sections; 134 requirement rows in sections 2 to 19, all with distinct identifiers; no requirement pending; 73 legacy CORE entries, of which 72 are mapped (13 of them adapted by later decisions) and 1 is retired (section 21); 76 decisions, of which 49 are traced to requirements or rules and 27 are classified as non-product/domain (section 22).

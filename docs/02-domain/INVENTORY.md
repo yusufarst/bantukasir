@@ -55,7 +55,7 @@ Sources: L-06 §Command fisik, L-15, D-034, D-035. Shop terms are provisional un
 | BR-INV-14 | OPERATIONS_ADMIN sees the purchase cost on every receiving document the OPERATIONS_ADMIN role can access, not only the documents that person created, and may enter and correct it while the document is being entered or reviewed. After confirmation OPERATIONS_ADMIN cannot change it; only the Owner corrects cost after posting, by a cost correction (COSTING section 7). | D-033, D-034 |
 | BR-INV-15 | OPERATIONS_ADMIN never sees moving weighted average cost, cost of goods sold, margin, profit, inventory value, or cost and profitability reports. After the Owner corrects the cost of a confirmed receiving line, OPERATIONS_ADMIN sees on that receiving document the current cost after the latest correction, the mark "Dikoreksi Pemilik", and the cost recorded at confirmation. Completing an UNKNOWN cost follows the same rule (D-034): OPERATIONS_ADMIN sees the completed cost, the same mark, and that the cost was UNKNOWN at confirmation. The reason for the correction and the rest of the correction history stay Owner-only (BR-DOM-07). A rejected correction changes nothing that OPERATIONS_ADMIN sees. CASHIER has no access to purchase cost. Labels are provisional until P7-G2. | D-033, D-034, D-047, L-04 |
 | BR-INV-16 | Receiving is separate from opening stock and from manual issue. A RECEIPT is never used to disguise an opening count. Products created after onboarding enter stock through RECEIPT. | L-06, CORE-043 |
-| BR-INV-17 | No stock or cost fact exists before confirmation. Whether an unconfirmed receiving document is held on the server, so that another authorized user can continue it, is T-17 a (RF-5). A receiving draft is held in page memory only, never in browser storage, and recovery after a reload uses the command reference (SECURITY_MODEL section 7, ADR-007); the earlier write-only rule for cost entered by OPERATIONS_ADMIN no longer applies. | D-033, L-06, L-04 |
+| BR-INV-17 | No stock or cost fact exists before confirmation. Whether an unconfirmed receiving document is held on the server, so that another authorized user can continue it, is decided by D-069 (T-17 a): not in V1. A receiving draft is held in page memory only, never in browser storage, and recovery after a reload uses the command reference (SECURITY_MODEL section 7, ADR-007); the earlier write-only rule for cost entered by OPERATIONS_ADMIN no longer applies. | D-033, L-06, L-04 |
 
 ## 5. Manual issue — Barang Keluar
 
@@ -137,10 +137,9 @@ Warehouses, locations, transfers and goods in transit; reservations; advanced st
 
 | Item | Subject |
 | --- | --- |
-| T-17 a | Whether an unconfirmed receiving document is held on the server |
 | T-17 b | Correcting an onboarding entry before the flag is released: a zero-count checklist entry, or a wrong positive OPENING |
 | Gate G2 | Real units, precisions, opening volume, barcodes and availability of cost evidence |
 
-T-16 was resolved in RF-3B by D-060, D-061 and ADR-008 (COSTING section 10).
+T-16 was resolved in RF-3B by D-060, D-061 and ADR-008 (COSTING section 10). T-17 a is decided by D-069.
 
 Stock records are business records: they are kept at least 10 years and V1 has no function that deletes them (D-044, DOMAIN_MODEL section 12).

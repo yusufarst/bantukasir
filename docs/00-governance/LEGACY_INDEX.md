@@ -138,7 +138,7 @@ The ignored folders `.local/` and `.agents/` are not tracked, not part of any co
 | `CORE-001` … `CORE-073` | Core requirement entries | Superseded in RF-2 by the requirement register. [REQUIREMENTS](../01-product/REQUIREMENTS.md) section 21 maps every entry to the requirements that carry it, or records why it was retired. The original entries stay in `docs/01-product/legacy/requirements/` |
 | `AUTH01`, `POS01`, … (39) | Acceptance suites | `docs/08-testing/legacy/08-TESTING-ACCEPTANCE.md`; cited as test references by REQUIREMENTS until RF-6 |
 | `G1` … `G4`, `DEVICES`, `TARGET`, `EXECUTOR`, `RELEASE` | Business and external gates | [OPEN_ITEMS](OPEN_ITEMS.md) section 3 |
-| `P7-G01` … `P7-G18` | Capability groups of the former design coverage matrix | `docs/07-ux-design/legacy/P7-COVERAGE.md` — input only |
+| `P7-G01` … `P7-G18` | Capability groups of the former design coverage matrix | `docs/07-ux-design/legacy/P7-COVERAGE.md` — LEGACY — SUPERSEDED in RF-4A; [INFORMATION_ARCHITECTURE](../07-ux-design/INFORMATION_ARCHITECTURE.md) section 12 maps every group to its pages (section 10 below) |
 | `T01` … `T40` | Plan 2.0 task cards | Git history only: `git show 604d925:docs/archive/plan2/tasks/T01.md` |
 | `UI01`, `UI02`, `UI03`, `BK01`–`BK03`, `R6`, Gate A/B | Earlier prototype rounds | Git history only (section 3); UI03 in the stash (section 4) |
 
@@ -244,3 +244,39 @@ Legacy schema rules changed or made concrete in RF-3B, with the reason:
 No legacy schema rule is dropped without a written reason.
 
 New identifiers written in RF-3B: `ADR-008` in `docs/adr/`; `SCH-nn` rules and `G-nn` guards in SCHEMA; questions 32 to 35 in OPEN_ITEMS.
+
+## 10. Documents superseded in RF-4A
+
+RF-4A (D-070) wrote the six CURRENT documents of `docs/07-ux-design/` for gate P7-G1: [USER_TASKS](../07-ux-design/USER_TASKS.md), [INFORMATION_ARCHITECTURE](../07-ux-design/INFORMATION_ARCHITECTURE.md), [NAVIGATION_CONTRACTS](../07-ux-design/NAVIGATION_CONTRACTS.md), [INTERACTION_INVENTORY](../07-ux-design/INTERACTION_INVENTORY.md), [UI_STATES](../07-ux-design/UI_STATES.md) and [ADAPTIVE_AND_ACCESSIBILITY](../07-ux-design/ADAPTIVE_AND_ACCESSIBILITY.md). The gate itself is not approved by the checkpoint (plan decision P-10). All the legacy files stay in the working tree, byte-identical; they are removed only by a later authorized step.
+
+| Legacy document | Status after RF-4A | Carried by |
+| --- | --- | --- |
+| `docs/07-ux-design/legacy/P7-UX-DESIGN.md` | LEGACY — SUPERSEDED | The six RF-4A documents; the order of P7 work and the use of the design tool are plan decisions P-10 and P-14 (D-070) |
+| `docs/07-ux-design/legacy/P7-COVERAGE.md` | LEGACY — SUPERSEDED | INFORMATION_ARCHITECTURE section 12 (every group traced) and INTERACTION_INVENTORY |
+| `docs/07-ux-design/legacy/DESIGN.md` | LEGACY — INPUT ONLY, unchanged | Input to RF-4C (gate P7-G3) |
+| `docs/07-ux-design/legacy/p7-correction/`, `docs/07-ux-design/legacy/p7-owner-r1/` | RECORD, unchanged | Evidence for the former candidate; the re-foundation analysis (section 20) and INFORMATION_ARCHITECTURE section 11 trace its destinations and dialogs |
+
+Legacy capability groups and the pages that now carry them:
+
+| Group | Pages |
+| --- | --- |
+| `P7-G01` Auth dan account | UXP-001, UXP-002, UXP-003, UXP-004, UXP-005; Owner user administration UXP-602 to UXP-606 |
+| `P7-G02` Shell, dashboard dan utilities | UXP-000, UXP-007 |
+| `P7-G03` Catalog dan search-first | UXP-301, UXP-302, UXP-303, UXP-304, UXP-307 |
+| `P7-G04` Barcode dan internal label | UXP-302 (barcode section), UXP-305, UXP-306 |
+| `P7-G05` Receiving | UXP-404, UXP-405, UXP-406 |
+| `P7-G06` Manual issue non-sale | UXP-407, UXP-408, UXP-409 |
+| `P7-G07` Opening awal | UXP-412, UXP-413 |
+| `P7-G08` Current stock, restock dan history | UXP-401, UXP-402, UXP-403; the Stok badge in UXP-000 |
+| `P7-G09` Register dan own session entry | UXP-104; cash registers UXP-609, UXP-610 |
+| `P7-G10` POS draft, scanner dan cart | UXP-101 |
+| `P7-G11` Full payment, result dan recovery | UXP-102, UXP-103, UXP-006 |
+| `P7-G12` Close, own history dan immutable report | UXP-105, UXP-201, UXP-202, UXP-205, UXP-206, UXP-207 |
+| `P7-G13` Owner stock/cost correction | UXP-410, UXP-411, UXP-503, UXP-504, UXP-505 |
+| `P7-G14` Refund dan physical return | UXP-203, UXP-204 |
+| `P7-G15` Finance, periods, audit dan scoped reports | UXP-501, UXP-502, UXP-612; staff scope through UXP-201, UXP-205, UXP-402 |
+| `P7-G16` Runtime identity, config dan system status | UXP-607, UXP-608, UXP-609, UXP-610, UXP-611 |
+| `P7-G17` Original documents dan exports | UXP-103, UXP-202 (receipt print and reprint), UXP-206 (session report print and CSV), UXP-306 (labels) |
+| `P7-G18` Incident dan recovery state | UXP-006, UXP-414, UXP-415, UXP-611; UI_STATES UXS-14, UXS-15, UXS-16 |
+
+New identifiers written in RF-4A: `UXT-nn` (user tasks), `UXP-nnn` (pages), `UXI-nnn` (interactions), `UXS-nn` (states), `UXA-nn` (adaptive and accessibility rules) and `NC-nn` (global navigation rules) in `docs/07-ux-design/`; decisions D-066 to D-076.

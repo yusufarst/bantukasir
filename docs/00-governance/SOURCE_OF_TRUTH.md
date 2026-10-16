@@ -154,12 +154,18 @@ The logical database schema is SCHEMA (RF-3B, D-059; OPEN_ITEMS T-03 resolved). 
 
 | Path | Subject | Status | Replaced in |
 | --- | --- | --- | --- |
-| [legacy/DESIGN.md](../07-ux-design/legacy/DESIGN.md) | Draft visual contract of the former design candidate | LEGACY — INPUT ONLY | RF-4 |
-| [legacy/P7-UX-DESIGN.md](../07-ux-design/legacy/P7-UX-DESIGN.md) | Former P7 workflow | LEGACY — INPUT ONLY | RF-4 |
-| [legacy/P7-COVERAGE.md](../07-ux-design/legacy/P7-COVERAGE.md) | Capability coverage matrix G01 to G18 | LEGACY — INPUT ONLY | RF-4 |
+| [USER_TASKS.md](../07-ux-design/USER_TASKS.md) | User tasks per role, frequency, devices, step budgets | CURRENT (RF-4A); gate P7-G1 not yet approved | — |
+| [INFORMATION_ARCHITECTURE.md](../07-ux-design/INFORMATION_ARCHITECTURE.md) | Areas, navigation per role, page inventory with access classes, capability and requirement coverage, traceability of the former candidate and of P7-G01 to P7-G18 | CURRENT (RF-4A); gate P7-G1 not yet approved | — |
+| [NAVIGATION_CONTRACTS.md](../07-ux-design/NAVIGATION_CONTRACTS.md) | Global navigation rules and one navigation and back-action contract per page | CURRENT (RF-4A); gate P7-G1 not yet approved | — |
+| [INTERACTION_INVENTORY.md](../07-ux-design/INTERACTION_INVENTORY.md) | Every visible control per page, with capability, action, review, scanner safety and result state; zero dead interactions | CURRENT (RF-4A); gate P7-G1 not yet approved; routes in RF-5 | — |
+| [UI_STATES.md](../07-ux-design/UI_STATES.md) | State catalogue, error-code mapping, uncertain-outcome recovery, states per page | CURRENT (RF-4A); gate P7-G1 not yet approved; wording in RF-4B | — |
+| [ADAPTIVE_AND_ACCESSIBILITY.md](../07-ux-design/ADAPTIVE_AND_ACCESSIBILITY.md) | Device classes, adaptive rules and the exact accessibility targets of REQ-UX-03 | CURRENT (RF-4A); gate P7-G1 not yet approved | — |
+| [legacy/DESIGN.md](../07-ux-design/legacy/DESIGN.md) | Draft visual contract of the former design candidate | LEGACY — INPUT ONLY | RF-4C |
+| [legacy/P7-UX-DESIGN.md](../07-ux-design/legacy/P7-UX-DESIGN.md) | Former P7 workflow | LEGACY — SUPERSEDED by the RF-4A documents and plan decisions P-10 and P-14 (D-070) | RF-4A; removal in a later authorized step |
+| [legacy/P7-COVERAGE.md](../07-ux-design/legacy/P7-COVERAGE.md) | Capability coverage matrix G01 to G18 | LEGACY — SUPERSEDED by INFORMATION_ARCHITECTURE (section 12 maps every group) and INTERACTION_INVENTORY | RF-4A; removal in a later authorized step |
 | `legacy/p7-correction/` (7 files), `legacy/p7-owner-r1/` (8 files) | Evidence for the former candidate | RECORD | removed after RF-4 |
 
-P7 is being rebuilt (D-024). The former candidate, design revision `sha256-bef01d649ea91b2b`, was never approved and will not be. No approved design exists. Nothing in this folder may be used as an approved design contract; colour and spacing tokens are carried forward only as input. The localization architecture is decided in [ADR-005](../adr/ADR-005-localization-architecture.md) and is input to `LOCALIZATION.md` in RF-4.
+P7 is being rebuilt (D-024) as three checkpoints, RF-4A, RF-4B and RF-4C, ending at gates P7-G1, P7-G2 and P7-G3 (D-025; plan decision P-10, D-070). RF-4A wrote the six CURRENT documents above for gate P7-G1 (navigation and page structure); the gate is approved only by a separate Owner decision. Their Indonesian labels are working labels until P7-G2. The former candidate, design revision `sha256-bef01d649ea91b2b`, was never approved and will not be. No approved visual design exists. Nothing in this folder may be used as an approved design contract; colour and spacing tokens are carried forward only as input. The localization architecture is decided in [ADR-005](../adr/ADR-005-localization-architecture.md) and is input to `LOCALIZATION.md` in RF-4.
 
 ### docs/08-testing — P8
 

@@ -365,7 +365,7 @@ Runtime privileges: `SELECT`, `INSERT`. Every fact row that an enveloped command
 | `version` | `integer` | `>= 1`; the expected version of an edit |
 | `created_at`, `updated_at` | `timestamptz` | |
 
-No uniqueness of category names is enforced: no decision sets one. How a CSV import row names a category is set with T-17 h in RF-5. Runtime privileges: `SELECT`, `INSERT`; `UPDATE` of `name`, `active`, `version`, `updated_at`.
+No uniqueness of category names is enforced: no decision sets one. How a CSV import row names a category is decided by D-069 (T-17 h); its matching rule and enforcement are set in RF-5. Runtime privileges: `SELECT`, `INSERT`; `UPDATE` of `name`, `active`, `version`, `updated_at`.
 
 **`products`** — class M. Entity: Product.
 
@@ -624,7 +624,7 @@ Inserted with the product's first movement and updated with each later one, in t
 | `line_count` | `smallint` | 1–500 (TR §11.2) |
 | `confirmed_at`; `actor_user_id`, `actor_display_name`; `command_id` | | `command_id` unique |
 
-A receiving document exists in the database only once confirmed. Whether an unconfirmed document is held on the server is T-17 a (RF-5); if it is, it gets its own draft table, never rows in this one, because no stock or cost fact exists before confirmation (BR-INV-17). Runtime privileges: `SELECT`, `INSERT`.
+A receiving document exists in the database only once confirmed. An unconfirmed document is not held on the server in V1 (D-069, T-17 a), so there is no draft table; a document held on the server would need its own draft table, never rows in this one, because no stock or cost fact exists before confirmation (BR-INV-17). Runtime privileges: `SELECT`, `INSERT`.
 
 **`receiving_lines`** — class F.
 
@@ -869,7 +869,7 @@ UNIQUE (id, product_id, quantity),                        -- target for the SALE
 FOREIGN KEY (id) REFERENCES stock_movements (sale_line_id) DEFERRABLE INITIALLY DEFERRED  -- BR-SALE-09
 ```
 
-PostgreSQL's `round` on `numeric` rounds ties away from zero, which for non-negative values is half-up (section 15). No uniqueness of product per Sale is enforced. Whether two lines of the same product in one checkout are stored as entered or combined into one line is not decided: it changes the receipt and, through once-per-line rounding (BR-SALE-06), can change a total, so it is OPEN_ITEMS question 35, deferred by the Owner to before RF-5 (D-063). The schema allows either answer. The stock check adds such lines together in any case (BR-INV-07; G-02). Runtime privileges: `SELECT`, `INSERT`.
+PostgreSQL's `round` on `numeric` rounds ties away from zero, which for non-negative values is half-up (section 15). No uniqueness of product per Sale is enforced yet. Question 35 is answered by D-067: a Sale stores one line per product. RF-5 specifies the enforcement — the uniqueness of the product within a Sale and its validation code — as an amendment of this section. The stock check adds such lines together in any case (BR-INV-07; G-02). Runtime privileges: `SELECT`, `INSERT`.
 
 **`payments`** — class F. Entity: Payment.
 
@@ -1045,7 +1045,7 @@ CREATE UNIQUE INDEX cash_sessions_one_open_per_user ON cash_sessions (responsibl
 
 It holds no cost, cost evidence, margin, profit or security data (BR-CASH-20). Runtime privileges: `SELECT`, `INSERT`.
 
-**`cash_session_review_notes`** — class F. Entity: Owner review note (BR-CASH-19). Columns `id`; `session_id` (→ `cash_session_closes`); `note` (1–2,000); `recorded_at`; `actor_user_id`, `actor_display_name`; `command_id` (unique). Whether a note can be edited is T-17 f (RF-5); until then the table is insert-only. Runtime privileges: `SELECT`, `INSERT`.
+**`cash_session_review_notes`** — class F. Entity: Owner review note (BR-CASH-19). Columns `id`; `session_id` (→ `cash_session_closes`); `note` (1–2,000); `recorded_at`; `actor_user_id`, `actor_display_name`; `command_id` (unique). A note is never edited; a correction is a new note (D-069, T-17 f). The table is insert-only. Runtime privileges: `SELECT`, `INSERT`.
 
 ### 5.11 Framework tables
 
@@ -1573,11 +1573,9 @@ Checked on 5 and 6 October 2026. The documentation pages served as "current" wer
 
 | Item | Subject | Step |
 | --- | --- | --- |
-| T-17 a | A server-held unconfirmed receiving document would be its own draft table (section 5.7) | RF-5 |
 | T-17 b | Correction of a checklist entry or a wrong positive OPENING before release; the tables stay insert-only until then | RF-5 |
-| T-17 d | Deactivating a user who holds an OPEN session (RACE-28) | RF-5 |
-| T-17 f | Editing an Owner review note; the table stays insert-only until then | RF-5 |
-| T-17 h | A CSV row that names a category that does not exist yet; category names carry no uniqueness constraint | RF-5 |
+| D-067 | The uniqueness of the product within a Sale and its validation code (section 5.9) | RF-5 |
+| D-069 | Its backend enforcement: no receiving draft table (T-17 a, section 5.7); deactivation that changes no `cash_sessions` row (T-17 d, RACE-28); insert-only review notes (T-17 f, section 5.10); the category-name rule of the CSV import (T-17 h, section 5.6) | RF-5 |
 | Restore runbook | Run the after-restore procedure before the application accepts traffic (section 5.3); advance both number sequences (SCH-28); treat the promotion of any lagging database copy as a restore; run production with synchronous commit | RF-6 |
 | Collation | The reindex step after an upgrade of the collation library (SCH-14) | RF-6 |
 | Reconciliation incidents | How a difference in a running total or an active barcode mapping is handled (G-03; BR-INV-46); the reconciliation's schedule | RF-6 |
@@ -1586,7 +1584,6 @@ Checked on 5 and 6 October 2026. The documentation pages served as "current" wer
 | Question 20 | Who runs operator procedures and runbook steps on production (SCH-46) | RF-6 |
 | SEC-LOG-05 | Retention of `security_log_entries` | RF-6 |
 | Reconciliation and backup status | Where the daily reconciliation run and backup status for the Owner's system status are stored (REQ-OPS-04) | RF-6 |
-| Question 35 | Whether the same product on two lines of one checkout is stored as two lines or combined; the schema allows either answer (section 5.9) | RF-5 |
 | RF-4 | The accent colour set (`accent_token` allowlist); how numbers and names appear on screens and documents | RF-4 |
 | RF-5 | Error codes for setup-dependent refusals; what the mandatory payout reference of a drawer cash refund holds — typed by the Owner or generated (BR-RFD-05); the length of the document identity and register fields if they differ from the column bounds here | RF-5 |
 | RF-7 | The Tasks that implement this schema, ordered by module dependency | RF-7 |
