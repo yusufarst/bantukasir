@@ -288,3 +288,13 @@ The canonical amendment for the Owner's payment-method decision Q38 (D-077, auth
 ## 12. RF-4B
 
 RF-4B (D-083) supersedes no legacy document. It finalizes the shop terms of [GLOSSARY](../02-domain/GLOSSARY.md) and writes [COPY_DECK](../07-ux-design/COPY_DECK.md) for gate P7-G2. The receipt and screen layouts of `docs/02-domain/legacy/17-POS-SALES.md` and the scanner screen behaviour of `docs/02-domain/legacy/12-BARCODE-SCANNER.md` stay input only for RF-5, and `docs/07-ux-design/legacy/DESIGN.md` stays input only for RF-4C; all three are unchanged. New identifiers: the copy keys, the writing rules `CW-nn` and the findings `F-nn` of COPY_DECK; decisions D-081 to D-083.
+
+## 13. RF-4C
+
+RF-4C (D-086) writes [DESIGN_SYSTEM](../07-ux-design/DESIGN_SYSTEM.md), [KEY_SCREENS](../07-ux-design/KEY_SCREENS.md) and the previews in `docs/07-ux-design/previews/` for gate P7-G3. The gate itself is not approved by the checkpoint (plan decision P-10). The legacy file stays in the working tree, byte-identical; it is removed only by a later authorized step.
+
+| Legacy document | Status after RF-4C | Carried by |
+| --- | --- | --- |
+| `docs/07-ux-design/legacy/DESIGN.md` | LEGACY — SUPERSEDED, unchanged | DESIGN_SYSTEM. Not used as input: the draft was made with the design-generation tool that D-086 excludes |
+
+New identifiers: the key screens `KS-nn` of KEY_SCREENS and the deviations `DV-nn` of DESIGN_SYSTEM section 1.3; decision D-086, whose terms also record the pause and the resumption of RF-4C.

@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="id" data-accent="green">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preview</title>
+<link rel="stylesheet" href="assets/bk-tokens.css">
+<link rel="stylesheet" href="assets/bk-base.css">
+<link rel="stylesheet" href="assets/bk-components.css">
+</head>
+<!-- KS-07 · UXP-105 Tutup sesi kas (close flow: preview, count, review; BR-CASH-13).
+     States: ?state=default | count | review | recount | unresolved-checkout -->
+<body data-page="UXP-105" data-title-key="cash.close.title" data-layout="rail" data-nav="till" data-nav-current="true" data-role="cashier" data-roles="cashier owner combined">
+<div class="bk-app" id="bk-app">
+  <div class="bk-col">
+    <main id="main" class="bk-main" tabindex="-1">
+      <div class="bk-container bk-container--focused">
+        <a class="bk-back" href="ks-03-kasir.html" data-k="ux.action.back_to" data-p='{"halaman":"Kasir"}'></a>
+        <div class="bk-pagehead">
+          <div class="bk-pagehead__text">
+            <h1 class="bk-title bk-title--shell" tabindex="-1" data-k="cash.close.title"></h1>
+            <p class="bk-subtitle" data-k="sales.till.session" data-p='{"nomor":"20261017-000004","laci":"Laci 1"}'></p>
+          </div>
+        </div>
+        <div class="bk-notice bk-notice--success" id="close-success" role="status" hidden>
+          <span data-icon="check"></span>
+          <p class="bk-notice__title" tabindex="-1" data-k="cash.close.success" data-p='{"nomor":"20261017-000004"}'></p>
+        </div>
+        <ol class="bk-steps" id="steps">
+          <li id="st-1" aria-current="step"><span class="bk-steps__n" aria-hidden="true">1</span><span data-k="cash.close.step_preview"></span></li>
+          <li id="st-2"><span class="bk-steps__n" aria-hidden="true">2</span><span data-k="cash.close.step_count"></span></li>
+        </ol>
+
+        <div id="step-1" class="bk-stack">
+          <div class="bk-notice bk-notice--warning" role="alert" data-when="recount">
+            <span data-icon="refresh"></span>
+            <p class="bk-notice__title" data-k="ux.state.recount.title"></p>
+            <p class="bk-notice__body" data-k="ux.state.recount.body"></p>
+          </div>
+          <div class="bk-notice bk-notice--pending" role="status" data-when="unresolved-checkout">
+            <span data-icon="clock"></span>
+            <p class="bk-notice__body" data-k="cash.close.unresolved_note"></p>
+            <div class="bk-notice__actions"><a class="bk-btn bk-btn--primary" href="index.html#outside-set" data-k="cash.close.resolve_unresolved"></a></div>
+          </div>
+          <section class="bk-card bk-section" aria-labelledby="preview-title">
+            <h2 class="bk-h3 bk-mb-4" id="preview-title" data-k="cash.close.step_preview"></h2>
+            <dl class="bk-kv">
+              <dt data-k="cash.figure.opening_cash"></dt><dd data-fixture>Rp200.000</dd>
+              <dt data-k="cash.figure.sale_count"></dt><dd data-fixture>23</dd>
+              <dt data-k="cash.figure.cash_payments"></dt><dd data-fixture>Rp1.056.500</dd>
+              <dt data-k="cash.figure.transfer_payments"></dt><dd data-fixture>Rp1.475.000</dd>
+              <dt data-k="cash.figure.drawer_refunds"></dt><dd data-fixture>&minus;Rp50.000</dd>
+              <div class="bk-kv__strong"><dt data-k="cash.figure.expected_cash"></dt><dd data-fixture>Rp1.206.500</dd></div>
+            </dl>
+          </section>
+          <section class="bk-card bk-section" aria-labelledby="refunds-title">
+            <h2 class="bk-h3" id="refunds-title" data-k="cash.close.drawer_refunds"></h2>
+            <p class="bk-hint bk-mb-4" data-k="cash.close.drawer_refunds_reminder"></p>
+            <p data-k="cash.close.drawer_refund_row" data-p='{"uang":"Rp50.000","nomor":"20261017-000101","waktu":"17 Oktober 2026, 15.20.44"}'></p>
+          </section>
+          <div>
+            <div class="bk-actions">
+              <button type="button" class="bk-btn bk-btn--primary bk-btn--lg" id="continue" data-ctrl-enter
+                data-k-aria="cash.close.continue_count" data-shortcut="Ctrl+Enter" aria-keyshortcuts="Control+Enter">
+                <span data-k="cash.close.continue_count"></span><kbd class="bk-kbd" aria-hidden="true">Ctrl+Enter</kbd>
+              </button>
+              <a class="bk-btn bk-btn--secondary bk-btn--lg" href="ks-03-kasir.html" data-k="ux.action.cancel"></a>
+            </div>
+            <p class="bk-reason" id="continue-reason" data-when="unresolved-checkout"><span data-icon="info"></span><span data-k="cash.close.disabled_unresolved_checkout"></span></p>
+          </div>
+        </div>
+
+        <div id="step-2" class="bk-stack" hidden>
+          <section class="bk-card bk-section bk-form" aria-labelledby="count-title">
+            <h2 class="bk-h3" id="count-title" data-k="cash.close.step_count"></h2>
+            <div class="bk-field">
+              <label class="bk-label" for="physical" data-k="cash.close.physical_cash"></label>
+              <div class="bk-input bk-input--xl bk-input--num">
+                <span class="bk-input__affix">Rp</span>
+                <input id="physical" class="bk-input__control" type="text" inputmode="numeric" autocomplete="off" aria-describedby="physical-hint">
+              </div>
+              <p class="bk-hint" id="physical-hint" data-k="cash.close.physical_cash_help"></p>
+            </div>
+          </section>
+          <div>
+            <div class="bk-actions">
+              <button type="button" class="bk-btn bk-btn--primary bk-btn--lg" id="close-review-btn" data-dialog-open="close-review" data-ctrl-enter
+                data-k-aria="ux.action.review" data-shortcut="Ctrl+Enter" aria-keyshortcuts="Control+Enter">
+                <span data-k="ux.action.review"></span><kbd class="bk-kbd" aria-hidden="true">Ctrl+Enter</kbd>
+              </button>
+              <button type="button" class="bk-btn bk-btn--secondary bk-btn--lg" id="back-preview" data-k="cash.close.back_to_preview"></button>
+              <a class="bk-btn bk-btn--quiet bk-btn--lg" href="ks-03-kasir.html" data-k="ux.action.cancel"></a>
+            </div>
+            <p class="bk-reason" id="close-reason" hidden><span data-icon="info"></span><span data-k="cash.close.disabled"></span></p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="bk-dialog-layer" id="close-review" hidden>
+  <div class="bk-dialog" role="dialog" aria-modal="true" aria-labelledby="close-review-title" aria-describedby="close-review-note">
+    <h2 class="bk-dialog__title" id="close-review-title" data-k="cash.close.review_title"></h2>
+    <div class="bk-dialog__body">
+      <dl class="bk-kv">
+        <dt data-k="cash.figure.physical_cash"></dt><dd id="rv-physical"></dd>
+        <dt data-k="cash.figure.expected_cash"></dt><dd data-fixture>Rp1.206.500</dd>
+        <div class="bk-kv__strong"><dt data-k="cash.figure.variance"></dt><dd><span class="bk-status" id="rv-variance-status"><span data-icon-slot></span><span id="rv-variance"></span></span></dd></div>
+      </dl>
+      <p class="bk-notice bk-notice--quiet bk-notice--text" id="close-review-note" data-k="cash.close.review_note"></p>
+    </div>
+    <div class="bk-dialog__actions">
+      <button type="button" class="bk-btn bk-btn--secondary bk-btn--lg" data-dialog-close data-initial-focus
+        data-k-aria="ux.action.edit_again" data-shortcut="Esc" aria-keyshortcuts="Escape"><span data-k="ux.action.edit_again"></span></button>
+      <button type="button" class="bk-btn bk-btn--primary bk-btn--lg" id="close-confirm" data-ctrl-enter
+        data-k-aria="cash.close.confirm" data-shortcut="Ctrl+Enter" aria-keyshortcuts="Control+Enter">
+        <span data-k="cash.close.confirm"></span><kbd class="bk-kbd" aria-hidden="true">Ctrl+Enter</kbd>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="bk-live" id="bk-live-polite" aria-live="polite"></div>
+<div class="bk-live" id="bk-live-assertive" aria-live="assertive"></div>
+<script src="assets/bk-copy.js"></script>
+<script src="assets/bk-icons.js"></script>
+<script src="assets/bk-app.js"></script>
+</body>
+</html>

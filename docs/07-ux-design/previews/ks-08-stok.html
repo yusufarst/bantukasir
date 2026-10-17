@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="id" data-accent="green">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preview</title>
+<link rel="stylesheet" href="assets/bk-tokens.css">
+<link rel="stylesheet" href="assets/bk-base.css">
+<link rel="stylesheet" href="assets/bk-components.css">
+</head>
+<!-- KS-08 · UXP-401 Stok (list with stock attention). Admin Operasional by default;
+     ?peran=owner adds the Owner's sub-navigation items and "Sesuaikan stok" (CAP-16).
+     States: ?state=default | attention | no-results | stale | empty -->
+<body data-page="UXP-401" data-title-key="inventory.stock.title" data-layout="side" data-nav="stock" data-sub-area="stock" data-sub="stock" data-role="ops" data-roles="ops owner combined">
+<div class="bk-app" id="bk-app">
+  <div class="bk-col">
+    <main id="main" class="bk-main" tabindex="-1">
+      <div data-subnav-host></div>
+      <div class="bk-container">
+        <div class="bk-pagehead">
+          <div class="bk-pagehead__text"><h1 class="bk-title bk-title--shell" tabindex="-1" data-k="inventory.stock.title" data-first-focus></h1></div>
+        </div>
+        <div class="bk-notice bk-notice--warning bk-mb-4" role="status" data-when="stale">
+          <span data-icon="clock"></span>
+          <p class="bk-notice__title" data-k="ux.state.stale_read.title"></p>
+          <p class="bk-notice__body" data-k="ux.state.stale_read.body" data-p='{"waktu":"17 Oktober 2026, 13.40.02"}'></p>
+          <div class="bk-notice__actions"><button type="button" class="bk-btn bk-btn--secondary" data-k="ux.action.reload"></button></div>
+        </div>
+        <section class="bk-card bk-section" aria-labelledby="page-title-list">
+          <h2 class="bk-sr-only" id="page-title-list" data-k="inventory.stock.title"></h2>
+          <div class="bk-toolbar">
+            <div class="bk-field">
+              <label class="bk-label" for="stock-search" data-k="inventory.stock.search"></label>
+              <div class="bk-input">
+                <span class="bk-input__icon" data-icon="search"></span>
+                <input id="stock-search" class="bk-input__control" type="search" autocomplete="off" enterkeyhint="search" data-k-ph="catalog.products.search_hint">
+              </div>
+            </div>
+            <div class="bk-field">
+              <label class="bk-label" for="f-cat" data-k="catalog.field.category"></label>
+              <div class="bk-input"><input id="f-cat" class="bk-input__control" type="search" autocomplete="off" data-k-ph="ux.list.search_hint"></div>
+            </div>
+          </div>
+          <fieldset class="bk-filterset">
+            <legend class="bk-label bk-legend" data-k="inventory.stock.filter_state"></legend>
+            <div class="bk-chips">
+              <button type="button" class="bk-chip" aria-pressed="false" data-chip="out"><span data-icon="check"></span><span data-k="inventory.state.out"></span></button>
+              <button type="button" class="bk-chip" aria-pressed="false" data-chip="low"><span data-icon="check"></span><span data-k="inventory.state.low"></span></button>
+              <button type="button" class="bk-chip" aria-pressed="false" data-chip="normal"><span data-icon="check"></span><span data-k="inventory.state.normal"></span></button>
+            </div>
+          </fieldset>
+          <div class="bk-refresh">
+            <span data-k="ux.list.updated_at" data-p='{"waktu":"17 Oktober 2026, 13.45.10"}'></span>
+            <button type="button" class="bk-btn bk-btn--quiet" id="reload"><span data-icon="refresh"></span><span data-k="ux.action.reload"></span></button>
+            <span class="bk-meta" id="stock-count" aria-live="polite"></span>
+          </div>
+
+          <p class="bk-empty" data-when="empty" data-k="inventory.stock.empty"></p>
+          <div class="bk-empty" id="stock-noresults" hidden>
+            <p class="bk-empty__title" data-k="ux.state.no_results.title"></p>
+            <p data-k="ux.state.no_results.body"></p>
+            <p class="bk-mt-4"><button type="button" class="bk-btn bk-btn--secondary" id="clear-filters" data-k="ux.action.clear_filters"></button></p>
+          </div>
+          <div class="bk-table-host" data-unless="empty">
+            <table class="bk-table" id="stock-table">
+              <thead>
+                <tr>
+                  <th scope="col" data-k="inventory.stock.col_product"></th>
+                  <th scope="col" data-k="catalog.field.sku"></th>
+                  <th scope="col" class="is-num" data-k="inventory.stock.col_stock"></th>
+                  <th scope="col" class="is-num" data-k="catalog.field.min_stock"></th>
+                  <th scope="col" data-k="inventory.stock.col_state"></th>
+                  <th scope="col" data-role-only="owner"><span class="bk-sr-only" data-k="inventory.adjustment.title"></span></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr data-stock-row data-state="normal">
+                  <td class="is-head"><a class="bk-table__link bk-clamp-2" id="p1" href="index.html#outside-set" data-fixture>Pulpen gel hitam 0,5 mm</a></td>
+                  <td data-k-label="catalog.field.sku"><span class="bk-mono" data-fixture>ATK-PG-05H</span></td>
+                  <td class="is-num" data-k-label="inventory.stock.col_stock" data-fixture>48 pcs</td>
+                  <td class="is-num" data-k-label="catalog.field.min_stock" data-fixture>20 pcs</td>
+                  <td data-k-label="inventory.stock.col_state"><span class="bk-status"><span class="bk-status__dot" aria-hidden="true"></span><span data-k="inventory.state.normal"></span></span></td>
+                  <td data-role-only="owner" class="is-action"><button type="button" class="bk-btn bk-btn--quiet" id="a1" aria-labelledby="a1t p1"><span id="a1t" data-k="inventory.adjustment.title"></span></button></td>
+                </tr>
+                <tr data-stock-row data-state="low">
+                  <td class="is-head"><a class="bk-table__link bk-clamp-2" id="p2" href="index.html#outside-set" data-fixture>Kertas HVS A4 70 gsm isi 500 lembar</a></td>
+                  <td data-k-label="catalog.field.sku"><span class="bk-mono" data-fixture>ATK-HVS-A470</span></td>
+                  <td class="is-num" data-k-label="inventory.stock.col_stock" data-fixture>6 rim</td>
+                  <td class="is-num" data-k-label="catalog.field.min_stock" data-fixture>10 rim</td>
+                  <td data-k-label="inventory.stock.col_state"><span class="bk-status bk-status--warning"><span data-icon="warning"></span><span data-k="inventory.state.low"></span></span></td>
+                  <td data-role-only="owner" class="is-action"><button type="button" class="bk-btn bk-btn--quiet" id="a2" aria-labelledby="a2t p2"><span id="a2t" data-k="inventory.adjustment.title"></span></button></td>
+                </tr>
+                <tr data-stock-row data-state="out">
+                  <td class="is-head"><a class="bk-table__link bk-clamp-2" id="p3" href="index.html#outside-set" data-fixture>Spidol papan tulis biru</a></td>
+                  <td data-k-label="catalog.field.sku"><span class="bk-mono" data-fixture>ATK-SPB-01</span></td>
+                  <td class="is-num" data-k-label="inventory.stock.col_stock" data-fixture>0 pcs</td>
+                  <td class="is-num" data-k-label="catalog.field.min_stock" data-fixture>12 pcs</td>
+                  <td data-k-label="inventory.stock.col_state"><span class="bk-status bk-status--danger"><span data-icon="danger"></span><span data-k="inventory.state.out"></span></span></td>
+                  <td data-role-only="owner" class="is-action"><button type="button" class="bk-btn bk-btn--quiet" id="a3" aria-labelledby="a3t p3"><span id="a3t" data-k="inventory.adjustment.title"></span></button></td>
+                </tr>
+                <tr data-stock-row data-state="normal">
+                  <td class="is-head"><a class="bk-table__link bk-clamp-2" id="p4" href="index.html#outside-set" data-fixture>Binder kantor dua cincin ukuran folio dengan sampul plastik tebal tahan air dan kantong depan bening untuk label nama</a></td>
+                  <td data-k-label="catalog.field.sku"><span class="bk-mono" data-fixture>ATK-BND-F2C-BENING-TEBAL</span></td>
+                  <td class="is-num" data-k-label="inventory.stock.col_stock" data-fixture>14 pcs</td>
+                  <td class="is-num" data-k-label="catalog.field.min_stock" data-fixture>5 pcs</td>
+                  <td data-k-label="inventory.stock.col_state"><span class="bk-status"><span class="bk-status__dot" aria-hidden="true"></span><span data-k="inventory.state.normal"></span></span></td>
+                  <td data-role-only="owner" class="is-action"><button type="button" class="bk-btn bk-btn--quiet" id="a4" aria-labelledby="a4t p4"><span id="a4t" data-k="inventory.adjustment.title"></span></button></td>
+                </tr>
+                <tr data-stock-row data-state="low">
+                  <td class="is-head"><a class="bk-table__link bk-clamp-2" id="p5" href="index.html#outside-set" data-fixture>Kertas kado motif garis per meter</a></td>
+                  <td data-k-label="catalog.field.sku"><span class="bk-mono" data-fixture>ATK-KK-GRS</span></td>
+                  <td class="is-num" data-k-label="inventory.stock.col_stock" data-fixture>42,5 m</td>
+                  <td class="is-num" data-k-label="catalog.field.min_stock" data-fixture>50 m</td>
+                  <td data-k-label="inventory.stock.col_state"><span class="bk-status bk-status--warning"><span data-icon="warning"></span><span data-k="inventory.state.low"></span></span></td>
+                  <td data-role-only="owner" class="is-action"><button type="button" class="bk-btn bk-btn--quiet" id="a5" aria-labelledby="a5t p5"><span id="a5t" data-k="inventory.adjustment.title"></span></button></td>
+                </tr>
+                <tr data-stock-row data-state="out">
+                  <td class="is-head"><a class="bk-table__link bk-clamp-2" id="p6" href="index.html#outside-set" data-fixture>Lakban bening 48 mm × 100 yard</a></td>
+                  <td data-k-label="catalog.field.sku"><span class="bk-mono" data-fixture>ATK-LKB-48</span></td>
+                  <td class="is-num" data-k-label="inventory.stock.col_stock" data-fixture>0 pcs</td>
+                  <td class="is-num" data-k-label="catalog.field.min_stock" data-fixture>6 pcs</td>
+                  <td data-k-label="inventory.stock.col_state"><span class="bk-status bk-status--danger"><span data-icon="danger"></span><span data-k="inventory.state.out"></span></span></td>
+                  <td data-role-only="owner" class="is-action"><button type="button" class="bk-btn bk-btn--quiet" id="a6" aria-labelledby="a6t p6"><span id="a6t" data-k="inventory.adjustment.title"></span></button></td>
+                </tr>
+                <tr data-stock-row data-state="normal">
+                  <td class="is-head"><a class="bk-table__link bk-clamp-2" id="p7" href="index.html#outside-set" data-fixture>Buku tulis bergaris 58 lembar</a></td>
+                  <td data-k-label="catalog.field.sku"><span class="bk-mono" data-fixture>ATK-BT-58</span></td>
+                  <td class="is-num" data-k-label="inventory.stock.col_stock" data-fixture>120 pcs</td>
+                  <td class="is-num" data-k-label="catalog.field.min_stock" data-fixture>40 pcs</td>
+                  <td data-k-label="inventory.stock.col_state"><span class="bk-status"><span class="bk-status__dot" aria-hidden="true"></span><span data-k="inventory.state.normal"></span></span></td>
+                  <td data-role-only="owner" class="is-action"><button type="button" class="bk-btn bk-btn--quiet" id="a7" aria-labelledby="a7t p7"><span id="a7t" data-k="inventory.adjustment.title"></span></button></td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="bk-load-more"><button type="button" class="bk-btn bk-btn--secondary bk-btn--block" data-k="ux.action.load_more"></button></div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+<div class="bk-live" id="bk-live-polite" aria-live="polite"></div>
+<div class="bk-live" id="bk-live-assertive" aria-live="assertive"></div>
+<script src="assets/bk-copy.js"></script>
+<script src="assets/bk-icons.js"></script>
+<script src="assets/bk-app.js"></script>
+</body>
+</html>

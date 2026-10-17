@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="id" data-accent="green">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preview</title>
+<link rel="stylesheet" href="assets/bk-tokens.css">
+<link rel="stylesheet" href="assets/bk-base.css">
+<link rel="stylesheet" href="assets/bk-components.css">
+</head>
+<!-- KS-10 · UXP-502 Laporan keuangan (Owner report with completeness and the
+     interactive trend chart, D-018, UXA-19). States: ?state=default | incomplete | table -->
+<body data-page="UXP-502" data-title-key="reporting.finance.title" data-layout="side" data-nav="reports" data-sub-area="reports" data-sub="finance" data-role="owner" data-roles="owner">
+<div class="bk-app" id="bk-app">
+  <div class="bk-col">
+    <main id="main" class="bk-main" tabindex="-1">
+      <div data-subnav-host></div>
+      <div class="bk-container">
+        <div class="bk-pagehead">
+          <div class="bk-pagehead__text">
+            <h1 class="bk-title bk-title--shell" tabindex="-1" data-k="reporting.finance.title" data-first-focus></h1>
+            <p class="bk-meta" data-k="reporting.as_of" data-p='{"waktu":"17 Oktober 2026, 13.45.00"}'></p>
+          </div>
+        </div>
+        <div class="bk-stack">
+          <section class="bk-card bk-section" aria-labelledby="period-legend">
+            <fieldset class="bk-seg bk-seg--wrap">
+              <legend class="bk-label bk-legend" id="period-legend" data-k="reporting.period.label"></legend>
+              <div class="bk-seg__opt"><input type="radio" name="period" id="p-today" value="today"><label for="p-today" data-k="reporting.period.today"></label></div>
+              <div class="bk-seg__opt"><input type="radio" name="period" id="p-7" value="7"><label for="p-7" data-k="reporting.period.last_7_days"></label></div>
+              <div class="bk-seg__opt"><input type="radio" name="period" id="p-month" value="month" checked><label for="p-month" data-k="reporting.period.this_month"></label></div>
+              <div class="bk-seg__opt"><input type="radio" name="period" id="p-last" value="last"><label for="p-last" data-k="reporting.period.last_month"></label></div>
+              <div class="bk-seg__opt"><input type="radio" name="period" id="p-custom" value="custom"><label for="p-custom" data-k="reporting.period.custom"></label></div>
+            </fieldset>
+            <div class="bk-custom" id="custom-range" hidden>
+              <div class="bk-field"><label class="bk-label" for="d-start" data-k="reporting.period.start"></label><div class="bk-input"><input id="d-start" class="bk-input__control" type="date"></div></div>
+              <div class="bk-field"><label class="bk-label" for="d-end" data-k="reporting.period.end"></label><div class="bk-input"><input id="d-end" class="bk-input__control" type="date"></div></div>
+              <div class="bk-actions">
+                <button type="button" class="bk-btn bk-btn--primary" data-k="ux.action.apply"></button>
+                <button type="button" class="bk-btn bk-btn--secondary" id="custom-cancel" data-k="ux.action.cancel"></button>
+              </div>
+            </div>
+            <p class="bk-meta bk-mt-4" data-k="reporting.period.range" data-p='{"awal":"01 Oktober 2026","akhir":"17 Oktober 2026"}'></p>
+          </section>
+
+          <div class="bk-notice bk-notice--success" role="status" data-unless="incomplete">
+            <span data-icon="check"></span>
+            <p class="bk-notice__title" data-k="reporting.complete"></p>
+            <p class="bk-notice__body" data-k="reporting.last_correction" data-p='{"waktu":"12 Oktober 2026, 10.04.31"}'></p>
+          </div>
+          <div class="bk-notice bk-notice--warning" role="status" data-when="incomplete">
+            <span data-icon="warning"></span>
+            <p class="bk-notice__title" data-k="ux.state.cost_incomplete.title"></p>
+            <div class="bk-notice__body">
+              <p data-k="ux.state.cost_incomplete.body"></p>
+              <p data-k="reporting.unknown_lines" data-p='{"jumlah":"4"}'></p>
+              <p data-k="reporting.marked_products" data-p='{"jumlah":"1"}'></p>
+            </div>
+            <div class="bk-notice__actions"><a class="bk-btn bk-btn--secondary" href="index.html#outside-set" data-k="costing.worklist.title"></a></div>
+          </div>
+
+          <section class="bk-card" aria-labelledby="figures-title">
+            <h2 class="bk-sr-only" id="figures-title" data-k="reporting.finance.title"></h2>
+            <div class="bk-metrics">
+              <div class="bk-metric"><p class="bk-metric__label" data-k="reporting.figure.gross_sales"></p><p class="bk-metric__value" data-fixture>Rp25.999.000</p><p class="bk-metric__hint" data-k="reporting.figure.gross_sales_help"></p></div>
+              <div class="bk-metric"><p class="bk-metric__label" data-k="reporting.figure.refunds"></p><p class="bk-metric__value" data-fixture>Rp185.000</p></div>
+              <div class="bk-metric"><p class="bk-metric__label" data-k="reporting.figure.net_sales"></p><p class="bk-metric__value" data-fixture>Rp25.814.000</p><p class="bk-metric__hint" data-k="reporting.figure.net_sales_help"></p></div>
+              <div class="bk-metric"><p class="bk-metric__label" data-k="reporting.figure.cogs"></p><p class="bk-metric__value" data-fixture>Rp17.553.500</p><p class="bk-metric__hint" data-unless="incomplete" data-k="reporting.figure.cogs_help"></p><p class="bk-status bk-status--warning" data-when="incomplete"><span data-icon="warning"></span><span data-k="ux.state.cost_incomplete.title"></span></p></div>
+              <div class="bk-metric"><p class="bk-metric__label" data-k="reporting.figure.gross_profit"></p><p class="bk-metric__value" data-fixture>Rp8.260.500</p><p class="bk-metric__hint" data-unless="incomplete" data-k="reporting.figure.gross_profit_help"></p><p class="bk-status bk-status--warning" data-when="incomplete"><span data-icon="warning"></span><span data-k="ux.state.cost_incomplete.title"></span></p></div>
+              <div class="bk-metric" data-unless="incomplete"><p class="bk-metric__label" data-k="reporting.figure.margin"></p><p class="bk-metric__value" data-fixture>32,0%</p><p class="bk-metric__hint" data-k="reporting.figure.margin_help"></p></div>
+            </div>
+          </section>
+
+          <section class="bk-card bk-section" aria-labelledby="trend-title">
+            <div class="bk-section__head">
+              <h2 class="bk-h2" id="trend-title" data-k="reporting.finance.trend"></h2>
+              <button type="button" class="bk-btn bk-btn--secondary" id="toggle-table" aria-pressed="false" aria-controls="trend-table"><span data-k="reporting.finance.show_table" data-toggle-label></span></button>
+            </div>
+            <div class="bk-chart" id="chart" tabindex="0" role="group" data-k-aria="reporting.finance.trend_label" data-p-aria='{"ukuran":"Penjualan neto"}'>
+              <svg viewBox="0 0 720 240" preserveAspectRatio="none" aria-hidden="true" focusable="false"></svg>
+              <div class="bk-chart__tip" id="chart-tip" hidden></div>
+            </div>
+            <div class="bk-live" id="chart-live" aria-live="polite"></div>
+            <p class="bk-chart__range" id="chart-range"><span data-fixture>01 Oktober 2026</span><span data-fixture>17 Oktober 2026</span></p>
+            <div class="bk-table-host">
+              <table class="bk-table" id="trend-table" hidden>
+                <thead><tr><th scope="col" data-k="reporting.finance.table_date"></th><th scope="col" class="is-num" data-k="reporting.figure.net_sales"></th></tr></thead>
+                <tbody id="trend-rows"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+<div class="bk-live" id="bk-live-polite" aria-live="polite"></div>
+<div class="bk-live" id="bk-live-assertive" aria-live="assertive"></div>
+<script src="assets/bk-copy.js"></script>
+<script src="assets/bk-icons.js"></script>
+<script src="assets/bk-app.js"></script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en" data-accent="green">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design system specimen</title>
+<link rel="stylesheet" href="assets/bk-tokens.css">
+<link rel="stylesheet" href="assets/bk-base.css">
+<link rel="stylesheet" href="assets/bk-components.css">
+</head>
+<!-- Review aid of RF-4C: the tokens and components of DESIGN_SYSTEM.md rendered.
+     Labels of the specimen are review chrome in English; component texts are copy keys. -->
+<body data-page="DS" data-layout="none">
+<div id="bk-app">
+<main class="rv-page">
+  <p><a class="rv-back" href="index.html">Index</a></p>
+  <h1>Design system specimen</h1>
+  <p class="rv-lead">Rendered tokens and components of <code>DESIGN_SYSTEM.md</code>. Contrast ratios are WCAG 2.x values computed from the token colours (DESIGN_SYSTEM section 3.5).</p>
+
+  <h2>Accent set (brand slots)</h2>
+  <p>The shop chooses one accent in Profil usaha; the stored value is <code>accent_token</code>. Names are RF-4C proposals for COPY_DECK change control.</p>
+  <div class="rv-grid">
+    <div class="rv-accent" data-accent="green"><span class="rv-accent__name"><span data-k="config.profile.accent_option.green"></span> · <code>green</code> (default)</span><span class="rv-accent__bar"><i class="rv-c rv-c--p"></i><i class="rv-c rv-c--s"></i><i class="rv-c rv-c--t150"></i><i class="rv-c rv-c--t50"></i></span><span class="bk-meta">White on primary 6.69:1 · ring on canvas 6.26:1</span><button type="button" class="bk-btn bk-btn--primary bk-btn--lg" data-k="sales.cart.pay"></button></div>
+    <div class="rv-accent" data-accent="teal"><span class="rv-accent__name"><span data-k="config.profile.accent_option.teal"></span> · <code>teal</code></span><span class="rv-accent__bar"><i class="rv-c rv-c--p"></i><i class="rv-c rv-c--s"></i><i class="rv-c rv-c--t150"></i><i class="rv-c rv-c--t50"></i></span><span class="bk-meta">White on primary 7.31:1 · ring on canvas 6.85:1</span><button type="button" class="bk-btn bk-btn--primary bk-btn--lg" data-k="sales.cart.pay"></button></div>
+    <div class="rv-accent" data-accent="blue"><span class="rv-accent__name"><span data-k="config.profile.accent_option.blue"></span> · <code>blue</code></span><span class="rv-accent__bar"><i class="rv-c rv-c--p"></i><i class="rv-c rv-c--s"></i><i class="rv-c rv-c--t150"></i><i class="rv-c rv-c--t50"></i></span><span class="bk-meta">White on primary 7.55:1 · ring on canvas 7.08:1</span><button type="button" class="bk-btn bk-btn--primary bk-btn--lg" data-k="sales.cart.pay"></button></div>
+    <div class="rv-accent" data-accent="purple"><span class="rv-accent__name"><span data-k="config.profile.accent_option.purple"></span> · <code>purple</code></span><span class="rv-accent__bar"><i class="rv-c rv-c--p"></i><i class="rv-c rv-c--s"></i><i class="rv-c rv-c--t150"></i><i class="rv-c rv-c--t50"></i></span><span class="bk-meta">White on primary 8.84:1 · ring on canvas 8.28:1</span><button type="button" class="bk-btn bk-btn--primary bk-btn--lg" data-k="sales.cart.pay"></button></div>
+    <div class="rv-accent" data-accent="graphite"><span class="rv-accent__name"><span data-k="config.profile.accent_option.graphite"></span> · <code>graphite</code></span><span class="rv-accent__bar"><i class="rv-c rv-c--p"></i><i class="rv-c rv-c--s"></i><i class="rv-c rv-c--t150"></i><i class="rv-c rv-c--t50"></i></span><span class="bk-meta">White on primary 11.80:1 · ring on canvas 11.06:1</span><button type="button" class="bk-btn bk-btn--primary bk-btn--lg" data-k="sales.cart.pay"></button></div>
+  </div>
+
+  <h2>Neutrals, text and status (fixed tokens)</h2>
+  <div class="rv-swatches">
+    <div class="rv-swatch"><div class="rv-swatch__chip rv-bg-canvas"></div><div class="rv-swatch__meta"><b>canvas #f7f8f3</b>page background</div></div>
+    <div class="rv-swatch"><div class="rv-swatch__chip rv-bg-surface"></div><div class="rv-swatch__meta"><b>surface #ffffff</b>cards, bars</div></div>
+    <div class="rv-swatch"><div class="rv-swatch__chip rv-bg-sunken"></div><div class="rv-swatch__meta"><b>sunken #f2f3ee</b>table heads, wells</div></div>
+    <div class="rv-swatch"><div class="rv-swatch__chip rv-bg-input"></div><div class="rv-swatch__meta"><b>border-input #858890</b>3.55:1 on white (BK)</div></div>
+    <div class="rv-swatch"><div class="rv-swatch__chip rv-bg-text"></div><div class="rv-swatch__meta"><b>text-primary #0f1014</b>19.0:1 on white</div></div>
+    <div class="rv-swatch"><div class="rv-swatch__chip rv-bg-text2"></div><div class="rv-swatch__meta"><b>text-secondary #55565c</b>7.3:1 white · 6.9 canvas</div></div>
+    <div class="rv-swatch"><div class="rv-swatch__chip rv-bg-text3"></div><div class="rv-swatch__meta"><b>text-tertiary #6b6d73</b>5.2:1 white · 4.6 sunken</div></div>
+  </div>
+  <div class="rv-row">
+    <span class="bk-pill bk-pill--danger"><span data-icon="danger" data-icon-class="bk-icon--sm"></span><span data-k="inventory.state.out"></span></span>
+    <span class="bk-pill bk-pill--warning"><span data-icon="warning" data-icon-class="bk-icon--sm"></span><span data-k="inventory.state.low"></span></span>
+    <span class="bk-pill"><span data-k="inventory.state.normal"></span></span>
+    <span class="bk-pill bk-pill--pending"><span data-icon="clock" data-icon-class="bk-icon--sm"></span><span data-k="ux.state.uncertain.title"></span></span>
+    <span class="bk-pill bk-pill--pending"><span data-k="ux.state.cost_unknown.title"></span></span>
+    <span class="bk-pill bk-pill--success"><span data-icon="check" data-icon-class="bk-icon--sm"></span><span data-k="reporting.complete"></span></span>
+    <span class="bk-pill bk-pill--info"><span data-k="ux.state.inactive.label"></span></span>
+  </div>
+  <div class="rv-row">
+    <span class="bk-status bk-status--danger"><span data-icon="danger"></span><span data-k="inventory.state.out"></span></span>
+    <span class="bk-status bk-status--warning"><span data-icon="warning"></span><span data-k="inventory.state.low"></span></span>
+    <span class="bk-status"><span class="bk-status__dot" aria-hidden="true"></span><span data-k="inventory.state.normal"></span></span>
+    <span class="bk-status bk-status--inactive"><span class="bk-status__dot" aria-hidden="true"></span><span data-k="ux.state.inactive.label"></span></span>
+    <span class="bk-status bk-status--warning"><span data-icon="warning"></span><span data-fixture>&minus;Rp2.000</span>&nbsp;<span data-k="ux.format.variance_short"></span></span>
+  </div>
+
+  <h2>Typography (Inter, text cut)</h2>
+  <div class="rv-specimen rv-type">
+    <code>display 40/48 700</code><span class="bk-display" data-fixture>Rp117.000</span>
+    <code>title 28/36 700</code><span class="bk-title" data-k="sales.payment.title"></span>
+    <code>heading 20/28 600</code><span class="bk-h2" data-k="reporting.home.attention"></span>
+    <code>subheading 16/24 600</code><span class="bk-h3" data-k="sales.cart.title"></span>
+    <code>body 14/20 400</code><span data-k="cash.open.intro"></span>
+    <code>label 14/20 500</code><span class="bk-label" data-k="sales.payment.tendered"></span>
+    <code>meta 12/16 400</code><span class="bk-metric__hint" data-k="reporting.figure.net_sales_help"></span>
+    <code>mono 13/18</code><span class="bk-mono" data-fixture>ATK-BND-F2C-BENING-TEBAL</span>
+  </div>
+
+  <h2>Buttons and targets (every target ≥ 44 × 44 px)</h2>
+  <div class="rv-specimen">
+    <div class="rv-row">
+      <button type="button" class="bk-btn bk-btn--primary" data-k="ux.action.review"></button>
+      <button type="button" class="bk-btn bk-btn--secondary" data-k="ux.action.cancel"></button>
+      <button type="button" class="bk-btn bk-btn--quiet" data-k="ux.action.reload"></button>
+      <button type="button" class="bk-btn bk-btn--danger" data-k="sales.cart.clear"></button>
+      <button type="button" class="bk-btn bk-btn--secondary bk-btn--icon" data-k-aria="ux.nav.menu_open"><span data-icon="menu"></span></button>
+    </div>
+    <div class="rv-row">
+      <button type="button" class="bk-btn bk-btn--primary" data-k="ux.action.review"></button><code>44</code>
+      <button type="button" class="bk-btn bk-btn--primary bk-btn--lg" data-k="ux.action.review"></button><code>48</code>
+      <button type="button" class="bk-btn bk-btn--primary bk-btn--xl" data-k="sales.receipt.new_sale"></button><code>56</code>
+    </div>
+    <div class="rv-row">
+      <button type="button" class="bk-btn bk-btn--primary bk-btn--final" aria-disabled="true" aria-describedby="sp-reason"><span data-k="sales.payment.final_cash"></span></button>
+    </div>
+    <p class="bk-reason" id="sp-reason"><span data-icon="info"></span><span data-k="sales.payment.disabled_tender" data-p='{"uang":"Rp2.000"}'></span></p>
+    <div class="rv-row"><button type="button" class="bk-btn bk-btn--primary bk-btn--lg" aria-busy="true" aria-disabled="true"><span class="bk-spinner" aria-hidden="true"></span><span data-k="ux.state.submitting.title"></span></button><span class="bk-kbd bk-kbd--show" aria-hidden="true">Ctrl+Enter</span></div>
+  </div>
+
+  <h2>Fields and choices</h2>
+  <div class="rv-specimen bk-form">
+    <div class="bk-field"><label class="bk-label" for="sp-search" data-k="sales.till.search"></label><div class="bk-input bk-input--lg"><span class="bk-input__icon" data-icon="search"></span><input id="sp-search" class="bk-input__control" type="search" data-k-ph="sales.till.search_hint"></div></div>
+    <div class="bk-field"><label class="bk-label" for="sp-money" data-k="cash.open.opening_cash"></label><div class="bk-input bk-input--xl bk-input--num"><span class="bk-input__affix">Rp</span><input id="sp-money" class="bk-input__control" type="text" inputmode="numeric" value="200.000"></div><p class="bk-hint" data-k="cash.open.opening_cash_help"></p></div>
+    <div class="bk-field"><label class="bk-label" for="sp-qty" data-k="inventory.line.quantity"></label><div class="bk-input bk-input--num is-invalid"><input id="sp-qty" class="bk-input__control" type="text" inputmode="decimal" value="2,555" aria-invalid="true" aria-describedby="sp-qty-e"><span class="bk-input__affix bk-input__affix--end" data-fixture>m</span></div><p class="bk-error" id="sp-qty-e"><span data-icon="danger" data-icon-class="bk-icon--sm"></span><span data-k="ux.state.validation.title"></span></p></div>
+    <fieldset class="bk-seg bk-seg--xl"><legend class="bk-label bk-legend" data-k="sales.payment.method"></legend>
+      <div class="bk-seg__opt"><input type="radio" name="sp-m" id="sp-m1" checked><label for="sp-m1"><span data-icon="cash" data-icon-class="bk-icon--lg"></span><span data-k="sales.payment.method_cash"></span></label></div>
+      <div class="bk-seg__opt"><input type="radio" name="sp-m" id="sp-m2"><label for="sp-m2"><span data-icon="bank" data-icon-class="bk-icon--lg"></span><span data-k="sales.payment.method_transfer"></span></label></div>
+    </fieldset>
+    <div class="bk-chips"><button type="button" class="bk-chip" aria-pressed="true"><span data-icon="check"></span><span data-k="inventory.state.out"></span></button><button type="button" class="bk-chip" aria-pressed="false"><span data-icon="check"></span><span data-k="inventory.state.low"></span></button></div>
+    <label class="bk-check"><input type="checkbox" checked><span data-k="costing.field.cost_unknown"></span></label>
+  </div>
+
+  <h2>Notices and recovery</h2>
+  <div class="bk-stack">
+    <div class="bk-notice bk-notice--pending"><span data-icon="clock"></span><p class="bk-notice__title" data-k="ux.state.uncertain.title"></p><div class="bk-notice__body"><p data-k="ux.state.uncertain.body"></p><p><strong data-k="commands.family.sale.must_not"></strong></p></div><div class="bk-notice__actions"><button type="button" class="bk-btn bk-btn--primary" data-k="ux.action.resend"></button><button type="button" class="bk-btn bk-btn--secondary" data-k="ux.action.check_status"></button></div></div>
+    <div class="bk-notice bk-notice--danger"><span data-icon="danger"></span><p class="bk-notice__title" data-k="ux.state.load_failed.title"></p><p class="bk-notice__body" data-k="ux.state.load_failed.body"></p></div>
+    <div class="bk-notice bk-notice--warning"><span data-icon="warning"></span><p class="bk-notice__title" data-k="ux.state.cost_incomplete.title"></p></div>
+    <div class="bk-notice bk-notice--info"><span data-icon="info"></span><p class="bk-notice__body" data-k="inventory.receipt_new.draft_note"></p></div>
+    <div class="bk-notice bk-notice--success"><span data-icon="check"></span><p class="bk-notice__title" data-k="inventory.receipt_new.success"></p></div>
+  </div>
+
+  <h2>Dialog (shown inline)</h2>
+  <div class="bk-dialog rv-dialog">
+    <h3 class="bk-dialog__title" data-k="cash.close.review_title"></h3>
+    <div class="bk-dialog__body"><dl class="bk-kv"><dt data-k="cash.figure.physical_cash"></dt><dd data-fixture>Rp1.204.500</dd><dt data-k="cash.figure.expected_cash"></dt><dd data-fixture>Rp1.206.500</dd><div class="bk-kv__strong"><dt data-k="cash.figure.variance"></dt><dd><span class="bk-status bk-status--warning"><span data-icon="warning"></span><span data-k="ux.format.variance" data-p='{"uang":"−Rp2.000","keterangan":"kurang"}'></span></span></dd></div></dl><p class="bk-notice bk-notice--quiet bk-notice--text" data-k="cash.close.review_note"></p></div>
+    <div class="bk-dialog__actions"><button type="button" class="bk-btn bk-btn--secondary bk-btn--lg" data-k="ux.action.edit_again"></button><button type="button" class="bk-btn bk-btn--primary bk-btn--lg" data-k="cash.close.confirm"></button></div>
+  </div>
+</main>
+</div>
+<div class="bk-live" id="bk-live-polite" aria-live="polite"></div>
+<div class="bk-live" id="bk-live-assertive" aria-live="assertive"></div>
+<script src="assets/bk-copy.js"></script>
+<script src="assets/bk-icons.js"></script>
+<script src="assets/bk-app.js"></script>
+</body>
+</html>

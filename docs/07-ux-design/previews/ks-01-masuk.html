@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="id" data-accent="green">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preview</title>
+<link rel="stylesheet" href="assets/bk-tokens.css">
+<link rel="stylesheet" href="assets/bk-base.css">
+<link rel="stylesheet" href="assets/bk-components.css">
+</head>
+<!-- KS-01 · UXP-001 Masuk (pre-authentication): no shell, no business data, no codename,
+     always the default accent. States: ?state=default | failed | signed-out | throttled -->
+<body data-page="UXP-001" data-title-key="access.sign_in.title" data-layout="none">
+<div class="bk-app" id="bk-app" data-layout="none">
+  <main id="main" class="bk-auth" tabindex="-1">
+    <div class="bk-auth__card">
+      <h1 class="bk-title" tabindex="-1" data-k="access.sign_in.title"></h1>
+      <div class="bk-notice bk-notice--quiet" role="status" data-when="signed-out">
+        <span data-icon="info"></span>
+        <p class="bk-notice__title" data-k="ux.state.signed_out.title"></p>
+        <p class="bk-notice__body" data-k="ux.state.signed_out.body"></p>
+      </div>
+      <div class="bk-notice bk-notice--danger" role="alert" data-when="failed">
+        <span data-icon="danger"></span>
+        <p class="bk-notice__title" data-k="ux.state.signin_failed.sign_in.title"></p>
+        <p class="bk-notice__body" data-k="ux.state.signin_failed.sign_in.body"></p>
+      </div>
+      <div class="bk-notice bk-notice--warning" role="alert" data-when="throttled">
+        <span data-icon="clock"></span>
+        <p class="bk-notice__title" data-k="ux.state.throttled.title"></p>
+        <p class="bk-notice__body" data-k="ux.state.throttled.body" data-p='{"durasi":"60 detik"}'></p>
+      </div>
+      <form id="signin" class="bk-form" novalidate>
+        <div class="bk-field">
+          <label class="bk-label" for="email" data-k="access.sign_in.email"></label>
+          <div class="bk-input bk-input--lg">
+            <input id="email" class="bk-input__control" type="email" inputmode="email" autocomplete="username" spellcheck="false" required data-first-focus>
+          </div>
+        </div>
+        <div class="bk-field">
+          <label class="bk-label" for="pw" data-k="access.sign_in.password"></label>
+          <div class="bk-input bk-input--lg">
+            <input id="pw" class="bk-input__control" type="password" autocomplete="current-password" required>
+            <button type="button" class="bk-input__btn" id="pw-toggle" aria-pressed="false" data-k-aria="ux.action.show_password" data-k-title="ux.action.show_password"><span data-icon="eye"></span></button>
+          </div>
+        </div>
+        <button type="submit" class="bk-btn bk-btn--primary bk-btn--lg bk-btn--block" data-k="access.sign_in.submit"></button>
+      </form>
+    </div>
+  </main>
+</div>
+<div class="bk-live" id="bk-live-polite" aria-live="polite"></div>
+<div class="bk-live" id="bk-live-assertive" aria-live="assertive"></div>
+<script src="assets/bk-copy.js"></script>
+<script src="assets/bk-icons.js"></script>
+<script src="assets/bk-app.js"></script>
+</body>
+</html>

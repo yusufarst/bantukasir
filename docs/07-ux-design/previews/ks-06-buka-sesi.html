@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="id" data-accent="green">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preview</title>
+<link rel="stylesheet" href="assets/bk-tokens.css">
+<link rel="stylesheet" href="assets/bk-base.css">
+<link rel="stylesheet" href="assets/bk-components.css">
+</head>
+<!-- KS-06 · UXP-104 Buka sesi kas (command page with a review dialog, BR-CASH-05).
+     States: ?state=default | review | no-register -->
+<body data-page="UXP-104" data-title-key="cash.open.title" data-layout="rail" data-nav="till" data-role="cashier" data-roles="cashier owner combined">
+<div class="bk-app" id="bk-app">
+  <div class="bk-col">
+    <main id="main" class="bk-main" tabindex="-1">
+      <div class="bk-container bk-container--focused">
+        <div class="bk-pagehead">
+          <div class="bk-pagehead__text">
+            <h1 class="bk-title bk-title--shell" tabindex="-1" data-k="cash.open.title"></h1>
+            <p class="bk-subtitle" data-k="cash.open.intro"></p>
+          </div>
+        </div>
+        <div class="bk-notice bk-notice--warning" role="alert" data-when="no-register">
+          <span data-icon="warning"></span>
+          <p class="bk-notice__title" data-k="ux.state.no_register.title"></p>
+          <p class="bk-notice__body" data-k="ux.state.no_register.body"></p>
+        </div>
+        <form class="bk-card bk-section bk-form" novalidate data-unless="no-register">
+          <fieldset class="bk-seg">
+            <legend class="bk-label bk-legend" data-k="cash.open.register"></legend>
+            <div class="bk-seg__opt"><input type="radio" name="register" id="reg-1" value="Laci 1"><label for="reg-1"><span data-icon="drawer"></span><span data-fixture>Laci 1</span></label></div>
+            <div class="bk-seg__opt"><input type="radio" name="register" id="reg-2" value="Laci 2"><label for="reg-2"><span data-icon="drawer"></span><span data-fixture>Laci 2</span></label></div>
+          </fieldset>
+          <div class="bk-field">
+            <label class="bk-label" for="opening" data-k="cash.open.opening_cash"></label>
+            <div class="bk-input bk-input--xl bk-input--num">
+              <span class="bk-input__affix">Rp</span>
+              <input id="opening" class="bk-input__control" type="text" inputmode="numeric" autocomplete="off" aria-describedby="opening-hint">
+            </div>
+            <p class="bk-hint" id="opening-hint" data-k="cash.open.opening_cash_help"></p>
+          </div>
+          <div class="bk-actions">
+            <button type="button" class="bk-btn bk-btn--primary bk-btn--lg" id="review-btn" data-dialog-open="open-review" data-ctrl-enter
+              data-k-aria="ux.action.review" data-shortcut="Ctrl+Enter" aria-keyshortcuts="Control+Enter">
+              <span data-k="ux.action.review"></span><kbd class="bk-kbd" aria-hidden="true">Ctrl+Enter</kbd>
+            </button>
+            <a class="bk-btn bk-btn--secondary bk-btn--lg" href="index.html#outside-set" data-k="ux.action.cancel"></a>
+          </div>
+          <p class="bk-reason" id="review-reason" hidden><span data-icon="info"></span><span data-k="cash.open.disabled"></span></p>
+        </form>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="bk-dialog-layer" id="open-review" hidden>
+  <div class="bk-dialog" role="dialog" aria-modal="true" aria-labelledby="open-review-title" aria-describedby="open-review-body">
+    <h2 class="bk-dialog__title" id="open-review-title" data-k="cash.open.review_title"></h2>
+    <div class="bk-dialog__body"><p id="open-review-body"></p></div>
+    <div class="bk-dialog__actions">
+      <button type="button" class="bk-btn bk-btn--secondary bk-btn--lg" data-dialog-close data-initial-focus
+        data-k-aria="ux.action.edit_again" data-shortcut="Esc" aria-keyshortcuts="Escape"><span data-k="ux.action.edit_again"></span></button>
+      <button type="button" class="bk-btn bk-btn--primary bk-btn--lg" id="open-confirm" data-ctrl-enter
+        data-k-aria="cash.open.confirm" data-shortcut="Ctrl+Enter" aria-keyshortcuts="Control+Enter">
+        <span data-k="cash.open.confirm"></span><kbd class="bk-kbd" aria-hidden="true">Ctrl+Enter</kbd>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="bk-live" id="bk-live-polite" aria-live="polite"></div>
+<div class="bk-live" id="bk-live-assertive" aria-live="assertive"></div>
+<script src="assets/bk-copy.js"></script>
+<script src="assets/bk-icons.js"></script>
+<script src="assets/bk-app.js"></script>
+</body>
+</html>

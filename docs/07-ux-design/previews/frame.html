@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en" data-accent="green">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Viewport frame</title>
+<link rel="stylesheet" href="assets/bk-tokens.css">
+<link rel="stylesheet" href="assets/bk-base.css">
+<link rel="stylesheet" href="assets/bk-components.css">
+</head>
+<!-- Review aid of RF-4C: shows one preview at an exact viewport size, scaled to fit the
+     window. The page inside lays out at the stated size; only the picture is scaled.
+     ?src=<file>&w=<css px>&h=<css px> -->
+<body>
+<nav class="rv-frame-bar" aria-label="Viewport">
+  <a href="index.html">Index</a>
+  <span id="rv-name"></span>
+  <span id="rv-sizes"></span>
+  <a id="rv-open" href="#">Open alone</a>
+</nav>
+<div class="rv-stage" id="rv-stage"><div class="rv-stage__box" id="rv-box"><iframe id="rv-frame" title="Preview"></iframe></div></div>
+<script>
+(function () {
+  var q = new URLSearchParams(location.search);
+  var src = q.get('src') || 'ks-03-kasir.html';
+  if (!/^[a-z0-9-]+\.html(\?[a-z0-9=&%.-]*)?$/i.test(src)) src = 'ks-03-kasir.html';
+  var w = Math.max(320, Math.min(1920, parseInt(q.get('w'), 10) || 1366));
+  var h = Math.max(320, Math.min(1200, parseInt(q.get('h'), 10) || 768));
+  var sizes = [[1366, 768], [1024, 768], [768, 1024], [640, 400], [390, 844], [360, 740]];
+  var frame = document.getElementById('rv-frame'), box = document.getElementById('rv-box');
+  frame.src = src; frame.width = w; frame.height = h;
+  document.getElementById('rv-name').textContent = src + ' · ' + w + ' × ' + h;
+  document.getElementById('rv-open').href = src;
+  document.getElementById('rv-sizes').innerHTML = sizes.map(function (s) {
+    var cur = s[0] === w && s[1] === h ? ' aria-current="true"' : '';
+    return '<a href="frame.html?src=' + encodeURIComponent(src) + '&w=' + s[0] + '&h=' + s[1] + '"' + cur + '>' + s[0] + ' × ' + s[1] + '</a>';
+  }).join(' ');
+  function fit() {
+    var stage = document.getElementById('rv-stage');
+    var availW = stage.clientWidth - 32, availH = window.innerHeight - stage.getBoundingClientRect().top - 32;
+    var s = Math.min(1, availW / w, availH / h);
+    box.style.width = w + 'px'; box.style.height = h + 'px';
+    box.style.transform = 'scale(' + s + ')';
+    stage.style.height = (h * s + 32) + 'px';
+  }
+  window.addEventListener('resize', fit);
+  fit();
+})();
+</script>
+</body>
+</html>

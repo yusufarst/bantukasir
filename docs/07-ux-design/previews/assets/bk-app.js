@@ -56,6 +56,18 @@
     var digits = String(text || '').replace(/[^0-9]/g, '');
     return digits === '' ? null : parseInt(digits, 10);
   }
+  // A text set after boot keeps its provenance: a copy key, or fixture data.
+  function setCopy(el, key, params) {
+    el.textContent = t(key, params);
+    el.setAttribute('data-k', key);
+    if (params) el.setAttribute('data-p', JSON.stringify(params)); else el.removeAttribute('data-p');
+    el.removeAttribute('data-fixture');
+  }
+  function setData(el, text) {
+    el.textContent = text;
+    el.setAttribute('data-fixture', '');
+    el.removeAttribute('data-k'); el.removeAttribute('data-p');
+  }
   window.BK = { t: t, rp: rp, qty: qty };
 
   function renderCopy(root) {
@@ -151,7 +163,7 @@
 
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function initials(name) { return name.split(/\s+/).map(function (w) { return w.charAt(0); }).join('').slice(0, 2).toUpperCase(); }
-  function shopMark() { return '<span class="bk-shop__mark" aria-hidden="true">' + esc(initials(SHOP)) + '</span>'; }
+  function shopMark() { return '<span class="bk-shop__mark" aria-hidden="true" data-fixture>' + esc(initials(SHOP)) + '</span>'; }
 
   function navItemsHTML(kind) {
     var cur = body.getAttribute('data-nav');
@@ -169,10 +181,10 @@
       }
       if (kind === 'rail') {
         return '<li><a class="bk-rail__link" href="' + n.href + '"' + current + '>' + window.BK_ICON(n.icon, 'bk-icon--lg') +
-          '<span class="bk-tip">' + label + '</span>' + badge + '</a></li>';
+          '<span class="bk-tip" data-k="' + n.key + '">' + label + '</span>' + badge + '</a></li>';
       }
       return '<li><a class="bk-nav__link" href="' + n.href + '"' + current + '>' + window.BK_ICON(n.icon, 'bk-icon--lg') +
-        '<span class="bk-nav__label">' + label + '</span>' + badge + '</a></li>';
+        '<span class="bk-nav__label" data-k="' + n.key + '">' + label + '</span>' + badge + '</a></li>';
     }).join('');
   }
 
@@ -182,14 +194,14 @@
     var name = esc(u.name);
     var label = esc(t('ux.shell.account_menu', { nama: u.name }));
     var menuId = 'bk-account-menu-' + where;
-    var items = '<a class="bk-menu__item" role="menuitem" href="' + OUT + '">' + window.BK_ICON('user') + '<span>' + esc(t('access.account.title')) + '</span></a>';
+    var items = '<a class="bk-menu__item" role="menuitem" href="' + OUT + '">' + window.BK_ICON('user') + '<span data-k="access.account.title">' + esc(t('access.account.title')) + '</span></a>';
     if (unresolved) {
-      items += '<a class="bk-menu__item" role="menuitem" href="' + OUT + '">' + window.BK_ICON('clock') + '<span>' + esc(t('commands.unresolved.menu_item', { jumlah: 1 })) + '</span></a>';
+      items += '<a class="bk-menu__item" role="menuitem" href="' + OUT + '">' + window.BK_ICON('clock') + '<span data-k="commands.unresolved.menu_item" data-p=\'{"jumlah":"1"}\'>' + esc(t('commands.unresolved.menu_item', { jumlah: 1 })) + '</span></a>';
     }
-    items += '<div class="bk-menu__sep" role="separator"></div><a class="bk-menu__item bk-menu__item--danger" role="menuitem" href="ks-01-masuk.html?state=signed-out">' + window.BK_ICON('logout') + '<span>' + esc(t('access.sign_out')) + '</span></a>';
-    var visible = where === 'side' ? '<span class="bk-account__name">' + name + '</span>' : '';
+    items += '<div class="bk-menu__sep" role="separator"></div><a class="bk-menu__item bk-menu__item--danger" role="menuitem" href="ks-01-masuk.html?state=signed-out">' + window.BK_ICON('logout') + '<span data-k="access.sign_out">' + esc(t('access.sign_out')) + '</span></a>';
+    var visible = where === 'side' ? '<span class="bk-account__name" data-fixture>' + name + '</span>' : '';
     return '<div class="bk-account"><button type="button" class="bk-account__btn" aria-haspopup="menu" aria-expanded="false" aria-controls="' + menuId + '" aria-label="' + label + '">' +
-      '<span class="bk-avatar" aria-hidden="true">' + esc(initials(u.name)) + '</span>' + visible + '</button>' +
+      '<span class="bk-avatar" aria-hidden="true" data-fixture>' + esc(initials(u.name)) + '</span>' + visible + '</button>' +
       '<div class="bk-menu" role="menu" id="' + menuId + '" aria-label="' + label + '" hidden>' + items + '</div></div>';
   }
 
@@ -202,10 +214,10 @@
     var navLabel = esc(t('ux.nav.main'));
     var shell;
     if (layout === 'rail') {
-      shell = '<header class="bk-rail" role="banner"><span class="bk-shop__mark" role="img" aria-label="' + esc(SHOP) + '">' + esc(initials(SHOP)) + '</span>' +
+      shell = '<header class="bk-rail" role="banner"><span class="bk-shop__mark" role="img" aria-label="' + esc(SHOP) + '" data-fixture>' + esc(initials(SHOP)) + '</span>' +
         '<nav class="bk-nav" aria-label="' + navLabel + '"><ul class="bk-rail__list" role="list">' + navItemsHTML('rail') + '</ul></nav>' + accountHTML('rail') + '</header>';
     } else {
-      shell = '<header class="bk-sidenav" role="banner"><div class="bk-shop">' + shopMark() + '<span class="bk-shop__name">' + esc(SHOP) + '</span></div>' +
+      shell = '<header class="bk-sidenav" role="banner"><div class="bk-shop">' + shopMark() + '<span class="bk-shop__name" data-fixture>' + esc(SHOP) + '</span></div>' +
         '<nav class="bk-nav" aria-label="' + navLabel + '"><ul class="bk-nav__list" role="list">' + navItemsHTML('side') + '</ul></nav>' + accountHTML('side') + '</header>';
     }
     app.insertAdjacentHTML('afterbegin', shell);
@@ -213,12 +225,12 @@
     var titleKey = body.getAttribute('data-title-key');
     var top = '<header class="bk-topbar" role="banner">' +
       '<button type="button" class="bk-btn bk-btn--quiet bk-btn--icon" data-drawer-open aria-expanded="false" aria-controls="bk-drawer" aria-label="' + esc(t('ux.nav.menu_open')) + '">' + window.BK_ICON('menu', 'bk-icon--lg') + '</button>' +
-      '<p class="bk-topbar__title">' + esc(t(titleKey)) + '</p>' + accountHTML('top') + '</header>';
+      '<p class="bk-topbar__title" data-k="' + titleKey + '">' + esc(t(titleKey)) + '</p>' + accountHTML('top') + '</header>';
     col.insertAdjacentHTML('afterbegin', top);
 
     var drawer = '<div class="bk-drawer-layer" id="bk-drawer" hidden><div class="bk-drawer-layer__scrim" data-drawer-close></div>' +
       '<div class="bk-drawer" role="dialog" aria-modal="true" aria-label="' + navLabel + '">' +
-      '<div class="bk-drawer__head"><div class="bk-shop">' + shopMark() + '<span class="bk-shop__name">' + esc(SHOP) + '</span></div>' +
+      '<div class="bk-drawer__head"><div class="bk-shop">' + shopMark() + '<span class="bk-shop__name" data-fixture>' + esc(SHOP) + '</span></div>' +
       '<button type="button" class="bk-btn bk-btn--quiet bk-btn--icon" data-drawer-close aria-label="' + esc(t('ux.nav.menu_close')) + '">' + window.BK_ICON('close', 'bk-icon--lg') + '</button></div>' +
       '<nav class="bk-nav" aria-label="' + navLabel + '"><ul class="bk-nav__list" role="list">' + navItemsHTML('side') + '</ul></nav></div></div>';
     body.insertAdjacentHTML('beforeend', drawer);
@@ -228,8 +240,8 @@
     var bq = Q.get('banner');
     var showUnresolved = bq === 'unresolved' || body.getAttribute('data-unresolved') === '1' || /unresolved|uncertain|held/.test(Q.get('state') || '');
     if (showUnresolved) {
-      banners += '<div class="bk-banner" role="region" aria-label="' + esc(t('commands.unresolved.banner')) + '"><p class="bk-banner__text">' + window.BK_ICON('clock') + '<span>' + esc(t('commands.unresolved.banner')) + '</span></p>' +
-        '<a class="bk-btn bk-btn--secondary" href="' + OUT + '">' + esc(t('ux.action.open_unresolved')) + '</a></div>';
+      banners += '<div class="bk-banner" role="region" aria-label="' + esc(t('commands.unresolved.banner')) + '"><p class="bk-banner__text">' + window.BK_ICON('clock') + '<span data-k="commands.unresolved.banner">' + esc(t('commands.unresolved.banner')) + '</span></p>' +
+        '<a class="bk-btn bk-btn--secondary" href="' + OUT + '" data-k="ux.action.open_unresolved">' + esc(t('ux.action.open_unresolved')) + '</a></div>';
     }
     if (bq === 'onboarding') {
       banners += '<div class="bk-banner bk-banner--warning" role="region" aria-label="' + esc(t('ux.state.onboarding.title')) + '"><p class="bk-banner__text">' + window.BK_ICON('warning') + '<span><strong>' + esc(t('ux.state.onboarding.title')) + '</strong> ' + esc(t('ux.state.onboarding.body')) + '</span></p>' +
@@ -248,14 +260,14 @@
       var tabs = '<nav class="bk-subnav" aria-label="' + aria + '"><ul class="bk-subnav__list" role="list">' + items.map(function (s) {
         var c = s.id === cur ? ' aria-current="' + curState + '"' : '';
         var badge = s.badge ? '<span class="bk-badge" aria-hidden="true">' + s.badge + '</span><span class="bk-sr-only">' + esc(t('ux.nav.incidents_badge.label', { jumlah: s.badge })) + '</span>' : '';
-        return '<li><a class="bk-subnav__link" href="' + s.href + '"' + c + '>' + esc(t(s.key)) + badge + '</a></li>';
+        return '<li><a class="bk-subnav__link" href="' + s.href + '"' + c + '><span data-k="' + s.key + '">' + esc(t(s.key)) + '</span>' + badge + '</a></li>';
       }).join('') + '</ul></nav>';
       var curItem = items.filter(function (s) { return s.id === cur; })[0] || items[0];
       var menu = '<nav class="bk-submenu" aria-label="' + aria + '"><button type="button" class="bk-submenu__btn" aria-haspopup="true" aria-expanded="false" aria-controls="bk-submenu-list">' +
-        '<span>' + esc(t(curItem.key)) + '</span>' + window.BK_ICON('chevron-down') + '</button>' +
+        '<span data-k="' + curItem.key + '">' + esc(t(curItem.key)) + '</span>' + window.BK_ICON('chevron-down') + '</button>' +
         '<div class="bk-menu" id="bk-submenu-list" hidden><ul role="list">' + items.map(function (s) {
           var c = s.id === cur ? ' aria-current="' + curState + '"' : '';
-          return '<li><a class="bk-menu__item" href="' + s.href + '"' + c + '>' + esc(t(s.key)) + '</a></li>';
+          return '<li><a class="bk-menu__item" href="' + s.href + '"' + c + ' data-k="' + s.key + '">' + esc(t(s.key)) + '</a></li>';
         }).join('') + '</ul></div></nav>';
       var host = document.querySelector('[data-subnav-host]');
       if (host) host.innerHTML = tabs + menu;
@@ -411,12 +423,17 @@
     el.click();
     return true;
   }
+  // A focused final action or print button ignores Enter; pointer, Space and Ctrl+Enter remain (UXA-10).
+  var NO_ENTER = '.bk-btn--final[data-ctrl-enter], .bk-dialog [data-ctrl-enter], #print';
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.ctrlKey && e.target.closest && e.target.closest(NO_ENTER)) e.preventDefault();
+  }, true);
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' && e.ctrlKey) {
       if (e.repeat || !ctrlEnterArmed) { e.preventDefault(); return; }
       var scope = openLayer || document;
-      var target = scope.querySelector('[data-ctrl-enter]:not([hidden])');
-      if (target && target.offsetParent !== null) {
+      var target = Array.prototype.filter.call(scope.querySelectorAll('[data-ctrl-enter]'), function (el) { return el.offsetParent !== null; })[0];
+      if (target) {
         e.preventDefault();
         ctrlEnterArmed = false;
         activate(target);
@@ -438,7 +455,7 @@
       if (ex && ex.offsetParent !== null) { e.preventDefault(); activate(ex); }
     } else if (e.key === 'Escape') {
       var back = document.querySelector('[data-shortcut-esc]');
-      if (back && !e.target.closest('input, textarea, select')) { e.preventDefault(); activate(back); }
+      if (back && !e.isComposing && !e.target.closest('textarea, select, input[type="search"]')) { e.preventDefault(); activate(back); }
     }
   });
 
@@ -463,7 +480,7 @@
       e.preventDefault();
       var b = form.querySelector('[type="submit"]');
       b.setAttribute('aria-busy', 'true');
-      b.innerHTML = '<span class="bk-spinner" aria-hidden="true"></span><span>' + esc(t('ux.state.submitting.title')) + '</span>';
+      b.innerHTML = '<span class="bk-spinner" aria-hidden="true"></span><span data-k="ux.state.submitting.title">' + esc(t('ux.state.submitting.title')) + '</span>';
       setTimeout(function () { location.href = 'ks-02-beranda.html'; }, 900);
     });
   };
@@ -494,14 +511,14 @@
     function resultHTML(p) {
       var stock = qty(p.stock, p.dec) + ' ' + p.unit;
       var thumb = '<span class="bk-thumb" role="img" aria-label="' + esc(t('catalog.photo.placeholder_alt')) + '">' + window.BK_ICON('image') + '</span>';
-      var meta = '<span class="bk-result__meta"><span class="bk-mono">' + esc(p.sku) + '</span><span>' + esc(t('sales.till.result_stock', { jumlah: stock })) + '</span></span>';
+      var meta = '<span class="bk-result__meta"><span class="bk-mono" data-fixture>' + esc(p.sku) + '</span><span data-k="sales.till.result_stock" data-p="' + esc(JSON.stringify({ jumlah: stock })) + '">' + esc(t('sales.till.result_stock', { jumlah: stock })) + '</span></span>';
       if (p.inactive) {
-        return '<div class="bk-result is-inactive">' + thumb + '<span><span class="bk-result__name bk-clamp-2">' + esc(p.name) + '</span>' + meta + '</span>' +
-          '<span class="bk-status bk-status--inactive"><span class="bk-status__dot" aria-hidden="true"></span>' + esc(t('ux.state.inactive.label')) + '</span></div>';
+        return '<div class="bk-result is-inactive">' + thumb + '<span><span class="bk-result__name bk-clamp-2" data-fixture>' + esc(p.name) + '</span>' + meta + '</span>' +
+          '<span class="bk-status bk-status--inactive"><span class="bk-status__dot" aria-hidden="true"></span><span data-k="ux.state.inactive.label">' + esc(t('ux.state.inactive.label')) + '</span></span></div>';
       }
       return '<button type="button" class="bk-result" data-add="' + p.id + '" aria-label="' + esc(t('sales.till.add_to_cart_named', { produk: p.name })) + '">' + thumb +
-        '<span><span class="bk-result__name bk-clamp-2">' + esc(p.name) + '</span>' + meta + '</span>' +
-        '<span class="bk-result__price">' + rp(p.price) + '<span class="bk-result__add" aria-hidden="true">' + esc(t('sales.till.add_to_cart')) + '</span></span></button>';
+        '<span><span class="bk-result__name bk-clamp-2" data-fixture>' + esc(p.name) + '</span>' + meta + '</span>' +
+        '<span class="bk-result__price"><span data-fixture>' + rp(p.price) + '</span><span class="bk-result__add" aria-hidden="true" data-k="sales.till.add_to_cart">' + esc(t('sales.till.add_to_cart')) + '</span></span></button>';
     }
     function renderResults(term) {
       term = (term || '').trim().toLowerCase();
@@ -516,17 +533,17 @@
       var decDisabled = l.q <= minQ;
       var reasonId = 'dec-reason-' + p.id;
       var ch = changed[p.id];
-      var priceLine = ch ? '<p class="bk-line__meta"><span class="bk-status bk-status--warning">' + window.BK_ICON('warning') + esc(t('ux.state.price_changed.line', { lama: rp(ch.old), baru: rp(p.price) })) + '</span></p>' : '';
+      var priceLine = ch ? '<p class="bk-line__meta"><span class="bk-status bk-status--warning">' + window.BK_ICON('warning') + '<span data-k="ux.state.price_changed.line">' + esc(t('ux.state.price_changed.line', { lama: rp(ch.old), baru: rp(p.price) })) + '</span></span></p>' : '';
       return '<li class="bk-line' + (ch ? ' is-changed' : '') + '" data-line="' + p.id + '">' +
-        '<div class="bk-line__top"><div><p class="bk-line__name">' + esc(p.name) + '</p><p class="bk-line__meta"><span class="bk-mono">' + esc(p.sku) + '</span> · ' + rp(p.price) + '</p>' + priceLine + '</div>' +
-        '<div class="bk-line__total"><span class="bk-line__sub">' + esc(t('sales.cart.line_total')) + '</span><br>' + sub + '</div></div>' +
+        '<div class="bk-line__top"><div><p class="bk-line__name" data-fixture>' + esc(p.name) + '</p><p class="bk-line__meta" data-fixture><span class="bk-mono">' + esc(p.sku) + '</span> · ' + rp(p.price) + '</p>' + priceLine + '</div>' +
+        '<div class="bk-line__total"><span class="bk-line__sub" data-k="sales.cart.line_total">' + esc(t('sales.cart.line_total')) + '</span><br><span data-fixture>' + sub + '</span></div></div>' +
         '<div class="bk-line__controls"><div class="bk-stepper" role="group" aria-label="' + esc(t('sales.cart.quantity')) + ' ' + esc(p.name) + '">' +
         '<button type="button" data-dec="' + p.id + '" aria-label="' + esc(t('sales.cart.decrease', { satuan: p.unit, produk: p.name })) + '"' + (decDisabled ? ' aria-disabled="true" aria-describedby="' + reasonId + '"' : '') + '>−</button>' +
         '<input type="text" inputmode="' + (p.dec ? 'decimal' : 'numeric') + '" value="' + qty(l.q, p.dec) + '" data-qty="' + p.id + '" aria-label="' + esc(t('sales.cart.quantity')) + ' ' + esc(p.name) + '">' +
         '<button type="button" data-inc="' + p.id + '" aria-label="' + esc(t('sales.cart.increase', { satuan: p.unit, produk: p.name })) + '">+</button></div>' +
-        '<span class="bk-line__unit">' + esc(p.unit) + '</span>' +
-        '<button type="button" class="bk-btn bk-btn--quiet" data-remove="' + p.id + '" aria-label="' + esc(t('sales.cart.remove_named', { produk: p.name })) + '">' + window.BK_ICON('trash') + '<span>' + esc(t('sales.cart.remove')) + '</span></button></div>' +
-        (decDisabled ? '<p class="bk-reason" id="' + reasonId + '">' + window.BK_ICON('info') + '<span>' + esc(t('sales.cart.decrease_disabled')) + '</span></p>' : '') +
+        '<span class="bk-line__unit" data-fixture>' + esc(p.unit) + '</span>' +
+        '<button type="button" class="bk-btn bk-btn--quiet" data-remove="' + p.id + '" aria-label="' + esc(t('sales.cart.remove_named', { produk: p.name })) + '">' + window.BK_ICON('trash') + '<span data-k="sales.cart.remove">' + esc(t('sales.cart.remove')) + '</span></button></div>' +
+        (decDisabled ? '<p class="bk-reason" id="' + reasonId + '">' + window.BK_ICON('info') + '<span data-k="sales.cart.decrease_disabled">' + esc(t('sales.cart.decrease_disabled')) + '</span></p>' : '') +
         '</li>';
     }
     function total() { return cart.reduce(function (s, l) { return s + Math.round(byId(l.id).price * l.q); }, 0); }
@@ -534,7 +551,7 @@
       linesEl.innerHTML = cart.map(lineHTML).join('');
       document.getElementById('cart-empty').hidden = cart.length > 0;
       document.getElementById('cart-clear').hidden = cart.length === 0;
-      totalEl.textContent = rp(total());
+      setData(totalEl, rp(total()));
       var reasonKey = null;
       if (!cart.length) reasonKey = 'sales.cart.disabled_empty';
       else if (STATE === 'price-changed' && Object.keys(changed).length) reasonKey = 'sales.cart.disabled_price_review';
@@ -543,7 +560,7 @@
         pay.setAttribute('aria-disabled', 'true');
         pay.setAttribute('aria-describedby', 'pay-reason');
         payReason.hidden = false;
-        payReason.querySelector('[data-reason-text]').textContent = t(reasonKey);
+        setCopy(payReason.querySelector('[data-reason-text]'), reasonKey);
         payReason.querySelector('[data-reason-link]').hidden = reasonKey !== 'sales.cart.disabled_unresolved';
       } else {
         pay.removeAttribute('aria-disabled');
@@ -582,19 +599,22 @@
       if (e.key === 'ArrowDown') { var r = results.querySelector('button.bk-result'); if (r) { e.preventDefault(); r.focus(); } }
       if (e.key !== 'Enter' || e.ctrlKey) return;
       e.preventDefault(); // Enter ends a code and runs the lookup, never a command (UXA-10)
-      var v = search.value.trim();
+      lookup(search.value.trim());
+    });
+    function lookup(v) {
+      search.value = v;
       var exact = PRODUCTS.filter(function (p) { return p.code === v || p.sku.toLowerCase() === v.toLowerCase(); })[0];
       var unknown = document.getElementById('till-unknown');
       if (exact) { unknown.hidden = true; search.value = ''; renderResults(''); add(exact.id); return; }
       if (/^\d{8,}$/.test(v)) {
         unknown.hidden = false;
-        unknown.querySelector('[data-unknown-body]').textContent = t('ux.state.unknown_code.body', { kode: v });
+        setCopy(unknown.querySelector('[data-unknown-body]'), 'ux.state.unknown_code.body', { kode: v });
         announce(t('ux.announce.unknown_code', { kode: v }));
         return;
       }
       unknown.hidden = true;
       renderResults(v);
-    });
+    }
     search.addEventListener('input', function () { if (!/^\d+$/.test(search.value)) renderResults(search.value); });
     linesEl.addEventListener('click', function (e) {
       var inc = e.target.closest('[data-inc]'), dec = e.target.closest('[data-dec]'), rem = e.target.closest('[data-remove]');
@@ -624,13 +644,15 @@
     renderResults(STATE === 'empty' || STATE === 'opened' ? '' : 'pulpen');
     if (STATE !== 'empty' && STATE !== 'opened') search.value = 'pulpen';
     render();
+    // A scan or search typed on the receipt page starts this sale with it (UXA-09).
+    if (Q.get('kode')) lookup(Q.get('kode').trim());
     setTimeout(function () { search.focus(); }, 0);
   };
 
   /* Payment (UXP-102): one screen, one final action (D-040) */
   PAGES['UXP-102'] = function () {
     var total = parseInt(Q.get('total'), 10) || 119000;
-    document.getElementById('pay-total').textContent = rp(total);
+    setData(document.getElementById('pay-total'), rp(total));
     var cash = document.getElementById('m-cash'), transfer = document.getElementById('m-transfer');
     var tendered = document.getElementById('tendered');
     var changeBox = document.getElementById('change-box');
@@ -644,21 +666,21 @@
       var m = method();
       document.querySelectorAll('[data-method]').forEach(function (el) { el.hidden = el.getAttribute('data-method') !== m; });
       var key = m === 'cash' ? 'sales.payment.final_cash' : 'sales.payment.final_transfer';
-      finalLabel.textContent = t(key);
+      setCopy(finalLabel, key);
       finalBtn.setAttribute('aria-label', t(key) + ' (Ctrl+Enter)');
       if (m === 'transfer') { finalBtn.removeAttribute('aria-disabled'); finalBtn.removeAttribute('aria-describedby'); reason.hidden = true; return; }
       var v = parseRp(tendered.value);
       if (v !== null) tendered.value = group(v);
       if (v === null) {
-        changeBox.classList.remove('is-short'); changeLabel.textContent = t('sales.payment.change'); changeVal.textContent = '—';
+        changeBox.classList.remove('is-short'); setCopy(changeLabel, 'sales.payment.change'); setData(changeVal, '—');
         finalBtn.setAttribute('aria-disabled', 'true'); finalBtn.setAttribute('aria-describedby', 'final-reason');
-        reason.hidden = false; reason.querySelector('[data-reason-text]').textContent = t('sales.payment.disabled_tender', { uang: rp(total) });
+        reason.hidden = false; setCopy(reason.querySelector('[data-reason-text]'), 'sales.payment.disabled_tender', { uang: rp(total) });
       } else if (v < total) {
-        changeBox.classList.add('is-short'); changeLabel.textContent = t('ux.state.tender_low.title'); changeVal.textContent = t('ux.state.tender_low.body', { uang: rp(total - v) });
+        changeBox.classList.add('is-short'); setCopy(changeLabel, 'ux.state.tender_low.title'); setCopy(changeVal, 'ux.state.tender_low.body', { uang: rp(total - v) });
         finalBtn.setAttribute('aria-disabled', 'true'); finalBtn.setAttribute('aria-describedby', 'final-reason');
-        reason.hidden = false; reason.querySelector('[data-reason-text]').textContent = t('sales.payment.disabled_tender', { uang: rp(total - v) });
+        reason.hidden = false; setCopy(reason.querySelector('[data-reason-text]'), 'sales.payment.disabled_tender', { uang: rp(total - v) });
       } else {
-        changeBox.classList.remove('is-short'); changeLabel.textContent = t('sales.payment.change'); changeVal.textContent = rp(v - total);
+        changeBox.classList.remove('is-short'); setCopy(changeLabel, 'sales.payment.change'); setData(changeVal, rp(v - total));
         finalBtn.removeAttribute('aria-disabled'); finalBtn.removeAttribute('aria-describedby'); reason.hidden = true;
       }
     }
@@ -666,19 +688,37 @@
     tendered.addEventListener('input', update);
     tendered.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.ctrlKey) e.preventDefault(); });
     document.getElementById('exact').addEventListener('click', function () { tendered.value = group(total); update(); tendered.focus(); });
-    finalBtn.addEventListener('click', function () {
-      if (finalBtn.getAttribute('aria-disabled') === 'true') return;
+    // While sending, the button's name and look say so; its shortcut is not offered,
+    // the form cannot change and the way back is closed (UXS-06, UXI-084).
+    function freeze() {
+      document.querySelectorAll('[data-pay-form] input, [data-pay-form] button').forEach(function (el) {
+        if (el === finalBtn) return;
+        if (el.type === 'radio') el.disabled = true;
+        else if (el.tagName === 'INPUT') el.readOnly = true;
+        else el.setAttribute('aria-disabled', 'true');
+      });
+    }
+    function busy() {
       finalBtn.setAttribute('aria-busy', 'true');
       finalBtn.setAttribute('aria-disabled', 'true');
-      finalLabel.textContent = t('ux.state.submitting.title');
+      setCopy(finalLabel, 'ux.state.submitting.title');
+      finalBtn.setAttribute('aria-label', t('ux.state.submitting.title'));
+      finalBtn.querySelector('.bk-kbd').hidden = true;
       finalBtn.insertAdjacentHTML('afterbegin', '<span class="bk-spinner" aria-hidden="true"></span>');
+      freeze();
+      document.querySelectorAll('[data-unless~="submitting"]').forEach(function (el) { el.hidden = true; });
+      document.querySelectorAll('[data-when~="submitting"]').forEach(function (el) { el.hidden = false; });
+    }
+    finalBtn.addEventListener('click', function () {
+      if (finalBtn.getAttribute('aria-disabled') === 'true') return;
+      busy();
       setTimeout(function () { location.href = 'ks-05-struk.html'; }, 1100);
     });
     if (STATE === 'transfer') transfer.checked = true;
     if (STATE === 'short') tendered.value = group(total - 4000);
     if (STATE === 'default') tendered.value = '';
     update();
-    if (STATE === 'submitting') { finalBtn.setAttribute('aria-busy', 'true'); finalBtn.setAttribute('aria-disabled', 'true'); finalLabel.textContent = t('ux.state.submitting.title'); finalBtn.insertAdjacentHTML('afterbegin', '<span class="bk-spinner" aria-hidden="true"></span>'); }
+    if (STATE === 'submitting') busy();
     if (STATE === 'uncertain' || STATE === 'held') {
       tendered.value = group(total + 1000); update();
       // The request is frozen on its page (NC-09): nothing in the form can change it.
@@ -705,31 +745,38 @@
     if (size) { var r = document.querySelector('input[name="size"][value="' + size + '"]'); if (r) { r.checked = true; r.dispatchEvent(new Event('change', { bubbles: true })); } }
     document.getElementById('print').addEventListener('click', function () { window.print(); });
     var s = document.getElementById('next-search');
-    s.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); location.href = 'ks-03-kasir.html?state=empty'; } });
+    s.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      location.href = 'ks-03-kasir.html?state=empty' + (s.value.trim() ? '&kode=' + encodeURIComponent(s.value.trim()) : '');
+    });
     setTimeout(function () { s.focus(); }, 0);
   };
 
   /* Open cash session (UXP-104) */
   PAGES['UXP-104'] = function () {
-    var reg = document.getElementById('register'), cash = document.getElementById('opening');
+    if (STATE === 'no-register') return;
+    var regs = Array.prototype.slice.call(document.querySelectorAll('input[name="register"]'));
+    var cash = document.getElementById('opening');
     var review = document.getElementById('review-btn'), reason = document.getElementById('review-reason');
+    function regValue() { var r = regs.filter(function (x) { return x.checked; })[0]; return r ? r.value : ''; }
     function update() {
       var v = parseRp(cash.value);
       if (v !== null) cash.value = group(v);
-      var ok = reg.value !== '' && v !== null;
+      var ok = regValue() !== '' && v !== null;
       if (ok) { review.removeAttribute('aria-disabled'); review.removeAttribute('aria-describedby'); reason.hidden = true; }
       else { review.setAttribute('aria-disabled', 'true'); review.setAttribute('aria-describedby', 'review-reason'); reason.hidden = false; }
       var body2 = document.getElementById('open-review-body');
-      if (body2) body2.textContent = t('cash.open.review_body', { laci: reg.options[reg.selectedIndex].text, uang: rp(v || 0) });
+      if (body2) setCopy(body2, 'cash.open.review_body', { laci: regValue(), uang: rp(v || 0) });
     }
-    reg.addEventListener('change', update);
+    regs.forEach(function (r) { r.addEventListener('change', update); });
     cash.addEventListener('input', update);
     cash.addEventListener('keydown', function (e) { if (e.key === 'Enter') e.preventDefault(); });
     document.getElementById('open-confirm').addEventListener('click', function () { location.href = 'ks-03-kasir.html?state=opened'; });
-    if (STATE === 'review') { reg.value = 'Laci 1'; cash.value = '200.000'; }
+    if (STATE === 'review') { regs[0].checked = true; cash.value = '200.000'; }
     update();
     if (STATE === 'review') setTimeout(function () { window.BK.openDialog('open-review', review); }, 0);
-    else setTimeout(function () { (reg.value ? cash : reg).focus(); }, 0);
+    else setTimeout(function () { (regValue() ? cash : regs[0]).focus(); }, 0);
   };
 
   /* Close own cash session (UXP-105) */
@@ -750,8 +797,8 @@
       else { review.removeAttribute('aria-disabled'); review.removeAttribute('aria-describedby'); reason.hidden = true; }
       var d = (v || 0) - expected;
       var word = d < 0 ? t('ux.format.variance_short') : (d > 0 ? t('ux.format.variance_over') : t('ux.format.variance_even'));
-      document.getElementById('rv-physical').textContent = rp(v || 0);
-      document.getElementById('rv-variance').textContent = t('ux.format.variance', { uang: rp(d), keterangan: word });
+      setData(document.getElementById('rv-physical'), rp(v || 0));
+      setCopy(document.getElementById('rv-variance'), 'ux.format.variance', { uang: rp(d), keterangan: word });
       var vs = document.getElementById('rv-variance-status');
       vs.className = 'bk-status ' + (d === 0 ? 'bk-status--success' : 'bk-status--warning');
       vs.querySelector('[data-icon-slot]').innerHTML = window.BK_ICON(d === 0 ? 'check' : 'warning');
@@ -767,6 +814,11 @@
       document.getElementById('close-success').querySelector('[tabindex]').focus();
     });
     if (STATE === 'count' || STATE === 'review') { goStep(2); phys.value = '1.204.500'; }
+    if (STATE === 'unresolved-checkout') {
+      var cont = document.getElementById('continue');
+      cont.setAttribute('aria-disabled', 'true');
+      cont.setAttribute('aria-describedby', 'continue-reason');
+    }
     update();
     if (STATE === 'review') setTimeout(function () { window.BK.openDialog('close-review', review); }, 0);
     else if (STATE !== 'count') setTimeout(function () { document.getElementById('continue').focus(); }, 0);
@@ -787,7 +839,7 @@
       });
       document.getElementById('stock-noresults').hidden = n > 0;
       document.getElementById('stock-table').hidden = n === 0;
-      document.getElementById('stock-count').textContent = t('ux.list.count', { jumlah: n });
+      setCopy(document.getElementById('stock-count'), 'ux.list.count', { jumlah: n });
     }
     chips.forEach(function (c) { c.addEventListener('click', function () { c.setAttribute('aria-pressed', String(c.getAttribute('aria-pressed') !== 'true')); apply(); }); });
     search.addEventListener('input', apply);
@@ -814,9 +866,18 @@
         var zero = !unk && parseRp(cost.value) === 0;
         li.querySelector('[data-zero-reason]').hidden = !zero;
       });
-      document.getElementById('rv-lines').textContent = t('inventory.receipt_new.review_lines', { jumlah: lines.length });
-      document.getElementById('rv-unknown').textContent = t('inventory.receipt_new.review_unknown', { jumlah: unknown });
-      document.getElementById('rv-unknown').hidden = unknown === 0;
+      setCopy(document.getElementById('rv-lines'), 'inventory.receipt_new.review_lines', { jumlah: lines.length });
+      setCopy(document.getElementById('rv-unknown'), 'inventory.receipt_new.review_unknown', { jumlah: unknown });
+      document.getElementById('rv-unknown-wrap').hidden = unknown === 0;
+      // The review lists the draft as it is now; unknown-cost lines are highlighted (UXI-240).
+      var list = document.querySelector('.bk-review-lines');
+      if (list) list.innerHTML = Array.prototype.map.call(lines, function (li) {
+        var name = li.querySelector('.bk-line__name').textContent;
+        var q = li.querySelector('[id^="q"]').value + ' ' + li.querySelector('.bk-input__affix--end').textContent;
+        var unk = li.querySelector('[data-unknown]').checked;
+        var cost = unk ? '<span class="bk-pill bk-pill--pending" data-k="ux.state.cost_unknown.title">' + esc(t('ux.state.cost_unknown.title')) + '</span>' : '<span data-fixture>Rp' + esc(li.querySelector('[data-cost]').value || '0') + '</span>';
+        return '<li class="bk-review-line' + (unk ? ' is-flagged' : '') + '"><span data-fixture>' + esc(name) + '</span><span><span data-fixture>' + esc(q) + '</span> · ' + cost + '</span></li>';
+      }).join('');
       var tb = document.getElementById('rcv-review-btn'), rs = document.getElementById('rcv-reason');
       if (lines.length) { tb.removeAttribute('aria-disabled'); tb.removeAttribute('aria-describedby'); rs.hidden = true; }
       else { tb.setAttribute('aria-disabled', 'true'); tb.setAttribute('aria-describedby', 'rcv-reason'); rs.hidden = false; }
@@ -838,7 +899,7 @@
       var v = s.value.trim();
       var unk = document.getElementById('rcv-unknown');
       if (/^\d{8,}$/.test(v) && !PRODUCTS.some(function (p) { return p.code === v; })) {
-        unk.hidden = false; unk.querySelector('[data-unknown-body]').textContent = t('ux.state.unknown_code.body', { kode: v });
+        unk.hidden = false; setCopy(unk.querySelector('[data-unknown-body]'), 'ux.state.unknown_code.body', { kode: v });
         announce(t('ux.announce.unknown_code', { kode: v }));
       } else { unk.hidden = true; }
     });
@@ -849,7 +910,7 @@
       ok.querySelector('[tabindex]').focus();
       announce(t('ux.announce.saved', { pesan: t('inventory.receipt_new.success') }));
     });
-    if (STATE === 'unknown-code') { s.value = '8990001112223'; var unk2 = document.getElementById('rcv-unknown'); unk2.hidden = false; unk2.querySelector('[data-unknown-body]').textContent = t('ux.state.unknown_code.body', { kode: s.value }); }
+    if (STATE === 'unknown-code') { s.value = '8990001112223'; var unk2 = document.getElementById('rcv-unknown'); unk2.hidden = false; setCopy(unk2.querySelector('[data-unknown-body]'), 'ux.state.unknown_code.body', { kode: s.value }); }
     sync();
     if (STATE === 'review') setTimeout(function () { window.BK.openDialog('rcv-review', document.getElementById('rcv-review-btn')); }, 0);
     else setTimeout(function () { s.focus(); }, 0);
@@ -878,26 +939,26 @@
     var area = 'M' + x(0) + ',' + y(0) + ' L' + pts.split(' ').join(' L') + ' L' + x(data.length - 1) + ',' + y(0) + ' Z';
     var ticks = data.map(function (v, k) { return (k % 2 === 0) ? '<text class="bk-chart__axis" x="' + x(k) + '" y="' + (H - 8) + '" text-anchor="middle">' + (k + 1) + '</text>' : ''; }).join('');
     var dots = data.map(function (v, k) { return '<circle class="bk-chart__pt" data-i="' + k + '" cx="' + x(k) + '" cy="' + y(v) + '" r="4"/><circle class="bk-chart__hit" data-i="' + k + '" cx="' + x(k) + '" cy="' + y(v) + '" r="14"/>'; }).join('');
-    chart.querySelector('svg').innerHTML = grid + ticks + '<path class="bk-chart__area" d="' + area + '"/><polyline class="bk-chart__line" points="' + pts + '"/>' + dots + '<circle class="bk-chart__focus" id="chart-ring" r="9" cx="-20" cy="-20"/>';
+    chart.querySelector('svg').innerHTML = grid + ticks + '<path class="bk-chart__area" d="' + area + '"/><polyline class="bk-chart__line" points="' + pts + '"/>' + dots + '<circle class="bk-chart__focus" id="chart-ring" r="9" cx="-20" cy="-20" display="none"/>';
     var active = -1;
     function show(k, speak) {
       active = k;
       var svg = chart.querySelector('svg');
       var box = svg.getBoundingClientRect();
       var sx = box.width / W, sy = box.height / H;
-      var text = t('reporting.finance.trend_point', { tanggal: dateText(k + 1), nilai: rp(data[k]) });
+      var pt = { tanggal: dateText(k + 1), nilai: rp(data[k]) };
       tip.hidden = false;
-      tip.textContent = text;
+      setCopy(tip, 'reporting.finance.trend_point', pt);
       tip.style.left = (x(k) * sx) + 'px';
       tip.style.top = (y(data[k]) * sy) + 'px';
       svg.querySelectorAll('.bk-chart__pt').forEach(function (c) { c.classList.toggle('is-active', +c.getAttribute('data-i') === k); });
       var ring = document.getElementById('chart-ring');
       ring.setAttribute('cx', x(k)); ring.setAttribute('cy', y(data[k]));
-      ring.style.display = document.activeElement === chart ? '' : 'none';
-      if (speak) live.textContent = text;
+      ring.setAttribute('display', document.activeElement === chart ? 'inline' : 'none');
+      if (speak) setCopy(live, 'reporting.finance.trend_point', pt);
     }
     chart.addEventListener('focus', function () { show(active < 0 ? data.length - 1 : active, true); });
-    chart.addEventListener('blur', function () { tip.hidden = true; document.getElementById('chart-ring').style.display = 'none'; });
+    chart.addEventListener('blur', function () { tip.hidden = true; document.getElementById('chart-ring').setAttribute('display', 'none'); });
     chart.addEventListener('keydown', function (e) {
       var k = active < 0 ? data.length - 1 : active;
       if (e.key === 'ArrowRight') k = Math.min(data.length - 1, k + 1);
@@ -912,7 +973,7 @@
     chart.addEventListener('pointerdown', function (e) { var h = e.target.closest('[data-i]'); if (h) show(+h.getAttribute('data-i'), true); });
     chart.addEventListener('pointerleave', function () { if (document.activeElement !== chart) tip.hidden = true; });
     var tbody = document.getElementById('trend-rows');
-    tbody.innerHTML = data.map(function (v, k) { return '<tr><td>' + dateText(k + 1) + '</td><td class="is-num">' + rp(v) + '</td></tr>'; }).join('');
+    tbody.innerHTML = data.map(function (v, k) { return '<tr><td data-fixture>' + dateText(k + 1) + '</td><td class="is-num" data-fixture>' + rp(v) + '</td></tr>'; }).join('');
     var toggle = document.getElementById('toggle-table');
     toggle.addEventListener('click', function () {
       var showTable = document.getElementById('trend-table').hidden;
@@ -920,7 +981,7 @@
       chart.hidden = showTable;
       document.getElementById('chart-range').hidden = showTable;
       toggle.setAttribute('aria-pressed', String(showTable));
-      toggle.querySelector('[data-toggle-label]').textContent = t(showTable ? 'reporting.finance.show_chart' : 'reporting.finance.show_table');
+      setCopy(toggle.querySelector('[data-toggle-label]'), showTable ? 'reporting.finance.show_chart' : 'reporting.finance.show_table');
     });
     document.querySelectorAll('input[name="period"]').forEach(function (r) {
       r.addEventListener('change', function () { document.getElementById('custom-range').hidden = r.value !== 'custom'; });

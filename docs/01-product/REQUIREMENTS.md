@@ -433,7 +433,7 @@ Every decision D-001 to D-086 is either traced to at least one requirement or ru
 | D-083 | Authorization of RF-4B: the glossary's shop terms finalized and the copy deck | Non-product/domain — governance |
 | D-084 | Acceptance of the RF-4B checkpoint `c4bf8e9` and authorization of one correction of the copy deck: a held request stays held when a status check gets no answer | Non-product/domain — governance |
 | D-085 | The Golden Frontend Reference v1.0.0 (tag `v1.0.0`, commit `14497d9`) replaces DesainPakeAI as the approved reusable frontend reference; its generic tokens, components and UX patterns may be adapted into the approved stack; its MULTIPLECORP material is never adopted | Non-product/domain — governance (AGENTS rules 5 and 6, TOOLCHAIN section 3) |
-| D-086 | Acceptance of the D-085 commit `6e73514` and of the RF-4B correction `551b4eb`; approval of gate P7-G2, terminology and copy: GLOSSARY and COPY_DECK at `551b4eb`, each named by its hash; authorization of RF-4C, and its pause by the Owner the same day | REQ-UX-01 |
+| D-086 | Acceptance of the D-085 commit `6e73514` and of the RF-4B correction `551b4eb`; approval of gate P7-G2, terminology and copy: GLOSSARY and COPY_DECK at `551b4eb`, each named by its hash; authorization of RF-4C, its pause by the Owner the same day and its resumption on 18 October 2026, with the deviations from the reference's defaults that DESIGN_SYSTEM adopts | REQ-UX-01, REQ-UX-03 |
 
 ## 23. Counts
 

@@ -242,6 +242,9 @@ window.BK_COPY = {
   'cash.close.confirm': 'Tutup sesi',
   'cash.close.success': 'Sesi kas :nomor ditutup.',
   'cash.close.disabled': 'Isi uang fisik di laci.',
+  'cash.close.unresolved_note': 'Ada penjualan di sesi ini yang statusnya belum pasti. Cek statusnya dulu sebelum menghitung laci.',
+  'cash.close.resolve_unresolved': 'Cek permintaan yang belum pasti',
+  'cash.close.disabled_unresolved_checkout': 'Ada penjualan di sesi ini yang statusnya belum pasti. Cek statusnya dulu.',
 
   /* UXP-401 Stok (COPY_DECK 9.1, 9.2) */
   'inventory.stock.search': 'Cari produk',
@@ -360,5 +363,6 @@ window.BK_COPY_PROPOSED = {
   'config.profile.accent_option.purple': 'Ungu',
   'config.profile.accent_option.graphite': 'Grafit',
   'reporting.finance.table_date': 'Tanggal',
+  'reporting.period.label': 'Periode',
   'ux.action.more_actions': 'Tindakan lain'
 };

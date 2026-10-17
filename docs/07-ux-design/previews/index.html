@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en" data-accent="green">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RF-4C key-screen previews</title>
+<link rel="stylesheet" href="assets/bk-tokens.css">
+<link rel="stylesheet" href="assets/bk-base.css">
+<link rel="stylesheet" href="assets/bk-components.css">
+</head>
+<!-- Review aid of RF-4C (nonproduction). The product frames are Indonesian and keyed to
+     COPY_DECK; this gallery is review chrome in English. Normative text:
+     docs/07-ux-design/DESIGN_SYSTEM.md and KEY_SCREENS.md. -->
+<body>
+<main class="rv-page">
+  <h1>RF-4C key-screen previews</h1>
+  <p class="rv-lead">Renderable, nonproduction previews of the BantuKasir design system and key screens for gate P7-G3. They approve nothing until the Owner decides the gate. Every text in a product frame is a COPY_DECK copy key; names, products and figures are synthetic fixtures.</p>
+  <p>Open a screen directly, or in a fixed viewport with <a href="frame.html?src=ks-03-kasir.html&amp;w=1366&amp;h=768">frame.html</a>. Review parameters: <code>?state=</code> a designed state; <code>?peran=owner|ops|cashier|combined</code> the role; <code>?aksen=green|teal|blue|purple|graphite</code> an accent of the constrained set.</p>
+
+  <h2>Design system</h2>
+  <div class="rv-grid">
+    <div class="rv-card">
+      <h3>Specimen <span class="rv-tag">DS</span></h3>
+      <p>Tokens, the accent set with measured contrast, type scale, components and their states.</p>
+      <div class="rv-links"><a href="ds-specimen.html">Open</a><a href="ds-specimen.html?aksen=blue">Blue accent</a><a href="ds-specimen.html?aksen=graphite">Graphite accent</a></div>
+    </div>
+  </div>
+
+  <h2>Key screens</h2>
+  <div class="rv-grid">
+    <div class="rv-card">
+      <h3>KS-01 Masuk <span class="rv-tag">UXP-001</span></h3>
+      <p>Sign-in; no business data and no codename; default accent.</p>
+      <div class="rv-links"><a href="ks-01-masuk.html">Default</a><a href="ks-01-masuk.html?state=failed">Failed</a><a href="ks-01-masuk.html?state=signed-out">Signed out</a><a href="ks-01-masuk.html?state=throttled">Throttled</a></div>
+    </div>
+    <div class="rv-card">
+      <h3>KS-02 Beranda <span class="rv-tag">UXP-007 · Owner</span></h3>
+      <p>Today's figures, open cash sessions, attention items.</p>
+      <div class="rv-links"><a href="ks-02-beranda.html">Default</a><a href="ks-02-beranda.html?state=quiet">Nothing to report</a><a href="ks-02-beranda.html?state=failed">Panel failed</a><a href="ks-02-beranda.html?state=loading">Loading</a></div>
+    </div>
+    <div class="rv-card">
+      <h3>KS-03 Kasir <span class="rv-tag">UXP-101 · Kasir</span></h3>
+      <p>Till: search or scan, cart, total and "Bayar"; rail navigation.</p>
+      <div class="rv-links"><a href="ks-03-kasir.html">Default</a><a href="ks-03-kasir.html?state=empty">Empty cart</a><a href="ks-03-kasir.html?state=price-changed">Price changed</a><a href="ks-03-kasir.html?state=unresolved">Unresolved payment</a><a href="ks-03-kasir.html?peran=owner">As Owner</a></div>
+    </div>
+    <div class="rv-card">
+      <h3>KS-04 Pembayaran <span class="rv-tag">UXP-102</span></h3>
+      <p>One payment screen, one final action (D-040); Tunai or Transfer bank only (D-077).</p>
+      <div class="rv-links"><a href="ks-04-pembayaran.html?total=117000">Tunai</a><a href="ks-04-pembayaran.html?total=117000&amp;state=short">Amount short</a><a href="ks-04-pembayaran.html?total=117000&amp;state=transfer">Transfer bank</a><a href="ks-04-pembayaran.html?total=117000&amp;state=submitting">Submitting</a><a href="ks-04-pembayaran.html?total=117000&amp;state=uncertain">Uncertain</a><a href="ks-04-pembayaran.html?total=117000&amp;state=held">Held</a></div>
+    </div>
+    <div class="rv-card">
+      <h3>KS-05 Struk <span class="rv-tag">UXP-103</span></h3>
+      <p>Result after a sale; receipt at 58 mm, 80 mm and A4 with long names.</p>
+      <div class="rv-links"><a href="ks-05-struk.html">58 mm</a><a href="ks-05-struk.html?ukuran=80">80 mm</a><a href="ks-05-struk.html?ukuran=a4">A4</a><a href="ks-05-struk.html?state=copy">Copy marker</a></div>
+    </div>
+    <div class="rv-card">
+      <h3>KS-06 Buka sesi kas <span class="rv-tag">UXP-104</span></h3>
+      <p>Open a cash session with a review dialog.</p>
+      <div class="rv-links"><a href="ks-06-buka-sesi.html">Default</a><a href="ks-06-buka-sesi.html?state=review">Review</a><a href="ks-06-buka-sesi.html?state=no-register">No register free</a></div>
+    </div>
+    <div class="rv-card">
+      <h3>KS-07 Tutup sesi kas <span class="rv-tag">UXP-105</span></h3>
+      <p>Close flow: preview, count, review with the variance and its word.</p>
+      <div class="rv-links"><a href="ks-07-tutup-sesi.html">Preview</a><a href="ks-07-tutup-sesi.html?state=count">Count</a><a href="ks-07-tutup-sesi.html?state=review">Review</a><a href="ks-07-tutup-sesi.html?state=recount">Recount</a><a href="ks-07-tutup-sesi.html?state=unresolved-checkout">Unresolved sale</a></div>
+    </div>
+    <div class="rv-card">
+      <h3>KS-08 Stok <span class="rv-tag">UXP-401 · Admin Operasional</span></h3>
+      <p>Stock list with Habis, Menipis and Normal; sub-navigation tabs.</p>
+      <div class="rv-links"><a href="ks-08-stok.html">Admin Operasional</a><a href="ks-08-stok.html?peran=owner">Owner</a><a href="ks-08-stok.html?peran=combined">Combined</a><a href="ks-08-stok.html?state=attention">Needs restock</a><a href="ks-08-stok.html?state=no-results">No results</a><a href="ks-08-stok.html?state=stale">Not refreshed</a></div>
+    </div>
+    <div class="rv-card">
+      <h3>KS-09 Catat barang masuk <span class="rv-tag">UXP-405 · Admin Operasional</span></h3>
+      <p>Receiving with known and unknown cost; review dialog.</p>
+      <div class="rv-links"><a href="ks-09-catat-barang-masuk.html">Default</a><a href="ks-09-catat-barang-masuk.html?state=review">Review</a><a href="ks-09-catat-barang-masuk.html?state=unknown-code">Unknown code</a><a href="ks-09-catat-barang-masuk.html?state=uncertain">Uncertain</a></div>
+    </div>
+    <div class="rv-card">
+      <h3>KS-10 Laporan keuangan <span class="rv-tag">UXP-502 · Owner</span></h3>
+      <p>Figures with completeness and the interactive trend chart (D-018).</p>
+      <div class="rv-links"><a href="ks-10-laporan-keuangan.html">Default</a><a href="ks-10-laporan-keuangan.html?state=incomplete">Cost incomplete</a><a href="ks-10-laporan-keuangan.html?state=table">As table</a></div>
+    </div>
+  </div>
+
+  <h2>Fixed viewports</h2>
+  <p>The width classes are compact below 600 px, medium 600–1023 px and expanded from 1024 px (UXA-02). 640 × 400 is 200 % browser zoom on a 1280 × 800 window (UXA-12).</p>
+  <div class="rv-links">
+    <a href="frame.html?src=ks-03-kasir.html&amp;w=1366&amp;h=768">Kasir 1366 × 768</a>
+    <a href="frame.html?src=ks-03-kasir.html&amp;w=1024&amp;h=768">Kasir 1024 × 768</a>
+    <a href="frame.html?src=ks-03-kasir.html&amp;w=768&amp;h=1024">Kasir 768 × 1024</a>
+    <a href="frame.html?src=ks-04-pembayaran.html%3Ftotal%3D117000&amp;w=640&amp;h=400">Pembayaran 640 × 400</a>
+    <a href="frame.html?src=ks-08-stok.html&amp;w=390&amp;h=844">Stok 390 × 844</a>
+    <a href="frame.html?src=ks-02-beranda.html&amp;w=390&amp;h=844">Beranda 390 × 844</a>
+  </div>
+
+  <h2 id="outside-set">Pages outside the key-screen set</h2>
+  <p>Navigation items and links that lead to pages not drawn in RF-4C land here. Those pages exist in INFORMATION_ARCHITECTURE section 5 and follow the same design system; they are built from it by the implementation Tasks.</p>
+</main>
+</body>
+</html>

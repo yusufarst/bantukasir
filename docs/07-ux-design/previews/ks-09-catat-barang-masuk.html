@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="id" data-accent="green">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preview</title>
+<link rel="stylesheet" href="assets/bk-tokens.css">
+<link rel="stylesheet" href="assets/bk-base.css">
+<link rel="stylesheet" href="assets/bk-components.css">
+</head>
+<!-- KS-09 · UXP-405 Catat barang masuk (command page; the draft lives in page memory,
+     D-069 a). Admin Operasional sees and enters the purchase cost (D-033).
+     States: ?state=default | review | unknown-code | uncertain -->
+<body data-page="UXP-405" data-title-key="inventory.receipt_new.title" data-layout="side" data-nav="stock" data-nav-current="true" data-sub-area="stock" data-sub="receipts" data-sub-current="true" data-role="ops" data-roles="ops owner combined">
+<div class="bk-app" id="bk-app">
+  <div class="bk-col">
+    <main id="main" class="bk-main" tabindex="-1">
+      <div data-subnav-host></div>
+      <div class="bk-container bk-container--form">
+        <a class="bk-back" href="index.html#outside-set" data-k="ux.action.back_to" data-p='{"halaman":"Barang masuk"}'></a>
+        <div class="bk-pagehead">
+          <div class="bk-pagehead__text"><h1 class="bk-title bk-title--shell" tabindex="-1" data-k="inventory.receipt_new.title"></h1></div>
+        </div>
+        <div class="bk-stack">
+          <div class="bk-notice bk-notice--success" id="rcv-success" role="status" hidden>
+            <span data-icon="check"></span>
+            <p class="bk-notice__title" tabindex="-1" data-k="inventory.receipt_new.success"></p>
+          </div>
+          <div class="bk-notice bk-notice--info">
+            <span data-icon="info"></span>
+            <p class="bk-notice__body" data-k="inventory.receipt_new.draft_note"></p>
+          </div>
+
+          <section class="bk-card bk-section bk-form" aria-labelledby="lines-title">
+            <h2 class="bk-sr-only" id="lines-title" data-k="inventory.line.product"></h2>
+            <div class="bk-field">
+              <label class="bk-label" for="rcv-search" data-k="inventory.line.search"></label>
+              <div class="bk-input bk-input--lg">
+                <span class="bk-input__icon" data-icon="scan"></span>
+                <input id="rcv-search" class="bk-input__control" type="search" autocomplete="off" enterkeyhint="search" data-k-ph="inventory.line.search_hint">
+              </div>
+            </div>
+            <div class="bk-notice bk-notice--warning" id="rcv-unknown" role="status" hidden>
+              <span data-icon="warning"></span>
+              <p class="bk-notice__title" data-k="ux.state.unknown_code.title"></p>
+              <p class="bk-notice__body" data-unknown-body></p>
+              <div class="bk-notice__actions"><a class="bk-btn bk-btn--secondary" href="index.html#outside-set"><span data-icon="plus"></span><span data-k="catalog.product_create.title"></span></a></div>
+            </div>
+
+            <ol class="bk-list-plain bk-rcv" id="rcv-lines">
+              <li class="bk-rcv__line" data-rcv-line>
+                <div class="bk-rcv__head">
+                  <p class="bk-line__name" id="n1" data-fixture>Kertas HVS A4 70 gsm isi 500 lembar</p>
+                  <button type="button" class="bk-btn bk-btn--quiet" data-remove-line id="r1" aria-labelledby="r1t n1"><span data-icon="trash"></span><span id="r1t" data-k="ux.action.remove_line"></span></button>
+                </div>
+                <p class="bk-line__meta"><span class="bk-mono" data-fixture>ATK-HVS-A470</span></p>
+                <div class="bk-rcv__fields">
+                  <div class="bk-field">
+                    <label class="bk-label" for="q1" id="q1l" data-k="inventory.line.quantity"></label>
+                    <div class="bk-input bk-input--num"><input id="q1" class="bk-input__control" type="text" inputmode="numeric" value="20" aria-labelledby="q1l n1"><span class="bk-input__affix bk-input__affix--end" data-fixture>rim</span></div>
+                  </div>
+                  <div class="bk-field">
+                    <label class="bk-label" for="c1" id="c1l" data-k="costing.field.line_cost"></label>
+                    <div class="bk-input bk-input--num" data-cost-wrap><span class="bk-input__affix">Rp</span><input id="c1" class="bk-input__control" type="text" inputmode="numeric" value="960.000" data-cost aria-labelledby="c1l n1" aria-describedby="c1h"></div>
+                    <p class="bk-hint" id="c1h" data-k="costing.field.line_cost_help"></p>
+                    <p class="bk-reason" data-zero-reason hidden><span data-icon="info"></span><span data-k="costing.field.zero_disabled"></span></p>
+                  </div>
+                </div>
+                <label class="bk-check"><input type="checkbox" data-unknown aria-describedby="u1h"><span data-k="costing.field.cost_unknown"></span></label>
+                <p class="bk-hint" id="u1h" data-unknown-hint hidden data-k="costing.field.cost_unknown_help"></p>
+              </li>
+              <li class="bk-rcv__line" data-rcv-line>
+                <div class="bk-rcv__head">
+                  <p class="bk-line__name" id="n2" data-fixture>Pulpen gel hitam 0,5 mm</p>
+                  <button type="button" class="bk-btn bk-btn--quiet" data-remove-line id="r2" aria-labelledby="r2t n2"><span data-icon="trash"></span><span id="r2t" data-k="ux.action.remove_line"></span></button>
+                </div>
+                <p class="bk-line__meta"><span class="bk-mono" data-fixture>ATK-PG-05H</span></p>
+                <div class="bk-rcv__fields">
+                  <div class="bk-field">
+                    <label class="bk-label" for="q2" id="q2l" data-k="inventory.line.quantity"></label>
+                    <div class="bk-input bk-input--num"><input id="q2" class="bk-input__control" type="text" inputmode="numeric" value="100" aria-labelledby="q2l n2"><span class="bk-input__affix bk-input__affix--end" data-fixture>pcs</span></div>
+                  </div>
+                  <div class="bk-field">
+                    <label class="bk-label" for="c2" id="c2l" data-k="costing.field.line_cost"></label>
+                    <div class="bk-input bk-input--num" data-cost-wrap><span class="bk-input__affix">Rp</span><input id="c2" class="bk-input__control" type="text" inputmode="numeric" value="320.000" data-cost aria-labelledby="c2l n2" aria-describedby="c2h"></div>
+                    <p class="bk-hint" id="c2h" data-k="costing.field.line_cost_help"></p>
+                    <p class="bk-reason" data-zero-reason hidden><span data-icon="info"></span><span data-k="costing.field.zero_disabled"></span></p>
+                  </div>
+                </div>
+                <label class="bk-check"><input type="checkbox" data-unknown aria-describedby="u2h"><span data-k="costing.field.cost_unknown"></span></label>
+                <p class="bk-hint" id="u2h" data-unknown-hint hidden data-k="costing.field.cost_unknown_help"></p>
+              </li>
+              <li class="bk-rcv__line" data-rcv-line>
+                <div class="bk-rcv__head">
+                  <p class="bk-line__name" id="n3" data-fixture>Lakban bening 48 mm × 100 yard</p>
+                  <button type="button" class="bk-btn bk-btn--quiet" data-remove-line id="r3" aria-labelledby="r3t n3"><span data-icon="trash"></span><span id="r3t" data-k="ux.action.remove_line"></span></button>
+                </div>
+                <p class="bk-line__meta"><span class="bk-mono" data-fixture>ATK-LKB-48</span></p>
+                <div class="bk-rcv__fields">
+                  <div class="bk-field">
+                    <label class="bk-label" for="q3" id="q3l" data-k="inventory.line.quantity"></label>
+                    <div class="bk-input bk-input--num"><input id="q3" class="bk-input__control" type="text" inputmode="numeric" value="24" aria-labelledby="q3l n3"><span class="bk-input__affix bk-input__affix--end" data-fixture>pcs</span></div>
+                  </div>
+                  <div class="bk-field">
+                    <label class="bk-label" for="c3" id="c3l" data-k="costing.field.line_cost"></label>
+                    <div class="bk-input bk-input--num" data-cost-wrap><span class="bk-input__affix">Rp</span><input id="c3" class="bk-input__control" type="text" inputmode="numeric" data-cost aria-labelledby="c3l n3" aria-describedby="c3h"></div>
+                    <p class="bk-hint" id="c3h" data-k="costing.field.line_cost_help"></p>
+                    <p class="bk-reason" data-zero-reason hidden><span data-icon="info"></span><span data-k="costing.field.zero_disabled"></span></p>
+                  </div>
+                </div>
+                <label class="bk-check"><input type="checkbox" data-unknown checked aria-describedby="u3h"><span data-k="costing.field.cost_unknown"></span></label>
+                <p class="bk-hint" id="u3h" data-unknown-hint data-k="costing.field.cost_unknown_help"></p>
+              </li>
+            </ol>
+
+            <div class="bk-rcv__fields">
+              <div class="bk-field">
+                <label class="bk-label" for="ref"><span data-k="inventory.receipt_new.reference"></span> <span class="bk-label__opt" data-k="ux.action.optional"></span></label>
+                <div class="bk-input"><input id="ref" class="bk-input__control" type="text" autocomplete="off"></div>
+              </div>
+              <div class="bk-field">
+                <label class="bk-label" for="docdate"><span data-k="inventory.receipt_new.document_date"></span> <span class="bk-label__opt" data-k="ux.action.optional"></span></label>
+                <div class="bk-input"><input id="docdate" class="bk-input__control" type="date" aria-describedby="docdate-h"></div>
+                <p class="bk-hint" id="docdate-h" data-k="inventory.receipt_new.document_date_help"></p>
+              </div>
+            </div>
+          </section>
+
+          <div class="bk-notice bk-notice--pending" role="alert" data-when="uncertain">
+            <span data-icon="clock"></span>
+            <p class="bk-notice__title" data-k="ux.state.uncertain.title"></p>
+            <div class="bk-notice__body">
+              <p data-k="ux.state.uncertain.body"></p>
+              <p><strong data-k="commands.family.stock_posting.must_not"></strong></p>
+            </div>
+            <div class="bk-notice__actions">
+              <button type="button" class="bk-btn bk-btn--primary" data-k="ux.action.resend"></button>
+              <button type="button" class="bk-btn bk-btn--secondary" data-k="ux.action.check_status"></button>
+            </div>
+          </div>
+          <div data-unless="uncertain">
+            <div class="bk-actions">
+              <button type="button" class="bk-btn bk-btn--primary bk-btn--lg" id="rcv-review-btn" data-dialog-open="rcv-review" data-ctrl-enter
+                data-k-aria="ux.action.review" data-shortcut="Ctrl+Enter" aria-keyshortcuts="Control+Enter">
+                <span data-k="ux.action.review"></span><kbd class="bk-kbd" aria-hidden="true">Ctrl+Enter</kbd>
+              </button>
+              <a class="bk-btn bk-btn--secondary bk-btn--lg" href="index.html#outside-set" data-k="ux.action.cancel"></a>
+            </div>
+            <p class="bk-reason" id="rcv-reason" hidden><span data-icon="info"></span><span data-k="inventory.receipt_new.disabled"></span></p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="bk-dialog-layer" id="rcv-review" hidden>
+  <div class="bk-dialog" role="dialog" aria-modal="true" aria-labelledby="rcv-review-title" aria-describedby="rcv-review-note">
+    <h2 class="bk-dialog__title" id="rcv-review-title" data-k="inventory.receipt_new.review_title"></h2>
+    <div class="bk-dialog__body">
+      <p id="rv-lines"></p>
+      <p class="bk-status bk-status--pending" id="rv-unknown-wrap"><span data-icon="clock"></span><span id="rv-unknown"></span></p>
+      <ul class="bk-list-plain bk-review-lines">
+        <li class="bk-review-line"><span data-fixture>Kertas HVS A4 70 gsm isi 500 lembar</span><span data-fixture>20 rim · Rp960.000</span></li>
+        <li class="bk-review-line"><span data-fixture>Pulpen gel hitam 0,5 mm</span><span data-fixture>100 pcs · Rp320.000</span></li>
+        <li class="bk-review-line is-flagged"><span data-fixture>Lakban bening 48 mm × 100 yard</span><span><span data-fixture>24 pcs</span> · <span class="bk-pill bk-pill--pending" data-k="ux.state.cost_unknown.title"></span></span></li>
+      </ul>
+      <p class="bk-notice bk-notice--quiet bk-notice--text" id="rcv-review-note" data-k="inventory.receipt_new.review_note"></p>
+    </div>
+    <div class="bk-dialog__actions">
+      <button type="button" class="bk-btn bk-btn--secondary bk-btn--lg" data-dialog-close data-initial-focus
+        data-k-aria="ux.action.edit_again" data-shortcut="Esc" aria-keyshortcuts="Escape"><span data-k="ux.action.edit_again"></span></button>
+      <button type="button" class="bk-btn bk-btn--primary bk-btn--lg" id="rcv-confirm" data-ctrl-enter
+        data-k-aria="inventory.receipt_new.confirm" data-shortcut="Ctrl+Enter" aria-keyshortcuts="Control+Enter">
+        <span data-k="inventory.receipt_new.confirm"></span><kbd class="bk-kbd" aria-hidden="true">Ctrl+Enter</kbd>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="bk-live" id="bk-live-polite" aria-live="polite"></div>
+<div class="bk-live" id="bk-live-assertive" aria-live="assertive"></div>
+<script src="assets/bk-copy.js"></script>
+<script src="assets/bk-icons.js"></script>
+<script src="assets/bk-app.js"></script>
+</body>
+</html>
