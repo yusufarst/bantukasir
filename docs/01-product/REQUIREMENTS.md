@@ -8,7 +8,7 @@
 | Product | [PRODUCT_BLUEPRINT](PRODUCT_BLUEPRINT.md) |
 | Domain rules | [DOMAIN_MODEL](../02-domain/DOMAIN_MODEL.md), [CATALOG_BARCODE](../02-domain/CATALOG_BARCODE.md), [INVENTORY](../02-domain/INVENTORY.md), [COSTING](../02-domain/COSTING.md), [SALES_CASH](../02-domain/SALES_CASH.md) |
 
-The requirement register of BantuKasir V1. Each requirement says what the product must do, how acceptance is judged, where the requirement comes from, and which legacy acceptance suite tests it today. Section 21 maps every legacy CORE entry to these requirements; section 22 traces every decision D-001 to D-079.
+The requirement register of BantuKasir V1. Each requirement says what the product must do, how acceptance is judged, where the requirement comes from, and which legacy acceptance suite tests it today. Section 21 maps every legacy CORE entry to these requirements; section 22 traces every decision D-001 to D-080.
 
 ## 1. How to read this register
 
@@ -344,7 +344,7 @@ Every legacy Core entry CORE-001 to CORE-073 (`core.json`, `CORE-MAP.md`) is map
 
 ## 22. Decision traceability
 
-Every decision D-001 to D-079 is either traced to at least one requirement or rule, or classified as having no product or domain content.
+Every decision D-001 to D-080 is either traced to at least one requirement or rule, or classified as having no product or domain content.
 
 | Decision | Product or domain content | Traced to |
 | --- | --- | --- |
@@ -427,7 +427,8 @@ Every decision D-001 to D-079 is either traced to at least one requirement or ru
 | D-077 | V1 payment methods CASH and BANK_TRANSFER only (the Owner's decision Q38): STATIC_QRIS removed from V1; goods only; one full payment per Sale; a future method needs a separate Owner decision | REQ-PAY-01, REQ-PAY-03, REQ-PAY-04, REQ-DOC-01, REQ-CASH-05, REQ-CASH-12; BR-PAY-01, BR-PAY-03, BR-PAY-04 (retired), BR-PAY-06, BR-SALE-02, BR-SALE-10, BR-SALE-12, BR-DOC-01, BR-CASH-12, BR-CASH-20, BR-RFD-05, BR-COST-34 |
 | D-078 | Acceptance of the RF-4A checkpoint `c8dc234` and of its SSD safety bundle | Non-product/domain — governance |
 | D-079 | Authorization of the Q38 canonical amendment | Non-product/domain — governance |
+| D-080 | Acceptance of the Q38 checkpoint `d4c0594` and of its SSD safety bundle | Non-product/domain — governance |
 
 ## 23. Counts
 
-Re-derived from this register: 23 sections; 134 requirement rows in sections 2 to 19, all with distinct identifiers; no requirement pending; 73 legacy CORE entries, of which 72 are mapped (9 of them adapted by later decisions) and 1 is retired (section 21); 79 decisions, of which 50 are traced to requirements or rules and 29 are classified as non-product/domain (section 22).
+Re-derived from this register: 23 sections; 134 requirement rows in sections 2 to 19, all with distinct identifiers; no requirement pending; 73 legacy CORE entries, of which 72 are mapped (9 of them adapted by later decisions) and 1 is retired (section 21); 80 decisions, of which 50 are traced to requirements or rules and 30 are classified as non-product/domain (section 22).
