@@ -284,3 +284,7 @@ New identifiers written in RF-4A: `UXT-nn` (user tasks), `UXP-nnn` (pages), `UXI
 ## 11. Q38 amendment
 
 The canonical amendment for the Owner's payment-method decision Q38 (D-077, authorized by D-079) supersedes no legacy document. It retires in place, without reuse, the rule BR-PAY-04 in SALES_CASH, the task UXT-05 in USER_TASKS and the term STATIC_QRIS in GLOSSARY. New identifiers: decisions D-077 to D-079; open item N-11.
+
+## 12. RF-4B
+
+RF-4B (D-083) supersedes no legacy document. It finalizes the shop terms of [GLOSSARY](../02-domain/GLOSSARY.md) and writes [COPY_DECK](../07-ux-design/COPY_DECK.md) for gate P7-G2. The receipt and screen layouts of `docs/02-domain/legacy/17-POS-SALES.md` and the scanner screen behaviour of `docs/02-domain/legacy/12-BARCODE-SCANNER.md` stay input only for RF-5, and `docs/07-ux-design/legacy/DESIGN.md` stays input only for RF-4C; all three are unchanged. New identifiers: the copy keys, the writing rules `CW-nn` and the findings `F-nn` of COPY_DECK; decisions D-081 to D-083.
