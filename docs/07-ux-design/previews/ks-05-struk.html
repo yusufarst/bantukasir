@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="id" data-accent="green">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preview</title>
+<link rel="stylesheet" href="assets/bk-tokens.css">
+<link rel="stylesheet" href="assets/bk-base.css">
+<link rel="stylesheet" href="assets/bk-components.css">
+</head>
+<!-- KS-05 · UXP-103 Struk (result after a committed Sale) with the receipt look
+     of 58 mm, 80 mm and A4 (UXA-23). ?ukuran=58|80|a4; ?state=copy shows the copy
+     marker that every reprint carries (BR-DOC-04), for review of its look. -->
+<body data-page="UXP-103" data-title-key="sales.receipt.title" data-layout="rail" data-nav="till" data-nav-current="true" data-role="cashier" data-roles="cashier owner combined">
+<div class="bk-app" id="bk-app">
+  <div class="bk-col">
+    <main id="main" class="bk-main" tabindex="-1">
+      <div class="bk-container">
+        <a class="bk-back" href="ks-03-kasir.html?state=empty" data-k="ux.action.back_to" data-p='{"halaman":"Kasir"}'></a>
+        <div class="bk-pagehead">
+          <div class="bk-pagehead__text"><h1 class="bk-title bk-title--shell" tabindex="-1" data-k="sales.receipt.title"></h1></div>
+        </div>
+        <div class="bk-grid-2 bk-grid-2--receipt">
+          <div class="bk-stack">
+            <div class="bk-notice bk-notice--success" role="status">
+              <span data-icon="check"></span>
+              <p class="bk-notice__title" data-k="sales.receipt.saved" data-p='{"nomor":"20261017-000123"}'></p>
+            </div>
+            <a class="bk-btn bk-btn--primary bk-btn--xl bk-btn--block" href="ks-03-kasir.html?state=empty" data-k="sales.receipt.new_sale"></a>
+            <div class="bk-field">
+              <label class="bk-label" for="next-search" data-k="sales.till.search"></label>
+              <div class="bk-input bk-input--lg">
+                <span class="bk-input__icon" data-icon="scan"></span>
+                <input id="next-search" class="bk-input__control" type="search" autocomplete="off" enterkeyhint="search"
+                  aria-describedby="next-hint" data-k-aria="sales.till.search" data-shortcut="F2" aria-keyshortcuts="F2" data-shortcut-f2>
+              </div>
+              <p class="bk-hint" id="next-hint" data-k="sales.receipt.search_hint"></p>
+            </div>
+            <div><a class="bk-btn bk-btn--secondary" href="index.html#outside-set" data-k="sales.detail.title"></a></div>
+          </div>
+
+          <section class="bk-card bk-section" aria-labelledby="receipt-size-legend">
+            <div class="bk-section__head">
+              <fieldset class="bk-seg bk-seg--three">
+                <legend class="bk-label bk-legend" id="receipt-size-legend" data-k="sales.receipt.size"></legend>
+                <div class="bk-seg__opt"><input type="radio" name="size" id="sz-58" value="58" checked><label for="sz-58" data-k="sales.receipt.size_58"></label></div>
+                <div class="bk-seg__opt"><input type="radio" name="size" id="sz-80" value="80"><label for="sz-80" data-k="sales.receipt.size_80"></label></div>
+                <div class="bk-seg__opt"><input type="radio" name="size" id="sz-a4" value="a4"><label for="sz-a4" data-k="sales.receipt.size_a4"></label></div>
+              </fieldset>
+            </div>
+            <div class="bk-print-row">
+              <button type="button" class="bk-btn bk-btn--secondary" id="print" aria-describedby="print-hint"><span data-icon="printer"></span><span data-k="sales.receipt.print"></span></button>
+              <p class="bk-hint" id="print-hint" data-k="sales.receipt.print_check"></p>
+            </div>
+
+            <div class="bk-paper-stage bk-mt-4">
+              <article class="bk-paper bk-paper--58" id="paper" aria-label="Struk" data-k-alt="sales.receipt.title">
+                <p class="bk-paper__center" data-when="copy"><span class="bk-paper__copy" data-k="documents.receipt.copy_marker"></span></p>
+                <p class="bk-paper__title bk-paper__center" data-size-only="a4" hidden data-k="documents.invoice.title"></p>
+                <p class="bk-paper__shop" data-fixture>Toko Contoh</p>
+                <p class="bk-paper__center" data-fixture>Jl. Contoh Raya No. 1, Kota Contoh</p>
+                <p class="bk-paper__center" data-fixture>0800-0000-0000</p>
+                <p class="bk-paper__center" data-fixture>Buka setiap hari 08.00–21.00</p>
+                <hr class="bk-paper__rule">
+                <p data-k="documents.receipt.number" data-p='{"nomor":"20261017-000123"}'></p>
+                <p data-k="documents.receipt.time" data-p='{"waktu":"17 Oktober 2026, 13.45.00"}'></p>
+                <p data-k="documents.receipt.cashier" data-p='{"nama":"Rina"}'></p>
+                <p data-k="documents.receipt.session" data-p='{"nomor":"20261017-000004"}'></p>
+                <hr class="bk-paper__rule">
+                <div class="bk-paper__items">
+                  <div class="bk-paper__item">
+                    <p class="bk-paper__name" data-fixture>Pulpen gel hitam 0,5 mm</p>
+                    <p class="bk-paper__sku" data-k="documents.receipt.sku" data-p='{"sku":"ATK-PG-05H"}'></p>
+                    <p class="bk-paper__row"><span data-k="documents.receipt.line_quantity" data-p='{"jumlah":"2","satuan":"pcs","harga":"Rp4.500"}'></span><span data-fixture>Rp9.000</span></p>
+                  </div>
+                  <div class="bk-paper__item">
+                    <p class="bk-paper__name" data-fixture>Kertas HVS A4 70 gsm isi 500 lembar</p>
+                    <p class="bk-paper__sku" data-k="documents.receipt.sku" data-p='{"sku":"ATK-HVS-A470"}'></p>
+                    <p class="bk-paper__row"><span data-k="documents.receipt.line_quantity" data-p='{"jumlah":"1","satuan":"rim","harga":"Rp52.000"}'></span><span data-fixture>Rp52.000</span></p>
+                  </div>
+                  <div class="bk-paper__item">
+                    <p class="bk-paper__name" data-fixture>Kertas kado motif garis per meter</p>
+                    <p class="bk-paper__sku" data-k="documents.receipt.sku" data-p='{"sku":"ATK-KK-GRS"}'></p>
+                    <p class="bk-paper__row"><span data-k="documents.receipt.line_quantity" data-p='{"jumlah":"2,5","satuan":"m","harga":"Rp7.000"}'></span><span data-fixture>Rp17.500</span></p>
+                  </div>
+                  <div class="bk-paper__item">
+                    <p class="bk-paper__name" data-fixture>Binder kantor dua cincin ukuran folio dengan sampul plastik tebal tahan air dan kantong depan bening untuk label nama</p>
+                    <p class="bk-paper__sku" data-k="documents.receipt.sku" data-p='{"sku":"ATK-BND-F2C-BENING-TEBAL"}'></p>
+                    <p class="bk-paper__row"><span data-k="documents.receipt.line_quantity" data-p='{"jumlah":"1","satuan":"pcs","harga":"Rp38.500"}'></span><span data-fixture>Rp38.500</span></p>
+                  </div>
+                </div>
+                <hr class="bk-paper__rule">
+                <p class="bk-paper__row bk-paper__total"><span data-k="documents.receipt.total"></span><span data-fixture>Rp117.000</span></p>
+                <p data-k="documents.receipt.method" data-p='{"metode":"Tunai"}'></p>
+                <p class="bk-paper__row"><span data-k="documents.receipt.tendered"></span><span data-fixture>Rp120.000</span></p>
+                <p class="bk-paper__row"><span data-k="documents.receipt.change"></span><span data-fixture>Rp3.000</span></p>
+                <p data-k="documents.receipt.customer" data-p='{"nama":"Bu Sari"}'></p>
+                <hr class="bk-paper__rule">
+                <p class="bk-paper__center" data-fixture>Terima kasih.</p>
+              </article>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+<div class="bk-live" id="bk-live-polite" aria-live="polite"></div>
+<div class="bk-live" id="bk-live-assertive" aria-live="assertive"></div>
+<script src="assets/bk-copy.js"></script>
+<script src="assets/bk-icons.js"></script>
+<script src="assets/bk-app.js"></script>
+</body>
+</html>

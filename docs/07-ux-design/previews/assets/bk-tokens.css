@@ -1,0 +1,277 @@
+/* =============================================================================
+   BantuKasir design tokens — RF-4C preview (nonproduction)
+
+   Normative source: docs/07-ux-design/DESIGN_SYSTEM.md. This file is the
+   rendered form of its token tables for the key-screen previews; where the two
+   differ, DESIGN_SYSTEM.md prevails.
+
+   Translated from the generic layer of the Golden Frontend Reference v1.0
+   (v1.0.0, baseline golden-frontend-v1.0, commit 14497d9, assets/css/tokens.css)
+   under D-085 and D-086. Names follow the reference where the role is the same.
+   BantuKasir values that differ from the reference's defaults are marked
+   "BK:" with the rule that requires them (DESIGN_SYSTEM section 1.4).
+   No MULTIPLECORP brand value is used: the --brand-* slots carry the
+   BantuKasir accent set (DESIGN_SYSTEM section 3.3).
+   ============================================================================= */
+
+:root {
+  /* ---------------------------------------------------------------------------
+     1. Typography (DESIGN_SYSTEM section 4)
+     ------------------------------------------------------------------------- */
+  --font-sans: "Inter", "Inter Fallback", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", Consolas, "Liberation Mono", Menlo, monospace;
+  --font-variation-text: "opsz" 14;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* BK: no runtime text compression (the reference's --tu); UXA-06 sets
+     body >= 14 px and secondary >= 12 px at every width. */
+  --text-display-size: 40px;   --text-display-lh: 48px;   --text-display-track: -0.02em;  /* till total, change */
+  --text-title-size: 28px;     --text-title-lh: 36px;     --text-title-track: -0.02em;    /* h1 */
+  --text-heading-size: 20px;   --text-heading-lh: 28px;   --text-heading-track: -0.01em;  /* h2 */
+  --text-subheading-size: 16px; --text-subheading-lh: 24px;                               /* h3, card titles */
+  --text-figure-size: 24px;    --text-figure-lh: 32px;    --text-figure-track: -0.01em;   /* metrics, totals */
+  --text-body-lg-size: 16px;   --text-body-lg-lh: 24px;                                   /* intro, fields */
+  --text-body-size: 14px;      --text-body-lh: 20px;                                      /* body minimum */
+  --text-label-size: 14px;     --text-label-lh: 20px;                                     /* field labels */
+  --text-meta-size: 12px;      --text-meta-lh: 16px;                                      /* secondary minimum */
+  --text-button-size: 15px;    --text-button-lh: 20px;
+  --text-button-lg-size: 16px; --text-button-lg-lh: 24px;
+  --text-nav-size: 15px;       --text-nav-lh: 20px;
+  --text-mono-size: 13px;      --text-mono-lh: 18px;                                      /* SKU, barcode */
+  --text-pill-size: 12px;      --text-pill-lh: 16px;
+
+  /* ---------------------------------------------------------------------------
+     2. Spacing (reference 4 px base with a 2 px half step)
+     ------------------------------------------------------------------------- */
+  --space-0-5: 2px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-14: 56px;
+  --space-16: 64px;
+
+  /* ---------------------------------------------------------------------------
+     3. Layout (DESIGN_SYSTEM section 7). BK: comfortable density (UXA-26).
+     ------------------------------------------------------------------------- */
+  --gutter: 24px;
+  --card-pad: 20px;
+  --grid-gap: 16px;
+  --section-gap: 24px;
+  --sidenav-w: 248px;
+  --rail-w: 76px;
+  --topbar-h: 56px;
+  --row-min: 56px;
+  --container-data: 1440px;
+  --container-form: 960px;
+  --container-focused: 640px;
+  --container-auth: 420px;
+
+  /* ---------------------------------------------------------------------------
+     4. Radius (reference: control radius ~0.18 x height)
+     ------------------------------------------------------------------------- */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-full: 9999px;
+
+  /* ---------------------------------------------------------------------------
+     5. Controls. BK: every target >= 44 x 44 CSS px at every width (UXA-07);
+     the final payment action >= 56 px (BR-SALE-14, UXA-07).
+     ------------------------------------------------------------------------- */
+  --touch-min: 44px;
+  --touch-gap: 8px;
+  --control-md: 44px;
+  --control-lg: 48px;
+  --control-xl: 56px;
+  --control-final: 64px;
+  --badge-height: 24px;
+  --dot: 8px;
+
+  /* ---------------------------------------------------------------------------
+     6. Icons (reference anatomy: outline, 24-unit grid, round caps and joins)
+     ------------------------------------------------------------------------- */
+  --icon-lg: 24px;
+  --icon-md: 20px;
+  --icon-sm: 16px;
+  --icon-stroke: 1.75;
+
+  /* ---------------------------------------------------------------------------
+     7. Neutrals and text (reference fixed tokens, values unchanged)
+     ------------------------------------------------------------------------- */
+  --color-canvas: #f7f8f3;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #f2f3ee;
+  --color-border-subtle: #f0f1ef;
+  --color-border: #e4e4e2;
+  --color-border-strong: #d8d8d6;
+  /* BK: a field, choice control or switch needs a 3:1 boundary (UXA-18);
+     the reference's #e4e4e2 field border is 1.27:1 on white. */
+  --color-border-input: #858890;          /* 3.55:1 on white, 3.32:1 on canvas */
+  --color-border-input-hover: #6b6d73;    /* 5.17:1 on white */
+  --color-row-hover: #f8f9f4;
+  --color-row-press: #f2f3ec;
+  --color-scrim: rgba(15, 16, 20, 0.32);
+
+  --color-text-primary: #0f1014;          /* 19.0:1 on white */
+  --color-text-strong: #3a3b42;           /* 11.2:1 */
+  --color-text-secondary: #55565c;        /* 7.3:1 white, 6.9 canvas */
+  --color-text-tertiary: #6b6d73;         /* 5.2:1 white, 4.9 canvas, 4.6 sunken */
+  --color-text-placeholder: #75767a;      /* 4.5:1 on white fields only */
+  --color-text-disabled: #9b9da1;         /* disabled controls only (WCAG exempt) */
+  --color-text-on-primary: #ffffff;
+
+  /* ---------------------------------------------------------------------------
+     8. Status tones (reference fixed tokens, values unchanged; fg on bg >= 5:1)
+     ------------------------------------------------------------------------- */
+  --color-success-bg: #e3f4e9;  --color-success-fg: #236b49;  --color-success-dot: #319664;
+  --color-warning-bg: #fff1e2;  --color-warning-fg: #8a4a0e;  --color-warning-dot: #d98a3d;
+  --color-pending-bg: #fef1d8;  --color-pending-fg: #7a5a22;  --color-pending-dot: #cb9d4e;
+  --color-danger-bg: #fde7e8;   --color-danger-fg: #b4373f;   --color-danger-dot: #d0454c;
+  --color-info-bg: #e2ecf4;     --color-info-fg: #0f2b4f;     --color-info-dot: #5b8db5;
+  --color-neutral-bg: #f2f3ee;  --color-neutral-fg: #3a3b42;  --color-neutral-dot: #9b9da1;
+  --color-danger-solid: #b4373f;          /* white label 5.9:1 */
+  --color-danger-solid-hover: #9e2f36;
+
+  /* Chart: the one trend series takes the shop's accent (>= 6.69:1 on white);
+     grid lines use the reference chart track. */
+  --chart-line: var(--brand-primary);
+  --chart-area-opacity: 0.16;
+  --chart-grid: #e6e8eb;
+  --chart-line-width: 2px;
+
+  /* ---------------------------------------------------------------------------
+     9. Elevation (reference values)
+     ------------------------------------------------------------------------- */
+  --shadow-xs: 0 1px 1px rgba(16, 24, 8, .04);
+  --shadow-card: 0 1px 3px rgba(20, 24, 16, .04);
+  --shadow-menu: 0 2px 8px rgba(0, 0, 0, .05), 0 12px 32px rgba(20, 24, 16, .08);
+  --shadow-modal: 0 0 0 1px rgba(15, 16, 20, .05), 0 24px 48px rgba(15, 16, 20, .14), 0 2px 6px rgba(15, 16, 20, .05);
+  --shadow-drawer: 1px 0 0 rgba(15, 16, 20, .06), 24px 0 48px rgba(15, 16, 20, .12);
+  --shadow-bar: 0 -1px 0 var(--color-border), 0 -8px 24px rgba(15, 16, 20, .06);
+
+  /* ---------------------------------------------------------------------------
+     10. Focus (UXA-08: >= 2 px, >= 3:1). The ring is the accent of the shop.
+     ------------------------------------------------------------------------- */
+  --color-focus: var(--brand-accent);
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+
+  /* ---------------------------------------------------------------------------
+     11. Motion (reference durations and curves). BK: removed entirely under
+     prefers-reduced-motion (UXA-20), see bk-base.css.
+     ------------------------------------------------------------------------- */
+  --dur-instant: 80ms;
+  --dur-hover: 140ms;
+  --dur-fast: 160ms;
+  --dur-state: 200ms;
+  --dur-base: 240ms;
+  --dur-moderate: 320ms;
+  --ease-standard: cubic-bezier(0.42, 0, 0.58, 1);
+  --ease-enter: cubic-bezier(0, 0, 0.2, 1);
+  --ease-exit: cubic-bezier(0.37, 0, 0.63, 1);
+
+  /* ---------------------------------------------------------------------------
+     12. Layers (reference scale)
+     ------------------------------------------------------------------------- */
+  --z-raised: 2;
+  --z-bar: 30;
+  --z-popover: 80;
+  --z-drawer: 95;
+  --z-modal: 100;
+  --z-live: 110;
+}
+
+/* -----------------------------------------------------------------------------
+   Width classes (UXA-02): compact < 600, medium 600-1023, expanded >= 1024.
+   BK: replaces the reference's 768 / 1025 classes (TOOLCHAIN section 3).
+   --------------------------------------------------------------------------- */
+@media (max-width: 1023.98px) {
+  :root { --gutter: 20px; --sidenav-w: 216px; }
+}
+@media (max-width: 599.98px) {
+  :root {
+    --gutter: 16px;
+    --card-pad: 16px;
+    --grid-gap: 12px;
+    --section-gap: 20px;
+    --text-title-size: 24px;   --text-title-lh: 30px;
+    --text-heading-size: 18px; --text-heading-lh: 24px;
+    --text-body-size: 15px;    --text-body-lh: 22px;
+    --text-display-size: 34px; --text-display-lh: 40px;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   PROJECT BRAND TOKENS: the constrained accent set (DESIGN_SYSTEM section 3.3;
+   SCHEMA accent_token allowlist). Only these slots change with the shop's
+   accent. "green" is the default and the accent of the pre-authentication
+   pages. Every value is measured in DESIGN_SYSTEM section 3.5.
+   --------------------------------------------------------------------------- */
+:root,
+[data-accent="green"] {
+  --brand-primary: #116949;        /* white label 6.69:1 */
+  --brand-primary-hover: #0f5c40;
+  --brand-primary-press: #0e533a;
+  --brand-accent: #116949;         /* focus ring, indicators: 6.26:1 on canvas */
+  --brand-accent-strong: #0e583d;  /* accent text: 8.46:1 white, 7.47:1 tint-150 */
+  --brand-tint-50: #f6fbf9;
+  --brand-tint-100: #eff8f5;
+  --brand-tint-150: #e6f4ef;
+  --brand-tint-200: #d8eee6;
+}
+[data-accent="teal"] {
+  --brand-primary: #0f5f6c;        /* 7.31:1 */
+  --brand-primary-hover: #0d535e;
+  --brand-primary-press: #0c4b55;
+  --brand-accent: #0f5f6c;
+  --brand-accent-strong: #0c4f5a;
+  --brand-tint-50: #f6fafb;
+  --brand-tint-100: #eff7f8;
+  --brand-tint-150: #e6f2f4;
+  --brand-tint-200: #d8ebee;
+}
+[data-accent="blue"] {
+  --brand-primary: #215497;        /* 7.55:1 */
+  --brand-primary-hover: #1e4d8a;
+  --brand-primary-press: #1c4882;
+  --brand-accent: #215497;
+  --brand-accent-strong: #1d4b86;
+  --brand-tint-50: #f6f8fc;
+  --brand-tint-100: #eef3f9;
+  --brand-tint-150: #e5ecf6;
+  --brand-tint-200: #d5e1f0;
+}
+[data-accent="purple"] {
+  --brand-primary: #583a88;        /* 8.84:1 */
+  --brand-primary-hover: #51367d;
+  --brand-primary-press: #4c3276;
+  --brand-accent: #583a88;
+  --brand-accent-strong: #4f3479;
+  --brand-tint-50: #f8f6fb;
+  --brand-tint-100: #f3eff8;
+  --brand-tint-150: #ece7f4;
+  --brand-tint-200: #e1d9ed;
+}
+[data-accent="graphite"] {
+  --brand-primary: #34383d;        /* 11.80:1 */
+  --brand-primary-hover: #2d3034;
+  --brand-primary-press: #282b2f;
+  --brand-accent: #34383d;
+  --brand-accent-strong: #2a2e32;
+  --brand-tint-50: #f8f9f9;
+  --brand-tint-100: #f3f4f4;
+  --brand-tint-150: #ecedef;
+  --brand-tint-200: #e1e3e5;
+}

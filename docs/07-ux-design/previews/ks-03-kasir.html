@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="id" data-accent="green">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preview</title>
+<link rel="stylesheet" href="assets/bk-tokens.css">
+<link rel="stylesheet" href="assets/bk-base.css">
+<link rel="stylesheet" href="assets/bk-components.css">
+</head>
+<!-- KS-03 · UXP-101 Kasir (till workspace). Nonproduction preview of RF-4C.
+     States: ?state=default | empty | price-changed | unresolved | opened -->
+<body data-page="UXP-101" data-title-key="sales.till.title" data-layout="rail" data-nav="till" data-role="cashier" data-roles="cashier owner combined">
+<div class="bk-app" id="bk-app">
+  <div class="bk-col bk-col--till">
+    <main id="main" class="bk-main bk-main--till" tabindex="-1">
+      <div class="bk-till">
+        <section class="bk-till__work" aria-labelledby="page-title">
+          <div class="bk-notice bk-notice--success" data-when="opened" role="status">
+            <span data-icon="check"></span>
+            <p class="bk-notice__title" data-k="cash.open.success" data-p='{"nomor":"20261017-000004"}'></p>
+          </div>
+          <div class="bk-till__head">
+            <div class="bk-till__title">
+              <h1 class="bk-title bk-title--shell" id="page-title" tabindex="-1" data-k="sales.till.title"></h1>
+              <p class="bk-meta" data-k="sales.till.session" data-p='{"nomor":"20261017-000004","laci":"Laci 1"}'></p>
+            </div>
+            <a class="bk-btn bk-btn--quiet" href="ks-07-tutup-sesi.html" data-k="cash.close.title"></a>
+          </div>
+
+          <div class="bk-notice bk-notice--warning" id="price-notice" data-when="price-changed" role="alert">
+            <span data-icon="warning"></span>
+            <p class="bk-notice__title" data-k="ux.state.price_changed.title"></p>
+            <div class="bk-notice__body">
+              <p data-k="ux.state.price_changed.body" data-p='{"jumlah":"1"}'></p>
+              <p><strong data-k="ux.state.price_changed.total" data-p='{"uang":"Rp115.500"}'></strong></p>
+            </div>
+            <div class="bk-notice__actions">
+              <button type="button" class="bk-btn bk-btn--primary" id="accept-prices" data-k="sales.cart.accept_new_prices"></button>
+            </div>
+          </div>
+
+          <div class="bk-till__search">
+            <div class="bk-field">
+              <label class="bk-label" for="till-search" data-k="sales.till.search"></label>
+              <div class="bk-input bk-input--lg">
+                <span class="bk-input__icon" data-icon="search"></span>
+                <input id="till-search" class="bk-input__control" type="search" autocomplete="off" enterkeyhint="search"
+                  data-k-ph="sales.till.search_hint" data-k-aria="sales.till.search" data-shortcut="F2" aria-keyshortcuts="F2" data-shortcut-f2>
+                <kbd class="bk-kbd bk-kbd--field" aria-hidden="true">F2</kbd>
+              </div>
+            </div>
+            <button type="button" class="bk-btn bk-btn--secondary bk-btn--lg" data-disclosure aria-expanded="false" aria-controls="till-filters">
+              <span data-icon="filter"></span><span data-k="ux.action.filter"></span>
+            </button>
+          </div>
+          <div class="bk-filters" id="till-filters" hidden>
+            <div class="bk-field">
+              <label class="bk-label" for="f-cat" data-k="catalog.field.category"></label>
+              <div class="bk-input"><input id="f-cat" class="bk-input__control" type="search" autocomplete="off" data-k-ph="ux.list.search_hint"></div>
+            </div>
+            <div class="bk-field">
+              <label class="bk-label" for="f-brand" data-k="catalog.field.brand"></label>
+              <div class="bk-input"><input id="f-brand" class="bk-input__control" type="search" autocomplete="off" data-k-ph="ux.list.search_hint"></div>
+            </div>
+          </div>
+
+          <div class="bk-notice bk-notice--warning" id="till-unknown" role="status" hidden>
+            <span data-icon="warning"></span>
+            <p class="bk-notice__title" data-k="ux.state.unknown_code.title"></p>
+            <p class="bk-notice__body" data-unknown-body></p>
+          </div>
+
+          <div class="bk-results">
+            <div id="till-results" class="bk-card"></div>
+            <div class="bk-empty" id="till-noresults" hidden>
+              <p class="bk-empty__title" data-k="ux.state.no_results.title"></p>
+              <p data-k="ux.state.no_results.body"></p>
+            </div>
+            <div class="bk-load-more"><button type="button" class="bk-btn bk-btn--secondary bk-btn--block" data-k="ux.action.load_more"></button></div>
+          </div>
+        </section>
+
+        <section class="bk-cart" aria-labelledby="cart-title">
+          <div class="bk-cart__head">
+            <h2 class="bk-h3" id="cart-title" data-k="sales.cart.title"></h2>
+            <button type="button" class="bk-btn bk-btn--quiet" id="cart-clear" data-dialog-open="clear-dialog" data-k="sales.cart.clear"></button>
+          </div>
+          <div class="bk-cart__lines">
+            <p class="bk-empty" id="cart-empty" data-k="sales.cart.empty" hidden></p>
+            <ul id="cart-lines" class="bk-list-plain" role="list"></ul>
+          </div>
+          <div class="bk-cart__foot">
+            <div class="bk-total">
+              <span class="bk-total__label" data-k="sales.cart.total"></span>
+              <span class="bk-total__value" id="cart-total"></span>
+            </div>
+            <a class="bk-btn bk-btn--primary bk-btn--xl bk-btn--block" data-when="unresolved" href="index.html#outside-set" data-k="sales.till.resolve_payment"></a>
+            <button type="button" class="bk-btn bk-btn--primary bk-btn--final" id="pay"
+              data-k-aria="sales.cart.pay" data-shortcut="F8" aria-keyshortcuts="F8" data-shortcut-f8>
+              <span data-k="sales.cart.pay"></span><kbd class="bk-kbd" aria-hidden="true">F8</kbd>
+            </button>
+            <p class="bk-reason" id="pay-reason" hidden>
+              <span data-icon="info"></span>
+              <span><span data-reason-text></span> <a href="index.html#outside-set" data-reason-link data-k="ux.action.open_unresolved"></a></span>
+            </p>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="bk-dialog-layer" id="clear-dialog" hidden>
+  <div class="bk-dialog" role="alertdialog" aria-modal="true" aria-labelledby="clear-title" aria-describedby="clear-body">
+    <h2 class="bk-dialog__title" id="clear-title" data-k="sales.cart.clear_confirm.title"></h2>
+    <div class="bk-dialog__body"><p id="clear-body" data-k="sales.cart.clear_confirm.body"></p></div>
+    <div class="bk-dialog__actions">
+      <button type="button" class="bk-btn bk-btn--secondary" data-dialog-close data-initial-focus data-k="ux.action.cancel"></button>
+      <button type="button" class="bk-btn bk-btn--danger" id="clear-confirm" data-k="sales.cart.clear"></button>
+    </div>
+  </div>
+</div>
+
+<div class="bk-live" id="bk-live-polite" aria-live="polite"></div>
+<div class="bk-live" id="bk-live-assertive" aria-live="assertive"></div>
+<script src="assets/bk-copy.js"></script>
+<script src="assets/bk-icons.js"></script>
+<script src="assets/bk-app.js"></script>
+</body>
+</html>

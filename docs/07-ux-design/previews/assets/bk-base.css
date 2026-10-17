@@ -1,0 +1,139 @@
+/* =============================================================================
+   BantuKasir base layer — RF-4C preview (nonproduction)
+   Font faces, reset, document defaults, focus, icons, utilities, reduced motion.
+   Requires bk-tokens.css first.
+
+   Fonts. Production self-hosts the Inter files (SIL OFL 1.1) because the CSP
+   allows no third-party origin (SECURITY_MODEL SEC-HDR-03). These review-only
+   previews try an installed Inter first, then a pinned copy of the OFL package
+   @fontsource-variable/inter 5.2.8 on jsDelivr, then a size-adjusted local
+   Segoe UI face (the fallback technique of the reference's base.css).
+   ============================================================================= */
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: local("Inter Variable"), local("InterVariable"), local("Inter"),
+       url("https://cdn.jsdelivr.net/npm/@fontsource-variable/inter@5.2.8/files/inter-latin-wght-normal.woff2") format("woff2-variations"),
+       url("https://cdn.jsdelivr.net/npm/@fontsource-variable/inter@5.2.8/files/inter-latin-wght-normal.woff2") format("woff2");
+}
+
+/* Cap-height-matched fallback: Segoe UI scaled to Inter's metrics, one face per
+   weight band so 600 and 700 never collapse to 400 when Inter is missing. */
+@font-face {
+  font-family: "Inter Fallback";
+  font-weight: 100 450;
+  src: local("Segoe UI"), local("SegoeUI");
+  size-adjust: 104%; ascent-override: 93.1%; descent-override: 23.3%; line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Inter Fallback";
+  font-weight: 451 650;
+  src: local("Segoe UI Semibold"), local("SegoeUI-Semibold");
+  size-adjust: 104%; ascent-override: 93.1%; descent-override: 23.3%; line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Inter Fallback";
+  font-weight: 651 900;
+  src: local("Segoe UI Bold"), local("SegoeUI-Bold");
+  size-adjust: 104%; ascent-override: 93.1%; descent-override: 23.3%; line-gap-override: 0%;
+}
+
+/* Reset */
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+img, svg { display: block; max-width: 100%; }
+input, button, textarea, select { font: inherit; color: inherit; letter-spacing: inherit; }
+button { background: none; border: 0; padding: 0; cursor: pointer; text-align: inherit; }
+button:disabled { cursor: not-allowed; }
+a { color: inherit; }
+ul[role="list"], ol[role="list"], menu { list-style: none; padding: 0; }
+table { border-collapse: collapse; border-spacing: 0; }
+p, h1, h2, h3, h4, li, dd, dt { overflow-wrap: anywhere; }
+h1, h2, h3, h4 { font-size: inherit; font-weight: inherit; }
+[hidden] { display: none !important; }
+
+/* Document */
+html {
+  background: var(--color-canvas);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-lh);
+  font-weight: var(--weight-regular);
+  font-optical-sizing: none;
+  font-variation-settings: var(--font-variation-text);
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+body { min-height: 100vh; background: var(--color-canvas); }
+input, select, textarea, button { font-optical-sizing: none; font-variation-settings: var(--font-variation-text); }
+::placeholder { color: var(--color-text-placeholder); opacity: 1; }
+::selection { background: var(--brand-tint-200); color: var(--color-text-primary); }
+
+/* Text fields are 16 px on touch devices, so a mobile browser never zooms the
+   page on focus (reference DESIGN_SYSTEM section 14.10). Input follows the
+   pointer, never the width alone (UXA-02). */
+@media (pointer: coarse) {
+  input, select, textarea { font-size: 16px; }
+}
+
+/* Focus: always visible on keyboard focus, 2 px, the shop's accent (UXA-08). */
+:focus { outline: none; }
+:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Icons: <svg class="bk-icon"><use href="#i-search"/></svg> */
+.bk-icon {
+  width: var(--icon-md);
+  height: var(--icon-md);
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: var(--icon-stroke);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vertical-align: middle;
+}
+svg.bk-icon { max-width: none; }
+[data-icon] { display: inline-flex; flex: none; }
+.bk-icon--lg { width: var(--icon-lg); height: var(--icon-lg); }
+.bk-icon--sm { width: var(--icon-sm); height: var(--icon-sm); stroke-width: 1.6; }
+
+/* Utilities */
+.bk-sr-only {
+  position: absolute !important; width: 1px !important; height: 1px !important;
+  padding: 0 !important; margin: -1px !important; overflow: hidden !important;
+  clip: rect(0 0 0 0) !important; clip-path: inset(50%) !important;
+  white-space: nowrap !important; border: 0 !important;
+}
+.bk-num { font-variant-numeric: tabular-nums; }
+.bk-mono {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-size);
+  line-height: var(--text-mono-lh);
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+.bk-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Reduced motion: transitions and animations are removed (UXA-20).
+   BK: the reference keeps a 150 ms crossfade; BantuKasir removes it. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
+}

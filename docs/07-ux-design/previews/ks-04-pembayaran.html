@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="id" data-accent="green">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preview</title>
+<link rel="stylesheet" href="assets/bk-tokens.css">
+<link rel="stylesheet" href="assets/bk-base.css">
+<link rel="stylesheet" href="assets/bk-components.css">
+</head>
+<!-- KS-04 · UXP-102 Pembayaran (one payment screen, one final action, D-040).
+     States: ?state=default | short | transfer | submitting | uncertain | held -->
+<body data-page="UXP-102" data-title-key="sales.payment.title" data-layout="rail" data-nav="till" data-nav-current="true" data-role="cashier" data-roles="cashier owner combined">
+<div class="bk-app" id="bk-app">
+  <div class="bk-col">
+    <main id="main" class="bk-main" tabindex="-1">
+      <div class="bk-container bk-container--focused">
+        <a class="bk-back" id="back-to-cart" href="ks-03-kasir.html" data-shortcut-esc
+           data-k-aria="sales.payment.back_to_cart" data-shortcut="Esc" aria-keyshortcuts="Escape"
+           data-unless="uncertain held submitting">
+          <span data-icon="arrow-left"></span><span data-k="sales.payment.back_to_cart"></span>
+        </a>
+        <p data-when="uncertain held submitting">
+          <span class="bk-back" aria-disabled="true" aria-describedby="back-reason" role="link">
+            <span data-icon="arrow-left"></span><span data-k="sales.payment.back_to_cart"></span>
+          </span>
+        </p>
+        <p class="bk-reason" id="back-reason" data-when="uncertain held submitting">
+          <span data-icon="info"></span><span data-k="sales.payment.back_disabled"></span>
+        </p>
+
+        <div class="bk-pagehead">
+          <div class="bk-pagehead__text"><h1 class="bk-title bk-title--shell" tabindex="-1" data-k="sales.payment.title"></h1></div>
+        </div>
+
+        <div class="bk-pay" data-pay-form>
+          <div class="bk-pay__total">
+            <span class="bk-pay__total-label" data-k="sales.payment.total"></span>
+            <span class="bk-display" id="pay-total"></span>
+          </div>
+
+          <fieldset class="bk-seg bk-seg--xl">
+            <legend class="bk-label bk-legend" data-k="sales.payment.method"></legend>
+            <div class="bk-seg__opt">
+              <input type="radio" name="method" id="m-cash" value="cash" checked data-shortcut-alt1 aria-keyshortcuts="Alt+1">
+              <label for="m-cash" data-k-aria="sales.payment.method_cash" data-shortcut="Alt+1">
+                <span data-icon="cash" data-icon-class="bk-icon--lg"></span><span data-k="sales.payment.method_cash"></span>
+                <kbd class="bk-kbd" aria-hidden="true">Alt+1</kbd>
+              </label>
+            </div>
+            <div class="bk-seg__opt">
+              <input type="radio" name="method" id="m-transfer" value="transfer" data-shortcut-alt2 aria-keyshortcuts="Alt+2">
+              <label for="m-transfer" data-k-aria="sales.payment.method_transfer" data-shortcut="Alt+2">
+                <span data-icon="bank" data-icon-class="bk-icon--lg"></span><span data-k="sales.payment.method_transfer"></span>
+                <kbd class="bk-kbd" aria-hidden="true">Alt+2</kbd>
+              </label>
+            </div>
+          </fieldset>
+
+          <div class="bk-form" data-method="cash">
+            <div class="bk-tender">
+              <div class="bk-field">
+                <label class="bk-label" for="tendered" data-k="sales.payment.tendered"></label>
+                <div class="bk-input bk-input--xl bk-input--num">
+                  <span class="bk-input__affix">Rp</span>
+                  <input id="tendered" class="bk-input__control" type="text" inputmode="numeric" autocomplete="off" aria-describedby="change-box">
+                </div>
+              </div>
+              <button type="button" class="bk-btn bk-btn--secondary bk-btn--xl" id="exact"
+                data-k-aria="sales.payment.exact_cash" data-shortcut="Alt+U" aria-keyshortcuts="Alt+U" data-shortcut-altu>
+                <span data-k="sales.payment.exact_cash"></span><kbd class="bk-kbd" aria-hidden="true">Alt+U</kbd>
+              </button>
+            </div>
+            <div class="bk-change" id="change-box" aria-live="polite">
+              <span class="bk-change__label" id="change-label"></span>
+              <span class="bk-display" id="change-value"></span>
+            </div>
+          </div>
+
+          <div class="bk-form" data-method="transfer" hidden>
+            <div class="bk-notice bk-notice--info">
+              <span data-icon="info"></span>
+              <p class="bk-notice__title" data-k="sales.payment.method_transfer"></p>
+              <p class="bk-notice__body" data-k="sales.payment.transfer_help"></p>
+            </div>
+            <div class="bk-field">
+              <label class="bk-label" for="reference"><span data-k="sales.payment.reference"></span> <span class="bk-label__opt" data-k="ux.action.optional"></span></label>
+              <div class="bk-input bk-input--lg"><input id="reference" class="bk-input__control" type="text" autocomplete="off"></div>
+            </div>
+          </div>
+
+          <div class="bk-field">
+            <label class="bk-label" for="customer"><span data-k="sales.payment.customer_name"></span> <span class="bk-label__opt" data-k="ux.action.optional"></span></label>
+            <div class="bk-input bk-input--lg"><input id="customer" class="bk-input__control" type="text" autocomplete="off" aria-describedby="customer-hint"></div>
+            <p class="bk-hint" id="customer-hint" data-k="sales.payment.customer_name_help"></p>
+          </div>
+
+          <div class="bk-final" data-unless="uncertain held">
+            <button type="button" class="bk-btn bk-btn--primary bk-btn--final" id="final" data-ctrl-enter aria-keyshortcuts="Control+Enter">
+              <span id="final-label"></span><kbd class="bk-kbd" aria-hidden="true">Ctrl+Enter</kbd>
+            </button>
+            <p class="bk-reason" id="final-reason" hidden><span data-icon="info"></span><span data-reason-text></span></p>
+          </div>
+        </div>
+
+        <div class="bk-notice bk-notice--pending bk-mt-4" id="uncertain" role="alert" data-when="uncertain held">
+          <span data-icon="clock"></span>
+          <p class="bk-notice__title" data-k="ux.state.uncertain.title"></p>
+          <div class="bk-notice__body">
+            <p data-when="uncertain" data-k="ux.state.uncertain.body"></p>
+            <p data-when="held" data-k="ux.state.held.idempotency_conflict.body"></p>
+            <p><strong data-k="commands.family.sale.must_not"></strong></p>
+          </div>
+          <div class="bk-notice__actions">
+            <button type="button" class="bk-btn bk-btn--primary bk-btn--lg" data-when="uncertain" data-initial-focus data-k="ux.action.resend"></button>
+            <button type="button" class="bk-btn bk-btn--secondary bk-btn--lg" data-when="uncertain" data-k="ux.action.check_status"></button>
+            <button type="button" class="bk-btn bk-btn--primary bk-btn--lg" data-when="held" data-initial-focus data-k="ux.action.check_status"></button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+<div class="bk-live" id="bk-live-polite" aria-live="polite"></div>
+<div class="bk-live" id="bk-live-assertive" aria-live="assertive"></div>
+<script src="assets/bk-copy.js"></script>
+<script src="assets/bk-icons.js"></script>
+<script src="assets/bk-app.js"></script>
+</body>
+</html>
