@@ -8,7 +8,7 @@
 | Product | [PRODUCT_BLUEPRINT](PRODUCT_BLUEPRINT.md) |
 | Domain rules | [DOMAIN_MODEL](../02-domain/DOMAIN_MODEL.md), [CATALOG_BARCODE](../02-domain/CATALOG_BARCODE.md), [INVENTORY](../02-domain/INVENTORY.md), [COSTING](../02-domain/COSTING.md), [SALES_CASH](../02-domain/SALES_CASH.md) |
 
-The requirement register of BantuKasir V1. Each requirement says what the product must do, how acceptance is judged, where the requirement comes from, and which legacy acceptance suite tests it today. Section 21 maps every legacy CORE entry to these requirements; section 22 traces every decision D-001 to D-084.
+The requirement register of BantuKasir V1. Each requirement says what the product must do, how acceptance is judged, where the requirement comes from, and which legacy acceptance suite tests it today. Section 21 maps every legacy CORE entry to these requirements; section 22 traces every decision D-001 to D-085.
 
 ## 1. How to read this register
 
@@ -344,11 +344,11 @@ Every legacy Core entry CORE-001 to CORE-073 (`core.json`, `CORE-MAP.md`) is map
 
 ## 22. Decision traceability
 
-Every decision D-001 to D-084 is either traced to at least one requirement or rule, or classified as having no product or domain content.
+Every decision D-001 to D-085 is either traced to at least one requirement or rule, or classified as having no product or domain content.
 
 | Decision | Product or domain content | Traced to |
 | --- | --- | --- |
-| D-001 | Only the prohibition on MULTIPLECORP material remains in force; it governs agents, not the product | Non-product/domain — governance (AGENTS rule 5) |
+| D-001 | Only the prohibition on MULTIPLECORP material remains in force; it governs agents, not the product; D-085 sets its boundary for the Golden Frontend Reference | Non-product/domain — governance (AGENTS rule 5) |
 | D-002 | V1 minimum scope, as amended | REQ-SCOPE-01, REQ-SCOPE-02, REQ-ACC-01, PRODUCT_BLUEPRINT sections 7 and 8; BR-DOM-01 |
 | D-003 | One full payment per Sale; no gateway | REQ-PAY-01, REQ-PAY-03, REQ-PAY-05; BR-PAY-01, BR-PAY-07 |
 | D-004 | Stack and modular monolith | Non-product/domain — architecture, recorded as ADR-001 (RF-3A); noted in PRODUCT_BLUEPRINT as a constraint by reference to DECISIONS |
@@ -357,14 +357,14 @@ Every decision D-001 to D-084 is either traced to at least one requirement or ru
 | D-007 | Server authorization and per-role allowlists; CASHIER manages no master data (write-only cost superseded) | REQ-ACC-03, REQ-ACC-04, REQ-CAT-01; BR-DOM-07, BR-CAT-02 |
 | D-008 | Corrections: originals kept, separate money and quantity bounds, cost restored once, Owner reason and recent authentication, bounded replay | REQ-RFD-02, REQ-COST-05 to REQ-COST-07, REQ-INV-08, REQ-INV-09, REQ-ACC-08; BR-RFD-03, BR-COST-20 |
 | D-009 | Cash accountability, as amended by D-035 | REQ-CASH-01 to REQ-CASH-11, REQ-SALE-01; BR-CASH-01 to BR-CASH-19 |
-| D-010 | Runtime client identity (pipeline adapted by D-024 and D-025) | REQ-SCOPE-03, REQ-CFG-01, REQ-UX-01; BR-DOM-11 |
+| D-010 | Runtime client identity (pipeline adapted by D-024, D-025 and D-085) | REQ-SCOPE-03, REQ-CFG-01, REQ-UX-01; BR-DOM-11 |
 | D-011 | Agent models (superseded by D-031) | Non-product/domain — agent workflow |
 | D-012 | Build Units (not executable) | Non-product/domain — delivery planning (RF-7) |
 | D-013 | Security support and sign-in session timeouts | REQ-ACC-07, REQ-ACC-08, REQ-CFG-03, REQ-NFR-07; BR-USR-06, BR-USR-07 |
 | D-014 | Review before freeze; P7 before P8 to P11 | Non-product/domain — governance |
 | D-015 | One local planning commit (consumed) | Non-product/domain — governance |
 | D-016 | Preservation of earlier material | Non-product/domain — governance |
-| D-017 | P7 is real design work | REQ-UX-01 (approval form replaced by D-025); the rest is governance |
+| D-017 | P7 is real design work (no longer in the BantuKasir design project, D-085) | REQ-UX-01 (approval form replaced by D-025); the rest is governance |
 | D-018 | Date format, Owner "Barang keluar" entry, trend chart as RF-4 input; example photos superseded by D-037 | REQ-DOC-05, REQ-INV-06, REQ-RPT-06; BR-NUM-07, BR-INV-18 |
 | D-019 | Repository restructure (FD-01) | Non-product/domain — governance |
 | D-020 | Repository documents in English; Indonesian is the primary interface language | REQ-NFR-01 |
@@ -417,7 +417,7 @@ Every decision D-001 to D-084 is either traced to at least one requirement or ru
 | D-067 | One Sale line per product (question 35): the cart combines repeated additions; the server refuses a request that names a product twice | REQ-SALE-03, REQ-SALE-05, REQ-DOC-01, REQ-RFD-02, REQ-INV-02; BR-SALE-06, BR-SALE-16, BR-INV-07, BR-RFD-03 |
 | D-068 | Refund cash still in the drawer at close (question 29): variance kept, linked Owner review note, handover before the next opening count | REQ-CASH-09, REQ-RFD-04, REQ-RFD-09; BR-CASH-16, BR-CASH-19, BR-RFD-09, BR-RFD-17 |
 | D-069 | T-17 a, d, f and h: receiving drafts in page memory; deactivation of a staff account that holds an OPEN session; append-only review notes; CSV category names refused when missing or ambiguous | REQ-INV-04, REQ-ACC-06, REQ-ACC-10, REQ-CASH-09, REQ-CASH-11, REQ-CAT-09; BR-INV-17, BR-CASH-11, BR-CASH-18, BR-CASH-19, BR-CAT-38, BR-CAT-42 |
-| D-070 | RF-4A authorization, including plan decisions P-10 to P-15 | Non-product/domain — governance |
+| D-070 | RF-4A authorization, including plan decisions P-10 to P-15 (P-14 amended by D-085) | Non-product/domain — governance |
 | D-071 | At most one initial stock onboarding period per business-data lifecycle (question 36, finding F-03): no new onboarding after the first release; later corrections by adjustment, reversal or cost correction | REQ-INV-07, REQ-INV-08, REQ-INV-09, REQ-COST-05; BR-INV-16, BR-INV-24, BR-INV-29, BR-INV-31, BR-INV-34, BR-COST-20 |
 | D-072 | Onboarding and a restore of earlier business data (question 37): a released onboarding is not reopened or continued by restoring an older backup; a period never released may continue as the same original period; an unverifiable state is held until the Owner's restore reconciliation | REQ-INV-07, REQ-CMD-03; BR-INV-24, BR-CMD-06 |
 | D-073 | Server-authoritative recovery of a request refused as EPOCH_STALE after a restore: the status check stays available; a reference is released only by a verified outcome or an audited reconciliation with a safe fence; the re-application of SEC-OP-04 stays possible | REQ-CMD-01, REQ-CMD-03, REQ-SALE-08, REQ-UX-02; BR-CMD-03, BR-CMD-06; SECURITY_MODEL SEC-OP-04 |
@@ -432,7 +432,8 @@ Every decision D-001 to D-084 is either traced to at least one requirement or ru
 | D-082 | Approval of gate P7-G1, navigation and page structure: the six RF-4A documents at checkpoint `d4c0594`, each named by its hash | REQ-UX-01 |
 | D-083 | Authorization of RF-4B: the glossary's shop terms finalized and the copy deck | Non-product/domain — governance |
 | D-084 | Acceptance of the RF-4B checkpoint `c4bf8e9` and authorization of one correction of the copy deck: a held request stays held when a status check gets no answer | Non-product/domain — governance |
+| D-085 | The Golden Frontend Reference v1.0.0 (tag `v1.0.0`, commit `14497d9`) replaces DesainPakeAI as the approved reusable frontend reference; its generic tokens, components and UX patterns may be adapted into the approved stack; its MULTIPLECORP material is never adopted | Non-product/domain — governance (AGENTS rules 5 and 6, TOOLCHAIN section 3) |
 
 ## 23. Counts
 
-Re-derived from this register: 23 sections; 134 requirement rows in sections 2 to 19, all with distinct identifiers; no requirement pending; 73 legacy CORE entries, of which 72 are mapped (9 of them adapted by later decisions) and 1 is retired (section 21); 84 decisions, of which 51 are traced to requirements or rules and 33 are classified as non-product/domain (section 22).
+Re-derived from this register: 23 sections; 134 requirement rows in sections 2 to 19, all with distinct identifiers; no requirement pending; 73 legacy CORE entries, of which 72 are mapped (9 of them adapted by later decisions) and 1 is retired (section 21); 85 decisions, of which 51 are traced to requirements or rules and 34 are classified as non-product/domain (section 22).

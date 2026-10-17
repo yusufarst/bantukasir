@@ -46,7 +46,7 @@ Free-tier record (AICWDF §4C.4): the Cloudflare plan's limits, its behaviour at
 
 | Item | Note |
 | --- | --- |
-| DesainPakeAI design tool | Used for P7 design work. Its plan, credits and entitlements have not been verified. Anything that may consume paid credit needs the Owner's authorization. |
+| DesainPakeAI design tool | No longer required for P7 design work (D-085; [TOOLCHAIN](TOOLCHAIN.md) section 5). Its plan, credits and entitlements were never verified. Any further use, and anything that may consume paid credit, needs the Owner's authorization. |
 | AI planning and execution agents | Chosen by the Owner (D-031). Not a runtime dependency of the product. |
 
 ## 5. Paid-service exception registry
