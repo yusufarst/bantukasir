@@ -2,10 +2,10 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-4B under D-083, 17 October 2026 (Asia/Jakarta) |
+| Status | CURRENT — written in RF-4B under D-083 and corrected under D-084, 17 October 2026 (Asia/Jakarta) |
 | Phase | P7 — terminology and copy (AICWDF sections 4B and 18; REQ-NFR-01) |
-| Gate | P7-G2, terminology and copy (D-025): **artifacts ready for the Owner's review — NOT APPROVED**. Approval is a separate Owner decision that names the RF-4B checkpoint commit and the hash of each artifact: this document and [GLOSSARY](../02-domain/GLOSSARY.md) (plan decision P-10, D-070) |
-| Decisions | D-018, D-024, D-025, D-033, D-040, D-043, D-047, D-049, D-050, D-051, D-052, D-068, D-069, D-071, D-072, D-073, D-075, D-077, D-082, D-083 |
+| Gate | P7-G2, terminology and copy (D-025): **artifacts ready for the Owner's review — NOT APPROVED**. Approval is a separate Owner decision that names the commit that contains the RF-4B correction (D-084) and the hash of each artifact: this document and [GLOSSARY](../02-domain/GLOSSARY.md) (plan decision P-10, D-070) |
+| Decisions | D-018, D-024, D-025, D-033, D-040, D-043, D-047, D-049, D-050, D-051, D-052, D-068, D-069, D-071, D-072, D-073, D-075, D-077, D-082, D-083, D-084 |
 | Structure | The six documents of gate P7-G1, approved by D-082: [USER_TASKS](USER_TASKS.md), [INFORMATION_ARCHITECTURE](INFORMATION_ARCHITECTURE.md), [NAVIGATION_CONTRACTS](NAVIGATION_CONTRACTS.md), [INTERACTION_INVENTORY](INTERACTION_INVENTORY.md), [UI_STATES](UI_STATES.md), [ADAPTIVE_AND_ACCESSIBILITY](ADAPTIVE_AND_ACCESSIBILITY.md) |
 | Related | [GLOSSARY](../02-domain/GLOSSARY.md), [ADR-005](../adr/ADR-005-localization-architecture.md), [TECHNICAL_RULES](../06-api-performance/TECHNICAL_RULES.md) section 4, [SECURITY_MODEL](../05-security/SECURITY_MODEL.md) |
 
@@ -851,7 +851,7 @@ Used on UXP-301 to UXP-308, in Product Search and in the stock pages.
 | — | Preview, title | `catalog.csv_import.preview_title` | Pratinjau impor | — |
 | — | Preview, summary | `catalog.csv_import.preview_summary` | :siap baris siap diimpor, :salah baris perlu diperbaiki. | — |
 | — | Preview, rule | `catalog.csv_import.all_or_nothing` | Semua baris diimpor bersama, atau tidak ada yang diimpor. | BR-CAT-38 |
-| UXI-208 | Row errors | Section 16.3 | Including "Kategori tidak ditemukan" and "Nama kategori cocok dengan lebih dari satu kategori aktif" | D-069 (h) |
+| UXI-208 | Row errors | Section 16.3 | Including "Tidak ada kategori aktif dengan nama ini." and "Nama kategori cocok dengan lebih dari satu kategori aktif." | D-069 (h) |
 | UXI-209 | Link | `catalog.csv_import.create_category_link` | Buat kategori di halaman Kategori | A call to action in a message (CW-04); the import never creates a category |
 | UXI-210 | Button | `catalog.csv_import.confirm` | Impor :jumlah produk | — |
 | UXI-210 | Success | `catalog.csv_import.success` | :jumlah produk baru ditambahkan. | — |
@@ -1579,7 +1579,7 @@ Codes: **32**, each with a message.
 
 | Key | Copy | Rule |
 | --- | --- | --- |
-| `ux.state.barcode_ineligible.retired` | Barcode ini sudah dipensiunkan dan tidak bisa dipakai lagi. Tidak ada yang disimpan. | BR-CAT-19 |
+| `ux.state.barcode_ineligible.retired` | Barcode ini sudah dipensiunkan dan tidak bisa dipakai lagi. Hanya barcode pabrik yang dipensiunkan karena salah pasang yang bisa dipasang Pemilik ke produk yang benar, dengan Koreksi salah pasang barcode. Tidak ada yang disimpan. | BR-CAT-19, BR-CAT-51, D-052 |
 | `ux.state.barcode_ineligible.reserved` | Kode yang diawali BK- hanya untuk barcode internal yang dibuat aplikasi. Tidak ada yang disimpan. | BR-CAT-18 |
 | `ux.state.barcode_ineligible.check_digit` | Angka pemeriksa barcode ini tidak cocok. Periksa lagi kodenya. Tidak ada yang disimpan. | BR-CAT-17 |
 | `ux.state.barcode_ineligible.not_correctable` | Barcode ini tidak bisa dikoreksi. Hanya barcode pabrik yang terpasang pada produk lain, atau yang dipensiunkan karena salah pasang, yang bisa dipasang ke produk yang benar. Tidak ada yang disimpan. | D-051, D-052 |
@@ -1615,7 +1615,7 @@ The body of UXS-14 and UXS-15 is followed by what must not happen meanwhile (UI_
 | Reconciliation reopening | `commands.family.reopen`: Buka kembali mutasi | `commands.family.reopen.must_not`: Jangan membuka kembali mutasi ini lagi. |
 | Owner review note | `commands.family.review_note`: Catatan tinjauan | `commands.family.review_note.must_not`: Jangan menulis catatan ini lagi. |
 | Print, reprint or export | — | No panel: the print or export is repeated (UXS-44) |
-| Resolution of an uncertain intent | — | `commands.resolution.no_answer`: Cek status belum mendapat jawaban. Coba lagi. |
+| Resolution of an uncertain intent | — | `commands.resolution.no_answer`: Cek status belum mendapat jawaban. Statusnya tetap belum pasti; cek lagi sebentar lagi. |
 
 ### 14.2 Results of "Cek status"
 
@@ -1626,7 +1626,7 @@ The body of UXS-14 and UXS-15 is followed by what must not happen meanwhile (UI_
 | IN_PROGRESS | `commands.resolution.in_progress` | Masih diproses. Cek lagi sebentar lagi. | UXS-06, then a new check |
 | NOT_COMMITTED | `commands.resolution.not_committed` | Tidak tersimpan, dan tidak akan pernah tersimpan. Anda dapat mulai lagi. | The row disappears; for a Sale, Mulai lagi dari keranjang |
 | EPOCH_STALE again | `ux.state.held.epoch_stale` | Section 12 | The reference is kept (D-073) |
-| No answer | `commands.resolution.no_answer` | Cek status belum mendapat jawaban. Coba lagi. | UXS-14 |
+| No answer | `commands.resolution.no_answer` | Cek status belum mendapat jawaban. Statusnya tetap belum pasti; cek lagi sebentar lagi. | The request keeps the state it was in before the check, and its reference is kept; UXS-06, shown while a check runs, is not that state. UXS-14 stays UXS-14, with Kirim ulang and Cek status; UXS-15, after IDEMPOTENCY_CONFLICT or EPOCH_STALE, stays UXS-15, with Cek status only and never Kirim ulang (ADR-007 section 5; UI_STATES section 1; finding F-05) |
 
 ## 15. Disabled reasons
 
@@ -1910,7 +1910,7 @@ User-task labels of USER_TASKS section 3 name tasks for planning; they are not s
 
 ### 21.1 Findings carried forward
 
-Non-blocking findings about the six P7-G1 documents, made while writing this deck. They change nothing in this deck's wording. The six documents are not edited, because D-082 approved them by their hashes; each finding goes to the step named.
+Findings about the six P7-G1 documents. F-01 to F-04 are non-blocking findings made while writing this deck; they change nothing in its wording. F-05 was recorded under D-084, which corrected section 14.2 so that this deck does not carry it. The six documents are not edited, because D-082 approved them by their hashes; each finding goes to the step named.
 
 | ID | Finding | Goes to |
 | --- | --- | --- |
@@ -1918,6 +1918,7 @@ Non-blocking findings about the six P7-G1 documents, made while writing this dec
 | F-02 | INTERACTION_INVENTORY section 3 counts UXI-076 among the 48 rows disabled with a reason, but the row states no disabled condition: it is shown only while a checkout is unresolved. | RF-5, with the full interaction contracts |
 | F-03 | The working labels listed in section 19 differ from this deck. | Wording follows this deck (section 1.5); the documents keep them until their next authorized revision |
 | F-04 | INFORMATION_ARCHITECTURE section 14 lists "Final wording of every label, message and state" as left to RF-4B. This deck writes it; it becomes binding with gate P7-G2. | Gate P7-G2 (the Owner) |
+| F-05 | A status check that gets no answer leads to UXS-14 in INTERACTION_INVENTORY UXI-086, the "Cek status" of the uncertain panel of UXP-102, which lists UXS-14 among its results, and, for UXP-006, in its NAVIGATION_CONTRACTS row ("A resolution that fails stays UNCERTAIN (UXS-14)") and in its row button UXI-055 ("UXS-14 when the check itself gets no answer"). Read literally, these rows move a held request (UXS-15, after IDEMPOTENCY_CONFLICT or EPOCH_STALE) into UXS-14, which offers "Kirim ulang"; ADR-007 section 5 and UI_STATES section 1 never repeat a held request. UI_STATES section 4 ("stays UNCERTAIN") agrees when UNCERTAIN includes HELD, as in ADR-007 section 5. This deck keeps the state the request was in (section 14.2, D-084). | RF-5, with the full interaction contracts: a status check without an answer leaves the request in the state it was in, so a held request stays UXS-15 with "Cek status" only; the rows are brought in line at the next authorized revision of INTERACTION_INVENTORY and NAVIGATION_CONTRACTS |
 
 ### 21.2 Left to later steps
 

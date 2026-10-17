@@ -8,7 +8,7 @@
 | Product | [PRODUCT_BLUEPRINT](PRODUCT_BLUEPRINT.md) |
 | Domain rules | [DOMAIN_MODEL](../02-domain/DOMAIN_MODEL.md), [CATALOG_BARCODE](../02-domain/CATALOG_BARCODE.md), [INVENTORY](../02-domain/INVENTORY.md), [COSTING](../02-domain/COSTING.md), [SALES_CASH](../02-domain/SALES_CASH.md) |
 
-The requirement register of BantuKasir V1. Each requirement says what the product must do, how acceptance is judged, where the requirement comes from, and which legacy acceptance suite tests it today. Section 21 maps every legacy CORE entry to these requirements; section 22 traces every decision D-001 to D-083.
+The requirement register of BantuKasir V1. Each requirement says what the product must do, how acceptance is judged, where the requirement comes from, and which legacy acceptance suite tests it today. Section 21 maps every legacy CORE entry to these requirements; section 22 traces every decision D-001 to D-084.
 
 ## 1. How to read this register
 
@@ -344,7 +344,7 @@ Every legacy Core entry CORE-001 to CORE-073 (`core.json`, `CORE-MAP.md`) is map
 
 ## 22. Decision traceability
 
-Every decision D-001 to D-083 is either traced to at least one requirement or rule, or classified as having no product or domain content.
+Every decision D-001 to D-084 is either traced to at least one requirement or rule, or classified as having no product or domain content.
 
 | Decision | Product or domain content | Traced to |
 | --- | --- | --- |
@@ -431,7 +431,8 @@ Every decision D-001 to D-083 is either traced to at least one requirement or ru
 | D-081 | Acceptance of the D-080 bookkeeping commit `cdb8361`; the wording issue R-2 closed administratively | Non-product/domain — governance |
 | D-082 | Approval of gate P7-G1, navigation and page structure: the six RF-4A documents at checkpoint `d4c0594`, each named by its hash | REQ-UX-01 |
 | D-083 | Authorization of RF-4B: the glossary's shop terms finalized and the copy deck | Non-product/domain — governance |
+| D-084 | Acceptance of the RF-4B checkpoint `c4bf8e9` and authorization of one correction of the copy deck: a held request stays held when a status check gets no answer | Non-product/domain — governance |
 
 ## 23. Counts
 
-Re-derived from this register: 23 sections; 134 requirement rows in sections 2 to 19, all with distinct identifiers; no requirement pending; 73 legacy CORE entries, of which 72 are mapped (9 of them adapted by later decisions) and 1 is retired (section 21); 83 decisions, of which 51 are traced to requirements or rules and 32 are classified as non-product/domain (section 22).
+Re-derived from this register: 23 sections; 134 requirement rows in sections 2 to 19, all with distinct identifiers; no requirement pending; 73 legacy CORE entries, of which 72 are mapped (9 of them adapted by later decisions) and 1 is retired (section 21); 84 decisions, of which 51 are traced to requirements or rules and 33 are classified as non-product/domain (section 22).
