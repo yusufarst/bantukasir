@@ -156,9 +156,9 @@ RF-2 (D-041) wrote the CURRENT product and domain documents. The legacy document
 | `docs/01-product/legacy/requirements/CORE-MAP.md` | `docs/01-product/REQUIREMENTS.md` (section 21) |
 | `docs/02-domain/legacy/P2-DOMAIN.md` | `docs/02-domain/DOMAIN_MODEL.md` |
 | `docs/02-domain/legacy/06-INVENTORY-SPEC.md` | `docs/02-domain/INVENTORY.md` |
-| `docs/02-domain/legacy/12-BARCODE-SCANNER.md` | `docs/02-domain/CATALOG_BARCODE.md` for domain rules; the scanner screen behaviour is input only for RF-4 and RF-5 |
+| `docs/02-domain/legacy/12-BARCODE-SCANNER.md` | `docs/02-domain/CATALOG_BARCODE.md` for domain rules; the scanner screen behaviour was input for RF-4 and RF-5 and is superseded in RF-5 (section 14) |
 | `docs/02-domain/legacy/15-FINANCE-PROFITABILITY.md` | `docs/02-domain/COSTING.md` |
-| `docs/02-domain/legacy/17-POS-SALES.md` | `docs/02-domain/SALES_CASH.md` for domain rules; receipt and screen layouts are input only for RF-4 and RF-5 |
+| `docs/02-domain/legacy/17-POS-SALES.md` | `docs/02-domain/SALES_CASH.md` for domain rules; receipt and screen layouts were input for RF-4 and RF-5 and are superseded in RF-5 (section 14) |
 | `docs/04-architecture/legacy/02-ARCHITECTURE.md` — domain part only (entity table, numbers and time) | `docs/02-domain/DOMAIN_MODEL.md`; its other parts are dealt with in RF-3A and RF-3B (section 8) |
 
 New identifiers written in RF-2: requirements `REQ-<area>-<nn>` in REQUIREMENTS, and domain rules `BR-<area>-<nn>` in the domain documents.
@@ -298,3 +298,15 @@ RF-4C (D-086) writes [DESIGN_SYSTEM](../07-ux-design/DESIGN_SYSTEM.md), [KEY_SCR
 | `docs/07-ux-design/legacy/DESIGN.md` | LEGACY — SUPERSEDED, unchanged | DESIGN_SYSTEM. Not used as input: the draft was made with the design-generation tool that D-086 excludes |
 
 New identifiers: the key screens `KS-nn` of KEY_SCREENS and the deviations `DV-nn` of DESIGN_SYSTEM section 1.3; decision D-086, whose terms also record the pause and the resumption of RF-4C.
+
+## 14. RF-5
+
+RF-5 (D-087) writes the P3 documents [CRITICAL_FLOWS](../03-workflows/CRITICAL_FLOWS.md), [ROUTE_CONTRACTS](../03-workflows/ROUTE_CONTRACTS.md), [INTERACTION_CONTRACTS](../03-workflows/INTERACTION_CONTRACTS.md) and [DOCUMENT_CONTRACTS](../03-workflows/DOCUMENT_CONTRACTS.md), and [ADR-009](../adr/ADR-009-command-receipts-and-reconciled-outcomes.md). The legacy files stay in the working tree, byte-identical; they are removed only by a later authorized step.
+
+| Legacy document | Status after RF-5 | Carried by |
+| --- | --- | --- |
+| `docs/03-workflows/legacy/P3-CRITICAL-WORKFLOWS.md` | LEGACY — SUPERSEDED, unchanged | The four P3 documents. Its rules that later decisions changed (D-033, D-035, D-037, D-040, D-046, D-047; SOURCE_OF_TRUTH section 1) are not carried |
+| `docs/02-domain/legacy/17-POS-SALES.md`, its receipt and screen layouts | LEGACY — SUPERSEDED, unchanged | DOCUMENT_CONTRACTS DC-01 and DC-02, written from BR-DOC-01, BR-CASH-20 and COPY_DECK section 17; the approved P7 documents |
+| `docs/02-domain/legacy/12-BARCODE-SCANNER.md`, its scanner screen behaviour | LEGACY — SUPERSEDED, unchanged | INTERACTION_CONTRACTS sections 1.7 and 3.1 and the approved P7 documents |
+
+New identifiers: the workflows `WF-nn`; the routes `RT-nn`, `RN-nn`, `RP-nnn`, `RD-nn`, `RA-nn`, `RR-nn`, `RC-nn`, `SC-nn` and `OP-nn`; the contracts `IC-nn` and `DC-nn`; INVENTORY BR-INV-47 and BR-INV-48; SCHEMA guards G-22 to G-26; TECHNICAL_RULES RACE-31 to RACE-34; SECURITY_MODEL SEC-OP-05; ADR-009; decision D-087; open item T-20.

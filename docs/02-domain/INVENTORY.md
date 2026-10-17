@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-2 under D-041, 4 October 2026 (Asia/Jakarta) |
+| Status | CURRENT — written in RF-2 under D-041, 4 October 2026 (Asia/Jakarta); amended in RF-5 under D-087, 18 October 2026: onboarding once per set of business data and after a restore (D-071, D-072), and the correction of onboarding entries before the release (T-17 b) |
 | Phase | P2 — domain rules |
 | Replaces | `docs/02-domain/legacy/06-INVENTORY-SPEC.md` |
 | Map and terms | [DOMAIN_MODEL](DOMAIN_MODEL.md), [GLOSSARY](GLOSSARY.md) |
@@ -72,10 +72,12 @@ Sources: L-06 §Command fisik, L-15, D-034, D-035. Shop terms are provisional un
 | ID | Rule | Source |
 | --- | --- | --- |
 | BR-INV-23 | Only the Owner enters opening stock. Real opening data needs gate G2 and an authorized cutover. Synthetic data is allowed only in an isolated non-production environment. | L-06, L-P3 |
-| BR-INV-24 | The Owner sets a documented cutover and a persistent onboarding flag. While it is on, ordinary stock postings and Sales are refused, including requests that race the flag change, which use the same guard. No database lock is held while people count. Creating products stays possible and creates no stock. | L-06, CORE-010 |
+| BR-INV-24 | The Owner starts onboarding at a documented cutover; its persistent state is NOT_STARTED, ACTIVE or RELEASED. While it is ACTIVE, ordinary stock postings and Sales are refused, including requests that race the state change, which use the same guard. No database lock is held while people count. Creating products stays possible and creates no stock. Onboarding is started and released at most once for a set of business data: after its release it never starts or continues again, also after a reinstallation, a server migration or the restore of an earlier backup. After a restore whose onboarding state cannot be verified, onboarding is held — not started, continued or released — until the Owner's restore reconciliation; if it was never released, it continues as the same period. | L-06, CORE-010, D-071, D-072 |
 | BR-INV-25 | One opening command holds at most 100 product rows. Each positive row has a quantity in the product's precision, an acquisition cost KNOWN or UNKNOWN, and a count reference. All rows commit together; one invalid row, or a 101st row, refuses the whole command. A duplicate or retried command returns the original result. | L-06, CORE-010, CORE-045 |
-| BR-INV-26 | OPENING is posted once per product, only for a product with no earlier movement, guarded against races. Different commands cover different products. One product's opening is never split across commands or disguised as a receipt. | L-06 |
-| BR-INV-27 | A zero count is recorded in the onboarding checklist and creates no movement. | L-06 |
+| BR-INV-26 | OPENING is posted while onboarding is ACTIVE, once per product and only for a product with no earlier movement, guarded against races. Different commands cover different products. One product's opening is never split across commands or disguised as a receipt. Before the release, an OPENING that the Owner reversed in full may be replaced by one explicit replacement OPENING (BR-INV-48). A product never has more than one effective OPENING, one that is not reversed. | L-06, D-087 |
+| BR-INV-27 | A zero count is recorded in the onboarding checklist and creates no movement. Before the release, the Owner may withdraw it with a reason and recent authentication: the zero count stays, a withdrawal record is added, and the product can be counted again. | L-06, D-087 |
+| BR-INV-47 | A product has at most one effective onboarding entry: a zero count that is not withdrawn, or an OPENING that is not reversed. Correcting an entry before the release is append-only and audited — a withdrawal, a reversal, an explicit replacement — and only the Owner corrects, with a reason and recent authentication. There is no reset, no deletion and no edit of an entry, and no correction of this kind after the release (BR-INV-29). | D-087 |
+| BR-INV-48 | A replacement OPENING is recorded only by the Owner, with a reason, a count reference, its acquisition cost KNOWN or UNKNOWN and recent authentication, while onboarding is ACTIVE and not held; only for a product whose OPENINGs are all reversed and which has no effective entry; and it names the reversed opening line it replaces, which is replaced at most once. The original OPENING, its reversal and the replacement all stay in the history. | D-087 |
 | BR-INV-28 | Before releasing the onboarding flag, the Owner verifies all counts, the barcode and minimum-stock setup and the remaining unknown costs. | L-06 |
 | BR-INV-29 | After onboarding, mistakes are corrected by authorized corrections (adjustment, reversal, cost correction), never by a reset, a re-import or a balance edit. | L-06 |
 | BR-INV-30 | If the real catalogue makes manual opening entry impractical, or serial, pack or batch identity turns out to be required, the affected onboarding stops for an Owner decision. No import of stock or cost is added silently; CSV import creates products only. | L-06, D-037 |
@@ -92,7 +94,7 @@ Sources: L-06 §Command fisik, L-15, D-034, D-035. Shop terms are provisional un
 
 | ID | Rule | Source |
 | --- | --- | --- |
-| BR-INV-34 | Only the Owner reverses, with a reason and recent authentication. A reversal is one full, linked REVERSAL that is the exact inverse of one eligible standalone OPENING, RECEIPT or MANUAL_ISSUE. The original stays. The Owner does not enter a free quantity. | L-06, L-P3, D-008, CORE-009 |
+| BR-INV-34 | Only the Owner reverses, with a reason and recent authentication. A reversal is one full, linked REVERSAL that is the exact inverse of one eligible standalone OPENING, RECEIPT or MANUAL_ISSUE. The original stays. The Owner does not enter a free quantity. A RECEIPT or MANUAL_ISSUE is reversed only while onboarding is not ACTIVE (BR-INV-24); an OPENING may also be reversed while it is ACTIVE, to correct it before the release (BR-INV-48). | L-06, L-P3, D-008, CORE-009, D-087 |
 | BR-INV-35 | A source is reversed at most once. A repeat with the same or a different key is refused or returns the original result. | L-06, CORE-009, BR-CMD-02 |
 | BR-INV-36 | SALE_ISSUE and RETURN_RECEIPT are never reversed directly; sales are corrected by refunds and returns (SALES_CASH). ADJUSTMENT and REVERSAL are not eligible sources. | L-06 |
 | BR-INV-37 | A reversal is refused if it would make stock negative now, if it would leave an invalid history (an issue that would have had no stock at its time, even when the current balance stays non-negative), or if the dependent valuation cannot be replayed safely (COSTING). | L-06, L-15 |
@@ -137,9 +139,8 @@ Warehouses, locations, transfers and goods in transit; reservations; advanced st
 
 | Item | Subject |
 | --- | --- |
-| T-17 b | Correcting an onboarding entry before the flag is released: a zero-count checklist entry, or a wrong positive OPENING |
 | Gate G2 | Real units, precisions, opening volume, barcodes and availability of cost evidence |
 
-T-16 was resolved in RF-3B by D-060, D-061 and ADR-008 (COSTING section 10). T-17 a is decided by D-069.
+T-16 was resolved in RF-3B by D-060, D-061 and ADR-008 (COSTING section 10). T-17 a is decided by D-069. T-17 b is decided by D-087 (BR-INV-26, BR-INV-27, BR-INV-34, BR-INV-47, BR-INV-48); D-071 and D-072 are written into BR-INV-24 in RF-5.
 
 Stock records are business records: they are kept at least 10 years and V1 has no function that deletes them (D-044, DOMAIN_MODEL section 12).

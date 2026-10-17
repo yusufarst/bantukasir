@@ -53,7 +53,7 @@ One application, one database. Modules are folders and namespaces with an owner 
 | Documents | Template versions | Rendering receipts, session reports and labels from snapshots; CSV exports; print and export audit | SALES_CASH section 5, BR-AUD-06 |
 | Reporting | — (read only) | Finance report, daily summary, stock history, audit log views, per-role DTOs | COSTING section 9, SALES_CASH section 9 |
 | Audit | AuditEvent; security log entries | In-transaction audit writer and reader; separate security log channel | DOMAIN_MODEL section 9; SECURITY_MODEL section 9 |
-| Commands | Command result and fence records; recovery epoch | Envelope validation, fingerprint, identity, outcomes, resolution (ADR-007) | DOMAIN_MODEL section 7 |
+| Commands | Command result and fence records; request receipts, stale-intent reports and their reconciliations (ADR-009); recovery epoch | Envelope validation, fingerprint, identity, outcomes, resolution (ADR-007); request receipts and the reconciled outcomes of requests from before a restore (ADR-009) | DOMAIN_MODEL section 7 |
 | Media | Stored files and temporary uploads | Upload validation and re-encoding, private storage, authorized delivery, temporary CSV area, housekeeping | SECURITY_MODEL section 13; D-037, D-054 |
 | Operations | — | Scheduled commands (reconciliation trigger, housekeeping, backup trigger in RF-6), system status | REQ-OPS-04, ADR-002 |
 

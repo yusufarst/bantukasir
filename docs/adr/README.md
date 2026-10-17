@@ -64,7 +64,7 @@ Rules for the fields:
 
 - Identifiers are `ADR-NNN`, three digits, permanent and never reused.
 - The file name is `ADR-NNN-short-title.md` in this folder.
-- The next free identifier is **ADR-009**. No ADR is authorized beyond ADR-008 until a later step is authorized (D-059).
+- The next free identifier is **ADR-010**. ADR-009 was written in RF-5 under D-087; no further ADR is authorized until a later step is authorized.
 
 ## 5. Index
 
@@ -78,5 +78,6 @@ Rules for the fields:
 | [ADR-006](ADR-006-exact-numbers.md) | Exact numbers | ACCEPTED | D-006 (Planner); AGENTS rule 7 |
 | [ADR-007](ADR-007-command-identity-and-idempotency.md) | Command identity and idempotency | ACCEPTED | D-006 (Planner), D-040 (Owner) |
 | [ADR-008](ADR-008-cost-allocation-representation.md) | Issue-cost allocation representation | ACCEPTED | D-060, D-061 (Owner); D-034, D-035 |
+| [ADR-009](ADR-009-command-receipts-and-reconciled-outcomes.md) | Command request receipts and reconciled outcomes | ACCEPTED | D-073, D-074 (Owner); D-087 |
 
-ADR-001 to ADR-007 were written in RF-3A (D-055). They record decisions that were already in force or that the Owner took before RF-3A was authorized. ADR-008 was written in RF-3B (D-059) and records the representation that follows from the Owner's decisions D-060 and D-061. None adds business meaning.
+ADR-001 to ADR-007 were written in RF-3A (D-055). They record decisions that were already in force or that the Owner took before RF-3A was authorized. ADR-008 was written in RF-3B (D-059) and records the representation that follows from the Owner's decisions D-060 and D-061. ADR-009 was written in RF-5 (D-087); it extends ADR-007 with the mechanisms that the Owner's decisions D-073 and D-074 required, and leaves a new server refusal to the Owner. None adds business meaning.

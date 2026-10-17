@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-2 under D-041, 4 October 2026 (Asia/Jakarta) |
+| Status | CURRENT — written in RF-2 under D-041, 4 October 2026 (Asia/Jakarta); amended in RF-5 under D-087, 18 October 2026: the CSV column list and dialect (BR-CAT-39) |
 | Phase | P2 — domain rules |
 | Replaces | `docs/02-domain/legacy/12-BARCODE-SCANNER.md` as to domain rules; the catalogue parts of `docs/01-product/legacy/01-PRD.md` and `docs/02-domain/legacy/06-INVENTORY-SPEC.md` |
 | Map and terms | [DOMAIN_MODEL](DOMAIN_MODEL.md), [GLOSSARY](GLOSSARY.md) |
@@ -86,7 +86,7 @@ The conventions of DOMAIN_MODEL section 1 apply: rules are `BR-CAT-nn`, every ru
 | --- | --- | --- |
 | BR-CAT-37 | A CSV import creates new products only. It never creates opening stock, a stock movement, acquisition cost, cost of goods sold or any other financial fact; imported products start with stock 0. Opening stock and its cost go through the opening stock workflow (INVENTORY). | D-037, L-06 |
 | BR-CAT-38 | An import never updates or overwrites an existing product, never succeeds partly and never skips a row silently. It shows a preview with validation before confirmation, validates again at confirmation, and processes a confirmed file all-or-nothing. | D-037, L-06 §Batas Later |
-| BR-CAT-39 | The header and columns are explicit and strict. Barcode and SKU are read as text, keeping leading zeros. Duplicates inside the file and conflicts with existing products are found before anything is committed. Unknown or unexpected columns are refused. The file is UTF-8; spreadsheet formulas are not accepted. File size and row count are limited: at most 2 MiB and 5,000 data rows (SECURITY_MODEL section 13); the column list and the dialect are set in RF-5. | D-037, L-06 §Batas Later |
+| BR-CAT-39 | The header and columns are explicit and strict. Barcode and SKU are read as text, keeping leading zeros. Duplicates inside the file and conflicts with existing products are found before anything is committed. Unknown or unexpected columns are refused. The file is UTF-8; spreadsheet formulas are not accepted. File size and row count are limited: at most 2 MiB and 5,000 data rows (SECURITY_MODEL section 13); the column list and the dialect are those of [DOCUMENT_CONTRACTS](../03-workflows/DOCUMENT_CONTRACTS.md) DC-04. | D-037, L-06 §Batas Later, D-087 |
 | BR-CAT-40 | An import is idempotent and durable: a retry or a lost response never creates duplicate products. The uploaded file is temporary working data of the import command: it is not kept after the command reaches its final lifecycle outcome, is never a business record and cannot be downloaded again; the audit keeps the import result — the products created, a row summary, the file's checksum, the actor and the time. | D-037, D-044, D-054 |
 | BR-CAT-41 | Only roles that manage the catalogue (the Owner and OPERATIONS_ADMIN) may import, enforced on the server. | D-037, L-04 |
 | BR-CAT-42 | It is not a general spreadsheet or enterprise import engine: XLSX is outside V1 unless decided separately, and the import is never extended to stock or cost. Whether a row may name a category that does not exist yet is decided by D-069 (T-17 h). | D-037 |

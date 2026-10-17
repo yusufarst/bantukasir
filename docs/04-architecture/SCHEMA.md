@@ -2,10 +2,10 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-3B under D-059, 5 October 2026 (Asia/Jakarta) |
+| Status | CURRENT — written in RF-3B under D-059, 5 October 2026 (Asia/Jakarta); amended in RF-5 under D-087, 18 October 2026: command request receipts and restore reconciliation (section 5.3), the onboarding states and the correction of onboarding entries before release (section 5.7), one line per product in a Sale (section 5.9), guards G-22 to G-26 |
 | Phase | P4 — logical database schema; with [ARCHITECTURE](ARCHITECTURE.md) and [STACK_AND_MODULES](STACK_AND_MODULES.md) it completes P4 |
 | Replaces | `docs/04-architecture/legacy/02-ARCHITECTURE.md` §Constraint database and the schema-delivery part of §Payment extension boundary dan schema delivery; `docs/04-architecture/legacy/P4-ARCHITECTURE.md` §Schema, immutability dan constraints ([LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 9) |
-| Decisions | D-006, D-032 to D-038, D-042 to D-054, D-060 to D-062, D-077; [ADR-006](../adr/ADR-006-exact-numbers.md), [ADR-007](../adr/ADR-007-command-identity-and-idempotency.md), [ADR-008](../adr/ADR-008-cost-allocation-representation.md) |
+| Decisions | D-006, D-032 to D-038, D-042 to D-054, D-060 to D-062, D-067 to D-074, D-077, D-086, D-087; [ADR-006](../adr/ADR-006-exact-numbers.md), [ADR-007](../adr/ADR-007-command-identity-and-idempotency.md), [ADR-008](../adr/ADR-008-cost-allocation-representation.md), [ADR-009](../adr/ADR-009-command-receipts-and-reconciled-outcomes.md) |
 | Related | [ARCHITECTURE](ARCHITECTURE.md) section 9, [TECHNICAL_RULES](../06-api-performance/TECHNICAL_RULES.md) sections 7 and 8, [SECURITY_MODEL](../05-security/SECURITY_MODEL.md), [DOMAIN_MODEL](../02-domain/DOMAIN_MODEL.md), [PRODUCTION_DATA_SAFETY](../00-governance/PRODUCTION_DATA_SAFETY.md) |
 
 The logical PostgreSQL schema of BantuKasir: its tables, columns, keys and constraints; which records are immutable facts and which are replaceable projections; the retention class of every table; the database roles and their privileges; the indexes; and the mapping of every persistent invariant to the constraint, lock, guard and test that enforce it. It enforces the product and domain rules of P1 and P2 and adds no business meaning. Every rule names its source: a decision `D-…`, a CURRENT document, or a legacy source key from [DOMAIN_MODEL](../02-domain/DOMAIN_MODEL.md) section 2. Rules are numbered `SCH-nn`; guards `G-nn`; identifiers are permanent.
@@ -166,6 +166,7 @@ Two kinds of ephemeral data are kept **outside the database** and have no table:
 | `role_super_admin`, `role_operations_admin`, `role_cashier` | `boolean` | The three fixed roles (BR-USR-01) |
 | `status` | `text` | `ACTIVE`, `DEACTIVATED`, `ANONYMIZED` |
 | `deactivated_at`, `anonymized_at` | `timestamptz` null | Set with the status |
+| `version` | `integer` | `>= 1`; increases with every change of the display name, email, roles or status; the expected version of a user-management command (INTERACTION_CONTRACTS RC-35 to RC-42; D-087) |
 | `created_at`, `updated_at` | `timestamptz` | |
 
 ```sql
@@ -186,7 +187,8 @@ CREATE UNIQUE INDEX users_one_active_owner ON users (role_super_admin)
 - **At least one active Owner after bootstrap** cannot be held by one constraint; guard G-08 holds it.
 - There is no `remember_token` column (remember-me is disabled, SEC-AUTH-07) and no `email_verified_at` column (the email is never verified, D-049).
 - Anonymization replaces `display_name` with the neutral label, `email` with the unique `.invalid` placeholder and `password` with null (SEC-ACC-09); every frozen copy of the old name elsewhere stays (section 3.5).
-- Runtime privileges: `SELECT`, `INSERT`; `UPDATE` of `display_name`, `email`, `password`, `role_operations_admin`, `role_cashier`, `status`, `deactivated_at`, `anonymized_at`, `updated_at`.
+- Anonymization derives the neutral label from `access.user.anonymized_name` with `:nomor` the account's `id` in decimal, and the placeholder email `anonymized-<id>@users.invalid` (SEC-ACC-09; D-087).
+- Runtime privileges: `SELECT`, `INSERT`; `UPDATE` of `display_name`, `email`, `password`, `role_operations_admin`, `role_cashier`, `status`, `deactivated_at`, `anonymized_at`, `version`, `updated_at`.
 
 **`sessions`** — class E, framework table. Entity: Sign-in session. The table of the framework's database session driver (ADR-002), with the framework's columns (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, `last_activity`). The sign-in time and the time of the last user-initiated request are kept in the encrypted payload (SEC-SESS-02). Rows are removed when a session ends or is revoked (SEC-SESS-04) and by the framework's expiry. Runtime privileges: all four.
 
@@ -207,8 +209,8 @@ CREATE UNIQUE INDEX users_one_active_owner ON users (role_super_admin)
 | `address`, `contact` | `text` null | up to 500; up to 200 |
 | `email` | `text` null | up to 254 (BR-CFG-01: optional email) |
 | `document_header`, `document_footer` | `text` null | up to 500 each |
-| `document_identity` | `text` null | up to 100. TECHNICAL_RULES section 11.3 sets no length for it; this column bound is the limit until RF-5 sets the document content |
-| `accent_token` | `text` null | up to 32; a value of the constrained set defined with the design system (RF-4), which then adds its allowlist check |
+| `document_identity` | `text` null | up to 100; printed under the shop name on receipts and session reports (DOCUMENT_CONTRACTS DC-01, DC-02; D-087) |
+| `accent_token` | `text` null | `CHECK (accent_token IN ('green', 'teal', 'blue', 'purple', 'graphite'))`: the accent set of DESIGN_SYSTEM section 3.3; null renders as `green`, the default (D-086, D-087) |
 | `logo_file_id` | `bigint` null | → `stored_files` |
 | `created_at`; `actor_user_id`, `actor_display_name`; `command_id` | | The Owner and the command (BR-CFG-02) |
 
@@ -223,7 +225,7 @@ Runtime privileges: `SELECT`, `INSERT`. A revision is never changed or deleted (
 | `changed_at` | `timestamptz` | |
 
 - The row is inserted with the first revision. A command that freezes the shop identity in a snapshot takes a share lock on it, and a BusinessProfile change an update lock (TR §7.1 step 2.4; RACE-25).
-- Until the first revision exists, a command that must freeze the shop identity (Sale checkout, session close) is refused before any fact: a receipt or session report must hold the identity frozen from a revision (BR-DOC-01, BR-CASH-20). Opening a cash session is refused under the same condition, because a session that is opened must be closable and its close freezes the identity. The refusal code and the setup workflow are RF-5. This states a consequence of existing rules, not a new one.
+- The bootstrap procedure inserts the first revision, with the shop name it is given, and this row (SECURITY_MODEL SEC-OP-01; D-087), so a revision exists from the start (guard G-23). Sale checkout, session open and session close still check it inside their transaction and would refuse `VALIDATION_FAILED` before any fact, because a receipt or session report must hold the identity frozen from a revision (BR-DOC-01, BR-CASH-20). This states a consequence of existing rules, not a new one.
 - Runtime privileges: `SELECT`, `INSERT`; `UPDATE` of `revision_id`, `changed_at`.
 
 ### 5.3 Commands
@@ -291,6 +293,33 @@ CREATE UNIQUE INDEX command_identities_process_key ON command_identities (actor_
 | `committed_at` | `timestamptz` | |
 
 Runtime privileges: `SELECT`, `INSERT`. Every fact row that an enveloped command creates carries `command_id` (→ `command_identities`), so the facts of a command can be found from its identity.
+
+**`command_request_receipts`** — class E. The request receipts of ADR-009 section 1.
+
+| Column | Type | Rule |
+| --- | --- | --- |
+| `id` | `bigint` | Primary key |
+| `actor_user_id` | `bigint` | → `users` |
+| `operation` | `text` | As `command_identities.operation` |
+| `source_intent_id`, `idempotency_key` | `uuid` | As the request carried them |
+| `recovery_epoch` | `bytea` | The epoch the request carried |
+| `received_at` | `timestamptz` | As TECHNICAL_RULES TR-TIME-03 |
+| `outcome` | `text` | `PENDING`, `COMMITTED`, `REJECTED`, `HELD` or `NOT_COMMITTED` |
+| `outcome_at` | `timestamptz` null | Set with every outcome other than `PENDING` |
+
+- Written in a transaction of its own before the command's transaction, never with the payload (ADR-009 section 1; guard G-25). The outcome is informative; the command identity is the authority on whether a command committed.
+- Indexed by `(actor_user_id, outcome)` for the listing of RD-04.
+- Housekeeping removes a row only when its outcome is `COMMITTED`, `REJECTED` or `NOT_COMMITTED` and it is older than the retention RF-6 sets; an unresolved row is never removed (SCH-11).
+- Runtime privileges: `SELECT`, `INSERT`; `UPDATE` of `outcome`, `outcome_at`; `DELETE`.
+
+**`stale_intent_reports`** and **`intent_reconciliations`** — class F. The requests from an earlier recovery epoch and the Owner's reconciliation of each (ADR-009 section 3; D-073).
+
+| Table | Columns |
+| --- | --- |
+| `stale_intent_reports` | `id`; `operation`; `source_intent_id`; `UNIQUE (operation, source_intent_id)`, so a report is written at most once (insert if absent); `actor_user_id`; `reported_epoch` (`bytea`); `first_reported_at` |
+| `intent_reconciliations` | `report_id` (primary key, → `stale_intent_reports`); `outcome` (`CHECK (outcome = 'NOT_COMMITTED')`); `fence_command_id` (unique, → `command_identities`, a `FENCE` of the report's operation and intent written in the current epoch); `decided_by_user_id` (the Owner); `operator_note` (1–1,000); `recorded_at` |
+
+Written by the status check (reports, in a transaction of its own after the `EPOCH_STALE` refusal) and by the operator procedure SEC-OP-05 (reconciliations, with the fence and the audit event `RESTORE_RECONCILIATION` in one transaction). Runtime privileges on both: `SELECT`, `INSERT`.
 
 ### 5.4 Audit
 
@@ -511,16 +540,29 @@ The products it creates carry its command in `products.created_command_id`; the 
 
 ### 5.7 Inventory
 
-**`onboarding_state`** — class S. Entity: onboarding state (BR-INV-24).
+**`onboarding_state`** — class S. Entity: onboarding state (BR-INV-24; D-071, D-072).
 
 | Column | Type | Rule |
 | --- | --- | --- |
 | `id` | `smallint` | Primary key; `CHECK (id = 1)` |
-| `active` | `boolean` | Inserted `false` by the bootstrap procedure |
+| `state` | `text` | `NOT_STARTED`, `ACTIVE` or `RELEASED`; inserted `NOT_STARTED` by the bootstrap procedure. The onboarding freeze is on exactly while it is `ACTIVE` |
+| `version` | `bigint` | `>= 1`; increases with every change of the state and with every restore hold; the expected version of the onboarding and opening commands |
+| `release_presence` | `smallint`, stored generated | `CASE WHEN state = 'RELEASED' THEN 1 END`; → `onboarding_releases (id)` `DEFERRABLE INITIALLY DEFERRED`: the state is `RELEASED` only with its durable release record |
 | `changed_at` | `timestamptz` | |
-| `changed_by_user_id` | `bigint` null | Null only for the bootstrap row |
+| `changed_by_user_id` | `bigint` null | Null for the bootstrap row and for changes by an operator procedure |
 
-Postings take a share lock on it, setting and releasing it an update lock (TR §7.1 step 2.3; RACE-04). The documented cutover is recorded in the audit event of the change. Runtime privileges: `SELECT`, `INSERT`; `UPDATE` of `active`, `changed_at`, `changed_by_user_id`.
+Postings take a share lock on it, starting and releasing it an update lock, and so do the after-restore and restore reconciliation procedures (TR §7.1 step 2.3; RACE-04). The documented cutover is the time and actor of the start, recorded in its audit event. Starting is allowed only from `NOT_STARTED` with no release record and no unreconciled hold; nothing changes the state after `RELEASED` (guard G-26). Runtime privileges: `SELECT`, `INSERT`; `UPDATE` of `state`, `version`, `changed_at`, `changed_by_user_id`.
+
+**`onboarding_releases`** — class F. The durable release of onboarding (D-071). Columns `id` (primary key, `CHECK (id = 1)`: one release per set of business data); `released_at`; `kind` (`RELEASE`, written by RC-13, or `RESTORE_RECONCILIATION`, written by SEC-OP-05 when the Owner finds that onboarding was released before a restore); `actor_user_id` (the Owner); `command_id` (null for the procedure). It travels with the business data, so a reinstallation or a server migration with these data never makes onboarding available again. Runtime privileges: `SELECT`, `INSERT`.
+
+**`onboarding_restore_holds`** and **`onboarding_restore_reconciliations`** — class F. The hold of D-072.
+
+| Table | Columns |
+| --- | --- |
+| `onboarding_restore_holds` | `id`; `restored_state` (the state the restored data showed: `NOT_STARTED` or `ACTIVE`); `recovery_epoch` (`bytea`, the epoch set by the same after-restore run); `set_at` |
+| `onboarding_restore_reconciliations` | `hold_id` (primary key, → the hold); `outcome` (`RELEASED_BEFORE_RESTORE` or `NEVER_RELEASED`); `decided_by_user_id` (the Owner); `operator_note` (1–1,000); `recorded_at` |
+
+The after-restore procedure SEC-OP-04 inserts a hold, under the update lock of `onboarding_state`, whenever the restored state is not `RELEASED`; a hold without a reconciliation refuses every onboarding and opening command (`STALE_VERSION`; G-26) and shows UXS-50. SEC-OP-05 records the Owner's outcome: `RELEASED_BEFORE_RESTORE` also writes the release record and sets the state `RELEASED`; `NEVER_RELEASED` leaves the restored state, which continues as the same period (D-072). Runtime privileges on both: `SELECT`, `INSERT`.
 
 **`stock_movements`** — class F. Entity: StockMovement (BR-INV-02).
 
@@ -534,6 +576,7 @@ Postings take a share lock on it, setting and releasing it an update lock (TR §
 | `opening_line_id`, `receiving_line_id`, `sale_line_id`, `manual_issue_line_id`, `adjustment_line_id`, `reversal_id`, `return_line_id` | `bigint` null | The one source (DOMAIN_MODEL section 4). Each source line key is a discriminator (section 3.6): with `product_id` and `line_quantity` it references its line's `(id, product_id, quantity)`, so the movement moves exactly the line's product and quantity; a reversal is tied to its source by `reversals` |
 | `line_quantity` | `numeric(13,3)` null | The quantity of the source line: `quantity` for OPENING, RECEIPT, ADJUSTMENT and RETURN_RECEIPT, `-quantity` for SALE_ISSUE and MANUAL_ISSUE; null exactly for REVERSAL (composite-key column) |
 | `return_condition` | `text` null | `'SALEABLE'` exactly for `RETURN_RECEIPT` (composite-key column) |
+| `opening_replacement` | `boolean` null | Set exactly for OPENING (composite-key column): whether the OPENING's line replaces a reversed opening line (D-087) |
 | `cost_evidence_presence`, `issue_allocation_presence`, `return_allocation_presence` | `bigint`, stored generated | Presence keys (section 3.7) |
 | `recorded_at`; `actor_user_id`; `command_id` | | |
 
@@ -555,7 +598,8 @@ CHECK (num_nonnulls(opening_line_id, receiving_line_id, sale_line_id, manual_iss
    AND (movement_type = 'RETURN_RECEIPT') = (return_line_id IS NOT NULL)),
 CHECK ((movement_type = 'RETURN_RECEIPT') = (return_condition IS NOT NULL)
    AND (return_condition IS NULL OR return_condition = 'SALEABLE')),
-CHECK (movement_type <> 'OPENING' OR product_sequence = 1),                              -- BR-INV-26
+CHECK ((movement_type = 'OPENING') = (opening_replacement IS NOT NULL)),
+CHECK (movement_type <> 'OPENING' OR product_sequence = 1 OR opening_replacement),                              -- BR-INV-26
 CHECK ((movement_type = 'REVERSAL') = (line_quantity IS NULL)
    AND (line_quantity IS NULL OR line_quantity =
         CASE WHEN movement_type IN ('SALE_ISSUE', 'MANUAL_ISSUE') THEN -quantity ELSE quantity END)),
@@ -573,10 +617,11 @@ UNIQUE (id, product_id, movement_type, quantity, product_sequence),
 UNIQUE (id, product_id, quantity, product_sequence),
 UNIQUE (id, sale_line_id),
 UNIQUE (id, return_line_id),
+UNIQUE (id, opening_line_id),                                                            -- target of a replacement line (D-087)
 FOREIGN KEY (product_id, base_unit, quantity_precision)
     REFERENCES products (id, base_unit, quantity_precision) ON UPDATE RESTRICT,           -- BR-CAT-07
-FOREIGN KEY (opening_line_id, product_id, line_quantity)
-    REFERENCES opening_stock_lines (id, product_id, quantity),
+FOREIGN KEY (opening_line_id, product_id, line_quantity, opening_replacement)
+    REFERENCES opening_stock_lines (id, product_id, quantity, is_replacement),
 FOREIGN KEY (receiving_line_id, product_id, line_quantity)
     REFERENCES receiving_lines (id, product_id, quantity),
 FOREIGN KEY (sale_line_id, product_id, line_quantity)
@@ -597,7 +642,7 @@ FOREIGN KEY (return_allocation_presence) REFERENCES return_cost_allocations (mov
     DEFERRABLE INITIALLY DEFERRED
 ```
 
-- **OPENING once per product and first.** An OPENING must have sequence 1 and sequences are unique per product, so a product has at most one OPENING and only before any other movement (BR-INV-26). `opening_stock_lines` also keeps a product unique across opening entries.
+- **OPENING first, and one effective OPENING per product.** An original OPENING must have sequence 1 and sequences are unique per product, so a product has at most one original OPENING and only before any other movement (BR-INV-26). A replacement OPENING, posted before the release for a product whose OPENING was reversed in full, comes later in the sequence and carries `opening_replacement`, taken through its key from its line, which must name the reversed line it replaces (D-087). The keys of `opening_stock_lines` below allow one original line per product and one replacement per replaced line, so at most one OPENING of a product is ever effective (not reversed); guard G-22 adds the zero counts.
 - **A source posts at most once**, and a REVERSAL is the exact inverse of its source (`reversals` below).
 - **A movement moves its line's product and quantity.** The composite keys from each source line key, with `product_id` and `line_quantity`, make it impossible to store a movement of another product or quantity than its line, including the issue of a SaleLine and the receipt of a return line. A return's cost therefore always lands on the product whose issue it is linked to (ADR-008 section 7).
 - **Cost records accompany every posting** that COSTING requires (BR-INV-08): acquisition cost evidence for OPENING, RECEIPT and positive ADJUSTMENT; an issue allocation for SALE_ISSUE, MANUAL_ISSUE and negative ADJUSTMENT; a return allocation for RETURN_RECEIPT. REVERSAL has none; the replay treats it (ADR-008).
@@ -651,10 +696,25 @@ Runtime privileges on both: `SELECT`, `INSERT`.
 | Table | Columns |
 | --- | --- |
 | `opening_stock_entries` | `id`; `row_count` (1–100, BR-INV-25); `confirmed_at`; `actor_user_id`, `actor_display_name`; `command_id` (unique) |
-| `opening_stock_lines` | `id`; `opening_stock_entry_id`; `row_no` (1–100, unique per entry); `product_id` (**unique across all opening lines**, BR-INV-26); `quantity` (line quantity); `count_reference` (1–100, mandatory, BR-INV-25); deferred foreign key `(id)` → `stock_movements (opening_line_id)`; `UNIQUE (id, product_id, quantity)`, the target of its movement's key |
-| `onboarding_zero_counts` | `id`; `product_id`; `count_reference` (null, up to 100: BR-INV-25 requires a count reference only for positive rows); `recorded_at`; `actor_user_id`, `actor_display_name`; `command_id` — a zero count creates no movement (BR-INV-27) |
+| `opening_stock_lines` | `id`; `opening_stock_entry_id`; `row_no` (1–100, unique per entry); `product_id`; `quantity` (line quantity); `count_reference` (1–100, mandatory, BR-INV-25); `replaces_line_id` and `replaces_movement_id` (null for an original line; both set for a replacement, D-087); `replacement_reason` (1–1,000, set exactly for a replacement); `is_replacement` (stored generated: `replaces_line_id IS NOT NULL`); deferred foreign key `(id)` → `stock_movements (opening_line_id)`; `UNIQUE (id, product_id, quantity, is_replacement)`, the target of its movement's key; `UNIQUE (id, product_id)` |
+| `onboarding_zero_counts` | `id`; `product_id`; `count_reference` (null, up to 100: BR-INV-25 requires a count reference only for positive rows); `recorded_at`; `actor_user_id`, `actor_display_name`; `command_id` — a zero count creates no movement (BR-INV-27); `UNIQUE (id, product_id)` |
+| `onboarding_zero_count_withdrawals` | `zero_count_id` (primary key: a zero count is withdrawn at most once); `product_id`, with `(zero_count_id, product_id)` → `onboarding_zero_counts (id, product_id)`; `reason` (1–1,000); `recorded_at`; `actor_user_id`, `actor_display_name`; `command_id` (unique) |
 
-How a checklist entry or a wrong positive OPENING is corrected before the onboarding flag is released is T-17 b (RF-5). Until then these tables are insert-only; any correction mechanism RF-5 defines is added without rewriting them. Runtime privileges on all three: `SELECT`, `INSERT`.
+```sql
+-- specification text, not a migration (P-7): the replacement of a reversed OPENING (D-087)
+CHECK ((replaces_line_id IS NULL) = (replaces_movement_id IS NULL)
+   AND (replaces_line_id IS NULL) = (replacement_reason IS NULL)),
+is_replacement boolean GENERATED ALWAYS AS (replaces_line_id IS NOT NULL) STORED,
+CREATE UNIQUE INDEX opening_lines_one_original ON opening_stock_lines (product_id)
+    WHERE replaces_line_id IS NULL;                                          -- one original line per product
+UNIQUE (replaces_line_id),                                                   -- a line is replaced at most once
+FOREIGN KEY (replaces_line_id, product_id) REFERENCES opening_stock_lines (id, product_id),
+FOREIGN KEY (replaces_movement_id, replaces_line_id)
+    REFERENCES stock_movements (id, opening_line_id),                        -- the replaced line's own OPENING
+FOREIGN KEY (replaces_movement_id) REFERENCES reversals (original_movement_id)  -- which was reversed in full
+```
+
+Corrections before the release are append-only (T-17 b, decided by D-087): a zero count is withdrawn by a withdrawal row; a wrong OPENING is reversed in full (`reversals`) and then replaced by an explicit replacement line in a new entry of one row. No row of these tables is updated or deleted, and no correction exists after the release (D-071). Which entry is effective for a product — at most one — is guard G-22. Runtime privileges on all four: `SELECT`, `INSERT`.
 
 **`adjustments`** and **`adjustment_lines`** — class F. Entity: Adjustment (Owner only, BR-INV-31).
 
@@ -869,7 +929,7 @@ UNIQUE (id, product_id, quantity),                        -- target for the SALE
 FOREIGN KEY (id) REFERENCES stock_movements (sale_line_id) DEFERRABLE INITIALLY DEFERRED  -- BR-SALE-09
 ```
 
-PostgreSQL's `round` on `numeric` rounds ties away from zero, which for non-negative values is half-up (section 15). No uniqueness of product per Sale is enforced yet. Question 35 is answered by D-067: a Sale stores one line per product. RF-5 specifies the enforcement — the uniqueness of the product within a Sale and its validation code — as an amendment of this section. The stock check adds such lines together in any case (BR-INV-07; G-02). Runtime privileges: `SELECT`, `INSERT`.
+PostgreSQL's `round` on `numeric` rounds ties away from zero, which for non-negative values is half-up (section 15). A Sale stores one line per product (D-067): `UNIQUE (sale_id, product_id)`. A Sale request that names a product twice is refused `VALIDATION_FAILED` before any lock and is never merged on the server; a Sale holds at most 200 lines, so at most 200 distinct products (TECHNICAL_RULES section 11.2; INTERACTION_CONTRACTS RC-01). Runtime privileges: `SELECT`, `INSERT`.
 
 **`payments`** — class F. Entity: Payment.
 
@@ -924,7 +984,7 @@ It holds no cost or profit (BR-DOC-01, BR-COST-08). It is never changed; a repri
 | | `payout_method` | `CASH` or `BANK_TRANSFER` (BR-RFD-05) |
 | | `funding_source` | `DRAWER` or `OWNER_FUNDS` for CASH; null for BANK_TRANSFER (BR-RFD-06) |
 | | `cash_session_id` | Set exactly when `funding_source = 'DRAWER'` (BR-RFD-07) |
-| | `payout_reference` | 1–100: BR-RFD-05 records every payout with its reference |
+| | `payout_reference` | 1–100: BR-RFD-05 records every payout with its reference. For a drawer-funded refund the server generates it as `<Sale number>/<k>`, k being the ordinal of the correction on that Sale, taken under the Sale lock; otherwise the Owner types the reference of the payout made (D-087) |
 | `refund_lines` | `id`; `refund_id`; `sale_id`; `sale_line_id` | `(refund_id, sale_id)` → `refunds (id, sale_id)`; `(sale_line_id, sale_id)` → `sale_lines (id, sale_id)`; `UNIQUE (refund_id, sale_line_id)` |
 | | `amount` | Money, `> 0` |
 | `return_lines` | `id`; `correction_id`; `sale_id`; `sale_line_id`; `product_id` | `(correction_id, sale_id)` → `sale_corrections (id, sale_id)`; `(sale_line_id, sale_id, product_id)` → `sale_lines (id, sale_id, product_id)`: the returned product is the SaleLine's |
@@ -970,7 +1030,7 @@ CHECK ((funding_source IS NOT DISTINCT FROM 'DRAWER') = (cash_session_id IS NOT 
 | `version` | `integer` | `>= 1` |
 | `created_at`, `updated_at` | `timestamptz` | |
 
-TECHNICAL_RULES section 11.3 sets no length for the code and label; these column bounds are the limits until RF-5. A change is allowed only while no session is OPEN on the register, under the register lock (BR-CASH-02; G-19; RACE-26). Runtime privileges: `SELECT`, `INSERT`; `UPDATE` of `code`, `label`, `active`, `version`, `updated_at`.
+TECHNICAL_RULES section 11.3 sets no length for the code and label; these column bounds are the limits, confirmed in RF-5 (D-087). A change is allowed only while no session is OPEN on the register, under the register lock (BR-CASH-02; G-19; RACE-26). Runtime privileges: `SELECT`, `INSERT`; `UPDATE` of `code`, `label`, `active`, `version`, `updated_at`.
 
 **`cash_sessions`** — class FS. Entity: CashSession.
 
@@ -1130,6 +1190,11 @@ A check constraint sees one row; a unique index or foreign key sees one relation
 | G-19 | A cash register is changed only while no session is OPEN on it; an Owner-assisted close is by the Owner, an own close by the responsible user | Register and close Actions under the register or session lock |
 | G-20 | A stored-file reference names a file of the matching purpose (a logo for a revision, a product photo for a product) | Media and catalogue Actions |
 | G-21 | The cost-incomplete mark is written and cleared only as section 5.8 says | Costing Action of the refused correction; successful corrections and reversals of the same source; the RF-6 recovery procedure |
+| G-22 | A product has at most one effective onboarding entry: a zero count without a withdrawal, or an OPENING that is not reversed (BR-INV-47; D-087) | Opening-stock Actions (INTERACTION_CONTRACTS RC-11, RC-14, RC-48) under the onboarding share lock and the product lock (step 6). Backed by `opening_lines_one_original`, `UNIQUE (replaces_line_id)` and the replacement's keys to its reversal (section 5.7) |
+| G-23 | After bootstrap a BusinessProfile revision and its current pointer exist | The bootstrap procedure (SEC-OP-01); no command removes a revision (BR-CFG-02). Checked again by checkout, session open and close |
+| G-24 | A replacement OPENING is posted only while onboarding is `ACTIVE` without an unreconciled hold, for a product whose movements are only OPENINGs and their reversals (BR-INV-48) | RC-48 under the onboarding share lock and the product lock |
+| G-25 | Every enveloped user command that runs has a request receipt written before its transaction (ADR-009 section 1) | Commands module; proven by failure injection on the receipt write |
+| G-26 | Onboarding starts at most once and is released at most once for a set of business data; while a restore hold has no reconciliation, no onboarding or opening command runs (D-071, D-072) | Onboarding and opening Actions under the locks of `onboarding_state` (step 2.3). Backed by the primary key of `onboarding_releases` and `release_presence` |
 
 ## 9. Invariant-to-enforcement matrix
 
@@ -1170,8 +1235,8 @@ Every rule of DOMAIN_MODEL, CATALOG_BARCODE, INVENTORY, COSTING and SALES_CASH a
 | BR-NUM-05 | `timestamptz` facts; `business_date` columns | — | Server clock | SESSION09 |
 | BR-CMD-01 | `command_identities`, `command_results`; `command_id` on every fact | 1 | G-12 | POS01, POS03, INV01, SESSION06 |
 | BR-CMD-02 | The two unique identity pairs | 1 | Fingerprint comparison after rollback (TR-TX-08) | POS01, POS03 |
-| BR-CMD-03 | `FENCE` rows | 1 | Resolution (ADR-007 section 4) | POS03; RACE-27 (NEW) |
-| BR-CMD-06 | `recovery_epoch`; session rows removed; sequences advanced after restore (SCH-28) | 2.3 | G-12 | REC02 |
+| BR-CMD-03 | `FENCE` rows; `command_request_receipts` (ADR-009) | 1 | Resolution (ADR-007 section 4); G-25 | POS03; RACE-27, RACE-33 (NEW) |
+| BR-CMD-06 | `recovery_epoch`; session rows removed; sequences advanced after restore (SCH-28); `stale_intent_reports`, `intent_reconciliations` (ADR-009) | 2.3 | G-12 | REC02; RACE-34 (NEW) |
 | BR-USR-01, BR-USR-02 | Role columns and their checks | — | — | AUTH01, AUTH03 |
 | BR-USR-03 | No seeded account; the bootstrap inserts the first Owner; `password` null until the first link; no verification column | 2.3 | — | AUTH01; NEW |
 | BR-USR-04 | `users_one_active_owner`; no runtime `UPDATE` of `role_super_admin` | 2.1, 2.2 | G-08 | RACE-21, RACE-30 (NEW) |
@@ -1226,10 +1291,10 @@ Every rule of DOMAIN_MODEL, CATALOG_BARCODE, INVENTORY, COSTING and SALES_CASH a
 | BR-INV-02, BR-INV-05 | `stock_movements` insert-only; `UNIQUE (product_id, product_sequence)`; `document_date` separate | 6, 7 | — | INV01 |
 | BR-INV-03 | `stock_balances` projection | 7 | G-03 | INV01 |
 | BR-INV-04, BR-INV-20, BR-INV-33 | `on_hand BETWEEN 0 AND …` | 6, 7 | G-02 | INV02; RACE-03 |
-| BR-INV-06, BR-INV-07 | — (lines of one product are added together by the stock check; whether they are stored as one line is question 35) | 2.1, 2.3, 6, 7 | G-02, G-10, G-11 | INV01, INV02 |
+| BR-INV-06, BR-INV-07 | — (lines of one product are added together by the stock check; a Sale stores one line per product, `UNIQUE (sale_id, product_id)`, D-067) | 2.1, 2.3, 6, 7 | G-02, G-10, G-11 | INV01, INV02 |
 | BR-INV-08 | Presence keys on `stock_movements`; deferred keys from lines to movements; movement keys to each line's product and quantity | 8 | G-13 | INV01 (failure injection) |
 | BR-INV-09 | Command identity; one movement per source | 1 | — | INV01 |
-| BR-INV-11, BR-INV-24 | `onboarding_state`; OPENING only at sequence 1 | 2.3 | G-10 | OPEN01; RACE-04 |
+| BR-INV-11, BR-INV-24 | `onboarding_state` with `release_presence`; `onboarding_releases`; `onboarding_restore_holds` and their reconciliations | 2.3 | G-10, G-26 | OPEN01; RACE-04, RACE-32 |
 | BR-INV-12, BR-INV-16 | `receiving_documents`, `receiving_lines`, evidence; separate types and tables | 6, 7 | — | INV01 |
 | BR-INV-13 | Status and amount pattern | — | — | FIN02 |
 | BR-INV-14, BR-INV-15 | Evidence insert-only; corrections only by the Owner's command; the purchase cost shown is the evidence and its latest correction | 6 | Capability check (CAP-12, CAP-19) | AUTH02 |
@@ -1238,7 +1303,9 @@ Every rule of DOMAIN_MODEL, CATALOG_BARCODE, INVENTORY, COSTING and SALES_CASH a
 | BR-INV-21, BR-INV-32 | Issue allocations (ADR-008) and evidence for positive adjustments | 7 | G-13 | FIN01, INV03 |
 | BR-INV-22 | Separate tables: a manual issue creates no Sale or Payment | — | — | NEW |
 | BR-INV-25, BR-INV-27 | `row_count` 1–100; `count_reference` mandatory for opening lines; zero counts without movement | 2.3, 6, 7 | — | OPEN01 |
-| BR-INV-26 | `opening_stock_lines.product_id` unique; OPENING at sequence 1 | 6, 7 | — | OPEN01; RACE-06 |
+| BR-INV-26 | `opening_lines_one_original`; original OPENING at sequence 1; replacement keys | 2.3, 6, 7 | G-22, G-24 | OPEN01; RACE-06, RACE-31 |
+| BR-INV-27, BR-INV-47 | `onboarding_zero_count_withdrawals` keyed by the zero count | 2.3, 6 | G-22 | RACE-31 (NEW) |
+| BR-INV-48 | `replaces_line_id` unique; keys to the replaced line's OPENING and its reversal | 2.3, 6, 7 | G-22, G-24 | RACE-31 (NEW) |
 | BR-INV-29, BR-INV-46 | No runtime update or delete of movements or balances outside commands; repair only from facts | 6 | — | DB01; NEW |
 | BR-INV-31 | `adjustments` (reason, count reference and reference, all mandatory) | 6, 7 | — | INV03 |
 | BR-INV-34, BR-INV-36 | `reversals` key to the original's type and quantity; `inverse_quantity = -original_quantity` | 6, 7 | — | INV03 |
@@ -1342,9 +1409,9 @@ Each race of TECHNICAL_RULES section 8 and the schema element that serializes it
 | --- | --- | --- |
 | RACE-01, RACE-02 | Insert of the identity (step 1) | Unique identity pairs (section 5.3) |
 | RACE-03 | `products` and `stock_balances` locks (steps 6, 7) | `on_hand >= 0` |
-| RACE-04 | `users`, `onboarding_state`, `business_profile_current` locks (step 2) | `status`; `onboarding_state.active` read under lock |
+| RACE-04 | `users`, `onboarding_state`, `business_profile_current` locks (step 2) | `status`; `onboarding_state.state` read under lock |
 | RACE-05 | `products` `FOR UPDATE` | Movement key with `ON UPDATE RESTRICT` |
-| RACE-06 | `onboarding_state` share lock; product locks | OPENING at sequence 1; `opening_stock_lines.product_id` unique |
+| RACE-06 | `onboarding_state` share lock; product locks | Original OPENING at sequence 1; `opening_lines_one_original` |
 | RACE-07 | `cash_registers` lock (step 3) | Partial unique indexes on OPEN sessions |
 | RACE-08 | `cash_sessions` lock (step 4) | `activity_version`; close row keyed by session |
 | RACE-09 | Identity; `cash_sessions` `FOR UPDATE` | `cash_session_closes` primary key on `session_id`; `command_id` unique |
@@ -1364,9 +1431,13 @@ Each race of TECHNICAL_RULES section 8 and the schema element that serializes it
 | RACE-25 | `business_profile_current` lock (step 2.4) | Snapshot references one revision |
 | RACE-26 | `cash_registers` lock | G-19 |
 | RACE-27 | Identity | `FENCE` row on `UNIQUE (operation, source_intent_id)` |
-| RACE-28 | `users` lock of the target | Deactivation changes no `cash_sessions` row (T-17 d, RF-5) |
+| RACE-28 | `users` lock of the target | Deactivation, and the Owner replacement procedure, change no `cash_sessions` row (D-069 (d), D-087) |
 | RACE-29 | `categories` lock (step 6) | `categories.active` read under lock |
 | RACE-30 | Insert of the singletons (bootstrap); `users` lock (replacement) | Primary keys of `recovery_epoch` and `onboarding_state`; `users_one_active_owner` |
+| RACE-31 | `onboarding_state` share lock; product lock (step 6) | `opening_lines_one_original`; `UNIQUE (replaces_line_id)`; primary key of `onboarding_zero_count_withdrawals` |
+| RACE-32 | `onboarding_state` update lock | `version`; primary key of `onboarding_releases`; `release_presence` |
+| RACE-33 | Identity | `FENCE` row on `UNIQUE (operation, source_intent_id)` |
+| RACE-34 | Identity; `stale_intent_reports` | `UNIQUE (operation, source_intent_id)` of the reports; the fence of the reconciliation |
 
 ### 9.4 Test families
 
@@ -1402,12 +1473,14 @@ Runtime privileges per table (S = `SELECT`, I = `INSERT`, U = `UPDATE` of the li
 
 | Table | Class | S | I | U (columns) | D |
 | --- | --- | --- | --- | --- | --- |
-| `users` | M | ✓ | ✓ | `display_name`, `email`, `password`, `role_operations_admin`, `role_cashier`, `status`, `deactivated_at`, `anonymized_at`, `updated_at` | — |
+| `users` | M | ✓ | ✓ | `display_name`, `email`, `password`, `role_operations_admin`, `role_cashier`, `status`, `deactivated_at`, `anonymized_at`, `version`, `updated_at` | — |
 | `sessions`, `password_reset_tokens`, `cache`, `cache_locks` | E | ✓ | ✓ | all | ✓ |
 | `business_profile_revisions` | F | ✓ | ✓ | — | — |
 | `business_profile_current` | S | ✓ | ✓ | `revision_id`, `changed_at` | — |
 | `recovery_epoch` | S | ✓ | ✓ | `epoch`, `set_at` | — |
 | `command_identities`, `command_results` | F | ✓ | ✓ | — | — |
+| `command_request_receipts` | E | ✓ | ✓ | `outcome`, `outcome_at` | ✓ (resolved rows, by housekeeping) |
+| `stale_intent_reports`, `intent_reconciliations` | F | ✓ | ✓ | — | — |
 | `audit_events` | F | ✓ | ✓ | — | — |
 | `security_log_entries` | L | ✓ | ✓ | — | — |
 | `stored_files` | F | ✓ | ✓ | — | — |
@@ -1417,7 +1490,8 @@ Runtime privileges per table (S = `SELECT`, I = `INSERT`, U = `UPDATE` of the li
 | `barcode_tokens`, `barcode_mappings`, `barcode_mapping_retirements` | F | ✓ | ✓ | — | — |
 | `barcode_active_mappings` | P | ✓ | ✓ | — | ✓ |
 | `csv_product_imports` | F | ✓ | ✓ | — | — |
-| `onboarding_state` | S | ✓ | ✓ | `active`, `changed_at`, `changed_by_user_id` | — |
+| `onboarding_state` | S | ✓ | ✓ | `state`, `version`, `changed_at`, `changed_by_user_id` | — |
+| `onboarding_releases`, `onboarding_restore_holds`, `onboarding_restore_reconciliations`, `onboarding_zero_count_withdrawals` | F | ✓ | ✓ | — | — |
 | `stock_movements` | F | ✓ | ✓ | — | — |
 | `stock_balances` | P | ✓ | ✓ | `on_hand`, `last_sequence`, `updated_at` | — |
 | `receiving_documents`, `receiving_lines`, `manual_issues`, `manual_issue_lines`, `opening_stock_entries`, `opening_stock_lines`, `onboarding_zero_counts`, `adjustments`, `adjustment_lines`, `reversals` | F | ✓ | ✓ | — | — |
@@ -1482,7 +1556,7 @@ Every entity of DOMAIN_MODEL section 4 and the tables that represent it.
 | 11 | StockBalance | `stock_balances` |
 | 12 | Receiving document | `receiving_documents`, `receiving_lines` |
 | 13 | Manual issue | `manual_issues`, `manual_issue_lines` |
-| 14 | Opening stock entry and onboarding state | `opening_stock_entries`, `opening_stock_lines`, `onboarding_zero_counts`, `onboarding_state` |
+| 14 | Opening stock entry and onboarding state | `opening_stock_entries`, `opening_stock_lines`, `onboarding_zero_counts`, `onboarding_zero_count_withdrawals`, `onboarding_state`, `onboarding_releases`, `onboarding_restore_holds`, `onboarding_restore_reconciliations` |
 | 15 | Adjustment | `adjustments`, `adjustment_lines` |
 | 16 | Reversal | `reversals` |
 | 17 | AcquisitionCostEvidence | `acquisition_cost_evidence` |
@@ -1499,7 +1573,7 @@ Every entity of DOMAIN_MODEL section 4 and the tables that represent it.
 | 28 | CashSession | `cash_sessions`, `cash_session_closes` |
 | 29 | CashSessionReportSnapshot | `cash_session_reports` |
 | 30 | Owner review note | `cash_session_review_notes` |
-| 31 | Command result | `command_identities`, `command_results` |
+| 31 | Command result | `command_identities`, `command_results`; with ADR-009 `command_request_receipts`, `stale_intent_reports`, `intent_reconciliations` |
 | 32 | AuditEvent | `audit_events` |
 
 Technical tables that represent no domain entity: `password_reset_tokens` (one-time links), `security_log_entries`, `recovery_epoch`, `inventory_posting_blocks` and `inventory_posting_block_reopenings`, `cost_incomplete_marks` and `cost_incomplete_mark_clearances`, `cache`, `cache_locks`, `migrations`. Every table of section 5 is named in this section: 61 tables in all.
@@ -1573,9 +1647,7 @@ Checked on 5 and 6 October 2026. The documentation pages served as "current" wer
 
 | Item | Subject | Step |
 | --- | --- | --- |
-| T-17 b | Correction of a checklist entry or a wrong positive OPENING before release; the tables stay insert-only until then | RF-5 |
-| D-067 | The uniqueness of the product within a Sale and its validation code (section 5.9) | RF-5 |
-| D-069 | Its backend enforcement: no receiving draft table (T-17 a, section 5.7); deactivation that changes no `cash_sessions` row (T-17 d, RACE-28); insert-only review notes (T-17 f, section 5.10); the category-name rule of the CSV import (T-17 h, section 5.6) | RF-5 |
+| Receipt retention | How long resolved rows of `command_request_receipts` are kept before housekeeping removes them (ADR-009) | RF-6 |
 | Restore runbook | Run the after-restore procedure before the application accepts traffic (section 5.3); advance both number sequences (SCH-28); treat the promotion of any lagging database copy as a restore; run production with synchronous commit | RF-6 |
 | Collation | The reindex step after an upgrade of the collation library (SCH-14) | RF-6 |
 | Reconciliation incidents | How a difference in a running total or an active barcode mapping is handled (G-03; BR-INV-46); the reconciliation's schedule | RF-6 |
@@ -1584,8 +1656,6 @@ Checked on 5 and 6 October 2026. The documentation pages served as "current" wer
 | Question 20 | Who runs operator procedures and runbook steps on production (SCH-46) | RF-6 |
 | SEC-LOG-05 | Retention of `security_log_entries` | RF-6 |
 | Reconciliation and backup status | Where the daily reconciliation run and backup status for the Owner's system status are stored (REQ-OPS-04) | RF-6 |
-| RF-4 | The accent colour set (`accent_token` allowlist); how numbers and names appear on screens and documents | RF-4 |
-| RF-5 | Error codes for setup-dependent refusals; what the mandatory payout reference of a drawer cash refund holds — typed by the Owner or generated (BR-RFD-05); the length of the document identity and register fields if they differ from the column bounds here | RF-5 |
 | RF-7 | The Tasks that implement this schema, ordered by module dependency | RF-7 |
 
 Nothing in this document authorizes implementation, a migration, executed SQL or any later step.
