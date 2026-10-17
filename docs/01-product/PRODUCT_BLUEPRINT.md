@@ -68,7 +68,7 @@ A combined account has the union of the CASHIER and OPERATIONS_ADMIN columns and
 | ID | Journey | Actor | Requirements |
 | --- | --- | --- | --- |
 | J-01 | Open a cash session: choose a free cash register, count and enter opening cash (Rp0 allowed), confirm. | CASHIER, Owner | REQ-CASH-03 |
-| J-02 | Sell: scan or search, adjust quantities in the cart, choose CASH, BANK_TRANSFER or STATIC_QRIS on the payment screen, press the one final action, show and print the receipt. | CASHIER, Owner | REQ-SCAN-01 to REQ-SCAN-04, REQ-SALE-01 to REQ-SALE-12, REQ-PAY-01 to REQ-PAY-05, REQ-DOC-01 to REQ-DOC-05 |
+| J-02 | Sell: scan or search, adjust quantities in the cart, choose CASH or BANK_TRANSFER on the payment screen, press the one final action, show and print the receipt. | CASHIER, Owner | REQ-SCAN-01 to REQ-SCAN-04, REQ-SALE-01 to REQ-SALE-12, REQ-PAY-01 to REQ-PAY-05, REQ-DOC-01 to REQ-DOC-05 |
 | J-03 | Close a cash session: preview, count the drawer, close; recount if new activity arrived; read and print the session report. | CASHIER, Owner | REQ-CASH-06 to REQ-CASH-12 |
 | J-04 | Add products: search first, create, set price, barcodes, label and photo; or import new products from CSV. | OPERATIONS_ADMIN, Owner | REQ-CAT-01 to REQ-CAT-12 |
 | J-05 | Receive goods with cost or with cost marked unknown; record goods leaving for a non-sale reason; follow stock attention. | OPERATIONS_ADMIN, Owner | REQ-INV-04 to REQ-INV-06, REQ-INV-10 |
@@ -80,7 +80,7 @@ Page flows and screens are designed in RF-4 and RF-5, not here.
 
 ## 7. V1 scope
 
-In V1 (D-002 as amended by D-032, D-036, D-037, D-038):
+In V1 (D-002 as amended by D-032, D-036, D-037, D-038, D-077):
 
 - goods only, one business and one stock pool per installation;
 - exactly three fixed roles, with the CASHIER and OPERATIONS_ADMIN combination;
@@ -88,7 +88,7 @@ In V1 (D-002 as amended by D-032, D-036, D-037, D-038):
 - receiving, opening stock with onboarding, manual issue, adjustment, reversal, stock attention, stock history and reconciliation;
 - moving-weighted-average cost with explicit UNKNOWN, Owner-only cost correction with replay, Owner-only cost of goods sold and gross profit;
 - cash accountability: cash registers, own cash sessions, expected cash, safe close, immutable session reports;
-- fully paid Sales with one payment by CASH, BANK_TRANSFER or STATIC_QRIS, confirmed on one payment screen;
+- fully paid Sales with one payment by CASH or BANK_TRANSFER, confirmed on one payment screen;
 - receipts for thermal 58 mm, thermal 80 mm and A4 by browser print, reprints;
 - Owner-only refunds and returns, paid from the drawer of an OPEN cash session (never beyond its expected cash, and only after the refund is recorded; D-035, D-045, D-046) or the Owner's own funds;
 - audit; reports for each role; BusinessProfile with revisions; independent backup and recovery;
@@ -96,9 +96,9 @@ In V1 (D-002 as amended by D-032, D-036, D-037, D-038):
 
 ## 8. Outside V1
 
-Services, bookings, orders, deposits, deferred fulfilment and reservations; warehouses, locations, transfers and goods in transit; HR, attendance, payroll, complex shifts, shared active drawers, paid-in, paid-out and cash pickups; price overrides and discount engines; unpaid, split or partial payments; accounts receivable and payable, net profit, expenses and tax accounting; serial numbers, pack conversion, batches, expiry dates and consignment; automatic supplier purchasing, CRM, leads and targets; XLSX import and any import of stock or cost; product photo galleries and bulk image import; Web Push, email notifications, outbox and general background workers; camera scanning and offline sales; payment gateways, dynamic QRIS, cards and e-wallets; public sign-up, two-factor authentication, Google sign-in, any email sent by the application, dynamic roles and multi-tenancy; an English interface and a language switcher; tax calculation; the phone as a primary cashier device; deleting master data or business records, and any archival-delete or expiry of records; splitting one refund across several funding sources; cash top-ups.
+Services, bookings, orders, deposits, deferred fulfilment and reservations; warehouses, locations, transfers and goods in transit; HR, attendance, payroll, complex shifts, shared active drawers, paid-in, paid-out and cash pickups; price overrides and discount engines; unpaid, split or partial payments; accounts receivable and payable, net profit, expenses and tax accounting; serial numbers, pack conversion, batches, expiry dates and consignment; automatic supplier purchasing, CRM, leads and targets; XLSX import and any import of stock or cost; product photo galleries and bulk image import; Web Push, email notifications, outbox and general background workers; camera scanning and offline sales; payment gateways, static and dynamic QRIS, cards and e-wallets; public sign-up, two-factor authentication, Google sign-in, any email sent by the application, dynamic roles and multi-tenancy; an English interface and a language switcher; tax calculation; the phone as a primary cashier device; deleting master data or business records, and any archival-delete or expiry of records; splitting one refund across several funding sources; cash top-ups.
 
-Sources: L-PRD §Batas Later as amended by D-036 (static QRIS moved into V1) and D-037 (CSV product import and product photos moved into V1); D-038; D-039; D-042; D-044; D-045; D-049; D-050. A future method code or a design template never activates any of these (L-PRD). If a real shop turns out to need one of them, the affected work stops for an Owner decision before any implementation (L-PRD, L-06).
+Sources: L-PRD §Batas Later as amended by D-036 (static QRIS moved into V1, and out again by D-077) and D-037 (CSV product import and product photos moved into V1); D-038; D-039; D-042; D-044; D-045; D-049; D-050; D-077 (a future payment method needs a separate Owner decision). A future method code or a design template never activates any of these (L-PRD). If a real shop turns out to need one of them, the affected work stops for an Owner decision before any implementation (L-PRD, L-06).
 
 ## 9. Requirements
 

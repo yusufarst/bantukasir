@@ -2,10 +2,10 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-4A under D-070 and, after the stop on finding F-03, D-071; corrected after the independent final review under D-072 to D-075; 11 October 2026 (Asia/Jakarta) |
+| Status | CURRENT — written in RF-4A under D-070 and, after the stop on finding F-03, D-071; corrected after the independent final review under D-072 to D-075; 11 October 2026 (Asia/Jakarta); amended for the Owner's payment-method decision Q38 under D-077 and D-079 (STATIC_QRIS removed), 17 October 2026 (Asia/Jakarta) |
 | Phase | P7 — user tasks for the information architecture |
-| Gate | P7-G1, navigation and page structure (D-025): **artifacts ready for the Owner's review — NOT APPROVED**. Approval is a separate Owner decision that names the RF-4A checkpoint commit and the hash of each artifact (D-070) |
-| Decisions | D-017, D-018, D-024, D-025, D-032, D-033, D-036, D-039, D-040, D-047, D-049, D-067 to D-075 |
+| Gate | P7-G1, navigation and page structure (D-025): **artifacts ready for the Owner's review — NOT APPROVED**. Approval is a separate Owner decision that names the checkpoint commit and the hash of each artifact (D-070); for this document, that is the checkpoint containing the Q38 amendment (D-079) |
+| Decisions | D-017, D-018, D-024, D-025, D-032, D-033, D-036, D-039, D-040, D-047, D-049, D-067 to D-075, D-077 |
 | Related | [INFORMATION_ARCHITECTURE](INFORMATION_ARCHITECTURE.md), [NAVIGATION_CONTRACTS](NAVIGATION_CONTRACTS.md), [INTERACTION_INVENTORY](INTERACTION_INVENTORY.md), [UI_STATES](UI_STATES.md), [ADAPTIVE_AND_ACCESSIBILITY](ADAPTIVE_AND_ACCESSIBILITY.md) |
 
 What each person who uses BantuKasir is trying to do, how often, on which device and in which journey. The [information architecture](INFORMATION_ARCHITECTURE.md) is built from these tasks, not from the system's capabilities. This document adds no business rule: every task traces to a journey of [PRODUCT_BLUEPRINT](../01-product/PRODUCT_BLUEPRINT.md) section 6, capabilities of [SECURITY_MODEL](../05-security/SECURITY_MODEL.md) section 6 and requirements of [REQUIREMENTS](../01-product/REQUIREMENTS.md). Tasks are numbered `UXT-nn`; identifiers are permanent.
@@ -44,7 +44,7 @@ Indonesian labels in quotation marks are **working labels**, taken from the [GLO
 | UXT-02 | "Buka sesi kas" | Take responsibility for one cash register with a counted opening amount | Cashier, Combined, Owner | Daily | PC kasir or tablet kasir | J-01 | CAP-21 | REQ-CASH-02, REQ-CASH-03 | UXP-104 | Ordinary |
 | UXT-03 | "Jual, bayar tunai" | Sell goods paid in cash and give the change | Cashier, Combined, Owner | Per transaction | PC kasir or tablet kasir | J-02 | CAP-21, CAP-02, CAP-03, CAP-14 | REQ-SALE-01, REQ-SALE-04, REQ-PAY-02, REQ-SCAN-01, REQ-SCAN-02 | UXP-101, UXP-102, UXP-103 | Ordinary |
 | UXT-04 | "Jual, bayar transfer bank" | Sell goods paid by bank transfer, confirmed from merchant evidence | Cashier, Combined, Owner | Per transaction | PC kasir or tablet kasir | J-02 | CAP-21, CAP-02 | REQ-PAY-03, REQ-SALE-04 | UXP-101, UXP-102, UXP-103 | Ordinary |
-| UXT-05 | "Jual, bayar QRIS statis" | Sell goods paid by static QRIS, confirmed from merchant evidence | Cashier, Combined, Owner | Per transaction | PC kasir or tablet kasir | J-02 | CAP-21, CAP-02 | REQ-PAY-03, REQ-PAY-04, REQ-SALE-04 | UXP-101, UXP-102, UXP-103 | Ordinary |
+| UXT-05 | **Retired by D-077.** Formerly "Jual, bayar QRIS statis"; static QRIS is not a V1 payment method. The identifier is not reused | — | — | — | — | — | — | — | — | — |
 | UXT-06 | "Cetak struk; cetak ulang" | Give the customer a receipt; print it again when needed | Cashier, Combined, Owner | Per transaction | PC kasir or tablet kasir | J-02 | CAP-21 | REQ-DOC-01, REQ-DOC-02, REQ-DOC-03 | UXP-103, UXP-202 | Ordinary |
 | UXT-07 | "Tangani harga berubah, stok kurang atau produk nonaktif saat bayar" | Finish the sale correctly after a refusal, without a silent change of total | Cashier, Combined, Owner | Many times a day | PC kasir or tablet kasir | J-02 | CAP-21 | REQ-SALE-02, REQ-SALE-07 | UXP-101, UXP-102 | Ordinary |
 | UXT-08 | "Pulihkan permintaan yang statusnya belum pasti" | Know whether a sale or posting was saved, without charging twice | Cashier, Combined, Owner, Ops | Rare | Any | J-02, J-05, J-07 | CAP-34 | REQ-SALE-08, REQ-CMD-01 | UXP-102, UXP-006 | Rare but risky |
@@ -102,7 +102,6 @@ Counted in user actions. An action is one deliberate step: a scan, a key press o
 | Sale paid CASH | PC | 3 | "Bayar" (F8) → type the amount received, or "Uang Pas" (Alt+U) → "Selesaikan" (Ctrl+Enter) | Tunai is chosen when the payment screen opens (G1-10; accepted by the Owner, D-075) |
 | Sale paid CASH | Tablet | 3 | Tap "Bayar" → tap "Uang Pas", or type the amount → tap "Selesaikan" | As above |
 | Sale paid BANK_TRANSFER | PC and tablet | 3 | "Bayar" (F8) → choose "Transfer bank" (Alt+2) → "Dana sudah diterima — Selesaikan" (Ctrl+Enter) | The reference is optional and not counted |
-| Sale paid STATIC_QRIS | PC and tablet | 3 | "Bayar" (F8) → choose "QRIS statis" (Alt+3) → "Dana sudah diterima — Selesaikan" (Ctrl+Enter) | As above |
 | Next sale after a receipt | PC and tablet | 0 | Scan the first item on UXP-103 (or 1 action: "Transaksi baru") | Printing is a separate, optional action |
 | Add an item to the cart | PC and tablet | 1 | One scan per base unit; a repeated scan adds to the same line (D-067) | A quantity edit is one more action |
 | Open a cash session | PC and tablet | 3 | On UXP-104 (reached through "Kasir"): type the opening cash → "Tinjau" (Ctrl+Enter) → "Buka sesi" (Ctrl+Enter); choosing the register is one more action when more than one is free | Review step kept (BR-CASH-05) |

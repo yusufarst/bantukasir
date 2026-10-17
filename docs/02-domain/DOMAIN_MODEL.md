@@ -85,7 +85,7 @@ The attributes listed are the business attributes that rules depend on. They are
 | Issue-cost allocation | The cost assigned to an issued quantity (sale, manual issue, negative adjustment) | Issue; amount or UNKNOWN at commit, an immutable fact; the current corrected amount, a projection that each replay replaces (D-060); for a saleable return, the link to the original issue allocation (D-061) | COSTING; [ADR-008](../adr/ADR-008-cost-allocation-representation.md) |
 | Sale | A completed, fully paid sale of goods handed over directly | Number, source intent, actor, cash session, server time, business date, total | SALES_CASH |
 | SaleLine | One product line of a Sale | Product, unit, quantity, unit price applied, line total | SALES_CASH |
-| Payment | The one full payment of a Sale | Method, applied amount; tendered amount and change for CASH; optional reference for BANK_TRANSFER and STATIC_QRIS | SALES_CASH |
+| Payment | The one full payment of a Sale | Method, applied amount; tendered amount and change for CASH; optional reference for BANK_TRANSFER | SALES_CASH |
 | ReceiptSnapshot | The immutable receipt content of a Sale | Number, frozen shop identity revision, template and asset revision, lines, payment, cashier, session | SALES_CASH |
 | Refund | Money paid back against an original Sale, with its payout | Sale and lines, amount, payout method, source of money, cash session when drawer-funded, actor, reason | SALES_CASH |
 | Return | Goods physically returned against an original Sale | Sale lines, quantity, condition (saleable or not) | SALES_CASH |

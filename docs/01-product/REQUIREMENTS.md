@@ -8,7 +8,7 @@
 | Product | [PRODUCT_BLUEPRINT](PRODUCT_BLUEPRINT.md) |
 | Domain rules | [DOMAIN_MODEL](../02-domain/DOMAIN_MODEL.md), [CATALOG_BARCODE](../02-domain/CATALOG_BARCODE.md), [INVENTORY](../02-domain/INVENTORY.md), [COSTING](../02-domain/COSTING.md), [SALES_CASH](../02-domain/SALES_CASH.md) |
 
-The requirement register of BantuKasir V1. Each requirement says what the product must do, how acceptance is judged, where the requirement comes from, and which legacy acceptance suite tests it today. Section 21 maps every legacy CORE entry to these requirements; section 22 traces every decision D-001 to D-076.
+The requirement register of BantuKasir V1. Each requirement says what the product must do, how acceptance is judged, where the requirement comes from, and which legacy acceptance suite tests it today. Section 21 maps every legacy CORE entry to these requirements; section 22 traces every decision D-001 to D-079.
 
 ## 1. How to read this register
 
@@ -16,7 +16,7 @@ The requirement register of BantuKasir V1. Each requirement says what the produc
 - **Requirement** states the obligation in shop terms ([GLOSSARY](../02-domain/GLOSSARY.md)). The detailed rule is the `BR-…` it cites in a domain document; where a requirement and a rule seem to differ, the rule's source decision decides, and the difference is a defect to report.
 - **Acceptance criteria** are the observable conditions that must pass with real evidence (PRODUCT_BLUEPRINT section 11).
 - **Source** names decisions, legacy documents (keys in DOMAIN_MODEL section 2) and rules. No requirement exists without a source.
-- **Tests** names the legacy acceptance suites in `docs/08-testing/legacy/08-TESTING-ACCEPTANCE.md`, which remain the test references until RF-6. `NEW` means no legacy suite covers the requirement; RF-6 adds coverage. Several suites were written before D-033 to D-040; where a suite's text conflicts with a requirement here, the requirement prevails. Known cases: AUTH02 (write-only cost for OPERATIONS_ADMIN, superseded by D-033); RET01 and SESSION04 (refunds from Owner funds only and expected cash without refunds, superseded by D-035); POS02 and PAYEXT01 (no QRIS, superseded by D-036); UX01 (approval of the former design revision, superseded by D-024 and D-025).
+- **Tests** names the legacy acceptance suites in `docs/08-testing/legacy/08-TESTING-ACCEPTANCE.md`, which remain the test references until RF-6. `NEW` means no legacy suite covers the requirement; RF-6 adds coverage. Several suites were written before D-033 to D-040; where a suite's text conflicts with a requirement here, the requirement prevails. Known cases: AUTH02 (write-only cost for OPERATIONS_ADMIN, superseded by D-033); RET01 and SESSION04 (refunds from Owner funds only and expected cash without refunds, superseded by D-035); UX01 (approval of the former design revision, superseded by D-024 and D-025). The "no QRIS" expectation of POS02 and PAYEXT01, superseded by D-036, holds again under D-077.
 - **Decisions taken during RF-2 and before RF-3A.** Questions 21 to 24 and 27 to 28 were asked during RF-2 and answered by D-042 to D-047; questions 25, 6, 5, 26, 31, 7 and 30 were answered before RF-3A by D-048 to D-054. Section 20 lists the requirements these decisions shape. Questions 33, 34 and 32 were answered before RF-3B by D-060 to D-062; they change no requirement (section 22). No requirement is pending.
 - **Words.** "Session" alone means a cash session; a sign-in session is always named in full (DOMAIN_MODEL section 1).
 
@@ -135,17 +135,17 @@ The requirement register of BantuKasir V1. Each requirement says what the produc
 
 | ID | Requirement | Acceptance criteria | Source | Tests |
 | --- | --- | --- | --- | --- |
-| REQ-PAY-01 | Each Sale has exactly one full payment by CASH, BANK_TRANSFER or STATIC_QRIS; no split, partial, deposit, credit or mixed payment; the server refuses other methods. | Mixed, partial and unknown methods are refused. | D-003, D-036; BR-PAY-01 | POS02, PAYEXT01 |
+| REQ-PAY-01 | Each Sale has exactly one full payment by CASH or BANK_TRANSFER; no split, partial, deposit, credit or mixed payment; the server refuses other methods. | Mixed, partial and unknown methods are refused, STATIC_QRIS included. | D-003, D-036, D-077; BR-PAY-01 | POS02, PAYEXT01 |
 | REQ-PAY-02 | CASH: tendered at least the total, change = tendered − total, applied = total; "Uang Pas" may set tendered to the total; the final action is enabled only when tendered is valid and at least the total; change is shown before confirmation. | Total Rp75.000 with Rp100.000 gives Rp25.000 change; Rp70.000 is refused; "Uang Pas" sets tendered equal to the total. | D-040, L-17; BR-PAY-02, BR-SALE-11 | POS02 |
-| REQ-PAY-03 | BANK_TRANSFER and STATIC_QRIS: the full total, confirmed by the final button stating that the funds were received, based on merchant evidence; optional reference; no gateway, API, webhook, callback, polling or pending state; gross amount; fees not modelled. | No pending state exists; the button text states the confirmation; the reference is optional. | D-036, D-040, D-003; BR-PAY-03 to BR-PAY-05, BR-SALE-12 | POS02, PAYEXT01 |
-| REQ-PAY-04 | BANK_TRANSFER and STATIC_QRIS never change expected cash; session and Owner reports show the three methods separately; the receipt names QRIS explicitly. | A session with a QRIS sale keeps the same expected cash; per-method totals appear separately. | D-036; BR-PAY-06, BR-CASH-12 | SESSION04 (adapted) |
+| REQ-PAY-03 | BANK_TRANSFER: the full total, confirmed by the final button stating that the funds were received, based on merchant evidence; optional reference; no gateway, API, webhook, callback, polling or pending state; gross amount; fees not modelled. | No pending state exists; the button text states the confirmation; the reference is optional. | D-036, D-040, D-003, D-077; BR-PAY-03, BR-PAY-05, BR-PAY-07, BR-SALE-12 | POS02, PAYEXT01 |
+| REQ-PAY-04 | BANK_TRANSFER never changes expected cash; session and Owner reports show CASH and BANK_TRANSFER separately. | A session with a BANK_TRANSFER sale keeps the same expected cash; per-method totals appear separately. | D-036, D-077; BR-PAY-06, BR-CASH-12 | SESSION04 (adapted) |
 | REQ-PAY-05 | Payment methods sit behind an explicit server boundary; a future provider would be additive; V1 has no placeholder provider record, controller or asynchronous status; a completed Sale never becomes pending. | Code and schema review find no provider placeholders or asynchronous payment states. | D-003, D-036, L-02; BR-PAY-07 | PAYEXT01 |
 
 ## 11. Receipts and documents
 
 | ID | Requirement | Acceptance criteria | Source | Tests |
 | --- | --- | --- | --- | --- |
-| REQ-DOC-01 | Every Sale has one number and one immutable receipt snapshot with the frozen shop identity, template and asset revisions, time, cashier, session, items, total, method (QRIS named), tendered and change for CASH, optional customer name, and no cost or profit. | The snapshot holds the listed fields; later profile or price changes do not alter it. | L-17, D-036, D-038; BR-DOC-01 | IDENTITY01, SESSION08 |
+| REQ-DOC-01 | Every Sale has one number and one immutable receipt snapshot with the frozen shop identity, template and asset revisions, time, cashier, session, items, total, method, tendered and change for CASH, optional customer name, and no cost or profit. | The snapshot holds the listed fields; later profile or price changes do not alter it. | L-17, D-036, D-038, D-077; BR-DOC-01 | IDENTITY01, SESSION08 |
 | REQ-DOC-02 | Receipts print through browser templates for thermal 58 mm, thermal 80 mm and A4 ("Nota Penjualan") from the same snapshot; no tax is calculated and no document claims to be a tax invoice. | The three templates render from one snapshot; no tax line is computed. | D-039, L-17; BR-DOC-02, BR-DOC-03 | DEVICE01, SESSION08 |
 | REQ-DOC-03 | A reprint shows the same number and content with a copy marker, creates no fact and is audited; a print dialog is not proof of ink. | A reprint creates no Sale, Payment or movement; an audit event records the request. | L-17; BR-DOC-04, BR-AUD-06 | SESSION08, POS03 |
 | REQ-DOC-04 | Every document and media request is authorized again: a cashier reaches their own documents, the Owner all. | A guessed receipt number or URL is refused outside scope. | L-17, L-04; BR-DOC-06 | SESSION10, AUTH02 |
@@ -159,14 +159,14 @@ The requirement register of BantuKasir V1. Each requirement says what the produc
 | REQ-CASH-02 | At most one OPEN session per cash register and per user, also when opens race. | Concurrent opens give one success. | D-009, L-17; BR-CASH-06 | SESSION02 |
 | REQ-CASH-03 | A user opens a session as themselves with explicit opening cash of zero or more (Rp0 valid, blank refused), atomically, creating no Sale or movement. | A blank amount is refused; Rp0 is accepted; no Sale is created. | L-17, D-009, D-032; BR-CASH-04, BR-CASH-05 | SESSION03 |
 | REQ-CASH-04 | Every completed Sale, whatever its method, is attributed once to its own session, cash register and user. | A transfer-only Sale appears once in its session report. | D-009, L-17; BR-SALE-02 | SESSION03 |
-| REQ-CASH-05 | expectedCash = openingCash + applied CASH Sale payments − drawer-funded CASH refunds; variance = physical − expected; no hidden adjustment; opening and physical cash are zero or more. | Legacy example: expected Rp120.000, physical Rp118.000, variance −Rp2.000. With a STATIC_QRIS sale of Rp30.000 and a drawer-funded refund of Rp10.000 added: expected Rp110.000, physical Rp108.000, variance −Rp2.000. | D-035, D-036, L-17; BR-CASH-12 | SESSION04 (adapted) |
+| REQ-CASH-05 | expectedCash = openingCash + applied CASH Sale payments − drawer-funded CASH refunds; variance = physical − expected; no hidden adjustment; opening and physical cash are zero or more. | Legacy example: expected Rp120.000, physical Rp118.000, variance −Rp2.000. With a drawer-funded refund of Rp10.000 added: expected Rp110.000, physical Rp108.000, variance −Rp2.000. | D-035, D-036, L-17, D-077; BR-CASH-12 | SESSION04 (adapted) |
 | REQ-CASH-06 | Close uses a preview, a count outside the transaction, and an atomic close that checks the activity version under the checkout lock; a changed version refuses with "Ada transaksi baru; hitung ulang kas" and keeps the session OPEN; a failure keeps it OPEN; there is no CLOSING state. | The SESSION05 and SESSION06 cases pass. | L-17, D-009; BR-CASH-13, BR-CASH-14, BR-CASH-17 | SESSION05, SESSION06 |
 | REQ-CASH-07 | In a race between a Sale and a close, either the Sale commits and the close needs a recount, or the close commits and the Sale is refused before any fact; no successful Sale is missing from its report; uncertain checkouts are resolved before close. | Both race orders tested. | L-17; BR-CASH-15, BR-CASH-16 | SESSION05 |
 | REQ-CASH-08 | A repeated or lost close, with any key, gives one CLOSED session, one snapshot and one result; a conflicting count never overwrites; the result is recoverable after close. | A different-key repeat returns the original result. | L-17; BR-CASH-17 | SESSION06 |
 | REQ-CASH-09 | A CLOSED session is final: no reopening, no change of responsible user; a counting mistake gets a linked Owner review note; no refund payout is accepted; later corrections never rewrite it. | No reopen function exists; a refund that selects a CLOSED session is refused; the report is unchanged after a later refund. | L-17, D-035; BR-CASH-19, BR-RFD-09 | SESSION07 |
 | REQ-CASH-10 | Returning on the same business date opens a new session; a handover is A closes, then B opens; a session across midnight stays one document. | Two sessions on the same date give two distinct reports. | L-17; BR-CASH-09 | SESSION01 |
 | REQ-CASH-11 | The Owner may close another user's session with current permission, a count, recent authentication and a reason; the responsible user stays; the close actor is recorded. | Without recent authentication it is refused; the snapshot shows both users. | L-17, L-04; BR-CASH-18 | SESSION10 |
-| REQ-CASH-12 | The session report holds the listed contents, including CASH, BANK_TRANSFER and STATIC_QRIS totals separately and each drawer-funded refund separately, and never cost or profit; a cashier reaches only their own reports, the Owner all, OPERATIONS_ADMIN none; CSV export is formula-safe, keeps negative variance numeric and rupiah, time zone and session context; a failed export or print retries the same snapshot. | Report fields verified; CSV formula prefixes neutralized; access per role verified. | L-17, D-035, D-036; BR-CASH-20 to BR-CASH-22 | SESSION07, SESSION08, SESSION10 |
+| REQ-CASH-12 | The session report holds the listed contents, including CASH and BANK_TRANSFER totals separately and each drawer-funded refund separately, and never cost or profit; a cashier reaches only their own reports, the Owner all, OPERATIONS_ADMIN none; CSV export is formula-safe, keeps negative variance numeric and rupiah, time zone and session context; a failed export or print retries the same snapshot. | Report fields verified; CSV formula prefixes neutralized; access per role verified. | L-17, D-035, D-036, D-077; BR-CASH-20 to BR-CASH-22 | SESSION07, SESSION08, SESSION10 |
 | REQ-CASH-13 | The activity version increases with every Sale and every drawer-funded refund of the session. | A drawer-funded refund after the close preview makes the close refuse with the recount message. | L-17, D-035; BR-CASH-10, BR-RFD-08 | NEW (extends SESSION05) |
 
 ## 13. Refunds and returns
@@ -279,7 +279,7 @@ Every legacy Core entry CORE-001 to CORE-073 (`core.json`, `CORE-MAP.md`) is map
 | CORE-009 | REQ-INV-08, REQ-INV-09, REQ-ACC-08 | Mapped |
 | CORE-010 | REQ-INV-07 | Mapped |
 | CORE-011 | REQ-SALE-01, REQ-SALE-05, REQ-SALE-06, REQ-COST-10 | Mapped |
-| CORE-012 | REQ-PAY-02, REQ-PAY-03, REQ-SALE-02, REQ-CAT-08 | Adapted — STATIC_QRIS added by D-036 |
+| CORE-012 | REQ-PAY-02, REQ-PAY-03, REQ-SALE-02, REQ-CAT-08 | Mapped — STATIC_QRIS, added by D-036, was removed again by D-077 |
 | CORE-013 | REQ-SALE-02, REQ-SALE-07, REQ-SALE-08, REQ-SALE-11, REQ-DOC-03 | Mapped |
 | CORE-014 | REQ-RFD-01, REQ-RFD-02, REQ-RFD-03, REQ-RFD-05, REQ-RFD-06, REQ-COST-07 | Adapted — refunds may be drawer-funded (D-035) |
 | CORE-015 | REQ-INV-10, REQ-CAT-01 | Mapped |
@@ -289,7 +289,7 @@ Every legacy Core entry CORE-001 to CORE-073 (`core.json`, `CORE-MAP.md`) is map
 | CORE-019 | REQ-CASH-10 | Mapped |
 | CORE-020 | REQ-CASH-02 | Mapped |
 | CORE-021 | REQ-CASH-03, REQ-CASH-04, REQ-SALE-01 | Mapped |
-| CORE-022 | REQ-CASH-05, REQ-PAY-04 | Adapted — drawer-funded refunds (D-035) and STATIC_QRIS (D-036) |
+| CORE-022 | REQ-CASH-05, REQ-PAY-04 | Adapted — drawer-funded refunds (D-035); the STATIC_QRIS addition of D-036 was removed by D-077 |
 | CORE-023 | REQ-CASH-06, REQ-CASH-07 | Mapped |
 | CORE-024 | REQ-CASH-06, REQ-CASH-08 | Mapped |
 | CORE-025 | REQ-CASH-09, REQ-CASH-12, REQ-COST-09 | Mapped |
@@ -306,7 +306,7 @@ Every legacy Core entry CORE-001 to CORE-073 (`core.json`, `CORE-MAP.md`) is map
 | CORE-036 | REQ-NFR-04 | Mapped — targets remain proposals; dataset waits for G2 (T-09) |
 | CORE-037 | REQ-OPS-03 | Mapped |
 | CORE-038 | REQ-NFR-07, REQ-ACC-05 | Mapped |
-| CORE-039 | REQ-PAY-01, REQ-PAY-05 | Adapted — STATIC_QRIS is a V1 method (D-036) |
+| CORE-039 | REQ-PAY-01, REQ-PAY-05 | Mapped — STATIC_QRIS, added by D-036, was removed again by D-077 |
 | CORE-040 | REQ-SCOPE-01, REQ-SCOPE-02, REQ-SALE-09 | Mapped |
 | CORE-041 | REQ-ACC-01, REQ-ACC-03 | Mapped |
 | CORE-042 | REQ-CAT-01, REQ-CAT-02, REQ-CAT-07 | Mapped |
@@ -320,9 +320,9 @@ Every legacy Core entry CORE-001 to CORE-073 (`core.json`, `CORE-MAP.md`) is map
 | CORE-050 | — | **Retired.** The write-only rule for cost entered by OPERATIONS_ADMIN is superseded by D-033. The current rule is REQ-INV-05 and REQ-COST-04. |
 | CORE-051 | REQ-CASH-01, REQ-CASH-02, REQ-CFG-04 | Mapped |
 | CORE-052 | REQ-CASH-03, REQ-CASH-10 | Mapped |
-| CORE-053 | REQ-PAY-01 | Adapted — STATIC_QRIS added (D-036) |
+| CORE-053 | REQ-PAY-01 | Mapped — STATIC_QRIS, added by D-036, was removed again by D-077 |
 | CORE-054 | REQ-PAY-03 | Mapped |
-| CORE-055 | REQ-PAY-03, REQ-PAY-05 | Adapted — static QRIS is in V1; still no gateway, callback, webhook or asynchronous state (D-036) |
+| CORE-055 | REQ-PAY-03, REQ-PAY-05 | Mapped — no gateway, callback, webhook or asynchronous state; STATIC_QRIS, added by D-036, was removed again by D-077 |
 | CORE-056 | REQ-SALE-05, REQ-COST-10, REQ-NFR-08 | Mapped |
 | CORE-057 | REQ-CMD-01, REQ-SALE-06, REQ-SALE-08, REQ-CASH-08 | Mapped |
 | CORE-058 | REQ-CASH-06, REQ-CASH-07 | Mapped |
@@ -344,7 +344,7 @@ Every legacy Core entry CORE-001 to CORE-073 (`core.json`, `CORE-MAP.md`) is map
 
 ## 22. Decision traceability
 
-Every decision D-001 to D-076 is either traced to at least one requirement or rule, or classified as having no product or domain content.
+Every decision D-001 to D-079 is either traced to at least one requirement or rule, or classified as having no product or domain content.
 
 | Decision | Product or domain content | Traced to |
 | --- | --- | --- |
@@ -383,7 +383,7 @@ Every decision D-001 to D-076 is either traced to at least one requirement or ru
 | D-033 | Purchase cost and OPERATIONS_ADMIN; UNKNOWN never zero | REQ-INV-04, REQ-INV-05, REQ-COST-03, REQ-COST-04; BR-INV-14, BR-INV-15, BR-COST-03, BR-COST-07 |
 | D-034 | Owner-only cost correction with bounded replay; originals and history retained | REQ-COST-05 to REQ-COST-10; BR-COST-16 to BR-COST-31; COSTING section 10 (T-16, resolved by D-060 and D-061) |
 | D-035 | Refunds and returns: Owner only, drawer or Owner funds, expected cash, activity version | REQ-RFD-01 to REQ-RFD-07, REQ-CASH-05, REQ-CASH-09, REQ-CASH-13; BR-RFD-01 to BR-RFD-13, BR-CASH-12 |
-| D-036 | CASH, BANK_TRANSFER, STATIC_QRIS; no discount or price change at the till | REQ-PAY-01 to REQ-PAY-05, REQ-SALE-02, REQ-CAT-08, REQ-RPT-01; BR-PAY-01 to BR-PAY-07, BR-SALE-05, BR-CAT-13 |
+| D-036 | CASH, BANK_TRANSFER, STATIC_QRIS (STATIC_QRIS removed again by D-077); no discount or price change at the till | REQ-PAY-01 to REQ-PAY-05, REQ-SALE-02, REQ-CAT-08, REQ-RPT-01; BR-PAY-01 to BR-PAY-07, BR-SALE-05, BR-CAT-13 |
 | D-037 | CSV import of new products; one optional photo | REQ-CAT-09, REQ-CAT-10, REQ-OPS-01, REQ-NFR-07; BR-CAT-37 to BR-CAT-49 |
 | D-038 | One business per installation; client-neutral; BusinessProfile revisions | REQ-SCOPE-01, REQ-SCOPE-03, REQ-CFG-01, REQ-CFG-02; BR-DOM-01, BR-CFG-01 to BR-CFG-05 |
 | D-039 | PC and tablet; print templates; no tax; sign-in timeouts | REQ-NFR-02, REQ-NFR-03, REQ-NFR-10, REQ-ACC-07, REQ-DOC-02, REQ-SCAN-01; BR-USR-06, BR-DOC-02, BR-DOC-03 |
@@ -424,7 +424,10 @@ Every decision D-001 to D-076 is either traced to at least one requirement or ru
 | D-074 | Duplicate actions across devices, browsers or cleared browser data: not an accepted risk; RF-5 proposes the backend mitigation and its tests | REQ-SALE-08, REQ-CMD-01, REQ-RFD-09; BR-SALE-20, BR-CMD-03 |
 | D-075 | Remediation of the RF-4A independent final review; the planning agent's G1 proposals accepted: the combined account's Stok home, no role switcher, "Tunai" preselected, provisional shortcuts and breakpoints | REQ-UX-03, REQ-SALE-04; the rest is governance |
 | D-076 | Repository visibility (public); the publication guard before any push; RF-4A extended to record it | Non-product/domain — governance |
+| D-077 | V1 payment methods CASH and BANK_TRANSFER only (the Owner's decision Q38): STATIC_QRIS removed from V1; goods only; one full payment per Sale; a future method needs a separate Owner decision | REQ-PAY-01, REQ-PAY-03, REQ-PAY-04, REQ-DOC-01, REQ-CASH-05, REQ-CASH-12; BR-PAY-01, BR-PAY-03, BR-PAY-04 (retired), BR-PAY-06, BR-SALE-02, BR-SALE-10, BR-SALE-12, BR-DOC-01, BR-CASH-12, BR-CASH-20, BR-RFD-05, BR-COST-34 |
+| D-078 | Acceptance of the RF-4A checkpoint `c8dc234` and of its SSD safety bundle | Non-product/domain — governance |
+| D-079 | Authorization of the Q38 canonical amendment | Non-product/domain — governance |
 
 ## 23. Counts
 
-Re-derived from this register: 23 sections; 134 requirement rows in sections 2 to 19, all with distinct identifiers; no requirement pending; 73 legacy CORE entries, of which 72 are mapped (13 of them adapted by later decisions) and 1 is retired (section 21); 76 decisions, of which 49 are traced to requirements or rules and 27 are classified as non-product/domain (section 22).
+Re-derived from this register: 23 sections; 134 requirement rows in sections 2 to 19, all with distinct identifiers; no requirement pending; 73 legacy CORE entries, of which 72 are mapped (9 of them adapted by later decisions) and 1 is retired (section 21); 79 decisions, of which 50 are traced to requirements or rules and 29 are classified as non-product/domain (section 22).

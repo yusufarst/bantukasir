@@ -187,7 +187,7 @@ RF-3A (D-055) wrote the CURRENT architecture, security and technical-rule docume
 | `P4-ARCHITECTURE` §Schema, immutability dan constraints | **LEGACY — IN FORCE until RF-3B**, except its statement that barcode tokens are never reused (D-051, D-052; SOURCE_OF_TRUTH section 2) | SCHEMA (RF-3B) |
 | `P4-ARCHITECTURE` §Angka dan waktu exact | LEGACY — SUPERSEDED | ADR-006; TECHNICAL_RULES section 11; DOMAIN_MODEL section 7. Its statement about which cost a saleable return uses has no authority while T-16 is open (COSTING section 10) |
 | `P4-ARCHITECTURE` §Transaksi, locking dan original-result recovery | LEGACY — SUPERSEDED | TECHNICAL_RULES sections 6 to 9; ADR-007 |
-| `P4-ARCHITECTURE` §Payment boundary dan kesiapan provider kelak | LEGACY — SUPERSEDED | ARCHITECTURE section 5, with the methods of D-036 |
+| `P4-ARCHITECTURE` §Payment boundary dan kesiapan provider kelak | LEGACY — SUPERSEDED | ARCHITECTURE section 5, with the methods of D-036 as amended by D-077 |
 | `P4-ARCHITECTURE` §Keamanan dan privacy implications | LEGACY — SUPERSEDED | SECURITY_MODEL; ADR-004. Its write-only cost rule was already superseded by D-033 |
 | `P4-ARCHITECTURE` §Testing implications | LEGACY — INPUT ONLY for RF-6 | The test strategy (RF-6) |
 | `P4-ARCHITECTURE` §Deployment, operasi dan maintenance | LEGACY — INPUT ONLY for RF-6; ADR-002 and ADR-003 prevail where it differs | RF-6 |
@@ -207,7 +207,7 @@ Legacy technical rules changed or retired in RF-3A, with the reason:
 | L-P5: limits for public password-reset requests (3 per hour per identity, 10 per IP, 100 global) | Retired | There is no public reset request (D-049); one-time link submissions have their own limits (SECURITY_MODEL section 11) |
 | L-P4, L-09: Docker Compose packaging; Nginx-managed certificate renewal | Replaced | The hosting topology is Cloudflare, VPS and Coolify (D-053, ADR-003) |
 | L-04, L-P4, L-P5: purchase cost entered by Operations is write-only | Not carried | Superseded by D-033 before RF-3A |
-| L-P4, L-P6: CASH or BANK_TRANSFER only | Not carried | Superseded by D-036 before RF-3A |
+| L-P4, L-P6: CASH or BANK_TRANSFER only | Not carried | Superseded by D-036 before RF-3A. Current again since D-077 (ARCHITECTURE ARC-30, TECHNICAL_RULES TR-VAL-04) |
 | L-P6 race "Replay melawan posting": "source and allocation stable and versioned" | Not carried as a rule | It would settle T-16 (a) (COSTING section 10); TECHNICAL_RULES RACE-11 keeps the rest of the rule |
 | L-P4: Fortify chosen from the version notes of the time; 12-character password in the former design candidate | Replaced | Fortify confirmed from current documentation (ADR-004); password profile AICWDF-COMPAT-8 (D-049) |
 | L-P6, L-04: a record missing after an uncertain outcome stays UNCERTAIN or becomes an incident; "not found" is never permission for a replacement | Kept and refined: within one recovery epoch, a resolution that writes a fence makes NOT_COMMITTED a server fact, after which a new draft is allowed (ADR-007 section 4); a missing result alone still permits nothing (a lost command reference also needs the hard time bound of TECHNICAL_RULES TR-TIME-03); after a restore such intents are refused `EPOCH_STALE` and handled by the restore runbook | The fence guarantees that the original can never commit afterwards, so a new draft cannot duplicate it; BR-CMD-03 is kept (ADR-007 section 4) |
@@ -236,7 +236,7 @@ Legacy schema rules changed or made concrete in RF-3B, with the reason:
 | --- | --- | --- |
 | L-P4: "Unik normalized SKU" | Made concrete: outer whitespace removed before storage; letter case kept as typed; uniqueness without regard to letter case; no control characters; 1 to 64 characters (SCHEMA section 5.6; CATALOG_BARCODE BR-CAT-05) | T-17 g, a technical reading the Owner accepted for RF-3B planning (D-059) |
 | L-02, L-P4: a barcode token unique globally and never reused | Changed before RF-3B: a token is unique and active on at most one product; a manufacturer token retired as a misassignment may be re-attached by the Owner's correction; `BK-P-…` codes are never reused (SCHEMA section 5.6) | D-051, D-052 |
-| L-P4: "satu full Payment ... per completed Sale" | Kept, with the three methods of D-036 (SCHEMA section 5.9) | D-036 |
+| L-P4: "satu full Payment ... per completed Sale" | Kept, with the two methods of D-077 (SCHEMA section 5.9) | D-036, D-077 |
 | L-P4, L-02: "Sale number" unique and immutable, with no generation rule | Kept, with the generation rule of D-062: unique per installation, taken inside the committing transaction, increasing in allocation order, gaps allowed, with the Asia/Jakarta business date as a readable part (SCHEMA section 6) | D-062 |
 | L-02 entity table: CashRegister "code/label unik" | Made concrete: the register code is unique without regard to letter case; the label is not unique (SCHEMA section 5.10) | Carried from the legacy entity table as the code's identity rule; reported to the Owner with the RF-3B report |
 | L-02: cumulative refund and return bounds held by aggregate checks under lock | Kept and strengthened: running totals with check constraints under the original Sale lock (SCHEMA section 5.9) | Data integrity first (PROJECT_RULES section 2) |
@@ -280,3 +280,7 @@ Legacy capability groups and the pages that now carry them:
 | `P7-G18` Incident dan recovery state | UXP-006, UXP-414, UXP-415, UXP-611; UI_STATES UXS-14, UXS-15, UXS-16 |
 
 New identifiers written in RF-4A: `UXT-nn` (user tasks), `UXP-nnn` (pages), `UXI-nnn` (interactions), `UXS-nn` (states), `UXA-nn` (adaptive and accessibility rules) and `NC-nn` (global navigation rules) in `docs/07-ux-design/`; decisions D-066 to D-076.
+
+## 11. Q38 amendment
+
+The canonical amendment for the Owner's payment-method decision Q38 (D-077, authorized by D-079) supersedes no legacy document. It retires in place, without reuse, the rule BR-PAY-04 in SALES_CASH, the task UXT-05 in USER_TASKS and the term STATIC_QRIS in GLOSSARY. New identifiers: decisions D-077 to D-079; open item N-11.

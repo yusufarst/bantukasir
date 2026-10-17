@@ -2,10 +2,10 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-4A under D-070 and, after the stop on finding F-03, D-071; corrected after the independent final review under D-072 to D-075 and after the targeted re-verification of that remediation (D-075); 11 and 12 October 2026 (Asia/Jakarta) |
+| Status | CURRENT — written in RF-4A under D-070 and, after the stop on finding F-03, D-071; corrected after the independent final review under D-072 to D-075 and after the targeted re-verification of that remediation (D-075); 11 and 12 October 2026 (Asia/Jakarta); amended for the Owner's payment-method decision Q38 under D-077 and D-079 (STATIC_QRIS removed), 17 October 2026 (Asia/Jakarta) |
 | Phase | P7 — information architecture, role-based navigation and page inventory |
-| Gate | P7-G1, navigation and page structure (D-025): **artifacts ready for the Owner's review — NOT APPROVED**. Approval is a separate Owner decision that names the RF-4A checkpoint commit and the hash of each artifact (D-070) |
-| Decisions | D-017, D-018, D-024, D-025, D-032, D-033, D-036, D-039, D-040, D-047, D-049, D-067 to D-075 |
+| Gate | P7-G1, navigation and page structure (D-025): **artifacts ready for the Owner's review — NOT APPROVED**. Approval is a separate Owner decision that names the checkpoint commit and the hash of each artifact (D-070); for this document, that is the checkpoint containing the Q38 amendment (D-079) |
+| Decisions | D-017, D-018, D-024, D-025, D-032, D-033, D-036, D-039, D-040, D-047, D-049, D-067 to D-075, D-077 |
 | Related | [USER_TASKS](USER_TASKS.md), [NAVIGATION_CONTRACTS](NAVIGATION_CONTRACTS.md), [INTERACTION_INVENTORY](INTERACTION_INVENTORY.md), [UI_STATES](UI_STATES.md), [ADAPTIVE_AND_ACCESSIBILITY](ADAPTIVE_AND_ACCESSIBILITY.md) |
 
 How BantuKasir is organized for the people who use it: the areas, each role's navigation, every page of V1 with who may reach it, and how the former design candidate and the legacy P7 coverage groups map onto the new pages. It presents rules already accepted in P1, P2, P5 and P6 and the Owner's decisions D-067 to D-069 and D-071 to D-075; it adds no business rule. Pages are numbered `UXP-nnn`; identifiers are permanent.
@@ -89,7 +89,7 @@ The capability column of a protected page names the capabilities needed to open 
 | UXP-006 | Unresolved requests | "Permintaan belum pasti" | A0 | List | Resolve the signed-in user's own commands whose outcome is not yet known (ADR-007 sections 4 and 5) | UXP-000 | Protected | Owner, Ops, Cashier, Combined · to open or display: CAP-34; its controls also use: CAP-11, CAP-13, CAP-21 | Cek status | REQ-SALE-08, REQ-CMD-01, REQ-RFD-09 | All device classes |
 | UXP-007 | Owner home | "Beranda" | A0 | Home | The Owner's start of day: today's figures, cash sessions now open, and the items that need the Owner's attention, each linking to its page | — (top-level) | Protected | Owner · to open or display: CAP-22, CAP-14, CAP-18, CAP-20, CAP-32; its controls also use: CAP-15 | — | REQ-RPT-04, REQ-INV-10, REQ-OPS-04 | Phone first (FD-05); PC and tablet |
 | UXP-101 | Till | "Kasir" | A1 | Till workspace | Scan or search products, build the cart, go to payment, all in the user's own OPEN cash session | — (top-level) | Protected | Owner, Cashier, Combined · to open or display: CAP-21, CAP-02, CAP-03, CAP-14; its controls also use: CAP-34 | Bayar | REQ-SALE-01, REQ-SALE-02, REQ-SALE-06, REQ-SCAN-01, REQ-SCAN-02, REQ-SCAN-03, REQ-SCAN-04, REQ-CAT-07, REQ-CAT-10 | PC with keyboard and USB HID scanner; tablet with touch and Bluetooth HID scanner (D-039); phone not a primary cashier device |
-| UXP-102 | Payment screen | "Pembayaran" | A1 | Payment | The one payment screen with one final action (D-040): choose CASH, BANK_TRANSFER or STATIC_QRIS and complete the Sale | UXP-101 | Protected | Owner, Cashier, Combined · to open or display: CAP-21; its controls also use: CAP-34 | Selesaikan / Dana sudah diterima — Selesaikan | REQ-SALE-04, REQ-SALE-05, REQ-SALE-06, REQ-SALE-07, REQ-SALE-08, REQ-PAY-01, REQ-PAY-02, REQ-PAY-03, REQ-PAY-04, REQ-SALE-09 | PC: keyboard path; tablet: final action large and apart from other controls (BR-SALE-14) |
+| UXP-102 | Payment screen | "Pembayaran" | A1 | Payment | The one payment screen with one final action (D-040): choose CASH or BANK_TRANSFER and complete the Sale | UXP-101 | Protected | Owner, Cashier, Combined · to open or display: CAP-21; its controls also use: CAP-34 | Selesaikan / Dana sudah diterima — Selesaikan | REQ-SALE-04, REQ-SALE-05, REQ-SALE-06, REQ-SALE-07, REQ-SALE-08, REQ-PAY-01, REQ-PAY-02, REQ-PAY-03, REQ-PAY-04, REQ-SALE-09 | PC: keyboard path; tablet: final action large and apart from other controls (BR-SALE-14) |
 | UXP-103 | Receipt after a sale | "Struk" | A1 | Result | Show the committed receipt with no further confirmation (BR-SALE-14); print it; start the next sale | UXP-101 | Protected | Owner, Cashier, Combined · to open or display: CAP-21; its controls also use: CAP-02 | Transaksi baru | REQ-SALE-04, REQ-DOC-01, REQ-DOC-02, REQ-DOC-03, REQ-DOC-05, REQ-SALE-11 | PC and tablet; receipt print through the browser (58 mm, 80 mm, A4) |
 | UXP-104 | Open cash session | "Buka sesi kas" | A1 | Command page | Open a cash session as oneself: choose an available cash register, enter the opening cash (Rp0 valid), review, confirm | — (the Kasir destination when the user has no OPEN session) | Protected | Owner, Cashier, Combined · to open or display: CAP-21; its controls also use: CAP-34 | Tinjau → Buka sesi | REQ-CASH-02, REQ-CASH-03, REQ-SALE-01 | PC and tablet |
 | UXP-105 | Close own cash session | "Tutup sesi kas" | A1 | Close flow | Close one's own OPEN session: preview, count the drawer, review, close; recount when new activity arrived | UXP-101 | Protected | Owner, Cashier, Combined · to open or display: CAP-21; its controls also use: CAP-34 | Tinjau → Tutup sesi | REQ-CASH-05, REQ-CASH-06, REQ-CASH-07, REQ-CASH-08, REQ-CASH-13 | PC and tablet; scan capture paused during the count |
@@ -296,7 +296,7 @@ Every requirement of [REQUIREMENTS](../01-product/REQUIREMENTS.md) either maps t
 | REQ-PAY-02 | UXP-102 | — |
 | REQ-PAY-03 | UXP-102 | — |
 | REQ-PAY-04 | UXP-102, UXP-501, UXP-502 | — |
-| REQ-PAY-05 | UXP-102 | Only CASH, BANK_TRANSFER and STATIC_QRIS appear; no provider placeholder |
+| REQ-PAY-05 | UXP-102 | Only CASH and BANK_TRANSFER appear; no provider placeholder (D-077) |
 | REQ-DOC-01 | UXP-103, UXP-202 | — |
 | REQ-DOC-02 | UXP-103 | — |
 | REQ-DOC-03 | UXP-103, UXP-202 | — |
@@ -363,7 +363,7 @@ Requirements: **134**; with at least one page or "all pages": 120; with no inter
 | Journey | Name | Path through the pages |
 | --- | --- | --- |
 | J-01 | Open a cash session | UXP-001 → "Kasir" → UXP-104 (choose register, opening cash) → review dialog → "Buka sesi" → UXP-101 |
-| J-02 | Sell | UXP-101 (scan or search; quantities) → "Bayar" → UXP-102 (CASH, BANK_TRANSFER or STATIC_QRIS; one final action) → UXP-103 (receipt; print) → next sale; reprint later from UXP-202 |
+| J-02 | Sell | UXP-101 (scan or search; quantities) → "Bayar" → UXP-102 (CASH or BANK_TRANSFER; one final action) → UXP-103 (receipt; print) → next sale; reprint later from UXP-202 |
 | J-03 | Close a cash session | UXP-101 → "Tutup sesi" → UXP-105 (preview → count → review → "Tutup sesi"; recount on UXS-19) → UXP-206 (report; print; CSV). Owner-assisted: UXP-206 → UXP-207 → UXP-206 |
 | J-04 | Add products | UXP-301 → "Tambah produk" → UXP-303 (search first) → UXP-302 (price, barcodes, photo) → UXP-306 (labels); or UXP-308 (CSV) → UXP-301 |
 | J-05 | Receive, issue, follow stock attention | UXP-404 → UXP-405 → review → UXP-406; UXP-407 → UXP-408 → review → UXP-409; UXP-401 and the Stok badge |
@@ -459,7 +459,7 @@ The groups of `docs/07-ux-design/legacy/P7-COVERAGE.md` (LEGACY — SUPERSEDED b
 | P7-G08 | Current stock, restock dan history | UXP-401, UXP-402, UXP-403; the Stok badge in UXP-000 | — |
 | P7-G09 | Register dan own session entry | UXP-104; cash registers UXP-609, UXP-610 | — |
 | P7-G10 | POS draft, scanner dan cart | UXP-101 | One line per product (D-067); no undo control (not required by a CURRENT rule); quantity edit and removal remain |
-| P7-G11 | Full payment, result dan recovery | UXP-102, UXP-103, UXP-006 | STATIC_QRIS added (D-036); the review dialog and checkbox are removed (D-040) |
+| P7-G11 | Full payment, result dan recovery | UXP-102, UXP-103, UXP-006 | STATIC_QRIS added (D-036) and removed again (D-077); the review dialog and checkbox are removed (D-040) |
 | P7-G12 | Close, own history dan immutable report | UXP-105, UXP-201, UXP-202, UXP-205, UXP-206, UXP-207 | Review notes append-only (D-069) |
 | P7-G13 | Owner stock/cost correction | UXP-410, UXP-411, UXP-503, UXP-504, UXP-505 | Corrections are reached from the record they correct, not from the finance report |
 | P7-G14 | Refund dan physical return | UXP-203, UXP-204 | Source of money and the D-068 instruction added |

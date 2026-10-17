@@ -96,7 +96,7 @@ The conventions of DOMAIN_MODEL section 1 apply: rules are `BR-COST-nn`, every r
 
 | ID | Rule | Source |
 | --- | --- | --- |
-| BR-COST-34 | The Owner's finance report shows: gross sales, refunds, net sales, number of completed Sales, applied payments by method (CASH, BANK_TRANSFER and STATIC_QRIS separately) and refund payouts separately, quantity sold and returned, cost of goods sold and gross profit. Margin is shown only when cost is complete and net sales are above zero. | L-15, D-036 |
+| BR-COST-34 | The Owner's finance report shows: gross sales, refunds, net sales, number of completed Sales, applied payments by method (CASH and BANK_TRANSFER separately) and refund payouts separately, quantity sold and returned, cost of goods sold and gross profit. Margin is shown only when cost is complete and net sales are above zero. | L-15, D-036, D-077 |
 | BR-COST-35 | Net sales = completed gross sales − refunds. Net cost of goods sold = sale allocations − cost of verified saleable returns. Gross profit = net sales − net cost of goods sold. | L-15 |
 | BR-COST-36 | Refunds and returns appear on their server posting date with a reference to the original Sale. There is no backdating. | L-15, BR-NUM-05 |
 | BR-COST-37 | Periods are Hari Ini (today), 7 Hari (today and the six dates before), Bulan Ini (from the first of this month until now), Bulan Lalu (the whole previous calendar month) and Rentang Kustom (chosen dates, inclusive), computed under BR-NUM-06. A custom range changes the report only when applied; cancelling keeps the previous period. The maximum query range is 366 days (TECHNICAL_RULES section 11). | L-15, L-P3, L-P6, TECHNICAL_RULES |

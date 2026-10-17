@@ -140,12 +140,12 @@ One concept, one canonical English term, one Indonesian shop term. Repository do
 | Payment | The one full payment of a Sale | Pembayaran | L-17 |
 | CASH | Payment method: cash | Tunai | L-04 |
 | BANK_TRANSFER | Payment method: bank transfer, confirmed by the cashier | Transfer bank | L-04 |
-| STATIC_QRIS | Payment method: static QRIS, confirmed by the cashier (D-036) | QRIS statis | proposed |
+| STATIC_QRIS | **Retired by D-077.** Formerly a V1 payment method (D-036); not a payment method in V1. The row is kept so the term is not reused with another meaning | None in V1 (formerly "QRIS statis") | D-077 |
 | Tendered amount | Cash handed over by the customer | Uang diterima | proposed |
 | Change | Tendered amount minus total | Kembalian | proposed |
 | Exact cash | The action that sets the tendered amount to the total (D-040) | Uang Pas | D-040 |
-| Funds-received confirmation | The cashier's confirmation, in the final button, that a transfer or QRIS payment arrived | Dana sudah diterima — Selesaikan | D-040 |
-| Payment reference | An optional reference of a transfer or QRIS payment | Referensi pembayaran | proposed |
+| Funds-received confirmation | The cashier's confirmation, in the final button, that a bank transfer payment arrived | Dana sudah diterima — Selesaikan | D-040 |
+| Payment reference | An optional reference of a bank transfer payment | Referensi pembayaran | proposed |
 | Sale total | The sum of line totals | Total | proposed |
 | Line total | Quantity × unit price, rounded once | Subtotal | proposed |
 | Stale price | The selling price changed while the cart was open | Harga berubah | proposed |

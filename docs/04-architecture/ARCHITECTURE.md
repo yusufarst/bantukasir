@@ -5,7 +5,7 @@
 | Status | CURRENT — written in RF-3A under D-055, 4 October 2026 (Asia/Jakarta) |
 | Phase | P4 — application architecture; the logical database schema is [SCHEMA](SCHEMA.md) (RF-3B) |
 | Replaces | The architecture part of `docs/04-architecture/legacy/02-ARCHITECTURE.md` and of `docs/04-architecture/legacy/P4-ARCHITECTURE.md`; their schema and database-constraint parts are replaced by [SCHEMA](SCHEMA.md) (RF-3B) ([LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) sections 8 and 9) |
-| Decisions | D-004, D-005, D-006, D-036, D-038, D-053, D-054, D-060, D-061; [ADR-001](../adr/ADR-001-stack-and-modular-monolith.md) to [ADR-008](../adr/ADR-008-cost-allocation-representation.md) |
+| Decisions | D-004, D-005, D-006, D-036, D-038, D-053, D-054, D-060, D-061, D-077; [ADR-001](../adr/ADR-001-stack-and-modular-monolith.md) to [ADR-008](../adr/ADR-008-cost-allocation-representation.md) |
 | Related | [STACK_AND_MODULES](STACK_AND_MODULES.md), [SCHEMA](SCHEMA.md), [SECURITY_MODEL](../05-security/SECURITY_MODEL.md), [TECHNICAL_RULES](../06-api-performance/TECHNICAL_RULES.md), [DOMAIN_MODEL](../02-domain/DOMAIN_MODEL.md) |
 
 How BantuKasir is built: its context, layers, units of work, read models, the payment, media and document boundaries, runtime constraints and database privilege separation. It enforces the product and domain rules and adds no business meaning. Every rule names its source: a decision `D-…`, a CURRENT document, or a legacy source key from [DOMAIN_MODEL](../02-domain/DOMAIN_MODEL.md) section 2. Rules are numbered `ARC-nn`.
@@ -73,8 +73,8 @@ One installation serves one business with one stock pool; another shop has its o
 
 | ID | Rule | Source |
 | --- | --- | --- |
-| ARC-30 | The payment methods are an explicit server-side list: CASH, BANK_TRANSFER and STATIC_QRIS. One place in the Sales module defines each method's validation: tendered cash and change for CASH; the cashier's confirmation that the funds were received and an optional reference for BANK_TRANSFER and STATIC_QRIS. Any other value is refused. | D-036, D-003, BR-PAY-01, BR-PAY-07 |
-| ARC-31 | There is no payment provider: no gateway adapter or stub, no provider table, controller, webhook, callback, polling or asynchronous or pending payment state. A completed Sale never becomes pending. | D-036, BR-PAY-04, BR-PAY-07 |
+| ARC-30 | The payment methods are an explicit server-side list: CASH and BANK_TRANSFER. One place in the Sales module defines each method's validation: tendered cash and change for CASH; the cashier's confirmation that the funds were received and an optional reference for BANK_TRANSFER. Any other value is refused. | D-036, D-003, D-077, BR-PAY-01, BR-PAY-07 |
+| ARC-31 | There is no payment provider: no gateway adapter or stub, no provider table, controller, webhook, callback, polling or asynchronous or pending payment state. A completed Sale never becomes pending. | D-036, D-077, BR-PAY-07 |
 | ARC-32 | A future provider would be an additive, reviewed change behind this boundary: the method list and its validation are the only seam. No adapter interface is created now, because no real variability exists in V1 (AICWDF §15.1.8); this is the framework's own rule against speculative abstraction, not a deviation. | D-036, AICWDF §15.1.2, §15.1.8 |
 | ARC-33 | Provider fees, settlement delay and net settlement are not modelled; a Sale is recorded at the gross amount paid. | D-036, BR-PAY-05 |
 

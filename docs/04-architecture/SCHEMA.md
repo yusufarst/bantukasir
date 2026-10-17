@@ -5,7 +5,7 @@
 | Status | CURRENT — written in RF-3B under D-059, 5 October 2026 (Asia/Jakarta) |
 | Phase | P4 — logical database schema; with [ARCHITECTURE](ARCHITECTURE.md) and [STACK_AND_MODULES](STACK_AND_MODULES.md) it completes P4 |
 | Replaces | `docs/04-architecture/legacy/02-ARCHITECTURE.md` §Constraint database and the schema-delivery part of §Payment extension boundary dan schema delivery; `docs/04-architecture/legacy/P4-ARCHITECTURE.md` §Schema, immutability dan constraints ([LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 9) |
-| Decisions | D-006, D-032 to D-038, D-042 to D-054, D-060 to D-062; [ADR-006](../adr/ADR-006-exact-numbers.md), [ADR-007](../adr/ADR-007-command-identity-and-idempotency.md), [ADR-008](../adr/ADR-008-cost-allocation-representation.md) |
+| Decisions | D-006, D-032 to D-038, D-042 to D-054, D-060 to D-062, D-077; [ADR-006](../adr/ADR-006-exact-numbers.md), [ADR-007](../adr/ADR-007-command-identity-and-idempotency.md), [ADR-008](../adr/ADR-008-cost-allocation-representation.md) |
 | Related | [ARCHITECTURE](ARCHITECTURE.md) section 9, [TECHNICAL_RULES](../06-api-performance/TECHNICAL_RULES.md) sections 7 and 8, [SECURITY_MODEL](../05-security/SECURITY_MODEL.md), [DOMAIN_MODEL](../02-domain/DOMAIN_MODEL.md), [PRODUCTION_DATA_SAFETY](../00-governance/PRODUCTION_DATA_SAFETY.md) |
 
 The logical PostgreSQL schema of BantuKasir: its tables, columns, keys and constraints; which records are immutable facts and which are replaceable projections; the retention class of every table; the database roles and their privileges; the indexes; and the mapping of every persistent invariant to the constraint, lock, guard and test that enforce it. It enforces the product and domain rules of P1 and P2 and adds no business meaning. Every rule names its source: a decision `D-…`, a CURRENT document, or a legacy source key from [DOMAIN_MODEL](../02-domain/DOMAIN_MODEL.md) section 2. Rules are numbered `SCH-nn`; guards `G-nn`; identifiers are permanent.
@@ -876,7 +876,7 @@ PostgreSQL's `round` on `numeric` rounds ties away from zero, which for non-nega
 | Column | Type | Rule |
 | --- | --- | --- |
 | `id`; `sale_id` | `bigint` | `sale_id` unique: at most one Payment per Sale; with the Sale's deferred key, exactly one (BR-PAY-01) |
-| `method` | `text` | `CASH`, `BANK_TRANSFER`, `STATIC_QRIS` (D-036) |
+| `method` | `text` | `CASH`, `BANK_TRANSFER` (D-036, D-077) |
 | `applied_amount` | `bigint` | `(sale_id, applied_amount)` → `sales (id, total_amount)`: the applied amount equals the Sale total (BR-PAY-02, BR-PAY-03) |
 | `tendered_amount`, `change_amount` | `bigint` null | Money |
 | `reference` | `text` null | up to 100 |
@@ -886,12 +886,12 @@ PostgreSQL's `round` on `numeric` rounds ties away from zero, which for non-nega
 CHECK ((method = 'CASH' AND tendered_amount IS NOT NULL AND tendered_amount >= applied_amount
         AND change_amount IS NOT NULL AND change_amount = tendered_amount - applied_amount
         AND reference IS NULL)
-    OR (method IN ('BANK_TRANSFER', 'STATIC_QRIS') AND tendered_amount IS NULL AND change_amount IS NULL)),
+    OR (method = 'BANK_TRANSFER' AND tendered_amount IS NULL AND change_amount IS NULL)),
 UNIQUE (sale_id, method),                                  -- target for receipt_snapshots
 UNIQUE (sale_id, method, tendered_amount, change_amount)    -- target for receipt_snapshots (CASH)
 ```
 
-A Payment for BANK_TRANSFER or STATIC_QRIS exists only because the cashier's final action confirmed that the funds were received (D-040, BR-SALE-12); no further column records it. Runtime privileges: `SELECT`, `INSERT`.
+A Payment for BANK_TRANSFER exists only because the cashier's final action confirmed that the funds were received (D-040, BR-SALE-12); no further column records it. Runtime privileges: `SELECT`, `INSERT`.
 
 **`receipt_snapshots`** — class F. Entity: ReceiptSnapshot (BR-DOC-01).
 
@@ -921,7 +921,7 @@ It holds no cost or profit (BR-DOC-01, BR-COST-08). It is never changed; a repri
 | | `recorded_at`; `actor_user_id`, `actor_display_name`; `command_id` (unique) | |
 | `refunds` | `id`; `correction_id` (unique); `sale_id` | `(correction_id, sale_id)` → `sale_corrections (id, sale_id)`; `UNIQUE (id, sale_id)` |
 | | `amount` | Money, `> 0` |
-| | `payout_method` | `CASH` or `BANK_TRANSFER` (BR-RFD-05: no source defines a STATIC_QRIS payout) |
+| | `payout_method` | `CASH` or `BANK_TRANSFER` (BR-RFD-05) |
 | | `funding_source` | `DRAWER` or `OWNER_FUNDS` for CASH; null for BANK_TRANSFER (BR-RFD-06) |
 | | `cash_session_id` | Set exactly when `funding_source = 'DRAWER'` (BR-RFD-07) |
 | | `payout_reference` | 1–100: BR-RFD-05 records every payout with its reference |
@@ -1038,7 +1038,7 @@ CREATE UNIQUE INDEX cash_sessions_one_open_per_user ON cash_sessions (responsibl
 | `business_profile_revision_id`, `logo_file_id`, `template_version` | Frozen identity, asset and template |
 | `register_code`, `register_label` | Frozen (G-17): the register's current values may change later |
 | `closed_at`, `cutoff_activity_version`, `physical_cash`, `expected_cash`, `variance`, `close_actor_display_name` | `(session_id, closed_at, cutoff_activity_version, physical_cash, expected_cash, variance, close_actor_display_name)` → `cash_session_closes (session_id, closed_at, activity_version_at_close, physical_cash, expected_cash, variance, close_actor_display_name)`: the report shows the close as it was recorded |
-| `completed_sale_count`, `completed_sale_value`, `cash_applied`, `bank_transfer_applied`, `static_qris_applied`, `drawer_refund_total` | Money and counts as closed; `CHECK (expected_cash = opening_cash + cash_applied - drawer_refund_total)` and `CHECK (variance = physical_cash - expected_cash)` |
+| `completed_sale_count`, `completed_sale_value`, `cash_applied`, `bank_transfer_applied`, `drawer_refund_total` | Money and counts as closed; `CHECK (expected_cash = opening_cash + cash_applied - drawer_refund_total)` and `CHECK (variance = physical_cash - expected_cash)` |
 | `drawer_refunds` | `jsonb` array: each drawer-funded refund with its Sale number, refund reference, amount, time and the Owner's frozen name (D-035) |
 | `source_ids` | `jsonb`: the internal keys of the Sales, Payments and drawer-funded refunds the close derived its totals from (BR-CASH-13) |
 | `close_reason`, `notes` | null; up to 1,000 each. The close reason is copied from the close and checked by guard G-17 |
@@ -1289,7 +1289,7 @@ Every rule of DOMAIN_MODEL, CATALOG_BARCODE, INVENTORY, COSTING and SALES_CASH a
 | BR-SALE-20 | Results retained; fences | 1 | — | POS03; RACE-27 (NEW) |
 | BR-SALE-23 | `recovery_epoch` | 2.3 | G-12 | REC02; RACE-12 |
 | BR-PAY-01 to BR-PAY-03 | `payments.sale_id` unique; deferred key from Sale; method and CASH checks; applied amount = Sale total | — | — | POS01 |
-| BR-PAY-04, BR-PAY-05, BR-PAY-07 | Method allowlist; no provider, pending-status or fee table or column | — | — | PAYEXT01 (adapted) |
+| BR-PAY-05, BR-PAY-07 | Method allowlist; no provider, pending-status or fee table or column | — | — | PAYEXT01 (adapted) |
 | BR-PAY-06 | Expected cash counts CASH only | 4 | G-05 | SESSION04 |
 | BR-DOC-01 | `receipt_snapshots` unique per Sale; `sale_number` (section 6) | 2.4, 8 | G-17, G-18 | IDENTITY01, SESSION08 |
 | BR-DOC-02, BR-DOC-05 | `template_version`; logo file kept | — | — | IDENTITY01 |
@@ -1533,7 +1533,7 @@ Technical tables that represent no domain entity: `password_reset_tokens` (one-t
 | same: global barcode token that is never reused | **Changed by D-051 and D-052**: a token is unique and active on at most one product; a manufacturer token retired as a misassignment may be re-attached by the Owner's correction; `BK-P-…` codes are never reused |
 | same: Sale source intent, scoped command key, fingerprint and result | Section 5.3 |
 | same: movement source intent; Sale number | Movement source keys; the Sale number now has its generation rule (D-062, section 6) |
-| same: one full Payment and one ReceiptSnapshot per completed Sale | As above, with the methods of D-036 |
+| same: one full Payment and one ReceiptSnapshot per completed Sale | As above, with the two methods of D-077 (D-036 as amended; section 5.9) |
 | same: partial unique OPEN per register and per responsible cashier; every Sale in an eligible session of the actor | Partial unique indexes; the Sale's composite key to its actor's session |
 | same: foreign keys and checks for sources, quantities, amounts, non-negative cash, unit semantics after the first movement, legal status and type | Section 5; the unit and precision lock is now a database guarantee |
 | same: exactly one immutable report per CLOSED session, consistent sources and cutoff | `cash_session_closes`, `cash_session_reports` |
