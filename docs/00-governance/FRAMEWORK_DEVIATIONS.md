@@ -135,7 +135,7 @@ Changes that bring the project into line with the framework. They are planning a
 | Action | Framework rule | Step |
 | --- | --- | --- |
 | Adopt password profile AICWDF-COMPAT-8 in place of the 12-character minimum shown in the former design candidate, unless an external binding requirement applies | §4A.5 | Applied in RF-3A (D-049; SECURITY_MODEL section 2, ADR-004) |
-| Zero-touch production rule: coding agents never connect to or run anything against production; a controlled executor applies approved migrations | §29, §30 | **Not applied — pending Owner decision** (question 20, R-16; see [PRODUCTION_DATA_SAFETY](PRODUCTION_DATA_SAFETY.md) section 5). It changes who operates a production release, so it is not a planner decision. If the Owner keeps the earlier rule instead, that is a deviation needing explicit approval (§41) and is recorded here as FD-09. |
-| Use the framework Task statuses in place of the legacy status vocabularies | §19 | RF-6, RF-7 |
+| Zero-touch production rule: coding agents never connect to or run anything against production; a controlled executor applies approved migrations | §29, §30 | **Applied — D-088** (question 20, R-16 resolved): no AI agent operates production or staging; a human operator applies authorized releases and migrations ([PRODUCTION_DATA_SAFETY](PRODUCTION_DATA_SAFETY.md) section 5; [ADR-011](../adr/ADR-011-release-pipeline-environments-and-production-operation.md)). FD-09 is not needed and is not created. |
+| Use the framework Task statuses in place of the legacy status vocabularies | §19 | RF-6 applied it to test evidence ([TEST_STRATEGY](../08-testing/TEST_STRATEGY.md) section 8); the Task statuses of PROJECT_RULES section 7 apply from RF-7 |
 | Defer Graphify until code exists | §6.4 | Recorded in [TOOLCHAIN](TOOLCHAIN.md) |
 | Add Context7 as the current-documentation capability | §5.1 | Recorded in TOOLCHAIN |

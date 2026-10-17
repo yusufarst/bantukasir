@@ -2,9 +2,9 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-5 under D-087, 18 October 2026 (Asia/Jakarta) |
+| Status | CURRENT — written in RF-5 under D-087, 18 October 2026 (Asia/Jakarta); amended in RF-6 under D-088, 18 October 2026: sections 1.4 and 2.5 and RC-03 and RC-04, for the Owner's decision on N-07; the audit codes of OP-06 and OP-07 in sections 8, 11 and 12 |
 | Phase | P3 — the interaction contracts of AICWDF section 14: for every command and read, its request, validation, checks, result and refusals, and the route of every control of INTERACTION_INVENTORY |
-| Decisions | D-033, D-035, D-040, D-045, D-046, D-049, D-051, D-052, D-054, D-062, D-067 to D-074, D-077, D-086, D-087; [ADR-007](../adr/ADR-007-command-identity-and-idempotency.md), [ADR-009](../adr/ADR-009-command-receipts-and-reconciled-outcomes.md) |
+| Decisions | D-033, D-035, D-040, D-045, D-046, D-049, D-051, D-052, D-054, D-062, D-067 to D-074, D-077, D-086, D-087, D-088; [ADR-007](../adr/ADR-007-command-identity-and-idempotency.md), [ADR-009](../adr/ADR-009-command-receipts-and-reconciled-outcomes.md) |
 | Related | [ROUTE_CONTRACTS](ROUTE_CONTRACTS.md), [CRITICAL_FLOWS](CRITICAL_FLOWS.md), [DOCUMENT_CONTRACTS](DOCUMENT_CONTRACTS.md), [UI_STATES](../07-ux-design/UI_STATES.md), [NAVIGATION_CONTRACTS](../07-ux-design/NAVIGATION_CONTRACTS.md), [INTERACTION_INVENTORY](../07-ux-design/INTERACTION_INVENTORY.md), [COPY_DECK](../07-ux-design/COPY_DECK.md) |
 
 What each request carries, what the server validates before and after it takes its locks, what it writes, what it answers and how the page shows each answer. The command contracts are named by their route (`RC-nn`, ROUTE_CONTRACTS section 6); the other contracts are `IC-nn`. These contracts apply the rules of the domain documents, TECHNICAL_RULES, SCHEMA and SECURITY_MODEL; where a rule text was brought in line in RF-5, the amendment is listed in D-087. They add no error code: every refusal uses one of the 32 codes of TECHNICAL_RULES section 4, with the state of UI_STATES section 3 and the message key of COPY_DECK section 13.1.
@@ -67,7 +67,7 @@ NAVIGATION_CONTRACTS NC-13 blocks a new command of a family while the user has a
 - the minimal references in this browser (SEC-CH-05), and
 - the user's request receipts on the server that are not resolved (RD-04, `scope=own`; ADR-009 section 2), read when a page of the family opens, before a final action is enabled and with the shell refresh of RD-03.
 
-A receipt makes the block act on every device and browser of the user, also after the browser's site data are cleared, for every request that reached the server (N-07 mitigation; D-087). A request refused before its receipt (sections 1.1 step 1) ran nothing and needs no block. The families and their operations:
+A receipt makes the block act on every device and browser of the user, also after the browser's site data are cleared, for every request that reached the server (N-07 mitigation; D-087). A request refused before its receipt (sections 1.1 step 1) ran nothing and needs no block. The Owner decided N-07 in D-088: the block stays a client rule for every family, and the server refuses nothing because of an unresolved receipt except a close while the responsible user has an unresolved checkout (section 2.5; G-27). The narrow window of a request still on its way to the server when the user starts the same action on another device is an accepted risk; a duplicate that results is corrected by an audited correction — a refund or return of the duplicate Sale, or a reversal of a duplicate receiving or manual issue (DECISIONS section 5). The families and their operations:
 
 | Family (TECHNICAL_RULES section 7.2) | Operations |
 | --- | --- |
@@ -144,7 +144,7 @@ A browser reference lost with the browser's data no longer loses the intent: the
 
 - **Own close (RP-105).** "Lanjut hitung" (UXI-103) is disabled while the user has an unresolved `sale.checkout` reference or receipt. A user holds one OPEN session at a time, so such a request belongs to this session or to none.
 - **Owner-assisted close (RP-207).** The close preview lists the responsible user's unresolved `sale.checkout` receipts (ADR-009 section 4). "Lanjut hitung" (UXI-150) is disabled while one is listed; the Owner resolves each with "Cek status" as the Owner (CAP-34). A receipt whose original still runs answers IN_PROGRESS until its hard end (TR-TIME-03).
-- No server refusal is added: the close stays protected by the session lock and the activity version (BR-CASH-13 to BR-CASH-15), so no committed Sale is ever missing from its report. A server refusal of a close while such a receipt is unresolved would be a new refusal and needs the Owner's decision (ADR-009 section 6).
+- **Server refusal of the close (D-088).** The Owner decided N-07 with one server refusal: RC-03 and RC-04 are refused `RECOUNT_REQUIRED` while the session's responsible user has a `sale.checkout` receipt whose outcome is PENDING or HELD, an earlier-epoch HELD receipt included; the check is made after the session lock is held (G-27, RACE-35). The session stays OPEN; the page reloads the preview, where the unresolved checkout is listed with "Cek status". The refusal uses an existing code, so no error code and no copy is added; the close also stays protected by the session lock and the activity version (BR-CASH-13 to BR-CASH-15), so no committed Sale is ever missing from its report.
 
 ### 2.6 Cash of a drawer-funded refund
 
@@ -242,11 +242,11 @@ Each contract lists the payload, the expected versions, what is refused before a
 | Payload | `sessionId`; `physicalCash` (required, zero or more); RC-04 also `reason` (1 to 1,000) |
 | Expected | `activityVersion` from the close preview |
 | Gate | RC-03: the session's responsible user (CAP-21). RC-04: the Owner (CAP-23), recent authentication, and the responsible user is not the Owner; the responsible user may be deactivated (D-069 (d), D-087) |
-| Under locks | Family Close. Session OPEN (`SESSION_NOT_OPEN`); activity version equal (`RECOUNT_REQUIRED`; BR-CASH-14); totals and expected cash derived from the session's facts under its lock (BR-CASH-13, G-05) |
+| Under locks | Family Close. Session OPEN (`SESSION_NOT_OPEN`); activity version equal (`RECOUNT_REQUIRED`; BR-CASH-14); no `sale.checkout` request receipt of the responsible user with outcome PENDING or HELD, read after the session lock (`RECOUNT_REQUIRED`; G-27, D-088); totals and expected cash derived from the session's facts under its lock (BR-CASH-13, G-05) |
 | Commits | Close record (physical cash, expected cash, variance, cutoff, closed time, close actor), the CashSessionReportSnapshot (BR-CASH-20) with its drawer-funded refunds, CLOSED status, audit `CASH_SESSION_CLOSE` or `CASH_SESSION_CLOSE_ASSISTED`, result; the responsible user never changes (BR-CASH-18) |
 | Result | `cash_session_close`, the session number, `location` RP-206 |
-| Client | BR-CASH-16 as section 2.5; the close preview lists the drawer-funded refunds with the reminder of D-068 |
-| Tests | RACE-08, RACE-09, RACE-13 including the D-068 scenario (CRITICAL_FLOWS WF-09), RACE-28 with an Owner-assisted close of a deactivated user's session |
+| Client | BR-CASH-16 as section 2.5; on `RECOUNT_REQUIRED` the page reloads the close preview, which shows the new totals or the unresolved checkout with "Cek status"; the close preview lists the drawer-funded refunds with the reminder of D-068 |
+| Tests | RACE-08, RACE-09, RACE-13 including the D-068 scenario (CRITICAL_FLOWS WF-09), RACE-28 with an Owner-assisted close of a deactivated user's session, RACE-35 (D-088) |
 
 ### RC-05 `sale_correction.drawer_funded` and RC-06 `sale_correction.other`
 
@@ -450,7 +450,7 @@ The `action` of an audit event (SCHEMA section 5.4) and its label in Riwayat akt
 | `OPENING_STOCK_REPLACE` | RC-48 | Proposed (section 11) |
 | `ZERO_COUNT_WITHDRAW` | RC-14 | Proposed (section 11) |
 | `ONBOARDING_START`; `ONBOARDING_RELEASE` | RC-12; RC-13 | `audit.action.onboarding_start`; `audit.action.onboarding_release` |
-| `COST_CORRECTION`; `COST_INCOMPLETE_MARK` | RC-15; the mark of BR-COST-27 | `audit.action.cost_correction`; `audit.action.cost_incomplete_mark` |
+| `COST_CORRECTION`; `COST_INCOMPLETE_MARK` | RC-15 and the cost recovery OP-06 (D-088); the mark of BR-COST-27 | `audit.action.cost_correction`; `audit.action.cost_incomplete_mark` |
 | `RECONCILIATION_BLOCK`; `POSTING_REOPEN` | SC-01; RC-16 | `audit.action.reconciliation_block`; `audit.action.reopen` |
 | `PRODUCT_CREATE`; `PRODUCT_EDIT`; `PRICE_CHANGE`; `PRODUCT_DEACTIVATE`; `PRODUCT_REACTIVATE` | RC-17 to RC-20 | `audit.action.product_create`; `audit.action.product_edit`; `audit.action.price_change`; `audit.action.product_deactivate`; `audit.action.product_reactivate` |
 | `CATEGORY_CREATE`; `CATEGORY_RENAME`; `CATEGORY_DEACTIVATE`; `CATEGORY_REACTIVATE` | RC-21 to RC-24 | `audit.action.category_create`; `audit.action.category_rename`; `audit.action.category_deactivate`; `audit.action.category_reactivate` |
@@ -468,6 +468,7 @@ The `action` of an audit event (SCHEMA section 5.4) and its label in Riwayat akt
 | `PRINT`; `EXPORT` | RC-44, RC-45, RC-47; RC-46 | `audit.action.print`; `audit.action.export` |
 | `ONBOARDING_RESTORE_HOLD` | OP-04 (D-072) | Proposed (section 11) |
 | `RESTORE_RECONCILIATION` | OP-05 (D-072, D-073) | Proposed (section 11) |
+| `PROJECTION_REBUILT` | OP-07 (D-088) | Proposed (section 11) |
 
 The category of each event, `BUSINESS` or `SECURITY`, follows SEC-LOG-02. The security log writes `outcome_code` `SUCCEEDED` or `REFUSED` only, labelled by `audit.security.outcome.succeeded` and `audit.security.outcome.refused`; its event type carries the kind of failure (UXI-383). A further outcome code would need its label through change control first.
 
@@ -893,7 +894,7 @@ These words are needed before the Tasks that use them ship; they are proposals, 
 | UXI-150 and UXI-103 disabled reason (section 2.5) | `ux.disabled.unresolved_checkouts`: "Ada penjualan yang statusnya belum pasti. Cek statusnya dulu sebelum menghitung laci." |
 | UXI-291, withdrawal of a zero count (RC-14) | `inventory.onboarding.withdraw_zero`: "Tarik hitungan nol"; review title "Tarik hitungan nol?"; body "Hitungan nol ini tetap tercatat di riwayat, lalu produk ini bisa dihitung lagi."; success "Hitungan nol ditarik." |
 | UXI-228 and UXI-291, the replacement of a reversed OPENING (RC-48) | `inventory.opening_entry.replace`: "Catat ulang stok awal"; eligibility "Stok awal dibatalkan; bisa dicatat ulang."; review title "Tinjau stok awal pengganti"; success "Stok awal pengganti tersimpan." |
-| Audit labels (section 8) | `audit.action.opening_stock_replace`: "Stok awal dicatat ulang"; `audit.action.zero_count_withdraw`: "Hitungan nol ditarik"; `audit.action.onboarding_restore_hold`: "Stok awal ditahan setelah pemulihan"; `audit.action.restore_reconciliation`: "Rekonsiliasi pemulihan" |
+| Audit labels (section 8) | `audit.action.opening_stock_replace`: "Stok awal dicatat ulang"; `audit.action.zero_count_withdraw`: "Hitungan nol ditarik"; `audit.action.onboarding_restore_hold`: "Stok awal ditahan setelah pemulihan"; `audit.action.restore_reconciliation`: "Rekonsiliasi pemulihan"; `audit.action.projection_rebuilt` (RF-6, D-088): "Data stok dan biaya dibangun ulang dari mutasi" |
 | DC-04 column headers (UXI-206) | The headers of DOCUMENT_CONTRACTS DC-04 |
 | T-19 | The eight texts and the percent format of DESIGN_SYSTEM section 13, already listed in OPEN_ITEMS |
 
@@ -906,4 +907,4 @@ These words are needed before the Tasks that use them ship; they are proposals, 
 | Command operations with a contract | 48 of 48, plus RC-50 and SC-01 |
 | Error codes used that are not in TECHNICAL_RULES section 4 | 0 |
 | Commands that take a price, a total, expected cash, a cost scope or a number from the client | 0 (TR-VAL-03) |
-| Audit action codes without an approved label | 4, proposed in section 11 |
+| Audit action codes without an approved label | 5, proposed in section 11 (the fifth, `PROJECTION_REBUILT`, added in RF-6) |

@@ -2,13 +2,13 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-2 under D-041, 4 October 2026 (Asia/Jakarta) |
+| Status | CURRENT — written in RF-2 under D-041, 4 October 2026 (Asia/Jakarta); amended in RF-6 under D-088, 18 October 2026: the reading of the "Tests" column (section 1), REQ-OPS-01, REQ-NFR-05, and sections 22 and 23 |
 | Phase | P1 — functional and non-functional requirements, acceptance criteria |
 | Replaces | `docs/01-product/legacy/requirements/core.json` and `docs/01-product/legacy/requirements/CORE-MAP.md` (CORE-001 to CORE-073) |
 | Product | [PRODUCT_BLUEPRINT](PRODUCT_BLUEPRINT.md) |
 | Domain rules | [DOMAIN_MODEL](../02-domain/DOMAIN_MODEL.md), [CATALOG_BARCODE](../02-domain/CATALOG_BARCODE.md), [INVENTORY](../02-domain/INVENTORY.md), [COSTING](../02-domain/COSTING.md), [SALES_CASH](../02-domain/SALES_CASH.md) |
 
-The requirement register of BantuKasir V1. Each requirement says what the product must do, how acceptance is judged, where the requirement comes from, and which legacy acceptance suite tests it today. Section 21 maps every legacy CORE entry to these requirements; section 22 traces every decision D-001 to D-087.
+The requirement register of BantuKasir V1. Each requirement says what the product must do, how acceptance is judged, where the requirement comes from, and which acceptance suite tests it (the column as written before RF-6; the current mapping is ACCEPTANCE_SUITES section 5). Section 21 maps every legacy CORE entry to these requirements; section 22 traces every decision D-001 to D-088.
 
 ## 1. How to read this register
 
@@ -16,7 +16,7 @@ The requirement register of BantuKasir V1. Each requirement says what the produc
 - **Requirement** states the obligation in shop terms ([GLOSSARY](../02-domain/GLOSSARY.md)). The detailed rule is the `BR-…` it cites in a domain document; where a requirement and a rule seem to differ, the rule's source decision decides, and the difference is a defect to report.
 - **Acceptance criteria** are the observable conditions that must pass with real evidence (PRODUCT_BLUEPRINT section 11).
 - **Source** names decisions, legacy documents (keys in DOMAIN_MODEL section 2) and rules. No requirement exists without a source.
-- **Tests** names the legacy acceptance suites in `docs/08-testing/legacy/08-TESTING-ACCEPTANCE.md`, which remain the test references until RF-6. `NEW` means no legacy suite covers the requirement; RF-6 adds coverage. Several suites were written before D-033 to D-040; where a suite's text conflicts with a requirement here, the requirement prevails. Known cases: AUTH02 (write-only cost for OPERATIONS_ADMIN, superseded by D-033); RET01 and SESSION04 (refunds from Owner funds only and expected cash without refunds, superseded by D-035); UX01 (approval of the former design revision, superseded by D-024 and D-025). The "no QRIS" expectation of POS02 and PAYEXT01, superseded by D-036, holds again under D-077.
+- **Tests** names the legacy acceptance suites in `docs/08-testing/legacy/08-TESTING-ACCEPTANCE.md`, as written before RF-6. `NEW` meant that no legacy suite covered the requirement. RF-6 rebuilt the suites with the same identifiers and added new ones (D-088): the current suites of every requirement are [ACCEPTANCE_SUITES](../08-testing/ACCEPTANCE_SUITES.md) section 5, which prevails where this column differs. Several suites were written before D-033 to D-040; where a suite's text conflicts with a requirement here, the requirement prevails. Known cases: AUTH02 (write-only cost for OPERATIONS_ADMIN, superseded by D-033); RET01 and SESSION04 (refunds from Owner funds only and expected cash without refunds, superseded by D-035); UX01 (approval of the former design revision, superseded by D-024 and D-025). The "no QRIS" expectation of POS02 and PAYEXT01, superseded by D-036, holds again under D-077.
 - **Decisions taken during RF-2 and before RF-3A.** Questions 21 to 24 and 27 to 28 were asked during RF-2 and answered by D-042 to D-047; questions 25, 6, 5, 26, 31, 7 and 30 were answered before RF-3A by D-048 to D-054. Section 20 lists the requirements these decisions shape. Questions 33, 34 and 32 were answered before RF-3B by D-060 to D-062; they change no requirement (section 22). No requirement is pending.
 - **Words.** "Session" alone means a cash session; a sign-in session is always named in full (DOMAIN_MODEL section 1).
 
@@ -214,7 +214,7 @@ The requirement register of BantuKasir V1. Each requirement says what the produc
 
 | ID | Requirement | Acceptance criteria | Source | Tests |
 | --- | --- | --- | --- | --- |
-| REQ-OPS-01 | An independent, encrypted backup outside the server holds the database, logos, product photos and templates with a manifest and checksums; an isolated restore is verified before the pilot and regularly afterwards. The destination and its cost are question 18 (before RF-6). | A restore to a new isolated target reconciles every fact and asset. | D-005, L-09, D-037; BR-CAT-49 | REC01 |
+| REQ-OPS-01 | An independent, encrypted backup outside the server holds the database, logos, product photos and templates with a manifest and checksums; an isolated restore is verified before the pilot and regularly afterwards. The destination, its cost — a free allowance with a spending cap at Rp0 — and the custody of the recovery key are decided (D-088, question 18; ADR-010). | A restore to a new isolated target reconciles every fact and asset. | D-005, L-09, D-037, D-088; BR-CAT-49 | REC01 |
 | REQ-OPS-02 | Production data is protected as PRODUCTION_DATA_SAFETY states; schema changes are forward migrations rehearsed on a populated isolated target; the runtime database role cannot change the schema or immutable facts; migration credentials are separate. | DB01 cases. | PDS, L-09; BR-KEEP-02 | DB01 |
 | REQ-OPS-03 | V1 is released only within the release boundary of PRODUCT_BLUEPRINT section 12, after a pilot that the Owner accepts. | RELEASE01 evidence. | L-P10, L-08, D-025 | RELEASE01 |
 | REQ-OPS-04 | The Owner's system status shows the last backup and restore, their age, failures, disk space and reconciliation; anything unproven shows "Belum Terverifikasi". | Each state shown from real evidence. | L-09 | NEW (L-08 surface matrix) |
@@ -229,7 +229,7 @@ The requirement register of BantuKasir V1. Each requirement says what the produc
 | REQ-NFR-02 | PC and tablet are primary cashier devices with functionally equivalent cashier capabilities; the phone is not; Owner and OPERATIONS_ADMIN screens follow the framework's mobile-first rule. | The full cashier workflow runs on both device classes. | D-039, FD-05 | DEVICE01, UX01 |
 | REQ-NFR-03 | Real PC, tablet, USB and Bluetooth scanners, receipt and label printers and browsers pass gate DEVICES; emulation and print dialogs never count. | DEVICE01 records with device, operating system, browser, media and revision. | D-039, L-08 | DEVICE01 |
 | REQ-NFR-04 | Proposed performance targets, not yet accepted: barcode lookup p95 ≤ 500 ms, product search ≤ 700 ms, 50-line Sale ≤ 2 s, ordinary period report ≤ 2 s, with two concurrent cashiers on the intended server; a provisional dataset, labelled as an assumption, is in TECHNICAL_RULES section 13 until the catalogue size is known (G2, T-09); replay capacity is measured separately (reference 10,000 movements per product); a miss is never fixed by weakening integrity, privacy or cost completeness. | PERF01 measured on a representative target. | L-P6, L-08; TECHNICAL_RULES section 13 | PERF01 |
-| REQ-NFR-05 | Recovery point ≤ 6 hours and recovery time ≤ 4 hours are proposals only; measured values must be accepted by the Owner at gate G4 (question 18). | Measured and accepted values recorded. | L-09, OPEN_ITEMS gate G4 | REC01, REC02 |
+| REQ-NFR-05 | Recovery point ≤ 6 hours and recovery time ≤ 4 hours are proposals only; measured values must be accepted by the Owner at gate G4 (BACKUP_RECOVERY section 12; question 18 answered by D-088). | Measured and accepted values recorded. | L-09, OPEN_ITEMS gate G4 | REC01, REC02 |
 | REQ-NFR-06 | Additional recurring production cost is zero unless the Owner approves an exception; the independent backup is required regardless. | The cost inventory shows zero or approved exceptions. | COST_POLICY, AICWDF §4C | NEW |
 | REQ-NFR-07 | The security model of SECURITY_MODEL applies, including the upload rules for logos, product photos and CSV files and protection against command injection (threat THR-10; OPEN_ITEMS T-04 resolved); no public sign-up, two-factor authentication or tenant scope in V1. | SEC01 cases and the security tests of SECURITY_MODEL section 15. | D-013, D-037, D-049, D-054; SECURITY_MODEL | SEC01 |
 | REQ-NFR-08 | Data integrity (AGENTS rule 7): no floating point, append-only facts, one source of truth, transactional critical actions, explicit concurrency and idempotency, all proven on real PostgreSQL. | Covered by the inventory, costing, sales and cash requirements, tested on real PostgreSQL. | AGENTS rule 7, D-006; BR-DOM-02 to BR-DOM-05 | INV01, POS01 |
@@ -344,7 +344,7 @@ Every legacy Core entry CORE-001 to CORE-073 (`core.json`, `CORE-MAP.md`) is map
 
 ## 22. Decision traceability
 
-Every decision D-001 to D-087 is either traced to at least one requirement or rule, or classified as having no product or domain content.
+Every decision D-001 to D-088 is either traced to at least one requirement or rule, or classified as having no product or domain content.
 
 | Decision | Product or domain content | Traced to |
 | --- | --- | --- |
@@ -435,7 +435,8 @@ Every decision D-001 to D-087 is either traced to at least one requirement or ru
 | D-085 | The Golden Frontend Reference v1.0.0 (tag `v1.0.0`, commit `14497d9`) replaces DesainPakeAI as the approved reusable frontend reference; its generic tokens, components and UX patterns may be adapted into the approved stack; its MULTIPLECORP material is never adopted | Non-product/domain — governance (AGENTS rules 5 and 6, TOOLCHAIN section 3) |
 | D-086 | Acceptance of the D-085 commit `6e73514` and of the RF-4B correction `551b4eb`; approval of gate P7-G2, terminology and copy: GLOSSARY and COPY_DECK at `551b4eb`, each named by its hash; authorization of RF-4C, its pause by the Owner the same day and its resumption on 18 October 2026, with the deviations from the reference's defaults that DESIGN_SYSTEM adopts | REQ-UX-01, REQ-UX-03 |
 | D-087 | Acceptance of the RF-4C commits `3a7da19` and `7318322`; approval of gate P7-G3 (DESIGN_SYSTEM, KEY_SCREENS and the previews, each named by its hash); authorization and execution of RF-5; the Owner's decisions on T-17 b (correction of onboarding entries before the release) and on the Owner replacement procedure with an OPEN cash session | REQ-INV-07, REQ-INV-09, REQ-ACC-10, REQ-ACC-12, REQ-CASH-11, REQ-SALE-08, REQ-CMD-01, REQ-CMD-03, REQ-CAT-09, REQ-UX-01; BR-INV-24, BR-INV-26, BR-INV-27, BR-INV-34, BR-INV-47, BR-INV-48, BR-CASH-11, BR-CASH-16, BR-CASH-19, BR-RFD-05, BR-RFD-09, BR-RFD-17 |
+| D-088 | Acceptance of the RF-5 checkpoint; the decision on N-07 (no general server refusal; a close refused while the responsible user has an unresolved checkout receipt; the narrow cross-device risk accepted with audited corrections); question 18 (backup on a free allowance capped at Rp0; recovery key with the operator and a sealed copy with the shop's Owner); question 20 (no AI agent operates production); security log retention of 365 days; RF-6 authorized | REQ-CASH-07, REQ-OPS-01, REQ-OPS-03, REQ-OPS-04, REQ-NFR-05, REQ-NFR-06, REQ-AUD-02; BR-CASH-16, BR-KEEP-07 |
 
 ## 23. Counts
 
-Re-derived from this register: 23 sections; 134 requirement rows in sections 2 to 19, all with distinct identifiers; no requirement pending; 73 legacy CORE entries, of which 72 are mapped (9 of them adapted by later decisions) and 1 is retired (section 21); 87 decisions, of which 53 are traced to requirements or rules and 34 are classified as non-product/domain (section 22).
+Re-derived from this register: 23 sections; 134 requirement rows in sections 2 to 19, all with distinct identifiers; no requirement pending; 73 legacy CORE entries, of which 72 are mapped (9 of them adapted by later decisions) and 1 is retired (section 21); 88 decisions, of which 54 are traced to requirements or rules and 34 are classified as non-product/domain (section 22).

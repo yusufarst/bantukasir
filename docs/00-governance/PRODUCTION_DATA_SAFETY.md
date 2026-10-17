@@ -2,7 +2,7 @@
 
 **There is no production system yet, and no production operation of any kind is authorized.** These rules are recorded now so that they are already in force on the day production data exists.
 
-Sections 1 to 4 restate protections that already existed before the re-foundation, in the legacy operations document and in the Owner's Project instructions. They are intended to change nothing. Section 5 records one stricter rule from AICWDF-4.3 that the Owner has **not** yet decided; it is not in force.
+Sections 1 to 4 restate protections that already existed before the re-foundation, in the legacy operations document and in the Owner's Project instructions. They are intended to change nothing. Section 5 records the Owner's decision on who operates production (question 20, D-088), which adopts the stricter rule of AICWDF-4.3.
 
 ## 1. Never, without the Owner's approval of that exact operation
 
@@ -41,20 +41,18 @@ A reset of test data is allowed only on a test database that has been positively
 
 Assume years of real records. Old records are valuable. Every change preserves existing data and its meaning, preserves compatibility where practical, reproduces problems in local or staging environments with synthetic or anonymized data, and handles historical anomalies through controlled, traceable remediation.
 
-## 5. Open Owner decision — who may operate on production (R-16, question 20)
+## 5. Who operates production (question 20, D-088)
 
-`OWNER_REVALIDATION_REQUIRED`. **Not decided. Not in force.**
+The Owner decided question 20 on 18 October 2026 with the AICWDF-4.3 rule (§29, §30). R-16 is resolved; no framework deviation is needed.
 
-| | |
-| --- | --- |
-| Earlier BantuKasir rule | An agent may carry out a production release, migration or cutover when the Owner has authorized that exact target, revision and operation. The former plan assigned the production cutover to an executor work unit after such authorization. |
-| AICWDF-4.3 rule (§29, §30) | Ordinary coding agents never connect to or mutate a production database, by any means. Agents design a migration, write it, rehearse it outside production and document the risk; a controlled executor applies it after approval. Changing production database credentials or ownership ad hoc is also forbidden. |
-| Why it needs the Owner | The two rules differ on who operates a production release. That is release and cutover risk, which is the Owner's to decide. Keeping the earlier rule would be a departure from the framework that needs explicit approval (AICWDF-4.3 §41). |
-| Planner's recommendation | Adopt the framework rule. |
-| Effect until decided | None in practice: no release, migration, cutover or other production operation is authorized, so no agent may touch production under either rule. The decision is needed before release planning is rebuilt (step RF-6). |
+- **No AI agent** connects to, deploys to, migrates, restores or runs an operator procedure on production — by any means — and none holds a credential of the server, the hosting platform, Cloudflare, the backup store or the heartbeat monitor. Staging shares the production server, so this includes staging.
+- **Agents prepare and rehearse**: they write the code, the migrations and the runbooks, rehearse them in isolated local environments with synthetic data, and document the risk.
+- **A human operator applies** every staging and production operation through the controlled release procedure of [RELEASE_PROCESS](../10-release/RELEASE_PROCESS.md), after the Owner has authorized the exact target, revision and operation (gate RELEASE). Routine operations under the approved runbooks — the scheduled jobs, the monthly restore drill, reading status — need no new authorization each time ([OPERATIONS_RUNBOOK](../09-operations/OPERATIONS_RUNBOOK.md) OPR-01).
+- Changing production database credentials or ownership ad hoc is forbidden; credentials change only as [ENVIRONMENTS](../09-operations/ENVIRONMENTS.md) section 16 describes.
+- Section 1 still applies to the operator: a destructive operation needs the Owner's approval of that exact operation.
 
-The question is listed as number 20 in [OPEN_ITEMS](OPEN_ITEMS.md). When the Owner decides, record the decision in [DECISIONS](DECISIONS.md) and rewrite this section as a rule.
+The architecture of this rule is [ADR-011](../adr/ADR-011-release-pipeline-environments-and-production-operation.md).
 
 ## 6. Where the detail is
 
-Backup, restore, retention, reconciliation and recovery runbooks are in the legacy operations document, `docs/09-operations/legacy/09-DEPLOYMENT-OPS.md`, until operations planning is rebuilt in RF-6.
+Backup, restore and the reconciliation of a restore: [BACKUP_RECOVERY](../09-operations/BACKUP_RECOVERY.md). Operator procedures, incidents and maintenance: [OPERATIONS_RUNBOOK](../09-operations/OPERATIONS_RUNBOOK.md). Environments, access and secrets: [ENVIRONMENTS](../09-operations/ENVIRONMENTS.md). Releases, migrations and the cutover: [RELEASE_PROCESS](../10-release/RELEASE_PROCESS.md). All were written in RF-6 (D-088) and replace the legacy operations document.

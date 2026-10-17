@@ -58,4 +58,5 @@ ROLLBACK IMPACT:   none
 ## Related
 
 - [ADR-003](ADR-003-hosting-topology.md) for where these processes run.
+- [ADR-010](ADR-010-independent-backup-and-recovery-key-custody.md) (RF-6, D-088) completes item 7 — destination, cost, recovery-key custody, method — and amends item 1 with one backup container per environment.
 - Superseded legacy content: the runtime sentences of `docs/04-architecture/legacy/02-ARCHITECTURE.md` (introduction, §Runtime, asset dan operasi) and the cache paragraph of `docs/04-architecture/legacy/P4-ARCHITECTURE.md`. The operations content of `docs/09-operations/legacy/09-DEPLOYMENT-OPS.md` stays LEGACY — DRAFT until RF-6; where it differs from this ADR, this ADR prevails.

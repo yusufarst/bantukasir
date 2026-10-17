@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-5 under D-087, 18 October 2026 (Asia/Jakarta) |
+| Status | CURRENT — written in RF-5 under D-087, 18 October 2026 (Asia/Jakarta); amended in RF-6 under D-088, 18 October 2026: WF-08, WF-09, WF-27 and WF-32, and the test references of section 1 |
 | Phase | P3 — workflow contracts: each V1 workflow from its entry to its result, with its refusals, recovery, concurrency, records and proof |
 | Replaces | `docs/03-workflows/legacy/P3-CRITICAL-WORKFLOWS.md` (LEGACY — SUPERSEDED; [LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 14) |
 | Decisions | D-002 to D-087 as cited; [ADR-007](../adr/ADR-007-command-identity-and-idempotency.md), [ADR-008](../adr/ADR-008-cost-allocation-representation.md), [ADR-009](../adr/ADR-009-command-receipts-and-reconciled-outcomes.md) |
@@ -16,7 +16,7 @@ The workflows of BantuKasir V1, each from the page where it starts to the record
 - **One command, one transaction.** The confirmation sends one command with the envelope of ADR-007; its facts, projections, audit event and result commit together or not at all (TR-TX-01). No human, printer, payment or cash handling happens inside it (TR-TX-03).
 - **Outcomes.** COMMITTED leads to the result page; REJECTED returns to the review with the reason at the field or line; UNCERTAIN and HELD keep the frozen request and offer only its repeat or its status check (INTERACTION_CONTRACTS section 1.3). A new draft of the same business action is never started while the outcome is unknown (NC-13).
 - **Authorization.** Every route checks its capability and object scope again; a hidden control is never the authorization (SEC-AZ-07).
-- **Proof.** "Tests" name the race (TECHNICAL_RULES section 8) and the test families of SCHEMA section 9.4 that prove the workflow; RF-6 turns them into the test strategy.
+- **Proof.** "Tests" name the race (TECHNICAL_RULES section 8) and the test families of SCHEMA section 9.4 that prove the workflow; the suites of every workflow are [ACCEPTANCE_SUITES](../08-testing/ACCEPTANCE_SUITES.md) section 9 (RF-6, D-088).
 
 ## 2. Workflows
 
@@ -149,10 +149,10 @@ Tests: RACE-01, RACE-02, RACE-27, RACE-33; a receipt listed on a second device b
 1. **Preview.** RP-105 shows the session, its activity version, the totals the role may see, and every drawer-funded refund of the session with the reminder that its cash should no longer be in the drawer (D-068). "Lanjut hitung" is disabled while the user has an unresolved checkout (BR-CASH-16).
 2. **Count.** Checkout pauses; the user counts the drawer and enters the physical cash (Rp0 valid). Scan capture is paused; a scanner Enter never closes (BR-CAT-32).
 3. **Review and confirm.** The review shows physical cash, expected cash and the variance in words (COPY_DECK section 1.4); "Tutup sesi" sends RC-03 with the activity version.
-4. **Commit.** Under the session lock with the same lock as checkout: if the activity version changed, `RECOUNT_REQUIRED` (UXS-19) and the session stays OPEN; otherwise the close, the immutable report snapshot and the CLOSED status commit together.
+4. **Commit.** Under the session lock with the same lock as checkout: if the activity version changed, or the user has a checkout request whose receipt is PENDING or HELD (G-27, D-088), `RECOUNT_REQUIRED` (UXS-19) and the session stays OPEN; otherwise the close, the immutable report snapshot and the CLOSED status commit together.
 5. **Result.** RP-206 with the report; print (RC-45) and CSV export (RC-46) follow DC-02 and DC-03.
 
-Tests: RACE-08, RACE-09, RACE-13 with the scenario of D-068 (a refund committed before the preview, its cash still in the drawer at the count: the session closes with variance +R, nothing else is created, and a payout against the CLOSED session stays refused).
+Tests: RACE-08, RACE-09, RACE-13 with the scenario of D-068 (a refund committed before the preview, its cash still in the drawer at the count: the session closes with variance +R, nothing else is created, and a payout against the CLOSED session stays refused), RACE-35 (D-088).
 
 ### WF-09 Owner-assisted close
 
@@ -165,11 +165,11 @@ Tests: RACE-08, RACE-09, RACE-13 with the scenario of D-068 (a refund committed 
 | Rules | BR-CASH-16, BR-CASH-18, D-069 (d), D-087 |
 
 1. The Owner opens the session and chooses "Tutup sesi oleh Pemilik". The preview shows the responsible user, the register, the totals, the drawer-funded refunds and the responsible user's unresolved checkout requests from the server's receipts (ADR-009 section 4).
-2. While such a request is listed, "Lanjut hitung" is disabled; the Owner resolves each with "Cek status" as the Owner. This meets BR-CASH-16 when the responsible user's browser is not available.
+2. While such a request is listed, "Lanjut hitung" is disabled; the Owner resolves each with "Cek status" as the Owner. This meets BR-CASH-16 when the responsible user's browser is not available, and the server refuses RC-04 while such a receipt is unresolved (G-27, D-088).
 3. The Owner counts the drawer, gives a reason, confirms with recent authentication; RC-04 commits like WF-08 step 4. The responsible user does not change; the close actor is the Owner.
 4. The responsible user may be deactivated (WF-29) or, for an outgoing Owner, replaced (WF-32): the session stays OPEN until this close (D-069 (d), D-087).
 
-Tests: RACE-09, RACE-28 (deactivation never changes the session; the deactivated user's commands are refused; the Owner-assisted close succeeds), RACE-21.
+Tests: RACE-09, RACE-28 (deactivation never changes the session; the deactivated user's commands are refused; the Owner-assisted close succeeds), RACE-21, RACE-35.
 
 ### WF-10 Session review and Owner review notes
 
@@ -425,7 +425,7 @@ The worklist shows unknown costs and products marked incomplete. The Owner enter
 | Requirements | REQ-INV-12 |
 | Rules | BR-INV-45, BR-INV-46 |
 
-Once a day a read-only comparison runs; a mismatch blocks the product's postings (`posting_block.block`) and raises an incident. The Owner investigates under the runbook (RF-6) and reopens with recent authentication (RC-16). Tests: Reconciliation; RACE-24.
+Once a day a read-only comparison runs; a mismatch blocks the product's postings (`posting_block.block`) and raises an incident. The Owner investigates under [OPERATIONS_RUNBOOK](../09-operations/OPERATIONS_RUNBOOK.md) RB-04, where the operator repairs a projection only with the rebuild OP-07 on the Owner's request, and the Owner reopens with recent authentication (RC-16). Tests: Reconciliation; RACE-24.
 
 ### WF-28 Owner home and reports
 
@@ -486,9 +486,9 @@ System status shows each item with its evidence; anything unproven is "Belum Ter
 
 | | |
 | --- | --- |
-| Actors | The operator, on the Owner's authorization; the Owner for decisions |
+| Actors | The operator, a person and never an AI agent (D-088), on the Owner's authorization; the Owner for decisions |
 | User tasks | — (outside the interface) |
-| Routes | OP-01 to OP-05; RC-50, RD-04 |
+| Routes | OP-01 to OP-08; RC-50, RD-04 |
 | Requirements | REQ-ACC-05, REQ-ACC-12, REQ-CMD-03, REQ-OPS-01, REQ-OPS-02 |
 | Rules | SEC-OP-01 to SEC-OP-05, BR-CMD-06, D-048, D-072, D-073, D-087 |
 
@@ -498,7 +498,9 @@ System status shows each item with its evidence; anything unproven is "Belum Ter
 4. **After a restore** (OP-04): a new recovery epoch, every sign-in session revoked, and an onboarding hold when the restored onboarding state is not RELEASED (D-072).
 5. **Restore reconciliation** (OP-05): the Owner decides, for each request reported as EPOCH_STALE, that it is not committed in the restored data — a fence makes it final — and, for the onboarding hold, whether onboarding was released before the restore (then it stays released) or never (then it continues as the same period). Every decision is audited. The Owner's own user-management requests are reconciled before the security changes of SEC-OP-04 are re-applied (D-073).
 
-Backups, restore drills and the runbooks are RF-6 (REQ-OPS-01, REQ-OPS-02). Tests: RACE-12, RACE-21, RACE-30, RACE-34; a restore of the same backup twice still refuses stale intents.
+6. **Cost recovery, projection rebuild and drill record** (OP-06 to OP-08, written in RF-6): the Owner's correction published with an extended replay bound (OPERATIONS_RUNBOOK RB-12); a projection rebuilt from facts after a reconciliation incident (RB-04); a production restore drill recorded (BACKUP_RECOVERY RB-02).
+
+Backups, restore drills and the runbooks are [BACKUP_RECOVERY](../09-operations/BACKUP_RECOVERY.md) and [OPERATIONS_RUNBOOK](../09-operations/OPERATIONS_RUNBOOK.md) (REQ-OPS-01, REQ-OPS-02; D-088). Tests: RACE-12, RACE-21, RACE-30, RACE-34; a restore of the same backup twice still refuses stale intents.
 
 ## 3. Cross-cutting requirements
 

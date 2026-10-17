@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-2 under D-041, 4 October 2026 (Asia/Jakarta); amended in RF-5 under D-087, 18 October 2026: the onboarding states (D-071, D-072) and the correction of onboarding entries before the release (T-17 b) |
+| Status | CURRENT — written in RF-2 under D-041, 4 October 2026 (Asia/Jakarta); amended in RF-5 under D-087, 18 October 2026: the onboarding states (D-071, D-072) and the correction of onboarding entries before the release (T-17 b); amended in RF-6 under D-088, 18 October 2026: the log and backup retention of BR-KEEP-07 |
 | Phase | P2 — domain model and business rules |
 | Replaces | `docs/02-domain/legacy/P2-DOMAIN.md`, and the domain part (entity table, numbers and time) of `docs/04-architecture/legacy/02-ARCHITECTURE.md` |
 | Detailed rules | [CATALOG_BARCODE](CATALOG_BARCODE.md), [INVENTORY](INVENTORY.md), [COSTING](COSTING.md), [SALES_CASH](SALES_CASH.md) |
@@ -264,7 +264,7 @@ For every record that is a historical money or stock fact, "Hard delete: NO" mea
 | BR-KEEP-04 | V1 has no automatic expiry, purge, archival deletion or scheduled deletion of business records, and no manual deletion function for them. Immutable transactional and audit facts never become deletable because the minimum period has passed. | D-044 |
 | BR-KEEP-05 | Any future archival or deletion capability needs a separate Owner decision, legal and compliance revalidation, an explicit data classification, and safeguards for historical references, audit, reconciliation and document reproduction. | D-044 |
 | BR-KEEP-06 | Master data and configuration — users, categories, products, barcodes, cash registers, BusinessProfile revisions and the files of replaced or removed product photos — are never deleted in V1; they are deactivated or retired. | D-042, L-02 |
-| BR-KEEP-07 | Data classes outside the bookkeeping rule may get their own lifecycle and retention rules; RF-2 decided none of them. The uploaded CSV import file is temporary working data of its command and is not kept after the command's final outcome; the import result is kept in the audit (D-054). Operational logs (debug and security access logs) and backup copies stay in L-09 until RF-6. Expired authentication tokens and one-time links follow the library's retention and never remove a historical actor. | D-044, D-054, L-09 |
+| BR-KEEP-07 | Data classes outside the bookkeeping rule may get their own lifecycle and retention rules; RF-2 decided none of them. The uploaded CSV import file is temporary working data of its command and is not kept after the command's final outcome; the import result is kept in the audit (D-054). Operational logs, the security log and backup copies were left to RF-6, which set them (D-088): security log entries are kept 365 days (SECURITY_MODEL SEC-LOG-05); operational log lines follow the platform's rotation; backup copies follow the tiers of ADR-010. Expired authentication tokens and one-time links follow the library's retention and never remove a historical actor. | D-044, D-054, D-088 |
 | BR-KEEP-08 | These are product lifecycle rules. BantuKasir by itself does not guarantee legal or tax compliance. | D-044, D-043 |
 
 ## 13. Open items referenced in this document

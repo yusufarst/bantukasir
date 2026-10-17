@@ -16,6 +16,10 @@ The capabilities this project needs, the tool chosen for each, and its real stat
 | PHP quality | Pint, PHPStan with Larastan, Pest or PHPUnit | REQUIRED from the foundation Task | PLANNED | Real PostgreSQL is required for constraint, rollback and race tests; SQLite and mocks are not evidence for these. |
 | Frontend quality | Lint, TypeScript typecheck, Vitest where behaviour warrants it, Vite production build | REQUIRED from the foundation Task | PLANNED | |
 | Version control | Git on the Owner's Windows machine | REQUIRED | In use | Identity and safety rules in [PROJECT_RULES](PROJECT_RULES.md) section 9. |
+| Continuous integration | GitHub Actions on the public repository | REQUIRED from the foundation Task ([TEST_STRATEGY](../08-testing/TEST_STRATEGY.md) section 7) | PLANNED | Free on standard runners for a public repository (verified 18 October 2026); no environment secret in CI ([ADR-011](../adr/ADR-011-release-pipeline-environments-and-production-operation.md) item 4) |
+| Release image registry | GitHub Container Registry, public package | REQUIRED for releases (ADR-011 item 5) | PLANNED | Images run by digest, never `latest` |
+| Backup encryption and transfer | age; the PostgreSQL client tools of the server's major version; an S3 client of the framework's storage layer or the AWS SDK for PHP | REQUIRED for the backup container ([ADR-010](../adr/ADR-010-independent-backup-and-recovery-key-custody.md)) | PLANNED | Licences recorded by the operations Task; every program started through the process API with an argument list (THR-10) |
+| External heartbeat monitor | A free plan of a heartbeat service; candidate Healthchecks.io | REQUIRED before the pilot (ADR-011 item 11) | PLANNED | Free-tier record in [ENVIRONMENTS](../09-operations/ENVIRONMENTS.md) section 15; the operator holds the account |
 
 Versions are pinned, with lockfiles, by the foundation Task after checking support windows, advisories and compatibility. Production never uses a floating `latest` tag.
 

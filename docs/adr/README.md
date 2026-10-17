@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-3A under D-055, 4 October 2026 (Asia/Jakarta); index extended in RF-3B under D-059, 5 October 2026 |
+| Status | CURRENT — written in RF-3A under D-055, 4 October 2026 (Asia/Jakarta); index extended in RF-3B under D-059, 5 October 2026, in RF-5 under D-087 and in RF-6 under D-088, 18 October 2026 |
 | Phase | P0 policy and P4 index |
 | Framework | AICWDF-4.3 §4 (deviation record), §11 (ADR policy in P0), §15 (ADRs for major changes) |
 | Authority | Rank 4 in [SOURCE_OF_TRUTH](../00-governance/SOURCE_OF_TRUTH.md) section 1, below the decisions in [DECISIONS](../00-governance/DECISIONS.md) and the governance documents |
@@ -64,7 +64,7 @@ Rules for the fields:
 
 - Identifiers are `ADR-NNN`, three digits, permanent and never reused.
 - The file name is `ADR-NNN-short-title.md` in this folder.
-- The next free identifier is **ADR-010**. ADR-009 was written in RF-5 under D-087; no further ADR is authorized until a later step is authorized.
+- The next free identifier is **ADR-012**. ADR-009 was written in RF-5 under D-087; ADR-010 and ADR-011 were written in RF-6 under D-088; no further ADR is authorized until a later step is authorized.
 
 ## 5. Index
 
@@ -78,6 +78,8 @@ Rules for the fields:
 | [ADR-006](ADR-006-exact-numbers.md) | Exact numbers | ACCEPTED | D-006 (Planner); AGENTS rule 7 |
 | [ADR-007](ADR-007-command-identity-and-idempotency.md) | Command identity and idempotency | ACCEPTED | D-006 (Planner), D-040 (Owner) |
 | [ADR-008](ADR-008-cost-allocation-representation.md) | Issue-cost allocation representation | ACCEPTED | D-060, D-061 (Owner); D-034, D-035 |
-| [ADR-009](ADR-009-command-receipts-and-reconciled-outcomes.md) | Command request receipts and reconciled outcomes | ACCEPTED | D-073, D-074 (Owner); D-087 |
+| [ADR-009](ADR-009-command-receipts-and-reconciled-outcomes.md) | Command request receipts and reconciled outcomes | ACCEPTED | D-073, D-074 (Owner); D-087; section 6 decided by D-088 |
+| [ADR-010](ADR-010-independent-backup-and-recovery-key-custody.md) | Independent backup and recovery-key custody | ACCEPTED | D-088 (Owner, question 18); D-005 |
+| [ADR-011](ADR-011-release-pipeline-environments-and-production-operation.md) | Release pipeline, environments and production operation | ACCEPTED | D-088 (Owner, question 20); D-053 |
 
-ADR-001 to ADR-007 were written in RF-3A (D-055). They record decisions that were already in force or that the Owner took before RF-3A was authorized. ADR-008 was written in RF-3B (D-059) and records the representation that follows from the Owner's decisions D-060 and D-061. ADR-009 was written in RF-5 (D-087); it extends ADR-007 with the mechanisms that the Owner's decisions D-073 and D-074 required, and leaves a new server refusal to the Owner. None adds business meaning.
+ADR-001 to ADR-007 were written in RF-3A (D-055). They record decisions that were already in force or that the Owner took before RF-3A was authorized. ADR-008 was written in RF-3B (D-059) and records the representation that follows from the Owner's decisions D-060 and D-061. ADR-009 was written in RF-5 (D-087); it extends ADR-007 with the mechanisms that the Owner's decisions D-073 and D-074 required, and left a new server refusal to the Owner, who decided it in D-088 (a close only). ADR-010 and ADR-011 were written in RF-6 (D-088); they record the Owner's answers to questions 18 and 20 and the backup method, release pipeline, certificate method and monitoring chosen under them. None adds business meaning.

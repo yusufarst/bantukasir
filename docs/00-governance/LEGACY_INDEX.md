@@ -136,7 +136,7 @@ The ignored folders `.local/` and `.agents/` are not tracked, not part of any co
 | `D-001` … `D-018` | Decisions before the re-foundation | [DECISIONS](DECISIONS.md); original wording in `legacy/10-DECISIONS.md` |
 | `BU-…` (27) | Build Units | `docs/11-tasks/legacy/build-units/` — input only, not executable |
 | `CORE-001` … `CORE-073` | Core requirement entries | Superseded in RF-2 by the requirement register. [REQUIREMENTS](../01-product/REQUIREMENTS.md) section 21 maps every entry to the requirements that carry it, or records why it was retired. The original entries stay in `docs/01-product/legacy/requirements/` |
-| `AUTH01`, `POS01`, … (39) | Acceptance suites | `docs/08-testing/legacy/08-TESTING-ACCEPTANCE.md`; cited as test references by REQUIREMENTS until RF-6 |
+| `AUTH01`, `POS01`, … (39) | Acceptance suites | Rebuilt in RF-6 with the same identifiers in [ACCEPTANCE_SUITES](../08-testing/ACCEPTANCE_SUITES.md) (section 2 lists what changed), beside 17 new suites; the legacy text is in `docs/08-testing/legacy/08-TESTING-ACCEPTANCE.md` (D-088) |
 | `G1` … `G4`, `DEVICES`, `TARGET`, `EXECUTOR`, `RELEASE` | Business and external gates | [OPEN_ITEMS](OPEN_ITEMS.md) section 3 |
 | `P7-G01` … `P7-G18` | Capability groups of the former design coverage matrix | `docs/07-ux-design/legacy/P7-COVERAGE.md` — LEGACY — SUPERSEDED in RF-4A; [INFORMATION_ARCHITECTURE](../07-ux-design/INFORMATION_ARCHITECTURE.md) section 12 maps every group to its pages (section 10 below) |
 | `T01` … `T40` | Plan 2.0 task cards | Git history only: `git show 604d925:docs/archive/plan2/tasks/T01.md` |
@@ -189,8 +189,8 @@ RF-3A (D-055) wrote the CURRENT architecture, security and technical-rule docume
 | `P4-ARCHITECTURE` §Transaksi, locking dan original-result recovery | LEGACY — SUPERSEDED | TECHNICAL_RULES sections 6 to 9; ADR-007 |
 | `P4-ARCHITECTURE` §Payment boundary dan kesiapan provider kelak | LEGACY — SUPERSEDED | ARCHITECTURE section 5, with the methods of D-036 as amended by D-077 |
 | `P4-ARCHITECTURE` §Keamanan dan privacy implications | LEGACY — SUPERSEDED | SECURITY_MODEL; ADR-004. Its write-only cost rule was already superseded by D-033 |
-| `P4-ARCHITECTURE` §Testing implications | LEGACY — INPUT ONLY for RF-6 | The test strategy (RF-6) |
-| `P4-ARCHITECTURE` §Deployment, operasi dan maintenance | LEGACY — INPUT ONLY for RF-6; ADR-002 and ADR-003 prevail where it differs | RF-6 |
+| `P4-ARCHITECTURE` §Testing implications | LEGACY — INPUT ONLY for RF-6; since RF-6 LEGACY — SUPERSEDED (section 15) | [TEST_STRATEGY](../08-testing/TEST_STRATEGY.md) (RF-6) |
+| `P4-ARCHITECTURE` §Deployment, operasi dan maintenance | LEGACY — INPUT ONLY for RF-6; ADR-002 and ADR-003 prevail where it differs; since RF-6 LEGACY — SUPERSEDED (section 15) | [ENVIRONMENTS](../09-operations/ENVIRONMENTS.md), ADR-011 (RF-6) |
 | `P4-ARCHITECTURE` §Sumber primer yang diverifikasi saat planning | RECORD — no rule | Current sources are recorded in each ADR |
 | `P4-ARCHITECTURE` §History Inertia, pergantian actor dan privasi browser, and its cache paragraph | LEGACY — SUPERSEDED | SECURITY_MODEL section 7; ADR-002 |
 | `04-AUTH-RBAC-SECURITY`, whole document | LEGACY — SUPERSEDED | SECURITY_MODEL; ADR-004 |
@@ -225,7 +225,7 @@ RF-3B (D-059) wrote the logical database schema, [SCHEMA](../04-architecture/SCH
 | `02-ARCHITECTURE` §Payment extension boundary dan schema delivery — schema delivery (raw SQL constraints, partial uniqueness, immutable-history privileges, real PostgreSQL evidence) | LEGACY — SUPERSEDED | SCHEMA sections 10 and 13 (SCH-51), section 9.4 |
 | `02-ARCHITECTURE`, whole document | **LEGACY — SUPERSEDED** | DOMAIN_MODEL (RF-2); ARCHITECTURE, STACK_AND_MODULES, SECURITY_MODEL, TECHNICAL_RULES and ADR-001 to ADR-007 (RF-3A, section 8); SCHEMA and ADR-008 (RF-3B) |
 | `P4-ARCHITECTURE` §Schema, immutability dan constraints | LEGACY — SUPERSEDED | SCHEMA (SCHEMA section 14 traces each statement) |
-| `P4-ARCHITECTURE`, whole document | **LEGACY — SUPERSEDED**, except §Testing implications and §Deployment, operasi dan maintenance (LEGACY — INPUT ONLY for RF-6; ADR-002 and ADR-003 prevail where the deployment section differs) and §Sumber primer yang diverifikasi saat planning (RECORD) | ADR-001 to ADR-008, ARCHITECTURE, STACK_AND_MODULES, SECURITY_MODEL, TECHNICAL_RULES, SCHEMA |
+| `P4-ARCHITECTURE`, whole document | **LEGACY — SUPERSEDED**, except §Testing implications and §Deployment, operasi dan maintenance (LEGACY — INPUT ONLY for RF-6; ADR-002 and ADR-003 prevail where the deployment section differs; superseded in RF-6, section 15) and §Sumber primer yang diverifikasi saat planning (RECORD) | ADR-001 to ADR-008, ARCHITECTURE, STACK_AND_MODULES, SECURITY_MODEL, TECHNICAL_RULES, SCHEMA; since RF-6 also TEST_STRATEGY, ENVIRONMENTS and ADR-011 |
 | The legacy statements listed in COSTING section 10 (L-15, L-02, L-P2, L-P3, L-P6, L-06, L-17, L-08; Build Units BU-INV-003, BU-SALE-002) | Each received its disposition — adopted or rejected, with its reason — in ADR-008; the status of its parent document is unchanged by that disposition | ADR-008 section "Legacy statements listed in COSTING section 10" |
 
 This settles plan decision P-5 for the two documents: no legacy document is now in force for the subject of P4.
@@ -310,3 +310,18 @@ RF-5 (D-087) writes the P3 documents [CRITICAL_FLOWS](../03-workflows/CRITICAL_F
 | `docs/02-domain/legacy/12-BARCODE-SCANNER.md`, its scanner screen behaviour | LEGACY — SUPERSEDED, unchanged | INTERACTION_CONTRACTS sections 1.7 and 3.1 and the approved P7 documents |
 
 New identifiers: the workflows `WF-nn`; the routes `RT-nn`, `RN-nn`, `RP-nnn`, `RD-nn`, `RA-nn`, `RR-nn`, `RC-nn`, `SC-nn` and `OP-nn`; the contracts `IC-nn` and `DC-nn`; INVENTORY BR-INV-47 and BR-INV-48; SCHEMA guards G-22 to G-26; TECHNICAL_RULES RACE-31 to RACE-34; SECURITY_MODEL SEC-OP-05; ADR-009; decision D-087; open item T-20.
+
+## 15. RF-6
+
+RF-6 (D-088) writes the P8 documents [TEST_STRATEGY](../08-testing/TEST_STRATEGY.md), [ACCEPTANCE_SUITES](../08-testing/ACCEPTANCE_SUITES.md) and [DEVICE_VERIFICATION](../08-testing/DEVICE_VERIFICATION.md), the P9 documents [ENVIRONMENTS](../09-operations/ENVIRONMENTS.md), [BACKUP_RECOVERY](../09-operations/BACKUP_RECOVERY.md) and [OPERATIONS_RUNBOOK](../09-operations/OPERATIONS_RUNBOOK.md), the P10 documents [RELEASE_PROCESS](../10-release/RELEASE_PROCESS.md) and [UAT_PILOT](../10-release/UAT_PILOT.md), and [ADR-010](../adr/ADR-010-independent-backup-and-recovery-key-custody.md) and [ADR-011](../adr/ADR-011-release-pipeline-environments-and-production-operation.md). The legacy files stay in the working tree, byte-identical; they are removed only by a later authorized step.
+
+| Legacy document | Status after RF-6 | Carried by |
+| --- | --- | --- |
+| `docs/08-testing/legacy/08-TESTING-ACCEPTANCE.md` | LEGACY — SUPERSEDED, unchanged | TEST_STRATEGY (method, evidence, Definition of Done), ACCEPTANCE_SUITES (the 39 suites rebuilt with their identifiers; section 2 lists what later decisions changed), DEVICE_VERIFICATION (the device clauses). Its references to Build Units and its P7 holds are not carried: the Task baseline is RF-7 and the P7 gates are approved |
+| `docs/08-testing/legacy/P8-QUALITY.md` | LEGACY — SUPERSEDED, unchanged | TEST_STRATEGY |
+| `docs/09-operations/legacy/09-DEPLOYMENT-OPS.md` | LEGACY — SUPERSEDED, unchanged | PRODUCTION_DATA_SAFETY (its protections, already carried in RF-1), ENVIRONMENTS, BACKUP_RECOVERY, OPERATIONS_RUNBOOK and RELEASE_PROCESS. Not carried: Docker Compose, Nginx-managed certificates and an operating-system scheduler (D-053, ADR-002, ADR-003); the log retention of 30 and 90 days (replaced by D-088: the security log 365 days, operational logs by rotation); its retention of four weekly copies (replaced by the tiers of ADR-010 item 5). Its encryption to a recipient with an offline private key is carried by ADR-010 |
+| `docs/09-operations/legacy/P9-OPERATIONS.md` | LEGACY — SUPERSEDED, unchanged | ENVIRONMENTS, BACKUP_RECOVERY, OPERATIONS_RUNBOOK |
+| `docs/10-release/legacy/P10-RELEASE-UAT.md` | LEGACY — SUPERSEDED, unchanged | RELEASE_PROCESS and UAT_PILOT. Not carried: the write-only receiving cost (D-033) and a release carried out by an agent (D-088, question 20) |
+| `docs/04-architecture/legacy/P4-ARCHITECTURE.md` §Testing implications and §Deployment, operasi dan maintenance | LEGACY — SUPERSEDED, unchanged; the rest of the document keeps the status of section 9 | TEST_STRATEGY; ENVIRONMENTS and ADR-011 |
+
+New identifiers: the rules `TS-nn`, `DVT-nn`, `ENV-nn`, `BKP-nn`, `OPR-nn`, `REL-nn` and `UPR-nn`; the runbooks `RB-nn`; the UAT scripts `UAT-nn`, pilot criteria `PIL-nn` and guidance items `UG-nn`; 17 new suites; SCHEMA guard G-27 and section 5.12; TECHNICAL_RULES RACE-35; SECURITY_MODEL SEC-OP-06 to SEC-OP-08; ROUTE_CONTRACTS RH-01, SC-03, SC-04 and OP-06 to OP-08; ADR-010 and ADR-011; decision D-088; open item N-12.

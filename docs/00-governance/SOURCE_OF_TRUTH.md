@@ -37,15 +37,9 @@ Rules for every `legacy/` document:
 - Its identifiers (`BU-…`, acceptance suite names, `G1`–`G4`) remain valid references until the rebuilt documents replace them. `CORE-…` identifiers were replaced in RF-2 by the requirement register; [REQUIREMENTS](../01-product/REQUIREMENTS.md) section 21 maps each of them.
 - A LEGACY — SUPERSEDED document has no authority at all. Its rules apply only as far as the CURRENT document that replaced it carries them.
 - Where a CURRENT product or domain document (`docs/01-product/`, `docs/02-domain/`) and a legacy document still in force for another subject disagree on a product or domain rule, the CURRENT document prevails. The legacy text is not edited.
-- Where a CURRENT architecture, security or technical-rule document or an ADR (`docs/04-architecture/`, `docs/05-security/`, `docs/06-api-performance/`, `docs/adr/`, written in RF-3A and RF-3B) and a legacy document still in force for another subject disagree on an architecture, security or technical rule, the CURRENT document prevails. Where a LEGACY — DRAFT operations or release document differs from ADR-002 or ADR-003, the ADR prevails. The legacy text is not edited.
+- Where a CURRENT architecture, security or technical-rule document or an ADR (`docs/04-architecture/`, `docs/05-security/`, `docs/06-api-performance/`, `docs/adr/`, written in RF-3A and RF-3B) and a legacy document still in force for another subject disagree on an architecture, security or technical rule, the CURRENT document prevails. Where a LEGACY — DRAFT operations or release document differed from ADR-002 or ADR-003, the ADR prevailed; since RF-6 (D-088) those drafts are LEGACY — SUPERSEDED. The legacy text is not edited.
 - OPEN_ITEMS T-16 was resolved by D-060, D-061 and [ADR-008](../adr/ADR-008-cost-allocation-representation.md) (RF-3B). The legacy statements that would have settled T-16 (a) or (b), listed in RF-2 ([COSTING](../02-domain/COSTING.md) section 10), received their disposition in ADR-008: each is adopted or rejected there, with its reason. That disposition does not change the status of the document a statement belongs to.
-- Where a later decision in [DECISIONS](DECISIONS.md) changes a rule written in a legacy document still in force, the decision prevails (section 1). The legacy text is not edited. Known cases:
-
-| Legacy document still in force | Rule that no longer applies | Decision |
-| --- | --- | --- |
-| `docs/08-testing/legacy/08-TESTING-ACCEPTANCE.md` (draft) | Suites AUTH02 (write-only cost), RET01 and SESSION04 (refunds from Owner funds only; expected cash without refunds), UX01 (approval of the former design revision), SEARCH01 (a retired token is never recycled) | D-024, D-025, D-033, D-035, D-051, D-052 |
-| `docs/09-operations/legacy/09-DEPLOYMENT-OPS.md` (draft) | Docker Compose packaging; Nginx without automatic certificates, with operator-run certificate renewal; an operating-system scheduler | D-053 (ADR-002, ADR-003) |
-| `docs/10-release/legacy/P10-RELEASE-UAT.md` (draft) | Receiving cost of Operations write-only | D-033 |
+- Where a later decision in [DECISIONS](DECISIONS.md) changes a rule written in a legacy document still in force, the decision prevails (section 1). The legacy text is not edited. Known cases: none since RF-6. The three drafts that this list still named before RF-6 — `docs/08-testing/legacy/08-TESTING-ACCEPTANCE.md` (suites AUTH02, RET01, SESSION04, UX01 and SEARCH01; D-024, D-025, D-033, D-035, D-051, D-052), `docs/09-operations/legacy/09-DEPLOYMENT-OPS.md` (Docker Compose, Nginx-managed certificates, an operating-system scheduler; D-053) and `docs/10-release/legacy/P10-RELEASE-UAT.md` (write-only receiving cost; D-033) — are LEGACY — SUPERSEDED by the RF-6 documents (D-088), and those changes are carried by them ([ACCEPTANCE_SUITES](../08-testing/ACCEPTANCE_SUITES.md) section 2; [LEGACY_INDEX](LEGACY_INDEX.md) section 15).
 
 RF-2 also listed known cases for `docs/05-security/legacy/04-AUTH-RBAC-SECURITY.md`, `docs/05-security/legacy/P5-SECURITY.md` and `docs/06-api-performance/legacy/P6-CONCURRENCY-API.md` (write-only cost, D-033; CASH and BANK_TRANSFER as the only methods, D-036), and for the parts of `02-ARCHITECTURE` and `P4-ARCHITECTURE` that carried an allocation version per cost revision (T-16), the two payment methods (D-036) and write-only cost (D-033). Since RF-3A (D-055) those documents and parts are LEGACY — SUPERSEDED and carry no authority at all, so they are no longer listed; SECURITY_MODEL, TECHNICAL_RULES and ARCHITECTURE carry the current rules. RF-3A also listed the barcode-token cases of `02-ARCHITECTURE` §Constraint database and `P4-ARCHITECTURE` §Schema, immutability dan constraints (D-051, D-052). Under plan decision P-6 (D-059) those sections are superseded by [SCHEMA](../04-architecture/SCHEMA.md) when the Owner accepts the RF-3B checkpoint, so they are no longer listed either; SCHEMA section 5.6 carries the barcode rules of D-051 and D-052. D-077 makes CASH and BANK_TRANSFER the only V1 payment methods again, so the rule "CASH or BANK_TRANSFER only" of `P3-CRITICAL-WORKFLOWS` and the "no QRIS" expectation of suites POS02 and PAYEXT01, which D-036 had overridden, agree with the current rules and are no longer listed.
 
@@ -125,7 +119,7 @@ The domain part of `docs/04-architecture/legacy/02-ARCHITECTURE.md` (its entity 
 | [STACK_AND_MODULES.md](../04-architecture/STACK_AND_MODULES.md) | Stack and version policy, module map with entity ownership and dependencies, directory layout, no speculative abstraction | CURRENT (RF-3A) | — |
 | [SCHEMA.md](../04-architecture/SCHEMA.md) | Logical database schema: tables, keys, constraints, facts and projections, retention classes, document numbers, locks on rows, guards, the invariant-to-enforcement matrix, database privileges, indexes | CURRENT (RF-3B) | — |
 | [legacy/02-ARCHITECTURE.md](../04-architecture/legacy/02-ARCHITECTURE.md) | Former architecture, transaction and locking contract; database constraints; domain part (entity table, numbers and time) | LEGACY — SUPERSEDED as a whole: the domain part by DOMAIN_MODEL (RF-2), the architecture parts by the RF-3A documents, §Constraint database and the schema-delivery part of §Payment extension boundary dan schema delivery by SCHEMA (RF-3B). Section by section in [LEGACY_INDEX](LEGACY_INDEX.md) sections 8 and 9 | RF-2; RF-3A; RF-3B (final status under plan decision P-6, effective when the Owner accepts the RF-3B checkpoint); removal in a later authorized step |
-| [legacy/P4-ARCHITECTURE.md](../04-architecture/legacy/P4-ARCHITECTURE.md) | Former stack comparison and choice, modules, schema, testing and deployment implications | LEGACY — SUPERSEDED, except §Testing implications and §Deployment, operasi dan maintenance: LEGACY — INPUT ONLY for RF-6 (ADR-002 and ADR-003 prevail where the deployment section differs), and §Sumber primer yang diverifikasi saat planning: RECORD. §Schema, immutability dan constraints is superseded by SCHEMA (RF-3B); every other part by the RF-3A documents. Section by section in LEGACY_INDEX sections 8 and 9 | RF-3A; RF-3B (final status under P-6, effective when the Owner accepts the RF-3B checkpoint); RF-6 (testing and deployment input) |
+| [legacy/P4-ARCHITECTURE.md](../04-architecture/legacy/P4-ARCHITECTURE.md) | Former stack comparison and choice, modules, schema, testing and deployment implications | LEGACY — SUPERSEDED, except §Sumber primer yang diverifikasi saat planning: RECORD. §Testing implications is superseded by TEST_STRATEGY and §Deployment, operasi dan maintenance by ENVIRONMENTS and ADR-011 (RF-6, D-088); §Schema, immutability dan constraints by SCHEMA (RF-3B); every other part by the RF-3A documents. Section by section in LEGACY_INDEX sections 8, 9 and 15 | RF-3A; RF-3B (final status under P-6, effective when the Owner accepts the RF-3B checkpoint); RF-6; removal in a later authorized step |
 
 The logical database schema is SCHEMA (RF-3B, D-059; OPEN_ITEMS T-03 resolved). Under plan decision P-6 the final status of the two legacy P4 documents is written in the RF-3B checkpoint and takes effect when the Owner accepts it; until then their schema and constraint parts keep the status RF-3A gave them. No legacy document is shown as fully superseded while any of its parts is still the authority (plan decision P-5, D-055).
 
@@ -151,7 +145,9 @@ The logical database schema is SCHEMA (RF-3B, D-059; OPEN_ITEMS T-03 resolved). 
 | [README.md](../adr/README.md) | ADR policy, statuses, numbering and index | CURRENT (RF-3A) |
 | [ADR-001](../adr/ADR-001-stack-and-modular-monolith.md) to [ADR-007](../adr/ADR-007-command-identity-and-idempotency.md) | Stack and modular monolith; minimum runtime infrastructure; hosting topology; authentication; localization architecture; exact numbers; command identity and idempotency | ACCEPTED (RF-3A) |
 | [ADR-008](../adr/ADR-008-cost-allocation-representation.md) | Issue-cost allocation representation | ACCEPTED (RF-3B) |
-| [ADR-009](../adr/ADR-009-command-receipts-and-reconciled-outcomes.md) | Command request receipts and reconciled outcomes | ACCEPTED (RF-5, D-087) |
+| [ADR-009](../adr/ADR-009-command-receipts-and-reconciled-outcomes.md) | Command request receipts and reconciled outcomes | ACCEPTED (RF-5, D-087); section 6 decided by D-088 |
+| [ADR-010](../adr/ADR-010-independent-backup-and-recovery-key-custody.md) | Independent backup and recovery-key custody | ACCEPTED (RF-6, D-088) |
+| [ADR-011](../adr/ADR-011-release-pipeline-environments-and-production-operation.md) | Release pipeline, environments and production operation | ACCEPTED (RF-6, D-088) |
 
 ### docs/07-ux-design — P7
 
@@ -178,23 +174,31 @@ P7 is being rebuilt (D-024) as three checkpoints, RF-4A, RF-4B and RF-4C, ending
 
 | Path | Subject | Status | Replaced in |
 | --- | --- | --- | --- |
-| [legacy/08-TESTING-ACCEPTANCE.md](../08-testing/legacy/08-TESTING-ACCEPTANCE.md) | 39 acceptance suites and Definition of Done | LEGACY — DRAFT | RF-6 |
-| [legacy/P8-QUALITY.md](../08-testing/legacy/P8-QUALITY.md) | Phase summary | LEGACY — DRAFT | RF-6 |
+| [TEST_STRATEGY.md](../08-testing/TEST_STRATEGY.md) | Test levels, environments and data for tests, harness, test families, static checks, CI gates, evidence, acceptance gates, Definition of Done, reviews, final verification | CURRENT (RF-6, D-088) | — |
+| [ACCEPTANCE_SUITES.md](../08-testing/ACCEPTANCE_SUITES.md) | The 56 acceptance suites with their cases, and the traceability of every requirement, race, guard, threat, workflow and procedure | CURRENT (RF-6, D-088) | — |
+| [DEVICE_VERIFICATION.md](../08-testing/DEVICE_VERIFICATION.md) | The protocol of gate DEVICES on the shop's real devices | CURRENT (RF-6, D-088) | — |
+| [legacy/08-TESTING-ACCEPTANCE.md](../08-testing/legacy/08-TESTING-ACCEPTANCE.md) | 39 acceptance suites and Definition of Done | LEGACY — SUPERSEDED by the three documents above; its suite identifiers are carried (ACCEPTANCE_SUITES section 2) | RF-6; removal in a later authorized step |
+| [legacy/P8-QUALITY.md](../08-testing/legacy/P8-QUALITY.md) | Phase summary | LEGACY — SUPERSEDED by TEST_STRATEGY | RF-6; removal in a later authorized step |
 
 ### docs/09-operations — P9
 
 | Path | Subject | Status | Replaced in |
 | --- | --- | --- | --- |
-| [legacy/09-DEPLOYMENT-OPS.md](../09-operations/legacy/09-DEPLOYMENT-OPS.md) | Operations, production data protection, backup and recovery | LEGACY — DRAFT; ADR-002 and ADR-003 prevail where it differs | RF-6 |
-| [legacy/P9-OPERATIONS.md](../09-operations/legacy/P9-OPERATIONS.md) | Phase summary | LEGACY — DRAFT | RF-6 |
+| [ENVIRONMENTS.md](../09-operations/ENVIRONMENTS.md) | Environments, access, the server, Coolify, Cloudflare, certificates, network exposure, client address, configuration, database setup, scheduled tasks, logs and retention, the free-tier record, secrets and rotation, gate TARGET | CURRENT (RF-6, D-088) | — |
+| [BACKUP_RECOVERY.md](../09-operations/BACKUP_RECOVERY.md) | Backup, the store, verification, restore drills, recovery-key custody, the restore runbook, the gap after a restore, recovery objectives | CURRENT (RF-6, D-088) | — |
+| [OPERATIONS_RUNBOOK.md](../09-operations/OPERATIONS_RUNBOOK.md) | Operator procedures, scheduled commands, monitoring and alerts, the evidence of the system status, incident response and runbooks, maintenance, the routine calendar | CURRENT (RF-6, D-088) | — |
+| [legacy/09-DEPLOYMENT-OPS.md](../09-operations/legacy/09-DEPLOYMENT-OPS.md) | Operations, production data protection, backup and recovery | LEGACY — SUPERSEDED by the three documents above, PRODUCTION_DATA_SAFETY and RELEASE_PROCESS | RF-6; removal in a later authorized step |
+| [legacy/P9-OPERATIONS.md](../09-operations/legacy/P9-OPERATIONS.md) | Phase summary | LEGACY — SUPERSEDED by the three documents above | RF-6; removal in a later authorized step |
 
-Production data protection is already CURRENT in [PRODUCTION_DATA_SAFETY](PRODUCTION_DATA_SAFETY.md). Who may operate on production is an open Owner decision (question 20).
+Production data protection is CURRENT in [PRODUCTION_DATA_SAFETY](PRODUCTION_DATA_SAFETY.md); who operates production is decided there in section 5 (D-088, question 20).
 
 ### docs/10-release — P10
 
 | Path | Subject | Status | Replaced in |
 | --- | --- | --- | --- |
-| [legacy/P10-RELEASE-UAT.md](../10-release/legacy/P10-RELEASE-UAT.md) | Release readiness, cutover, pilot | LEGACY — DRAFT | RF-6 |
+| [RELEASE_PROCESS.md](../10-release/RELEASE_PROCESS.md) | Controlled releases, migration safety, deployment, checks, rollback, release records, the first installation, the cutover, gate RELEASE | CURRENT (RF-6, D-088) | — |
+| [UAT_PILOT.md](../10-release/UAT_PILOT.md) | UAT scripts per role, the pilot and its acceptance, training, the shop's guidance | CURRENT (RF-6, D-088) | — |
+| [legacy/P10-RELEASE-UAT.md](../10-release/legacy/P10-RELEASE-UAT.md) | Release readiness, cutover, pilot | LEGACY — SUPERSEDED by the two documents above | RF-6; removal in a later authorized step |
 
 ### docs/11-tasks — P11
 

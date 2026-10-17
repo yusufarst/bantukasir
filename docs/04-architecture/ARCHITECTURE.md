@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-3A under D-055, 4 October 2026 (Asia/Jakarta) |
+| Status | CURRENT — written in RF-3A under D-055, 4 October 2026 (Asia/Jakarta); amended in RF-6 under D-088, 18 October 2026: ARC-60, ARC-64, ARC-65, ARC-92 and section 12 |
 | Phase | P4 — application architecture; the logical database schema is [SCHEMA](SCHEMA.md) (RF-3B) |
 | Replaces | The architecture part of `docs/04-architecture/legacy/02-ARCHITECTURE.md` and of `docs/04-architecture/legacy/P4-ARCHITECTURE.md`; their schema and database-constraint parts are replaced by [SCHEMA](SCHEMA.md) (RF-3B) ([LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) sections 8 and 9) |
 | Decisions | D-004, D-005, D-006, D-036, D-038, D-053, D-054, D-060, D-061, D-077; [ADR-001](../adr/ADR-001-stack-and-modular-monolith.md) to [ADR-008](../adr/ADR-008-cost-allocation-representation.md) |
@@ -102,12 +102,12 @@ One installation serves one business with one stock pool; another shop has its o
 
 | ID | Rule | Source |
 | --- | --- | --- |
-| ARC-60 | The runtime is the minimum of ADR-002: Nginx and PHP-FPM serving Laravel, private PostgreSQL, database sessions, a database cache used only for rate limiting and scheduler locks, and scheduled commands. No queue, Redis, server-side rendering or websocket. | D-005, ADR-002 |
+| ARC-60 | The runtime is the minimum of ADR-002: Nginx and PHP-FPM serving Laravel, private PostgreSQL, database sessions, a database cache used only for rate limiting and scheduler locks, and scheduled commands; and, per environment, one backup container from the same image that serves nothing and runs only the backup (ADR-010 item 6). No queue, Redis, server-side rendering or websocket. | D-005, ADR-002, ADR-010 |
 | ARC-61 | The hosting topology is ADR-003: Cloudflare, a VPS, Coolify; production and staging as separate environments on the same server with separate databases, storage and secrets. | D-053, ADR-003 |
 | ARC-62 | Every command finishes inside its request within the limits of TECHNICAL_RULES section 9; a bounded heavy command that cannot finish is rejected with no partial change. | ADR-002, BR-COST-27 |
 | ARC-63 | Each environment's files live on a persistent volume of that environment; the temporary CSV area is separate and excluded from backups. | ADR-003, D-054 |
-| ARC-64 | Migrations are forward and additive, rehearsed on a populated isolated target, and applied as a controlled job, never at start-up. How an approved migration reaches production, and by whom, is RF-6 with question 20. | PRODUCTION_DATA_SAFETY section 2, L-P4 §Schema (procedure), D-053 |
-| ARC-65 | The independent encrypted backup of database and files is mandatory; its destination is question 18 (before RF-6). | D-005, ADR-002, REQ-OPS-01 |
+| ARC-64 | Migrations are forward and additive, rehearsed on a populated isolated target, and applied as a controlled job, never at start-up. An approved migration reaches production as the one-off migration job of [ADR-011](../adr/ADR-011-release-pipeline-environments-and-production-operation.md) item 7, run by the operator, a person, never an AI agent (D-088, question 20; [RELEASE_PROCESS](../10-release/RELEASE_PROCESS.md) section 5). | PRODUCTION_DATA_SAFETY section 2, L-P4 §Schema (procedure), D-053, D-088 |
+| ARC-65 | The independent encrypted backup of database and files is mandatory. Its destination, method and recovery-key custody are [ADR-010](../adr/ADR-010-independent-backup-and-recovery-key-custody.md) (D-088, question 18); it runs in a backup container of each environment. | D-005, ADR-002, ADR-010, REQ-OPS-01 |
 
 ## 9. Database privilege separation
 
@@ -131,11 +131,11 @@ One installation serves one business with one stock pool; another shop has its o
 | --- | --- | --- |
 | ARC-90 | Application logs are written to the container's standard output and collected by the platform; the security log is a separate channel, stored in the database after the business transaction ends and also written to standard output (SECURITY_MODEL SEC-LOG-03). Every log line carries a request identifier; no line contains a sensitive value (SECURITY_MODEL SEC-CH-08). | L-09, L-04 |
 | ARC-91 | The Owner's system status shows the last backup and restore, their age, failures, disk space and reconciliation, and "Belum Terverifikasi" for anything unproven. | REQ-OPS-04, L-09 |
-| ARC-92 | Uptime checking from outside the server, error tracking and monitoring are designed in RF-6 at zero additional cost unless the Owner approves otherwise. | COST_POLICY, AICWDF §20 |
+| ARC-92 | Uptime checking from outside the server, error tracking and monitoring are designed at zero additional cost unless the Owner approves otherwise: the health route, an external heartbeat monitor on a free plan, and the logs of the containers, with no error-tracking service ([ADR-011](../adr/ADR-011-release-pipeline-environments-and-production-operation.md) item 11; [ENVIRONMENTS](../09-operations/ENVIRONMENTS.md) sections 13 and 14; RF-6). | COST_POLICY, AICWDF §20, D-088 |
 
 ## 12. Boundary with later steps
 
 - RF-3B designed the logical schema ([SCHEMA](SCHEMA.md)), the mapping of invariants to constraints, locks, guards and tests, the representation of issue-cost allocations ([ADR-008](../adr/ADR-008-cost-allocation-representation.md), T-16) and items T-17 e, g and i. The schema and database-constraint parts of `02-ARCHITECTURE` and `P4-ARCHITECTURE` are superseded by SCHEMA under plan decision P-6, effective when the Owner accepts the RF-3B checkpoint.
 - RF-4 builds on ADR-005 (localization) and on the capabilities of SECURITY_MODEL section 6 for navigation per role.
 - RF-5 writes route and interaction contracts within TECHNICAL_RULES.
-- RF-6 writes infrastructure, backup and release documents within ADR-002 and ADR-003, and rebuilds the test strategy; the testing and deployment sections of `P4-ARCHITECTURE` are its input only.
+- RF-6 writes infrastructure, backup and release documents within ADR-002 and ADR-003, and rebuilds the test strategy; the testing and deployment sections of `P4-ARCHITECTURE` are its input only. Done under D-088: `docs/08-testing/`, `docs/09-operations/`, `docs/10-release/`, ADR-010 and ADR-011; those legacy sections are superseded.

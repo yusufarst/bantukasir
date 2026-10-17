@@ -10,7 +10,8 @@ DECISION SOURCE:  D-073 (Owner: server-authoritative recovery for NC-13; the sta
                   reconciliation with a safe fence); D-074 (Owner: RF-5 proposes the backend mitigation of duplicate
                   actions across devices, with tests; a new server refusal needs the Owner's decision first);
                   ADR-007 section 5 (who confirms the conclusion of a lost reference is designed in RF-5);
-                  D-087 (Owner: RF-5 authorization; the planner's choices recorded there)
+                  D-087 (Owner: RF-5 authorization; the planner's choices recorded there);
+                  D-088 (Owner: acceptance of RF-5 and the decision on N-07 that section 6 records)
 EXTENDS:          ADR-007, which stays in force unchanged
 ```
 
@@ -57,16 +58,18 @@ The server lists a user's unresolved receipts — PENDING or HELD — to that us
 | `stale_intent_reports` | F | `UNIQUE (operation, source_intent_id)`; `actor_user_id`, `reported_epoch`, `first_reported_at` |
 | `intent_reconciliations` | F | Primary key `report_id`; `outcome` (`NOT_COMMITTED`); `fence_command_id` → the fence; `decided_by_user_id` (the Owner); `operator_note`; `recorded_at` |
 
-### 6. Not decided here
+### 6. Not decided here — decided by D-088
 
 A **server refusal** of a new command while the same user has an unresolved receipt of its family would close the remaining window — a request still on its way to the server when the user starts again elsewhere — and would also enforce BR-CASH-16 on the server. It is a new refusal, so it needs the Owner's decision (D-074). It is offered to the Owner with the RF-5 report; until the Owner decides, it is not specified.
+
+**Decided by D-088 (18 October 2026), the Owner's decision on N-07 at the acceptance of RF-5.** No general server refusal is added, for checkout or any other family: the receipts of sections 1 and 2 and the existing identity and recovery mechanisms stay the mitigation. One refusal is added: a close, `cash_session.close` or `cash_session.close_assisted`, is refused while the session's responsible user has a `sale.checkout` receipt that is PENDING or HELD, so BR-CASH-16 is enforced on the server (SCHEMA guard G-27; TECHNICAL_RULES RACE-35; INTERACTION_CONTRACTS section 2.5). It uses the existing code `RECOUNT_REQUIRED`. The narrow risk of a request still on its way to the server when the user starts the same action on another device is accepted; a duplicate that results is handled by an audited correction (DECISIONS section 5).
 
 ## Alternatives considered
 
 | Alternative | Why not |
 | --- | --- |
 | Keep NC-13 in the browser only | Leaves the gap of D-074 open; not an accepted risk |
-| Refuse a new command on the server while a receipt is unresolved | A new refusal; needs the Owner (section 6) |
+| Refuse a new command on the server while a receipt is unresolved | A new refusal; needs the Owner (section 6). Declined by the Owner except for the close (D-088) |
 | Store receipts inside the command's transaction | A rejected or rolled-back command would leave no receipt, and a request that never committed could not be listed |
 | Let the server conclude NOT_COMMITTED for an earlier-epoch intent on its own | Forbidden by BR-CMD-06 and D-073: missing data is no proof |
 | Record the Owner's reconciliation through an interface page | Needs new pages and copy, and the restore runs before the shop reopens; the operator procedure records the Owner's decision under the runbook |
@@ -82,11 +85,12 @@ A **server refusal** of a new command while the same user has an unresolved rece
 ```text
 ADR REQUIRED:      YES (extends the command identity of ADR-007)
 DEVIATION:         NONE — AICWDF §17 requires explicit idempotency and recovery
-OWNER APPROVAL:    GIVEN — D-073 and D-074 set the rules; D-087 authorizes RF-5; the server refusal of section 6
-                   is not decided and waits for the Owner
+OWNER APPROVAL:    GIVEN — D-073 and D-074 set the rules; D-087 authorizes RF-5; D-088 decides section 6: no
+                   general refusal, one refusal of a close while a checkout receipt is unresolved
 REASON:            no duplicate business action across devices without a new refusal; a safe exit for
                    requests from before a restore
-RISK:              the window of section 6; a receipt write that fails refuses the request (SERVICE_BUSY)
+RISK:              the window of section 6, accepted by the Owner with audited corrections (D-088); a receipt
+                   write that fails refuses the request (SERVICE_BUSY)
 MIGRATION IMPACT:  none — no implementation exists
 ROLLBACK IMPACT:   none
 ```

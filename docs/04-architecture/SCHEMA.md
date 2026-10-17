@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-3B under D-059, 5 October 2026 (Asia/Jakarta); amended in RF-5 under D-087, 18 October 2026: command request receipts and restore reconciliation (section 5.3), the onboarding states and the correction of onboarding entries before release (section 5.7), one line per product in a Sale (section 5.9), guards G-22 to G-26 |
+| Status | CURRENT — written in RF-3B under D-059, 5 October 2026 (Asia/Jakarta); amended in RF-5 under D-087, 18 October 2026: command request receipts and restore reconciliation (section 5.3), the onboarding states and the correction of onboarding entries before release (section 5.7), one line per product in a Sale (section 5.9), guards G-22 to G-26; amended in RF-6 under D-088, 18 October 2026 (Asia/Jakarta): the retention of request receipts and of the security log, the tables of section 5.12, guard G-27, the backup role (SCH-42), the operator (SCH-46) and the RF-6 items of section 16 |
 | Phase | P4 — logical database schema; with [ARCHITECTURE](ARCHITECTURE.md) and [STACK_AND_MODULES](STACK_AND_MODULES.md) it completes P4 |
 | Replaces | `docs/04-architecture/legacy/02-ARCHITECTURE.md` §Constraint database and the schema-delivery part of §Payment extension boundary dan schema delivery; `docs/04-architecture/legacy/P4-ARCHITECTURE.md` §Schema, immutability dan constraints ([LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 9) |
 | Decisions | D-006, D-032 to D-038, D-042 to D-054, D-060 to D-062, D-067 to D-074, D-077, D-086, D-087; [ADR-006](../adr/ADR-006-exact-numbers.md), [ADR-007](../adr/ADR-007-command-identity-and-idempotency.md), [ADR-008](../adr/ADR-008-cost-allocation-representation.md), [ADR-009](../adr/ADR-009-command-receipts-and-reconciled-outcomes.md) |
@@ -19,7 +19,7 @@ PostgreSQL DDL appears in this document **only as specification text** (plan dec
 - **DDL blocks** are marked `-- specification text, not a migration (P-7)`. Where a table row and a DDL block both state a constraint, they state the same constraint.
 - **Names.** Table and column names are part of the contract. A Task may change a name only by updating this document in the same change (as STK-22 does for the directory layout).
 - **Locks** refer to the steps of [TECHNICAL_RULES](../06-api-performance/TECHNICAL_RULES.md) section 7.1; section 7 below says which row each step locks and in which mode.
-- **Tests** name the legacy acceptance suites of `docs/08-testing/legacy/08-TESTING-ACCEPTANCE.md` (references until RF-6) or `NEW`. Section 9.4 defines the test families that every constraint and privilege needs.
+- **Tests** name acceptance suites or `NEW`, as written before RF-6. Since RF-6 the suites are those of [ACCEPTANCE_SUITES](../08-testing/ACCEPTANCE_SUITES.md), which keeps the legacy identifiers and maps every guard, race and requirement, including those marked `NEW` here; where they differ, ACCEPTANCE_SUITES prevails (D-088). Section 9.4 defines the test families that every constraint and privilege needs.
 - **Roles.** "Runtime" is the database role of the application, "migration" the role of the controlled migration job, "backup" the role of the backup process (ARCHITECTURE ARC-70, ARC-71; section 10).
 
 ## 2. Principles
@@ -88,8 +88,8 @@ CHECK ((actor_kind = 'USER' AND actor_user_id IS NOT NULL AND actor_process IS N
     OR (actor_kind <> 'USER' AND actor_user_id IS NULL AND actor_process IS NOT NULL))
 ```
 
-- `actor_process` names the operator procedure (`bootstrap`, `owner_recovery`, `owner_replacement`, `after_restore`, and the reviewed cost recovery procedure of RF-6) or the scheduled command (`reconciliation`, `housekeeping`); the list is an allowlist in code. A one-time link consumption is recorded with `actor_kind = 'USER'` and the account that consumed it (SECURITY_MODEL section 14).
-- The full pattern is used where a non-user can act: `audit_events`, `command_identities`, `security_log_entries`, `inventory_posting_blocks` and `cost_incomplete_mark_clearances`. `security_log_entries` extends `actor_kind` with `ANONYMOUS`, for which both actor columns are null (section 5.4). Every other table that records an actor names a user and carries `actor_user_id NOT NULL` alone.
+- `actor_process` names the operator procedure (`bootstrap`, `owner_recovery`, `owner_replacement`, `after_restore`, `restore_reconciliation`, and, since RF-6, `cost_recovery`, `projection_rebuild` and `restore_drill_record`; SECURITY_MODEL SEC-OP-01 to SEC-OP-08) or the scheduled command (`reconciliation`, `housekeeping`); the list is an allowlist in code. A one-time link consumption is recorded with `actor_kind = 'USER'` and the account that consumed it (SECURITY_MODEL section 14).
+- The full pattern is used where a non-user can act: `audit_events`, `command_identities`, `security_log_entries`, `inventory_posting_blocks`, `cost_incomplete_mark_clearances` and, since RF-6, `restore_drills`. `security_log_entries` extends `actor_kind` with `ANONYMOUS`, for which both actor columns are null (section 5.4). Every other table that records an actor names a user and carries `actor_user_id NOT NULL` alone.
 
 ### 3.5 Frozen display information
 
@@ -130,7 +130,7 @@ A transaction that inserts an issue movement without its allocation therefore ca
 | ID | Rule | Source |
 | --- | --- | --- |
 | SCH-13 | **A null never passes a rule by accident.** Every column is `NOT NULL` unless its table says null. PostgreSQL treats a check constraint that evaluates to null as satisfied, so a check that involves a nullable column states `IS NOT NULL` in every branch that requires the value, or compares with `IS [NOT] DISTINCT FROM`. Composite foreign keys follow section 3.6. The Constraint test family inserts a null into every nullable column that a check or a composite key involves (section 9.4). | PostgreSQL documentation (section 15); SCH-03 |
-| SCH-14 | **Text comparison.** Uniqueness without regard to letter case (SKU, email, cash register code) uses PostgreSQL's `lower()` in the unique index, which is the only authority for it: the application maps the unique violation to its refusal and never decides that equality itself. The database is created with UTF-8 encoding; the foundation Task records its collation provider and locale with the pinned versions and proves the case folding with test vectors that include non-ASCII letters. "Control character" and "outer whitespace" mean what `[[:cntrl:]]` and `[[:space:]]` match in the database's character classification; the application's validation (TR-VAL-05) uses the same sets, proven with vectors that include a no-break space. An upgrade of the collation library is followed by the reindex step of the RF-6 runbook (section 16). | TR-VAL-05, BR-CAT-05, SEC-ACC-03; PostgreSQL documentation |
+| SCH-14 | **Text comparison.** Uniqueness without regard to letter case (SKU, email, cash register code) uses PostgreSQL's `lower()` in the unique index, which is the only authority for it: the application maps the unique violation to its refusal and never decides that equality itself. The database is created with UTF-8 encoding; the foundation Task records its collation provider and locale with the pinned versions and proves the case folding with test vectors that include non-ASCII letters. "Control character" and "outer whitespace" mean what `[[:cntrl:]]` and `[[:space:]]` match in the database's character classification; the application's validation (TR-VAL-05) uses the same sets, proven with vectors that include a no-break space. An upgrade of the collation library is followed by the reindex step of [OPERATIONS_RUNBOOK](../09-operations/OPERATIONS_RUNBOOK.md) RB-13 (D-088). | TR-VAL-05, BR-CAT-05, SEC-ACC-03; PostgreSQL documentation |
 
 ## 4. Data classes, mutability and retention
 
@@ -141,14 +141,14 @@ A transaction that inserts an issue movement without its allocation therefore ca
 | **M — master data and configuration** | Mutable current data | `SELECT`, `INSERT`, `UPDATE` of the listed columns only | Never deleted, softly or permanently (D-042, BR-KEEP-06) |
 | **S — singleton state** | One row of installation state | `SELECT`, `INSERT`, `UPDATE` of the listed columns only | Never deleted |
 | **P — projection** | Derived from facts, written in the same transaction as the facts, rebuilt only from facts by a controlled procedure (BR-INV-46) | `SELECT`, `INSERT`, `UPDATE` of the listed columns; `DELETE` only where stated | Not a record of its own. Superseded projected values are not kept (D-034, BR-COST-29) |
-| **L — security log** | Security events written outside the business transaction | `SELECT`, `INSERT` | Kept until RF-6 sets its retention (SEC-LOG-05); nothing removes an entry before then |
+| **L — security log** | Security events written outside the business transaction | `SELECT`, `INSERT`, `DELETE` (housekeeping only, of entries older than the retention) | Kept 365 days from `occurred_at`, then removed by the scheduled housekeeping (SEC-LOG-05; D-088); nothing removes a younger entry |
 | **E — ephemeral technical data** | Data whose lifecycle an existing decision sets | `SELECT`, `INSERT`, `UPDATE`, `DELETE` | Expires or is cleaned up as its decision says: sign-in sessions end and are removed (D-039, ADR-002, SEC-SESS-04; BR-KEEP-07); one-time link tokens are deleted when consumed or revoked and removed by housekeeping when expired (SEC-ACC-04, SEC-ACC-06, SEC-ACC-07); rate-limiter counters and scheduler locks expire (ADR-002) |
 
 Two kinds of ephemeral data are kept **outside the database** and have no table: an uploaded CSV import file, held in the private temporary area and removed at the command's final outcome and in any case after 24 hours (D-054, ARC-43); and a stored file left unreferenced by a rolled-back command, removed by housekeeping after a grace period of at least one hour (TR-TX-05). A stored file that a record references is never deleted or overwritten (D-042, BR-CFG-03).
 
 | ID | Rule | Source |
 | --- | --- | --- |
-| SCH-11 | No table of class F, FS, M, S or L is ever the target of a cleanup, purge, expiry or archival job. The only cleanup jobs are those for class E and for the two areas outside the database above, each tied to the decision that requires it. Removing a projection row inside the command that changes its facts — the active barcode mapping of a retired mapping, whose retirement fact keeps the history — is projection maintenance, not cleanup. | D-044, D-054, SEC-ACC-07, ADR-002, TR-TX-05 |
+| SCH-11 | No table of class F, FS, M or S is ever the target of a cleanup, purge, expiry or archival job, and a table of class L only as its retention says. The only cleanup jobs are those for class E, for class L after its retention of 365 days (D-088), and for the two areas outside the database above, each tied to the decision that requires it. Removing a projection row inside the command that changes its facts — the active barcode mapping of a retired mapping, whose retirement fact keeps the history — is projection maintenance, not cleanup. | D-044, D-054, D-088, SEC-ACC-07, ADR-002, TR-TX-05 |
 | SCH-12 | Every table's class is stated in section 5, and the runtime privileges of section 10 follow from it. A table may change class only with an update of this document and of section 10 in the same change. | ARC-70, ARC-72 |
 
 ## 5. Tables
@@ -239,7 +239,7 @@ Runtime privileges: `SELECT`, `INSERT`. A revision is never changed or deleted (
 | `set_at` | `timestamptz` | |
 
 - Inserted by the bootstrap procedure; replaced only by the after-restore procedure with a value never issued before (SEC-OP-01, SEC-OP-04).
-- Every enveloped command compares its epoch with this value inside its transaction and is refused `EPOCH_STALE` on a difference, before any fact (ADR-007 section 6). The comparison needs no lock: the epoch changes only in the after-restore procedure, which the restore runbook runs before the application accepts traffic again (input to RF-6, section 16).
+- Every enveloped command compares its epoch with this value inside its transaction and is refused `EPOCH_STALE` on a difference, before any fact (ADR-007 section 6). The comparison needs no lock: the epoch changes only in the after-restore procedure, which the restore runbook runs before the application accepts traffic again ([BACKUP_RECOVERY](../09-operations/BACKUP_RECOVERY.md) RB-01 phase D).
 - Runtime privileges: `SELECT`, `INSERT`; `UPDATE` of `epoch`, `set_at`.
 
 **`command_identities`** — class F. Entity: Command result, together with `command_results` (ADR-007 sections 2 to 4).
@@ -309,7 +309,8 @@ Runtime privileges: `SELECT`, `INSERT`. Every fact row that an enveloped command
 
 - Written in a transaction of its own before the command's transaction, never with the payload (ADR-009 section 1; guard G-25). The outcome is informative; the command identity is the authority on whether a command committed.
 - Indexed by `(actor_user_id, outcome)` for the listing of RD-04.
-- Housekeeping removes a row only when its outcome is `COMMITTED`, `REJECTED` or `NOT_COMMITTED` and it is older than the retention RF-6 sets; an unresolved row is never removed (SCH-11).
+- Housekeeping removes a row only when its outcome is `COMMITTED`, `REJECTED` or `NOT_COMMITTED` and its `outcome_at` is more than 30 days old (D-088); an unresolved row is never removed (SCH-11).
+- The same index serves guard G-27: a close reads the responsible user's `sale.checkout` receipts whose outcome is `PENDING` or `HELD` (D-088).
 - Runtime privileges: `SELECT`, `INSERT`; `UPDATE` of `outcome`, `outcome_at`; `DELETE`.
 
 **`stale_intent_reports`** and **`intent_reconciliations`** — class F. The requests from an earlier recovery epoch and the Owner's reconciliation of each (ADR-009 section 3; D-073).
@@ -360,7 +361,7 @@ Written by the status check (reports, in a transaction of its own after the `EPO
 
 - Written by the request after its business transaction has ended, committed or rolled back, and never inside it (SEC-LOG-03, TR-TX-02).
 - It stores no typed identifier, password, token, cookie, session identifier, user agent or payload (SEC-LOG-03, SEC-CH-08). The client address is personal data and is kept only as long as the log itself (SEC-LOG-05). Only the Owner reads it (CAP-32).
-- Runtime privileges: `SELECT`, `INSERT`. Its retention is set in RF-6 (SEC-LOG-05).
+- Runtime privileges: `SELECT`, `INSERT`, `DELETE`. Its retention is 365 days from `occurred_at` (SEC-LOG-05; D-088): the scheduled housekeeping removes older entries in bounded batches and never a younger one; no other path deletes an entry. The standard-output copy of each entry follows the platform's log rotation ([ENVIRONMENTS](../09-operations/ENVIRONMENTS.md) section 14).
 
 ### 5.5 Media
 
@@ -869,7 +870,7 @@ CHECK ((clearing_kind = 'LATER_CORRECTION') = (clearing_correction_id IS NOT NUL
 - **Written after the rollback.** The refused correction's transaction writes nothing (TECHNICAL_RULES section 1). The mark and an audit event `COST_CORRECTION_REFUSED` are then written in one small transaction of their own, which takes TR §7.1 steps 2.1 (the actor, share lock), 6 (the product, update lock) and 8, and inserts the mark only if no mark exists for the refused intent, so that a retry of the same intent writes one mark. The server answers `REPLAY_REJECTED` only after that transaction has committed; if it fails, the answer is `SERVICE_BUSY` and the client stays UNCERTAIN, so a refused correction is never reported without its mark (TR-TIME-01). If the Owner then abandons that intent, or a resolution fences it (ADR-007 section 4), no correction and no mark exist: the reports reflect exactly the published evidence, and the Owner can submit the correction again.
 - **Race with a later correction or a reversal.** Under the product guard, the mark's transaction checks whether the evidence has received more corrections than `corrections_seen` — a later correction published newer evidence after the refused attempt — or whether its source movement has a reversal. If so, it writes the mark together with its clearance, naming that correction or reversal as the cause. A reversal found here may predate the refused attempt, if a correction of an already reversed source was attempted; the clearance is then immediate, which is right, because that source no longer contributes to any figure (BR-COST-32); `cleared_at` and the actor columns are those of the mark's transaction.
 - **Scope.** An active mark — one without a clearance — makes incomplete every Owner cost figure of its product (cost of goods sold, gross profit, margin, inventory value) for every report period that ends after the `recorded_at` of `evidence_movement_id`. A report states that it is incomplete and how many products carry an active mark (BR-COST-38). OPERATIONS_ADMIN and CASHIER never see marks (BR-INV-15, D-033).
-- **Cleared only** (a) by a later successful correction or completion of the **same cost source**, or (b) by a successful reversal of that source's movement — each a replay that later succeeds for the same source, which writes a clearance for every active mark of that evidence in its own transaction (the correction's or the reversal's) — or (c) by the reviewed recovery procedure of RF-6. Nothing else clears a mark: not a correction of another source, not time, and never editing — the runtime role cannot update or delete either table.
+- **Cleared only** (a) by a later successful correction or completion of the **same cost source**, or (b) by a successful reversal of that source's movement — each a replay that later succeeds for the same source, which writes a clearance for every active mark of that evidence in its own transaction (the correction's or the reversal's) — or (c) by the reviewed recovery procedure, the operator procedure SEC-OP-06 written in RF-6 ([OPERATIONS_RUNBOOK](../09-operations/OPERATIONS_RUNBOOK.md) RB-12; D-088), which publishes the Owner's correction of that source with an extended replay bound and writes the clearance with `RECOVERY_PROCEDURE`. Nothing else clears a mark: not a correction of another source, not time, and never editing — the runtime role cannot update or delete either table.
 - **Why this adds no business meaning.** D-034 keeps the affected reporting marked incomplete "until a reviewed recovery procedure exists"; clearing (c) is that procedure. Clearings (a) and (b) are the accepted reading of item 5 of the RF-3B package (D-059): a mark is cleared by a replay that later succeeds for the same source. After (a) the source carries the latest cost evidence, so the figures it covers are, by D-034's own rule, "corrected figures based on the latest cost evidence" (BR-COST-30); after (b) the source no longer contributes to any figure (BR-COST-32). In both cases continuing to call the figures incomplete would be false (BR-COST-38). The scope follows the replay's own range: a correction affects its product from its source onward (BR-COST-23).
 - Runtime privileges on both: `SELECT`, `INSERT`.
 
@@ -1116,6 +1117,57 @@ It holds no cost, cost evidence, margin, profit or security data (BR-CASH-20). R
 | `cache`, `cache_locks` | E | The database cache, used only for rate-limiter counters and scheduler locks (ADR-002, TR-RUN-02) | All four |
 | `migrations` | — | The framework's record of applied migrations | None; the migration role owns it |
 
+### 5.12 Operations
+
+Added in RF-6 (D-088): the evidence behind the Owner's system status (REQ-OPS-04; [OPERATIONS_RUNBOOK](../09-operations/OPERATIONS_RUNBOOK.md) section 5). Owned by the Operations module (STACK_AND_MODULES section 2). They hold no business fact, no secret, no path and no message from an external service. Each row is written once and never changed.
+
+**`backup_runs`** — class F. One row per run of `backup:run` (ROUTE_CONTRACTS SC-03; [ADR-010](../adr/ADR-010-independent-backup-and-recovery-key-custody.md)), written by the backup role (SCH-42).
+
+| Column | Type | Rule |
+| --- | --- | --- |
+| `id` | `bigint` | Primary key |
+| `backup_id` | `text` | `^[0-9]{8}T[0-9]{6}Z-[A-Za-z0-9]{8}$`; unique |
+| `reason` | `text` | `SCHEDULED`, `PRE_RELEASE`, `ON_DEMAND` |
+| `started_at`, `finished_at` | `timestamptz` | `finished_at >= started_at` |
+| `outcome` | `text` | `SUCCEEDED` or `FAILED` |
+| `failure_code` | `text` null | `NO_SPACE`, `DUMP_INVALID`, `FILE_MISSING`, `FILE_CORRUPT`, `STORE_REFUSED`, `STORE_AUTH`, `REMOTE_MISMATCH`, `TIMEOUT`; set exactly when `outcome = 'FAILED'` |
+| `snapshot_at` | `timestamptz` null | The moment of the dump's snapshot; set when the dump succeeded |
+| `tiers` | `text` | The tiers written: `6h`, `6h,weekly`, `6h,monthly` or `6h,weekly,monthly` |
+| `dump_bytes`, `files_uploaded`, `uploaded_bytes`, `store_bytes` | `bigint` null | `>= 0`; set on success; `store_bytes` is the store's usage read after the upload |
+| `dump_object_sha256`, `manifest_object_sha256` | `bytea` null | 32 bytes each; the hashes of the encrypted objects, for the weekly re-verification; set on success |
+| `reverified_backup_id` | `text` null | The weekly copy re-verified by this run, on a Sunday run |
+
+`CHECK ((outcome = 'FAILED') = (failure_code IS NOT NULL))`. Runtime privileges: `SELECT`.
+
+**`restore_drills`** — class F. One row per production restore drill, written by the operator procedure SEC-OP-08 ([BACKUP_RECOVERY](../09-operations/BACKUP_RECOVERY.md) RB-02).
+
+| Column | Type | Rule |
+| --- | --- | --- |
+| `id` | `bigint` | Primary key |
+| `kind` | `text` | `ROUTINE` or `FULL` |
+| `backup_id` | `text` | The backup restored, as in `backup_runs` |
+| `manifest_sha256` | `bytea` | 32 bytes |
+| `started_at`, `finished_at` | `timestamptz` | `finished_at >= started_at` |
+| `result` | `text` | `PASS` or `FAIL` |
+| `restore_seconds` | `integer` | `>= 0`: the measured time of the restore steps |
+| `operator_note` | `text` | 1–1,000 |
+| `recorded_at`; `actor_kind`, `actor_user_id`, `actor_process` | | Section 3.4: `OPERATOR_PROCEDURE`, `restore_drill_record` |
+
+Runtime privileges: `SELECT`, `INSERT`.
+
+**`reconciliation_runs`** — class F. One row per run of `reconciliation:run` (SC-01).
+
+| Column | Type | Rule |
+| --- | --- | --- |
+| `id` | `bigint` | Primary key |
+| `started_at`, `finished_at` | `timestamptz` | `finished_at >= started_at` |
+| `outcome` | `text` | `CLEAN`, `MISMATCH` or `FAILED` |
+| `products_checked`, `blocks_written`, `other_differences` | `integer` | `>= 0`: products compared; posting blocks written; running-total or active-mapping differences reported (G-03) |
+| `scope` | `text` | `ALL` or `PRODUCT`; a run for one product after an incident (OPERATIONS_RUNBOOK RB-04) |
+| `run_trigger` | `text` | `SCHEDULE`, or `OPERATOR` for a run that the operator started by hand |
+
+Runtime privileges: `SELECT`, `INSERT`.
+
 ## 6. Document numbers (D-062)
 
 The Owner decided (D-062; question 32, option A) that Sale numbers and cash session numbers are unique per installation, generated by the server inside the committing transaction, monotonically allocated, allowed to have gaps, and carry the Asia/Jakarta business date as a readable part, with the Owner's clarification that "monotonically increasing" means allocation order, not commit order.
@@ -1130,7 +1182,7 @@ The Owner decided (D-062; question 32, option A) that Sale numbers and cash sess
 | SCH-25 | **Ordering semantics.** The counter part increases in the order the values are allocated. Two concurrent transactions may commit in the other order. Around midnight, a transaction that read the clock just before midnight may take its counter value just after another transaction that read the clock just after midnight; the number allocated later then carries the earlier date, for example `20261005-000101` after `20261006-000100`. The window is the short time between reading the clock and calling `nextval` at the same step (SCH-21). Both numbers are valid and unique, and the counter still follows allocation order, which is what D-062 requires; the full number is not a sort key across midnight (accepted by the Owner, D-063). Nothing serializes checkouts, or session opens, for numbering: no counter row, no advisory lock, no table lock. | D-062 (Owner's clarification), D-063 |
 | SCH-26 | **Gaps are valid.** A value taken by a transaction that later rolls back or fails, or lost in a database crash, is never reused (PostgreSQL never rolls back `nextval`). A gap is not an error: nothing reports, explains or fills it. | D-062; PostgreSQL documentation (section 15) |
 | SCH-27 | **Privileges.** The runtime role has `USAGE` on both sequences, which allows `nextval`, and not `UPDATE`, which would allow `setval`; the application can therefore never move or reset a sequence. | PDS §3; PostgreSQL documentation (section 15) |
-| SCH-28 | **After a restore.** A restore brings back each sequence's value from the backup, while Sales and sessions committed after the backup point may already have numbers printed on receipts in customers' hands. The restore runbook (RF-6) therefore advances both sequences, with the migration role, past every value that may have been issued after the backup point, before the shop reopens. The jump creates a gap, which SCH-26 allows. Uniqueness inside the restored database holds in any case. The same applies to any promotion of a database copy that may lag behind the primary, and the production database runs with synchronous commit, so that a number shown after commit is durable (RF-6). | D-062, BR-CMD-06; input to RF-6 |
+| SCH-28 | **After a restore.** A restore brings back each sequence's value from the backup, while Sales and sessions committed after the backup point may already have numbers printed on receipts in customers' hands. The restore runbook therefore advances both sequences, with the migration role, past every value that may have been issued after the backup point, before the shop reopens ([BACKUP_RECOVERY](../09-operations/BACKUP_RECOVERY.md) RB-01 step 13: at least 100,000 above the restored value and above every higher number found in the gap review). The jump creates a gap, which SCH-26 allows. Uniqueness inside the restored database holds in any case. The same applies to any promotion of a database copy that may lag behind the primary, and the production database runs with synchronous commit, so that a number shown after commit is durable ([ENVIRONMENTS](../09-operations/ENVIRONMENTS.md) ENV-32). | D-062, BR-CMD-06, D-088 |
 
 How the number is shown on receipts, in history and in reports is P7 (RF-4); the document label or prefix comes from the BusinessProfile's document identity (BR-CFG-01).
 
@@ -1171,7 +1223,7 @@ A check constraint sees one row; a unique index or foreign key sees one relation
 | --- | --- | --- |
 | G-01 | A Sale's total is the sum of its line totals; `line_count` equals its lines; it has at least one line | Checkout Action, before insert. Backed by: the per-line check `line_total = round(quantity * unit_price)`; the deferred keys from every line to its movement and from the Sale to its Payment and receipt |
 | G-02 | Stock is sufficient for the lines of a command, added together per product, before any write (BR-INV-07) | Posting Actions under the product guard and balance lock (steps 6, 7). Backed by `stock_balances.on_hand >= 0` |
-| G-03 | `stock_balances.on_hand` equals the sum of the product's movements and `last_sequence` their highest sequence; `inventory_valuations` and every allocation projection equal what ADR-008 computes from the facts; the running totals of section 5.9 equal the sums of their lines; each active barcode mapping is its token's mapping without a retirement | Posting, correction, replay and barcode Actions in the same transaction. Checked daily by the read-only reconciliation, a scheduled command outside any request budget: it reads each product in one consistent snapshot, recomputes cost values with the application's own arithmetic, never with SQL multiplication, division or rounding (ADR-008 section 5), and blocks the product's postings on an inventory or cost mismatch (BR-INV-45). A difference in a running total or an active mapping is reported as a reconciliation incident (BR-INV-46); its handling is the incident runbook of RF-6 |
+| G-03 | `stock_balances.on_hand` equals the sum of the product's movements and `last_sequence` their highest sequence; `inventory_valuations` and every allocation projection equal what ADR-008 computes from the facts; the running totals of section 5.9 equal the sums of their lines; each active barcode mapping is its token's mapping without a retirement | Posting, correction, replay and barcode Actions in the same transaction. Checked daily by the read-only reconciliation, a scheduled command outside any request budget: it reads each product in one consistent snapshot, recomputes cost values with the application's own arithmetic, never with SQL multiplication, division or rounding (ADR-008 section 5), and blocks the product's postings on an inventory or cost mismatch (BR-INV-45). A difference in a running total or an active mapping is reported as a reconciliation incident (BR-INV-46); its handling is [OPERATIONS_RUNBOOK](../09-operations/OPERATIONS_RUNBOOK.md) RB-04, whose repair is the projection rebuild SEC-OP-07 (D-088) |
 | G-04 | Checkout, a drawer-funded refund and a close act on a session that is OPEN at that moment; checkout uses the actor's own session | Actions under the session lock (step 4). Backed by the composite key Sale → session of its actor (section 5.9) |
 | G-05 | Expected cash = opening cash + applied CASH payments − drawer-funded CASH refunds of the session, computed from those facts under the session lock; a drawer-funded refund is at most the selected session's expected cash, so expected cash never becomes negative (D-035, D-045) | Refund and close Actions under the session lock. Backed by `cash_session_closes.expected_cash >= 0` and the report's check `expected_cash = opening_cash + cash_applied - drawer_refund_total`. No maintained expected-cash projection exists: the session lock already serializes every writer, and a stored copy would be a second number to reconcile (ARC-27) |
 | G-06 | A refund's amount is the sum of its lines; each running total of section 5.9 equals the sum of the refund and return lines it covers | Correction Action under the original Sale lock (step 5). Backed by the running totals' check constraints, which refuse any excess |
@@ -1189,12 +1241,13 @@ A check constraint sees one row; a unique index or foreign key sees one relation
 | G-18 | A record's business date (`business_date`, `opened_business_date`) is the Asia/Jakarta date of its time, read at step 8 next to the number (SCH-21) | Checkout, correction and session-open Actions. The number itself is held by a check constraint (SCH-22) |
 | G-19 | A cash register is changed only while no session is OPEN on it; an Owner-assisted close is by the Owner, an own close by the responsible user | Register and close Actions under the register or session lock |
 | G-20 | A stored-file reference names a file of the matching purpose (a logo for a revision, a product photo for a product) | Media and catalogue Actions |
-| G-21 | The cost-incomplete mark is written and cleared only as section 5.8 says | Costing Action of the refused correction; successful corrections and reversals of the same source; the RF-6 recovery procedure |
+| G-21 | The cost-incomplete mark is written and cleared only as section 5.8 says | Costing Action of the refused correction; successful corrections and reversals of the same source; the cost recovery procedure SEC-OP-06 (D-088) |
 | G-22 | A product has at most one effective onboarding entry: a zero count without a withdrawal, or an OPENING that is not reversed (BR-INV-47; D-087) | Opening-stock Actions (INTERACTION_CONTRACTS RC-11, RC-14, RC-48) under the onboarding share lock and the product lock (step 6). Backed by `opening_lines_one_original`, `UNIQUE (replaces_line_id)` and the replacement's keys to its reversal (section 5.7) |
 | G-23 | After bootstrap a BusinessProfile revision and its current pointer exist | The bootstrap procedure (SEC-OP-01); no command removes a revision (BR-CFG-02). Checked again by checkout, session open and close |
 | G-24 | A replacement OPENING is posted only while onboarding is `ACTIVE` without an unreconciled hold, for a product whose movements are only OPENINGs and their reversals (BR-INV-48) | RC-48 under the onboarding share lock and the product lock |
 | G-25 | Every enveloped user command that runs has a request receipt written before its transaction (ADR-009 section 1) | Commands module; proven by failure injection on the receipt write |
 | G-26 | Onboarding starts at most once and is released at most once for a set of business data; while a restore hold has no reconciliation, no onboarding or opening command runs (D-071, D-072) | Onboarding and opening Actions under the locks of `onboarding_state` (step 2.3). Backed by the primary key of `onboarding_releases` and `release_presence` |
+| G-27 | A close, own or Owner-assisted, commits only while the session's responsible user has no `sale.checkout` request receipt whose outcome is `PENDING` or `HELD`; otherwise it is refused `RECOUNT_REQUIRED` and the session stays OPEN (D-088, the Owner's decision on N-07) | Close Actions (INTERACTION_CONTRACTS RC-03, RC-04), which read the receipts after the session lock is held (step 4). A receipt written after that read belongs to a checkout that starts its Action only afterwards, waits for the session lock and then finds the session CLOSED (RACE-35). Backed by the index `(actor_user_id, outcome)` of `command_request_receipts` |
 
 ## 9. Invariant-to-enforcement matrix
 
@@ -1371,6 +1424,7 @@ Every rule of DOMAIN_MODEL, CATALOG_BARCODE, INVENTORY, COSTING and SALES_CASH a
 | BR-CASH-10, BR-RFD-08 | `activity_version` | 4 | — | SESSION05; NEW (REQ-CASH-13) |
 | BR-CASH-12 | `variance = physical_cash - expected_cash`; report arithmetic | 4 | G-05 | SESSION04 |
 | BR-CASH-13 to BR-CASH-15 | `cash_session_closes`, `cash_session_reports`; close takes `FOR UPDATE` | 4 | G-05, G-17 | SESSION05; RACE-08 |
+| BR-CASH-16 (server refusal of a close, D-088) | `command_request_receipts` read under the session lock | 4 | G-27 | SESSION05; RACE-35 |
 | BR-CASH-17 | Close keyed by session; `command_id` unique | 1, 4 | — | SESSION06; RACE-09 |
 | BR-CASH-18 | `close_kind`, mandatory reason for Owner-assisted close | 4 | G-19 | SESSION10 |
 | BR-CASH-19 | Close key to `(id, status)` `ON UPDATE RESTRICT`; `cash_session_review_notes` | 4 | — | SESSION07 |
@@ -1394,10 +1448,10 @@ These rules govern authorization, interface behaviour, physical actions, present
 | BR-DOM-07, BR-USR-07, BR-CAT-02, BR-CAT-41, BR-INV-23, BR-SALE-03, BR-DOC-06, BR-CASH-21, BR-RFD-01 | Authorization and recent authentication (SECURITY_MODEL sections 5 and 6) |
 | BR-DOM-10, BR-SALE-21, BR-RFD-14, BR-RFD-17 | No human, printer or network wait in a transaction; physical cash and printing after commit (TR-TX-03) |
 | BR-NUM-06, BR-NUM-07, BR-CAT-23, BR-CAT-26, BR-INV-41 to BR-INV-44 | Query periods, presentation, shared search logic, result DTOs, refresh and history reading (indexes in section 11) |
-| BR-CMD-04, BR-CMD-05, BR-INV-10, BR-SALE-10 to BR-SALE-15, BR-SALE-22, BR-CASH-16 | Review steps, confirmation interface, retries and client recovery (TECHNICAL_RULES sections 3 and 9; ADR-007 section 5) |
+| BR-CMD-04, BR-CMD-05, BR-INV-10, BR-SALE-10 to BR-SALE-15, BR-SALE-22, BR-CASH-16 (its client side; the server refusal of a close is G-27, D-088) | Review steps, confirmation interface, retries and client recovery (TECHNICAL_RULES sections 3 and 9; ADR-007 section 5) |
 | BR-CAT-20, BR-INV-28, BR-INV-30 | Facts to be verified, checks by the Owner, and stop conditions for an Owner decision |
 | BR-CAT-28 to BR-CAT-36 | Scanning and labels in the interface (RF-4, RF-5); print requests are audited under BR-AUD-06 |
-| BR-CAT-42, BR-CAT-43, BR-CAT-49 | Import format, upload rules (SECURITY_MODEL section 13) and backup (question 18, RF-6) |
+| BR-CAT-42, BR-CAT-43, BR-CAT-49 | Import format, upload rules (SECURITY_MODEL section 13) and backup ([ADR-010](../adr/ADR-010-independent-backup-and-recovery-key-custody.md); D-088) |
 | BR-CASH-11 | No key links a sign-in session to a cash session; signing out changes no row of `cash_sessions` |
 | BR-CASH-22 | CSV export formatting (SECURITY_MODEL SEC-CH-07) |
 
@@ -1438,36 +1492,37 @@ Each race of TECHNICAL_RULES section 8 and the schema element that serializes it
 | RACE-32 | `onboarding_state` update lock | `version`; primary key of `onboarding_releases`; `release_presence` |
 | RACE-33 | Identity | `FENCE` row on `UNIQUE (operation, source_intent_id)` |
 | RACE-34 | Identity; `stale_intent_reports` | `UNIQUE (operation, source_intent_id)` of the reports; the fence of the reconciliation |
+| RACE-35 | `cash_sessions` `FOR UPDATE` (step 4), then the read of the responsible user's receipts | G-27; a later checkout meets the CLOSED status under the same lock |
 
 ### 9.4 Test families
 
-RF-6 rebuilds the test strategy; these families are its input and are required for every row above that names a constraint, privilege or guard (SCH-10). All run on real PostgreSQL with committed fixtures and independent connections (STK-20).
+These families are required for every row above that names a constraint, privilege or guard (SCH-10). All run on real PostgreSQL with committed fixtures and independent connections (STK-20). Since RF-6 they are part of [TEST_STRATEGY](../08-testing/TEST_STRATEGY.md) section 5, and the suites that carry them are [ACCEPTANCE_SUITES](../08-testing/ACCEPTANCE_SUITES.md) (D-088).
 
 | Family | What it proves |
 | --- | --- |
 | Constraint | For every check, unique, foreign-key and partial unique constraint of section 5, a row that violates it, written directly with the runtime role, is refused, including a row with a null in each nullable column that a check or composite key involves (SCH-13) |
 | Deferred | For every deferred and presence key, a transaction that omits the required row fails at commit and leaves nothing |
-| Privilege | The actual grants equal section 10: the runtime role is refused DDL, `UPDATE` and `DELETE` on retained classes, `TRUNCATE` everywhere, `UPDATE` of every column not listed, and `setval` on the number sequences; the backup role can only read |
-| Race | Every RACE-01 to RACE-30 outcome with at least two connections and controlled interleaving; also the mark's transaction against a later correction or a reversal of the same source, a failing mark transaction (`SERVICE_BUSY`, no mark) and a retried refused intent (one mark) (section 5.8); and a running-total update that skips the Sale lock (the check still refuses the excess, SCH-33) |
+| Privilege | The actual grants equal section 10: the runtime role is refused DDL, `UPDATE` and `DELETE` on retained classes, `TRUNCATE` everywhere, `UPDATE` of every column not listed, and `setval` on the number sequences; the backup role can only read, and insert `backup_runs` (SCH-42) |
+| Race | Every RACE-01 to RACE-35 outcome with at least two connections and controlled interleaving; also the mark's transaction against a later correction or a reversal of the same source, a failing mark transaction (`SERVICE_BUSY`, no mark) and a retried refused intent (one mark) (section 5.8); and a running-total update that skips the Sale lock (the check still refuses the excess, SCH-33) |
 | Failure injection | A failure after each write step of a command leaves no fact, projection, audit event or result (TECHNICAL_RULES section 8) |
 | Reconciliation | Mismatches induced on a test database in balances, valuations, allocation projections, running totals and active barcode mappings are detected (G-03; BR-INV-45) |
 | Numbering | Concurrent checkouts in different sessions do not wait on each other for a number; numbers are unique and follow allocation order; a rolled-back checkout leaves a gap; the format and date part are correct across midnight (section 6) |
 | Costing | The ADR-008 test list |
-| Retention | No product path deletes or rewrites a retained row; the class E cleanups remove only what their decisions allow |
+| Retention | No product path deletes or rewrites a retained row; the class E cleanups and the class L cleanup after 365 days remove only what their decisions allow |
 
 ## 10. Database roles and privileges
 
-The three roles are logical. Their real names and credentials are set when the environments are built (RF-6) and are never written in the repository (SEC-SECRET-01, SEC-SECRET-05).
+The three roles are logical. Their real names and credentials are set by the operator when the environments are built ([ENVIRONMENTS](../09-operations/ENVIRONMENTS.md) ENV-30) and are never written in the repository (SEC-SECRET-01, SEC-SECRET-05).
 
 | ID | Rule | Source |
 | --- | --- | --- |
 | SCH-40 | **Migration role.** Owns the schema and every table, sequence and index in it, and is the only role that runs DDL. It is used only by the controlled migration job and is never available to the web runtime. | ARC-71, PDS §3, ARC-64 |
 | SCH-41 | **Runtime role.** Not a superuser, not the owner of any object, without `CREATEDB`, `CREATEROLE` or `CREATE` on any schema. It has `CONNECT` on its database, `USAGE` on the application schema and exactly the table privileges of the matrix below. It is never granted `TRUNCATE`, `REFERENCES`, `TRIGGER` or `MAINTAIN`. | ARC-70, PDS §3, SEC-LOG-04 |
-| SCH-42 | **Backup role.** For a logical dump: `CONNECT`, `USAGE` on the schema and `SELECT` on every table and sequence; nothing else. If RF-6 chooses another backup method (question 18), this role receives the minimum that method needs and the privilege test follows it. Restoring is a runbook step with its own controls (RF-6), never this role. | ARC-71, ADR-002, PDS §3 |
+| SCH-42 | **Backup role.** For the logical dump of ADR-010: `CONNECT`, `USAGE` on the schema, `SELECT` on every table and sequence, and `INSERT` on `backup_runs` (section 5.12), with what the pinned version requires to insert into its identity column; nothing else. The method needs the insert to record each run for the Owner's system status (RF-6, D-088), and the privilege test follows it. Restoring is a runbook step with its own controls ([BACKUP_RECOVERY](../09-operations/BACKUP_RECOVERY.md) RB-01), never this role. | ARC-71, ADR-002, ADR-010, PDS §3 |
 | SCH-43 | **No `PUBLIC` rights.** No role other than the migration role can create objects in the application schema; PostgreSQL grants `PUBLIC` no `CREATE` on the `public` schema in a new database (version 15 and later), and the foundation Task verifies this on the pinned version. PostgreSQL grants `PUBLIC` `CONNECT` and `TEMPORARY` on every new database; both are revoked from `PUBLIC` and granted only to the three roles as they need them, and the privilege test checks it. | PDS §3; PostgreSQL documentation (section 15) |
 | SCH-44 | **Sequences.** The runtime role has `USAGE` on `sale_number_seq` and `cash_session_number_seq` and never `UPDATE` (SCH-27). For the sequences behind identity columns it receives only what the pinned PostgreSQL version requires for inserting rows, plus `USAGE` on the sequence of a table that uses the presence-key fallback of section 3.7, verified by the privilege test. | PDS §3 |
 | SCH-45 | **Grants are explicit.** Each migration that creates a table grants its runtime privileges explicitly; default privileges are not relied on. The privilege test compares the database's actual grants with the matrix below and fails on any difference. | ARC-72, REQ-OPS-02 |
-| SCH-46 | **Operator procedures** run as console commands in the application container with the runtime role, within these privileges (SECURITY_MODEL section 14). Advancing the number sequences after a restore (SCH-28) is a runbook step that uses the migration role. Who may run either on production is question 20 (RF-6). | SECURITY_MODEL section 14, PDS §5 |
+| SCH-46 | **Operator procedures** run as console commands in the application container with the runtime role, within these privileges (SECURITY_MODEL section 14). Advancing the number sequences after a restore (SCH-28) is a runbook step that uses the migration role. On staging and production both are run by the operator, a person, never by an AI agent (D-088, question 20). | SECURITY_MODEL section 14, PDS §5, D-088 |
 
 Runtime privileges per table (S = `SELECT`, I = `INSERT`, U = `UPDATE` of the listed columns only, D = `DELETE`):
 
@@ -1482,7 +1537,7 @@ Runtime privileges per table (S = `SELECT`, I = `INSERT`, U = `UPDATE` of the li
 | `command_request_receipts` | E | ✓ | ✓ | `outcome`, `outcome_at` | ✓ (resolved rows, by housekeeping) |
 | `stale_intent_reports`, `intent_reconciliations` | F | ✓ | ✓ | — | — |
 | `audit_events` | F | ✓ | ✓ | — | — |
-| `security_log_entries` | L | ✓ | ✓ | — | — |
+| `security_log_entries` | L | ✓ | ✓ | — | ✓ (entries older than 365 days, by housekeeping) |
 | `stored_files` | F | ✓ | ✓ | — | — |
 | `categories` | M | ✓ | ✓ | `name`, `active`, `version`, `updated_at` | — |
 | `products` | M | ✓ | ✓ | `sku`, `name`, `category_id`, `brand`, `base_unit`, `quantity_precision`, `current_price_revision_id`, `minimum_stock`, `active`, `photo_file_id`, `version`, `updated_at` | — |
@@ -1508,6 +1563,8 @@ Runtime privileges per table (S = `SELECT`, I = `INSERT`, U = `UPDATE` of the li
 | `cash_registers` | M | ✓ | ✓ | `code`, `label`, `active`, `version`, `updated_at` | — |
 | `cash_sessions` | FS | ✓ | ✓ | `status`, `activity_version`, `updated_at` | — |
 | `cash_session_closes`, `cash_session_reports`, `cash_session_review_notes` | F | ✓ | ✓ | — | — |
+| `backup_runs` | F | ✓ | — (the backup role inserts, SCH-42) | — | — |
+| `restore_drills`, `reconciliation_runs` | F | ✓ | ✓ | — | — |
 | `migrations` | — | — | — | — | — |
 
 Every table that TECHNICAL_RULES section 7 locks has at least one column in column U, because PostgreSQL requires `UPDATE` privilege to lock a row (section 7). The immutable facts of ARCHITECTURE ARC-70 — stock movements, Sales and their lines, payments, receipt snapshots, refunds, returns, cost evidence and corrections, session report snapshots, audit events and command results — are all class F above; the class also covers every other fact table of section 5.
@@ -1576,7 +1633,7 @@ Every entity of DOMAIN_MODEL section 4 and the tables that represent it.
 | 31 | Command result | `command_identities`, `command_results`; with ADR-009 `command_request_receipts`, `stale_intent_reports`, `intent_reconciliations` |
 | 32 | AuditEvent | `audit_events` |
 
-Technical tables that represent no domain entity: `password_reset_tokens` (one-time links), `security_log_entries`, `recovery_epoch`, `inventory_posting_blocks` and `inventory_posting_block_reopenings`, `cost_incomplete_marks` and `cost_incomplete_mark_clearances`, `cache`, `cache_locks`, `migrations`. Every table of section 5 is named in this section: 61 tables in all.
+Technical tables that represent no domain entity: `password_reset_tokens` (one-time links), `security_log_entries`, `recovery_epoch`, `inventory_posting_blocks` and `inventory_posting_block_reopenings`, `cost_incomplete_marks` and `cost_incomplete_mark_clearances`, `backup_runs`, `restore_drills` and `reconciliation_runs` (section 5.12, RF-6), `cache`, `cache_locks`, `migrations`. Every table of section 5 is named in this section: 71 tables in all, counted again in RF-6 (the earlier figure of 61 did not include the seven tables that RF-5 added).
 
 ## 13. Boundary with implementation
 
@@ -1647,15 +1704,15 @@ Checked on 5 and 6 October 2026. The documentation pages served as "current" wer
 
 | Item | Subject | Step |
 | --- | --- | --- |
-| Receipt retention | How long resolved rows of `command_request_receipts` are kept before housekeeping removes them (ADR-009) | RF-6 |
-| Restore runbook | Run the after-restore procedure before the application accepts traffic (section 5.3); advance both number sequences (SCH-28); treat the promotion of any lagging database copy as a restore; run production with synchronous commit | RF-6 |
-| Collation | The reindex step after an upgrade of the collation library (SCH-14) | RF-6 |
-| Reconciliation incidents | How a difference in a running total or an active barcode mapping is handled (G-03; BR-INV-46); the reconciliation's schedule | RF-6 |
-| Cost recovery procedure | The reviewed recovery procedure that may clear a cost-incomplete mark (section 5.8) | RF-6 |
-| Question 18 | The backup destination and method; the backup role receives the minimum that method needs (SCH-42) | RF-6 |
-| Question 20 | Who runs operator procedures and runbook steps on production (SCH-46) | RF-6 |
-| SEC-LOG-05 | Retention of `security_log_entries` | RF-6 |
-| Reconciliation and backup status | Where the daily reconciliation run and backup status for the Owner's system status are stored (REQ-OPS-04) | RF-6 |
+| Receipt retention | How long resolved rows of `command_request_receipts` are kept before housekeeping removes them (ADR-009) | RESOLVED in RF-6: 30 days after `outcome_at` (section 5.3; D-088) |
+| Restore runbook | Run the after-restore procedure before the application accepts traffic (section 5.3); advance both number sequences (SCH-28); treat the promotion of any lagging database copy as a restore; run production with synchronous commit | RESOLVED in RF-6: [BACKUP_RECOVERY](../09-operations/BACKUP_RECOVERY.md) RB-01; [ENVIRONMENTS](../09-operations/ENVIRONMENTS.md) ENV-32 |
+| Collation | The reindex step after an upgrade of the collation library (SCH-14) | RESOLVED in RF-6: [OPERATIONS_RUNBOOK](../09-operations/OPERATIONS_RUNBOOK.md) RB-13 |
+| Reconciliation incidents | How a difference in a running total or an active barcode mapping is handled (G-03; BR-INV-46); the reconciliation's schedule | RESOLVED in RF-6: OPERATIONS_RUNBOOK RB-04 with the rebuild SEC-OP-07; daily at 03.00 Asia/Jakarta (ENVIRONMENTS section 13) |
+| Cost recovery procedure | The reviewed recovery procedure that may clear a cost-incomplete mark (section 5.8) | RESOLVED in RF-6: SEC-OP-06, OPERATIONS_RUNBOOK RB-12 |
+| Question 18 | The backup destination and method; the backup role receives the minimum that method needs (SCH-42) | RESOLVED: D-088, [ADR-010](../adr/ADR-010-independent-backup-and-recovery-key-custody.md); SCH-42 |
+| Question 20 | Who runs operator procedures and runbook steps on production (SCH-46) | RESOLVED: D-088 — the operator, a person, never an AI agent (SCH-46) |
+| SEC-LOG-05 | Retention of `security_log_entries` | RESOLVED: D-088 — 365 days (sections 4 and 5.4) |
+| Reconciliation and backup status | Where the daily reconciliation run and backup status for the Owner's system status are stored (REQ-OPS-04) | RESOLVED in RF-6: section 5.12 |
 | RF-7 | The Tasks that implement this schema, ordered by module dependency | RF-7 |
 
 Nothing in this document authorizes implementation, a migration, executed SQL or any later step.

@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-2 under D-041, 4 October 2026 (Asia/Jakarta) |
+| Status | CURRENT — written in RF-2 under D-041, 4 October 2026 (Asia/Jakarta); amended in RF-6 under D-088, 18 October 2026: sections 10, 11, 12 and 14 (questions 18 and 20, the rebuilt suites) |
 | Phase | P1 — product definition, scope and acceptance |
 | Replaces | `docs/01-product/legacy/01-PRD.md` and `docs/01-product/legacy/P1-PRODUCT.md` |
 | Requirements | [REQUIREMENTS](REQUIREMENTS.md) |
@@ -113,7 +113,7 @@ Functional and non-functional requirements, each with its acceptance criteria an
 | Printing | Browser-print receipt templates for 58 mm, 80 mm and A4. | Decided (D-039); real printer and paper width UNKNOWN |
 | Sign-in | Email and password; the email is never verified and no email is sent; no Google sign-in; Owner-issued one-time links for a staff member's first password and reset; Owner recovery by an operator procedure; password profile AICWDF-COMPAT-8; no two-factor authentication. Sign-in sessions end after 30 minutes of inactivity and 12 hours at most; recent authentication within 15 minutes for sensitive Owner actions. | Decided (D-013, D-039, D-049) |
 | Performance | Barcode lookup p95 ≤ 500 ms, product search ≤ 700 ms, 50-line Sale ≤ 2 s, period report ≤ 2 s with two concurrent cashiers. | Proposed targets, not measured; a provisional dataset, labelled as an assumption, is in TECHNICAL_RULES section 13 until gate G2 (T-09) |
-| Recovery | Independent backup outside the server; RPO ≤ 6 h and RTO ≤ 4 h. | Backup mandatory (D-005); objectives are proposals only (gate G4, question 18 before RF-6) |
+| Recovery | Independent backup outside the server; RPO ≤ 6 h and RTO ≤ 4 h. | Backup mandatory (D-005); destination, cost and recovery key decided (D-088, question 18; ADR-010); the objectives are proposals until the Owner accepts measured values (gate G4) |
 | Cost | No additional recurring production cost without Owner approval. | Decided (COST_POLICY) |
 | Security and integrity | Deny-by-default server authorization; threat controls; exact money and quantities; append-only facts; transactional and idempotent critical actions. | Decided (AGENTS rules 7 and 8, D-006, D-007, D-013); detailed in SECURITY_MODEL and TECHNICAL_RULES |
 | Tax | V1 calculates no tax and claims no equivalence with a tax invoice. | Decided (D-039); PKP/PPN status of the first store UNKNOWN (gate G1) |
@@ -124,7 +124,7 @@ Each row is stated as a requirement in REQUIREMENTS section 18, except retention
 
 ## 11. Acceptance
 
-A requirement is accepted only when its acceptance criteria pass on the revision being released, with real evidence: real PostgreSQL for constraints, races and rollback; direct requests for authorization; real devices for scanners and printers; a representative server for performance; a real restore for recovery (L-08). Legacy acceptance suites (`AUTH01`, `POS01`, …) remain the test references until RF-6 rebuilds the test strategy. A passing check is not a release authorization (PROJECT_RULES section 5).
+A requirement is accepted only when its acceptance criteria pass on the revision being released, with real evidence: real PostgreSQL for constraints, races and rollback; direct requests for authorization; real devices for scanners and printers; a representative server for performance; a real restore for recovery (L-08). The acceptance suites (`AUTH01`, `POS01`, …), rebuilt in RF-6 with their identifiers, are [ACCEPTANCE_SUITES](../08-testing/ACCEPTANCE_SUITES.md), and the strategy is [TEST_STRATEGY](../08-testing/TEST_STRATEGY.md) (D-088). A passing check is not a release authorization (PROJECT_RULES section 5).
 
 ## 12. Release boundary
 
@@ -136,7 +136,7 @@ V1 may be released only when all of the following hold (L-P10, L-08 §Hold, D-02
 4. the Owner has authorized the exact target, revision and operation (gate RELEASE);
 5. a pilot with real roles reconciles sales, sessions, stock, reports, reprints and backup, and the Owner accepts it in production.
 
-Who may operate a production release is question 20 (OPEN). No release, migration, cutover or other production operation is authorized today.
+A production release is operated by the operator, a person, never an AI agent, after the Owner's authorization of the exact target, revision and operation (D-088, question 20; [RELEASE_PROCESS](../10-release/RELEASE_PROCESS.md)). No release, migration, cutover or other production operation is authorized today.
 
 ## 13. Facts about the first store that are not known
 
@@ -161,8 +161,8 @@ The first client has confirmed that its cashiers will use both a PC and a tablet
 
 | Item | Subject | Needed before |
 | --- | --- | --- |
-| Question 18 | Backup destination, cost and recovery key | RF-6 (plan decision P-3) |
-| Question 20 | Who may operate on production | RF-6 |
+| Question 18 | Backup destination, cost and recovery key | ANSWERED — D-088 |
+| Question 20 | Who may operate on production | ANSWERED — D-088 |
 
 Questions 25, 6, 5, 26, 31, 7 and 30 were answered before RF-3A by D-048 to D-054; question 7 decided the hosting topology only, and the server facts stay in gate TARGET (section 13). Questions 21 to 24 and 27 to 28, raised during RF-2, were answered by D-042 to D-047 ([OPEN_ITEMS](../00-governance/OPEN_ITEMS.md)). Questions 33, 34 and 32 were answered before RF-3B by D-060 to D-062 — the cost recorded at a sale and after a correction, the cost a return restores after a correction, and the numbering of Sales and cash sessions; none changes a requirement. Questions 35 and 29 were answered before RF-4A by D-067 and D-068 — one Sale line per product, and the treatment of refund cash still in the drawer at close; neither changes a requirement.
 

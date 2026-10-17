@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-3A under D-055, 4 October 2026 (Asia/Jakarta) |
+| Status | CURRENT — written in RF-3A under D-055, 4 October 2026 (Asia/Jakarta); amended in RF-6 under D-088, 18 October 2026: the Operations module and its dependencies |
 | Phase | P4 — application architecture |
 | Replaces | The stack, module and structure sections of `docs/04-architecture/legacy/P4-ARCHITECTURE.md` and the module paragraph of `docs/04-architecture/legacy/02-ARCHITECTURE.md` ([LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 8) |
 | Decisions | D-004, D-005, D-050; [ADR-001](../adr/ADR-001-stack-and-modular-monolith.md), [ADR-002](../adr/ADR-002-minimum-runtime-infrastructure.md), [ADR-004](../adr/ADR-004-authentication.md), [ADR-005](../adr/ADR-005-localization-architecture.md), [ADR-006](../adr/ADR-006-exact-numbers.md), [ADR-007](../adr/ADR-007-command-identity-and-idempotency.md) |
@@ -55,7 +55,7 @@ One application, one database. Modules are folders and namespaces with an owner 
 | Audit | AuditEvent; security log entries | In-transaction audit writer and reader; separate security log channel | DOMAIN_MODEL section 9; SECURITY_MODEL section 9 |
 | Commands | Command result and fence records; request receipts, stale-intent reports and their reconciliations (ADR-009); recovery epoch | Envelope validation, fingerprint, identity, outcomes, resolution (ADR-007); request receipts and the reconciled outcomes of requests from before a restore (ADR-009) | DOMAIN_MODEL section 7 |
 | Media | Stored files and temporary uploads | Upload validation and re-encoding, private storage, authorized delivery, temporary CSV area, housekeeping | SECURITY_MODEL section 13; D-037, D-054 |
-| Operations | — | Scheduled commands (reconciliation trigger, housekeeping, backup trigger in RF-6), system status | REQ-OPS-04, ADR-002 |
+| Operations | Backup runs, restore drills and reconciliation runs (SCHEMA section 5.12, D-088) | Scheduled commands (reconciliation trigger, housekeeping, backup, heartbeat), the health route, the system status, and the operator procedures of restore and recovery (SEC-OP-04 to SEC-OP-08), each calling the owning module's services | REQ-OPS-04, ADR-002, ADR-010, ADR-011 |
 
 A shared kernel holds the value objects every module uses: money, quantity, cost (ADR-006), business date and clock, and the formatting helpers of ADR-005. It depends on no module.
 
@@ -76,7 +76,7 @@ A module may read from the modules listed for it; writes across modules happen o
 | Sales | Catalog, Inventory, Costing, Cash, Configuration, Audit, Commands, Access, shared kernel |
 | Documents | Sales, Cash, Catalog, Configuration (all read), Audit, shared kernel |
 | Reporting | Every domain module, read only |
-| Operations | Inventory, Costing (reconciliation reads), Media, Commands, Audit |
+| Operations | Inventory, Costing (reconciliation reads; the recovery and rebuild procedures call their services), Catalog (active mappings), Sales (running totals), Media, Commands, Access (actor), Audit |
 
 | ID | Rule | Source |
 | --- | --- | --- |

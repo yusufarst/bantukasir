@@ -105,7 +105,7 @@ Decision D-021 additionally allows the planner to write planning and re-foundati
 - Do not use reset, clean or restore to tidy up, and do not overwrite unrelated work.
 - Use only the Owner's configured Git author and committer identity. Never add AI, model or tool attribution to a commit. Do not rewrite old commits to remove past attribution.
 - No push, merge, pull request or deployment without explicit authorization for that exact action.
-- The branch model for implementation (feature branches, staging, protected `main`) is defined when P9 and P10 are rebuilt. Today `main` holds an obsolete baseline and must not be modified (D-022).
+- The branch model for implementation is [ADR-011](../adr/ADR-011-release-pipeline-environments-and-production-operation.md) item 3, written when P9 and P10 were rebuilt (RF-6, D-088): `develop`, one branch per Task, and `main` as the released line. Until the Owner authorizes the transition (OPEN_ITEMS N-12), `main` holds an obsolete baseline and must not be modified (D-022).
 
 ## 10. Windows and line endings
 
