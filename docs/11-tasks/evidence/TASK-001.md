@@ -967,3 +967,56 @@ The whole diff `a2cb971..HEAD` (122 files at `72a2321`, 89 added and 3 modified 
 | Docker | Created: the containers `bantukasir-db-1` and `bantukasir-app-1` (R5; the `app` container recreated as section 10.7 says) and this execution's `--rm` containers, all removed on exit; pulled: `rhysd/actionlint:1.7.12` by digest (section 8) |
 
 Nothing tracked was deleted. `Claude outputs/`, `plan-p0-p11-review.patch`, `.local/`, `.agents/`, the stash, `refs/codex/…`, `.git/objects/maintenance.lock` and every Git ref other than `task/TASK-001-toolchain-ci` are unchanged.
+
+## 11. Class-B review remediation
+
+| | |
+| --- | --- |
+| Instruction | The Owner's instruction of 19 October 2026, "TASK-001 — remediation of the class-B review": the Owner's continuation of TASK-001 under D-094 for the four findings of the review only. It records no new decision and starts no other Task; TASK-001 stays `VERIFYING` |
+| Review | The planning agent's review of class B of TASK-001 at `1bec0dc`, which found: R-1 `scripts/checks/npm-audit.mjs` fails open, since an npm error report or `{}` exits 0; R-2 network-dependent audit proofs are in the L1 suites, against TS-08; R-3 the documented stop command was never run; R-4 the allowlist entry of finding F-1 has no path condition. The review document is held by the Owner, not in the repository |
+| Executor | Implementation executor in Claude Code Desktop on the Owner's Windows machine; Claude Opus 5.5 (`claude-opus-5-5`); effort XHigh, as the Owner's instruction names it, and the desktop app's record of the session showed effort `xhigh`; a new session dedicated to the instruction, begun at 02:12 |
+| Authorized | Local commits on `task/TASK-001-toolchain-ci`; `docker compose down`, without `-v`, once, and `docker compose up -d --build --wait`; throwaway `--rm` containers. No push, pull request, merge, tag or branch operation; no accepted advisory |
+
+### 11.1 Preflight
+
+Run between 02:13 and 02:15, read-only, with `GIT_OPTIONAL_LOCKS=0`. PASS:
+
+- `task/TASK-001-toolchain-ci` (current) at `1bec0dc9c57c3a755488797a67747613c33fcb1d`, parent `72a232157ae352dc881c8410f7d33fbb1192a7b7`; `develop` `a2cb971`; `plan/bantukasir-pos-v1` `6e18185`; `main` and `origin/main` `f7cecfe`; `origin/plan/bantukasir-pos-v1` `86822d5`; no remote-tracking `develop`; `stash@{0}` `f4c98df`.
+- `git fsck --full --no-dangling` exited 0 with no output; the only lock is `.git/objects/maintenance.lock`, left untouched.
+- Nothing staged or modified; untracked exactly `Claude outputs/` (three files) and `plan-p0-p11-review.patch`.
+- Docker 29.8.0, OSType `linux`, kernel `6.18.33.2-microsoft-standard-WSL2`; `bantukasir-app-1` and `bantukasir-db-1` running and healthy; the volume `bantukasir_db-data`, created 18 October 2026 at 21:37:20; the network `bantukasir_default`; the image `bantukasir-app:local` at `b05cd365f1c0`. The two containers of the other local Compose project, on 127.0.0.1 ports 3000 and 55432, were not touched by anything below.
+
+### 11.2 R-1 — the npm audit fails closed (THR-14)
+
+**npm's real output without network**, recorded before the change, 02:16:43 to 02:16:50: `npm audit --json` in a throwaway `node:24.22.0-trixie-slim` container (by digest; Node.js 24.22.0, npm 11.19.1) with `--network none`, `--rm` and the repository mounted read-only. npm exited 1. Its standard output, 202 bytes:
+
+```json
+{
+  "message": "request to https://registry.npmjs.org/-/npm/v1/security/advisories/bulk failed, reason: getaddrinfo EAI_AGAIN registry.npmjs.org",
+  "error": {
+    "summary": "",
+    "detail": ""
+  }
+}
+```
+
+Its standard error, 295 bytes: a warning with the same request failure, `npm error audit endpoint returned an error`, and the path of npm's debug log inside the container. The report has an `error` key and no `vulnerabilities` key, and npm exits 1 here exactly as it does when it finds an advisory.
+
+**The defect, reproduced.** In the same kind of container, the script of `1bec0dc` printed "npm audit: no high or critical advisory, apart from those accepted with a reason." and exited 0 (02:16:58): it read `vulnerabilities ?? {}`, so an error report passed.
+
+**The fix.** `scripts/checks/npm-audit.mjs` accepts a report only when it is a JSON object with a `vulnerabilities` object and a `metadata.vulnerabilities` object and has no `error` key, and when every vulnerability carries a `via` list. Anything else — no output, output that is not JSON, a report that is not an object, `{}`, an `error` key, an unreadable saved report, npm not starting or killed by a signal — exits 2 with the fixed message "npm audit: no usable report (*reason*); the check fails closed. Run npm audit to see npm's own message." on standard error. npm's output and error messages are no longer printed, so no value of the environment is. Exit 1 still means an advisory that is not accepted, and exit 0 a usable report with none.
+
+**The L1 cases** of `tests/Unit/StaticChecks/npm-audit.test.ts`, deterministic, through the script's `--report=` option with files written at run time in the test's own temporary directory and removed by it (rule T1): an error report in npm's offline shape, alone and beside valid objects, exits 2 and prints neither the pass message nor a marker placed in npm's message; `{}` exits 2; output that is not JSON exits 2; no output exits 2; a clean report exits 0 with the pass message. The cases of the high, moderate and accepted advisories are kept, their saved report now carrying `metadata.vulnerabilities`. `npm run test:unit`, 02:18:07 to 02:18:40: 3 files, 12 tests passed.
+
+**The samples against both scripts**, in a throwaway `--network none` container with the repository read-only, the script of `1bec0dc` and the samples written in its own temporary directory, removed by its exit trap and with the container:
+
+| Sample | Script of `1bec0dc` | Fixed script |
+| --- | --- | --- |
+| npm's error report | 0 | 2 |
+| `{}` | 0 | 2 |
+| Output that is not JSON | 1, an uncaught exception | 2 |
+| No output | 1, an uncaught exception | 2 |
+
+In the same container, without network: `node scripts/checks/npm-audit.mjs` on the real tree exits 2 ("npm reported an error, for example an unreachable registry"), and `npm run lint` exits 2 after ESLint, without the pass message. With the network, 02:19:36 to 02:20:08: npm's report of the real tree has the keys `auditReportVersion`, `vulnerabilities` (no entry) and `metadata`, with `metadata.vulnerabilities` all zero, and `npm run lint` exits 0 with the pass message.
+
+The commit "TASK-001: make the npm audit fail closed" holds the script, its tests and sections 11 to 11.2.
