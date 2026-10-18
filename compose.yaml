@@ -1,0 +1,85 @@
+# Local environment of BantuKasir (TASK-001; EXECUTION_CONTEXT section 18): the
+# application container (Nginx and PHP-FPM) and PostgreSQL, the same on the
+# Owner's Windows machine (Docker Desktop with WSL2) and on CI's Linux runner.
+#
+#   Start:  docker compose up -d --build --wait
+#   Stop:   docker compose down
+#
+# The application answers on http://localhost:8080 (APP_PORT changes the port).
+# "docker compose down" keeps the database volume; never add --volumes or -v.
+# Commands of the command contract (TEST_STRATEGY section 7) run in containers:
+#   docker compose exec app composer <script>
+#   docker compose run --rm node npm <script>
+#   docker compose run --rm playwright npm run test:e2e
+# The environment holds synthetic data only and no secret: PostgreSQL accepts
+# connections without a password, only on the project's internal network.
+
+name: bantukasir
+
+services:
+    app:
+        build:
+            context: .
+            dockerfile: docker/app/Dockerfile
+        image: bantukasir-app:local
+        ports:
+            - "127.0.0.1:${APP_PORT:-8080}:8080"
+        environment:
+            APP_ENV: local
+            APP_DEBUG: "true"
+            APP_URL: "http://localhost:${APP_PORT:-8080}"
+            LOG_CHANNEL: stderr
+            DB_CONNECTION: pgsql
+            DB_HOST: db
+            DB_PORT: "5432"
+            DB_DATABASE: bantukasir
+            DB_USERNAME: postgres
+            # The tables of the database session driver and cache store belong
+            # to TASK-006 and TASK-004; until then local runs use files.
+            SESSION_DRIVER: file
+            CACHE_STORE: file
+        volumes:
+            - .:/var/www/html
+        depends_on:
+            db:
+                condition: service_healthy
+        healthcheck:
+            # Healthy when Nginx, PHP-FPM and Laravel answer without a server
+            # error; the application has no route of its own yet.
+            test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/ | grep -Eq '^[1-4][0-9][0-9]$$'"]
+            interval: 5s
+            timeout: 5s
+            retries: 12
+            start_period: 600s
+
+    db:
+        image: postgres:18.6-trixie@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336
+        environment:
+            POSTGRES_DB: bantukasir
+            POSTGRES_HOST_AUTH_METHOD: trust
+        volumes:
+            - db-data:/var/lib/postgresql
+        healthcheck:
+            test: ["CMD", "pg_isready", "-U", "postgres", "-d", "bantukasir"]
+            interval: 2s
+            timeout: 5s
+            retries: 30
+
+    node:
+        image: node:24.22.0-trixie-slim@sha256:7f486cabe892bff8fef04c0f7da8dba84a560be3e4e2740b7a86afc57ebec315
+        profiles: ["tools"]
+        working_dir: /app
+        volumes:
+            - .:/app
+
+    playwright:
+        image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:7852dc5a7d72f5fe458a597d690f6c42fbc8e9e26ddfa95f8e6ef552558d9bbf
+        profiles: ["tools"]
+        working_dir: /app
+        environment:
+            E2E_BASE_URL: http://app:8080
+        volumes:
+            - .:/app
+
+volumes:
+    db-data:

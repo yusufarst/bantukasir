@@ -696,3 +696,22 @@ Checks, in the application container:
 - Laravel 13.37.0, read in `vendor/laravel/framework` (EXC-03): `Application::configure()` calls `withCommands()`, which registers `app/Console/Commands` for discovery; `withRouting(commands: …)` adds a console routes file. There is no HTTP or console kernel class in the application.
 
 Skeleton hygiene: no migration, seeder, factory or model; no authentication page, route, controller or test and no starter kit (TASK-006); nothing that STACK_AND_MODULES section 1 excludes (section 4.3); the skeleton and its tests need no table of a later Task (section 7). README, AGENTS.md, CLAUDE.md, `docs/` and `assets/` were not overwritten by any skeleton file. `storage/inertia-devtools/`, which the R5 start created, is ignored by its own `.gitignore`, is no longer written, and is left in place for the Owner (section 10).
+
+The commit "TASK-001: add the application skeleton" (`99d2fd2`) holds the skeleton, the layout, the README stack line and this section.
+
+## 6. Local environment in containers (B5)
+
+Reviewed on 19 October 2026 between 00:20 and 00:25 against contract item 7.
+
+| Piece of the interrupted work | Decision |
+| --- | --- |
+| `compose.yaml`: project `bantukasir`; the `app` service built from `docker/app/Dockerfile` as `bantukasir-app:local`, on `127.0.0.1:${APP_PORT:-8080}`, with the bind-mounted repository and a health check that accepts any answer below 500; `db` from `postgres:18.6-trixie` by digest, password-less (`trust`) on the project's internal network only, with no port on the host, and the volume `db-data`; the `node` and `playwright` tool services by digest, under the profile `tools`; the start command `docker compose up -d --build --wait` and the stop command `docker compose down`, documented in its header, which keeps the volume and warns never to add `--volumes` or `-v` | Kept as written: it matches item 7 and the skeleton hygiene. `SESSION_DRIVER=file` and `CACHE_STORE=file` keep local runs off the tables of TASK-004 and TASK-006 |
+| `docker/app/nginx.conf`: only `public/index.php` is executed, every other `.php` answers 404, dot-files except `.well-known` are denied, `server_tokens off` | Kept |
+| `docker/app/Dockerfile`: the pinned base, Composer and Gitleaks images by digest; Nginx 1.30.6-1~trixie from nginx.org after checking the signing key's fingerprint; `pdo_pgsql`; the development `php.ini` | Kept; its header comment corrected: it said that every package is pinned by version, but only Nginx is — the other Debian packages come from the archive of the pinned base image (section 4.4) |
+| `docker/app/entrypoint.sh`: installs `vendor/` on the first start, creates `.env` from `.env.example`, makes `storage/` and `bootstrap/cache/` writable, starts PHP-FPM and Nginx; never migrates, seeds or deletes | Corrected: `php artisan key:generate` only replaces an existing `APP_KEY` line, so a `.env` without one — such as the one the R5 start copied from the old `.env.example` — was left without a key while the start reported success. The entrypoint now generates the key whenever `.env` has no non-empty `APP_KEY`, adding an empty `APP_KEY=` line first if there is none |
+
+Checks:
+
+- `sh -n docker/app/entrypoint.sh`: no syntax error.
+- `docker compose up -d --build --wait`, 00:23:43 to 00:24:14: the image rebuilt from the cache up to the changed entrypoint layer (the tag now names `b05cd365f1c0`, built 00:23:45; no dangling image is listed); `bantukasir-app-1` recreated and healthy, `bantukasir-db-1` kept and healthy on the volume `bantukasir_db-data`. The entrypoint logged "Application key set successfully"; `.env` now holds one non-empty `APP_KEY` line (its value was not printed). `GET /` on `127.0.0.1:8080` answers 404.
+- The start on Linux, CI's runner, cannot run before gate GATE-PUBLISH (AC-001-08, section 10).
