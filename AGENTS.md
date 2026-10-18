@@ -24,7 +24,7 @@ Every agent, in this order:
 3. [docs/00-governance/SOURCE_OF_TRUTH.md](docs/00-governance/SOURCE_OF_TRUTH.md) — the document map;
 4. only the documents the map names for the work in hand.
 
-Implementation executors will additionally read `docs/11-tasks/EXECUTION_CONTEXT.md`, `docs/11-tasks/TASK_PLAN.md` and the active Task. Those files do not exist yet. They are created when the Task baseline is planned (step RF-7 of the [re-foundation plan](docs/00-governance/REFOUNDATION_PLAN.md)). Until they exist and the Owner authorizes implementation, there is no Task to execute.
+Implementation executors additionally read [docs/11-tasks/EXECUTION_CONTEXT.md](docs/11-tasks/EXECUTION_CONTEXT.md), [docs/11-tasks/TASK_PLAN.md](docs/11-tasks/TASK_PLAN.md) and the contract of the active Task in `docs/11-tasks/tasks/`. They were written in step RF-7 of the [re-foundation plan](docs/00-governance/REFOUNDATION_PLAN.md) (D-090). Until the Owner approves that Task baseline (gate GATE-P11 of TASK_PLAN) and then authorizes a Task by name, there is no Task to execute.
 
 ## 4. Before any work
 

@@ -12,8 +12,8 @@ Status values: `APPROVED` (Owner approved), `RECORDED` (no Owner approval requir
 | FD-04 | No email-based password reset or verification | APPROVED — D-049 |
 | FD-05 | Point-of-sale screen designed for PC and tablet first | APPROVED — D-039 (product and design decision; not device acceptance) |
 | FD-06 | Hosting other than the framework default | WITHDRAWN — D-053 adopted the framework topology |
-| FD-07 | Dedicated final-verification Tasks kept | RECORDED |
-| FD-08 | Build Unit identifiers replaced by `TASK-NNN` | RECORDED |
+| FD-07 | Dedicated final-verification Tasks kept | RECORDED — applied in RF-7 (D-090) |
+| FD-08 | Build Unit identifiers replaced by `TASK-NNN` | RECORDED — applied in RF-7 (D-090) |
 
 Question numbers refer to [OPEN_ITEMS](OPEN_ITEMS.md).
 
@@ -116,6 +116,8 @@ RISK: None, provided feature Tasks still carry their own tests
 OWNER APPROVAL REQUIRED: NO
 ```
 
+Applied in RF-7 (D-090): the verification and release Tasks TASK-043 to TASK-046 and TASK-048 to TASK-050 of [TASK_PLAN](../11-tasks/TASK_PLAN.md) hold the final points of [TEST_STRATEGY](../08-testing/TEST_STRATEGY.md) section 12, and every feature Task carries its own tests ([EXECUTION_CONTEXT](../11-tasks/EXECUTION_CONTEXT.md) section 10).
+
 ## FD-08
 
 ```text
@@ -128,6 +130,8 @@ RISK: Lost references; mitigated by a Build Unit to Task mapping table in P11
 OWNER APPROVAL REQUIRED: NO
 ```
 
+Applied in RF-7 (D-090): the Tasks are `TASK-001` to `TASK-050`, and [TASK_PLAN](../11-tasks/TASK_PLAN.md) section 9 maps each of the 27 Build Units to the Tasks that carry it.
+
 ## Conformance actions (not deviations)
 
 Changes that bring the project into line with the framework. They are planning actions for the step shown and are not yet applied to the legacy documents.
@@ -136,6 +140,6 @@ Changes that bring the project into line with the framework. They are planning a
 | --- | --- | --- |
 | Adopt password profile AICWDF-COMPAT-8 in place of the 12-character minimum shown in the former design candidate, unless an external binding requirement applies | §4A.5 | Applied in RF-3A (D-049; SECURITY_MODEL section 2, ADR-004) |
 | Zero-touch production rule: coding agents never connect to or run anything against production; a controlled executor applies approved migrations | §29, §30 | **Applied — D-088** (question 20, R-16 resolved): no AI agent operates production or staging; a human operator applies authorized releases and migrations ([PRODUCTION_DATA_SAFETY](PRODUCTION_DATA_SAFETY.md) section 5; [ADR-011](../adr/ADR-011-release-pipeline-environments-and-production-operation.md)). FD-09 is not needed and is not created. |
-| Use the framework Task statuses in place of the legacy status vocabularies | §19 | RF-6 applied it to test evidence ([TEST_STRATEGY](../08-testing/TEST_STRATEGY.md) section 8); the Task statuses of PROJECT_RULES section 7 apply from RF-7 |
+| Use the framework Task statuses in place of the legacy status vocabularies | §19 | RF-6 applied it to test evidence ([TEST_STRATEGY](../08-testing/TEST_STRATEGY.md) section 8). **Applied — D-090:** the Task statuses of PROJECT_RULES section 7 are recorded in [TASK_PLAN](../11-tasks/TASK_PLAN.md) section 4, with the entry rules of [EXECUTION_CONTEXT](../11-tasks/EXECUTION_CONTEXT.md) section 4 |
 | Defer Graphify until code exists | §6.4 | Recorded in [TOOLCHAIN](TOOLCHAIN.md) |
 | Add Context7 as the current-documentation capability | §5.1 | Recorded in TOOLCHAIN |

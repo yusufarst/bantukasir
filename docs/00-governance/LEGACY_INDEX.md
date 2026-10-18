@@ -134,7 +134,7 @@ The ignored folders `.local/` and `.agents/` are not tracked, not part of any co
 | Identifier | Meaning | Where it is defined now |
 | --- | --- | --- |
 | `D-001` … `D-018` | Decisions before the re-foundation | [DECISIONS](DECISIONS.md); original wording in `legacy/10-DECISIONS.md` |
-| `BU-…` (27) | Build Units | `docs/11-tasks/legacy/build-units/` — input only, not executable |
+| `BU-…` (27) | Build Units | Superseded in RF-7 by the Tasks (FD-08, D-090): [TASK_PLAN](../11-tasks/TASK_PLAN.md) section 9 maps every Build Unit to the Tasks that carry it. The cards stay in `docs/11-tasks/legacy/build-units/` and are never executable |
 | `CORE-001` … `CORE-073` | Core requirement entries | Superseded in RF-2 by the requirement register. [REQUIREMENTS](../01-product/REQUIREMENTS.md) section 21 maps every entry to the requirements that carry it, or records why it was retired. The original entries stay in `docs/01-product/legacy/requirements/` |
 | `AUTH01`, `POS01`, … (39) | Acceptance suites | Rebuilt in RF-6 with the same identifiers in [ACCEPTANCE_SUITES](../08-testing/ACCEPTANCE_SUITES.md) (section 2 lists what changed), beside 17 new suites; the legacy text is in `docs/08-testing/legacy/08-TESTING-ACCEPTANCE.md` (D-088) |
 | `G1` … `G4`, `DEVICES`, `TARGET`, `EXECUTOR`, `RELEASE` | Business and external gates | [OPEN_ITEMS](OPEN_ITEMS.md) section 3 |
@@ -325,3 +325,15 @@ RF-6 (D-088) writes the P8 documents [TEST_STRATEGY](../08-testing/TEST_STRATEGY
 | `docs/04-architecture/legacy/P4-ARCHITECTURE.md` §Testing implications and §Deployment, operasi dan maintenance | LEGACY — SUPERSEDED, unchanged; the rest of the document keeps the status of section 9 | TEST_STRATEGY; ENVIRONMENTS and ADR-011 |
 
 New identifiers: the rules `TS-nn`, `DVT-nn`, `ENV-nn`, `BKP-nn`, `OPR-nn`, `REL-nn` and `UPR-nn`; the runbooks `RB-nn`; the UAT scripts `UAT-nn`, pilot criteria `PIL-nn` and guidance items `UG-nn`; 17 new suites; SCHEMA guard G-27 and section 5.12; TECHNICAL_RULES RACE-35; SECURITY_MODEL SEC-OP-06 to SEC-OP-08; ROUTE_CONTRACTS RH-01, SC-03, SC-04 and OP-06 to OP-08; ADR-010 and ADR-011; decision D-088; open item N-12.
+
+## 16. RF-7
+
+RF-7 (D-090) writes the P11 documents [EXECUTION_CONTEXT](../11-tasks/EXECUTION_CONTEXT.md), [TASK_PLAN](../11-tasks/TASK_PLAN.md), [DEPENDENCY_GRAPH](../11-tasks/DEPENDENCY_GRAPH.md) and [TRACEABILITY](../11-tasks/TRACEABILITY.md) and the 50 Task contracts in [`docs/11-tasks/tasks/`](../11-tasks/tasks/). The legacy files stay in the working tree, byte-identical; they are removed only by a later authorized step.
+
+| Legacy document | Status after RF-7 | Carried by |
+| --- | --- | --- |
+| `docs/11-tasks/legacy/11-BUILD-PLAN.md` | LEGACY — SUPERSEDED, unchanged | TASK_PLAN (the order, the gates, the register of status, the critical path) and DEPENDENCY_GRAPH (the dependency graph). Not carried: its estimates in hours and its calendar, because the size of a Task is a relative judgement that promises no date (TASK_PLAN section 1); the Build Units as the unit of work (FD-08) |
+| `docs/11-tasks/legacy/P11-BUILD-UNITS.md` | LEGACY — SUPERSEDED, unchanged | TASK_PLAN and EXECUTION_CONTEXT |
+| `docs/11-tasks/legacy/build-units/` (27 cards and `registry.json`) | LEGACY — SUPERSEDED, unchanged | The Task contracts; TASK_PLAN section 9 maps each Build Unit to its Tasks and names what a later decision changed, among them the production cutover carried out by an agent, which is not carried (D-088) |
+
+New identifiers: the Tasks `TASK-001` to `TASK-050`, the next free number being `TASK-051`; their acceptance criteria `AC-NNN-nn`; the execution rules `EXC-nn`; the gates GATE-P11, GATE-BRANCH, GATE-PUBLISH, GATE-CC1 and GATE-CC2 of TASK_PLAN section 3; the milestones `M1` to `M10`; decision D-090. Open item T-24 is resolved.

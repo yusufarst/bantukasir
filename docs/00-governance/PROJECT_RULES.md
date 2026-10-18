@@ -82,7 +82,7 @@ Evidence that a change invalidates is marked for re-run. Old evidence is never e
 
 ## 7. Task model (from P11 onward)
 
-Execution uses explicit bounded Tasks, defined in P11 after P0 to P10 are coherent. Statuses are `TODO`, `READY`, `IN_PROGRESS`, `BLOCKED`, `VERIFYING`, `DONE`, `SUPERSEDED`. A Task is not `READY` because it exists, and not `DONE` because code compiles or a page renders. One executor works on one Task at a time. Task identifiers are permanent. No Task baseline exists yet.
+Execution uses explicit bounded Tasks, defined in P11 after P0 to P10 are coherent. Statuses are `TODO`, `READY`, `IN_PROGRESS`, `BLOCKED`, `VERIFYING`, `DONE`, `SUPERSEDED`. A Task is not `READY` because it exists, and not `DONE` because code compiles or a page renders. One executor works on one Task at a time. Task identifiers are permanent. The Task baseline — [TASK_PLAN](../11-tasks/TASK_PLAN.md), the contracts in `docs/11-tasks/tasks/` and the rules of [EXECUTION_CONTEXT](../11-tasks/EXECUTION_CONTEXT.md) — was written in RF-7 (D-090) and waits for the Owner's approval (gate GATE-P11); TASK_PLAN section 4 is the only record of a Task's status.
 
 ## 8. Working loop between planner and executor
 
