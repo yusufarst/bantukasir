@@ -2,10 +2,10 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-7 under D-090, 18 October 2026 (Asia/Jakarta); corrected under D-091 the same day, after the independent review of the baseline; the baseline waits for the Owner's approval (gate GATE-P11 of section 3) |
+| Status | CURRENT — written in RF-7 under D-090, 18 October 2026 (Asia/Jakarta); corrected under D-091 the same day, after the independent review of the baseline; approved by the Owner with every Task (gate GATE-P11), and corrected for review finding R-1, under D-092 the same day |
 | Phase | P11 — Task planning, dependencies and execution specifications |
 | Replaces | `docs/11-tasks/legacy/11-BUILD-PLAN.md`, `docs/11-tasks/legacy/P11-BUILD-UNITS.md` and `docs/11-tasks/legacy/build-units/` (LEGACY — SUPERSEDED, [LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 16); decision D-012 |
-| Decisions | D-012, D-031, D-066, D-088, D-090, D-091; FD-07, FD-08 |
+| Decisions | D-012, D-031, D-066, D-088, D-090, D-091, D-092; FD-07, FD-08 |
 | Related | [EXECUTION_CONTEXT](EXECUTION_CONTEXT.md), [DEPENDENCY_GRAPH](DEPENDENCY_GRAPH.md), [TRACEABILITY](TRACEABILITY.md), the Task contracts in [tasks/](tasks/), [TEST_STRATEGY](../08-testing/TEST_STRATEGY.md) |
 
 The implementation baseline of BantuKasir V1: 50 Tasks, their dependencies, gates and status, the order in which to run them, and where every requirement, workflow, suite, route, table and control is built. Nothing here authorizes a Task: each one starts only on the Owner's explicit instruction ([EXECUTION_CONTEXT](EXECUTION_CONTEXT.md) EXC-10), and none starts before gate GATE-P11.
@@ -39,7 +39,7 @@ The implementation baseline of BantuKasir V1: 50 Tasks, their dependencies, gate
 | Phase 10 Release | 2 |
 | By size | S 1, M 18, L 27, XL 4 |
 | By review class | A 37, B 5, O 2, V 6 |
-| Waves of parallel work (DEPENDENCY_GRAPH section 4) | 31 |
+| Waves of parallel work (DEPENDENCY_GRAPH section 4) | 32 |
 
 ## 3. Gates
 
@@ -47,8 +47,8 @@ Gates that a Task waits for, besides its dependencies. GATE-P11 to GATE-CC2 are 
 
 | Gate | What must be true | Blocks | State today |
 | --- | --- | --- | --- |
-| GATE-P11 | The Owner approves this Task baseline (RF-7, D-090): the execution context, this plan, the dependency graph, the traceability and the 50 Task contracts. OPEN_ITEMS N-04 (whether the AICWDF-4.3 text joins the repository) has the deadline "RF-7 at the latest" and is decided with it. | Every Task | OPEN — awaiting the Owner |
-| GATE-BRANCH | OPEN_ITEMS N-12: the Owner decides when and how `develop` is created and `main` is brought forward (ADR-011 item 3); each branch operation and push needs its own authorization. RF-7 itself needs no transition (T-24, resolved in RF-7). | TASK-001 and every later implementation Task (EXC-22); and the `DONE` of TASK-002, which changes documents only: TASK-002 may be written before this gate, on the branch the Owner names, and is merged into `develop` after TASK-001 (EXC-37) | OPEN — Owner |
+| GATE-P11 | The Owner approves this Task baseline (RF-7, D-090): the execution context, this plan, the dependency graph, the traceability and the 50 Task contracts. OPEN_ITEMS N-04 (whether the AICWDF-4.3 text joins the repository) has the deadline "RF-7 at the latest" and is decided with it. | Every Task | APPROVED — D-092, with N-04 decided |
+| GATE-BRANCH | OPEN_ITEMS N-12: the Owner decides when and how `develop` is created and `main` is brought forward (ADR-011 item 3); each branch operation and push needs its own authorization. RF-7 itself needs no transition (T-24, resolved in RF-7). | TASK-001 and every later implementation Task (EXC-22); and the `DONE` of TASK-002, which changes documents only: TASK-002 may be written before this gate, on the branch the Owner names, and is merged into `develop` after TASK-001 (EXC-37) | OPEN — the branch model is decided (D-092); `develop` does not exist yet, and its creation is a branch operation that needs the Owner's own authorization |
 | GATE-PUBLISH | Before the first push of implementation work: OPEN_ITEMS N-09 decided and the one-time audit N-10 completed; before every push, the publication guard of D-076 (EXC-31). A pull request, its CI run and a merge into `develop` need a push. | The `DONE` of TASK-001 — its first push, its pull request, CI and its merge into `develop` — and so the start of every later implementation Task, all of which depend on TASK-001; every push after it. TASK-001 itself may start and be built and verified locally before it (EXC-31) | OPEN — Owner |
 | GATE-CC1 | The Owner approves, by the Git blob, size and SHA-256 of each changed artifact, the change-control package of TASK-002 (OPEN_ITEMS T-19, T-20). | TASK-005, TASK-009, TASK-010 and every interface Task that uses a key it adds | OPEN — after TASK-002 |
 | GATE-CC2 | The Owner approves by hash the artifacts that TASK-047 changes, when gate DEVICES changes a shortcut or a breakpoint; no approval is needed when the values are confirmed. | TASK-047 | OPEN — after TASK-046 |
@@ -69,7 +69,7 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | Task | Title | Phase | Lane | Size | Review | Depends on | Gates | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | [TASK-001](tasks/TASK-001-toolchain-ci.md) | Toolchain, repository conventions and CI | 1 | P | L | B | — | GATE-P11, GATE-BRANCH; before `DONE`: GATE-PUBLISH | `TODO` |
-| [TASK-002](tasks/TASK-002-p7-change-control-1.md) | P7 and copy change control, batch 1 | 1 | D | M | O | — | GATE-P11; before `DONE`: GATE-BRANCH, GATE-PUBLISH | `TODO` |
+| [TASK-002](tasks/TASK-002-p7-change-control-1.md) | P7 and copy change control, batch 1 | 1 | D | M | O | — | GATE-P11; before `DONE`: GATE-BRANCH, GATE-PUBLISH | `READY` |
 | [TASK-003](tasks/TASK-003-kernel-localization.md) | Shared kernel, formatting and localization | 1 | P | M | A | TASK-001 | — | `TODO` |
 | [TASK-004](tasks/TASK-004-database-foundation.md) | Database foundation, roles and test harness | 1 | P | L | A | TASK-001, TASK-003 | — | `TODO` |
 | [TASK-005](tasks/TASK-005-design-system.md) | Design system and frontend foundation | 1 | P | L | B | TASK-002, TASK-003 | GATE-CC1 | `TODO` |
@@ -95,7 +95,7 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-025](tasks/TASK-025-cost-correction.md) | Cost correction, completion and bounded replay | 5 | I | XL | A | TASK-024 | — | `TODO` |
 | [TASK-026](tasks/TASK-026-reversal.md) | Reversal of movements | 5 | I | L | A | TASK-025 | — | `TODO` |
 | [TASK-027](tasks/TASK-027-registers-session-open.md) | Cash registers and cash session open | 6 | S | M | A | TASK-011, TASK-022 | — | `TODO` |
-| [TASK-028](tasks/TASK-028-checkout.md) | Sale checkout (server) | 6 | S | XL | A | TASK-027, TASK-023, TASK-025, TASK-016 | — | `TODO` |
+| [TASK-028](tasks/TASK-028-checkout.md) | Sale checkout (server) | 6 | S | XL | A | TASK-027, TASK-023, TASK-025, TASK-026, TASK-016 | — | `TODO` |
 | [TASK-029](tasks/TASK-029-till-pages.md) | Till, payment and receipt pages | 6 | S | L | A | TASK-028, TASK-017 | — | `TODO` |
 | [TASK-030](tasks/TASK-030-session-close.md) | Cash session close and session pages | 6 | S | L | A | TASK-029 | — | `TODO` |
 | [TASK-031](tasks/TASK-031-documents-sales-lookup.md) | Receipt and session documents, sales lookup, print and export | 6 | S | L | A | TASK-030 | — | `TODO` |
@@ -119,7 +119,7 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-049](tasks/TASK-049-release-readiness.md) | Release readiness: staging, UAT and first installation | 10 | R | L | V | TASK-045, TASK-047, TASK-048 | G1, G2, G3, G4, DEVICES, TARGET, GATE-PUBLISH | `TODO` |
 | [TASK-050](tasks/TASK-050-production-pilot.md) | Production release, cutover and pilot acceptance | 10 | R | L | V | TASK-049 | RELEASE, GATE-PUBLISH, G4 | `TODO` |
 
-Totals: `TODO` 50; `READY` 0; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 0; `SUPERSEDED` 0.
+Totals: `TODO` 49; `READY` 1; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 0; `SUPERSEDED` 0.
 
 ## 5. Implementation sequence
 
@@ -144,7 +144,7 @@ One executor runs the Tasks in the order of their numbers. The milestones below 
 
 - **The platform first.** Every command needs the envelope, receipts and recovery (TASK-008, TASK-009); every page needs the design system, the shell and the authorization framework (TASK-005, TASK-007); every fixture needs the bootstrap and the staff accounts (TASK-010, TASK-011, EXC-45).
 - **The delivery path early.** The image, the backup and the release workflow (TASK-012 to TASK-014) come right after the platform, so that the operator can build staging, record gate TARGET and open the backup store (gate G4) while the product is built. These are the gates with the longest lead time, and they do not depend on business features.
-- **Catalogue, then stock, then sales.** The stock ledger needs products and barcodes; checkout needs the ledger, the issue allocation of TASK-023, the replay of TASK-025, which it extends to Sale issues, and an OPEN cash session; refunds need Sales, sessions and the replay.
+- **Catalogue, then stock, then sales.** The stock ledger needs products and barcodes; checkout needs the ledger, the issue allocation of TASK-023, the replay of TASK-025, which it extends to Sale issues, the reversal of TASK-026, which a later Sale can make unsafe, and an OPEN cash session; refunds need Sales, sessions and the replay.
 - **Each slice ends in a page.** A server Task is followed at once by the pages that use it, so every milestone is proven in the browser on the approved designs, not only by unit tests.
 - **Onboarding late on purpose.** TASK-035 proves the onboarding freeze (G-10) against every posting family, so it runs after all of them exist; it is used only at the cutover.
 - **Verification by final points.** TEST_STRATEGY section 12 and FD-07 keep dedicated verification Tasks for evidence that a feature Task cannot produce: the release candidate, staging, the drill target, real devices and the intended server.
@@ -152,19 +152,19 @@ One executor runs the Tasks in the order of their numbers. The milestones below 
 
 ### 5.3 Parallel work
 
-With more than one executor the Owner may run Tasks of different lanes at the same time (EXC-12). [DEPENDENCY_GRAPH](DEPENDENCY_GRAPH.md) section 4 lists, for each Task, the earliest wave in which its dependencies allow it; with enough executors the whole plan runs in 31 waves. The main parallel opportunities: TASK-002 beside TASK-001 to TASK-004, merged after TASK-001 (EXC-37); TASK-012 to TASK-014 beside the catalogue; TASK-027 beside TASK-023 to TASK-026; TASK-018 to TASK-020 beside TASK-021 to TASK-026; TASK-045, TASK-046 and TASK-048 beside each other.
+With more than one executor the Owner may run Tasks of different lanes at the same time (EXC-12). [DEPENDENCY_GRAPH](DEPENDENCY_GRAPH.md) section 4 lists, for each Task, the earliest wave in which its dependencies allow it; with enough executors the whole plan runs in 32 waves. The main parallel opportunities: TASK-002 beside TASK-001 to TASK-004, merged after TASK-001 (EXC-37); TASK-012 to TASK-014 beside the catalogue; TASK-027 beside TASK-023 to TASK-026; TASK-018 to TASK-020 beside TASK-021 to TASK-026; TASK-045, TASK-046 and TASK-048 beside each other.
 
 ### 5.4 Critical path
 
-- By number of Tasks (31): TASK-001 → TASK-003 → TASK-004 → TASK-006 → TASK-007 → TASK-008 → TASK-009 → TASK-011 → TASK-015 → TASK-016 → TASK-021 → TASK-022 → TASK-023 → TASK-024 → TASK-025 → TASK-028 → TASK-029 → TASK-030 → TASK-031 → TASK-033 → TASK-034 → TASK-035 → TASK-037 → TASK-039 → TASK-041 → TASK-043 → TASK-044 → TASK-046 → TASK-047 → TASK-049 → TASK-050.
-- Weighted by size (S 1, M 2, L 3, XL 4; weight 89): TASK-001 → TASK-003 → TASK-004 → TASK-006 → TASK-007 → TASK-008 → TASK-010 → TASK-011 → TASK-015 → TASK-016 → TASK-021 → TASK-022 → TASK-023 → TASK-024 → TASK-025 → TASK-028 → TASK-029 → TASK-030 → TASK-031 → TASK-033 → TASK-034 → TASK-035 → TASK-037 → TASK-039 → TASK-041 → TASK-043 → TASK-044 → TASK-045 → TASK-049 → TASK-050.
+- By number of Tasks (32): TASK-001 → TASK-003 → TASK-004 → TASK-006 → TASK-007 → TASK-008 → TASK-009 → TASK-011 → TASK-015 → TASK-016 → TASK-021 → TASK-022 → TASK-023 → TASK-024 → TASK-025 → TASK-026 → TASK-028 → TASK-029 → TASK-030 → TASK-031 → TASK-033 → TASK-034 → TASK-035 → TASK-037 → TASK-039 → TASK-041 → TASK-043 → TASK-044 → TASK-046 → TASK-047 → TASK-049 → TASK-050.
+- Weighted by size (S 1, M 2, L 3, XL 4; weight 92): TASK-001 → TASK-003 → TASK-004 → TASK-006 → TASK-007 → TASK-008 → TASK-010 → TASK-011 → TASK-015 → TASK-016 → TASK-021 → TASK-022 → TASK-023 → TASK-024 → TASK-025 → TASK-026 → TASK-028 → TASK-029 → TASK-030 → TASK-031 → TASK-033 → TASK-034 → TASK-035 → TASK-037 → TASK-039 → TASK-041 → TASK-043 → TASK-044 → TASK-045 → TASK-049 → TASK-050.
 - Outside the Tasks, the Owner's approvals and decisions are on the critical path of the release: GATE-P11 and GATE-BRANCH before TASK-001; GATE-PUBLISH before TASK-001 is `DONE`, and so before every later implementation Task; GATE-CC1 before TASK-005; and the external gates TARGET, DEVICES, G1 to G4 and RELEASE. DEPENDENCY_GRAPH section 5 shows where they enter.
 
 ## 6. The first eligible Task
 
-**[TASK-001](tasks/TASK-001-toolchain-ci.md) — Toolchain, repository conventions and CI** is the first eligible coding Task. It depends on no Task. It may start when gate GATE-P11 (the Owner approves this baseline), gate GATE-BRANCH (OPEN_ITEMS N-12: `develop` exists) and gate EXECUTOR hold and the Owner's instruction names it. It may be built and verified locally before gate GATE-PUBLISH, but it is `DONE` only when GATE-PUBLISH holds (N-09 decided, the N-10 audit completed and the publication guard passed), its branch is pushed on the Owner's authorization, its pull request is merged into `develop` and CI passes on the pull request and on the merge (EXC-31, EXC-32). Because every later implementation Task depends on TASK-001, GATE-PUBLISH is needed before any of them starts.
+**[TASK-001](tasks/TASK-001-toolchain-ci.md) — Toolchain, repository conventions and CI** is the first eligible coding Task. It depends on no Task. Gate GATE-P11 is approved (D-092). It may start when gate GATE-BRANCH (`develop` exists, created by a branch operation the Owner authorizes) and gate EXECUTOR hold and the Owner's instruction names it; until then it stays `TODO`. It may be built and verified locally before gate GATE-PUBLISH, but it is `DONE` only when GATE-PUBLISH holds (N-09 decided, the N-10 audit completed and the publication guard passed), its branch is pushed on the Owner's authorization, its pull request is merged into `develop` and CI passes on the pull request and on the merge (EXC-31, EXC-32). Because every later implementation Task depends on TASK-001, GATE-PUBLISH is needed before any of them starts.
 
-**[TASK-002](tasks/TASK-002-p7-change-control-1.md) — P7 and copy change control, batch 1** has no dependency either and changes documents only, so it may start once GATE-P11 holds, on the branch the Owner names, before `develop` exists. It is merged into `develop` only after TASK-001, with `develop` merged into its branch first and the hashes of its package measured again on the commit to be merged (EXC-36, EXC-37); its `DONE` therefore needs GATE-BRANCH and GATE-PUBLISH too. It should start beside TASK-001, because its outcome, gate GATE-CC1, is a prerequisite of TASK-005, TASK-009 and TASK-010 on the platform trunk.
+**[TASK-002](tasks/TASK-002-p7-change-control-1.md) — P7 and copy change control, batch 1** has no dependency either and changes documents only; with GATE-P11 approved (D-092) it is `READY` and may start on the Owner's instruction, on the branch the Owner names, before `develop` exists. It is merged into `develop` only after TASK-001, with `develop` merged into its branch first and the hashes of its package measured again on the commit to be merged (EXC-36, EXC-37); its `DONE` therefore needs GATE-BRANCH and GATE-PUBLISH too. It should start beside TASK-001, because its outcome, gate GATE-CC1, is a prerequisite of TASK-005, TASK-009 and TASK-010 on the platform trunk.
 
 ## 7. Open items and gates mapped
 
@@ -176,9 +176,9 @@ With more than one executor the Owner may run Tasks of different lanes at the sa
 | OPEN_ITEMS T-22 | TASK-013 | Capacity of the free allowance with staging counted |
 | OPEN_ITEMS T-23 | TASK-006; its consequences in TASK-013 (the dump) and TASK-038 (the cleanup) | Database enforcement of the 365-day retention of the security log |
 | OPEN_ITEMS T-24 | RESOLVED in RF-7 (D-090) | The deadline of N-12 now reads: before TASK-001 |
-| OPEN_ITEMS N-12 | Gate GATE-BRANCH | Before TASK-001 |
+| OPEN_ITEMS N-12 | Gate GATE-BRANCH | RESOLVED as to the model (D-092): `develop` for implementation, `main` for releases; the creation of `develop` needs the Owner's own authorization, before TASK-001 |
 | OPEN_ITEMS N-09, N-10 | Gate GATE-PUBLISH | Before the first push of implementation work, and so before TASK-001 is `DONE` |
-| OPEN_ITEMS N-04 | Gate GATE-P11 | Its deadline is "RF-7 at the latest"; the baseline does not depend on the answer, because the binding subset of AICWDF-4.3 is in `docs/00-governance` |
+| OPEN_ITEMS N-04 | Gate GATE-P11 | RESOLVED (D-092): the complete AICWDF-4.3 text is not added to the repository; the binding subset stays in `docs/00-governance` |
 | OPEN_ITEMS N-08 | Recommended before the first merge into `develop` | Branch protection is the Owner's setting; not a gate |
 | OPEN_ITEMS N-03, N-05, T-11, T-14, T-15 | Not mapped | The Owner's or housekeeping items, unchanged by this baseline |
 | OPEN_ITEMS T-01, T-02 | TASK-001 | Line endings; `.env.example` and `.gitignore` |

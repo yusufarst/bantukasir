@@ -2,10 +2,10 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-7 under D-090, 18 October 2026 (Asia/Jakarta); corrected under D-091 the same day, after the independent review of the baseline: EXC-12, EXC-21, EXC-22, EXC-31, EXC-32 and EXC-63, the new rules EXC-34 to EXC-37, and sections 4 and 15. The Task baseline it serves waits for the Owner's approval (gate GATE-P11 of [TASK_PLAN](TASK_PLAN.md)) |
+| Status | CURRENT — written in RF-7 under D-090, 18 October 2026 (Asia/Jakarta); corrected under D-091 the same day, after the independent review of the baseline: EXC-12, EXC-21, EXC-22, EXC-31, EXC-32 and EXC-63, the new rules EXC-34 to EXC-37, and sections 4 and 15. The Task baseline it serves is approved by the Owner (D-092; gate GATE-P11 of [TASK_PLAN](TASK_PLAN.md)) |
 | Phase | P11 — Task planning, dependencies and execution specifications |
 | Replaces | The execution, holds, status and evidence sections of `docs/11-tasks/legacy/11-BUILD-PLAN.md` and `docs/11-tasks/legacy/P11-BUILD-UNITS.md`, and the READ, VERIFY, STOP and UPDATE sections of the legacy Build Unit cards (LEGACY — SUPERSEDED, [LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 16) |
-| Decisions | D-019, D-021, D-031, D-066, D-076, D-085, D-088, D-090, D-091; FD-07, FD-08 |
+| Decisions | D-019, D-021, D-031, D-066, D-076, D-085, D-088, D-090, D-091, D-092; FD-07, FD-08 |
 | Related | [TASK_PLAN](TASK_PLAN.md), [DEPENDENCY_GRAPH](DEPENDENCY_GRAPH.md), [TRACEABILITY](TRACEABILITY.md), the Task contracts in [tasks/](tasks/), [TEST_STRATEGY](../08-testing/TEST_STRATEGY.md), [PROJECT_RULES](../00-governance/PROJECT_RULES.md) |
 
 How an implementation executor carries out one Task of BantuKasir: what it reads, what it may and may not do, the obligations every Task carries, how evidence is recorded and how a Task is closed. Rules are numbered `EXC-nn`; identifiers are permanent. This document authorizes nothing: a Task runs only on the Owner's explicit instruction naming it ([AGENTS.md](../../AGENTS.md) rule 1; PROJECT_RULES section 4). Where this document and a source above it in [SOURCE_OF_TRUTH](../00-governance/SOURCE_OF_TRUTH.md) section 1 disagree, the source above prevails and the difference is reported.

@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-7 under D-090, 18 October 2026 (Asia/Jakarta); corrected under D-091 the same day; generated from [TASK_PLAN](TASK_PLAN.md) section 4, which prevails |
+| Status | CURRENT — written in RF-7 under D-090, 18 October 2026 (Asia/Jakarta); corrected under D-091 and D-092 the same day; approved by D-092; generated from [TASK_PLAN](TASK_PLAN.md) section 4, which prevails |
 | Phase | P11 |
 | Related | [TASK_PLAN](TASK_PLAN.md), [EXECUTION_CONTEXT](EXECUTION_CONTEXT.md), [TRACEABILITY](TRACEABILITY.md) |
 
@@ -126,6 +126,7 @@ flowchart TD
   T027 --> T028
   T023 --> T028
   T025 --> T028
+  T026 --> T028
   T016 --> T028
   T028 --> T029
   T017 --> T029
@@ -202,31 +203,31 @@ flowchart TD
 | [TASK-023](tasks/TASK-023-manual-issue.md) | [TASK-022](tasks/TASK-022-receiving-stock-pages.md) | [TASK-024](tasks/TASK-024-stock-adjustment.md), [TASK-028](tasks/TASK-028-checkout.md) | 13 | I |
 | [TASK-024](tasks/TASK-024-stock-adjustment.md) | [TASK-023](tasks/TASK-023-manual-issue.md) | [TASK-025](tasks/TASK-025-cost-correction.md) | 14 | I |
 | [TASK-025](tasks/TASK-025-cost-correction.md) | [TASK-024](tasks/TASK-024-stock-adjustment.md) | [TASK-026](tasks/TASK-026-reversal.md), [TASK-028](tasks/TASK-028-checkout.md), [TASK-033](tasks/TASK-033-refunds-core.md), [TASK-040](tasks/TASK-040-finance-report.md) | 15 | I |
-| [TASK-026](tasks/TASK-026-reversal.md) | [TASK-025](tasks/TASK-025-cost-correction.md) | [TASK-035](tasks/TASK-035-onboarding.md) | 16 | I |
+| [TASK-026](tasks/TASK-026-reversal.md) | [TASK-025](tasks/TASK-025-cost-correction.md) | [TASK-028](tasks/TASK-028-checkout.md), [TASK-035](tasks/TASK-035-onboarding.md) | 16 | I |
 | [TASK-027](tasks/TASK-027-registers-session-open.md) | [TASK-011](tasks/TASK-011-user-management.md), [TASK-022](tasks/TASK-022-receiving-stock-pages.md) | [TASK-028](tasks/TASK-028-checkout.md) | 13 | S |
-| [TASK-028](tasks/TASK-028-checkout.md) | [TASK-016](tasks/TASK-016-barcodes.md), [TASK-023](tasks/TASK-023-manual-issue.md), [TASK-025](tasks/TASK-025-cost-correction.md), [TASK-027](tasks/TASK-027-registers-session-open.md) | [TASK-029](tasks/TASK-029-till-pages.md), [TASK-033](tasks/TASK-033-refunds-core.md) | 16 | S |
-| [TASK-029](tasks/TASK-029-till-pages.md) | [TASK-017](tasks/TASK-017-catalog-pages.md), [TASK-028](tasks/TASK-028-checkout.md) | [TASK-030](tasks/TASK-030-session-close.md) | 17 | S |
-| [TASK-030](tasks/TASK-030-session-close.md) | [TASK-029](tasks/TASK-029-till-pages.md) | [TASK-031](tasks/TASK-031-documents-sales-lookup.md), [TASK-032](tasks/TASK-032-assisted-close-notes.md) | 18 | S |
-| [TASK-031](tasks/TASK-031-documents-sales-lookup.md) | [TASK-030](tasks/TASK-030-session-close.md) | [TASK-033](tasks/TASK-033-refunds-core.md) | 19 | S |
-| [TASK-032](tasks/TASK-032-assisted-close-notes.md) | [TASK-011](tasks/TASK-011-user-management.md), [TASK-030](tasks/TASK-030-session-close.md) | [TASK-034](tasks/TASK-034-drawer-refunds.md), [TASK-041](tasks/TASK-041-owner-home-daily.md) | 19 | S |
-| [TASK-033](tasks/TASK-033-refunds-core.md) | [TASK-025](tasks/TASK-025-cost-correction.md), [TASK-028](tasks/TASK-028-checkout.md), [TASK-031](tasks/TASK-031-documents-sales-lookup.md) | [TASK-034](tasks/TASK-034-drawer-refunds.md) | 20 | S |
-| [TASK-034](tasks/TASK-034-drawer-refunds.md) | [TASK-032](tasks/TASK-032-assisted-close-notes.md), [TASK-033](tasks/TASK-033-refunds-core.md) | [TASK-035](tasks/TASK-035-onboarding.md), [TASK-036](tasks/TASK-036-reconciliation-repair.md), [TASK-040](tasks/TASK-040-finance-report.md) | 21 | S |
-| [TASK-035](tasks/TASK-035-onboarding.md) | [TASK-026](tasks/TASK-026-reversal.md), [TASK-034](tasks/TASK-034-drawer-refunds.md) | [TASK-037](tasks/TASK-037-restore-tooling.md), [TASK-042](tasks/TASK-042-audit-views.md) | 22 | I |
-| [TASK-036](tasks/TASK-036-reconciliation-repair.md) | [TASK-013](tasks/TASK-013-independent-backup.md), [TASK-020](tasks/TASK-020-barcode-correction.md), [TASK-034](tasks/TASK-034-drawer-refunds.md) | [TASK-039](tasks/TASK-039-system-status.md), [TASK-042](tasks/TASK-042-audit-views.md) | 22 | O |
-| [TASK-037](tasks/TASK-037-restore-tooling.md) | [TASK-013](tasks/TASK-013-independent-backup.md), [TASK-035](tasks/TASK-035-onboarding.md) | [TASK-039](tasks/TASK-039-system-status.md) | 23 | O |
+| [TASK-028](tasks/TASK-028-checkout.md) | [TASK-016](tasks/TASK-016-barcodes.md), [TASK-023](tasks/TASK-023-manual-issue.md), [TASK-025](tasks/TASK-025-cost-correction.md), [TASK-026](tasks/TASK-026-reversal.md), [TASK-027](tasks/TASK-027-registers-session-open.md) | [TASK-029](tasks/TASK-029-till-pages.md), [TASK-033](tasks/TASK-033-refunds-core.md) | 17 | S |
+| [TASK-029](tasks/TASK-029-till-pages.md) | [TASK-017](tasks/TASK-017-catalog-pages.md), [TASK-028](tasks/TASK-028-checkout.md) | [TASK-030](tasks/TASK-030-session-close.md) | 18 | S |
+| [TASK-030](tasks/TASK-030-session-close.md) | [TASK-029](tasks/TASK-029-till-pages.md) | [TASK-031](tasks/TASK-031-documents-sales-lookup.md), [TASK-032](tasks/TASK-032-assisted-close-notes.md) | 19 | S |
+| [TASK-031](tasks/TASK-031-documents-sales-lookup.md) | [TASK-030](tasks/TASK-030-session-close.md) | [TASK-033](tasks/TASK-033-refunds-core.md) | 20 | S |
+| [TASK-032](tasks/TASK-032-assisted-close-notes.md) | [TASK-011](tasks/TASK-011-user-management.md), [TASK-030](tasks/TASK-030-session-close.md) | [TASK-034](tasks/TASK-034-drawer-refunds.md), [TASK-041](tasks/TASK-041-owner-home-daily.md) | 20 | S |
+| [TASK-033](tasks/TASK-033-refunds-core.md) | [TASK-025](tasks/TASK-025-cost-correction.md), [TASK-028](tasks/TASK-028-checkout.md), [TASK-031](tasks/TASK-031-documents-sales-lookup.md) | [TASK-034](tasks/TASK-034-drawer-refunds.md) | 21 | S |
+| [TASK-034](tasks/TASK-034-drawer-refunds.md) | [TASK-032](tasks/TASK-032-assisted-close-notes.md), [TASK-033](tasks/TASK-033-refunds-core.md) | [TASK-035](tasks/TASK-035-onboarding.md), [TASK-036](tasks/TASK-036-reconciliation-repair.md), [TASK-040](tasks/TASK-040-finance-report.md) | 22 | S |
+| [TASK-035](tasks/TASK-035-onboarding.md) | [TASK-026](tasks/TASK-026-reversal.md), [TASK-034](tasks/TASK-034-drawer-refunds.md) | [TASK-037](tasks/TASK-037-restore-tooling.md), [TASK-042](tasks/TASK-042-audit-views.md) | 23 | I |
+| [TASK-036](tasks/TASK-036-reconciliation-repair.md) | [TASK-013](tasks/TASK-013-independent-backup.md), [TASK-020](tasks/TASK-020-barcode-correction.md), [TASK-034](tasks/TASK-034-drawer-refunds.md) | [TASK-039](tasks/TASK-039-system-status.md), [TASK-042](tasks/TASK-042-audit-views.md) | 23 | O |
+| [TASK-037](tasks/TASK-037-restore-tooling.md) | [TASK-013](tasks/TASK-013-independent-backup.md), [TASK-035](tasks/TASK-035-onboarding.md) | [TASK-039](tasks/TASK-039-system-status.md) | 24 | O |
 | [TASK-038](tasks/TASK-038-housekeeping.md) | [TASK-011](tasks/TASK-011-user-management.md), [TASK-018](tasks/TASK-018-photos-labels.md), [TASK-019](tasks/TASK-019-csv-import.md) | [TASK-043](tasks/TASK-043-performance-harness.md) | 13 | O |
-| [TASK-039](tasks/TASK-039-system-status.md) | [TASK-036](tasks/TASK-036-reconciliation-repair.md), [TASK-037](tasks/TASK-037-restore-tooling.md) | [TASK-041](tasks/TASK-041-owner-home-daily.md) | 24 | O |
-| [TASK-040](tasks/TASK-040-finance-report.md) | [TASK-025](tasks/TASK-025-cost-correction.md), [TASK-034](tasks/TASK-034-drawer-refunds.md) | [TASK-041](tasks/TASK-041-owner-home-daily.md) | 22 | R |
-| [TASK-041](tasks/TASK-041-owner-home-daily.md) | [TASK-032](tasks/TASK-032-assisted-close-notes.md), [TASK-039](tasks/TASK-039-system-status.md), [TASK-040](tasks/TASK-040-finance-report.md) | [TASK-043](tasks/TASK-043-performance-harness.md) | 25 | R |
-| [TASK-042](tasks/TASK-042-audit-views.md) | [TASK-035](tasks/TASK-035-onboarding.md), [TASK-036](tasks/TASK-036-reconciliation-repair.md) | [TASK-043](tasks/TASK-043-performance-harness.md) | 23 | R |
-| [TASK-043](tasks/TASK-043-performance-harness.md) | [TASK-014](tasks/TASK-014-release-pipeline.md), [TASK-038](tasks/TASK-038-housekeeping.md), [TASK-041](tasks/TASK-041-owner-home-daily.md), [TASK-042](tasks/TASK-042-audit-views.md) | [TASK-044](tasks/TASK-044-integrated-verification.md), [TASK-048](tasks/TASK-048-performance-verification.md) | 26 | V |
-| [TASK-044](tasks/TASK-044-integrated-verification.md) | [TASK-043](tasks/TASK-043-performance-harness.md) | [TASK-045](tasks/TASK-045-operations-verification.md), [TASK-046](tasks/TASK-046-device-verification.md), [TASK-048](tasks/TASK-048-performance-verification.md) | 27 | V |
-| [TASK-045](tasks/TASK-045-operations-verification.md) | [TASK-044](tasks/TASK-044-integrated-verification.md) | [TASK-049](tasks/TASK-049-release-readiness.md) | 28 | V |
-| [TASK-046](tasks/TASK-046-device-verification.md) | [TASK-044](tasks/TASK-044-integrated-verification.md) | [TASK-047](tasks/TASK-047-p7-change-control-2.md) | 28 | V |
-| [TASK-047](tasks/TASK-047-p7-change-control-2.md) | [TASK-046](tasks/TASK-046-device-verification.md) | [TASK-049](tasks/TASK-049-release-readiness.md) | 29 | D |
-| [TASK-048](tasks/TASK-048-performance-verification.md) | [TASK-043](tasks/TASK-043-performance-harness.md), [TASK-044](tasks/TASK-044-integrated-verification.md) | [TASK-049](tasks/TASK-049-release-readiness.md) | 28 | V |
-| [TASK-049](tasks/TASK-049-release-readiness.md) | [TASK-045](tasks/TASK-045-operations-verification.md), [TASK-047](tasks/TASK-047-p7-change-control-2.md), [TASK-048](tasks/TASK-048-performance-verification.md) | [TASK-050](tasks/TASK-050-production-pilot.md) | 30 | R |
-| [TASK-050](tasks/TASK-050-production-pilot.md) | [TASK-049](tasks/TASK-049-release-readiness.md) | — | 31 | R |
+| [TASK-039](tasks/TASK-039-system-status.md) | [TASK-036](tasks/TASK-036-reconciliation-repair.md), [TASK-037](tasks/TASK-037-restore-tooling.md) | [TASK-041](tasks/TASK-041-owner-home-daily.md) | 25 | O |
+| [TASK-040](tasks/TASK-040-finance-report.md) | [TASK-025](tasks/TASK-025-cost-correction.md), [TASK-034](tasks/TASK-034-drawer-refunds.md) | [TASK-041](tasks/TASK-041-owner-home-daily.md) | 23 | R |
+| [TASK-041](tasks/TASK-041-owner-home-daily.md) | [TASK-032](tasks/TASK-032-assisted-close-notes.md), [TASK-039](tasks/TASK-039-system-status.md), [TASK-040](tasks/TASK-040-finance-report.md) | [TASK-043](tasks/TASK-043-performance-harness.md) | 26 | R |
+| [TASK-042](tasks/TASK-042-audit-views.md) | [TASK-035](tasks/TASK-035-onboarding.md), [TASK-036](tasks/TASK-036-reconciliation-repair.md) | [TASK-043](tasks/TASK-043-performance-harness.md) | 24 | R |
+| [TASK-043](tasks/TASK-043-performance-harness.md) | [TASK-014](tasks/TASK-014-release-pipeline.md), [TASK-038](tasks/TASK-038-housekeeping.md), [TASK-041](tasks/TASK-041-owner-home-daily.md), [TASK-042](tasks/TASK-042-audit-views.md) | [TASK-044](tasks/TASK-044-integrated-verification.md), [TASK-048](tasks/TASK-048-performance-verification.md) | 27 | V |
+| [TASK-044](tasks/TASK-044-integrated-verification.md) | [TASK-043](tasks/TASK-043-performance-harness.md) | [TASK-045](tasks/TASK-045-operations-verification.md), [TASK-046](tasks/TASK-046-device-verification.md), [TASK-048](tasks/TASK-048-performance-verification.md) | 28 | V |
+| [TASK-045](tasks/TASK-045-operations-verification.md) | [TASK-044](tasks/TASK-044-integrated-verification.md) | [TASK-049](tasks/TASK-049-release-readiness.md) | 29 | V |
+| [TASK-046](tasks/TASK-046-device-verification.md) | [TASK-044](tasks/TASK-044-integrated-verification.md) | [TASK-047](tasks/TASK-047-p7-change-control-2.md) | 29 | V |
+| [TASK-047](tasks/TASK-047-p7-change-control-2.md) | [TASK-046](tasks/TASK-046-device-verification.md) | [TASK-049](tasks/TASK-049-release-readiness.md) | 30 | D |
+| [TASK-048](tasks/TASK-048-performance-verification.md) | [TASK-043](tasks/TASK-043-performance-harness.md), [TASK-044](tasks/TASK-044-integrated-verification.md) | [TASK-049](tasks/TASK-049-release-readiness.md) | 29 | V |
+| [TASK-049](tasks/TASK-049-release-readiness.md) | [TASK-045](tasks/TASK-045-operations-verification.md), [TASK-047](tasks/TASK-047-p7-change-control-2.md), [TASK-048](tasks/TASK-048-performance-verification.md) | [TASK-050](tasks/TASK-050-production-pilot.md) | 31 | R |
+| [TASK-050](tasks/TASK-050-production-pilot.md) | [TASK-049](tasks/TASK-049-release-readiness.md) | — | 32 | R |
 
 ## 4. Lanes and waves
 
@@ -258,29 +259,30 @@ flowchart TD
 | 13 | [TASK-023](tasks/TASK-023-manual-issue.md), [TASK-027](tasks/TASK-027-registers-session-open.md), [TASK-038](tasks/TASK-038-housekeeping.md) |
 | 14 | [TASK-024](tasks/TASK-024-stock-adjustment.md) |
 | 15 | [TASK-025](tasks/TASK-025-cost-correction.md) |
-| 16 | [TASK-026](tasks/TASK-026-reversal.md), [TASK-028](tasks/TASK-028-checkout.md) |
-| 17 | [TASK-029](tasks/TASK-029-till-pages.md) |
-| 18 | [TASK-030](tasks/TASK-030-session-close.md) |
-| 19 | [TASK-031](tasks/TASK-031-documents-sales-lookup.md), [TASK-032](tasks/TASK-032-assisted-close-notes.md) |
-| 20 | [TASK-033](tasks/TASK-033-refunds-core.md) |
-| 21 | [TASK-034](tasks/TASK-034-drawer-refunds.md) |
-| 22 | [TASK-035](tasks/TASK-035-onboarding.md), [TASK-036](tasks/TASK-036-reconciliation-repair.md), [TASK-040](tasks/TASK-040-finance-report.md) |
-| 23 | [TASK-037](tasks/TASK-037-restore-tooling.md), [TASK-042](tasks/TASK-042-audit-views.md) |
-| 24 | [TASK-039](tasks/TASK-039-system-status.md) |
-| 25 | [TASK-041](tasks/TASK-041-owner-home-daily.md) |
-| 26 | [TASK-043](tasks/TASK-043-performance-harness.md) |
-| 27 | [TASK-044](tasks/TASK-044-integrated-verification.md) |
-| 28 | [TASK-045](tasks/TASK-045-operations-verification.md), [TASK-046](tasks/TASK-046-device-verification.md), [TASK-048](tasks/TASK-048-performance-verification.md) |
-| 29 | [TASK-047](tasks/TASK-047-p7-change-control-2.md) |
-| 30 | [TASK-049](tasks/TASK-049-release-readiness.md) |
-| 31 | [TASK-050](tasks/TASK-050-production-pilot.md) |
+| 16 | [TASK-026](tasks/TASK-026-reversal.md) |
+| 17 | [TASK-028](tasks/TASK-028-checkout.md) |
+| 18 | [TASK-029](tasks/TASK-029-till-pages.md) |
+| 19 | [TASK-030](tasks/TASK-030-session-close.md) |
+| 20 | [TASK-031](tasks/TASK-031-documents-sales-lookup.md), [TASK-032](tasks/TASK-032-assisted-close-notes.md) |
+| 21 | [TASK-033](tasks/TASK-033-refunds-core.md) |
+| 22 | [TASK-034](tasks/TASK-034-drawer-refunds.md) |
+| 23 | [TASK-035](tasks/TASK-035-onboarding.md), [TASK-036](tasks/TASK-036-reconciliation-repair.md), [TASK-040](tasks/TASK-040-finance-report.md) |
+| 24 | [TASK-037](tasks/TASK-037-restore-tooling.md), [TASK-042](tasks/TASK-042-audit-views.md) |
+| 25 | [TASK-039](tasks/TASK-039-system-status.md) |
+| 26 | [TASK-041](tasks/TASK-041-owner-home-daily.md) |
+| 27 | [TASK-043](tasks/TASK-043-performance-harness.md) |
+| 28 | [TASK-044](tasks/TASK-044-integrated-verification.md) |
+| 29 | [TASK-045](tasks/TASK-045-operations-verification.md), [TASK-046](tasks/TASK-046-device-verification.md), [TASK-048](tasks/TASK-048-performance-verification.md) |
+| 30 | [TASK-047](tasks/TASK-047-p7-change-control-2.md) |
+| 31 | [TASK-049](tasks/TASK-049-release-readiness.md) |
+| 32 | [TASK-050](tasks/TASK-050-production-pilot.md) |
 
 A wave says when a Task may start. TASK-002 may start in wave 1, but it is merged into `develop` only after TASK-001 ([EXECUTION_CONTEXT](EXECUTION_CONTEXT.md) EXC-37), and TASK-001 is `DONE` only after gate GATE-PUBLISH.
 
 ## 5. Critical path
 
-- **By number of Tasks** (31 Tasks): TASK-001 → TASK-003 → TASK-004 → TASK-006 → TASK-007 → TASK-008 → TASK-009 → TASK-011 → TASK-015 → TASK-016 → TASK-021 → TASK-022 → TASK-023 → TASK-024 → TASK-025 → TASK-028 → TASK-029 → TASK-030 → TASK-031 → TASK-033 → TASK-034 → TASK-035 → TASK-037 → TASK-039 → TASK-041 → TASK-043 → TASK-044 → TASK-046 → TASK-047 → TASK-049 → TASK-050.
-- **Weighted by size** (S 1, M 2, L 3, XL 4; total weight 89): TASK-001 → TASK-003 → TASK-004 → TASK-006 → TASK-007 → TASK-008 → TASK-010 → TASK-011 → TASK-015 → TASK-016 → TASK-021 → TASK-022 → TASK-023 → TASK-024 → TASK-025 → TASK-028 → TASK-029 → TASK-030 → TASK-031 → TASK-033 → TASK-034 → TASK-035 → TASK-037 → TASK-039 → TASK-041 → TASK-043 → TASK-044 → TASK-045 → TASK-049 → TASK-050.
+- **By number of Tasks** (32 Tasks): TASK-001 → TASK-003 → TASK-004 → TASK-006 → TASK-007 → TASK-008 → TASK-009 → TASK-011 → TASK-015 → TASK-016 → TASK-021 → TASK-022 → TASK-023 → TASK-024 → TASK-025 → TASK-026 → TASK-028 → TASK-029 → TASK-030 → TASK-031 → TASK-033 → TASK-034 → TASK-035 → TASK-037 → TASK-039 → TASK-041 → TASK-043 → TASK-044 → TASK-046 → TASK-047 → TASK-049 → TASK-050.
+- **Weighted by size** (S 1, M 2, L 3, XL 4; total weight 92): TASK-001 → TASK-003 → TASK-004 → TASK-006 → TASK-007 → TASK-008 → TASK-010 → TASK-011 → TASK-015 → TASK-016 → TASK-021 → TASK-022 → TASK-023 → TASK-024 → TASK-025 → TASK-026 → TASK-028 → TASK-029 → TASK-030 → TASK-031 → TASK-033 → TASK-034 → TASK-035 → TASK-037 → TASK-039 → TASK-041 → TASK-043 → TASK-044 → TASK-045 → TASK-049 → TASK-050.
 - **Gates on the way.** GATE-P11 before TASK-001 and TASK-002; GATE-BRANCH before TASK-001 and before the merge of TASK-002; GATE-PUBLISH before TASK-001 is `DONE` — its first push, pull request, CI and merge — and so before every later implementation Task; GATE-CC1 before TASK-005, TASK-009 and TASK-010; TARGET and the operator before TASK-044's staging part and before TASK-045, TASK-046 and TASK-048; G4's store before TASK-045; DEVICES before TASK-046; G1 to G4 before TASK-049; RELEASE and the acceptance of G4 before TASK-050.
 
 ## 6. Checks
@@ -288,9 +290,9 @@ A wave says when a Task may start. TASK-002 may start in wave 1, but it is merge
 | Check | Result |
 | --- | --- |
 | Tasks in the graph | 50 |
-| Dependency edges | 83 |
+| Dependency edges | 84 |
 | Every dependency names an existing Task with a smaller number | Yes |
 | Cycles | 0 |
 | Tasks without dependencies | TASK-001, TASK-002 |
 | Tasks every other Task leads to | TASK-050 is a descendant of every Task: Yes |
-| Waves | 31 |
+| Waves | 32 |

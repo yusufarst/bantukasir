@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | `TODO`; the status of record is [TASK_PLAN](../TASK_PLAN.md) section 4 |
+| Status | `READY`; the status of record is [TASK_PLAN](../TASK_PLAN.md) section 4 |
 | Phase and lane | 1 Foundation · lane D, documents and change control |
 | Size and review | M · review class O — the Owner approves the artifacts by hash ([EXECUTION_CONTEXT](../EXECUTION_CONTEXT.md) section 12) |
 | Depends on | — |

@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-7 under D-090, 18 October 2026 (Asia/Jakarta); corrected under D-091 the same day; generated from the Task contracts and [TASK_PLAN](TASK_PLAN.md), which prevail |
+| Status | CURRENT — written in RF-7 under D-090, 18 October 2026 (Asia/Jakarta); corrected under D-091 and D-092 the same day; approved by D-092; generated from the Task contracts and [TASK_PLAN](TASK_PLAN.md), which prevail |
 | Phase | P11 |
 | Related | [REQUIREMENTS](../01-product/REQUIREMENTS.md), [CRITICAL_FLOWS](../03-workflows/CRITICAL_FLOWS.md), [ROUTE_CONTRACTS](../03-workflows/ROUTE_CONTRACTS.md), [INTERACTION_CONTRACTS](../03-workflows/INTERACTION_CONTRACTS.md), [SCHEMA](../04-architecture/SCHEMA.md), [ACCEPTANCE_SUITES](../08-testing/ACCEPTANCE_SUITES.md), [USER_TASKS](../07-ux-design/USER_TASKS.md), [UAT_PILOT](../10-release/UAT_PILOT.md) |
 

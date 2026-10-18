@@ -24,7 +24,7 @@ Every agent, in this order:
 3. [docs/00-governance/SOURCE_OF_TRUTH.md](docs/00-governance/SOURCE_OF_TRUTH.md) — the document map;
 4. only the documents the map names for the work in hand.
 
-Implementation executors additionally read [docs/11-tasks/EXECUTION_CONTEXT.md](docs/11-tasks/EXECUTION_CONTEXT.md), [docs/11-tasks/TASK_PLAN.md](docs/11-tasks/TASK_PLAN.md) and the contract of the active Task in `docs/11-tasks/tasks/`. They were written in step RF-7 of the [re-foundation plan](docs/00-governance/REFOUNDATION_PLAN.md) (D-090). Until the Owner approves that Task baseline (gate GATE-P11 of TASK_PLAN) and then authorizes a Task by name, there is no Task to execute.
+Implementation executors additionally read [docs/11-tasks/EXECUTION_CONTEXT.md](docs/11-tasks/EXECUTION_CONTEXT.md), [docs/11-tasks/TASK_PLAN.md](docs/11-tasks/TASK_PLAN.md) and the contract of the active Task in `docs/11-tasks/tasks/`. They were written in step RF-7 of the [re-foundation plan](docs/00-governance/REFOUNDATION_PLAN.md) (D-090). The Owner approved that Task baseline (D-092); a Task is executed only when the Owner's instruction names it, and until then there is no Task to execute.
 
 ## 4. Before any work
 

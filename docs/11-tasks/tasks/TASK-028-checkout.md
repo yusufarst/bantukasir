@@ -5,13 +5,13 @@
 | Status | `TODO`; the status of record is [TASK_PLAN](../TASK_PLAN.md) section 4 |
 | Phase and lane | 6 Cash and sales · lane S, cash and sales |
 | Size and review | XL · review class A — adversarial review in a separate session ([EXECUTION_CONTEXT](../EXECUTION_CONTEXT.md) section 12) |
-| Depends on | [TASK-027](TASK-027-registers-session-open.md), [TASK-023](TASK-023-manual-issue.md), [TASK-025](TASK-025-cost-correction.md), [TASK-016](TASK-016-barcodes.md) |
+| Depends on | [TASK-027](TASK-027-registers-session-open.md), [TASK-023](TASK-023-manual-issue.md), [TASK-025](TASK-025-cost-correction.md), [TASK-026](TASK-026-reversal.md), [TASK-016](TASK-016-barcodes.md) |
 | Gates | — ([TASK_PLAN](../TASK_PLAN.md) section 3) |
 | Branch | `task/TASK-028-checkout` from `develop` (EXC-22) |
 | Executor | Claude Opus 5.5 at effort Max (D-066), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None required. |
 | Modules | Sales, Inventory, Costing, Cash, Configuration |
-| Baseline | RF-7, D-090; corrected under D-091 |
+| Baseline | RF-7, D-090; corrected under D-091 and D-092 |
 
 ## 1. Goal
 
@@ -30,7 +30,7 @@ After AGENTS.md, CURRENT_HANDOFF, EXECUTION_CONTEXT and TASK_PLAN sections 1 to 
 - SALES_CASH sections 1 to 5 (BR-SALE-01 to BR-SALE-23, BR-PAY-01 to BR-PAY-07, BR-DOC-01 to BR-DOC-06) and BR-CASH-10
 - INVENTORY BR-INV-07
 - COSTING sections 6 and 7
-- ADR-008 sections 2, 4.1, 4.3 and 7; the replay of TASK-025
+- ADR-008 sections 2, 4.1, 4.3 and 7; the replay of TASK-025 and the reversal of TASK-026 (RC-10)
 - SCHEMA section 5.9 (`sales`, `sale_lines`, `payments`, `receipt_snapshots`, `sale_correction_totals`, `sale_line_correction_totals`), section 6, G-01, G-04, G-17 and G-18
 - TECHNICAL_RULES section 7.2 (Sale checkout), RACE-01 to RACE-03, RACE-08, RACE-11, RACE-18, RACE-23, RACE-25 and sections 11.2 and 13.1
 - SCHEMA G-07 and G-14

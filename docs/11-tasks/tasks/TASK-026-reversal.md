@@ -11,7 +11,7 @@
 | Executor | Claude Opus 5.5 at effort Max (D-066), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None required. |
 | Modules | Inventory, Costing |
-| Baseline | RF-7, D-090; corrected under D-091 |
+| Baseline | RF-7, D-090; corrected under D-091 and D-092 |
 
 ## 1. Goal
 
@@ -131,7 +131,7 @@ Each dimension is recorded `PASS`, `FAIL`, `BLOCKED` or `N/A` with its reason (E
 ## 12. For later Tasks
 
 - TASK-035 proves the OPENING case and its replacement.
-- Tasks that depend on this one directly: [TASK-035](TASK-035-onboarding.md).
+- Tasks that depend on this one directly: [TASK-028](TASK-028-checkout.md), [TASK-035](TASK-035-onboarding.md).
 
 ## 13. Expected files
 
