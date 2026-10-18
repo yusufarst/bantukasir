@@ -809,3 +809,62 @@ Checks run locally:
 - Every other step is a command of section 7.1, run locally in the same containers (section 10).
 
 Not verified, and why: the run on GitHub's runner — gate GATE-PUBLISH (AC-001-03, AC-001-05 in operation, AC-001-08 on Linux). The runner's Docker and Compose versions are those of its image, not the local Docker Compose v5.5.1; the first CI run is the check.
+
+The commit "TASK-001: add the ci workflow" (`67c2c00`) holds the workflow and this section; its secret scan of the tree and of the 23 commits found nothing.
+
+## 9. `.env.example` and `.gitignore` (B8)
+
+Rebuilt on 19 October 2026 between 01:27 and 01:35 (item 9, OPEN_ITEMS T-02).
+
+**`.env.example`** lists the settings of ENVIRONMENTS section 11 by role, with placeholders only: an empty value for every secret and every value an environment sets, and the fixed value where section 11 gives one.
+
+| Setting of ENVIRONMENTS section 11 | Role `web` | Role `backup` |
+| --- | --- | --- |
+| Environment name | `APP_ENV` (both roles) | — |
+| Debug, off | `APP_DEBUG=false` (both roles) | — |
+| Process role | `APP_PROCESS_ROLE`, `web` or `backup` (both roles) | — |
+| Log level | `LOG_LEVEL=info` (both roles) | — |
+| The database to reach | `DB_CONNECTION=pgsql`, `DB_HOST`, `DB_PORT=5432`, `DB_DATABASE` (both roles) | — |
+| Application URL, trusted hosts | `APP_URL`, `APP_TRUSTED_HOSTS` | — |
+| Application key, with the previous keys during a rotation | `APP_KEY`, `APP_PREVIOUS_KEYS` | — |
+| Runtime database credential | `DB_USERNAME`, `DB_PASSWORD` | — |
+| Session and cookie | `SESSION_DRIVER=database`, `SESSION_SECURE_COOKIE=true`, `SESSION_HTTP_ONLY=true`, `SESSION_SAME_SITE=lax` | — |
+| Heartbeat ping addresses | `HEARTBEAT_WEB_URL`, `HEARTBEAT_RECONCILIATION_URL` | `HEARTBEAT_BACKUP_URL` |
+| Backup database credential | — | `BACKUP_DB_USERNAME`, `BACKUP_DB_PASSWORD` |
+| Backup store endpoint, bucket, key identifier and key | — | `BACKUP_STORE_ENDPOINT`, `BACKUP_STORE_BUCKET`, `BACKUP_STORE_KEY_ID`, `BACKUP_STORE_KEY` |
+| Backup recipient (public key) | — | `BACKUP_RECIPIENT` |
+| Migration database credential | Never | Never — a comment says it is given only to the migration job (ADR-011 item 7) |
+| Clock and schedule | Not a setting: `config/app.php` fixes the UTC clock and the scheduler's time zone Asia/Jakarta (ARC-50); a comment says so | The same |
+
+Readings: Laravel's own names are kept where they exist (`APP_*`, `DB_*`, `SESSION_*`, `LOG_LEVEL`); the other names — `APP_PROCESS_ROLE`, `APP_TRUSTED_HOSTS`, `BACKUP_*`, `HEARTBEAT_*` — are TASK-001's choice, since no document names them, and the Tasks that read them (TASK-007, TASK-012, TASK-013, TASK-039) use these names or rename them in the same change. `.env.example` describes every environment, so its values are those of staging and production (the database session driver, a secure cookie, debug off); `compose.yaml` sets the local values, which take precedence over `.env`: `APP_ENV=local`, debug on, the file session driver and cache store, which need no table of a later Task, and — added now — `SESSION_SECURE_COOKIE=false`, since local runs are plain HTTP.
+
+The local `.env` that the R5 start had copied from the old `.env.example` (427 bytes, with the key the entrypoint added in section 6) was moved at 01:32:55 — not deleted — to `env-from-old-example/.env` in the recovery folder, so that the one-command start could be checked from the rebuilt file. `docker compose up -d --wait --force-recreate app`: healthy; the entrypoint created a new `.env` (1,280 bytes) from `.env.example` and set its key ("Application key set successfully"); apart from `APP_KEY` it equals `.env.example`; `config:show` gives `app.env` `local`, `session.secure` `false`, `session.driver` `file`.
+
+**`.gitignore`** keeps the rebuilt content and restores the patterns for secrets and operational data that the rebuild had dropped. Compared with the file at `1a8a057`:
+
+| Pattern of the old file | Now | Reason |
+| --- | --- | --- |
+| `secrets/`, `backups/`, `uploads/` | Kept, as before | Secrets and operational data never enter the public repository (D-076, SEC-SECRET-01) |
+| `private/`, `data/` | `/private/`, `/data/` | The same reason; anchored to the root, so that Laravel's tracked placeholders `storage/app/private/.gitignore` and `storage/framework/cache/data/.gitignore` are not hidden |
+| `node_modules/`, `coverage/`, `playwright-report/`, `test-results/` | `/node_modules/`, `/coverage/`, `/playwright-report/`, `/test-results/` | Anchored to the root, where npm, Vitest and Playwright write them |
+| `.next/`, `out/`, `dist/` | Removed | Outputs of the Next.js stack that the project no longer uses (T-02); Vite writes to `public/build/` |
+| — | Added: `auth.json`, `.agents/`, `/vendor/`, `/public/build/`, `/public/hot`, `/public/storage`, `/.phpunit.cache/`, `.phpunit.result.cache`, `/blob-report/` | Composer's credentials file, the local tool folder of EXECUTION_CONTEXT EXC-30, and the dependencies, build and test output of Laravel and Node |
+
+Every other pattern of the old file (`.env`, `.env.*`, `!.env.example`, `*.pem`, `*.key`, `*.p12`, `*.pfx`, `.local/`, `*.tsbuildinfo`, `*.log`, `*.dump`, `*.backup`, `*.sqlite`, `.DS_Store`, `Thumbs.db`, `.idea/`, `.vscode/`) is kept. Neither file settles OPEN_ITEMS T-14 or T-15: `Claude outputs/` and `plan-p0-p11-review.patch` stay untracked and not ignored.
+
+`git check-ignore --no-index -v`, 01:30, every path as required:
+
+| Path | Result | Rule |
+| --- | --- | --- |
+| `.env`, `.env.production` | Ignored | `.gitignore:2:.env`, `.gitignore:3:.env.*` |
+| `auth.json`, `a.pem`, `a.key`, `a.p12`, `a.pfx` | Ignored | `.gitignore:5` to `9` |
+| `secrets/x`, `backups/x`, `uploads/x`, `private/x`, `data/x` | Ignored | `.gitignore:40` to `44` |
+| `x.dump`, `x.backup`, `x.sqlite`, `x.log` | Ignored | `.gitignore:38`, `39`, `37`, `36` |
+| `vendor/x`, `node_modules/x`, `public/build/x` | Ignored | `.gitignore:16`, `17`, `20` |
+| `bootstrap/cache/services.php` | Ignored | `bootstrap/cache/.gitignore:1:*` |
+| `.local/x`, `.agents/x` | Ignored | `.gitignore:12`, `13` |
+| `.env.example` | Not ignored | `.gitignore:4:!.env.example` |
+| `storage/app/private/.gitignore`, `storage/app/public/.gitignore`, `storage/framework/cache/data/.gitignore`, `bootstrap/cache/.gitignore` | Not ignored | Each folder's own `!.gitignore` |
+| `Claude outputs/`, `plan-p0-p11-review.patch` | Not ignored | No rule |
+
+OPEN_ITEMS records T-01 and T-02 as resolved by TASK-001, with this evidence as the reference; no entry is added to DECISIONS, since the instruction records no new decision and the Owner's acceptance of the Task will record its result. EXECUTION_CONTEXT section 18 now describes the line-ending policy.

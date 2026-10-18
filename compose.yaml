@@ -38,6 +38,8 @@ services:
             # to TASK-006 and TASK-004; until then local runs use files.
             SESSION_DRIVER: file
             CACHE_STORE: file
+            # Local runs are plain HTTP; every other environment sets true.
+            SESSION_SECURE_COOKIE: "false"
         volumes:
             - .:/var/www/html
         networks:

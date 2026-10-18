@@ -1,35 +1,49 @@
-# Secrets and private local configuration
+# Environment files and secrets: never committed (AGENTS rule 9, SEC-SECRET-01).
 .env
 .env.*
 !.env.example
+auth.json
 *.pem
 *.key
 *.p12
 *.pfx
-secrets/
-private/
+
+# Local tool folders: never staged (EXECUTION_CONTEXT EXC-30).
 .local/
+.agents/
 
-# Dependencies and generated output (future implementation)
-node_modules/
-.next/
-out/
-dist/
-coverage/
-playwright-report/
-test-results/
+# Dependencies.
+/vendor/
+/node_modules/
+
+# Build output.
+/public/build/
+/public/hot
+/public/storage
 *.tsbuildinfo
-*.log
 
-# Operational data never belongs in the public repository
-backups/
-uploads/
-data/
+# Test output and coverage.
+/.phpunit.cache/
+.phpunit.result.cache
+/coverage/
+/playwright-report/
+/test-results/
+/blob-report/
+
+# Logs, local data dumps and operational data: never in the public repository
+# (D-076, SEC-SECRET-01). private/ and data/ are anchored to the root, so that
+# Laravel's placeholders in storage/ stay tracked.
+*.log
+*.sqlite
 *.dump
 *.backup
-*.sqlite
+secrets/
+backups/
+uploads/
+/private/
+/data/
 
-# Local tooling
+# Operating systems and editors.
 .DS_Store
 Thumbs.db
 .idea/
