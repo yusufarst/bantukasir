@@ -1,0 +1,44 @@
+{
+    "$schema": "https://www.schemastore.org/package.json",
+    "name": "bantukasir",
+    "private": true,
+    "type": "module",
+    "engines": {
+        "node": "^24.22.0"
+    },
+    "scripts": {
+        "lint": "eslint . && node scripts/checks/npm-audit.mjs",
+        "typecheck": "tsc --noEmit",
+        "test:unit": "vitest run",
+        "build": "vite build",
+        "test:e2e": "playwright test"
+    },
+    "dependencies": {
+        "@inertiajs/react": "3.9.1",
+        "react": "19.3.1",
+        "react-dom": "19.3.1"
+    },
+    "devDependencies": {
+        "@eslint/js": "10.0.1",
+        "@playwright/test": "1.64.1",
+        "@tailwindcss/vite": "4.3.3",
+        "@types/node": "24.19.2",
+        "@types/react": "19.3.0",
+        "@types/react-dom": "19.3.0",
+        "@vitejs/plugin-react": "6.1.2",
+        "eslint": "10.13.0",
+        "eslint-plugin-react": "7.37.5",
+        "globals": "17.13.0",
+        "laravel-vite-plugin": "3.2.0",
+        "tailwindcss": "4.3.3",
+        "typescript": "6.0.3",
+        "typescript-eslint": "8.71.2",
+        "vite": "8.3.4",
+        "vitest": "5.0.5"
+    },
+    "overrides": {
+        "eslint-plugin-react": {
+            "eslint": "$eslint"
+        }
+    }
+}

@@ -2,19 +2,19 @@
 
 The capabilities this project needs, the tool chosen for each, and its real status. The requirement is the capability; a named tool may be replaced by an equivalent that is already present and adequate.
 
-**Nothing is installed.** There is no application, so every implementation tool below is `PLANNED`. A status is changed to `VERIFIED` only by the Task that installs the tool and proves it works, recording version, scope and the verification performed.
+TASK-001 pins the toolchain of the empty application (section 1.1); a tool that a later Task adds stays `PLANNED` until that Task installs it. A status is changed to `VERIFIED` only by the Task that installs the tool and proves it works, recording version, scope and the verification performed.
 
 ## 1. Capabilities
 
 | Capability | Tool | Requirement | Status | Notes |
 | --- | --- | --- | --- | --- |
-| Current documentation for version-sensitive work | Context7, or the official documentation of the exact version | REQUIRED before relying on any framework or library API | NOT VERIFIED in the executor environment | Do not rely on remembered APIs for Laravel, Inertia, React, TypeScript, Tailwind, shadcn/ui or PostgreSQL. |
+| Current documentation for version-sensitive work | Context7, or the official documentation of the exact version | REQUIRED before relying on any framework or library API | Context7 NOT VERIFIED in the executor environment; TASK-001 used the official documentation and registries (section 1.1) | Do not rely on remembered APIs for Laravel, Inertia, React, TypeScript, Tailwind, shadcn/ui or PostgreSQL. |
 | Codebase impact analysis | Graphify, or equivalent targeted search | DEFERRED until application code exists, then required for significant changes | NOT INSTALLED | A map, not an authority. |
-| Browser end-to-end testing | Playwright, as a project dev dependency | REQUIRED for every interface Task | PLANNED | Use the project package and CLI, not an MCP server, unless interactive use materially helps. |
-| Interface components | shadcn/ui with Tailwind CSS | REQUIRED; use before creating new primitives | PLANNED | |
+| Browser end-to-end testing | Playwright, as a project dev dependency | REQUIRED for every interface Task | PINNED by TASK-001 (section 1.1) | Use the project package and CLI, not an MCP server, unless interactive use materially helps. |
+| Interface components | shadcn/ui with Tailwind CSS | REQUIRED; use before creating new primitives | Tailwind CSS PINNED by TASK-001; shadcn/ui not installed (section 1.1) | The components are added by TASK-005. |
 | Visual and frontend reference | Golden Frontend Reference v1.0.0, commit `14497d9` | REQUIRED for P7 design work (RF-4C) and later frontend work: the one approved reference (D-085) | APPROVED by the Owner (D-085); read only, nothing installed; tag `v1.0.0` confirmed at commit `14497d9` on 17 October 2026 | See section 3. AICWDF-4.3 requires a visual reference and prefers DesainPakaiAI; the requirement is the capability. DesainPakeAI is no longer required (section 5). |
-| PHP quality | Pint, PHPStan with Larastan, Pest or PHPUnit | REQUIRED from the foundation Task | PLANNED | Real PostgreSQL is required for constraint, rollback and race tests; SQLite and mocks are not evidence for these. |
-| Frontend quality | Lint, TypeScript typecheck, Vitest where behaviour warrants it, Vite production build | REQUIRED from the foundation Task | PLANNED | |
+| PHP quality | Pint, PHPStan with Larastan, Pest or PHPUnit | REQUIRED from the foundation Task | PINNED by TASK-001: Pint, PHPStan with Larastan, PHPUnit (section 1.1) | Real PostgreSQL is required for constraint, rollback and race tests; SQLite and mocks are not evidence for these. |
+| Frontend quality | Lint, TypeScript typecheck, Vitest where behaviour warrants it, Vite production build | REQUIRED from the foundation Task | PINNED by TASK-001 (section 1.1) | |
 | Version control | Git on the Owner's Windows machine | REQUIRED | In use | Identity and safety rules in [PROJECT_RULES](PROJECT_RULES.md) section 9. |
 | Continuous integration | GitHub Actions on the public repository | REQUIRED from the foundation Task ([TEST_STRATEGY](../08-testing/TEST_STRATEGY.md) section 7) | PLANNED | Free on standard runners for a public repository (verified 18 October 2026); no environment secret in CI ([ADR-011](../adr/ADR-011-release-pipeline-environments-and-production-operation.md) item 4) |
 | Release image registry | GitHub Container Registry, public package | REQUIRED for releases (ADR-011 item 5) | PLANNED | Images run by digest, never `latest` |
@@ -22,6 +22,35 @@ The capabilities this project needs, the tool chosen for each, and its real stat
 | External heartbeat monitor | A free plan of a heartbeat service; candidate Healthchecks.io | REQUIRED before the pilot (ADR-011 item 11) | PLANNED | Free-tier record in [ENVIRONMENTS](../09-operations/ENVIRONMENTS.md) section 15; the operator holds the account |
 
 Versions are pinned, with lockfiles, by the foundation Task after checking support windows, advisories and compatibility. Production never uses a floating `latest` tag.
+
+### 1.1 Pinned versions
+
+Pinned by TASK-001 (STK-01) in `composer.json` and `composer.lock`, `package.json` and `package-lock.json`, `compose.yaml` and `docker/app/Dockerfile`; every image by tag and digest. Checked on 19 October 2026 (Asia/Jakarta) against the official documentation and registries; the sources, the compatibility checks and the readings are in the [TASK-001 evidence](../11-tasks/evidence/TASK-001.md) section 4. `PINNED` means the version is checked; `VERIFIED` means the tool also ran in the command contract.
+
+| Component | Version | Licence | Support window | Advisory check | Status |
+| --- | --- | --- | --- | --- | --- |
+| PHP | 8.5.11, image `php:8.5.11-fpm-trixie` | PHP License | Active support to 31 December 2027, security fixes to 31 December 2029 | Latest 8.5 release (24 September 2026) | PINNED |
+| Composer | 2.10.3, image `composer:2.10.3` | MIT | Latest stable release | No advisory affects 2.10.3 | PINNED |
+| Laravel | `laravel/framework` 13.37.0 | MIT | Bug fixes to Q3 2027, security fixes to 17 March 2028 | `composer audit`: none | PINNED |
+| Laravel Fortify | `laravel/fortify` 1.41.0, selected; installed by TASK-006 | MIT | Latest major (Laravel: only the latest major of a library receives bug fixes) | No advisory affects 1.41.0 | PINNED, not installed |
+| Inertia, Laravel adapter | `inertiajs/inertia-laravel` 3.5.1 | MIT | None published; latest release | `composer audit`: none | PINNED |
+| Inertia, React adapter | `@inertiajs/react` 3.9.1 | MIT | None published; latest release | `npm audit`: none | PINNED |
+| React | `react`, `react-dom` 19.3.1 | MIT | None published; latest release | `npm audit`: none | PINNED |
+| TypeScript | 6.0.3 | Apache-2.0 | None published; latest 6.0 release (typescript-eslint supports `<6.1.0`) | `npm audit`: none | PINNED |
+| Vite | 8.3.4, with `@vitejs/plugin-react` 6.1.2 and `laravel-vite-plugin` 3.2.0 | MIT | Vite 8.3 receives regular patches | `npm audit`: none | PINNED |
+| Tailwind CSS | `tailwindcss`, `@tailwindcss/vite` 4.3.3 | MIT | None published; latest release | `npm audit`: none | PINNED |
+| shadcn/ui tooling | `shadcn` CLI 4.22.0, selected; not installed | MIT | Latest release | FAIL: GHSA-vfj7-8cjw-p6xm, high, in its dependency `braces` 3.0.3, no patched version | NOT INSTALLED; TASK-005 |
+| Brick Math | `brick/math` 1.0.0 | MIT | None published; latest release | `composer audit`: none | PINNED |
+| PHPUnit (one of Pest or PHPUnit) | `phpunit/phpunit` 13.4.3 | BSD-3-Clause | Bug fixes to 4 February 2028 | `composer audit`: none | PINNED |
+| PHPStan with Larastan | `phpstan/phpstan` 2.3.1, `larastan/larastan` 3.13.0 | MIT | None published; latest releases | `composer audit`: none | PINNED |
+| Pint | `laravel/pint` 1.32.1 | MIT | Latest major | `composer audit`: none | PINNED |
+| ESLint | `eslint` 10.13.0, `@eslint/js` 10.0.1, `typescript-eslint` 8.71.2, `eslint-plugin-react` 7.37.5, `globals` 17.13.0 | MIT | ESLint 10 is the current line; ESLint 9 ended on 6 August 2026 | `npm audit`: none | PINNED |
+| Vitest | 5.0.5 | MIT | None published; latest release | `npm audit`: none | PINNED |
+| Playwright | `@playwright/test` 1.64.1, image `mcr.microsoft.com/playwright:v1.64.1-noble` | Apache-2.0 | None published; latest release | `npm audit`: none | PINNED |
+| Node.js (LTS) | 24.22.0, image `node:24.22.0-trixie-slim`; `@types/node` 24.19.2 | MIT | LTS "Krypton": maintenance from 20 October 2026, end of life 30 April 2028 | Latest 24.x release | PINNED |
+| PostgreSQL | 18.6, image `postgres:18.6-trixie` | PostgreSQL License | Major 18 supported to 14 November 2030 | Current minor; no fix listed after 18.6 | PINNED |
+| Nginx | 1.30.6-1~trixie, from nginx.org | BSD-2-Clause | Stable branch 1.30 | Not affected by any advisory that nginx.org lists | PINNED |
+| Gitleaks (secret scan) | 8.30.1, image `ghcr.io/gitleaks/gitleaks:v8.30.1` | MIT | Latest release | No advisory affects 8.30.1 | PINNED |
 
 ## 2. Installing tools
 
