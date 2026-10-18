@@ -6,8 +6,10 @@
 useDefault = true
 
 [[allowlists]]
-description = "The fingerprint of the nginx.org package signing key in docker/app/Dockerfile, which nginx.org publishes so that its packages can be verified: a public value, not a secret"
+description = "The fingerprint of the nginx.org package signing key in docker/app/Dockerfile, which nginx.org publishes so that its packages can be verified: a public value, not a secret, allowed in that one file only"
 targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''docker/app/Dockerfile$''']
 regexes = ['''^573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62$''']
 
 [[allowlists]]

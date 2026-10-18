@@ -1058,3 +1058,22 @@ Before the change, `composer test:unit` had 18 tests and 65 assertions and `npm 
 **The intermittent failure of section 7.2 is resolved by this restructuring** as far as the L1 suites go: `ComposerAuditTest` no longer runs in `composer test:unit`, which needs no network now. Its dependence on Packagist is in the nature of the proof, as it is of `composer audit --locked`; in `composer lint` it runs only after the audit has passed, and a failure of the service fails the lint, never passes it. The cause of that one undecodable report at 01:11 was not determined.
 
 The commit "TASK-001: move the network-dependent audit proofs out of the L1 suites" holds the moved and new tests, `phpunit.xml`, `composer.json`, `package.json`, both Vitest configurations, STACK_AND_MODULES section 3 and this section.
+
+### 11.4 R-4 — the allowlist entry of finding F-1 narrowed
+
+**The defect.** The entry of finding F-1 in `.gitleaks.toml` allowed the nginx.org key fingerprint for the rule `generic-api-key` by its value alone, so the same value passed in any file.
+
+**The fix.** The entry now has `condition = "AND"` and `paths = ['''docker/app/Dockerfile$''']`, like the entry of finding F-2, so the value passes only in `docker/app/Dockerfile`; its description says so. The README of Gitleaks at tag `v8.30.1` documents the condition for a rule's allowlist — "OR" by default, and "AND" to make sure that every criterion matches — and does not repeat it for the global `[[allowlists]]` that `.gitleaks.toml` uses; the probes below show the pinned binary applying it there.
+
+**Probes (rule T1)**, 02:35:15 to 02:35:30, each in a throwaway `bantukasir-app:local` container (Gitleaks 8.30.1) with `--rm`, `--network none` and the repository mounted read-only; the samples were written in the probe's own temporary directory under the container's `/tmp`, removed by its exit trap and with the container. The configuration of `862bf0c` is "old", the changed one "new":
+
+| Sample | Old | New |
+| --- | --- | --- |
+| `gitleaks dir` on a copy of `docker/app/Dockerfile` at the same path | No leak, exit 0 | No leak, exit 0 |
+| `gitleaks dir` on the same Dockerfile at `docker/other/Dockerfile` | No leak, exit 0 | 1 leak, exit 1 |
+| `gitleaks dir` on the Dockerfile's `ARG NGINX_KEY_FINGERPRINT=…` line alone in `notes/fingerprint.txt` | No leak, exit 0 | 1 leak, exit 1 |
+| `gitleaks git` on a throwaway repository with one commit holding `docker/app/Dockerfile` and `notes/fingerprint.txt` | No leak, exit 0 | 1 leak, exit 1: rule `generic-api-key`, `notes/fingerprint.txt` line 1, the value redacted |
+
+**The real tree and the commits to push** still scan clean with the new entry: `bash scripts/checks/secret-scan.sh` in the application container, 02:36:18 to 02:36:35, "no leaks found" for the tree and for the 28 commits of `HEAD --not --remotes`, `c866b77` among them, exit 0.
+
+The commit "TASK-001: narrow the allowlist entry of finding F-1" holds `.gitleaks.toml` and this section.
