@@ -8,14 +8,14 @@ import { createRoot } from 'react-dom/client';
 const pages = import.meta.glob<{ default: ComponentType }>('./pages/**/*.tsx');
 
 void createInertiaApp({
-    resolve: (name) => {
+    resolve: async (name) => {
         const page = pages[`./pages/${name}.tsx`];
 
         if (page === undefined) {
             throw new Error(`Inertia page not found: ${name}`);
         }
 
-        return page();
+        return (await page()).default;
     },
     setup({ el, App, props }) {
         createRoot(el).render(<App {...props} />);

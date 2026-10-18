@@ -1,0 +1,18 @@
+# Secret scan (TEST_STRATEGY section 6, SEC-SECRET-01, D-076): the default rules
+# of Gitleaks 8.30.1, run by scripts/checks/secret-scan.sh, with two allowlist
+# entries, each for one value that is not a secret (TASK-001 evidence,
+# section 7).
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "The fingerprint of the nginx.org package signing key in docker/app/Dockerfile, which nginx.org publishes so that its packages can be verified: a public value, not a secret"
+targetRules = ["generic-api-key"]
+regexes = ['''^573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62$''']
+
+[[allowlists]]
+description = "Indonesian prose in a legacy document, which is never edited (AGENTS rule 15): the words after 'secret patterns,' on line 74 are not a secret"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''docs/07-ux-design/legacy/p7-correction/REVIEW\.md$''']
+regexes = ['''^preservasi85\+13$''']

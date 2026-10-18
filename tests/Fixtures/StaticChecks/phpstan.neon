@@ -1,0 +1,11 @@
+# The configuration of the PHPStan negative samples (AC-001-04): the project's
+# level, Larastan and rules, with the sample directory Php/Floats added to the
+# exact-value code. tests/Unit/StaticChecks/PhpstanRulesTest.php runs it.
+includes:
+    - ../../../vendor/larastan/larastan/extension.neon
+    - ../../../phpstan-rules.neon
+
+parameters:
+    level: 9
+    exactValueDirectories:
+        - %currentWorkingDirectory%/tests/Fixtures/StaticChecks/Php/Floats

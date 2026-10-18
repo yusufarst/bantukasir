@@ -40,6 +40,13 @@ services:
             CACHE_STORE: file
         volumes:
             - .:/var/www/html
+        networks:
+            default:
+                # Chromium refuses plain HTTP to the host "app", because "app"
+                # is a top-level domain on its HSTS preload list; the browser
+                # tests use this alias.
+                aliases:
+                    - bantukasir-app
         depends_on:
             db:
                 condition: service_healthy
@@ -77,7 +84,7 @@ services:
         profiles: ["tools"]
         working_dir: /app
         environment:
-            E2E_BASE_URL: http://app:8080
+            E2E_BASE_URL: http://bantukasir-app:8080
         volumes:
             - .:/app
 
