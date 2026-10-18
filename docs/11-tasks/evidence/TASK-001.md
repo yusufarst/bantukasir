@@ -3,7 +3,7 @@
 | | |
 | --- | --- |
 | Task | [TASK-001](../tasks/TASK-001-toolchain-ci.md), size L, review class B, lane P |
-| Status | `IN_PROGRESS`; the status of record is [TASK_PLAN](../TASK_PLAN.md) section 4 |
+| Status | `VERIFYING`; the status of record is [TASK_PLAN](../TASK_PLAN.md) section 4 |
 | Instruction | The Owner's instruction of 18 October 2026, "D-094 / D-095 bookkeeping + TASK-001 — executor instruction, rev2", recorded as D-094 and D-095 in [DECISIONS](../../00-governance/DECISIONS.md) |
 | Branch | `task/TASK-001-toolchain-ci`, created from `develop` (EXC-22) |
 | Base commit | `a2cb9713f56d59472677f40b09bf4c3016f73c51`, the D-094 bookkeeping commit on `develop` (parent `6e18185aa177834b55270cfac09a6d54670645f8`) |
@@ -868,3 +868,102 @@ Every other pattern of the old file (`.env`, `.env.*`, `!.env.example`, `*.pem`,
 | `Claude outputs/`, `plan-p0-p11-review.patch` | Not ignored | No rule |
 
 OPEN_ITEMS records T-01 and T-02 as resolved by TASK-001, with this evidence as the reference; no entry is added to DECISIONS, since the instruction records no new decision and the Owner's acceptance of the Task will record its result. EXECUTION_CONTEXT section 18 now describes the line-ending policy.
+
+The commit "TASK-001: rebuild .env.example and .gitignore" (`72a2321`) holds both files, the local cookie setting of `compose.yaml`, OPEN_ITEMS T-01 and T-02, EXECUTION_CONTEXT section 18 and this section; its secret scan of the tree and of the 24 commits found nothing.
+
+## 10. Close (B9)
+
+### 10.1 The command contract, the run of record
+
+Revision `72a2321` with the documents of this section in the working tree only; 19 October 2026; the local environment on the Owner's Windows machine (Docker Desktop, WSL2), synthetic data only; run by the implementation executor. Every command in the project's containers, in the order of TEST_STRATEGY section 7.
+
+| # | Command | Time | Result |
+| --- | --- | --- | --- |
+| 1 | `composer validate --strict --no-check-all` | 01:36:11 to 01:36:13 | PASS — "./composer.json is valid" |
+| 2 | `composer lint` | 01:36:13 to 01:36:40 | PASS — Pint 28 files; translation keys: 0 used, all present; migration review: 0 migrations; secret scan: the tree and 25 commits, no leaks; `composer audit`: "No security vulnerability advisories found" |
+| 3 | `composer analyse` | 01:36:40 to 01:38:33 | PASS — PHPStan level 9 with Larastan and the project's rules: "No errors" |
+| 4 | `composer test:unit` | 01:38:34 to 01:39:44 | PASS — 18 tests, 65 assertions |
+| 5 | `composer test:postgres` | 01:39:44 to 01:40:09 | PASS — 1 test, 3 assertions, on PostgreSQL 18.6 |
+| 6 | `composer test:race` | 01:40:09 to 01:40:33 | PASS — 1 test, 6 assertions, two independent connections |
+| 7 | `npm run lint` | 01:40:33 to 01:41:40 | PASS — ESLint no error; npm audit: no high or critical advisory |
+| 8 | `npm run typecheck` | 01:41:40 to 01:41:54 | PASS |
+| 9 | `npm run test:unit` | 01:41:55 to 01:42:30 | PASS — 3 files, 7 tests |
+| 10 | `npm run build` | 01:42:30 to 01:42:41 | PASS — `public/build/manifest.json`, CSS 4.19 kB, JavaScript 345.32 kB |
+| 11 | `npm run test:e2e` | 01:42:42 to 01:42:56 | PASS — the Playwright smoke test, 1 passed: `GET /` through Nginx and PHP-FPM answers 404, `Server: nginx`, no `X-Powered-By`, an HTML document |
+
+The static checks were each checked against their negative samples in runs 2, 4 and 9 (section 7.2). After the runs no temporary directory of a test was left (`/tmp` of the application container and of Git Bash hold no `bantukasir-*`).
+
+### 10.2 Line endings after the Task
+
+`git ls-files --eol` on 19 October 2026 at 01:45: 294 files `i/lf w/lf`; 18 files `i/none w/none` — the 17 empty `.gitkeep` files and `assets/brand/bantukasir-logo.svg`, one line with no final newline; 9 images `i/-text w/-text`; 3 files `i/lf w/mixed`, the legacy files `docs/07-ux-design/legacy/DESIGN.md`, `docs/07-ux-design/legacy/P7-UX-DESIGN.md` and `docs/07-ux-design/legacy/p7-correction/REVIEW.md`, with one CR each in the working tree since before the policy, equal to their blobs once CR is removed. Every tracked text file is stored as LF. `.env.example`, which had 19 CR in the working tree, was rewritten in section 9 and is now LF.
+
+### 10.3 Protected files
+
+- The 29 approved P7 artifacts — the six P7-G1 documents of `docs/07-ux-design/`, `docs/02-domain/GLOSSARY.md`, `docs/07-ux-design/COPY_DECK.md`, `DESIGN_SYSTEM.md`, `KEY_SCREENS.md` and the 19 files of `docs/07-ux-design/previews/` (tree `61f48f92fba53111738b66ec3330beb8431a9f57` at `a2cb971` and at `HEAD`, as D-087 names it): the blob at `HEAD` equals the blob at `a2cb971` for 29 of 29, and the working-tree bytes equal it for 29 of 29.
+- The 72 files under `legacy/` folders: the blob at `HEAD` equals the blob at `a2cb971` for 72 of 72; the working-tree bytes equal it for 69, and the 3 files of section 10.2 differ by one CR each.
+- `git diff --stat a2cb971 HEAD -- AGENTS.md CLAUDE.md assets docs/adr docs/02-domain docs/07-ux-design`: empty. The documents changed since `a2cb971` are only TOOLCHAIN, OPEN_ITEMS (T-01, T-02), STACK_AND_MODULES (section 3 and its status row), EXECUTION_CONTEXT (section 18 and its status row), TASK_PLAN (the row of TASK-001 and the totals), README (the stack line), this evidence and, in the last commit, CURRENT_HANDOFF.
+
+### 10.4 Acceptance criteria
+
+| Criterion | Status | Reason |
+| --- | --- | --- |
+| AC-001-01 | PASS | Every component of STACK_AND_MODULES section 1 that the skeleton needs is pinned to an exact version, with both lockfiles committed (`8babd86`); TOOLCHAIN section 1.1 shows each with its version, support window and advisory check, `VERIFIED` once it ran; no floating tag or `latest` in any configuration file — the only ranges are the platform constraints `php` and `engines.node` (section 4.2). Laravel Fortify is selected and verified and installed by TASK-006; the shadcn/ui CLI failed its advisory check and is not installed (section 4.4, for the reviewer) |
+| AC-001-02 | PASS | No excluded component in either resolved tree (section 4.3) |
+| AC-001-03 | PASS locally; BLOCKED in CI | The eleven commands pass locally (section 10.1); the runs on the pull request and on its merge into `develop` wait for gate GATE-PUBLISH |
+| AC-001-04 | PASS | Each static check fails on its samples and passes on the real tree (sections 7.2 and 10.1); the secret scan's samples are generated at run time outside the tracked tree and removed; the other samples are in `tests/Fixtures/`, which the build, the linters and the analysis exclude, and hold no secret-looking value |
+| AC-001-05 | PASS as written; BLOCKED as run | The workflow triggers only on pull requests and pushes to `develop` and `main`, starts PostgreSQL 18.6 by digest, references no secret, holds only the read-only workflow token and prints no environment value (section 8, actionlint); it has never run (GATE-PUBLISH) |
+| AC-001-06 | PASS | `.gitattributes` alone in `1a8a057`; every tracked text file stored as LF before (section 2) and after (sections 3.3 and 10.2) |
+| AC-001-07 | PASS | `.env.example` lists every setting of ENVIRONMENTS section 11 for both roles with placeholders only (section 9); the secret scan passes on the tree and on the 25 commits the first push would add, with the two allowlist entries of findings F-1 and F-2 for the reviewer |
+| AC-001-08 | PASS on Windows; BLOCKED on Linux | `docker compose up -d --build --wait` starts the environment on the Owner's Windows machine (sections 3.4.2, 6 and 9), and the Playwright smoke test opens the running application (10.1); the Linux start is CI's, which waits for GATE-PUBLISH. The stop command `docker compose down` is documented but was not run here: it removes the project's containers and network, which the instruction does not allow (section 10.7) |
+| AC-001-09 | BLOCKED | TASK-001 is `VERIFYING`. `DONE` needs gate GATE-PUBLISH, the Owner's authorization of the push with the publication guard passed, the pull request merged into `develop` by the Owner with a merge commit, and CI green on the pull request and the merge |
+
+### 10.5 Definition of Done
+
+| Dimension | Status | Reason |
+| --- | --- | --- |
+| Business | BLOCKED | AC-001-01, 02, 04, 06 and 07 pass; AC-001-03, 05 and 08 pass locally and wait for CI, and AC-001-09 for GATE-PUBLISH (section 10.4); the contributions to REQ-NFR-01 (the literal and key checks), REQ-NFR-07, REQ-NFR-08 and REQ-OPS-02 are in place locally |
+| UI and UX | N/A | No page or control |
+| Backend | N/A | No route or Action; the routes of Inertia DevTools are switched off (section 5) |
+| Database | N/A | No migration, table or role; the volume holds an empty database |
+| Security | PASS | THR-10: the process-function rule and its samples; THR-14: pinned versions, lockfiles and both audits with their samples; no secret in the tree or the commits to push; no route, so no refusal of a role applies yet. Findings F-1 and F-2 are allowlisted narrowly, with reasons, for the reviewer |
+| Data integrity | N/A | Writes no business fact |
+| Performance | N/A | No request path |
+| Operations | N/A | No backup, runbook or status impact |
+| Verification | BLOCKED | The command contract is green locally; the self-review is done (section 10.6); CI waits for GATE-PUBLISH; the reviewer's check (class B) and the Owner's acceptance are pending |
+
+The standing obligations of EXECUTION_CONTEXT section 10 do not apply: TASK-001 adds no route, table, command, read, page, operator procedure or document.
+
+### 10.6 Self-review
+
+The whole diff `a2cb971..HEAD` (122 files at `72a2321`, 89 added and 3 modified outside `docs/` and `tests/Fixtures/`) was reviewed against contract sections 4.1 and 13 and the skeleton hygiene. Findings, each fixed in the step named:
+
+- The shadcn/ui CLI's advisory (section 4.4), the locale and DevTools of the skeleton (section 5), the entrypoint's missing key and the Dockerfile's comment (section 6), the Inertia resolver, the Tailwind sources, the ESLint ignores and the HSTS-preloaded host name (section 7.3), the dropped `.gitignore` patterns (section 9).
+- F-1: commit `c866b77` was made before its scan's result was read; the value is public and allowlisted; history is not rewritten (section 7.4).
+- F-2: a published legacy document is flagged; allowlisted for that one string (section 7.4).
+- No other defect found. Every file is LF with no trailing whitespace; every commit message reads "TASK-001: …" under the Owner's identity, with no trailer and no mention of an AI model, agent or tool.
+
+### 10.7 What is not verified, and why
+
+- Everything on GitHub — the `ci` workflow's runs, AC-001-03 and AC-001-05 in CI, the Linux start of AC-001-08 — waits for gate GATE-PUBLISH: no push is authorized.
+- `docker compose down` was not run on the Owner's machine: it removes the project's containers and network, and the instruction allows removing only this execution's own `--rm` containers. For the same reason, it is recorded here that `docker compose up` itself recreated the `app` container `bantukasir-app-1` — which this execution created at the R5 start — three times when its configuration changed (the rebuilt entrypoint in section 6, the network alias in section 7.3, the new `.env` in section 9); each recreation replaces the container. No volume, network, image or other container was removed by a command of this execution; `bantukasir-db-1`, the volume `bantukasir_db-data` and the network `bantukasir_default` are the ones of section 3.4.2, and the two containers of the other local Compose project were not touched. The builds of sections 3.4.2 and 6 moved the tag `bantukasir-app:local` to a new image (now `b05cd365f1c0`); no untagged image is listed.
+- The two audit tests depend on Packagist's and npm's advisory services; one run of `ComposerAuditTest` at 01:11 failed to read the audit's report and did not recur (section 7.2).
+- The operating-system packages inside the images are not scanned (TASK-012).
+
+### 10.8 Paths created, moved, copied and removed by this execution
+
+| Path | What happened |
+| --- | --- |
+| Recovery folder `bantukasir-recovery/TASK-001-20261018-2346/`, beside the repository | Created at 23:46:47; holds `node_modules-partial/` (moved, R1), `bootstrap-cache/packages.php` and `services.php` (copied, R2) and `env-from-old-example/.env` (moved, section 9); about 385 kB. Nothing in it was deleted |
+| `node_modules/` | Moved away (R1); created again by `npm install` (R4), changed by `npm uninstall shadcn` (section 4.4) and reinstalled by `npm ci` (section 8) — npm managing its own folder (rule T3); ignored |
+| `package-lock.json` | Created by npm (R4) and committed (`8babd86`) |
+| `vendor/` | Kept (R3); `composer dump-autoload` rewrote its autoload files (rule T3); ignored |
+| `bootstrap/cache/packages.php`, `services.php` | Regenerated by Laravel's `package:discover` after the R2 copy, with the same bytes (rule T2); ignored |
+| `.env` | Created by the entrypoint at the R5 start from the old `.env.example`, given a key in section 6, moved to the recovery folder in section 9, and created again from the rebuilt `.env.example` at 01:33; ignored, local, holding only a generated local key |
+| `storage/framework/views/` (two compiled views), `storage/inertia-devtools/` (`.gitignore`, `_last_prune`) | Written by the application at the R5 start; ignored. The DevTools folder is no longer written and is left for the Owner |
+| `public/build/`, `test-results/`, `.phpunit.cache/` | Written and overwritten by Vite, Playwright and PHPUnit (rule T2); ignored |
+| Temporary directories of the tests and probes | Created under the temporary folder of the container that ran them, outside the tracked tree, and removed by the same test or step (rule T1): the R5 negative proof, `bantukasir-secret-scan-*`, `bantukasir-secret-scan-tree.*`, `bantukasir-composer-audit-*`, `bantukasir-composer-validate-*`, `bantukasir-npm-audit-*` and the probes of sections 7.2 and 7.4; none is left |
+| Files in the executor's session scratchpad, outside the repository | Notes, logs and hash lists of this execution; not project content |
+| A file list `b4list.txt` in the Windows user's temporary folder | Written by mistake by a shell command of section 5 (1,143 bytes, file names only); outside the repository, not deleted, left for the Owner |
+| Docker | Created: the containers `bantukasir-db-1` and `bantukasir-app-1` (R5; the `app` container recreated as section 10.7 says) and this execution's `--rm` containers, all removed on exit; pulled: `rhysd/actionlint:1.7.12` by digest (section 8) |
+
+Nothing tracked was deleted. `Claude outputs/`, `plan-p0-p11-review.patch`, `.local/`, `.agents/`, the stash, `refs/codex/…`, `.git/objects/maintenance.lock` and every Git ref other than `task/TASK-001-toolchain-ci` are unchanged.
