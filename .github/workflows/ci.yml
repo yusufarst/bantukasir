@@ -1,0 +1,98 @@
+# The ci workflow (ADR-011 item 4, TEST_STRATEGY section 7, TASK-001): the command
+# contract on every pull request and every push to develop and main, in the
+# containers of the local environment, so that CI runs the same images as the
+# Owner's machine: the application container, PostgreSQL of the pinned version
+# by digest as the db service container, Node.js and Playwright. It holds no
+# secret of any environment and publishes nothing; the only credential is the
+# token GitHub issues to the workflow, read-only and not kept in the checkout.
+# No scheduled trigger is used. The L5 step is the Playwright smoke test until
+# TASK-006 adds the sign-in path (EXECUTION_CONTEXT EXC-34).
+name: ci
+
+on:
+    pull_request:
+    push:
+        branches:
+            - develop
+            - main
+
+permissions:
+    contents: read
+
+jobs:
+    command-contract:
+        name: Command contract
+        runs-on: ubuntu-24.04
+        timeout-minutes: 60
+        steps:
+            - name: Check out the repository with its history
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  fetch-depth: 0
+                  persist-credentials: false
+
+            - name: Select the commits for the secret scan
+              id: commits
+              env:
+                  EVENT_NAME: ${{ github.event_name }}
+                  PULL_REQUEST_BASE: ${{ github.event.pull_request.base.sha }}
+                  PULL_REQUEST_HEAD: ${{ github.event.pull_request.head.sha }}
+                  PUSH_BEFORE: ${{ github.event.before }}
+                  PUSH_AFTER: ${{ github.sha }}
+                  PUSH_REF: ${{ github.ref }}
+              run: |
+                  if [ "$EVENT_NAME" = pull_request ]; then
+                      log_opts="$PULL_REQUEST_BASE..$PULL_REQUEST_HEAD"
+                  elif [ -n "$PUSH_BEFORE" ] && [ "$PUSH_BEFORE" != 0000000000000000000000000000000000000000 ]; then
+                      log_opts="$PUSH_BEFORE..$PUSH_AFTER"
+                  else
+                      # A new branch: the commits that no other branch on GitHub holds.
+                      others="$(git for-each-ref --format='%(refname)' refs/remotes/origin | grep -v -x "refs/remotes/origin/${PUSH_REF#refs/heads/}" | grep -v -x 'refs/remotes/origin/HEAD' | tr '\n' ' ')"
+                      log_opts="$PUSH_AFTER --not $others"
+                  fi
+                  echo "log_opts=$log_opts" >> "$GITHUB_OUTPUT"
+
+            - name: Start the local environment (one command)
+              run: docker compose up -d --build --wait
+
+            - name: composer validate
+              run: docker compose exec -T app composer validate --strict --no-check-all
+
+            - name: composer lint
+              env:
+                  SECRET_SCAN_LOG_OPTS: ${{ steps.commits.outputs.log_opts }}
+              run: docker compose exec -T -e SECRET_SCAN_LOG_OPTS app composer lint
+
+            - name: composer analyse
+              run: docker compose exec -T app composer analyse
+
+            - name: composer test:unit
+              run: docker compose exec -T app composer test:unit
+
+            - name: composer test:postgres
+              run: docker compose exec -T app composer test:postgres
+
+            - name: composer test:race
+              run: docker compose exec -T app composer test:race
+
+            - name: Install the npm dependencies from the lockfile
+              run: docker compose run --rm node npm ci
+
+            - name: npm run lint
+              run: docker compose run --rm node npm run lint
+
+            - name: npm run typecheck
+              run: docker compose run --rm node npm run typecheck
+
+            - name: npm run test:unit
+              run: docker compose run --rm node npm run test:unit
+
+            - name: npm run build
+              run: docker compose run --rm node npm run build
+
+            - name: npm run test:e2e
+              run: docker compose run --rm playwright npm run test:e2e
+
+            - name: Stop the local environment
+              if: always()
+              run: docker compose down
