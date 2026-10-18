@@ -8,7 +8,7 @@
 | Depends on | [TASK-045](TASK-045-operations-verification.md), [TASK-047](TASK-047-p7-change-control-2.md), [TASK-048](TASK-048-performance-verification.md) |
 | Gates | G1, G2, G3, G4 (the sealed copy handed over), DEVICES, TARGET, GATE-PUBLISH ([TASK_PLAN](../TASK_PLAN.md) section 3) |
 | Branch | `task/TASK-049-release-readiness` from `develop` (EXC-22) |
-| Executor | Claude Opus 5.5 at effort Max (D-066), on one explicit instruction of the Owner (EXC-10, EXC-11) |
+| Executor | Claude Opus 5.5, at the effort that the Owner's instruction names for this Task (D-031, D-095), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None. |
 | Modules | All |
 | Baseline | RF-7, D-090 |

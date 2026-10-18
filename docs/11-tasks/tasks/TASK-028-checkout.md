@@ -8,7 +8,7 @@
 | Depends on | [TASK-027](TASK-027-registers-session-open.md), [TASK-023](TASK-023-manual-issue.md), [TASK-025](TASK-025-cost-correction.md), [TASK-026](TASK-026-reversal.md), [TASK-016](TASK-016-barcodes.md) |
 | Gates | — ([TASK_PLAN](../TASK_PLAN.md) section 3) |
 | Branch | `task/TASK-028-checkout` from `develop` (EXC-22) |
-| Executor | Claude Opus 5.5 at effort Max (D-066), on one explicit instruction of the Owner (EXC-10, EXC-11) |
+| Executor | Claude Opus 5.5, at the effort that the Owner's instruction names for this Task (D-031, D-095), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None required. |
 | Modules | Sales, Inventory, Costing, Cash, Configuration |
 | Baseline | RF-7, D-090; corrected under D-091 and D-092 |

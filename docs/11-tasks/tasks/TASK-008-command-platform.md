@@ -8,7 +8,7 @@
 | Depends on | [TASK-007](TASK-007-authorization-shell.md) |
 | Gates | — ([TASK_PLAN](../TASK_PLAN.md) section 3) |
 | Branch | `task/TASK-008-command-platform` from `develop` (EXC-22) |
-| Executor | Claude Opus 5.5 at effort Max (D-066), on one explicit instruction of the Owner (EXC-10, EXC-11) |
+| Executor | Claude Opus 5.5, at the effort that the Owner's instruction names for this Task (D-031, D-095), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None required. Context7 for Laravel transactions and the pinned PostgreSQL error codes (EXC-03). |
 | Modules | Commands, Audit |
 | Baseline | RF-7, D-090 |

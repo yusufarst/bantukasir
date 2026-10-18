@@ -8,7 +8,7 @@
 | Depends on | [TASK-043](TASK-043-performance-harness.md) |
 | Gates | TARGET (the staging part), GATE-PUBLISH (the candidate tag) ([TASK_PLAN](../TASK_PLAN.md) section 3) |
 | Branch | `task/TASK-044-integrated-verification` from `develop` (EXC-22) |
-| Executor | Claude Opus 5.5 at effort Max (D-066), on one explicit instruction of the Owner (EXC-10, EXC-11) |
+| Executor | Claude Opus 5.5, at the effort that the Owner's instruction names for this Task (D-031, D-095), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None required. |
 | Modules | All |
 | Baseline | RF-7, D-090 |

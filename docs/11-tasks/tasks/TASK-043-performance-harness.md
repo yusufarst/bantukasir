@@ -8,7 +8,7 @@
 | Depends on | [TASK-041](TASK-041-owner-home-daily.md), [TASK-042](TASK-042-audit-views.md), [TASK-038](TASK-038-housekeeping.md), [TASK-014](TASK-014-release-pipeline.md) |
 | Gates | — ([TASK_PLAN](../TASK_PLAN.md) section 3) |
 | Branch | `task/TASK-043-performance-harness` from `develop` (EXC-22) |
-| Executor | Claude Opus 5.5 at effort Max (D-066), on one explicit instruction of the Owner (EXC-10, EXC-11) |
+| Executor | Claude Opus 5.5, at the effort that the Owner's instruction names for this Task (D-031, D-095), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None required. |
 | Modules | Test harness |
 | Baseline | RF-7, D-090 |

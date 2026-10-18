@@ -8,7 +8,7 @@
 | Depends on | [TASK-001](TASK-001-toolchain-ci.md) |
 | Gates | — ([TASK_PLAN](../TASK_PLAN.md) section 3) |
 | Branch | `task/TASK-003-kernel-localization` from `develop` (EXC-22) |
-| Executor | Claude Opus 5.5 at effort Max (D-066), on one explicit instruction of the Owner (EXC-10, EXC-11) |
+| Executor | Claude Opus 5.5, at the effort that the Owner's instruction names for this Task (D-031, D-095), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None required. Context7 for Brick Math, Laravel localization and Inertia shared props (EXC-03). |
 | Modules | Shared kernel (`app/Support`), Localization (`lang/id`, `resources/js/lib`) |
 | Baseline | RF-7, D-090 |

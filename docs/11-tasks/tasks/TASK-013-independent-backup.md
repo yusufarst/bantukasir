@@ -8,7 +8,7 @@
 | Depends on | [TASK-012](TASK-012-application-image.md), [TASK-010](TASK-010-bootstrap-profile-media.md) |
 | Gates | — ([TASK_PLAN](../TASK_PLAN.md) section 3) |
 | Branch | `task/TASK-013-independent-backup` from `develop` (EXC-22) |
-| Executor | Claude Opus 5.5 at effort Max (D-066), on one explicit instruction of the Owner (EXC-10, EXC-11) |
+| Executor | Claude Opus 5.5, at the effort that the Owner's instruction names for this Task (D-031, D-095), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None required. Context7 for the S3 client of the framework's storage layer and `pg_dump` of the pinned version (EXC-03). |
 | Modules | Operations |
 | Baseline | RF-7, D-090 |

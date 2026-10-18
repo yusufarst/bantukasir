@@ -8,7 +8,7 @@
 | Depends on | [TASK-004](TASK-004-database-foundation.md), [TASK-005](TASK-005-design-system.md) |
 | Gates | — ([TASK_PLAN](../TASK_PLAN.md) section 3) |
 | Branch | `task/TASK-006-authentication` from `develop` (EXC-22) |
-| Executor | Claude Opus 5.5 at effort Max (D-066), on one explicit instruction of the Owner (EXC-10, EXC-11) |
+| Executor | Claude Opus 5.5, at the effort that the Owner's instruction names for this Task (D-031, D-095), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None required. Context7 for Laravel Fortify and the session and password broker of the pinned version (EXC-03). |
 | Modules | Access, Audit |
 | Baseline | RF-7, D-090; corrected under D-091 |

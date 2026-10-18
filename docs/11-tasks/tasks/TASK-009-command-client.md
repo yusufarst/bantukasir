@@ -8,7 +8,7 @@
 | Depends on | [TASK-008](TASK-008-command-platform.md), [TASK-002](TASK-002-p7-change-control-1.md) |
 | Gates | GATE-CC1 ([TASK_PLAN](../TASK_PLAN.md) section 3) |
 | Branch | `task/TASK-009-command-client` from `develop` (EXC-22) |
-| Executor | Claude Opus 5.5 at effort Max (D-066), on one explicit instruction of the Owner (EXC-10, EXC-11) |
+| Executor | Claude Opus 5.5, at the effort that the Owner's instruction names for this Task (D-031, D-095), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None required. |
 | Modules | Commands (client), Frontend shell |
 | Baseline | RF-7, D-090; corrected under D-091 |

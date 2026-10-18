@@ -8,7 +8,7 @@
 | Depends on | — |
 | Gates | GATE-P11, GATE-BRANCH, GATE-PUBLISH (before DONE: the first push, the pull request, CI and the merge into `develop`) ([TASK_PLAN](../TASK_PLAN.md) section 3) |
 | Branch | `task/TASK-001-toolchain-ci` from `develop` (EXC-22) |
-| Executor | Claude Opus 5.5 at effort Max (D-066), on one explicit instruction of the Owner (EXC-10, EXC-11) |
+| Executor | Claude Opus 5.5, at the effort that the Owner's instruction names for this Task (D-031, D-095), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None required. Context7, or the official documentation of each pinned version, for version checks (EXC-03). |
 | Modules | Repository and shared configuration; no business module |
 | Baseline | RF-7, D-090; corrected under D-091 |

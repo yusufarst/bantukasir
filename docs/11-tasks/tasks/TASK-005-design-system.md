@@ -8,7 +8,7 @@
 | Depends on | [TASK-002](TASK-002-p7-change-control-1.md), [TASK-003](TASK-003-kernel-localization.md) |
 | Gates | GATE-CC1 ([TASK_PLAN](../TASK_PLAN.md) section 3) |
 | Branch | `task/TASK-005-design-system` from `develop` (EXC-22) |
-| Executor | Claude Opus 5.5 at effort Max (D-066), on one explicit instruction of the Owner (EXC-10, EXC-11) |
+| Executor | Claude Opus 5.5, at the effort that the Owner's instruction names for this Task (D-031, D-095), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None required. Playwright through the project's own package (TOOLCHAIN section 1). |
 | Modules | Frontend (`resources/js/components`, `layouts`, styles) |
 | Baseline | RF-7, D-090 |

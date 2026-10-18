@@ -8,7 +8,7 @@
 | Depends on | [TASK-028](TASK-028-checkout.md), [TASK-017](TASK-017-catalog-pages.md) |
 | Gates | — ([TASK_PLAN](../TASK_PLAN.md) section 3) |
 | Branch | `task/TASK-029-till-pages` from `develop` (EXC-22) |
-| Executor | Claude Opus 5.5 at effort Max (D-066), on one explicit instruction of the Owner (EXC-10, EXC-11) |
+| Executor | Claude Opus 5.5, at the effort that the Owner's instruction names for this Task (D-031, D-095), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None required. |
 | Modules | Sales (pages), Frontend |
 | Baseline | RF-7, D-090; corrected under D-091 |

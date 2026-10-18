@@ -8,7 +8,7 @@
 | Depends on | — |
 | Gates | GATE-P11, GATE-BRANCH (before DONE: its merge into `develop`, after TASK-001), GATE-PUBLISH (before DONE: its push and pull request) ([TASK_PLAN](../TASK_PLAN.md) section 3) |
 | Branch | `task/TASK-002-p7-change-control-1` from `develop` (EXC-22); or, before `develop` exists, the branch the Owner names, since this Task changes documents only; merged into `develop` only after TASK-001, with `develop` merged into it first (EXC-36, EXC-37) |
-| Executor | Claude Opus 5.5 at effort Max (D-066), on one explicit instruction of the Owner (EXC-10, EXC-11) |
+| Executor | Claude Opus 5.5, at the effort that the Owner's instruction names for this Task (D-031, D-095), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None. |
 | Modules | Documents only |
 | Baseline | RF-7, D-090; corrected under D-091 |

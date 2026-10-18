@@ -8,7 +8,7 @@
 | Depends on | [TASK-049](TASK-049-release-readiness.md) |
 | Gates | RELEASE (the Owner's exact authorization), GATE-PUBLISH (the merge into `main` and the tag), G4 (accepted before the cutover) ([TASK_PLAN](../TASK_PLAN.md) section 3) |
 | Branch | `task/TASK-050-production-pilot` from `develop` (EXC-22) |
-| Executor | Claude Opus 5.5 at effort Max (D-066), on one explicit instruction of the Owner (EXC-10, EXC-11) |
+| Executor | Claude Opus 5.5, at the effort that the Owner's instruction names for this Task (D-031, D-095), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None. |
 | Modules | All |
 | Baseline | RF-7, D-090 |

@@ -8,7 +8,7 @@
 | Depends on | [TASK-039](TASK-039-system-status.md), [TASK-040](TASK-040-finance-report.md), [TASK-032](TASK-032-assisted-close-notes.md) |
 | Gates | — ([TASK_PLAN](../TASK_PLAN.md) section 3) |
 | Branch | `task/TASK-041-owner-home-daily` from `develop` (EXC-22) |
-| Executor | Claude Opus 5.5 at effort Max (D-066), on one explicit instruction of the Owner (EXC-10, EXC-11) |
+| Executor | Claude Opus 5.5, at the effort that the Owner's instruction names for this Task (D-031, D-095), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None required. |
 | Modules | Reporting |
 | Baseline | RF-7, D-090 |

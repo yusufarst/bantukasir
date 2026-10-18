@@ -8,7 +8,7 @@
 | Depends on | [TASK-008](TASK-008-command-platform.md), [TASK-002](TASK-002-p7-change-control-1.md) |
 | Gates | GATE-CC1 ([TASK_PLAN](../TASK_PLAN.md) section 3) |
 | Branch | `task/TASK-010-bootstrap-profile-media` from `develop` (EXC-22) |
-| Executor | Claude Opus 5.5 at effort Max (D-066), on one explicit instruction of the Owner (EXC-10, EXC-11) |
+| Executor | Claude Opus 5.5, at the effort that the Owner's instruction names for this Task (D-031, D-095), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None required. Context7 for the image library chosen and the framework's storage layer (EXC-03). |
 | Modules | Configuration, Media, Access (operator procedures), Inventory (installation state) |
 | Baseline | RF-7, D-090 |
