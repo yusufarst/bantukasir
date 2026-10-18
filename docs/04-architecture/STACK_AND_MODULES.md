@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-3A under D-055, 4 October 2026 (Asia/Jakarta); amended in RF-6 under D-088, 18 October 2026: the Operations module and its dependencies; section 3 adapted by TASK-001 under STK-22, 19 October 2026 |
+| Status | CURRENT — written in RF-3A under D-055, 4 October 2026 (Asia/Jakarta); amended in RF-6 under D-088, 18 October 2026: the Operations module and its dependencies; section 3 adapted by TASK-001 under STK-22, 19 October 2026, with `tests/Network/` added the same day after its review of class B |
 | Phase | P4 — application architecture |
 | Replaces | The stack, module and structure sections of `docs/04-architecture/legacy/P4-ARCHITECTURE.md` and the module paragraph of `docs/04-architecture/legacy/02-ARCHITECTURE.md` ([LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 8) |
 | Decisions | D-004, D-005, D-050; [ADR-001](../adr/ADR-001-stack-and-modular-monolith.md), [ADR-002](../adr/ADR-002-minimum-runtime-infrastructure.md), [ADR-004](../adr/ADR-004-authentication.md), [ADR-005](../adr/ADR-005-localization-architecture.md), [ADR-006](../adr/ADR-006-exact-numbers.md), [ADR-007](../adr/ADR-007-command-identity-and-idempotency.md) |
@@ -118,6 +118,7 @@ Adaptations recorded by TASK-001 for Laravel 13 and the command contract (STK-22
 
 - Laravel 13 has no HTTP or console kernel class: routing, middleware and exception handling are configured in `bootstrap/app.php`, and `app/Console/Commands/` is discovered automatically; the schedule goes in `routes/console.php`, registered in `bootstrap/app.php` by the Task that adds the first scheduled command.
 - The test folders map to the command contract of TEST_STRATEGY section 7: `tests/Unit/` is `composer test:unit` and, for TypeScript, `npm run test:unit`; `tests/Feature/` is `composer test:postgres` (L2 and L4 on real PostgreSQL); `tests/Concurrency/` is `composer test:race`; `tests/Browser/` is `npm run test:e2e`.
+- `tests/Network/` holds the negative proofs of the dependency audit that need the advisory services over the network, so that the L1 suites run without network (TS-08): `composer lint` runs the PHPUnit suite `Network` after `composer audit --locked`, and `npm run lint` runs `vitest.network.config.ts` after the npm audit.
 - `tests/Fixtures/` holds the negative samples of the static checks, which the build, the linters and the analysis exclude; `tests/PHPStan/` holds the project's PHPStan rules.
 - `scripts/checks/` holds the static checks of TEST_STRATEGY section 6 that are not a tool's own command; `docker/` holds the files of the local container environment, which TASK-012 replaces with the release image.
 

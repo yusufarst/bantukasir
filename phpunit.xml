@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    PHPUnit (TEST_STRATEGY section 2): L1 in tests/Unit (composer test:unit);
-    L2 and L4 on real PostgreSQL in tests/Feature (composer test:postgres); L3
-    in tests/Concurrency (composer test:race). A test is never retried until it
-    passes (TS-08). Sessions and the cache use the array driver and store until
-    TASK-004 and TASK-006 create their tables.
+    PHPUnit (TEST_STRATEGY section 2): L1 in tests/Unit (composer test:unit),
+    which needs no network; L2 and L4 on real PostgreSQL in tests/Feature
+    (composer test:postgres); L3 in tests/Concurrency (composer test:race). The
+    suite Network, tests/Network, holds the negative proofs of the dependency
+    audit that need Packagist's advisories; composer lint runs it after the
+    audit itself. A test is never retried until it passes (TS-08). Sessions and
+    the cache use the array driver and store until TASK-004 and TASK-006 create
+    their tables.
 -->
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
@@ -25,6 +28,9 @@
         </testsuite>
         <testsuite name="Concurrency">
             <directory>tests/Concurrency</directory>
+        </testsuite>
+        <testsuite name="Network">
+            <directory>tests/Network</directory>
         </testsuite>
     </testsuites>
     <source>

@@ -1,9 +1,10 @@
 <?php
 
-namespace Tests\Unit\StaticChecks;
+namespace Tests\Network;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Process\Process;
+use Tests\Unit\StaticChecks\RunsChecks;
 
 /**
  * Negative sample of the Composer dependency audit (TEST_STRATEGY section 6,
@@ -11,7 +12,9 @@ use Symfony\Component\Process\Process;
  * a locked package with known advisories fails on the high ones only. The
  * sample project is written at run time in the test's own temporary directory
  * and removed afterwards. The audit reads Packagist's advisories, so the test
- * needs the network. The real tree passes in composer lint.
+ * needs the network, like the audit itself: it is not an L1 test, which runs
+ * without network (TS-08), and composer lint runs it, as the PHPUnit suite
+ * Network, right after composer audit --locked has passed on the real tree.
  */
 final class ComposerAuditTest extends TestCase
 {

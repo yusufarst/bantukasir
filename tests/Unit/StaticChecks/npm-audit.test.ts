@@ -5,9 +5,11 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 // Negative samples of the npm dependency audit (TEST_STRATEGY section 6,
-// THR-14, AC-001-04). Each sample is written at run time in the test's own
-// temporary directory outside the tracked tree, which the test removes
-// afterwards; the real tree passes in npm run lint.
+// THR-14, AC-001-04), from saved reports, so that they need no network (TS-08).
+// Each sample is written at run time in the test's own temporary directory
+// outside the tracked tree, which the test removes afterwards; the real tree
+// passes in npm run lint, which also runs the proof against the registry
+// (tests/Network/npm-audit.test.ts).
 const directories: string[] = [];
 
 function temporaryDirectory(): string {
@@ -28,19 +30,6 @@ afterEach(() => {
 });
 
 describe('the npm dependency audit', () => {
-    it('fails on a high advisory of a locked package', () => {
-        // braces 3.0.3 has the high advisory GHSA-vfj7-8cjw-p6xm and no fix.
-        const project = temporaryDirectory();
-        writeFileSync(path.join(project, 'package.json'), JSON.stringify({ name: 'audit-sample', private: true, dependencies: { braces: '3.0.3' } }));
-        const lock = spawnSync('npm', ['install', '--package-lock-only', '--ignore-scripts', '--no-audit', '--no-fund'], { cwd: project, encoding: 'utf8' });
-        expect(lock.status, lock.stderr).toBe(0);
-
-        const run = audit(project);
-
-        expect(run.status).toBe(1);
-        expect(run.stdout).toContain('braces: GHSA-vfj7-8cjw-p6xm (high)');
-    });
-
     const passMessage = 'npm audit: no high or critical advisory';
 
     function counts(high: number, moderate: number) {

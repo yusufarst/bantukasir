@@ -36,7 +36,8 @@
             "@php scripts/checks/translation-keys.php",
             "@php scripts/checks/migration-review.php",
             "bash scripts/checks/secret-scan.sh",
-            "@composer audit --locked"
+            "@composer audit --locked",
+            "phpunit --testsuite=Network"
         ],
         "analyse": "phpstan analyse --no-progress --memory-limit=1G",
         "test:unit": "phpunit --testsuite=Unit",
@@ -44,9 +45,9 @@
         "test:race": "phpunit --testsuite=Concurrency"
     },
     "scripts-descriptions": {
-        "lint": "Pint, the translation-key check, the migration review, the secret scan and the dependency audit (TEST_STRATEGY section 6).",
+        "lint": "Pint, the translation-key check, the migration review, the secret scan, the dependency audit and then its negative proofs that need the network, the PHPUnit suite Network (TEST_STRATEGY section 6).",
         "analyse": "PHPStan with Larastan and the project's rules for process functions, raw SQL and floats in exact values.",
-        "test:unit": "L1 unit tests, including the negative samples of the static checks.",
+        "test:unit": "L1 unit tests, which need no network, including the negative samples of the static checks.",
         "test:postgres": "Tests on real PostgreSQL (L2 and L4).",
         "test:race": "Concurrency tests on real PostgreSQL (L3)."
     },

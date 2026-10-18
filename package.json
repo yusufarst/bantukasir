@@ -7,7 +7,7 @@
         "node": "^24.22.0"
     },
     "scripts": {
-        "lint": "eslint . && node scripts/checks/npm-audit.mjs",
+        "lint": "eslint . && node scripts/checks/npm-audit.mjs && vitest run --config vitest.network.config.ts",
         "typecheck": "tsc --noEmit",
         "test:unit": "vitest run",
         "build": "vite build",

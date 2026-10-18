@@ -1020,3 +1020,41 @@ Its standard error, 295 bytes: a warning with the same request failure, `npm err
 In the same container, without network: `node scripts/checks/npm-audit.mjs` on the real tree exits 2 ("npm reported an error, for example an unreachable registry"), and `npm run lint` exits 2 after ESLint, without the pass message. With the network, 02:19:36 to 02:20:08: npm's report of the real tree has the keys `auditReportVersion`, `vulnerabilities` (no entry) and `metadata`, with `metadata.vulnerabilities` all zero, and `npm run lint` exits 0 with the pass message.
 
 The commit "TASK-001: make the npm audit fail closed" holds the script, its tests and sections 11 to 11.2.
+
+### 11.3 R-2 — the L1 suites without network (TS-08)
+
+**The defect.** Two negative proofs of the dependency audit read the advisory services over the network, Packagist and the npm registry, but ran in the L1 suites, which TEST_STRATEGY section 2 and TS-08 want deterministic: `tests/Unit/StaticChecks/ComposerAuditTest.php` in `composer test:unit`, and the case "fails on a high advisory of a locked package" of `npm-audit.test.ts` in `npm run test:unit`. The failure of `ComposerAuditTest` at 01:11 (section 7.2) came from that dependence.
+
+**The fix.** The two proofs now run where the network is already required, right after the audit that they prove, in an explicitly named network-dependent suite:
+
+- `tests/Unit/StaticChecks/ComposerAuditTest.php` moved with `git mv` to `tests/Network/ComposerAuditTest.php`; only its namespace (`Tests\Network`), the import of the trait `RunsChecks` and its comment changed. `phpunit.xml` has a fourth suite, `Network` (`tests/Network`), and `composer lint` runs `phpunit --testsuite=Network` as its last step, after `composer audit --locked`. The script descriptions of `lint` and `test:unit` say so.
+- The npm case moved to `tests/Network/npm-audit.test.ts`, run only by the new `vitest.network.config.ts` (`include: tests/Network/**/*.test.ts`). `npm run lint` is now `eslint . && node scripts/checks/npm-audit.mjs && vitest run --config vitest.network.config.ts`. `vitest.config.ts`, which `npm run test:unit` uses, includes `tests/Unit/` and `resources/js/` only, so it does not see `tests/Network/`; its comment says so. The option `-c, --config <path>` is in the help of the pinned Vitest 5.0.5 (`vitest run --help` in the `node` container, EXC-03).
+- The eleven command names of TEST_STRATEGY section 7 are unchanged, and so is `.github/workflows/ci.yml`: CI runs both proofs through `composer lint` and `npm run lint`. A Composer script stops at the first command that fails, and `&&` stops `npm run lint`, so a proof runs only after its audit has reached the advisory service and passed on the real tree.
+- STACK_AND_MODULES section 3 records `tests/Network/` as an adaptation under STK-22, with its status row. TOOLCHAIN does not describe the suite layout and is unchanged.
+
+The alternative that the instruction allows, a deterministic offline advisory source of Composer 2.10.3, was not used, so no reading of Composer's documentation or source for it was needed.
+
+**Determinism, without network.** Each run in a throwaway container with `--rm`, `--network none` and the repository mounted read-only:
+
+| Run | Time | Result |
+| --- | --- | --- |
+| `composer test:unit` in `bantukasir-app:local`, entrypoint `composer` | 02:23:20 to 02:25:11 | PASS — "OK (16 tests, 54 assertions)", exit 0. PHPUnit warned after the run that it could not write its run history `.phpunit.cache/test-run-history`, because the mount was read-only |
+| The same, with a `tmpfs` over the ignored `.phpunit.cache/` only | 02:25:24 to 02:27:10 | PASS — "OK (16 tests, 54 assertions)", exit 0, no warning |
+| `npm run test:unit` in `node:24.22.0-trixie-slim` | 02:27:10 | Stopped before any test, exit 1: Vite writes its bundled configuration to `node_modules/.vite-temp/` (`EROFS`) |
+| The same, with a `tmpfs` over the ignored `node_modules/.vite-temp/` and `node_modules/.vite/`, Vite's and Vitest's own folders | 02:27:27 to 02:27:56 | PASS — 3 files, 11 tests, exit 0 |
+
+Before the change, `composer test:unit` had 18 tests and 65 assertions and `npm run test:unit` 7 tests; `ComposerAuditTest` holds the 2 tests and 11 assertions that the suite `Network` now runs; R-1 added 5 cases to the npm L1 file and this change moved 1 out, so 7 + 5 − 1 = 11.
+
+**Fail closed, without network**, in the same kind of container:
+
+| Command | Exit | Output |
+| --- | --- | --- |
+| `composer audit --locked` | 100 | "curl error 6 while downloading https://repo.packagist.org/packages.json: Could not resolve host: repo.packagist.org"; no "No security vulnerability advisories found". With `COMPOSER_DISABLE_NETWORK=1` as well: exit 100, "Network disabled, request canceled". The command does not use Composer's option `--ignore-unreachable`, and no file of the project sets `COMPOSER_DISABLE_NETWORK` |
+| `composer lint` | 100 | Pint, the translation keys, the migration review and the secret scan (the tree and 27 commits) pass; then "Script @composer audit --locked handling the lint event returned with error code 100", and the suite `Network` does not run |
+| `npm run lint` | 2 | ESLint passes; then "npm audit: no usable report (npm reported an error, for example an unreachable registry); the check fails closed. …", and `vitest.network.config.ts` does not run; no pass message |
+
+**With the network**, in the project's containers: `composer lint`, 02:29:46 to 02:30:34, exit 0 — "No security vulnerability advisories found.", then the suite `Network`, "OK (2 tests, 11 assertions)"; `npm run lint`, 02:30:34 to 02:31:19, exit 0 — the pass message of the npm audit, then `tests/Network/npm-audit.test.ts`, 1 test passed. `composer validate --strict --no-check-all` ("./composer.json is valid"), `composer analyse` ("No errors", with `tests/Network/` analysed) and `npm run typecheck` exit 0.
+
+**The intermittent failure of section 7.2 is resolved by this restructuring** as far as the L1 suites go: `ComposerAuditTest` no longer runs in `composer test:unit`, which needs no network now. Its dependence on Packagist is in the nature of the proof, as it is of `composer audit --locked`; in `composer lint` it runs only after the audit has passed, and a failure of the service fails the lint, never passes it. The cause of that one undecodable report at 01:11 was not determined.
+
+The commit "TASK-001: move the network-dependent audit proofs out of the L1 suites" holds the moved and new tests, `phpunit.xml`, `composer.json`, `package.json`, both Vitest configurations, STACK_AND_MODULES section 3 and this section.
