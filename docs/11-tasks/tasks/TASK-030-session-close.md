@@ -11,7 +11,7 @@
 | Executor | Claude Opus 5.5 at effort Max (D-066), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None required. |
 | Modules | Cash, Sales (totals query) |
-| Baseline | RF-7, D-090 |
+| Baseline | RF-7, D-090; corrected under D-091 |
 
 ## 1. Goal
 
@@ -102,6 +102,7 @@ Controls are those of [TRACEABILITY](../TRACEABILITY.md) section 9.2, each built
 - L2 failure injection.
 - L4 RC-03 and scopes.
 - L5 KS-07.
+- Adds the close of a cash session to the L5 critical paths that every later pull request runs (EXECUTION_CONTEXT EXC-34).
 - The standing obligations of EXECUTION_CONTEXT section 10 for every route, table, command, read, page, procedure and document this Task adds.
 
 ## 8. Evidence

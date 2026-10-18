@@ -174,7 +174,7 @@ P7 is being rebuilt (D-024) as three checkpoints, RF-4A, RF-4B and RF-4C, ending
 
 | Path | Subject | Status | Replaced in |
 | --- | --- | --- | --- |
-| [TEST_STRATEGY.md](../08-testing/TEST_STRATEGY.md) | Test levels, environments and data for tests, harness, test families, static checks, CI gates, evidence, acceptance gates, Definition of Done, reviews, final verification | CURRENT (RF-6, D-088) | — |
+| [TEST_STRATEGY.md](../08-testing/TEST_STRATEGY.md) | Test levels, environments and data for tests, harness, test families, static checks, CI gates, evidence, acceptance gates, Definition of Done, reviews, final verification | CURRENT (RF-6, D-088); sections 6 and 7 amended by D-091 | — |
 | [ACCEPTANCE_SUITES.md](../08-testing/ACCEPTANCE_SUITES.md) | The 56 acceptance suites with their cases, and the traceability of every requirement, race, guard, threat, workflow and procedure | CURRENT (RF-6, D-088) | — |
 | [DEVICE_VERIFICATION.md](../08-testing/DEVICE_VERIFICATION.md) | The protocol of gate DEVICES on the shop's real devices | CURRENT (RF-6, D-088) | — |
 | [legacy/08-TESTING-ACCEPTANCE.md](../08-testing/legacy/08-TESTING-ACCEPTANCE.md) | 39 acceptance suites and Definition of Done | LEGACY — SUPERSEDED by the three documents above; its suite identifiers are carried (ACCEPTANCE_SUITES section 2) | RF-6; removal in a later authorized step |
@@ -204,11 +204,11 @@ Production data protection is CURRENT in [PRODUCTION_DATA_SAFETY](PRODUCTION_DAT
 
 | Path | Subject | Status | Replaced in |
 | --- | --- | --- | --- |
-| [EXECUTION_CONTEXT.md](../11-tasks/EXECUTION_CONTEXT.md) | The rules every Task executor follows: reading, authorization, statuses, the start of a Task, Git, engineering, the database, the interface, standing test obligations, evidence, reviews, Definition of Done, stop conditions, closing, change control | CURRENT (RF-7, D-090); awaiting the Owner's approval, gate GATE-P11 | — |
-| [TASK_PLAN.md](../11-tasks/TASK_PLAN.md) | The 50 Tasks: gates, the register of their status (the only record of a Task's status), the implementation sequence, the first eligible Task, the open items mapped, the former Build Units | CURRENT (RF-7, D-090); awaiting the Owner's approval, gate GATE-P11 | — |
-| [`tasks/`](../11-tasks/tasks/) (50 files `TASK-NNN-<name>.md`) | One contract per Task: goal, prerequisites, reading, scope and ownership, traceability, acceptance criteria, tests, evidence, Definition of Done, stop conditions, expected files | CURRENT (RF-7, D-090); awaiting the Owner's approval, gate GATE-P11 | — |
-| [DEPENDENCY_GRAPH.md](../11-tasks/DEPENDENCY_GRAPH.md) | The dependencies of the Tasks, lanes and waves, the critical path | CURRENT (RF-7, D-090); generated from TASK_PLAN, which prevails | — |
-| [TRACEABILITY.md](../11-tasks/TRACEABILITY.md) | Every requirement, workflow, user task, suite, race, guard, threat, route, table, page, control and document mapped to its Task | CURRENT (RF-7, D-090); generated with TASK_PLAN, which prevails | — |
+| [EXECUTION_CONTEXT.md](../11-tasks/EXECUTION_CONTEXT.md) | The rules every Task executor follows: reading, authorization, statuses, the start of a Task, Git, engineering, the database, the interface, standing test obligations, evidence, reviews, Definition of Done, stop conditions, closing, change control | CURRENT (RF-7, D-090; corrected by D-091); awaiting the Owner's approval, gate GATE-P11 | — |
+| [TASK_PLAN.md](../11-tasks/TASK_PLAN.md) | The 50 Tasks: gates, the register of their status (the only record of a Task's status), the implementation sequence, the first eligible Task, the open items mapped, the former Build Units | CURRENT (RF-7, D-090; corrected by D-091); awaiting the Owner's approval, gate GATE-P11 | — |
+| [`tasks/`](../11-tasks/tasks/) (50 files `TASK-NNN-<name>.md`) | One contract per Task: goal, prerequisites, reading, scope and ownership, traceability, acceptance criteria, tests, evidence, Definition of Done, stop conditions, expected files | CURRENT (RF-7, D-090; eleven contracts corrected by D-091); awaiting the Owner's approval, gate GATE-P11 | — |
+| [DEPENDENCY_GRAPH.md](../11-tasks/DEPENDENCY_GRAPH.md) | The dependencies of the Tasks, lanes and waves, the critical path | CURRENT (RF-7, D-090; corrected by D-091); generated from TASK_PLAN, which prevails | — |
+| [TRACEABILITY.md](../11-tasks/TRACEABILITY.md) | Every requirement, workflow, user task, suite, race, guard, threat, route, table, page, control and document mapped to its Task | CURRENT (RF-7, D-090; corrected by D-091); generated with TASK_PLAN, which prevails | — |
 | [legacy/11-BUILD-PLAN.md](../11-tasks/legacy/11-BUILD-PLAN.md), [legacy/P11-BUILD-UNITS.md](../11-tasks/legacy/P11-BUILD-UNITS.md) | Former build plan, dependency graph and estimates | LEGACY — SUPERSEDED by TASK_PLAN and DEPENDENCY_GRAPH (D-090) | RF-7; removal in a later authorized step |
 | `legacy/build-units/` (27 cards and `registry.json`) | Former Build Units | LEGACY — SUPERSEDED by the Task contracts; each Build Unit is mapped in TASK_PLAN section 9 (FD-08, D-090) | RF-7; removal in a later authorized step |
 

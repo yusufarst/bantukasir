@@ -2,13 +2,13 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-2 under D-041, 4 October 2026 (Asia/Jakarta); amended in RF-6 under D-088, 18 October 2026: the reading of the "Tests" column (section 1), REQ-OPS-01, REQ-NFR-05, and sections 22 and 23; amended under D-089, 18 October 2026: the trace of D-089 in sections 22 and 23; amended in RF-7 under D-090, 18 October 2026: the trace of D-090 in sections 22 and 23 |
+| Status | CURRENT — written in RF-2 under D-041, 4 October 2026 (Asia/Jakarta); amended in RF-6 under D-088, 18 October 2026: the reading of the "Tests" column (section 1), REQ-OPS-01, REQ-NFR-05, and sections 22 and 23; amended under D-089, 18 October 2026: the trace of D-089 in sections 22 and 23; amended in RF-7 under D-090, 18 October 2026: the trace of D-090 in sections 22 and 23; amended under D-091, 18 October 2026: the trace of D-091 in sections 22 and 23 |
 | Phase | P1 — functional and non-functional requirements, acceptance criteria |
 | Replaces | `docs/01-product/legacy/requirements/core.json` and `docs/01-product/legacy/requirements/CORE-MAP.md` (CORE-001 to CORE-073) |
 | Product | [PRODUCT_BLUEPRINT](PRODUCT_BLUEPRINT.md) |
 | Domain rules | [DOMAIN_MODEL](../02-domain/DOMAIN_MODEL.md), [CATALOG_BARCODE](../02-domain/CATALOG_BARCODE.md), [INVENTORY](../02-domain/INVENTORY.md), [COSTING](../02-domain/COSTING.md), [SALES_CASH](../02-domain/SALES_CASH.md) |
 
-The requirement register of BantuKasir V1. Each requirement says what the product must do, how acceptance is judged, where the requirement comes from, and which acceptance suite tests it (the column as written before RF-6; the current mapping is ACCEPTANCE_SUITES section 5). Section 21 maps every legacy CORE entry to these requirements; section 22 traces every decision D-001 to D-090.
+The requirement register of BantuKasir V1. Each requirement says what the product must do, how acceptance is judged, where the requirement comes from, and which acceptance suite tests it (the column as written before RF-6; the current mapping is ACCEPTANCE_SUITES section 5). Section 21 maps every legacy CORE entry to these requirements; section 22 traces every decision D-001 to D-091.
 
 ## 1. How to read this register
 
@@ -344,7 +344,7 @@ Every legacy Core entry CORE-001 to CORE-073 (`core.json`, `CORE-MAP.md`) is map
 
 ## 22. Decision traceability
 
-Every decision D-001 to D-090 is either traced to at least one requirement or rule, or classified as having no product or domain content.
+Every decision D-001 to D-091 is either traced to at least one requirement or rule, or classified as having no product or domain content.
 
 | Decision | Product or domain content | Traced to |
 | --- | --- | --- |
@@ -438,7 +438,8 @@ Every decision D-001 to D-090 is either traced to at least one requirement or ru
 | D-088 | Acceptance of the RF-5 checkpoint; the decision on N-07 (no general server refusal; a close refused while the responsible user has an unresolved checkout receipt; the narrow cross-device risk accepted with audited corrections); question 18 (backup on a free allowance capped at Rp0; recovery key with the operator and a sealed copy with the shop's Owner); question 20 (no AI agent operates production); security log retention of 365 days; RF-6 authorized | REQ-CASH-07, REQ-OPS-01, REQ-OPS-03, REQ-OPS-04, REQ-NFR-05, REQ-NFR-06, REQ-AUD-02; BR-CASH-16, BR-KEEP-07 |
 | D-089 | Correction of the RF-6 checkpoint after its independent review: every decryption of a backup off the VPS, also in restore drills (finding B-1); the settlement of request receipts after a conclusive status check or a fenced reconciliation (finding B-2); four nonblocking findings recorded | REQ-OPS-01, REQ-CASH-07, REQ-SALE-08; BR-CASH-16 |
 | D-090 | Acceptance of RF-6, the checkpoint `677a6ce` and its correction `cc88eae`; RF-7 authorized and executed: the Task baseline of P11 — execution context, Task plan, 50 Task contracts, dependency graph and traceability | Non-product/domain — governance ([TASK_PLAN](../11-tasks/TASK_PLAN.md), [EXECUTION_CONTEXT](../11-tasks/EXECUTION_CONTEXT.md)) |
+| D-091 | Correction of the RF-7 checkpoint after its independent review: TASK-028 depends on TASK-025; replay criteria and tests in TASK-028 and TASK-035; GATE-PUBLISH before TASK-001 is `DONE`; pull-request L5 checks scoped to the critical paths already implemented; secret-scan samples generated during tests; shared registers and merges without rebase | Non-product/domain — governance ([TASK_PLAN](../11-tasks/TASK_PLAN.md), [EXECUTION_CONTEXT](../11-tasks/EXECUTION_CONTEXT.md), [TEST_STRATEGY](../08-testing/TEST_STRATEGY.md) sections 6 and 7) |
 
 ## 23. Counts
 
-Re-derived from this register: 23 sections; 134 requirement rows in sections 2 to 19, all with distinct identifiers; no requirement pending; 73 legacy CORE entries, of which 72 are mapped (9 of them adapted by later decisions) and 1 is retired (section 21); 90 decisions, of which 55 are traced to requirements or rules and 35 are classified as non-product/domain (section 22).
+Re-derived from this register: 23 sections; 134 requirement rows in sections 2 to 19, all with distinct identifiers; no requirement pending; 73 legacy CORE entries, of which 72 are mapped (9 of them adapted by later decisions) and 1 is retired (section 21); 91 decisions, of which 55 are traced to requirements or rules and 36 are classified as non-product/domain (section 22).

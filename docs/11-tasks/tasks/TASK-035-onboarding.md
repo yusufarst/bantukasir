@@ -11,7 +11,7 @@
 | Executor | Claude Opus 5.5 at effort Max (D-066), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None required. |
 | Modules | Inventory, Costing |
-| Baseline | RF-7, D-090 |
+| Baseline | RF-7, D-090; corrected under D-091 |
 
 ## 1. Goal
 
@@ -29,7 +29,8 @@ After AGENTS.md, CURRENT_HANDOFF, EXECUTION_CONTEXT and TASK_PLAN sections 1 to 
 
 - INVENTORY section 6 (BR-INV-23 to BR-INV-30, BR-INV-47, BR-INV-48); D-071, D-072, D-087
 - SCHEMA section 5.7 (`onboarding_state`, `onboarding_releases`, `opening_stock_entries`, `opening_stock_lines`, `onboarding_zero_counts`, `onboarding_zero_count_withdrawals`, `onboarding_restore_holds`, `onboarding_restore_reconciliations`), G-10, G-22, G-24 and G-26
-- TECHNICAL_RULES section 7.2 (opening stock; onboarding set or release), RACE-04, RACE-06, RACE-31, RACE-32 and TR-TX-03
+- TECHNICAL_RULES section 7.2 (opening stock; onboarding set or release), RACE-04, RACE-06, RACE-11, RACE-31, RACE-32 and TR-TX-03
+- COSTING sections 7 and 8, BR-COST-32; ADR-008 sections 4.1 and 4.3; the replay of TASK-025 with its extensions; SCHEMA G-07
 - INTERACTION_CONTRACTS RC-11 to RC-14, RC-48 and section 3.1 (the `opening` context)
 - ROUTE_CONTRACTS RC-11 to RC-14, RC-48, RP-412 and RP-413
 - SECURITY_MODEL CAP-15
@@ -44,7 +45,7 @@ After AGENTS.md, CURRENT_HANDOFF, EXECUTION_CONTEXT and TASK_PLAN sections 1 to 
 1. Create `opening_stock_entries`, `opening_stock_lines`, `onboarding_zero_counts`, `onboarding_zero_count_withdrawals`, `onboarding_restore_holds` and `onboarding_restore_reconciliations`; complete the keys `stock_movements.opening_line_id` → `opening_stock_lines` and the replacement keys of an opening line to its reversed original.
 2. Implement RC-12 (start: the Owner; recent authentication; only from NOT_STARTED with no release record and no unreconciled hold) and RC-13 (release: only from ACTIVE without a hold; the release record makes it final).
 3. Implement RC-11 (at most 100 rows, all or nothing; an original OPENING once per product with no earlier movement; zero counts on the checklist without a movement; one effective entry per product, G-22), RC-14 (withdrawal of a zero count: the Owner, recent authentication, a reason) and RC-48 (one explicit replacement of a reversed OPENING, once; G-24).
-4. Extend the replay to OPENING; prove the reversal of an OPENING during onboarding through RC-10 (TASK-026).
+4. Extend the replay of TASK-025 to OPENING (ADR-008 sections 4.1 and 4.3): an OPENING enters the logical ledger as an increase at its effective cost evidence — the original amount, the amount of its latest correction, or UNKNOWN; a correction or completion of an OPENING's cost starts the replay at that OPENING; a reversed OPENING and its REVERSAL are skipped as a cancelled pair, and the replacement OPENING enters at its own position (BR-COST-32, D-087). Prove the reversal of an OPENING during onboarding through RC-10 (TASK-026), and the fixture of COSTING section 8 with a real OPENING.
 5. Build RP-412 (the state — not started, active, released, held for restore reconciliation — and the checklist with its corrections) and RP-413 (the entry draft; RD-01 `opening` with the eligibility values of D-087; "Buat produk baru" over the page through RP-303).
 6. Add the onboarding state to RD-03 and the banner UXS-27 on every page; prove the freeze (G-10) against every posting family: receiving, manual issue, adjustment, checkout, a saleable return and a reversal of a RECEIPT or MANUAL_ISSUE; prove RACE-04 for the start.
 
@@ -71,12 +72,12 @@ Controls are those of [TRACEABILITY](../TRACEABILITY.md) section 9.2, each built
 
 | Subject | Owned or carried here | Contributed to |
 | --- | --- | --- |
-| Requirements | REQ-INV-07 | REQ-INV-09, REQ-ACC-08, REQ-ACC-09 |
+| Requirements | REQ-INV-07 | REQ-INV-09, REQ-ACC-08, REQ-ACC-09, REQ-COST-06, REQ-COST-08 |
 | Workflows | WF-24, WF-25 | — |
 | User tasks | UXT-33 | — |
-| Acceptance suites | OPEN01 (final: TASK-044) | AUTH03, INV03, REC02 |
-| Races | RACE-06, RACE-31, RACE-32 | RACE-04 |
-| Guards | G-10, G-22, G-24, G-26 | — |
+| Acceptance suites | OPEN01 (final: TASK-044) | AUTH03, INV03, REC02, FIN03 |
+| Races | RACE-06, RACE-31, RACE-32 | RACE-04, RACE-11 |
+| Guards | G-10, G-22, G-24, G-26 | G-07 |
 | Threats | — | — |
 | Open items | — | — |
 
@@ -91,6 +92,8 @@ Controls are those of [TRACEABILITY](../TRACEABILITY.md) section 9.2, each built
 - **AC-035-05** No database lock is held while people count (TR-TX-03).
 - **AC-035-06** RP-412 and RP-413 follow the approved artifacts with the TASK-002 keys; UXS-27 appears on every page while onboarding is active.
 - **AC-035-07** The constraint, deferred and privilege families pass for the six tables.
+- **AC-035-08** The replay reaches OPENING: with an OPENING of 10 units at UNKNOWN cost and, after the release, a Sale of 4 whose allocation is UNKNOWN at commit, completing the OPENING's cost at Rp50.000 starts the replay at the OPENING and publishes the Sale line's issue projection as KNOWN Rp20.000 and the valuation as 6 units worth Rp30.000; replaying the same correction twice gives the same result; a failure injected during publication changes nothing; the OPENING's evidence and every fact stay unchanged (REQ-COST-06, G-07).
+- **AC-035-09** A reversed and replaced OPENING is a cancelled pair in the replay: OPENING A of 10 units at Rp100.000, reversed during onboarding and replaced by OPENING B of 8 units at Rp96.000, then after the release a Sale of 4 allocated Rp48.000; correcting B's cost to Rp88.000 republishes the Sale's issue projection as Rp44.000 and the valuation as 4 units worth Rp44.000, as a ledger holding B alone gives (BR-COST-32, G-24). The fixture of COSTING section 8 with a real OPENING gives physical quantity 15, value 225 and issue cost 75, and after the full reversal of its RECEIPT physical quantity 5, value 50 and issue cost 50 in the corrected projection, the allocation fact staying 75 (REQ-COST-08).
 
 ## 7. Tests
 
@@ -98,13 +101,15 @@ Controls are those of [TRACEABILITY](../TRACEABILITY.md) section 9.2, each built
 - L3 RACE-04 onboarding, RACE-06, RACE-31, RACE-32.
 - L4 the commands and the freeze against every posting family.
 - L5 RP-412 and RP-413.
+- L1 and L2 the ADR-008 replay cases from an OPENING: completion and correction of its cost after the release with later Sales, manual issues and returns; the reversed and replaced OPENING as a cancelled pair; the fixture of COSTING section 8 with a real OPENING; idempotence and failure injection during publication (FIN03).
+- L3 RACE-11 from an OPENING: a correction of an OPENING's cost against a checkout and a manual issue of the same product.
 - The standing obligations of EXECUTION_CONTEXT section 10 for every route, table, command, read, page, procedure and document this Task adds.
 
 ## 8. Evidence
 
 `docs/11-tasks/evidence/TASK-035.md` (EXC-60 to EXC-63), with the records of TEST_STRATEGY TS-30 and, in addition:
 
-- Nothing beyond EXC-61.
+- The ADR-008 replay cases from an OPENING covered.
 
 ## 9. Definition of Done
 

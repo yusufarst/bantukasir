@@ -5,13 +5,13 @@
 | Status | `TODO`; the status of record is [TASK_PLAN](../TASK_PLAN.md) section 4 |
 | Phase and lane | 6 Cash and sales · lane S, cash and sales |
 | Size and review | XL · review class A — adversarial review in a separate session ([EXECUTION_CONTEXT](../EXECUTION_CONTEXT.md) section 12) |
-| Depends on | [TASK-027](TASK-027-registers-session-open.md), [TASK-023](TASK-023-manual-issue.md), [TASK-016](TASK-016-barcodes.md) |
+| Depends on | [TASK-027](TASK-027-registers-session-open.md), [TASK-023](TASK-023-manual-issue.md), [TASK-025](TASK-025-cost-correction.md), [TASK-016](TASK-016-barcodes.md) |
 | Gates | — ([TASK_PLAN](../TASK_PLAN.md) section 3) |
 | Branch | `task/TASK-028-checkout` from `develop` (EXC-22) |
 | Executor | Claude Opus 5.5 at effort Max (D-066), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None required. |
 | Modules | Sales, Inventory, Costing, Cash, Configuration |
-| Baseline | RF-7, D-090 |
+| Baseline | RF-7, D-090; corrected under D-091 |
 
 ## 1. Goal
 
@@ -29,10 +29,11 @@ After AGENTS.md, CURRENT_HANDOFF, EXECUTION_CONTEXT and TASK_PLAN sections 1 to 
 
 - SALES_CASH sections 1 to 5 (BR-SALE-01 to BR-SALE-23, BR-PAY-01 to BR-PAY-07, BR-DOC-01 to BR-DOC-06) and BR-CASH-10
 - INVENTORY BR-INV-07
-- COSTING section 6
-- ADR-008 section 2
+- COSTING sections 6 and 7
+- ADR-008 sections 2, 4.1, 4.3 and 7; the replay of TASK-025
 - SCHEMA section 5.9 (`sales`, `sale_lines`, `payments`, `receipt_snapshots`, `sale_correction_totals`, `sale_line_correction_totals`), section 6, G-01, G-04, G-17 and G-18
-- TECHNICAL_RULES section 7.2 (Sale checkout), RACE-01 to RACE-03, RACE-08, RACE-18, RACE-23, RACE-25 and sections 11.2 and 13.1
+- TECHNICAL_RULES section 7.2 (Sale checkout), RACE-01 to RACE-03, RACE-08, RACE-11, RACE-18, RACE-23, RACE-25 and sections 11.2 and 13.1
+- SCHEMA G-07 and G-14
 - INTERACTION_CONTRACTS RC-01 and section 3.1 (the `till` context)
 - ROUTE_CONTRACTS RC-01
 - ARCHITECTURE section 5 (ARC-30 to ARC-33) and ARC-25
@@ -51,7 +52,7 @@ After AGENTS.md, CURRENT_HANDOFF, EXECUTION_CONTEXT and TASK_PLAN sections 1 to 
 4. Compute line totals half-up once and the Sale total as their sum; read the business date and allocate the number at step 8, immediately before the insert (SCH-21); write the lines, the Payment, the SALE_ISSUE movements and balances, the allocation of every line (UNKNOWN when the valuation is unknown), the receipt snapshot with the frozen identity, template version, display names, items, totals, method, tendered amount and change (DC-01), the correction-totals rows, the audit event and the durable result.
 5. Keep the payment boundary of ARC-30 to ARC-33: one place defines the methods and their validation; no provider record, table, controller, callback, webhook, polling or asynchronous state.
 6. Implement the `till` context of RD-01: it needs the actor's own OPEN session (`NO_OPEN_SESSION`) and returns the stock that checkout needs.
-7. Extend the replay of TASK-025 to SALE_ISSUE.
+7. Extend the replay of TASK-025 to SALE_ISSUE (ADR-008 sections 4.1 and 4.3): a replay that reaches a Sale line's issue recomputes its issue projection at that point of the logical ledger, validates the issue against the logical quantity (G-07), counts it against the movement cap, rewrites the projection only when its status or amount changes, and never touches the Sale, its lines, its Payment, its allocation fact, its receipt snapshot or a session's figures (D-060, REQ-COST-09). Checkout inserts each SALE_ISSUE projection equal to its fact (G-14) and holds the product guard for its products in the lock order, so it waits for a running replay of a product or is refused `SERVICE_BUSY`, and a replay waits for it in turn (RACE-11).
 8. Prove the Sale side of RACE-18 (a cart line taken before a barcode move keeps its product) and of RACE-25 (each receipt snapshot uses the revision current when its lock was taken).
 
 ### 4.2 Owned by this Task
@@ -79,12 +80,12 @@ Controls are those of [TRACEABILITY](../TRACEABILITY.md) section 9.2, each built
 
 | Subject | Owned or carried here | Contributed to |
 | --- | --- | --- |
-| Requirements | REQ-SALE-01, REQ-SALE-02, REQ-SALE-03, REQ-SALE-05, REQ-SALE-09, REQ-SALE-10, REQ-PAY-01, REQ-PAY-02, REQ-PAY-03, REQ-PAY-05, REQ-COST-10, REQ-CASH-04, REQ-CASH-13, REQ-DOC-01 | REQ-SCOPE-01, REQ-SCOPE-02, REQ-INV-02, REQ-INV-03, REQ-NFR-08, REQ-CAT-08 |
+| Requirements | REQ-SALE-01, REQ-SALE-02, REQ-SALE-03, REQ-SALE-05, REQ-SALE-09, REQ-SALE-10, REQ-PAY-01, REQ-PAY-02, REQ-PAY-03, REQ-PAY-05, REQ-COST-10, REQ-CASH-04, REQ-CASH-13, REQ-DOC-01 | REQ-SCOPE-01, REQ-SCOPE-02, REQ-INV-02, REQ-INV-03, REQ-NFR-08, REQ-CAT-08, REQ-COST-06, REQ-COST-09 |
 | Workflows | — | WF-05 |
 | User tasks | — | — |
-| Acceptance suites | POS01 (final: TASK-044), POS02 (final: TASK-044), PAYEXT01 (final: TASK-044) | POS03, FIN01, SESSION03, INV02, BARCODE01, IDENTITY01 |
-| Races | RACE-03, RACE-23, RACE-25 | RACE-01, RACE-02, RACE-08, RACE-18 |
-| Guards | G-01, G-04, G-17, G-18 | G-02, G-10, G-11, G-13 |
+| Acceptance suites | POS01 (final: TASK-044), POS02 (final: TASK-044), PAYEXT01 (final: TASK-044) | POS03, FIN01, FIN03, SESSION03, INV02, BARCODE01, IDENTITY01 |
+| Races | RACE-03, RACE-23, RACE-25 | RACE-01, RACE-02, RACE-08, RACE-11, RACE-18 |
+| Guards | G-01, G-04, G-17, G-18 | G-02, G-07, G-10, G-11, G-13, G-14 |
 | Threats | — | — |
 | Open items | — | — |
 
@@ -101,6 +102,8 @@ Controls are those of [TRACEABILITY](../TRACEABILITY.md) section 9.2, each built
 - **AC-028-07** RACE-03 (a last-unit Sale against a Sale or a manual issue), RACE-23 and RACE-25 give their outcomes; a cart line taken before a barcode move keeps its product (RACE-18).
 - **AC-028-08** No provider record, controller, callback, webhook or asynchronous payment state exists in code or schema (PAYEXT01, by review).
 - **AC-028-09** The constraint, deferred and privilege families pass for the six tables and the sequence.
+- **AC-028-10** The replay of TASK-025 reaches Sale issues: with a RECEIPT of 10 units at UNKNOWN cost and a Sale of 4 whose allocation is UNKNOWN at commit, completing the receipt's cost at Rp50.000 publishes the Sale line's issue projection as KNOWN Rp20.000 and the valuation as 6 units worth Rp30.000, while the allocation fact stays UNKNOWN; replaying the same correction twice gives the same result; a failure injected during publication changes nothing; the Sale, its lines, its Payment, its receipt snapshot and the session's figures are unchanged (REQ-COST-06, REQ-COST-09, G-14).
+- **AC-028-11** A Sale that takes the logical quantity to zero ends its pool, so a later known increase starts a new known pool for later Sales (ADR-008 section 4.1); the Sale issues count against the movement cap; a reversal of a RECEIPT whose units a later Sale issued is refused `REPLAY_REJECTED` with no change when the issue would exceed the logical quantity (G-07); a checkout and a replay of the same product never interleave: the later one waits within the lock timeout or is refused `SERVICE_BUSY`, and no checkout allocation is computed from a valuation that a replay is replacing (RACE-11).
 
 ## 7. Tests
 
@@ -109,6 +112,8 @@ Controls are those of [TRACEABILITY](../TRACEABILITY.md) section 9.2, each built
 - L2 failure injection after every write step.
 - L4 RC-01 with every refusal and the capability matrix.
 - Code and schema review for PAYEXT01.
+- L1 and L2 the ADR-008 replay cases with Sale issues: completion and correction of a cost before and after Sales, a sell-out that starts a new pool, a reversal refused because of a later Sale, idempotence, the movement cap counting Sale issues, failure injection during publication, and the Sale's facts, receipt snapshot and session figures unchanged (FIN03).
+- L3 RACE-11 Sale side: a checkout against a running replay of its product, and a replay against a running checkout.
 - The standing obligations of EXECUTION_CONTEXT section 10 for every route, table, command, read, page, procedure and document this Task adds.
 
 ## 8. Evidence
@@ -116,6 +121,7 @@ Controls are those of [TRACEABILITY](../TRACEABILITY.md) section 9.2, each built
 `docs/11-tasks/evidence/TASK-028.md` (EXC-60 to EXC-63), with the records of TEST_STRATEGY TS-30 and, in addition:
 
 - The adversarial review of the checkout transaction.
+- The ADR-008 replay cases with Sale issues covered.
 
 ## 9. Definition of Done
 
@@ -144,7 +150,7 @@ Each dimension is recorded `PASS`, `FAIL`, `BLOCKED` or `N/A` with its reason (E
 
 ## 12. For later Tasks
 
-- TASK-029 builds the till on RC-01; TASK-030 closes against its activity version; TASK-031 renders its snapshot; TASK-033 corrects its Sales.
+- TASK-029 builds the till on RC-01; TASK-030 closes against its activity version; TASK-031 renders its snapshot; TASK-033 corrects its Sales and extends the replay to the returns linked to their issues; TASK-035 extends it to OPENING.
 - Tasks that depend on this one directly: [TASK-029](TASK-029-till-pages.md), [TASK-033](TASK-033-refunds-core.md).
 
 ## 13. Expected files

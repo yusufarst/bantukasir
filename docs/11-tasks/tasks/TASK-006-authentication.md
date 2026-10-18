@@ -11,7 +11,7 @@
 | Executor | Claude Opus 5.5 at effort Max (D-066), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None required. Context7 for Laravel Fortify and the session and password broker of the pinned version (EXC-03). |
 | Modules | Access, Audit |
-| Baseline | RF-7, D-090 |
+| Baseline | RF-7, D-090; corrected under D-091 |
 
 ## 1. Goal
 
@@ -109,6 +109,7 @@ Controls are those of [TRACEABILITY](../TRACEABILITY.md) section 9.2, each built
 - L4 sign-in, sign-out, confirmation, password change and link consumption.
 - L4 throttling and uniform failures.
 - L5 KS-01 states, the link page's fragment handling, sign-out then Back.
+- Adds sign-in to the L5 critical paths that every later pull request runs (EXECUTION_CONTEXT EXC-34).
 - The standing obligations of EXECUTION_CONTEXT section 10 for every route, table, command, read, page, procedure and document this Task adds.
 
 ## 8. Evidence

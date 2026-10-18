@@ -6,12 +6,12 @@
 | Phase and lane | 1 Foundation · lane P, platform trunk |
 | Size and review | L · review class B — self-review and the reviewer's check ([EXECUTION_CONTEXT](../EXECUTION_CONTEXT.md) section 12) |
 | Depends on | — |
-| Gates | GATE-P11, GATE-BRANCH, GATE-PUBLISH (before its first push) ([TASK_PLAN](../TASK_PLAN.md) section 3) |
+| Gates | GATE-P11, GATE-BRANCH, GATE-PUBLISH (before DONE: the first push, the pull request, CI and the merge into `develop`) ([TASK_PLAN](../TASK_PLAN.md) section 3) |
 | Branch | `task/TASK-001-toolchain-ci` from `develop` (EXC-22) |
 | Executor | Claude Opus 5.5 at effort Max (D-066), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None required. Context7, or the official documentation of each pinned version, for version checks (EXC-03). |
 | Modules | Repository and shared configuration; no business module |
-| Baseline | RF-7, D-090 |
+| Baseline | RF-7, D-090; corrected under D-091 |
 
 ## 1. Goal
 
@@ -19,7 +19,7 @@ Create the empty application with pinned, verified versions, the directory layou
 
 ## 2. Prerequisites
 
-- Every Task under "Depends on" is `DONE`, and every gate above is satisfied ([EXECUTION_CONTEXT](../EXECUTION_CONTEXT.md) EXC-21).
+- Every Task under "Depends on" is `DONE`, and every gate above is satisfied, except a gate marked "before DONE", which must hold before this Task is `DONE` ([EXECUTION_CONTEXT](../EXECUTION_CONTEXT.md) EXC-21).
 - The Owner's instruction names this Task and states what it authorizes beyond local commits (EXC-10).
 - The checks of EXECUTION_CONTEXT section 5 pass.
 
@@ -44,8 +44,8 @@ After AGENTS.md, CURRENT_HANDOFF, EXECUTION_CONTEXT and TASK_PLAN sections 1 to 
 2. Create the Laravel application with Inertia and React with TypeScript, without the WorkOS starter-kit variant, Sanctum, Passport, Socialite, Redis or Valkey clients, queue workers, Horizon, Octane, server-side rendering or any component that STACK_AND_MODULES section 1 excludes.
 3. Lay out the directories of STACK_AND_MODULES section 3; record any adaptation the pinned framework needs in that section (STK-22). Create no speculative class or interface (STK-30).
 4. Create the command contract of TEST_STRATEGY section 7 as Composer and npm scripts: `composer validate`, `composer lint`, `composer analyse`, `composer test:unit`, `composer test:postgres`, `composer test:race`, `npm run lint`, `npm run typecheck`, `npm run test:unit`, `npm run build`, `npm run test:e2e`. Each runs and passes; suites may start with one smoke test, and `test:e2e` opens the running application in Playwright.
-5. Implement the static checks of TEST_STRATEGY section 6: Pint; PHPStan with Larastan at a level stated in the evidence; the forbidden process functions of THR-10 (`exec`, `shell_exec`, `system`, `passthru`, `popen`, string-command `proc_open`, backticks); SQL built from input or unbound parameters; floating-point types and operations in `app/Support` and `app/Domain` (ADR-006 item 5); ESLint and the TypeScript typecheck with `react/jsx-no-literals` set as ADR-005 item 5 says; the translation-key check, wired now and completed by TASK-003; the migration review check (a migration with `DROP TABLE`, `DROP COLUMN`, `DROP SCHEMA`, `DROP DATABASE`, `TRUNCATE`, or `DELETE` or `UPDATE` of retained data, without the approval reference of REL-06, fails); a secret scan of the tree and of the commits a push would add; and the dependency audit (`composer audit`, `npm audit`), failing on a high or critical advisory not recorded as accepted with its reason.
-6. Write the `ci` workflow of ADR-011 item 4 on GitHub Actions: on every pull request and every push to `develop` and `main`; PostgreSQL of the pinned version as a service container; the command contract; no secret of any environment; no scheduled trigger relied upon; workflows from forks never publish; nothing sensitive printed (TS-06).
+5. Implement the static checks of TEST_STRATEGY section 6: Pint; PHPStan with Larastan at a level stated in the evidence; the forbidden process functions of THR-10 (`exec`, `shell_exec`, `system`, `passthru`, `popen`, string-command `proc_open`, backticks); SQL built from input or unbound parameters; floating-point types and operations in `app/Support` and `app/Domain` (ADR-006 item 5); ESLint and the TypeScript typecheck with `react/jsx-no-literals` set as ADR-005 item 5 says; the translation-key check, wired now and completed by TASK-003; the migration review check (a migration with `DROP TABLE`, `DROP COLUMN`, `DROP SCHEMA`, `DROP DATABASE`, `TRUNCATE`, or `DELETE` or `UPDATE` of retained data, without the approval reference of REL-06, fails); a secret scan of the tree and of the commits a push would add, tested on samples that the test generates at run time outside the tracked tree and removes, never on a committed sample (EXECUTION_CONTEXT EXC-63); and the dependency audit (`composer audit`, `npm audit`), failing on a high or critical advisory not recorded as accepted with its reason.
+6. Write the `ci` workflow of ADR-011 item 4 on GitHub Actions: on every pull request and every push to `develop` and `main`; PostgreSQL of the pinned version as a service container; the command contract, whose pull-request L5 step runs the critical paths already implemented (EXECUTION_CONTEXT EXC-34) — at this Task the Playwright smoke test only; no secret of any environment; no scheduled trigger relied upon; workflows from forks never publish; nothing sensitive printed (TS-06).
 7. Provide the local environment in containers: an application container with Nginx and PHP-FPM and a PostgreSQL container of the pinned version, started and stopped with one documented command each, on the Owner's Windows machine and on CI's Linux runner. TASK-012 later moves it onto the release image.
 8. Apply the line-ending policy of OPEN_ITEMS T-01: a `.gitattributes` file (`* text=auto eol=lf` and the binary patterns the repository needs), committed alone, changing no content; then update the Windows note of EXECUTION_CONTEXT section 18 and CURRENT_HANDOFF section 2.
 9. Rebuild `.env.example` with every setting of ENVIRONMENTS section 11 for the process roles `web` and `backup`, placeholders only, and `.gitignore` for Laravel and Node (environment files, dependencies, build output, coverage, test artifacts), keeping `.local/` and `.agents/` ignored. Neither file settles OPEN_ITEMS T-14 or T-15: `Claude outputs/` is left as it is.
@@ -92,17 +92,19 @@ Controls are those of [TRACEABILITY](../TRACEABILITY.md) section 9.2, each built
 
 - **AC-001-01** Every component that STACK_AND_MODULES section 1 lists and the skeleton needs is pinned to an exact version, with lockfiles committed; TOOLCHAIN section 1 shows each as VERIFIED with its version, support window and advisory check; no floating tag or `latest` exists anywhere (STK-01).
 - **AC-001-02** None of the components that STACK_AND_MODULES section 1 excludes is in the Composer or npm dependency tree, as the evidence shows from the resolved trees.
-- **AC-001-03** The eleven commands of TEST_STRATEGY section 7 run and pass locally and, once GATE-PUBLISH allows the push, in the `ci` workflow, on the Task's final revision.
-- **AC-001-04** Each static check of TEST_STRATEGY section 6 fails on a deliberately violating sample kept in a test fixture directory that the build excludes, and passes on the real tree.
+- **AC-001-03** The eleven commands of TEST_STRATEGY section 7 run and pass locally, and in the `ci` workflow on the pull request and on its merge into `develop`; the L5 step runs the Playwright smoke test, because no critical path of TEST_STRATEGY section 7 exists yet (EXC-34).
+- **AC-001-04** Each static check of TEST_STRATEGY section 6 fails on a deliberately violating sample and passes on the real tree. The secret scan's samples are generated by its test at run time, in a temporary directory or a throwaway repository outside the tracked tree, and removed afterwards; no secret-looking value is ever committed, not even a fake one (EXC-63). The samples of the other checks are kept in a test fixture directory that the build excludes and hold no secret-looking value.
 - **AC-001-05** The `ci` workflow triggers only on pull requests and pushes to `develop` and `main`, starts PostgreSQL of the pinned version, references no secret other than the token GitHub issues to a workflow, and prints no environment value.
 - **AC-001-06** `.gitattributes` is in a commit of its own that changes no other file's content; afterwards `git ls-files --eol` shows every tracked text file stored as LF.
 - **AC-001-07** `.env.example` lists every setting of ENVIRONMENTS section 11 for both process roles with placeholder values only, and the secret scan passes on the tree and the history the first push would add.
 - **AC-001-08** The local environment starts with one command on Windows and on Linux, and the Playwright smoke test opens the running application.
+- **AC-001-09** The Task may start, and be built and verified locally, before gate GATE-PUBLISH, reaching `VERIFYING` at most. It is `DONE` only after GATE-PUBLISH holds, its branch is pushed on the Owner's authorization with the publication guard passed, its pull request is merged into `develop` by the Owner with a merge commit, and CI passes on the pull request and on the merge (EXECUTION_CONTEXT section 4, EXC-31, EXC-32).
 
 ## 7. Tests
 
 - The negative samples of every static check (L1, CI).
-- The command contract in CI on the Task's final revision.
+- The secret scan's samples generated at run time and removed, leaving no secret-looking value in the tree or the history (L1, CI).
+- The command contract in CI on the pull request and on its merge into `develop`.
 - The Playwright smoke test against the local environment.
 - The standing obligations of EXECUTION_CONTEXT section 10 for every route, table, command, read, page, procedure and document this Task adds.
 
@@ -111,7 +113,7 @@ Controls are those of [TRACEABILITY](../TRACEABILITY.md) section 9.2, each built
 `docs/11-tasks/evidence/TASK-001.md` (EXC-60 to EXC-63), with the records of TEST_STRATEGY TS-30 and, in addition:
 
 - The version table: component, version, licence, support window, advisory check, source and date.
-- The CI run of the final revision, or `BLOCKED` on GATE-PUBLISH with the local results.
+- The local results; then the CI runs of the pull request and of its merge into `develop` — until GATE-PUBLISH holds, the Task stays `VERIFYING` (EXC-31).
 - `git ls-files --eol` before and after the line-ending commit.
 
 ## 9. Definition of Done
@@ -149,6 +151,7 @@ Each dimension is recorded `PASS`, `FAIL`, `BLOCKED` or `N/A` with its reason (E
 
 - Every later Task runs the command contract created here.
 - TASK-003 completes the translation-key check; TASK-012 moves the local environment onto the release image.
+- TASK-006, TASK-009, TASK-029, TASK-030 and TASK-034 add the L5 critical paths of the pull-request gate (EXC-34).
 - Tasks that depend on this one directly: [TASK-003](TASK-003-kernel-localization.md), [TASK-004](TASK-004-database-foundation.md).
 
 ## 13. Expected files

@@ -11,7 +11,7 @@
 | Executor | Claude Opus 5.5 at effort Max (D-066), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None required. |
 | Modules | Inventory, Costing |
-| Baseline | RF-7, D-090 |
+| Baseline | RF-7, D-090; corrected under D-091 |
 
 ## 1. Goal
 
@@ -84,7 +84,7 @@ Controls are those of [TRACEABILITY](../TRACEABILITY.md) section 9.2, each built
 ## 6. Acceptance criteria
 
 - **AC-026-01** A reversal is the exact inverse of one eligible source, once; two concurrent reversals of the same source give one success (RACE-10).
-- **AC-026-02** The fixture of COSTING section 8 gives quantity 5, value 50 and issue cost 50; the invalid-history fixture is refused with no movement; SALE_ISSUE and RETURN_RECEIPT cannot be reversed.
+- **AC-026-02** The fixture of COSTING section 8, with a RECEIPT standing in for its OPENING until TASK-035 proves it with a real OPENING, gives quantity 5, value 50 and issue cost 50; the invalid-history fixture is refused with no movement; SALE_ISSUE and RETURN_RECEIPT cannot be reversed.
 - **AC-026-03** A RECEIPT or MANUAL_ISSUE is reversed only while onboarding is not active; a blocked product refuses the reversal.
 - **AC-026-04** The source's active marks are cleared in the reversal's transaction.
 - **AC-026-05** RP-411 follows the approved artifacts.

@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-7 under D-090, 18 October 2026 (Asia/Jakarta); generated from the Task contracts and [TASK_PLAN](TASK_PLAN.md), which prevail |
+| Status | CURRENT — written in RF-7 under D-090, 18 October 2026 (Asia/Jakarta); corrected under D-091 the same day; generated from the Task contracts and [TASK_PLAN](TASK_PLAN.md), which prevail |
 | Phase | P11 |
 | Related | [REQUIREMENTS](../01-product/REQUIREMENTS.md), [CRITICAL_FLOWS](../03-workflows/CRITICAL_FLOWS.md), [ROUTE_CONTRACTS](../03-workflows/ROUTE_CONTRACTS.md), [INTERACTION_CONTRACTS](../03-workflows/INTERACTION_CONTRACTS.md), [SCHEMA](../04-architecture/SCHEMA.md), [ACCEPTANCE_SUITES](../08-testing/ACCEPTANCE_SUITES.md), [USER_TASKS](../07-ux-design/USER_TASKS.md), [UAT_PILOT](../10-release/UAT_PILOT.md) |
 
@@ -72,10 +72,10 @@ Where each item of the V1 specification is built and where it is finally proven.
 | REQ-COST-03 | [TASK-021](tasks/TASK-021-ledger-receiving.md) | [TASK-023](tasks/TASK-023-manual-issue.md), [TASK-025](tasks/TASK-025-cost-correction.md) | FIN02 | [TASK-044](tasks/TASK-044-integrated-verification.md) |
 | REQ-COST-04 | [TASK-022](tasks/TASK-022-receiving-stock-pages.md) | [TASK-025](tasks/TASK-025-cost-correction.md), [TASK-040](tasks/TASK-040-finance-report.md) | AUTH02 | [TASK-044](tasks/TASK-044-integrated-verification.md) |
 | REQ-COST-05 | [TASK-025](tasks/TASK-025-cost-correction.md) | — | INV03, FIN02 | [TASK-044](tasks/TASK-044-integrated-verification.md) |
-| REQ-COST-06 | [TASK-025](tasks/TASK-025-cost-correction.md) | [TASK-036](tasks/TASK-036-reconciliation-repair.md), [TASK-043](tasks/TASK-043-performance-harness.md), [TASK-048](tasks/TASK-048-performance-verification.md) | FIN03, PERF01 | [TASK-044](tasks/TASK-044-integrated-verification.md), [TASK-048](tasks/TASK-048-performance-verification.md) |
+| REQ-COST-06 | [TASK-025](tasks/TASK-025-cost-correction.md) | [TASK-028](tasks/TASK-028-checkout.md), [TASK-035](tasks/TASK-035-onboarding.md), [TASK-036](tasks/TASK-036-reconciliation-repair.md), [TASK-043](tasks/TASK-043-performance-harness.md), [TASK-048](tasks/TASK-048-performance-verification.md) | FIN03, PERF01 | [TASK-044](tasks/TASK-044-integrated-verification.md), [TASK-048](tasks/TASK-048-performance-verification.md) |
 | REQ-COST-07 | [TASK-033](tasks/TASK-033-refunds-core.md) | — | FIN03, RET01 | [TASK-044](tasks/TASK-044-integrated-verification.md) |
-| REQ-COST-08 | [TASK-026](tasks/TASK-026-reversal.md) | — | INV03 | [TASK-044](tasks/TASK-044-integrated-verification.md) |
-| REQ-COST-09 | [TASK-040](tasks/TASK-040-finance-report.md) | [TASK-025](tasks/TASK-025-cost-correction.md) | FIN03, SESSION07 | [TASK-044](tasks/TASK-044-integrated-verification.md) |
+| REQ-COST-08 | [TASK-026](tasks/TASK-026-reversal.md) | [TASK-035](tasks/TASK-035-onboarding.md) | INV03 | [TASK-044](tasks/TASK-044-integrated-verification.md) |
+| REQ-COST-09 | [TASK-040](tasks/TASK-040-finance-report.md) | [TASK-025](tasks/TASK-025-cost-correction.md), [TASK-028](tasks/TASK-028-checkout.md) | FIN03, SESSION07 | [TASK-044](tasks/TASK-044-integrated-verification.md) |
 | REQ-COST-10 | [TASK-028](tasks/TASK-028-checkout.md) | [TASK-023](tasks/TASK-023-manual-issue.md) | FIN01, POS01 | [TASK-044](tasks/TASK-044-integrated-verification.md) |
 | REQ-SALE-01 | [TASK-028](tasks/TASK-028-checkout.md) | — | POS01, SESSION03 | [TASK-044](tasks/TASK-044-integrated-verification.md) |
 | REQ-SALE-02 | [TASK-028](tasks/TASK-028-checkout.md) | — | POS02, POS03 | [TASK-044](tasks/TASK-044-integrated-verification.md) |
@@ -261,7 +261,7 @@ UXT-05 is retired (D-077). The UAT scripts of UAT_PILOT section 2 run in TASK-04
 | STOCK01 | Stock attention | [TASK-022](tasks/TASK-022-receiving-stock-pages.md) | — | [TASK-044](tasks/TASK-044-integrated-verification.md) |
 | FIN01 | Costing arithmetic | [TASK-023](tasks/TASK-023-manual-issue.md) | [TASK-003](tasks/TASK-003-kernel-localization.md), [TASK-021](tasks/TASK-021-ledger-receiving.md), [TASK-028](tasks/TASK-028-checkout.md) | [TASK-044](tasks/TASK-044-integrated-verification.md) |
 | FIN02 | Unknown cost and corrections | [TASK-025](tasks/TASK-025-cost-correction.md) | [TASK-021](tasks/TASK-021-ledger-receiving.md), [TASK-040](tasks/TASK-040-finance-report.md) | [TASK-044](tasks/TASK-044-integrated-verification.md) |
-| FIN03 | Replay, returns and reports | [TASK-025](tasks/TASK-025-cost-correction.md) | [TASK-003](tasks/TASK-003-kernel-localization.md), [TASK-026](tasks/TASK-026-reversal.md), [TASK-033](tasks/TASK-033-refunds-core.md), [TASK-036](tasks/TASK-036-reconciliation-repair.md), [TASK-040](tasks/TASK-040-finance-report.md) | [TASK-044](tasks/TASK-044-integrated-verification.md) |
+| FIN03 | Replay, returns and reports | [TASK-025](tasks/TASK-025-cost-correction.md) | [TASK-003](tasks/TASK-003-kernel-localization.md), [TASK-026](tasks/TASK-026-reversal.md), [TASK-028](tasks/TASK-028-checkout.md), [TASK-033](tasks/TASK-033-refunds-core.md), [TASK-035](tasks/TASK-035-onboarding.md), [TASK-036](tasks/TASK-036-reconciliation-repair.md), [TASK-040](tasks/TASK-040-finance-report.md) | [TASK-044](tasks/TASK-044-integrated-verification.md) |
 | POS01 | Atomic checkout and command identity | [TASK-028](tasks/TASK-028-checkout.md) | — | [TASK-044](tasks/TASK-044-integrated-verification.md) |
 | POS02 | Payment arithmetic and methods | [TASK-028](tasks/TASK-028-checkout.md) | [TASK-003](tasks/TASK-003-kernel-localization.md), [TASK-029](tasks/TASK-029-till-pages.md) | [TASK-044](tasks/TASK-044-integrated-verification.md) |
 | POS03 | Rejections, uncertainty and printing after commit | [TASK-029](tasks/TASK-029-till-pages.md) | [TASK-008](tasks/TASK-008-command-platform.md), [TASK-009](tasks/TASK-009-command-client.md), [TASK-028](tasks/TASK-028-checkout.md), [TASK-031](tasks/TASK-031-documents-sales-lookup.md) | [TASK-044](tasks/TASK-044-integrated-verification.md) |
@@ -312,7 +312,7 @@ UXT-05 is retired (D-077). The UAT scripts of UAT_PILOT section 2 run in TASK-04
 | RACE-08 | [TASK-030](tasks/TASK-030-session-close.md) | [TASK-028](tasks/TASK-028-checkout.md) | SESSION05 |
 | RACE-09 | [TASK-032](tasks/TASK-032-assisted-close-notes.md) | [TASK-030](tasks/TASK-030-session-close.md) | SESSION06, SESSION10 |
 | RACE-10 | [TASK-033](tasks/TASK-033-refunds-core.md) | [TASK-026](tasks/TASK-026-reversal.md) | INV03, RET01 |
-| RACE-11 | [TASK-025](tasks/TASK-025-cost-correction.md) | [TASK-033](tasks/TASK-033-refunds-core.md) | FIN03 |
+| RACE-11 | [TASK-025](tasks/TASK-025-cost-correction.md) | [TASK-028](tasks/TASK-028-checkout.md), [TASK-033](tasks/TASK-033-refunds-core.md), [TASK-035](tasks/TASK-035-onboarding.md) | FIN03 |
 | RACE-12 | [TASK-037](tasks/TASK-037-restore-tooling.md) | — | REC02 |
 | RACE-13 | [TASK-034](tasks/TASK-034-drawer-refunds.md) | [TASK-030](tasks/TASK-030-session-close.md) | RET02, SESSION05 |
 | RACE-14 | [TASK-034](tasks/TASK-034-drawer-refunds.md) | — | RET02 |
@@ -348,14 +348,14 @@ UXT-05 is retired (D-077). The UAT scripts of UAT_PILOT section 2 run in TASK-04
 | G-04 | [TASK-028](tasks/TASK-028-checkout.md) | — | POS01 |
 | G-05 | [TASK-034](tasks/TASK-034-drawer-refunds.md) | [TASK-030](tasks/TASK-030-session-close.md) | RET02, SESSION04 |
 | G-06 | [TASK-033](tasks/TASK-033-refunds-core.md) | — | RET01 |
-| G-07 | [TASK-025](tasks/TASK-025-cost-correction.md) | [TASK-026](tasks/TASK-026-reversal.md) | INV03, FIN03 |
+| G-07 | [TASK-025](tasks/TASK-025-cost-correction.md) | [TASK-026](tasks/TASK-026-reversal.md), [TASK-028](tasks/TASK-028-checkout.md), [TASK-035](tasks/TASK-035-onboarding.md) | INV03, FIN03 |
 | G-08 | [TASK-011](tasks/TASK-011-user-management.md) | — | ACC01 |
 | G-09 | [TASK-016](tasks/TASK-016-barcodes.md) | [TASK-020](tasks/TASK-020-barcode-correction.md) | SEARCH01, BARCODE01 |
 | G-10 | [TASK-035](tasks/TASK-035-onboarding.md) | [TASK-021](tasks/TASK-021-ledger-receiving.md), [TASK-028](tasks/TASK-028-checkout.md), [TASK-033](tasks/TASK-033-refunds-core.md) | OPEN01 |
 | G-11 | [TASK-021](tasks/TASK-021-ledger-receiving.md) | [TASK-025](tasks/TASK-025-cost-correction.md), [TASK-026](tasks/TASK-026-reversal.md), [TASK-028](tasks/TASK-028-checkout.md), [TASK-033](tasks/TASK-033-refunds-core.md), [TASK-036](tasks/TASK-036-reconciliation-repair.md) | INV01, INV03 |
 | G-12 | [TASK-008](tasks/TASK-008-command-platform.md) | [TASK-037](tasks/TASK-037-restore-tooling.md) | REC02 |
 | G-13 | [TASK-023](tasks/TASK-023-manual-issue.md) | [TASK-021](tasks/TASK-021-ledger-receiving.md), [TASK-028](tasks/TASK-028-checkout.md), [TASK-033](tasks/TASK-033-refunds-core.md), [TASK-040](tasks/TASK-040-finance-report.md) | FIN01, FIN03 |
-| G-14 | [TASK-023](tasks/TASK-023-manual-issue.md) | [TASK-025](tasks/TASK-025-cost-correction.md) | FIN03 |
+| G-14 | [TASK-023](tasks/TASK-023-manual-issue.md) | [TASK-025](tasks/TASK-025-cost-correction.md), [TASK-028](tasks/TASK-028-checkout.md) | FIN03 |
 | G-15 | [TASK-025](tasks/TASK-025-cost-correction.md) | — | FIN02 |
 | G-16 | [TASK-011](tasks/TASK-011-user-management.md) | [TASK-006](tasks/TASK-006-authentication.md), [TASK-042](tasks/TASK-042-audit-views.md) | ACC01, AUDIT01 |
 | G-17 | [TASK-028](tasks/TASK-028-checkout.md) | [TASK-030](tasks/TASK-030-session-close.md), [TASK-031](tasks/TASK-031-documents-sales-lookup.md) | POS01, SESSION08 |

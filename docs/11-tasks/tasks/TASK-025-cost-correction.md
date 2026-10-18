@@ -11,7 +11,7 @@
 | Executor | Claude Opus 5.5 at effort Max (D-066), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None required. |
 | Modules | Costing, Reporting (cost pages) |
-| Baseline | RF-7, D-090 |
+| Baseline | RF-7, D-090; corrected under D-091 |
 
 ## 1. Goal
 
@@ -137,7 +137,7 @@ Each dimension is recorded `PASS`, `FAIL`, `BLOCKED` or `N/A` with its reason (E
 ## 12. For later Tasks
 
 - TASK-026, TASK-028, TASK-033 and TASK-035 extend the replay; TASK-036 adds OP-06; TASK-040 reports the published projections.
-- Tasks that depend on this one directly: [TASK-026](TASK-026-reversal.md), [TASK-033](TASK-033-refunds-core.md), [TASK-040](TASK-040-finance-report.md).
+- Tasks that depend on this one directly: [TASK-026](TASK-026-reversal.md), [TASK-028](TASK-028-checkout.md), [TASK-033](TASK-033-refunds-core.md), [TASK-040](TASK-040-finance-report.md).
 
 ## 13. Expected files
 

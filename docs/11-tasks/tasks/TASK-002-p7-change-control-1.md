@@ -6,12 +6,12 @@
 | Phase and lane | 1 Foundation · lane D, documents and change control |
 | Size and review | M · review class O — the Owner approves the artifacts by hash ([EXECUTION_CONTEXT](../EXECUTION_CONTEXT.md) section 12) |
 | Depends on | — |
-| Gates | GATE-P11 ([TASK_PLAN](../TASK_PLAN.md) section 3) |
-| Branch | `task/TASK-002-p7-change-control-1` from `develop` (EXC-22); before gate GATE-BRANCH, the branch the Owner names, since this Task changes documents only |
+| Gates | GATE-P11, GATE-BRANCH (before DONE: its merge into `develop`, after TASK-001), GATE-PUBLISH (before DONE: its push and pull request) ([TASK_PLAN](../TASK_PLAN.md) section 3) |
+| Branch | `task/TASK-002-p7-change-control-1` from `develop` (EXC-22); or, before `develop` exists, the branch the Owner names, since this Task changes documents only; merged into `develop` only after TASK-001, with `develop` merged into it first (EXC-36, EXC-37) |
 | Executor | Claude Opus 5.5 at effort Max (D-066), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None. |
 | Modules | Documents only |
-| Baseline | RF-7, D-090 |
+| Baseline | RF-7, D-090; corrected under D-091 |
 
 ## 1. Goal
 
@@ -19,7 +19,7 @@ Bring the approved P7 artifacts and COPY_DECK in line with the decisions taken a
 
 ## 2. Prerequisites
 
-- Every Task under "Depends on" is `DONE`, and every gate above is satisfied ([EXECUTION_CONTEXT](../EXECUTION_CONTEXT.md) EXC-21).
+- Every Task under "Depends on" is `DONE`, and every gate above is satisfied, except a gate marked "before DONE", which must hold before this Task is `DONE` ([EXECUTION_CONTEXT](../EXECUTION_CONTEXT.md) EXC-21).
 - The Owner's instruction names this Task and states what it authorizes beyond local commits (EXC-10).
 - The checks of EXECUTION_CONTEXT section 5 pass.
 
@@ -48,6 +48,7 @@ After AGENTS.md, CURRENT_HANDOFF, EXECUTION_CONTEXT and TASK_PLAN sections 1 to 
 4. Apply COPY_DECK findings F-01 to F-05: the gate rows of the approved documents name their approving decisions; the working labels that COPY_DECK section 19 lists are replaced by the deck's wording in the six P7-G1 documents; F-04 is closed by D-086; F-02 and F-05 as the previous item says.
 5. Add a change-control section to COPY_DECK listing every change with its reason and source decision, so that the Owner reviews one list.
 6. Measure, after the change commit, the Git blob, size and SHA-256 of every changed artifact and of every approved artifact that did not change; prepare the record of the Owner's approval in the form of D-082, D-086 and D-087. The approval itself is the Owner's decision, entered in DECISIONS when given.
+7. Merge into `develop` only after TASK-001 has been merged (EXECUTION_CONTEXT EXC-37): first merge `develop` into this Task's branch, never rebase (EXC-36); resolve any conflict without changing an approved artifact; re-run the checks; and measure again the blob, size and SHA-256 of every artifact of the package on the commit to be merged. The Owner's approval (GATE-CC1) covers those values; a value that differs from the approved one is approved again before the merge.
 
 ### 4.2 Owned by this Task
 
@@ -93,6 +94,7 @@ Controls are those of [TRACEABILITY](../TRACEABILITY.md) section 9.2, each built
 - **AC-002-04** The Owner's two answers (the close-refusal message, the store's usage on the system status) are recorded verbatim and applied.
 - **AC-002-05** Every approved artifact that the Task does not change is byte-identical to its approved blob, verified by hash; every changed artifact is listed with its blob, size and SHA-256 at the change commit.
 - **AC-002-06** Links, table shape, LF line endings and the absence of trailing whitespace are checked on every changed document.
+- **AC-002-07** The branch is merged into `develop` after TASK-001, from a state into which `develop` was merged without rebase; every artifact of the package on the merged commit has the blob, size and SHA-256 that the Owner approved.
 
 ## 7. Tests
 
@@ -129,6 +131,7 @@ Each dimension is recorded `PASS`, `FAIL`, `BLOCKED` or `N/A` with its reason (E
 
 - A change would need a new rule, page, control or state.
 - The Owner has not answered a question; the Task stays BLOCKED on it.
+- Merging `develop` into the branch would change an approved artifact, or a value of the package that the Owner has not approved again.
 - Every stop condition of EXECUTION_CONTEXT section 14.
 
 ## 11. Documents this Task updates
