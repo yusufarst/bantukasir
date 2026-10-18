@@ -2,10 +2,10 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-5 under D-087, 18 October 2026 (Asia/Jakarta); amended in RF-6 under D-088, 18 October 2026: WF-08, WF-09, WF-27 and WF-32, and the test references of section 1 |
+| Status | CURRENT — written in RF-5 under D-087, 18 October 2026 (Asia/Jakarta); amended in RF-6 under D-088, 18 October 2026: WF-08, WF-09, WF-27 and WF-32, and the test references of section 1; corrected under D-089, 18 October 2026: the settlement of request receipts in WF-07, WF-09 and WF-32 (finding B-2 of the RF-6 review) |
 | Phase | P3 — workflow contracts: each V1 workflow from its entry to its result, with its refusals, recovery, concurrency, records and proof |
 | Replaces | `docs/03-workflows/legacy/P3-CRITICAL-WORKFLOWS.md` (LEGACY — SUPERSEDED; [LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 14) |
-| Decisions | D-002 to D-087 as cited; [ADR-007](../adr/ADR-007-command-identity-and-idempotency.md), [ADR-008](../adr/ADR-008-cost-allocation-representation.md), [ADR-009](../adr/ADR-009-command-receipts-and-reconciled-outcomes.md) |
+| Decisions | D-002 to D-089 as cited; [ADR-007](../adr/ADR-007-command-identity-and-idempotency.md), [ADR-008](../adr/ADR-008-cost-allocation-representation.md), [ADR-009](../adr/ADR-009-command-receipts-and-reconciled-outcomes.md) |
 | Related | [ROUTE_CONTRACTS](ROUTE_CONTRACTS.md), [INTERACTION_CONTRACTS](INTERACTION_CONTRACTS.md), [DOCUMENT_CONTRACTS](DOCUMENT_CONTRACTS.md), [REQUIREMENTS](../01-product/REQUIREMENTS.md), [USER_TASKS](../07-ux-design/USER_TASKS.md) |
 
 The workflows of BantuKasir V1, each from the page where it starts to the record it leaves. A workflow names its actors, its user tasks (USER_TASKS), its routes (ROUTE_CONTRACTS), the requirements it carries (REQUIREMENTS) and the rules it applies; the request-level detail of each command is in INTERACTION_CONTRACTS section 5. Workflows add no business rule: where RF-5 had to settle a detail, D-087 records it and the rule documents state it. Workflow identifiers `WF-nn` are permanent.
@@ -130,11 +130,11 @@ Tests: a reprint creates no Sale, Payment or movement; the snapshot keeps its Bu
 
 1. A timeout, a lost connection, a 5xx or `SERVICE_BUSY` leaves the request UNCERTAIN (UXS-14): the page offers "Kirim ulang", which repeats the same frozen request, and "Cek status" (RC-50).
 2. `IDEMPOTENCY_CONFLICT` or `EPOCH_STALE` leaves it HELD (UXS-15): only "Cek status".
-3. The status check answers COMMITTED (show the result; a Sale's cart is discarded), IN_PROGRESS (check again), NOT_COMMITTED (a fence makes the original impossible; the user may start again) or, for a request from before a restore, EPOCH_STALE until the restore reconciliation has recorded an outcome (WF-32).
+3. The status check answers COMMITTED (show the result; a Sale's cart is discarded), IN_PROGRESS (check again), NOT_COMMITTED (a fence makes the original impossible; the user may start again) or, for a request from before a restore, EPOCH_STALE until the restore reconciliation has recorded an outcome (WF-32). A COMMITTED or NOT_COMMITTED answer, and a reconciliation, settle every unresolved receipt of the same operation and intent, from every device, whoever of the user and the Owner checked (ADR-009 section 1; D-089).
 4. RP-006 lists every unresolved request of the user — from this browser and from the server's receipts, so also those sent from another device — and, for the Owner, every user's (UXI-058). While one is unresolved, the user starts no new command of its family on any device (NC-13; INTERACTION_CONTRACTS section 1.4).
 5. A reference lost with the browser's data is found again through its receipt; a request with no receipt and no record after the record-check wait never reached the server (INTERACTION_CONTRACTS section 2.4).
 
-Tests: RACE-01, RACE-02, RACE-27, RACE-33; a receipt listed on a second device blocks the family there; a request refused before its receipt is not listed.
+Tests: RACE-01, RACE-02, RACE-27, RACE-33; a receipt listed on a second device blocks the family there; a request refused before its receipt is not listed; a conclusive status check settles every PENDING or HELD receipt of its intent, a conflict's included, which keeps its held code (SESSION05).
 
 ### WF-08 Close one's own cash session
 
@@ -165,7 +165,7 @@ Tests: RACE-08, RACE-09, RACE-13 with the scenario of D-068 (a refund committed 
 | Rules | BR-CASH-16, BR-CASH-18, D-069 (d), D-087 |
 
 1. The Owner opens the session and chooses "Tutup sesi oleh Pemilik". The preview shows the responsible user, the register, the totals, the drawer-funded refunds and the responsible user's unresolved checkout requests from the server's receipts (ADR-009 section 4).
-2. While such a request is listed, "Lanjut hitung" is disabled; the Owner resolves each with "Cek status" as the Owner. This meets BR-CASH-16 when the responsible user's browser is not available, and the server refuses RC-04 while such a receipt is unresolved (G-27, D-088).
+2. While such a request is listed, "Lanjut hitung" is disabled; the Owner resolves each with "Cek status" as the Owner, and each conclusive answer settles the responsible user's receipts of that intent (ADR-009 section 1). This meets BR-CASH-16 when the responsible user's browser is not available, and the server refuses RC-04 while such a receipt is unresolved (G-27, D-088).
 3. The Owner counts the drawer, gives a reason, confirms with recent authentication; RC-04 commits like WF-08 step 4. The responsible user does not change; the close actor is the Owner.
 4. The responsible user may be deactivated (WF-29) or, for an outgoing Owner, replaced (WF-32): the session stays OPEN until this close (D-069 (d), D-087).
 
@@ -496,7 +496,7 @@ System status shows each item with its evidence; anything unproven is "Belum Ter
 2. **Owner recovery** (OP-02): a RESET link for the one Owner account.
 3. **Owner replacement** (OP-03): the outgoing Owner is deactivated, also while holding an OPEN cash session, which stays OPEN until the new Owner closes it with an Owner-assisted close (WF-09; D-087); a new Owner account and link.
 4. **After a restore** (OP-04): a new recovery epoch, every sign-in session revoked, and an onboarding hold when the restored onboarding state is not RELEASED (D-072).
-5. **Restore reconciliation** (OP-05): the Owner decides, for each request reported as EPOCH_STALE, that it is not committed in the restored data — a fence makes it final — and, for the onboarding hold, whether onboarding was released before the restore (then it stays released) or never (then it continues as the same period). Every decision is audited. The Owner's own user-management requests are reconciled before the security changes of SEC-OP-04 are re-applied (D-073).
+5. **Restore reconciliation** (OP-05): the Owner decides, for each request reported as EPOCH_STALE, that it is not committed in the restored data — a fence makes it final and settles the intent's receipts (ADR-009 section 1) — and, for the onboarding hold, whether onboarding was released before the restore (then it stays released) or never (then it continues as the same period). Every decision is audited. The Owner's own user-management requests are reconciled before the security changes of SEC-OP-04 are re-applied (D-073).
 
 6. **Cost recovery, projection rebuild and drill record** (OP-06 to OP-08, written in RF-6): the Owner's correction published with an extended replay bound (OPERATIONS_RUNBOOK RB-12); a projection rebuilt from facts after a reconciliation incident (RB-04); a production restore drill recorded (BACKUP_RECOVERY RB-02).
 

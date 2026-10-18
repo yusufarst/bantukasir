@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-3B under D-059, 5 October 2026 (Asia/Jakarta); amended in RF-5 under D-087, 18 October 2026: command request receipts and restore reconciliation (section 5.3), the onboarding states and the correction of onboarding entries before release (section 5.7), one line per product in a Sale (section 5.9), guards G-22 to G-26; amended in RF-6 under D-088, 18 October 2026 (Asia/Jakarta): the retention of request receipts and of the security log, the tables of section 5.12, guard G-27, the backup role (SCH-42), the operator (SCH-46) and the RF-6 items of section 16 |
+| Status | CURRENT — written in RF-3B under D-059, 5 October 2026 (Asia/Jakarta); amended in RF-5 under D-087, 18 October 2026: command request receipts and restore reconciliation (section 5.3), the onboarding states and the correction of onboarding entries before release (section 5.7), one line per product in a Sale (section 5.9), guards G-22 to G-26; amended in RF-6 under D-088, 18 October 2026 (Asia/Jakarta): the retention of request receipts and of the security log, the tables of section 5.12, guard G-27, the backup role (SCH-42), the operator (SCH-46) and the RF-6 items of section 16; corrected under D-089, 18 October 2026: the marking and settlement of request receipts (section 5.3, G-27, sections 9, 10 and 11; finding B-2 of the RF-6 review) |
 | Phase | P4 — logical database schema; with [ARCHITECTURE](ARCHITECTURE.md) and [STACK_AND_MODULES](STACK_AND_MODULES.md) it completes P4 |
 | Replaces | `docs/04-architecture/legacy/02-ARCHITECTURE.md` §Constraint database and the schema-delivery part of §Payment extension boundary dan schema delivery; `docs/04-architecture/legacy/P4-ARCHITECTURE.md` §Schema, immutability dan constraints ([LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 9) |
 | Decisions | D-006, D-032 to D-038, D-042 to D-054, D-060 to D-062, D-067 to D-074, D-077, D-086, D-087; [ADR-006](../adr/ADR-006-exact-numbers.md), [ADR-007](../adr/ADR-007-command-identity-and-idempotency.md), [ADR-008](../adr/ADR-008-cost-allocation-representation.md), [ADR-009](../adr/ADR-009-command-receipts-and-reconciled-outcomes.md) |
@@ -306,12 +306,29 @@ Runtime privileges: `SELECT`, `INSERT`. Every fact row that an enveloped command
 | `received_at` | `timestamptz` | As TECHNICAL_RULES TR-TIME-03 |
 | `outcome` | `text` | `PENDING`, `COMMITTED`, `REJECTED`, `HELD` or `NOT_COMMITTED` |
 | `outcome_at` | `timestamptz` null | Set with every outcome other than `PENDING` |
+| `held_code` | `text` null | `IDEMPOTENCY_CONFLICT` or `EPOCH_STALE`: why the request was held. Set with the outcome `HELD`, or by a request refused with that code after its receipt was settled; never changed once set, also when the receipt is settled, so that a held request stays recognizable (D-089) |
+| `settled_by_command_id` | `bigint` null | → `command_identities`: the `COMMAND` identity or the `FENCE` that settled the receipt (ADR-009 section 1; D-089) |
+| `settled_by_user_id` | `bigint` null | → `users`: the user whose status check settled the receipt, or the Owner whose decision the restore reconciliation recorded (D-089) |
 
-- Written in a transaction of its own before the command's transaction, never with the payload (ADR-009 section 1; guard G-25). The outcome is informative; the command identity is the authority on whether a command committed.
-- Indexed by `(actor_user_id, outcome)` for the listing of RD-04.
+```sql
+-- specification text, not a migration (P-7)
+CHECK (outcome IN ('PENDING', 'COMMITTED', 'REJECTED', 'HELD', 'NOT_COMMITTED')),
+CHECK ((outcome = 'PENDING') = (outcome_at IS NULL)),
+CHECK (held_code IS NULL OR held_code IN ('IDEMPOTENCY_CONFLICT', 'EPOCH_STALE')),
+CHECK (outcome <> 'HELD' OR held_code IS NOT NULL),
+CHECK ((settled_by_command_id IS NULL) = (settled_by_user_id IS NULL)),
+CHECK (settled_by_command_id IS NULL OR outcome IN ('COMMITTED', 'NOT_COMMITTED')),
+CREATE INDEX command_request_receipts_intent ON command_request_receipts (operation, source_intent_id);  -- settlement
+```
+
+- Written in a transaction of its own before the command's transaction, never with the payload (ADR-009 section 1; guard G-25). The command identity is the authority on whether a command committed; the outcome follows it as the next two bullets say, and is what RD-04 lists and guard G-27 reads.
+- **Marking.** After the command ends, its own request sets the outcome in a short transaction, replacing only `PENDING`: `COMMITTED`; `REJECTED`; `HELD` with its `held_code`; or `NOT_COMMITTED` when it was refused `INTENT_ABANDONED`. A request whose receipt was settled meanwhile leaves the outcome as it is and only fills an empty `held_code`.
+- **Settlement (D-089).** When a status check conclusively answers `COMMITTED` — the intent's `COMMAND` identity exists, also an earlier-epoch identity present in restored data — or `NOT_COMMITTED` from a fence — the one it writes, an existing one, or the fence of a restore reconciliation (SEC-OP-05) — every row with the same `operation` and `source_intent_id` whose outcome is `PENDING` or `HELD` takes that outcome, with `outcome_at`, `settled_by_command_id` and `settled_by_user_id`, whichever authorized user ran the check: the intent's actor or the Owner (CAP-34). A checker who may not make the check gets `NOT_FOUND` and settles nothing. The rows are locked in ascending `id`. A fence and its settlement commit in one transaction, as do a reconciliation's fence, its row of `intent_reconciliations`, its audit event and its settlement; a settlement from an identity or a fence that already exists runs in a short transaction of its own after the read. A status check answered `EPOCH_STALE` sets the intent's `PENDING` rows to `HELD` with `held_code` `EPOCH_STALE`, in the transaction of its stale-intent report; `IN_PROGRESS` changes nothing.
+- A row whose outcome is `COMMITTED`, `REJECTED` or `NOT_COMMITTED` never changes outcome again; its actor, intent, key, epoch, received time and `held_code` stay as written.
+- Indexed by `(actor_user_id, outcome)` for the listing of RD-04, and by `(operation, source_intent_id)` for the settlement.
 - Housekeeping removes a row only when its outcome is `COMMITTED`, `REJECTED` or `NOT_COMMITTED` and its `outcome_at` is more than 30 days old (D-088); an unresolved row is never removed (SCH-11).
-- The same index serves guard G-27: a close reads the responsible user's `sale.checkout` receipts whose outcome is `PENDING` or `HELD` (D-088).
-- Runtime privileges: `SELECT`, `INSERT`; `UPDATE` of `outcome`, `outcome_at`; `DELETE`.
+- The same index serves guard G-27: a close reads the responsible user's `sale.checkout` receipts whose outcome is `PENDING` or `HELD` (D-088). A settled row no longer counts. A row leaves `PENDING` or `HELD` only by its own marking or by a settlement on a committed identity or a fence, so a close that finds none is never passed while such a checkout can still commit (RACE-35).
+- Runtime privileges: `SELECT`, `INSERT`; `UPDATE` of `outcome`, `outcome_at`, `held_code`, `settled_by_command_id`, `settled_by_user_id`; `DELETE`.
 
 **`stale_intent_reports`** and **`intent_reconciliations`** — class F. The requests from an earlier recovery epoch and the Owner's reconciliation of each (ADR-009 section 3; D-073).
 
@@ -320,7 +337,7 @@ Runtime privileges: `SELECT`, `INSERT`. Every fact row that an enveloped command
 | `stale_intent_reports` | `id`; `operation`; `source_intent_id`; `UNIQUE (operation, source_intent_id)`, so a report is written at most once (insert if absent); `actor_user_id`; `reported_epoch` (`bytea`); `first_reported_at` |
 | `intent_reconciliations` | `report_id` (primary key, → `stale_intent_reports`); `outcome` (`CHECK (outcome = 'NOT_COMMITTED')`); `fence_command_id` (unique, → `command_identities`, a `FENCE` of the report's operation and intent written in the current epoch); `decided_by_user_id` (the Owner); `operator_note` (1–1,000); `recorded_at` |
 
-Written by the status check (reports, in a transaction of its own after the `EPOCH_STALE` refusal) and by the operator procedure SEC-OP-05 (reconciliations, with the fence and the audit event `RESTORE_RECONCILIATION` in one transaction). Runtime privileges on both: `SELECT`, `INSERT`.
+Written by the status check (reports, in a transaction of its own after the `EPOCH_STALE` refusal) and by the operator procedure SEC-OP-05 (reconciliations, with the fence, the audit event `RESTORE_RECONCILIATION` and the settlement of the intent's receipts in one transaction). Runtime privileges on both: `SELECT`, `INSERT`.
 
 ### 5.4 Audit
 
@@ -1247,7 +1264,7 @@ A check constraint sees one row; a unique index or foreign key sees one relation
 | G-24 | A replacement OPENING is posted only while onboarding is `ACTIVE` without an unreconciled hold, for a product whose movements are only OPENINGs and their reversals (BR-INV-48) | RC-48 under the onboarding share lock and the product lock |
 | G-25 | Every enveloped user command that runs has a request receipt written before its transaction (ADR-009 section 1) | Commands module; proven by failure injection on the receipt write |
 | G-26 | Onboarding starts at most once and is released at most once for a set of business data; while a restore hold has no reconciliation, no onboarding or opening command runs (D-071, D-072) | Onboarding and opening Actions under the locks of `onboarding_state` (step 2.3). Backed by the primary key of `onboarding_releases` and `release_presence` |
-| G-27 | A close, own or Owner-assisted, commits only while the session's responsible user has no `sale.checkout` request receipt whose outcome is `PENDING` or `HELD`; otherwise it is refused `RECOUNT_REQUIRED` and the session stays OPEN (D-088, the Owner's decision on N-07) | Close Actions (INTERACTION_CONTRACTS RC-03, RC-04), which read the receipts after the session lock is held (step 4). A receipt written after that read belongs to a checkout that starts its Action only afterwards, waits for the session lock and then finds the session CLOSED (RACE-35). Backed by the index `(actor_user_id, outcome)` of `command_request_receipts` |
+| G-27 | A close, own or Owner-assisted, commits only while the session's responsible user has no `sale.checkout` request receipt whose outcome is `PENDING` or `HELD`; otherwise it is refused `RECOUNT_REQUIRED` and the session stays OPEN (D-088, the Owner's decision on N-07) | Close Actions (INTERACTION_CONTRACTS RC-03, RC-04), which read the receipts after the session lock is held (step 4). A receipt written after that read belongs to a checkout that starts its Action only afterwards, waits for the session lock and then finds the session CLOSED (RACE-35). A receipt leaves `PENDING` or `HELD` only by its own marking or by the settlement of section 5.3 on a committed identity or a fence, so a settled receipt no longer counts and none is cleared without that authority (D-089). Backed by the index `(actor_user_id, outcome)` of `command_request_receipts` |
 
 ## 9. Invariant-to-enforcement matrix
 
@@ -1288,7 +1305,7 @@ Every rule of DOMAIN_MODEL, CATALOG_BARCODE, INVENTORY, COSTING and SALES_CASH a
 | BR-NUM-05 | `timestamptz` facts; `business_date` columns | — | Server clock | SESSION09 |
 | BR-CMD-01 | `command_identities`, `command_results`; `command_id` on every fact | 1 | G-12 | POS01, POS03, INV01, SESSION06 |
 | BR-CMD-02 | The two unique identity pairs | 1 | Fingerprint comparison after rollback (TR-TX-08) | POS01, POS03 |
-| BR-CMD-03 | `FENCE` rows; `command_request_receipts` (ADR-009) | 1 | Resolution (ADR-007 section 4); G-25 | POS03; RACE-27, RACE-33 (NEW) |
+| BR-CMD-03 | `FENCE` rows; `command_request_receipts` (ADR-009) | 1 | Resolution (ADR-007 section 4) and the settlement of receipts (section 5.3, D-089); G-25 | POS03; RACE-27, RACE-33 (NEW); SESSION05 |
 | BR-CMD-06 | `recovery_epoch`; session rows removed; sequences advanced after restore (SCH-28); `stale_intent_reports`, `intent_reconciliations` (ADR-009) | 2.3 | G-12 | REC02; RACE-34 (NEW) |
 | BR-USR-01, BR-USR-02 | Role columns and their checks | — | — | AUTH01, AUTH03 |
 | BR-USR-03 | No seeded account; the bootstrap inserts the first Owner; `password` null until the first link; no verification column | 2.3 | — | AUTH01; NEW |
@@ -1424,7 +1441,7 @@ Every rule of DOMAIN_MODEL, CATALOG_BARCODE, INVENTORY, COSTING and SALES_CASH a
 | BR-CASH-10, BR-RFD-08 | `activity_version` | 4 | — | SESSION05; NEW (REQ-CASH-13) |
 | BR-CASH-12 | `variance = physical_cash - expected_cash`; report arithmetic | 4 | G-05 | SESSION04 |
 | BR-CASH-13 to BR-CASH-15 | `cash_session_closes`, `cash_session_reports`; close takes `FOR UPDATE` | 4 | G-05, G-17 | SESSION05; RACE-08 |
-| BR-CASH-16 (server refusal of a close, D-088) | `command_request_receipts` read under the session lock | 4 | G-27 | SESSION05; RACE-35 |
+| BR-CASH-16 (server refusal of a close, D-088) | `command_request_receipts` read under the session lock; a receipt settled only on a committed identity or a fence (section 5.3, D-089) | 4 | G-27 | SESSION05; RACE-35 |
 | BR-CASH-17 | Close keyed by session; `command_id` unique | 1, 4 | — | SESSION06; RACE-09 |
 | BR-CASH-18 | `close_kind`, mandatory reason for Owner-assisted close | 4 | G-19 | SESSION10 |
 | BR-CASH-19 | Close key to `(id, status)` `ON UPDATE RESTRICT`; `cash_session_review_notes` | 4 | — | SESSION07 |
@@ -1492,7 +1509,7 @@ Each race of TECHNICAL_RULES section 8 and the schema element that serializes it
 | RACE-32 | `onboarding_state` update lock | `version`; primary key of `onboarding_releases`; `release_presence` |
 | RACE-33 | Identity | `FENCE` row on `UNIQUE (operation, source_intent_id)` |
 | RACE-34 | Identity; `stale_intent_reports` | `UNIQUE (operation, source_intent_id)` of the reports; the fence of the reconciliation |
-| RACE-35 | `cash_sessions` `FOR UPDATE` (step 4), then the read of the responsible user's receipts | G-27; a later checkout meets the CLOSED status under the same lock |
+| RACE-35 | `cash_sessions` `FOR UPDATE` (step 4), then the read of the responsible user's receipts | G-27; a later checkout meets the CLOSED status under the same lock; a settlement takes no session lock and rests on a committed identity or a fence (section 5.3) |
 
 ### 9.4 Test families
 
@@ -1503,7 +1520,7 @@ These families are required for every row above that names a constraint, privile
 | Constraint | For every check, unique, foreign-key and partial unique constraint of section 5, a row that violates it, written directly with the runtime role, is refused, including a row with a null in each nullable column that a check or composite key involves (SCH-13) |
 | Deferred | For every deferred and presence key, a transaction that omits the required row fails at commit and leaves nothing |
 | Privilege | The actual grants equal section 10: the runtime role is refused DDL, `UPDATE` and `DELETE` on retained classes, `TRUNCATE` everywhere, `UPDATE` of every column not listed, and `setval` on the number sequences; the backup role can only read, and insert `backup_runs` (SCH-42) |
-| Race | Every RACE-01 to RACE-35 outcome with at least two connections and controlled interleaving; also the mark's transaction against a later correction or a reversal of the same source, a failing mark transaction (`SERVICE_BUSY`, no mark) and a retried refused intent (one mark) (section 5.8); and a running-total update that skips the Sale lock (the check still refuses the excess, SCH-33) |
+| Race | Every RACE-01 to RACE-35 outcome with at least two connections and controlled interleaving; also the settlement of request receipts against a close, against a second settlement and against the request's own late marking (section 5.3, D-089); the mark's transaction against a later correction or a reversal of the same source, a failing mark transaction (`SERVICE_BUSY`, no mark) and a retried refused intent (one mark) (section 5.8); and a running-total update that skips the Sale lock (the check still refuses the excess, SCH-33) |
 | Failure injection | A failure after each write step of a command leaves no fact, projection, audit event or result (TECHNICAL_RULES section 8) |
 | Reconciliation | Mismatches induced on a test database in balances, valuations, allocation projections, running totals and active barcode mappings are detected (G-03; BR-INV-45) |
 | Numbering | Concurrent checkouts in different sessions do not wait on each other for a number; numbers are unique and follow allocation order; a rolled-back checkout leaves a gap; the format and date part are correct across midnight (section 6) |
@@ -1534,7 +1551,7 @@ Runtime privileges per table (S = `SELECT`, I = `INSERT`, U = `UPDATE` of the li
 | `business_profile_current` | S | ✓ | ✓ | `revision_id`, `changed_at` | — |
 | `recovery_epoch` | S | ✓ | ✓ | `epoch`, `set_at` | — |
 | `command_identities`, `command_results` | F | ✓ | ✓ | — | — |
-| `command_request_receipts` | E | ✓ | ✓ | `outcome`, `outcome_at` | ✓ (resolved rows, by housekeeping) |
+| `command_request_receipts` | E | ✓ | ✓ | `outcome`, `outcome_at`, `held_code`, `settled_by_command_id`, `settled_by_user_id` | ✓ (resolved rows, by housekeeping) |
 | `stale_intent_reports`, `intent_reconciliations` | F | ✓ | ✓ | — | — |
 | `audit_events` | F | ✓ | ✓ | — | — |
 | `security_log_entries` | L | ✓ | ✓ | — | ✓ (entries older than 365 days, by housekeeping) |
@@ -1589,6 +1606,7 @@ Primary keys, unique constraints and partial unique indexes of section 5 are ind
 | Expected cash | `refunds (cash_session_id) WHERE funding_source = 'DRAWER'`; `payments (sale_id)` (unique) | G-05 |
 | Corrections and reports | `sale_corrections (sale_id)`; `(business_date)` | BR-COST-36 |
 | Marks | `cost_incomplete_marks (product_id)`; `(evidence_id)` | Section 5.8 |
+| Request receipts | `command_request_receipts (actor_user_id, outcome)`; `(operation, source_intent_id)` | ADR-009 sections 1 and 2; G-27; D-089 |
 | Every foreign-key column not covered above | One B-tree index each | PostgreSQL does not index referencing columns by itself |
 
 - The trigram index is measured at PERF01 against the provisional dataset (TECHNICAL_RULES section 13.2). The foundation Task verifies that the pinned PostgreSQL image provides `pg_trgm`. If it does not, the Task stops and reports: a fallback to prefix-only name matching would change how search behaves and is not chosen here.

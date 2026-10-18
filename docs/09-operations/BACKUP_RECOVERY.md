@@ -2,10 +2,10 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-6 under D-088, 18 October 2026 (Asia/Jakarta) |
+| Status | CURRENT — written in RF-6 under D-088, 18 October 2026 (Asia/Jakarta); corrected under D-089, 18 October 2026: every decryption off the VPS, also in drills (BKP-07, BKP-08, sections 8 and 9, RB-01 steps 8 to 11, RB-02), the close of a restored session after its receipts are settled (section 11), and the open items T-21 and T-22 (finding B-1 and two nonblocking findings of the RF-6 review) |
 | Phase | P9 — backup, restore, restore drills, the reconciliation of a restore, recovery-key custody and the recovery objectives |
 | Replaces | The backup, retention, restore and missing-interval sections of `docs/09-operations/legacy/09-DEPLOYMENT-OPS.md` (LEGACY — SUPERSEDED, [LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 15) |
-| Decisions | D-005, D-044, D-054, D-062, D-072, D-073, D-088; [ADR-007](../adr/ADR-007-command-identity-and-idempotency.md), [ADR-009](../adr/ADR-009-command-receipts-and-reconciled-outcomes.md), [ADR-010](../adr/ADR-010-independent-backup-and-recovery-key-custody.md), [ADR-011](../adr/ADR-011-release-pipeline-environments-and-production-operation.md) |
+| Decisions | D-005, D-044, D-054, D-062, D-072, D-073, D-088, D-089; [ADR-007](../adr/ADR-007-command-identity-and-idempotency.md), [ADR-009](../adr/ADR-009-command-receipts-and-reconciled-outcomes.md), [ADR-010](../adr/ADR-010-independent-backup-and-recovery-key-custody.md), [ADR-011](../adr/ADR-011-release-pipeline-environments-and-production-operation.md) |
 | Related | [ENVIRONMENTS](ENVIRONMENTS.md), [OPERATIONS_RUNBOOK](OPERATIONS_RUNBOOK.md), [SECURITY_MODEL](../05-security/SECURITY_MODEL.md) section 14, [SCHEMA](../04-architecture/SCHEMA.md) sections 5.3, 5.12, 6 and 10, [PRODUCTION_DATA_SAFETY](../00-governance/PRODUCTION_DATA_SAFETY.md) |
 
 How BantuKasir's data are copied out of the server, how a copy is proven, and how a shop is recovered from one. Rules are numbered `BKP-nn` and runbooks `RB-nn` (the runbook numbers are shared with OPERATIONS_RUNBOOK and RELEASE_PROCESS); identifiers are permanent. The operator — never an AI agent — performs every step on production and on a drill target (D-088, question 20). This document names no real account, bucket, key or location (SECURITY_MODEL SEC-SECRET-05).
@@ -20,8 +20,8 @@ How BantuKasir's data are copied out of the server, how a copy is proven, and ho
 | BKP-04 | **Missing is not proof.** A result missing from restored data is not proof that a command never committed. Nothing after the backup point is replayed, re-created or edited into the database; the gap is reviewed from evidence (section 11). | BR-CMD-06, REQ-CMD-03, D-073 |
 | BKP-05 | **The old world is fenced before anyone works.** After a restore, OP-04 sets a new recovery epoch and revokes every sign-in session, and both number sequences are advanced, before any user other than the Owner reaches the restored data (RB-01 phase D). | SEC-OP-04, SCH-28, D-073 |
 | BKP-06 | **The Owner decides, the operator records.** Every decision about a request from before a restore and about an onboarding restore hold is the Owner's; the operator records it with OP-05. The Owner's own user-management requests are reconciled before the security changes of SEC-OP-04 are re-applied. | D-072, D-073, SEC-OP-05 |
-| BKP-07 | **A copy of production data lives only as long as its drill.** A decrypted copy exists only on a restore-drill target and only during the drill, and is destroyed at its end (section 8). | ENVIRONMENTS ENV-01 |
-| BKP-08 | **The recovery key never touches the server.** The recovery key is used only on the operator's own machine or on the drill target, never on the production server (ADR-010 item 2). | ADR-010 |
+| BKP-07 | **A decrypted copy lives only as long as its drill or restore.** A decrypted copy of a backup exists only on the operator's own machine and on the drill target of section 8, only during the drill or the restore, and is destroyed at its end. On a server it exists only as the restored data of a real restore's target (RB-01). | ENVIRONMENTS ENV-01 |
+| BKP-08 | **The recovery key never enters the VPS.** Every decryption — in a restore, a drill or a check of the sealed copy — runs only on the operator's own machine or on an isolated drill target off the production and staging server (section 8). The recovery key is never copied to the VPS, to any of its containers, volumes or settings, to the hosting platform, to CI or to the repository. Decrypted data reach another machine only through an SSH tunnel from the machine that decrypted them (RB-01 steps 8 to 10). | ADR-010 item 2, D-089 |
 
 ## 2. What a backup holds
 
@@ -98,15 +98,15 @@ Configured by the operator when the store account is opened (gate G4); one bucke
 
 ## 8. The restore-drill target and copies of production data
 
-- The drill target is either a separate Coolify environment `drill` on the server, with its own database and volume, no hostname and no published port, reached only through an SSH tunnel; or the operator's own machine. It is never staging and never a production resource (ENVIRONMENTS section 2).
-- The decrypted dump and files exist only on the target. At the end of the drill the operator destroys the target's database, volume and every decrypted file, and the drill record says so. Destroying a drill copy is not a destructive production operation; keeping one "for later" is not allowed (BKP-07).
+- The drill target is the operator's own machine, or another isolated machine under the operator's control that is physically or logically separate from the VPS, for example a virtual machine on the operator's computer. It is never the VPS: never the production or staging server, a Coolify environment on it, or one of their resources (ENVIRONMENTS section 2; BKP-08). While the recovery key is in use there or decrypted data are present, no AI agent runs on it (ENVIRONMENTS ENV-01, ENV-03). A machine that would cost money needs the Owner's approval first (COST_POLICY).
+- The backup is decrypted on the operator's own machine or on the drill target itself. The decrypted dump and files exist only there; when the decrypting machine and the target differ, the decrypted data pass between them only through an SSH tunnel. At the end of the drill the operator destroys the target's database, volume and every decrypted file on every machine that held one, and the drill record says so. Destroying a drill copy is not a destructive production operation; keeping one "for later" is not allowed (BKP-07).
 - The same target, with the latest production backup, is the representative data of a migration rehearsal (RELEASE_PROCESS section 5).
 
 ## 9. Recovery key and storage access
 
 | ID | Rule | Source |
 | --- | --- | --- |
-| BKP-20 | **Creation.** The operator generates each environment's key pair with `age-keygen` on the operator's own machine, never on the server. The recipient goes into the backup container's settings; the private key into the operator's password manager. For production, the operator prints the private key and the storage account access, writes both to an offline USB drive, decrypts a test object with that copy together with the Owner, then seals it and hands it to the Owner (ADR-010 item 3). | D-088 (Q18b) |
+| BKP-20 | **Creation.** The operator generates each environment's key pair with `age-keygen` on the operator's own machine, never on the server. The recipient goes into the backup container's settings; the private key into the operator's password manager. For production, the operator prints the private key and the storage account access, writes both to an offline USB drive, decrypts a test object with that copy on the operator's own machine (BKP-08) together with the Owner, then seals it and hands it to the Owner (ADR-010 item 3). | D-088 (Q18b) |
 | BKP-21 | **Yearly check.** Once a year, at the full recovery estimate, the Owner confirms that the sealed copy is still sealed and stored apart from the shop's devices, and the operator confirms that the password manager still holds the key. | D-088 (Q18b) |
 | BKP-22 | **Rotation.** When a holder changes or a leak is suspected: generate a new key pair; set the new recipient; the next run uploads every file again under the new recipient (step 4 detects the old recipient) and every new dump uses it; keep the old private key, in the same custody, until no object encrypted to it is still in the store; hand over a new sealed copy and let the Owner destroy the old one only after that. A suspected leak of a private key is also an incident (RB-05): every copy encrypted to it may be readable by someone else. | SEC-SECRET-04 |
 | BKP-23 | **Loss.** If the operator's copy is lost, the sealed copy restores it, and the key is rotated. If both copies are lost, every backup is unreadable: generate a new key pair at once, take a new backup, record the incident and inform the Owner; the live data are unaffected. | ADR-010 |
@@ -131,10 +131,10 @@ Used only when the live data are lost, corrupted or untrustworthy and no forward
 
 **C. Restore**
 
-8. Download the manifest, the dump and the files with the operator's storage access; decrypt them on the operator's machine or on the target with the recovery key (BKP-08); compare every SHA-256 with the manifest. On a difference, take the next older backup.
-9. Restore the dump into the empty database with `pg_restore`, as the migration role, without owners or privileges; then apply the grants of SCHEMA section 10 with the release image's grants procedure, and run the privilege test against the target (DB01). A difference stops the restore.
-10. Restore the files into the new file volume under their storage keys; check each against `stored_files.sha256`.
-11. Compare the row counts with the manifest's `counts`; run `reconciliation:run` against the target. A mismatch blocks the products concerned, which RB-04 handles before they reopen.
+8. Download the manifest, the dump and the files with the operator's storage access to the operator's own machine, and decrypt them there with the recovery key — never on the target or anywhere else on the VPS (BKP-08); compare every SHA-256 with the manifest. On a difference, take the next older backup.
+9. Restore the dump into the empty database with `pg_restore` run on the operator's machine through an SSH tunnel to the target database, whose port stays unpublished (ENVIRONMENTS section 9), as the migration role, without owners or privileges; then apply the grants of SCHEMA section 10 with the release image's grants procedure, and run the privilege test against the target (DB01). A difference stops the restore.
+10. Copy the decrypted files from the operator's machine over SSH into the new file volume under their storage keys; check each against `stored_files.sha256`.
+11. Compare the row counts with the manifest's `counts`; run `reconciliation:run` against the target. A mismatch blocks the products concerned, which RB-04 handles before they reopen. Then delete every decrypted file from the operator's machine (BKP-07); a later need downloads and decrypts again.
 
 **D. Fence the old world, before any user**
 
@@ -166,7 +166,7 @@ The restored data end at the backup's snapshot. What happened afterwards is lost
 | --- | --- | --- |
 | Sales after the backup point | Receipts in customers' hands or on paper, bank transfer statements, the cashiers' account | Not re-created. The incident record lists what the evidence shows — numbers, times, totals, methods — so that the shop's own books can include them; BantuKasir's reports for the gap do not, and the record says so. The highest number seen sets the sequence advance of step 13 |
 | Stock | A physical count of the affected products | The Owner adjusts each product to its count with a reason that names the incident (BR-INV-31) |
-| Cash sessions | The drawers' cash; the restored sessions | A session restored as OPEN is counted and closed by its user or the Owner; its variance, which includes the lost interval, is explained by an Owner review note that names the incident (BR-CASH-19). A session opened after the backup point does not exist in the data; its cash is part of the count above |
+| Cash sessions | The drawers' cash; the restored sessions | A session restored as OPEN is counted and closed by its user or the Owner once the responsible user's checkout receipts are settled (SCHEMA G-27; ADR-009 section 1); its variance, which includes the lost interval, is explained by an Owner review note that names the incident (BR-CASH-19). A session opened after the backup point does not exist in the data; its cash is part of the count above |
 | Receiving, issues, corrections | Paper documents, the Owner's knowledge | Entered again only as new, ordinary commands at the time they are entered, if the Owner wants them recorded; never with an earlier date (BR-INV-05) |
 | Anything that cannot be settled | — | Recorded as unresolved in the incident record; the affected postings may stay blocked until the Owner decides (BR-INV-46) |
 
@@ -182,18 +182,18 @@ The proposals become accepted only when the Owner accepts the measured values, r
 ## 13. RB-02 — Restore drill
 
 1. Choose the latest production backup with a stored manifest.
-2. Prepare the drill target (section 8): deploy the manifest's release image; create roles and the marker `drill`.
-3. Download and decrypt with the recovery key; compare every SHA-256 with the manifest.
+2. Prepare the drill target off the VPS (section 8): deploy the manifest's release image; create roles and the marker `drill`.
+3. Download the backup to the operator's own machine, or to the drill target itself, and decrypt it there with the recovery key — never on the VPS (BKP-08); compare every SHA-256 with the manifest. When the target is another machine than the one that decrypted, the decrypted dump and files reach it only through an SSH tunnel.
 4. Restore the database, apply the grants and run the privilege test; restore the files and check them against `stored_files.sha256`.
 5. Compare the row counts with the manifest; run `reconciliation:run` on the target: it must be clean, because the backup came from reconciled data.
 6. Rehearse the fence: run OP-04 and the sequence advance on the target.
-7. Start the application on the target without traffic and check that `/up` answers 200; reach it through the SSH tunnel and render one recent receipt and one session report through an Owner recovery link issued in the drill copy (OP-02 on the target).
+7. Start the application on the target without traffic and check that `/up` answers 200; reach it locally or through an SSH tunnel and render one recent receipt and one session report through an Owner recovery link issued in the drill copy (OP-02 on the target).
 8. Measure the time of each step.
-9. Destroy the target and every decrypted file (section 8).
+9. Destroy the target and every decrypted file on every machine that held one (section 8).
 10. Record the drill in production with OP-08 `restore:record-drill`: kind `ROUTINE`, the backup identifier, the manifest's SHA-256, the result, the measured durations and a note; the system status then shows "Uji pemulihan terakhir" (OPERATIONS_RUNBOOK section 5).
 11. A failed drill is an incident of class S3 at least (RB-03), fixed and repeated.
 
-The same runbook on staging's backups rehearses the procedure with synthetic data; a staging drill is recorded in staging only and never counts for production.
+The same runbook on staging's backups rehearses the procedure with synthetic data, with its decryption off the VPS as well (BKP-08); a staging drill is recorded in staging only and never counts for production.
 
 ## 14. Open items
 
@@ -201,3 +201,5 @@ The same runbook on staging's backups rehearses the procedure with synthetic dat
 | --- | --- | --- |
 | Gate G4 | The store account, buckets and keys; the sealed copy; the first production backup and drill; the measured objectives accepted by the Owner | Before the pilot |
 | Implementation | `backup:run`, the grants procedure, OP-04 to OP-08 and the drill tooling, with the tests of ACCEPTANCE_SUITES REC01, REC02 and OPPROC01 | RF-7 Tasks |
+| T-21 | BKP-22 cannot finish a rotation: the `files/` objects and their earlier versions are never removed (section 6), so objects encrypted to the old recipient stay in the store and the old private key stays needed for good. Nonblocking finding of the RF-6 review, recorded only (D-089) | P11 or implementation |
+| T-22 | Staging's backups share the free allowance of the store account with production, but the capacity estimate of section 6 counts production only; and the reduced retention frees space only gradually, as copies already stored reach the end of their lock. Nonblocking finding of the RF-6 review, recorded only (D-089) | P11 or implementation |

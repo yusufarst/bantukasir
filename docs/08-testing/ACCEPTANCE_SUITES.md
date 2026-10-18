@@ -2,10 +2,10 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-6 under D-088, 18 October 2026 (Asia/Jakarta) |
+| Status | CURRENT — written in RF-6 under D-088, 18 October 2026 (Asia/Jakarta); corrected under D-089, 18 October 2026: the settlement cases of SESSION05, CMD01 and REC02 and the decryption case of REC01 (findings B-2 and B-1 of the RF-6 review) |
 | Phase | P8 — the acceptance suites, their cases and their traceability to requirements, races, guards, threats, workflows and operator procedures |
 | Replaces | The suite matrix, the surface matrix and the performance dataset section of `docs/08-testing/legacy/08-TESTING-ACCEPTANCE.md` (LEGACY — SUPERSEDED, [LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 15) |
-| Decisions | D-024 to D-088 as cited; FD-07 |
+| Decisions | D-024 to D-089 as cited; FD-07 |
 | Related | [TEST_STRATEGY](TEST_STRATEGY.md), [DEVICE_VERIFICATION](DEVICE_VERIFICATION.md), [REQUIREMENTS](../01-product/REQUIREMENTS.md), [CRITICAL_FLOWS](../03-workflows/CRITICAL_FLOWS.md), [TECHNICAL_RULES](../06-api-performance/TECHNICAL_RULES.md) section 8, [SCHEMA](../04-architecture/SCHEMA.md) sections 8 and 9, [SECURITY_MODEL](../05-security/SECURITY_MODEL.md) sections 10 and 15 |
 
 What must be proven before V1 is accepted. Every suite has an identifier, the requirements it accepts, the races, guards and threats it proves, its levels (TEST_STRATEGY section 2), its final point (TEST_STRATEGY section 12) and its required cases. Status today: every suite is `NOT_RUN`; nothing is built.
@@ -27,7 +27,7 @@ What must be proven before V1 is accepted. Every suite has an identifier, the re
 | SEARCH01 | A retired manufacturer barcode may be moved or re-attached by the Owner's misassignment correction (BARCODE01) | D-051, D-052 |
 | OPEN01 | Onboarding starts and is released at most once per business-data lifecycle, also across a restore; corrections before the release | D-071, D-072, D-087 |
 | POS01 | One Sale line per product | D-067 |
-| SESSION05 | A close is refused while the responsible user has an unresolved checkout request (G-27, RACE-35) | D-088 |
+| SESSION05 | A close is refused while the responsible user has an unresolved checkout request (G-27, RACE-35); a conclusive status check settles every receipt of the intent (ADR-009 section 1) | D-088, D-089 |
 | REC01, REC02 | The backup method, key custody and the reconciliation of a restore | D-072, D-073, D-088; ADR-009, ADR-010 |
 | RELEASE01 | The release is operated by a person, never an agent | D-088 |
 | POS02, PAYEXT01 | CASH and BANK_TRANSFER only, as in the legacy text | D-077 |
@@ -275,7 +275,7 @@ Levels: L1 unit, L2 database, L3 concurrency, L4 HTTP, L5 browser, L6 operations
 
 **CMD01 — Request receipts across devices**
 - Every command request is recorded on arrival, in its own transaction, before the command's transaction; a receipt that cannot be written refuses the request `SERVICE_BUSY` with nothing run (G-25; failure injection).
-- The outcome is marked COMMITTED, REJECTED, HELD or NOT_COMMITTED; RD-04 lists a user's PENDING and HELD receipts, and every user's to the Owner (REQ-CMD-01).
+- The outcome is marked COMMITTED, REJECTED, HELD or NOT_COMMITTED by the request itself, replacing only PENDING, and settled for every receipt of the intent by a conclusive status check or a reconciliation (ADR-009 section 1; SESSION05); RD-04 lists a user's PENDING and HELD receipts, and every user's to the Owner, and no longer lists a settled one (REQ-CMD-01).
 - NC-13 blocks a family on a second browser context of the same user and after the site data are cleared, for every request that reached the server (TEST_STRATEGY TS-23; REQ-SALE-08).
 - The Owner checks another user's request; a fence names the Owner as actor; RACE-33 and RACE-27.
 - D-088: apart from the close (SESSION05), no family is refused by the server because of an unresolved receipt — a second checkout of the same user from another browser while a receipt is PENDING is not refused by the server; the client's NC-13 block is what prevents it.
@@ -318,6 +318,10 @@ Levels: L1 unit, L2 database, L3 concurrency, L4 HTTP, L5 browser, L6 operations
 - RACE-08: Sale first, the close needs a recount (`RECOUNT_REQUIRED`); close first, the Sale is refused `SESSION_NOT_OPEN` before any fact; no successful Sale is missing from its report; no lock is held while cash is counted; there is no CLOSING state (REQ-CASH-06, REQ-CASH-07).
 - A drawer-funded refund after the preview makes the close refuse with the recount message (RACE-13, REQ-CASH-13).
 - D-088, G-27, RACE-35: a close, own or Owner-assisted, is refused `RECOUNT_REQUIRED` while the session's responsible user has a `sale.checkout` receipt that is PENDING or HELD, an earlier-epoch HELD receipt included; the session stays OPEN; after the status check resolves the receipt the close succeeds; a checkout whose receipt is written after the close's check finds the session CLOSED and is refused `SESSION_NOT_OPEN`.
+- D-089, the settlement of receipts (ADR-009 section 1; SCHEMA section 5.3): the responsible user has two `sale.checkout` receipts of one intent, one PENDING because its process ended before marking it and one HELD with `IDEMPOTENCY_CONFLICT`. A status check that conclusively answers COMMITTED — run by the user, and in a second case by the Owner — settles both to COMMITTED in one transaction, keeps the `held_code` and records the settling identity and the checker; the close is then refused only by its activity version until the recount (RACE-08) and succeeds after it. A check that answers NOT_COMMITTED writes the fence and settles both in the fence's transaction; the close then succeeds, and a late original is refused `INTENT_ABANDONED` with nothing written.
+- A check by a user who is neither the intent's actor nor the Owner answers `NOT_FOUND` and settles nothing; IN_PROGRESS and a check without an answer settle nothing; a settled receipt never returns to PENDING or HELD, also when its own request is processed afterwards.
+- A settlement concurrent with a close, with controlled interleaving: settled before the close's read, the close proceeds under its other checks; settled after it, the close was already refused; the two never deadlock, and the close never commits while the checkout can still commit.
+- An earlier-epoch HELD receipt keeps the close refused until the status check finds its identity in the restored data (COMMITTED) or OP-05 records NOT_COMMITTED with its fence, which settles it in the same transaction (REC02).
 - The client keeps "Lanjut hitung" disabled while such a request is known (INTERACTION_CONTRACTS section 2.5); the server refusal holds also when the client's list is stale.
 
 **SESSION06 — Repeated and lost closes**
@@ -380,13 +384,13 @@ Levels: L1 unit, L2 database, L3 concurrency, L4 HTTP, L5 browser, L6 operations
 
 **REC01 — Backup and isolated restore**
 - A backup run as BACKUP_RECOVERY section 4 describes, including each failure code; the excluded table data; the files as a superset; the manifest last; the weekly re-verification (REQ-OPS-01).
-- The server holds only the recipient: no private key exists on the server or in its configuration; the server's storage key cannot delete a locked object; the lifecycle tiers keep what section 6 says (THR-17).
-- A restore drill (RB-02) on a new isolated target: decryption, hashes, restore as the migration role, grants, privilege test, file checksums, counts equal to the manifest, a clean reconciliation, the application started; the drill record shown by the status; the measured times (REQ-NFR-05).
+- The server holds only the recipient: no private key exists on the server or in its configuration; the server's storage key cannot delete a locked object; the lifecycle tiers keep what section 6 says (THR-17). Every decryption of a drill or a restore runs on the operator's own machine or on an isolated drill target off the VPS, never on the VPS, and decrypted data reach another machine only through an SSH tunnel (BACKUP_RECOVERY BKP-08).
+- A restore drill (RB-02) on a new isolated target off the VPS: decryption, hashes, restore as the migration role, grants, privilege test, file checksums, counts equal to the manifest, a clean reconciliation, the application started; the drill record shown by the status; the measured times (REQ-NFR-05).
 
 **REC02 — After a restore: fence and reconciliation**
 - OP-04 sets an epoch never issued before and revokes every session; RACE-12: stale intents are refused `EPOCH_STALE`, also after the same backup is restored twice (REQ-CMD-03, G-12).
 - The number sequences are advanced so that no number issued after the backup point repeats (SCH-28).
-- A status check of an earlier-epoch intent whose identity is in the restored data answers COMMITTED; otherwise `EPOCH_STALE` with one report; OP-05 records NOT_COMMITTED with a fence and a late original is refused `INTENT_ABANDONED`; RACE-34.
+- A status check of an earlier-epoch intent whose identity is in the restored data answers COMMITTED; otherwise `EPOCH_STALE` with one report; OP-05 records NOT_COMMITTED with a fence, settles the intent's PENDING or HELD receipts in the same transaction (ADR-009 section 1), and a late original is refused `INTENT_ABANDONED`; RACE-34.
 - The Owner's user-management requests are reconciled before the security changes after the backup point are re-applied (RB-01 order); the onboarding hold and its two outcomes (REQ-INV-07, G-26, D-072).
 - The rehearsal of RB-01 phases D and E on staging, with the Owner's time measured (REQ-NFR-05).
 

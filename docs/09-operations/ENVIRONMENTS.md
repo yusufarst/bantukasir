@@ -2,10 +2,10 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-6 under D-088, 18 October 2026 (Asia/Jakarta) |
+| Status | CURRENT — written in RF-6 under D-088, 18 October 2026 (Asia/Jakarta); corrected under D-089, 18 October 2026: decryption and the restore-drill target off the VPS (ENV-01, sections 2, 3, 6 and 16; finding B-1 of the RF-6 review) |
 | Phase | P9 — environments, access, configuration, network, certificates, scheduled tasks, logs, monitoring and the free-tier record |
 | Replaces | The runtime, configuration and TLS paragraphs of `docs/09-operations/legacy/09-DEPLOYMENT-OPS.md` and `docs/09-operations/legacy/P9-OPERATIONS.md`; `docs/04-architecture/legacy/P4-ARCHITECTURE.md` §Deployment, operasi dan maintenance (all LEGACY — SUPERSEDED, [LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 15) |
-| Decisions | D-005, D-053, D-076, D-088; [ADR-002](../adr/ADR-002-minimum-runtime-infrastructure.md), [ADR-003](../adr/ADR-003-hosting-topology.md), [ADR-010](../adr/ADR-010-independent-backup-and-recovery-key-custody.md), [ADR-011](../adr/ADR-011-release-pipeline-environments-and-production-operation.md) |
+| Decisions | D-005, D-053, D-076, D-088, D-089; [ADR-002](../adr/ADR-002-minimum-runtime-infrastructure.md), [ADR-003](../adr/ADR-003-hosting-topology.md), [ADR-010](../adr/ADR-010-independent-backup-and-recovery-key-custody.md), [ADR-011](../adr/ADR-011-release-pipeline-environments-and-production-operation.md) |
 | Related | [BACKUP_RECOVERY](BACKUP_RECOVERY.md), [OPERATIONS_RUNBOOK](OPERATIONS_RUNBOOK.md), [RELEASE_PROCESS](../10-release/RELEASE_PROCESS.md), [SECURITY_MODEL](../05-security/SECURITY_MODEL.md), [TECHNICAL_RULES](../06-api-performance/TECHNICAL_RULES.md) section 9, [COST_POLICY](../00-governance/COST_POLICY.md) |
 
 Where BantuKasir runs, who may reach each place, and how each environment is configured. Rules are numbered `ENV-nn`; identifiers are permanent. This document is written for a public repository: it names no real address, domain, provider account, credential or backup location (SECURITY_MODEL SEC-SECRET-05). Those facts are recorded privately by the operator at gate TARGET. Setting names below are descriptive; the foundation Task fixes the exact names when it rebuilds `.env.example` (OPEN_ITEMS T-02). Nothing here is installed or created by RF-6.
@@ -14,7 +14,7 @@ Where BantuKasir runs, who may reach each place, and how each environment is con
 
 | ID | Rule | Source |
 | --- | --- | --- |
-| ENV-01 | **Production data stay in production.** Production data exist only in the production environment, in its backups and, for the length of a drill, in a restore-drill target. They are never copied to a developer's machine, to CI, to staging or into the repository, and never appear in a test, a log, a screenshot or an evidence record. | PRODUCTION_DATA_SAFETY section 4, ADR-003 item 6, D-088 |
+| ENV-01 | **Production data stay in production.** Production data exist only in the production environment, in its backups and, decrypted for the length of a drill or a restore, on the operator's own machine and on the restore-drill target of section 2, never elsewhere on the VPS (BACKUP_RECOVERY BKP-07, BKP-08). Otherwise they are never copied to a developer's machine, to CI, to staging or into the repository; no AI agent runs on a machine while it holds them; and they never appear in a test, a log, a screenshot or an evidence record. | PRODUCTION_DATA_SAFETY section 4, ADR-003 item 6, D-088, D-089 |
 | ENV-02 | **Separate everything.** Each environment has its own database, file volume, temporary area, application key, secrets, hostname, backup bucket and recovery key pair. No secret is shared between environments. | D-053, SEC-SECRET-02, REQ-OPS-06, ADR-010 |
 | ENV-03 | **No agent reaches the server.** Agents hold no credential of the VPS, Coolify, Cloudflare, the backup store or the heartbeat monitor; the operator performs every staging and production operation (question 20). | D-088, ADR-011 item 1 |
 | ENV-04 | **Positive identification.** Every environment carries its name in configuration and the same name as a marker on its database, written by the operator when the database is created (`COMMENT ON DATABASE`). Operator procedures, the release preflight and every test-database reset read both and refuse to run when they differ or when the target is not the one named on the command line. A folder or database name alone is never proof (PRODUCTION_DATA_SAFETY section 2). | PDS §2, SECURITY_MODEL section 14 |
@@ -29,7 +29,7 @@ Where BantuKasir runs, who may reach each place, and how each environment is con
 | CI | GitHub-hosted runners, created per run | Synthetic | Workflows (ADR-011 item 4) | The required checks; the release image |
 | Staging | The Coolify environment `staging` on the VPS | Synthetic or anonymized only | The operator; the Owner and staff for UAT and training | Release rehearsal; rehearsal of every operator procedure (OPPROC01); UAT; its own backups and drills |
 | Production | The Coolify environment `production` on the VPS | The shop's data | The shop; the operator for operations | Live use |
-| Restore-drill target | Temporary: a separate Coolify environment `drill` on the server with no hostname and no published port, or the operator's own machine | A decrypted copy of a production backup, during the drill only | The operator | Restore drills (BACKUP_RECOVERY RB-02) and migration rehearsal on representative data (RELEASE_PROCESS section 5); wiped at the end of the drill |
+| Restore-drill target | Temporary, never on the VPS: the operator's own machine, or another isolated machine physically or logically separate from the VPS (BACKUP_RECOVERY section 8); no AI agent runs on it while it holds the recovery key in use or decrypted data | A decrypted copy of a production backup, during the drill only; decrypted on the operator's machine or on the target itself, and passed between machines only through an SSH tunnel | The operator | Restore drills (BACKUP_RECOVERY RB-02) and migration rehearsal on representative data (RELEASE_PROCESS section 5); wiped at the end of the drill |
 | Performance target | The VPS before production data exist (gate TARGET), in staging or a temporary environment | The provisional benchmark dataset, synthetic | The operator | PERF01; after go-live PERF01 is repeated only in staging, never against production |
 
 ## 3. Access
@@ -37,7 +37,7 @@ Where BantuKasir runs, who may reach each place, and how each environment is con
 | Who | Holds | Never holds |
 | --- | --- | --- |
 | Agents (planning agent, executor) | The repository, CI results, local environments | Any credential of the VPS, Coolify, Cloudflare, the backup store or the heartbeat monitor; any environment secret; any recovery key (ENV-03) |
-| Operator | SSH key to the VPS; the Coolify administrator account; Cloudflare access; the backup store account and the server's storage keys; the heartbeat monitor; the secrets of staging and production; the migration role credentials; the recovery keys of production and staging | — |
+| Operator | SSH key to the VPS; the Coolify administrator account; Cloudflare access; the backup store account and the server's storage keys; the heartbeat monitor; the secrets of staging and production; the migration role credentials; the recovery keys of production and staging, used only off the VPS (BACKUP_RECOVERY BKP-08) | — |
 | The shop's Owner (SUPER_ADMIN) | The application; the sealed copy of the production recovery key and backup store access (ADR-010 item 3) | Server access, unless the Owner is also the operator |
 | Staff | The application, by role | — |
 
@@ -62,7 +62,7 @@ The branch model, CI, the release image and the deployment path are [ADR-011](..
 
 ## 6. Coolify layout
 
-One Coolify project per installation, with the environments `production` and `staging` (and `drill` only during a drill). Each environment holds three resources:
+One Coolify project per installation, with the environments `production` and `staging`; a restore drill never runs on the VPS (BACKUP_RECOVERY section 8). Each environment holds three resources:
 
 | Resource | Source | Network | Storage | Hostname | Scheduled task | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -189,7 +189,7 @@ COST_POLICY section 2 requires this record for every free tier the product depen
 | Migration role password | The operator's password manager only | After each use by another person; leak | As above, never stored in an environment |
 | PostgreSQL superuser | The platform's database resource | Leak | Through the platform |
 | Storage key of the server | The backup container | Leak; change of operator | The account owner creates a new key with the same capabilities, updates the setting, then deletes the old key |
-| Storage account access and recovery key | The operator and the sealed copy (ADR-010 item 3) | Leak; change of operator or Owner | BACKUP_RECOVERY section 9 |
+| Storage account access and recovery key | The operator, off the VPS (BACKUP_RECOVERY BKP-08), and the sealed copy (ADR-010 item 3) | Leak; change of operator or Owner | BACKUP_RECOVERY section 9 |
 | Heartbeat ping addresses | The containers | Leak | New addresses in the monitor; update the settings |
 | Origin certificate key | The proxy's certificate directory | Leak; renewal | Revoke at Cloudflare; issue and install a new certificate (RB-07) |
 | Staging access-gate credential | The operator | Leak; change of operator | Change at the proxy |

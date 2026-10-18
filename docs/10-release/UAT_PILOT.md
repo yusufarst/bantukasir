@@ -2,10 +2,10 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-6 under D-088, 18 October 2026 (Asia/Jakarta) |
+| Status | CURRENT — written in RF-6 under D-088, 18 October 2026 (Asia/Jakarta); corrected under D-089, 18 October 2026: the wording of UAT-23, because a drill never runs on the VPS (finding B-1 of the RF-6 review) |
 | Phase | P10 — user acceptance testing, the pilot and its acceptance, the shop's operating guidance and training |
 | Replaces | The UAT and pilot section of `docs/10-release/legacy/P10-RELEASE-UAT.md` (LEGACY — SUPERSEDED, [LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 15) |
-| Decisions | D-032, D-035, D-040, D-045, D-046, D-056, D-068, D-071, D-087, D-088 |
+| Decisions | D-032, D-035, D-040, D-045, D-046, D-056, D-068, D-071, D-087, D-088, D-089 |
 | Related | [RELEASE_PROCESS](RELEASE_PROCESS.md), [USER_TASKS](../07-ux-design/USER_TASKS.md), [CRITICAL_FLOWS](../03-workflows/CRITICAL_FLOWS.md), [ACCEPTANCE_SUITES](../08-testing/ACCEPTANCE_SUITES.md), [DEVICE_VERIFICATION](../08-testing/DEVICE_VERIFICATION.md), [GLOSSARY](../02-domain/GLOSSARY.md), [COPY_DECK](../07-ux-design/COPY_DECK.md) |
 
 How the shop's own people accept BantuKasir before it is used for real, how the first period of real use is run and accepted, and what the shop is told. Rules are numbered `UPR-nn`, UAT scripts `UAT-nn`, pilot criteria `PIL-nn` and guidance items `UG-nn`; identifiers are permanent. The guidance of section 5 is the shop's text, in Indonesian, with the terms of GLOSSARY and the labels of COPY_DECK.
@@ -48,7 +48,7 @@ Each script names the user tasks it covers (USER_TASKS), so every task of V1 is 
 | UAT-20 | Pemilik | UXT-34 | On staging only, the operator induces a stock mismatch with a documented statement on the staging database; the reconciliation runs | The product is blocked; after the operator's rebuild (OP-07) and a clean reconciliation, "Buka kembali mutasi" reopens it | INV01, OPPROC01 |
 | UAT-21 | Pemilik | UXT-35 | Create a cashier and a combined account and hand over their links; deactivate a cashier who holds an OPEN session; reactivate; anonymize a deactivated account | The session stays OPEN after the deactivation; the anonymized account keeps its history on old receipts | ACC01, LINK01, SESSION10 |
 | UAT-22 | Pemilik | UXT-36, UXT-37, UXT-39 | Change the BusinessProfile and its logo; add and change a cash register; change the Owner's own name and email | Old receipts reprint with their old identity; a register with an OPEN session cannot be changed | IDENTITY01, CONFIG01, ACC01 |
-| UAT-23 | Pemilik | UXT-38 | Read Status sistem before and after the first drill on staging; read Riwayat aktivitas and Riwayat keamanan | "Belum Terverifikasi" before any drill; the drill's time after it; staff cannot open these pages | STATUS01, AUDIT01 |
+| UAT-23 | Pemilik | UXT-38 | Read Status sistem on staging before and after the first staging drill (BACKUP_RECOVERY RB-02); read Riwayat aktivitas and Riwayat keamanan | "Belum Terverifikasi" before any drill; the drill's time after it; staff cannot open these pages | STATUS01, AUDIT01 |
 | UAT-24 | Pemilik and operator | — (outside the interface) | On staging: every operator procedure (OP-01 to OP-08) and a full RB-01 rehearsal with the Owner's decisions of phase E | Each procedure behaves as SECURITY_MODEL section 14 says; the Owner's reconciliation time is measured (BACKUP_RECOVERY section 12) | OPPROC01, REC02 |
 
 ## 3. The pilot

@@ -145,7 +145,7 @@ The logical database schema is SCHEMA (RF-3B, D-059; OPEN_ITEMS T-03 resolved). 
 | [README.md](../adr/README.md) | ADR policy, statuses, numbering and index | CURRENT (RF-3A) |
 | [ADR-001](../adr/ADR-001-stack-and-modular-monolith.md) to [ADR-007](../adr/ADR-007-command-identity-and-idempotency.md) | Stack and modular monolith; minimum runtime infrastructure; hosting topology; authentication; localization architecture; exact numbers; command identity and idempotency | ACCEPTED (RF-3A) |
 | [ADR-008](../adr/ADR-008-cost-allocation-representation.md) | Issue-cost allocation representation | ACCEPTED (RF-3B) |
-| [ADR-009](../adr/ADR-009-command-receipts-and-reconciled-outcomes.md) | Command request receipts and reconciled outcomes | ACCEPTED (RF-5, D-087); section 6 decided by D-088 |
+| [ADR-009](../adr/ADR-009-command-receipts-and-reconciled-outcomes.md) | Command request receipts and reconciled outcomes | ACCEPTED (RF-5, D-087); section 6 decided by D-088; section 1 corrected by D-089 |
 | [ADR-010](../adr/ADR-010-independent-backup-and-recovery-key-custody.md) | Independent backup and recovery-key custody | ACCEPTED (RF-6, D-088) |
 | [ADR-011](../adr/ADR-011-release-pipeline-environments-and-production-operation.md) | Release pipeline, environments and production operation | ACCEPTED (RF-6, D-088) |
 
