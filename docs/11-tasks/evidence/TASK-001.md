@@ -761,6 +761,8 @@ Every temporary directory of a test or a probe was created by it under the tempo
 
 Results of the runs between 00:50 and 01:23, after the corrections of section 7.3: `composer test:unit` 18 tests, 65 assertions, OK, twice in a row; `npm run test:unit` 3 files, 7 tests, passed; `composer analyse` "No errors"; `composer lint`, `npm run lint`, `npm run typecheck` and `npm run build` exit 0; `composer test:postgres` and `composer test:race` 1 test each, OK; `npm run test:e2e` 1 passed. One earlier full run of the Unit suite, at 01:11, had one error: `ComposerAuditTest` could not decode the audit's output as JSON. It did not recur in six runs of that test alone and two runs of the whole suite; the test now prints the audit's output when that happens. The audit reads Packagist's advisories over the network, so a failure of that service fails the test — and the check — rather than passing it. The final run of section 10 is the one of record.
 
+Superseded in part by the class-B review remediation (section 11): the npm audit now fails closed (11.2), and `ComposerAuditTest` and the npm case against the registry moved out of the L1 suites into `tests/Network/`, which `composer lint` and `npm run lint` run (11.3).
+
 ### 7.3 Corrections made while building the contract
 
 | Interrupted work | Correction |
@@ -875,6 +877,8 @@ The commit "TASK-001: rebuild .env.example and .gitignore" (`72a2321`) holds bot
 
 ### 10.1 The command contract, the run of record
 
+Superseded as the run of record by section 11.6, after the class-B review remediation (TS-32).
+
 Revision `72a2321` with the documents of this section in the working tree only; 19 October 2026; the local environment on the Owner's Windows machine (Docker Desktop, WSL2), synthetic data only; run by the implementation executor. Every command in the project's containers, in the order of TEST_STRATEGY section 7.
 
 | # | Command | Time | Result |
@@ -905,6 +909,8 @@ The static checks were each checked against their negative samples in runs 2, 4 
 
 ### 10.4 Acceptance criteria
 
+The rows AC-001-04 and AC-001-08 are replaced by those of section 11.6.
+
 | Criterion | Status | Reason |
 | --- | --- | --- |
 | AC-001-01 | PASS | Every component of STACK_AND_MODULES section 1 that the skeleton needs is pinned to an exact version, with both lockfiles committed (`8babd86`); TOOLCHAIN section 1.1 shows each with its version, support window and advisory check, `VERIFIED` once it ran; no floating tag or `latest` in any configuration file — the only ranges are the platform constraints `php` and `engines.node` (section 4.2). Laravel Fortify is selected and verified and installed by TASK-006; the shadcn/ui CLI failed its advisory check and is not installed (section 4.4, for the reviewer) |
@@ -918,6 +924,8 @@ The static checks were each checked against their negative samples in runs 2, 4 
 | AC-001-09 | BLOCKED | TASK-001 is `VERIFYING`. `DONE` needs gate GATE-PUBLISH, the Owner's authorization of the push with the publication guard passed, the pull request merged into `develop` by the Owner with a merge commit, and CI green on the pull request and the merge |
 
 ### 10.5 Definition of Done
+
+The rows Business, Security and Verification are replaced by those of section 11.6.
 
 | Dimension | Status | Reason |
 | --- | --- | --- |
@@ -943,6 +951,8 @@ The whole diff `a2cb971..HEAD` (122 files at `72a2321`, 89 added and 3 modified 
 - No other defect found. Every file is LF with no trailing whitespace; every commit message reads "TASK-001: …" under the Owner's identity, with no trailer and no mention of an AI model, agent or tool.
 
 ### 10.7 What is not verified, and why
+
+Two items below are settled by section 11: `docker compose down` was run (11.5), and the audit tests no longer run in the L1 suites (11.3).
 
 - Everything on GitHub — the `ci` workflow's runs, AC-001-03 and AC-001-05 in CI, the Linux start of AC-001-08 — waits for gate GATE-PUBLISH: no push is authorized.
 - `docker compose down` was not run on the Owner's machine: it removes the project's containers and network, and the instruction allows removing only this execution's own `--rm` containers. For the same reason, it is recorded here that `docker compose up` itself recreated the `app` container `bantukasir-app-1` — which this execution created at the R5 start — three times when its configuration changed (the rebuilt entrypoint in section 6, the network alias in section 7.3, the new `.env` in section 9); each recreation replaces the container. No volume, network, image or other container was removed by a command of this execution; `bantukasir-db-1`, the volume `bantukasir_db-data` and the network `bantukasir_default` are the ones of section 3.4.2, and the two containers of the other local Compose project were not touched. The builds of sections 3.4.2 and 6 moved the tag `bantukasir-app:local` to a new image (now `b05cd365f1c0`); no untagged image is listed.
@@ -1077,3 +1087,74 @@ The commit "TASK-001: move the network-dependent audit proofs out of the L1 suit
 **The real tree and the commits to push** still scan clean with the new entry: `bash scripts/checks/secret-scan.sh` in the application container, 02:36:18 to 02:36:35, "no leaks found" for the tree and for the 28 commits of `HEAD --not --remotes`, `c866b77` among them, exit 0.
 
 The commit "TASK-001: narrow the allowlist entry of finding F-1" holds `.gitleaks.toml` and this section.
+
+### 11.5 R-3 — the stop command run (contract item 7, AC-001-08)
+
+The documented stop command was run once, and the start command after it, at revision `1f3a6f5`:
+
+| Step | Time | Result |
+| --- | --- | --- |
+| Before | 02:37 | `bantukasir-app-1` and `bantukasir-db-1` up and healthy; the volume `bantukasir_db-data`, created 18 October 2026 at 21:37:20; the network `bantukasir_default`; the tag `bantukasir-app:local` on `b05cd365f1c0` |
+| `docker compose down`, without `-v` | 02:37:37 to 02:37:41 | PASS, exit 0: it stopped and removed `bantukasir-app-1` and `bantukasir-db-1` and removed the network `bantukasir_default`, and nothing else. Afterwards the volume `bantukasir_db-data` exists with the same creation time; no container or network of the project is left; the image is unchanged; the two containers of the other local Compose project are still running, with the same identifiers |
+| `docker compose up -d --build --wait` | 02:37:48 to 02:38:15 | PASS, exit 0: the network and both containers created again, `bantukasir-db-1` and then `bantukasir-app-1` healthy. PostgreSQL logged "PostgreSQL Database directory appears to contain a database; Skipping initialization": it started on the cluster kept in the volume, and the database `bantukasir` still holds no table. `GET /` on `127.0.0.1:8080` answers 404, as before |
+
+The build took 0.7 s from the build cache, and the image's creation time is still 00:23:45, that of section 6, so its content is unchanged; as in section 3.4.2, Docker exported a new index for the tag, which now names `2781b4202329`, and the index `b05cd365f1c0` is no longer listed. No untagged image is listed. That new index is the only change to the images; no volume and no container of another project was removed, and `docker compose down -v` was never run.
+
+### 11.6 Close of the remediation
+
+**The command contract, the run of record.** Revision `1f3a6f5`, with no tracked file modified; 19 October 2026; the local environment of section 11.5 on the Owner's Windows machine, synthetic data only; run by the implementation executor; every command in the project's containers, in the order of TEST_STRATEGY section 7. It replaces the run of section 10.1 as the run of record (TS-32).
+
+| # | Command | Time | Result |
+| --- | --- | --- | --- |
+| 1 | `composer validate --strict --no-check-all` | 02:39:11 to 02:39:14 | PASS — "./composer.json is valid" |
+| 2 | `composer lint` | 02:39:14 to 02:39:59 | PASS — Pint 28 files; translation keys: 0 used, all present; migration review: 0 migrations; secret scan: the tree and 29 commits, no leaks; `composer audit`: "No security vulnerability advisories found."; the suite `Network`: OK, 2 tests, 11 assertions |
+| 3 | `composer analyse` | 02:39:59 to 02:41:39 | PASS — PHPStan level 9 with Larastan and the project's rules: "No errors" |
+| 4 | `composer test:unit` | 02:41:46 to 02:43:03 | PASS — 16 tests, 54 assertions |
+| 5 | `composer test:postgres` | 02:43:03 to 02:43:26 | PASS — 1 test, 3 assertions, on PostgreSQL 18.6 |
+| 6 | `composer test:race` | 02:43:26 to 02:43:49 | PASS — 1 test, 6 assertions, two independent connections |
+| 7 | `npm run lint` | 02:43:55 to 02:44:38 | PASS — ESLint no error; npm audit: no high or critical advisory; `tests/Network/npm-audit.test.ts`: 1 test passed |
+| 8 | `npm run typecheck` | 02:44:38 to 02:44:47 | PASS |
+| 9 | `npm run test:unit` | 02:44:47 to 02:45:17 | PASS — 3 files, 11 tests |
+| 10 | `npm run build` | 02:45:17 to 02:45:25 | PASS — `public/build/manifest.json`, CSS 4.19 kB, JavaScript 345.32 kB |
+| 11 | `npm run test:e2e` | 02:45:25 to 02:45:33 | PASS — the Playwright smoke test, 1 passed |
+
+**Protected files**, at `1f3a6f5`, compared with `a2cb971`:
+
+- The 29 approved P7 artifacts — the six P7-G1 documents (`ADAPTIVE_AND_ACCESSIBILITY`, `INFORMATION_ARCHITECTURE`, `INTERACTION_INVENTORY`, `NAVIGATION_CONTRACTS`, `UI_STATES`, `USER_TASKS`), GLOSSARY, COPY_DECK, DESIGN_SYSTEM, KEY_SCREENS and the 19 previews (tree `61f48f92fba53111738b66ec3330beb8431a9f57` at both): the blob at `HEAD` equals the blob at `a2cb971` for 29 of 29, and the working-tree bytes equal it for 29 of 29.
+- The 72 files under `legacy/` folders: the blob at `HEAD` equals the blob at `a2cb971` for 72 of 72; the working-tree bytes equal it for 69, and the 3 files of section 10.2 differ only by their one CR each.
+- `AGENTS.md`, `CLAUDE.md`, `docs/adr` and `docs/02-domain`: the same blobs and trees; `git diff --stat a2cb971 HEAD -- AGENTS.md CLAUDE.md assets docs/adr docs/02-domain docs/07-ux-design` is empty. Since `1bec0dc` the remediation changed only the files that sections 11.2 to 11.4 name, this evidence and, in its last commit, CURRENT_HANDOFF.
+
+**Acceptance criteria and Definition of Done.** These rows replace those of sections 10.4 and 10.5; the other rows stand.
+
+| Criterion | Status | Reason |
+| --- | --- | --- |
+| AC-001-04 | PASS | Each static check fails on its samples and passes on the real tree (sections 7.2 and 11.6). The dependency audit fails closed: an error report of npm, `{}`, output that is not JSON and no output exit 2 (11.2), and `composer audit --locked` exits 100 without network (11.3). The L1 samples need no network; the two proofs that do run in `composer lint` and `npm run lint`, after their audits (11.3). The allowlist entry of finding F-1 holds only in `docker/app/Dockerfile` (11.4). The secret scan's samples are still generated at run time outside the tracked tree and removed |
+| AC-001-08 | PASS on Windows; BLOCKED on Linux | Both documented commands ran on the Owner's Windows machine: `docker compose down` removed only the project's containers and network and kept the volume, and `docker compose up -d --build --wait` started the environment again on the same database (11.5); the Playwright smoke test opens the running application (11.6). The start and stop on Linux are CI's, which waits for gate GATE-PUBLISH |
+
+| Dimension | Status | Reason |
+| --- | --- | --- |
+| Business | BLOCKED | As in section 10.5: AC-001-01, 02, 04, 06 and 07 pass; AC-001-03, 05 and 08 pass locally and wait for CI, and AC-001-09 for GATE-PUBLISH |
+| Security | PASS | THR-10 as in section 10.5; THR-14 with a dependency audit that fails closed (11.2, 11.3); no secret in the tree or in the 29 commits to push, with the entry of F-1 limited to its file (11.4) and that of F-2 unchanged |
+| Verification | BLOCKED | The command contract is green locally (11.6), with L1 proven without network (11.3); the self-review of the remediation is done (below); the planning agent's re-check, CI and the Owner's acceptance are pending |
+
+UI and UX, Backend, Database, Data integrity, Performance and Operations stay N/A as in section 10.5.
+
+**Self-review.** The diff `1bec0dc..1f3a6f5` (12 files, one of them moved) was reviewed against the four findings and the instruction. Besides the shape check that R-1 asks for, the script now also stops with exit 2 when a vulnerability has no `via` list, and treats a `via` entry that is not an object as a reference to another package, where a `null` entry used to end in an uncaught exception; both are part of failing closed on a malformed report. No other defect found. Every changed file is LF with no trailing whitespace; each of the four commits reads "TASK-001: …" under the Owner's identity, with no trailer and no mention of an AI model, agent or tool, as `git log -1 --format=%B` showed after each.
+
+**Not verified, and why.** Everything on GitHub, CI included, and the start and stop on Linux: gate GATE-PUBLISH. The cause of the undecodable Composer report at 01:11 (section 11.3). The README of Gitleaks 8.30.1 does not state how a global allowlist applies `condition`; the probes of section 11.4 show what the pinned binary does.
+
+**Paths created, changed and removed by the remediation.**
+
+| Path | What happened |
+| --- | --- |
+| `tests/Network/` | Created; holds `ComposerAuditTest.php`, moved from `tests/Unit/StaticChecks/` with `git mv`, and `npm-audit.test.ts`; `vitest.network.config.ts` added. No tracked file was deleted |
+| Temporary directories (rule T1) | `bantukasir-npm-audit-probe.*` (11.2) and `bantukasir-gitleaks-probe.*` (11.4), each made by its probe under the `/tmp` of a throwaway `--rm` container and removed by its exit trap and with the container; the tests' own directories (`bantukasir-npm-audit-*`, `bantukasir-composer-audit-*`, `bantukasir-composer-validate-*`, `bantukasir-secret-scan-*`, `bantukasir-secret-scan-tree.*`), removed by the tests. After the runs, no `bantukasir-*` entry is in the `/tmp` of the application container or of Git Bash |
+| Files in Git Bash's `/tmp` | Three output captures of single commands (the `git fsck` output of the preflight and the offline `composer audit` and `composer lint` outputs of 11.3), written directly in `/tmp` rather than in a directory of their own, and removed by name by the same command; none is left |
+| `tmpfs` mounts | Over the ignored `.phpunit.cache/`, `node_modules/.vite-temp/` and `node_modules/.vite/` of throwaway containers only (11.3); in memory, gone with the container |
+| `.phpunit.cache/`, `public/build/`, `test-results/`, `node_modules/.vite*` | Written and overwritten by PHPUnit, Vite, Vitest and Playwright (rule T2); ignored |
+| Docker | `bantukasir-app-1`, `bantukasir-db-1` and `bantukasir_default` removed by `docker compose down` and created again by `docker compose up` (11.5); the tag `bantukasir-app:local` moved to `2781b4202329`, the same image content; every throwaway container removed on exit (`--rm`) |
+| Files in the executor's session scratchpad, outside the repository | Logs of the run of record; not project content |
+
+Nothing else was deleted: no tracked or pre-existing file, recovery folder, Git data, volume, image content or Owner data. `Claude outputs/`, `plan-p0-p11-review.patch`, `.local/`, `.agents/`, the stash, `refs/codex/…`, `.git/objects/maintenance.lock` and every Git ref other than `task/TASK-001-toolchain-ci` are unchanged.
+
+The commit "TASK-001: record the class-B review remediation" holds sections 11.5 and 11.6, the notes that point from sections 7.2, 10.1, 10.4, 10.5 and 10.7 to this section, and CURRENT_HANDOFF.
