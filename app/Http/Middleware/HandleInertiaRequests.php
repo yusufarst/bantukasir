@@ -2,8 +2,10 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\Localization\Dictionary;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use Inertia\OnceProp;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -38,6 +40,21 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             //
+        ];
+    }
+
+    /**
+     * Define the props that are shared once and remembered across visits.
+     * The interface dictionary reaches React once per full page load; the
+     * client sends it back as already loaded and keeps it (ADR-005 item 4).
+     *
+     * @return array<string, callable|OnceProp>
+     */
+    public function shareOnce(Request $request): array
+    {
+        return [
+            ...parent::shareOnce($request),
+            'dictionary' => fn (): array => Dictionary::forInterface(),
         ];
     }
 }
