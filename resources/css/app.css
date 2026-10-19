@@ -1,0 +1,7 @@
+/* Classes come from the interface code only, never from the documents, the
+   approved previews or the tests (TASK-001). */
+@import 'tailwindcss' source(none);
+@source '../js';
+@source '../views';
+
+/* The design tokens of DESIGN_SYSTEM section 14 are added by TASK-005. */

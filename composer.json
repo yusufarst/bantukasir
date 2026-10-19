@@ -1,0 +1,90 @@
+{
+    "$schema": "https://getcomposer.org/schema.json",
+    "name": "bantukasir/bantukasir",
+    "type": "project",
+    "description": "BantuKasir, a goods-only point of sale.",
+    "license": "proprietary",
+    "require": {
+        "php": "~8.5.11",
+        "brick/math": "1.0.0",
+        "inertiajs/inertia-laravel": "3.5.1",
+        "laravel/framework": "13.37.0"
+    },
+    "require-dev": {
+        "larastan/larastan": "3.13.0",
+        "laravel/pint": "1.32.1",
+        "phpstan/phpstan": "2.3.1",
+        "phpunit/phpunit": "13.4.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "post-autoload-dump": [
+            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+            "@php artisan package:discover --ansi"
+        ],
+        "lint": [
+            "pint --test",
+            "@php scripts/checks/translation-keys.php",
+            "@php scripts/checks/migration-review.php",
+            "bash scripts/checks/secret-scan.sh",
+            "@composer audit --locked",
+            "phpunit --testsuite=Network"
+        ],
+        "analyse": "phpstan analyse --no-progress --memory-limit=1G",
+        "test:unit": "phpunit --testsuite=Unit",
+        "test:postgres": "phpunit --testsuite=Postgres",
+        "test:race": "phpunit --testsuite=Concurrency"
+    },
+    "scripts-descriptions": {
+        "lint": "Pint, the translation-key check, the migration review, the secret scan, the dependency audit and then its negative proofs that need the network, the PHPUnit suite Network (TEST_STRATEGY section 6).",
+        "analyse": "PHPStan with Larastan and the project's rules for process functions, raw SQL and floats in exact values.",
+        "test:unit": "L1 unit tests, which need no network, including the negative samples of the static checks.",
+        "test:postgres": "Tests on real PostgreSQL (L2 and L4).",
+        "test:race": "Concurrency tests on real PostgreSQL (L3)."
+    },
+    "extra": {
+        "laravel": {
+            "dont-discover": []
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "process-timeout": 1800,
+        "platform": {
+            "php": "8.5.11"
+        },
+        "allow-plugins": {},
+        "policy": {
+            "advisories": {
+                "audit": "fail",
+                "ignore-severity": {
+                    "low": {
+                        "reason": "THR-14 and TEST_STRATEGY section 6 fail the audit on high and critical advisories only.",
+                        "on-block": false
+                    },
+                    "medium": {
+                        "reason": "THR-14 and TEST_STRATEGY section 6 fail the audit on high and critical advisories only.",
+                        "on-block": false
+                    }
+                },
+                "ignore-id": {}
+            },
+            "abandoned": {
+                "audit": "report"
+            }
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

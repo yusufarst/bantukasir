@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-7 under D-090, 18 October 2026 (Asia/Jakarta); corrected under D-091 the same day, after the independent review of the baseline: EXC-12, EXC-21, EXC-22, EXC-31, EXC-32 and EXC-63, the new rules EXC-34 to EXC-37, and sections 4 and 15. The Task baseline it serves is approved by the Owner (D-092; gate GATE-P11 of [TASK_PLAN](TASK_PLAN.md)); amended under D-095 (EXC-11) |
+| Status | CURRENT — written in RF-7 under D-090, 18 October 2026 (Asia/Jakarta); corrected under D-091 the same day, after the independent review of the baseline: EXC-12, EXC-21, EXC-22, EXC-31, EXC-32 and EXC-63, the new rules EXC-34 to EXC-37, and sections 4 and 15. The Task baseline it serves is approved by the Owner (D-092; gate GATE-P11 of [TASK_PLAN](TASK_PLAN.md)); amended under D-095 (EXC-11); section 18 updated by TASK-001 for its line-ending policy |
 | Phase | P11 — Task planning, dependencies and execution specifications |
 | Replaces | The execution, holds, status and evidence sections of `docs/11-tasks/legacy/11-BUILD-PLAN.md` and `docs/11-tasks/legacy/P11-BUILD-UNITS.md`, and the READ, VERIFY, STOP and UPDATE sections of the legacy Build Unit cards (LEGACY — SUPERSEDED, [LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 16) |
 | Decisions | D-019, D-021, D-031, D-066, D-076, D-085, D-088, D-090, D-091, D-092, D-095; FD-07, FD-08 |
@@ -189,5 +189,5 @@ Verification and release Tasks contain steps on staging, the restore-drill targe
 
 ## 18. Windows notes
 
-- The Owner works on Windows. Run Git with `GIT_OPTIONAL_LOCKS=0` and `-c core.autocrlf=true` in the device shell until TASK-001 applies the line-ending policy of OPEN_ITEMS T-01 (CURRENT_HANDOFF section 2). Do not rewrite files only to normalize line endings.
+- The Owner works on Windows. TASK-001 applied the line-ending policy of OPEN_ITEMS T-01: `.gitattributes` (`* text=auto eol=lf` and the binary patterns), so Git stores every text file as LF and checks it out as LF whatever `core.autocrlf` says. Run Git with `GIT_OPTIONAL_LOCKS=0` in the device shell; the `-c core.autocrlf=true` override is no longer needed (CURRENT_HANDOFF section 2). A file checked out before the policy may still hold CR in the working tree: a difference of line endings only is not a change, and files are not rewritten only to normalize them.
 - Paths in documents and scripts use forward slashes; scripts that the Tasks add run in the containers of the local environment (TASK-001), so that local, CI and the release image use the same runtime.

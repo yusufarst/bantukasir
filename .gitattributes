@@ -1,0 +1,18 @@
+# Line endings (OPEN_ITEMS T-01, TASK-001): every text file is stored in the
+# repository and checked out with LF, on Windows too; binary files are never
+# converted.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.pdf binary
+*.zip binary
+*.gz binary

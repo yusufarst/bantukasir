@@ -1,0 +1,19 @@
+# PHPStan with Larastan (TEST_STRATEGY section 6) at level 9, with the project's
+# rules of phpstan-rules.neon. The negative samples in tests/Fixtures are
+# analysed only by their own configuration (tests/Fixtures/StaticChecks).
+includes:
+    - vendor/larastan/larastan/extension.neon
+    - phpstan-rules.neon
+
+parameters:
+    level: 9
+    paths:
+        - app
+        - bootstrap/app.php
+        - bootstrap/providers.php
+        - config
+        - database
+        - routes
+        - tests
+    excludePaths:
+        - tests/Fixtures

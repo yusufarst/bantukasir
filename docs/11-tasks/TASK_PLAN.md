@@ -5,7 +5,7 @@
 | Status | CURRENT — written in RF-7 under D-090, 18 October 2026 (Asia/Jakarta); corrected under D-091 the same day, after the independent review of the baseline; approved by the Owner with every Task (gate GATE-P11), and corrected for review finding R-1, under D-092 the same day |
 | Phase | P11 — Task planning, dependencies and execution specifications |
 | Replaces | `docs/11-tasks/legacy/11-BUILD-PLAN.md`, `docs/11-tasks/legacy/P11-BUILD-UNITS.md` and `docs/11-tasks/legacy/build-units/` (LEGACY — SUPERSEDED, [LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 16); decision D-012 |
-| Decisions | D-012, D-031, D-066, D-088, D-090, D-091, D-092, D-094, D-095; FD-07, FD-08 |
+| Decisions | D-012, D-031, D-066, D-088, D-090, D-091, D-092, D-094, D-095, D-096, D-097; FD-07, FD-08 |
 | Related | [EXECUTION_CONTEXT](EXECUTION_CONTEXT.md), [DEPENDENCY_GRAPH](DEPENDENCY_GRAPH.md), [TRACEABILITY](TRACEABILITY.md), the Task contracts in [tasks/](tasks/), [TEST_STRATEGY](../08-testing/TEST_STRATEGY.md) |
 
 The implementation baseline of BantuKasir V1: 50 Tasks, their dependencies, gates and status, the order in which to run them, and where every requirement, workflow, suite, route, table and control is built. Nothing here authorizes a Task: each one starts only on the Owner's explicit instruction ([EXECUTION_CONTEXT](EXECUTION_CONTEXT.md) EXC-10), and none starts before gate GATE-P11.
@@ -49,7 +49,7 @@ Gates that a Task waits for, besides its dependencies. GATE-P11 to GATE-CC2 are 
 | --- | --- | --- | --- |
 | GATE-P11 | The Owner approves this Task baseline (RF-7, D-090): the execution context, this plan, the dependency graph, the traceability and the 50 Task contracts. OPEN_ITEMS N-04 (whether the AICWDF-4.3 text joins the repository) has the deadline "RF-7 at the latest" and is decided with it. | Every Task | APPROVED — D-092, with N-04 decided |
 | GATE-BRANCH | OPEN_ITEMS N-12: the Owner decides when and how `develop` is created and `main` is brought forward (ADR-011 item 3); each branch operation and push needs its own authorization. RF-7 itself needs no transition (T-24, resolved in RF-7). | TASK-001 and every later implementation Task (EXC-22); and the `DONE` of TASK-002, which changes documents only: TASK-002 may be written before this gate, on the branch the Owner names, and is merged into `develop` after TASK-001 (EXC-37) | SATISFIED — D-094 |
-| GATE-PUBLISH | Before the first push of implementation work: OPEN_ITEMS N-09 decided and the one-time audit N-10 completed; before every push, the publication guard of D-076 (EXC-31). A pull request, its CI run and a merge into `develop` need a push. | The `DONE` of TASK-001 — its first push, its pull request, CI and its merge into `develop` — and so the start of every later implementation Task, all of which depend on TASK-001; every push after it. TASK-001 itself may start and be built and verified locally before it (EXC-31) | OPEN — Owner |
+| GATE-PUBLISH | Before the first push of implementation work: OPEN_ITEMS N-09 decided and the one-time audit N-10 completed; before every push, the publication guard of D-076 (EXC-31). A pull request, its CI run and a merge into `develop` need a push. | The `DONE` of TASK-001 — its first push, its pull request, CI and its merge into `develop` — and so the start of every later implementation Task, all of which depend on TASK-001; every push after it. TASK-001 itself may start and be built and verified locally before it (EXC-31) | SATISFIED — N-09 decided (D-096) and the N-10 audit completed (D-097); the publication guard of D-076, with the known baseline of D-097, before every push |
 | GATE-CC1 | The Owner approves, by the Git blob, size and SHA-256 of each changed artifact, the change-control package of TASK-002 (OPEN_ITEMS T-19, T-20). | TASK-005, TASK-009, TASK-010 and every interface Task that uses a key it adds | OPEN — after TASK-002 |
 | GATE-CC2 | The Owner approves by hash the artifacts that TASK-047 changes, when gate DEVICES changes a shortcut or a breakpoint; no approval is needed when the values are confirmed. | TASK-047 | OPEN — after TASK-046 |
 | EXECUTOR | The executor runs as Claude Opus 5.5 at the effort that the Owner's instruction names for the Task (D-031, D-095; EXECUTION_CONTEXT EXC-11; OPEN_ITEMS section 3). | Every Task | Checked at the start of each Task |
@@ -68,7 +68,7 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 
 | Task | Title | Phase | Lane | Size | Review | Depends on | Gates | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| [TASK-001](tasks/TASK-001-toolchain-ci.md) | Toolchain, repository conventions and CI | 1 | P | L | B | — | GATE-P11, GATE-BRANCH; before `DONE`: GATE-PUBLISH | `READY` |
+| [TASK-001](tasks/TASK-001-toolchain-ci.md) | Toolchain, repository conventions and CI | 1 | P | L | B | — | GATE-P11, GATE-BRANCH; before `DONE`: GATE-PUBLISH | `VERIFYING` |
 | [TASK-002](tasks/TASK-002-p7-change-control-1.md) | P7 and copy change control, batch 1 | 1 | D | M | O | — | GATE-P11; before `DONE`: GATE-BRANCH, GATE-PUBLISH | `READY` |
 | [TASK-003](tasks/TASK-003-kernel-localization.md) | Shared kernel, formatting and localization | 1 | P | M | A | TASK-001 | — | `TODO` |
 | [TASK-004](tasks/TASK-004-database-foundation.md) | Database foundation, roles and test harness | 1 | P | L | A | TASK-001, TASK-003 | — | `TODO` |
@@ -119,7 +119,7 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-049](tasks/TASK-049-release-readiness.md) | Release readiness: staging, UAT and first installation | 10 | R | L | V | TASK-045, TASK-047, TASK-048 | G1, G2, G3, G4, DEVICES, TARGET, GATE-PUBLISH | `TODO` |
 | [TASK-050](tasks/TASK-050-production-pilot.md) | Production release, cutover and pilot acceptance | 10 | R | L | V | TASK-049 | RELEASE, GATE-PUBLISH, G4 | `TODO` |
 
-Totals: `TODO` 48; `READY` 2; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 0; `SUPERSEDED` 0.
+Totals: `TODO` 48; `READY` 1; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 1; `DONE` 0; `SUPERSEDED` 0.
 
 ## 5. Implementation sequence
 

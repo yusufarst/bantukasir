@@ -1,0 +1,27 @@
+# The project's PHPStan rules (TEST_STRATEGY section 6): process functions
+# (THR-10), raw SQL (TR-VAL-07) and floats in exact values (ADR-006 item 5).
+parametersSchema:
+    exactValueDirectories: listOf(string())
+
+parameters:
+    # The money, quantity and cost code: the shared kernel and the domain
+    # modules (STACK_AND_MODULES section 3).
+    exactValueDirectories:
+        - %currentWorkingDirectory%/app/Support
+        - %currentWorkingDirectory%/app/Domain
+
+services:
+    -
+        class: Tests\PHPStan\ForbiddenProcessFunctionRule
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tests\PHPStan\RawSqlRule
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tests\PHPStan\FloatInExactValuesRule
+        arguments:
+            directories: %exactValueDirectories%
+        tags:
+            - phpstan.rules.rule

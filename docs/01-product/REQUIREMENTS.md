@@ -2,13 +2,13 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-2 under D-041, 4 October 2026 (Asia/Jakarta); amended in RF-6 under D-088, 18 October 2026: the reading of the "Tests" column (section 1), REQ-OPS-01, REQ-NFR-05, and sections 22 and 23; amended under D-089, 18 October 2026: the trace of D-089 in sections 22 and 23; amended in RF-7 under D-090, 18 October 2026: the trace of D-090 in sections 22 and 23; amended under D-091, 18 October 2026: the trace of D-091 in sections 22 and 23; amended under D-092, 18 October 2026: the trace of D-092 in sections 22 and 23; amended under D-093, 18 October 2026: the trace of D-093 in sections 22 and 23; amended under D-094 and D-095, 18 October 2026: the trace of D-094 and D-095 in sections 22 and 23 |
+| Status | CURRENT — written in RF-2 under D-041, 4 October 2026 (Asia/Jakarta); amended in RF-6 under D-088, 18 October 2026: the reading of the "Tests" column (section 1), REQ-OPS-01, REQ-NFR-05, and sections 22 and 23; amended under D-089, 18 October 2026: the trace of D-089 in sections 22 and 23; amended in RF-7 under D-090, 18 October 2026: the trace of D-090 in sections 22 and 23; amended under D-091, 18 October 2026: the trace of D-091 in sections 22 and 23; amended under D-092, 18 October 2026: the trace of D-092 in sections 22 and 23; amended under D-093, 18 October 2026: the trace of D-093 in sections 22 and 23; amended under D-094 and D-095, 18 October 2026: the trace of D-094 and D-095 in sections 22 and 23; amended under D-096, 19 October 2026: the trace of D-096 in sections 22 and 23; amended under D-097, 19 October 2026: the trace of D-097 in sections 22 and 23 |
 | Phase | P1 — functional and non-functional requirements, acceptance criteria |
 | Replaces | `docs/01-product/legacy/requirements/core.json` and `docs/01-product/legacy/requirements/CORE-MAP.md` (CORE-001 to CORE-073) |
 | Product | [PRODUCT_BLUEPRINT](PRODUCT_BLUEPRINT.md) |
 | Domain rules | [DOMAIN_MODEL](../02-domain/DOMAIN_MODEL.md), [CATALOG_BARCODE](../02-domain/CATALOG_BARCODE.md), [INVENTORY](../02-domain/INVENTORY.md), [COSTING](../02-domain/COSTING.md), [SALES_CASH](../02-domain/SALES_CASH.md) |
 
-The requirement register of BantuKasir V1. Each requirement says what the product must do, how acceptance is judged, where the requirement comes from, and which acceptance suite tests it (the column as written before RF-6; the current mapping is ACCEPTANCE_SUITES section 5). Section 21 maps every legacy CORE entry to these requirements; section 22 traces every decision D-001 to D-095.
+The requirement register of BantuKasir V1. Each requirement says what the product must do, how acceptance is judged, where the requirement comes from, and which acceptance suite tests it (the column as written before RF-6; the current mapping is ACCEPTANCE_SUITES section 5). Section 21 maps every legacy CORE entry to these requirements; section 22 traces every decision D-001 to D-097.
 
 ## 1. How to read this register
 
@@ -344,7 +344,7 @@ Every legacy Core entry CORE-001 to CORE-073 (`core.json`, `CORE-MAP.md`) is map
 
 ## 22. Decision traceability
 
-Every decision D-001 to D-095 is either traced to at least one requirement or rule, or classified as having no product or domain content.
+Every decision D-001 to D-097 is either traced to at least one requirement or rule, or classified as having no product or domain content.
 
 | Decision | Product or domain content | Traced to |
 | --- | --- | --- |
@@ -443,7 +443,9 @@ Every decision D-001 to D-095 is either traced to at least one requirement or ru
 | D-093 | Acceptance of the RF-7 SSD safety bundle `bantukasir-RF7-71cf2d9.bundle`: the plan branch at the P11 bookkeeping commit `71cf2d9`, `main` and the stash | Non-product/domain — governance |
 | D-094 | The local creation of `develop` at the D-093 bookkeeping commit `6e18185`, not pushed; `plan/bantukasir-pos-v1` frozen there; `main` unchanged, reserved for releases; gate GATE-BRANCH satisfied; TASK-001 `READY` and authorized, with local commits only | Non-product/domain — governance ([TASK_PLAN](../11-tasks/TASK_PLAN.md), [ADR-011](../adr/ADR-011-release-pipeline-environments-and-production-operation.md) item 3) |
 | D-095 | The blanket requirement of executor effort Max removed; the executor's effort chosen per Task under D-031 (Opus 5.5 at High, XHigh or Max); Fable 5.1 for escalation only, with documented justification | Non-product/domain — governance ([AGENTS.md](../../AGENTS.md) section 6, [EXECUTION_CONTEXT](../11-tasks/EXECUTION_CONTEXT.md) EXC-11) |
+| D-096 | N-09: the local path of the RF-1 safety bundle removed from the current documents and replaced by a neutral reference; the bundle's evidence and the published Git history kept, history not rewritten | Non-product/domain — governance ([SECURITY_MODEL](../05-security/SECURITY_MODEL.md) SEC-SECRET-05) |
+| D-097 | The N-10 audit of the published history complete; its findings accepted as published, N10-01 explicitly, with no rewrite of history; the accepted items the known baseline of the publication guard; gate GATE-PUBLISH satisfied | Non-product/domain — governance ([TASK_PLAN](../11-tasks/TASK_PLAN.md) gate GATE-PUBLISH, [EXECUTION_CONTEXT](../11-tasks/EXECUTION_CONTEXT.md) EXC-31) |
 
 ## 23. Counts
 
-Re-derived from this register: 23 sections; 134 requirement rows in sections 2 to 19, all with distinct identifiers; no requirement pending; 73 legacy CORE entries, of which 72 are mapped (9 of them adapted by later decisions) and 1 is retired (section 21); 95 decisions, of which 55 are traced to requirements or rules and 40 are classified as non-product/domain (section 22).
+Re-derived from this register: 23 sections; 134 requirement rows in sections 2 to 19, all with distinct identifiers; no requirement pending; 73 legacy CORE entries, of which 72 are mapped (9 of them adapted by later decisions) and 1 is retired (section 21); 97 decisions, of which 55 are traced to requirements or rules and 42 are classified as non-product/domain (section 22).
