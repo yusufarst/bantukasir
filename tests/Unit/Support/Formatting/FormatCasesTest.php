@@ -97,6 +97,9 @@ final class FormatCasesTest extends TestCase
                 'timeOfDay' => Format::timeOfDay(CarbonImmutable::parse(self::string($input))),
                 'dayName' => Format::dayName(BusinessDate::fromString(self::string($input))),
                 'count' => Format::count(self::int($input)),
+                // The table also holds amounts that are not integers, which
+                // the formatter refuses at run time.
+                'duration' => Format::duration($input, self::string($case['unit'] ?? null)), // @phpstan-ignore argument.type
                 'variance' => Format::variance(Money::of(self::string($input))),
                 default => self::fail('Unknown format'),
             };

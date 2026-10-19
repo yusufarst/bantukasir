@@ -118,6 +118,27 @@ final class Format
     }
 
     /**
+     * A duration: the amount as a count, a space and the unit word, "60
+     * menit", "30 detik", "1.500 detik" (COPY_DECK section 1.3, CC-21). The
+     * caller chooses the unit, `minute` or `second`; there is no conversion
+     * between units and no combined unit. A negative amount, an amount that is
+     * not an integer and an unknown unit are refused (TASK-003 evidence,
+     * reading R-25).
+     *
+     * @param  int  $amount  a whole number of 0 or more; any other value is refused at run time
+     */
+    public static function duration(mixed $amount, string $unit): string
+    {
+        $word = match ($unit) {
+            'minute' => __('ux.format.duration.minute'),
+            'second' => __('ux.format.duration.second'),
+            default => throw new InvalidArgumentException('A duration is in minutes or seconds (COPY_DECK section 1.3).'),
+        };
+
+        return self::count(self::wholeNumber($amount, 'A duration')).' '.self::string($word);
+    }
+
+    /**
      * A cash variance with its word (COPY_DECK section 1.4): "−Rp2.000
      * (kurang)", "Rp5.000 (lebih)", "Rp0 (sesuai)".
      */
@@ -168,6 +189,23 @@ final class Format
     private static function group(string $digits): string
     {
         return strrev(implode('.', str_split(strrev($digits), 3)));
+    }
+
+    /**
+     * A whole number of 0 or more, given as a PHP int: a float, a numeric
+     * string or any other value is refused, never truncated (ADR-006 item 5).
+     */
+    private static function wholeNumber(mixed $value, string $what): int
+    {
+        if (! is_int($value)) {
+            throw new InvalidArgumentException(sprintf('%s is a whole number given as an integer.', $what));
+        }
+
+        if ($value < 0) {
+            throw new InvalidArgumentException(sprintf('%s is never negative.', $what));
+        }
+
+        return $value;
     }
 
     private static function jakarta(DateTimeInterface $instant): CarbonImmutable

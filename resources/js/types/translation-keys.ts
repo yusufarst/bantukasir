@@ -11,6 +11,8 @@ export interface TranslationPlaceholders {
     'ux.format.day.thursday': never;
     'ux.format.day.tuesday': never;
     'ux.format.day.wednesday': never;
+    'ux.format.duration.minute': never;
+    'ux.format.duration.second': never;
     'ux.format.month.april': never;
     'ux.format.month.august': never;
     'ux.format.month.december': never;

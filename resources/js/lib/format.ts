@@ -115,7 +115,7 @@ export function formatDayName(date: string): string {
 
 /** The number of a count, "5.000"; the counted noun is in the copy that holds it. */
 export function formatCount(count: number | bigint): string {
-    if (typeof count === 'number' && !Number.isSafeInteger(count)) {
+    if (typeof count !== 'bigint' && !(typeof count === 'number' && Number.isSafeInteger(count))) {
         throw new RangeError('A count is a whole number.');
     }
 
@@ -124,6 +124,28 @@ export function formatCount(count: number | bigint): string {
     }
 
     return group(count.toString());
+}
+
+/** The unit of a duration, chosen by the caller (COPY_DECK section 1.3, CC-21). */
+export type DurationUnit = 'minute' | 'second';
+
+const DURATION_UNITS = {
+    minute: 'ux.format.duration.minute',
+    second: 'ux.format.duration.second',
+} as const satisfies Readonly<Record<DurationUnit, TranslationKey>>;
+
+/**
+ * A duration: the amount as a count, a space and the unit word, "60 menit",
+ * "30 detik", "1.500 detik". There is no conversion between units and no
+ * combined unit; a negative amount, an amount that is not a whole number and
+ * an unknown unit are refused (TASK-003 evidence, reading R-25).
+ */
+export function formatDuration(amount: number | bigint, unit: DurationUnit): string {
+    if (unit !== 'minute' && unit !== 'second') {
+        throw new RangeError('A duration is in minutes or seconds (COPY_DECK section 1.3).');
+    }
+
+    return `${formatCount(amount)} ${t(DURATION_UNITS[unit])}`;
 }
 
 /** A cash variance with its word (COPY_DECK section 1.4): "−Rp2.000 (kurang)". */

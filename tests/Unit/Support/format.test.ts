@@ -5,10 +5,12 @@ import {
     formatDate,
     formatDateTime,
     formatDayName,
+    formatDuration,
     formatMoney,
     formatQuantity,
     formatTimeOfDay,
     formatVariance,
+    type DurationUnit,
 } from '@/lib/format';
 import { installDictionary } from '@/lib/i18n';
 import table from './cases/formatting.json';
@@ -42,6 +44,10 @@ function format(entry: Case): string | null {
                 return formatDayName(String(input));
             case 'count':
                 return formatCount(typeof input === 'number' ? input : -1);
+            case 'duration':
+                // The table also holds amounts that are not integers and
+                // unknown units, which the formatter refuses at run time.
+                return formatDuration(input as unknown as number, (entry.unit ?? '') as DurationUnit);
             case 'variance':
                 return formatVariance(String(input));
             default:

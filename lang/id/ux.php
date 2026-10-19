@@ -5,7 +5,8 @@
 // copied verbatim from COPY_DECK; a key joins this file with the first Task
 // that uses it. The leaves of ux.format.month and ux.format.day are the English
 // names of the months and days in snake_case (COPY_DECK sections 1.1 and 1.3;
-// TASK-003 evidence, the readings).
+// TASK-003 evidence, the readings); ux.format.duration holds the unit words of
+// durations (COPY_DECK section 1.3, CC-21).
 
 return [
     'format' => [
@@ -36,6 +37,10 @@ return [
         'variance_over' => 'lebih',
         'variance_even' => 'sesuai',
         'variance' => ':uang (:keterangan)',
+        'duration' => [
+            'minute' => 'menit',
+            'second' => 'detik',
+        ],
     ],
     'validation' => [
         'money' => 'Isi jumlah rupiah yang benar, tanpa angka di belakang koma.',
