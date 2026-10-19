@@ -48,9 +48,14 @@ export class NumberOutOfRangeError extends Error {
 /**
  * Parses a canonical string (ADR-006 item 2) with at most maxScale fractional
  * digits, as written, and a sign only when signed. Anything else is refused,
- * never repaired.
+ * never repaired — a value that is not a string first of all, such as a JSON
+ * number, which RegExp.exec would turn into a string (TASK-003 finding A-04).
  */
 export function parseExact(value: string, maxScale: number, signed: boolean, kind: string): Exact {
+    if (typeof value !== 'string') {
+        throw new NonCanonicalNumberError(kind);
+    }
+
     const match = CANONICAL.exec(value);
     const integer = match?.[2];
 
@@ -91,8 +96,20 @@ export function toCanonical(value: Exact): string {
     return negative ? `-${text}` : text;
 }
 
+/**
+ * A scale is a whole number of 0 or more, as Brick Math requires on the
+ * server (TASK-003 finding A-17).
+ */
+function checkScale(scale: number): void {
+    if (!Number.isSafeInteger(scale) || scale < 0) {
+        throw new RangeError('A scale is a whole number of 0 or more.');
+    }
+}
+
 /** The units of an exact value at a scale at least its own, exactly. */
 export function unitsAt(value: Exact, scale: number): bigint {
+    checkScale(scale);
+
     if (scale < value.scale) {
         throw new RangeError('Rescaling to fewer decimals needs a rounding rule: use roundHalfUp.');
     }
@@ -105,6 +122,8 @@ export function unitsAt(value: Exact, scale: number): bigint {
  * ADR-008 section 5).
  */
 export function roundHalfUp(value: Exact, scale: number): Exact {
+    checkScale(scale);
+
     if (scale >= value.scale) {
         return { units: unitsAt(value, scale), scale };
     }

@@ -1,9 +1,10 @@
 // The client's formatting module (ADR-005 item 6): the formats of COPY_DECK
 // sections 1.3 and 1.4, from canonical strings and instants. Month, day and
 // variance words come from the `ux.format` keys through t(); nothing reads the
-// browser's locale data or time zone — no Intl, no toLocaleString, no local
-// time — and times are shown in Asia/Jakarta. app/Support/Formatting/Format is
-// the server's twin, proven equal on one table of cases.
+// browser's locale data or time zone — no Intl, no toLocaleString, no Date at
+// all: the calendar is computed in integers — and times are shown in
+// Asia/Jakarta. app/Support/Formatting/Format is the server's twin, proven
+// equal on one table of cases and on the differential cases.
 import { parseExact, parseMoney, parseQuantity, roundHalfUp, toCanonical, UNKNOWN_COST, type Exact } from '@/lib/exact';
 import { t } from '@/lib/i18n';
 import type { TranslationKey } from '@/types/translation-keys';
@@ -16,9 +17,15 @@ const RUPIAH = 'Rp';
 /**
  * Asia/Jakarta is UTC+07:00, Western Indonesia Time, without daylight saving
  * since 1964, so the client shifts an instant by this offset instead of
- * reading a time-zone database (TASK-003 evidence, the readings).
+ * reading a time-zone database (R-12). An instant before 1964-01-01 00:00 in
+ * Asia/Jakarta, 1963-12-31T17:00:00Z, is refused on both sides (TASK-003
+ * finding A-14, reading R-31).
  */
-const JAKARTA_OFFSET_MILLISECONDS = 7 * 60 * 60 * 1000;
+const JAKARTA_OFFSET_SECONDS = 7 * 60 * 60;
+
+const FIRST_INSTANT = '1963-12-31T17:00:00';
+
+const SECONDS_PER_DAY = 24 * 60 * 60;
 
 const MONTHS = [
     'ux.format.month.january',
@@ -91,20 +98,21 @@ export function formatDate(date: string): string {
 export function formatDateTime(instant: string): string {
     const local = jakarta(instant);
 
-    return `${twoDigits(local.getUTCDate())} ${monthName(local.getUTCMonth() + 1)} ${fourDigits(local.getUTCFullYear())}, ${twoDigits(local.getUTCHours())}.${twoDigits(local.getUTCMinutes())}.${twoDigits(local.getUTCSeconds())}`;
+    return `${twoDigits(local.day)} ${monthName(local.month)} ${fourDigits(local.year)}, ${twoDigits(local.hours)}.${twoDigits(local.minutes)}.${twoDigits(local.seconds)}`;
 }
 
 /** The time of day of an instant, in Asia/Jakarta: "13.45". */
 export function formatTimeOfDay(instant: string): string {
     const local = jakarta(instant);
 
-    return `${twoDigits(local.getUTCHours())}.${twoDigits(local.getUTCMinutes())}`;
+    return `${twoDigits(local.hours)}.${twoDigits(local.minutes)}`;
 }
 
 /** The day name of a business date: "Senin" to "Minggu". */
 export function formatDayName(date: string): string {
     const { year, month, day } = calendarDate(date);
-    const key = DAYS[new Date(Date.UTC(year, month - 1, day)).getUTCDay()];
+    // 1970-01-01 was a Thursday, the fifth day of DAYS, which starts on Sunday.
+    const key = DAYS[modulo(daysFromCivil(year, month, day) + 4, 7)];
 
     if (key === undefined) {
         throw new Error('A day of the week is 0 to 6.');
@@ -204,7 +212,19 @@ function digitsValue(digits: string): number {
     return value;
 }
 
-function calendarDate(date: string): { year: number; month: number; day: number } {
+interface CalendarDate {
+    year: number;
+    month: number;
+    day: number;
+}
+
+/**
+ * A business date of the years 0001 to 9999, the range the server accepts
+ * (BusinessDate::fromString), checked in the proleptic Gregorian calendar
+ * without Date.UTC, which maps the years 0 to 99 to 1900 to 1999 (TASK-003
+ * finding A-05, reading R-27).
+ */
+function calendarDate(date: string): CalendarDate {
     const match = DATE.exec(date);
 
     if (match === null) {
@@ -213,7 +233,7 @@ function calendarDate(date: string): { year: number; month: number; day: number 
 
     const [year, month, day] = [match[1], match[2], match[3]].map((part) => digitsValue(part ?? ''));
 
-    if (year === undefined || month === undefined || day === undefined || !exists(Date.UTC(year, month - 1, day), year, month, day)) {
+    if (year === undefined || month === undefined || day === undefined || !exists(year, month, day)) {
         throw new Error('A business date exists in the calendar.');
     }
 
@@ -221,10 +241,10 @@ function calendarDate(date: string): { year: number; month: number; day: number 
 }
 
 /**
- * The instant shifted to Asia/Jakarta, read only through the getUTC methods,
- * so that the browser's own time zone never takes part.
+ * The instant shifted to Asia/Jakarta by the fixed offset, computed in
+ * integers, so that neither the browser's time zone nor Date takes part.
  */
-function jakarta(instant: string): Date {
+function jakarta(instant: string): CalendarDate & { hours: number; minutes: number; seconds: number } {
     const match = INSTANT.exec(instant);
 
     if (match === null) {
@@ -237,20 +257,60 @@ function jakarta(instant: string): Date {
         throw new Error('An instant has six parts.');
     }
 
-    const utc = Date.UTC(year, month - 1, day, hours, minutes, seconds);
-
-    if (!exists(utc, year, month, day) || hours > 23 || minutes > 59 || seconds > 59) {
+    if (!exists(year, month, day) || hours > 23 || minutes > 59 || seconds > 59) {
         throw new Error('An instant exists in the calendar.');
     }
 
-    return new Date(utc + JAKARTA_OFFSET_MILLISECONDS);
+    if (instant.slice(0, FIRST_INSTANT.length) < FIRST_INSTANT) {
+        throw new RangeError('An instant before 1964 in Asia/Jakarta is outside the formats (R-12).');
+    }
+
+    const local = hours * 3600 + minutes * 60 + seconds + JAKARTA_OFFSET_SECONDS;
+    const date = civilFromDays(daysFromCivil(year, month, day) + Math.floor(local / SECONDS_PER_DAY));
+    const time = local % SECONDS_PER_DAY;
+
+    return { ...date, hours: Math.floor(time / 3600), minutes: Math.floor((time % 3600) / 60), seconds: time % 60 };
 }
 
-/** Whether a UTC time value is the given date, so that 2026-02-30 is refused. */
-function exists(utc: number, year: number, month: number, day: number): boolean {
-    const date = new Date(utc);
+/** Whether a date exists: years 0001 to 9999, the months and their days. */
+function exists(year: number, month: number, day: number): boolean {
+    return year >= 1 && year <= 9999 && month >= 1 && month <= 12 && day >= 1 && day <= daysInMonth(year, month);
+}
 
-    return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+function daysInMonth(year: number, month: number): number {
+    const leap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+
+    return [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1] ?? 0;
+}
+
+/** The days since 1970-01-01 of a proleptic Gregorian date (Howard Hinnant's days_from_civil). */
+function daysFromCivil(year: number, month: number, day: number): number {
+    const y = month <= 2 ? year - 1 : year;
+    const era = Math.floor(y / 400);
+    const yearOfEra = y - era * 400;
+    const dayOfYear = Math.floor((153 * (month + (month > 2 ? -3 : 9)) + 2) / 5) + day - 1;
+    const dayOfEra = yearOfEra * 365 + Math.floor(yearOfEra / 4) - Math.floor(yearOfEra / 100) + dayOfYear;
+
+    return era * 146097 + dayOfEra - 719468;
+}
+
+/** The proleptic Gregorian date of a day since 1970-01-01 (Howard Hinnant's civil_from_days). */
+function civilFromDays(days: number): CalendarDate {
+    const z = days + 719468;
+    const era = Math.floor(z / 146097);
+    const dayOfEra = z - era * 146097;
+    const yearOfEra = Math.floor((dayOfEra - Math.floor(dayOfEra / 1460) + Math.floor(dayOfEra / 36524) - Math.floor(dayOfEra / 146096)) / 365);
+    const dayOfYear = dayOfEra - (365 * yearOfEra + Math.floor(yearOfEra / 4) - Math.floor(yearOfEra / 100));
+    const shiftedMonth = Math.floor((5 * dayOfYear + 2) / 153);
+    const day = dayOfYear - Math.floor((153 * shiftedMonth + 2) / 5) + 1;
+    const month = shiftedMonth + (shiftedMonth < 10 ? 3 : -9);
+
+    return { year: yearOfEra + era * 400 + (month <= 2 ? 1 : 0), month, day };
+}
+
+/** The remainder of a division, never negative. */
+function modulo(value: number, divisor: number): number {
+    return ((value % divisor) + divisor) % divisor;
 }
 
 function twoDigits(value: number): string {
