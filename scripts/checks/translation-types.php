@@ -6,7 +6,8 @@
 // placeholders of each text, so that t() refuses an unknown key, a missing
 // placeholder or an extra one in the typecheck and in the build. Run it after
 // changing lang/id; composer lint runs it with --check, which fails when the
-// committed file differs from what lang/id generates.
+// committed file differs from what lang/id generates. Both modes fail on a
+// capitalized placeholder (:Name, :NAME), which lang/id may not use.
 //
 // Usage: php scripts/checks/translation-types.php [--check] [--lang=DIR] [--output=FILE]
 
@@ -33,6 +34,26 @@ foreach (array_slice($argv, 1) as $argument) {
 }
 
 $dictionary = Dictionary::fromDirectory($lang);
+
+// A capitalized placeholder, :Name or :NAME, is refused (TASK-003 finding
+// A-15, reading R-32): Laravel title-cases the first code point of such a
+// value, which the client could only approximate, and no COPY_DECK text uses
+// one, so refusing them keeps the server and the client equal by construction.
+$capitalized = [];
+
+foreach ($dictionary as $key => $text) {
+    preg_match_all('/:(\p{Lu}[\p{L}\p{N}_]*)/u', $text, $matches);
+
+    foreach ($matches[1] as $name) {
+        $capitalized[] = "CAPITALIZED PLACEHOLDER :{$name} in {$key}";
+    }
+}
+
+if ($capitalized !== []) {
+    fwrite(STDOUT, "Translation types: {$lang} holds placeholders that only lower-case names may take:\n  ".implode("\n  ", $capitalized)."\n");
+    exit(1);
+}
+
 $lines = [
     '// Generated from lang/id by scripts/checks/translation-types.php (ADR-005 item 5).',
     '// Do not edit: run that script after changing lang/id; composer lint fails',

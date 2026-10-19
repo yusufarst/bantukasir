@@ -37,6 +37,36 @@ final class TranslationTypesTest extends TestCase
         );
     }
 
+    /**
+     * TASK-003 adversarial finding A-15: a capitalized placeholder (`:Name`,
+     * `:NAME`) in lang/id fails the check and the generation alike, so that
+     * the server and the client stay equal by construction; a colon followed
+     * by a space or a lower-case placeholder is not one.
+     */
+    public function test_a_capitalized_placeholder_fails_the_check_and_the_generation(): void
+    {
+        $directory = self::makeTemporaryDirectory('translation-types');
+
+        try {
+            foreach ([['--check'], []] as $mode) {
+                $process = self::runCheck([
+                    PHP_BINARY, 'scripts/checks/translation-types.php', ...$mode,
+                    '--lang='.self::SAMPLES.'/capitalized/lang/id',
+                    '--output='.$directory.'/translation-keys.ts',
+                ]);
+
+                $this->assertSame(1, $process->getExitCode(), $process->getOutput());
+                $this->assertStringContainsString('CAPITALIZED PLACEHOLDER :Nama in ux.format.greeting', $process->getOutput());
+                $this->assertStringContainsString('CAPITALIZED PLACEHOLDER :NAMA in ux.format.shout', $process->getOutput());
+                $this->assertStringNotContainsString('ux.format.time', $process->getOutput());
+                $this->assertStringNotContainsString('ux.format.variance', $process->getOutput());
+                $this->assertFileDoesNotExist($directory.'/translation-keys.ts');
+            }
+        } finally {
+            self::removeTemporaryDirectory($directory);
+        }
+    }
+
     private function check(string $output): Process
     {
         return self::runCheck([
