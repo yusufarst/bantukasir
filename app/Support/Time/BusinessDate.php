@@ -80,9 +80,14 @@ final readonly class BusinessDate implements JsonSerializable, Stringable
         return $interval->invert === 1 ? -$interval->days : $interval->days;
     }
 
+    /**
+     * -1, 0 or 1: the dates compared as their `YYYY-MM-DD` strings, with
+     * strcmp(), never PHP's numeric comparison of strings (TASK-003 finding
+     * A-02).
+     */
     public function compareTo(self $other): int
     {
-        return $this->toString() <=> $other->toString();
+        return strcmp($this->toString(), $other->toString()) <=> 0;
     }
 
     public function isAfter(self $other): bool

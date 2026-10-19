@@ -77,6 +77,72 @@ final class PhpstanRulesTest extends TestCase
     }
 
     /**
+     * TASK-003 adversarial finding A-02: the float rule reports the 14
+     * floating-point operations that it let through (B04 to B10, B13, B17,
+     * B20 and B27 to B30), the 12 that were already reported stay reported,
+     * and the neighbours of the same operations (B31 to B48) are reported by
+     * the float rule too.
+     */
+    public function test_the_float_rule_reports_every_float_operation_of_the_review(): void
+    {
+        $tags = $this->tagsOf('FloatBypassSamples.php');
+        $byRule = $this->tagsReported('FloatBypassSamples.php', $tags, 'bantukasir.floatInExactValue');
+        $byAny = $this->tagsReported('FloatBypassSamples.php', $tags, null);
+
+        $unreported = ['B04', 'B05', 'B06', 'B07', 'B08', 'B09', 'B10', 'B13', 'B17', 'B20', 'B27', 'B28', 'B29', 'B30'];
+        $alreadyReported = ['B01', 'B02', 'B03', 'B12', 'B14', 'B15', 'B19', 'B21', 'B22', 'B24', 'B25', 'B26'];
+        $neighbours = ['B31', 'B32', 'B33', 'B34', 'B35', 'B36', 'B37', 'B38', 'B39', 'B41', 'B42', 'B43', 'B45', 'B46', 'B47', 'B48'];
+
+        $this->assertSame([], array_values(array_diff($unreported, $byRule)), 'float operations that the float rule lets through');
+        $this->assertSame([], array_values(array_diff($alreadyReported, $byAny)), 'float operations that are no longer reported');
+        $this->assertSame([], array_values(array_diff($neighbours, $byRule)), 'neighbouring float operations that the float rule lets through');
+    }
+
+    public function test_the_float_rule_accepts_exact_code_as_the_kernel_writes_it(): void
+    {
+        $this->assertSame([], $this->linesOf('FloatControls.php', 'bantukasir.floatInExactValue'));
+    }
+
+    /**
+     * The tag that ends each line of a sample, by line.
+     *
+     * @return array<int, string>
+     */
+    private function tagsOf(string $file): array
+    {
+        $tags = [];
+
+        foreach (file(self::projectRoot().'/tests/Fixtures/StaticChecks/Php/Floats/'.$file) ?: [] as $index => $line) {
+            if (preg_match('/\/\/ (B\d\d)\b/', $line, $tag) === 1) {
+                $tags[$index + 1] = $tag[1];
+            }
+        }
+
+        return $tags;
+    }
+
+    /**
+     * The tags whose line is reported, by the identifier given or by any.
+     *
+     * @param  array<int, string>  $tags
+     * @return list<string>
+     */
+    private function tagsReported(string $file, array $tags, ?string $identifier): array
+    {
+        $reported = [];
+
+        foreach ($tags as $line => $tag) {
+            $identifiers = self::$reported[$file][$line] ?? [];
+
+            if ($identifier === null ? $identifiers !== [] : in_array($identifier, $identifiers, true)) {
+                $reported[] = $tag;
+            }
+        }
+
+        return $reported;
+    }
+
+    /**
      * @return list<int>
      */
     private function linesOf(string $file, string $identifier): array
