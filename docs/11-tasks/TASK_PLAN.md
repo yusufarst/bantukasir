@@ -5,7 +5,7 @@
 | Status | CURRENT — written in RF-7 under D-090, 18 October 2026 (Asia/Jakarta); corrected under D-091 the same day, after the independent review of the baseline; approved by the Owner with every Task (gate GATE-P11), and corrected for review finding R-1, under D-092 the same day |
 | Phase | P11 — Task planning, dependencies and execution specifications |
 | Replaces | `docs/11-tasks/legacy/11-BUILD-PLAN.md`, `docs/11-tasks/legacy/P11-BUILD-UNITS.md` and `docs/11-tasks/legacy/build-units/` (LEGACY — SUPERSEDED, [LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 16); decision D-012 |
-| Decisions | D-012, D-031, D-066, D-088, D-090, D-091, D-092, D-094, D-095, D-096, D-097; FD-07, FD-08 |
+| Decisions | D-012, D-031, D-066, D-088, D-090, D-091, D-092, D-094, D-095, D-096, D-097, D-098; FD-07, FD-08 |
 | Related | [EXECUTION_CONTEXT](EXECUTION_CONTEXT.md), [DEPENDENCY_GRAPH](DEPENDENCY_GRAPH.md), [TRACEABILITY](TRACEABILITY.md), the Task contracts in [tasks/](tasks/), [TEST_STRATEGY](../08-testing/TEST_STRATEGY.md) |
 
 The implementation baseline of BantuKasir V1: 50 Tasks, their dependencies, gates and status, the order in which to run them, and where every requirement, workflow, suite, route, table and control is built. Nothing here authorizes a Task: each one starts only on the Owner's explicit instruction ([EXECUTION_CONTEXT](EXECUTION_CONTEXT.md) EXC-10), and none starts before gate GATE-P11.
@@ -68,9 +68,9 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 
 | Task | Title | Phase | Lane | Size | Review | Depends on | Gates | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| [TASK-001](tasks/TASK-001-toolchain-ci.md) | Toolchain, repository conventions and CI | 1 | P | L | B | — | GATE-P11, GATE-BRANCH; before `DONE`: GATE-PUBLISH | `VERIFYING` |
+| [TASK-001](tasks/TASK-001-toolchain-ci.md) | Toolchain, repository conventions and CI | 1 | P | L | B | — | GATE-P11, GATE-BRANCH; before `DONE`: GATE-PUBLISH | `DONE` |
 | [TASK-002](tasks/TASK-002-p7-change-control-1.md) | P7 and copy change control, batch 1 | 1 | D | M | O | — | GATE-P11; before `DONE`: GATE-BRANCH, GATE-PUBLISH | `READY` |
-| [TASK-003](tasks/TASK-003-kernel-localization.md) | Shared kernel, formatting and localization | 1 | P | M | A | TASK-001 | — | `TODO` |
+| [TASK-003](tasks/TASK-003-kernel-localization.md) | Shared kernel, formatting and localization | 1 | P | M | A | TASK-001 | — | `READY` |
 | [TASK-004](tasks/TASK-004-database-foundation.md) | Database foundation, roles and test harness | 1 | P | L | A | TASK-001, TASK-003 | — | `TODO` |
 | [TASK-005](tasks/TASK-005-design-system.md) | Design system and frontend foundation | 1 | P | L | B | TASK-002, TASK-003 | GATE-CC1 | `TODO` |
 | [TASK-006](tasks/TASK-006-authentication.md) | Authentication, one-time links, audit and security log | 2 | P | L | A | TASK-004, TASK-005 | — | `TODO` |
@@ -119,7 +119,7 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-049](tasks/TASK-049-release-readiness.md) | Release readiness: staging, UAT and first installation | 10 | R | L | V | TASK-045, TASK-047, TASK-048 | G1, G2, G3, G4, DEVICES, TARGET, GATE-PUBLISH | `TODO` |
 | [TASK-050](tasks/TASK-050-production-pilot.md) | Production release, cutover and pilot acceptance | 10 | R | L | V | TASK-049 | RELEASE, GATE-PUBLISH, G4 | `TODO` |
 
-Totals: `TODO` 48; `READY` 1; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 1; `DONE` 0; `SUPERSEDED` 0.
+Totals: `TODO` 47; `READY` 2; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 1; `SUPERSEDED` 0.
 
 ## 5. Implementation sequence
 
@@ -161,6 +161,8 @@ With more than one executor the Owner may run Tasks of different lanes at the sa
 - Outside the Tasks, the Owner's approvals and decisions are on the critical path of the release: GATE-P11 and GATE-BRANCH before TASK-001; GATE-PUBLISH before TASK-001 is `DONE`, and so before every later implementation Task; GATE-CC1 before TASK-005; and the external gates TARGET, DEVICES, G1 to G4 and RELEASE. DEPENDENCY_GRAPH section 5 shows where they enter.
 
 ## 6. The first eligible Task
+
+**Status (D-098).** TASK-001 is `DONE`: merged into `develop` by the Owner's merge commit `b212819`, with CI green on its pull request and on the merge. [TASK-003](tasks/TASK-003-kernel-localization.md) is `READY` and is the next Task on the critical path (section 5.4); TASK-002 stays `READY` beside it. Each starts only on the Owner's instruction that names it. The paragraphs below record how TASK-001 and TASK-002 became eligible.
 
 **[TASK-001](tasks/TASK-001-toolchain-ci.md) — Toolchain, repository conventions and CI** is the first eligible coding Task. It depends on no Task. Gate GATE-P11 is approved (D-092). Gate GATE-BRANCH is satisfied: `develop` exists, created locally by the branch operation the Owner authorized (D-094), so TASK-001 is `READY`; it starts when gate EXECUTOR holds and the Owner's instruction names it. It may be built and verified locally before gate GATE-PUBLISH, but it is `DONE` only when GATE-PUBLISH holds (N-09 decided, the N-10 audit completed and the publication guard passed), its branch is pushed on the Owner's authorization, its pull request is merged into `develop` and CI passes on the pull request and on the merge (EXC-31, EXC-32). Because every later implementation Task depends on TASK-001, GATE-PUBLISH is needed before any of them starts.
 

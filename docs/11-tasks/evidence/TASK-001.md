@@ -3,7 +3,7 @@
 | | |
 | --- | --- |
 | Task | [TASK-001](../tasks/TASK-001-toolchain-ci.md), size L, review class B, lane P |
-| Status | `VERIFYING`; the status of record is [TASK_PLAN](../TASK_PLAN.md) section 4 |
+| Status | `DONE` (D-098, section 12); the status of record is [TASK_PLAN](../TASK_PLAN.md) section 4 |
 | Instruction | The Owner's instruction of 18 October 2026, "D-094 / D-095 bookkeeping + TASK-001 — executor instruction, rev2", recorded as D-094 and D-095 in [DECISIONS](../../00-governance/DECISIONS.md) |
 | Branch | `task/TASK-001-toolchain-ci`, created from `develop` (EXC-22) |
 | Base commit | `a2cb9713f56d59472677f40b09bf4c3016f73c51`, the D-094 bookkeeping commit on `develop` (parent `6e18185aa177834b55270cfac09a6d54670645f8`) |
@@ -1158,3 +1158,80 @@ UI and UX, Backend, Database, Data integrity, Performance and Operations stay N/
 Nothing else was deleted: no tracked or pre-existing file, recovery folder, Git data, volume, image content or Owner data. `Claude outputs/`, `plan-p0-p11-review.patch`, `.local/`, `.agents/`, the stash, `refs/codex/…`, `.git/objects/maintenance.lock` and every Git ref other than `task/TASK-001-toolchain-ci` are unchanged.
 
 The commit "TASK-001: record the class-B review remediation" holds sections 11.5 and 11.6, the notes that point from sections 7.2, 10.1, 10.4, 10.5 and 10.7 to this section, and CURRENT_HANDOFF.
+
+## 12. Publication, merge and acceptance
+
+The planning agent recorded this section under D-021 for the D-098 bookkeeping. It draws on the executors' reports of 19 October 2026 and on the planning agent's own checks of GitHub and the repository. Sections 12.4 and 12.5 give the final status of every criterion and dimension, replacing the rows of sections 10.4, 10.5 and 11.6.
+
+### 12.1 First publication
+
+- **Instruction.** "First publication: D-096/D-097 bookkeeping commit, publication guard, push and pull request of TASK-001", by Claude Opus 5.5 at effort XHigh in a new session.
+- **Bookkeeping commit.** `8f0b96afca80af354bd24cf2354c263cc166ae97` on `2e7ffd2` recorded D-096 and D-097. It changes six files, under the Owner's identity.
+- **Publication guard** (D-076, EXC-31) over the 31 commits that the push added:
+  - the repository's secret scan with `.gitleaks.toml` was clean on the tree and on the 31 commits;
+  - Gitleaks 8.30.1 with its default rules found one hit, F-1 in `docker/app/Dockerfile` (`c866b77`), which is an item of the baseline;
+  - the privacy and client-data check of 44,346 added lines put every hit within the baseline of D-097. The vendor name Backblaze B2 was judged not a finding, and D-098 adds such names to the baseline;
+  - no binary file was added;
+  - every commit carries the Owner's identity.
+
+  Two commit-message points went to the Owner before the push (section 12.3).
+- **Push.** One atomic push without force, at 12:13:48Z, published `develop` at `a2cb971` and `task/TASK-001-toolchain-ci` at `8f0b96a`. `main` and `plan/bantukasir-pos-v1` were unchanged.
+- **Pull request.** Pull request #1, `develop` ← `task/TASK-001-toolchain-ci`, titled "TASK-001 — Toolchain, repository conventions and CI", with no attribution to an AI model, agent or tool.
+- **CI on the pull request.** Run 39250580770, `pull_request` on `8f0b96a`: success. Job "Command contract", 1m53s, with every step green:
+  - the environment started on the Linux runner;
+  - the eleven commands of the command contract passed;
+  - the secret scan covered the 15 commits of the branch;
+  - neither dependency audit reported an advisory;
+  - the Playwright smoke test passed.
+
+### 12.2 Merge
+
+- **Instruction.** "TASK-001: merge of PR #1 into `develop`", by Claude Opus 5.5 at effort High in a new session.
+- **Before the merge.** `docker compose down` was run, keeping the volume, and then `git switch develop`.
+- **Merge commit.** The local merge commit `b212819a1761ffc468283d6813bf6ec7581d097e`:
+  - parents `a2cb971` and `8f0b96a`;
+  - tree `f223127e6a6bedeebf11e7c03b337e5c8785da17`, equal to the tree of `8f0b96a`;
+  - the Owner's identity as author and committer;
+  - the one-line message "Merge TASK-001 (pull request #1): toolchain, repository conventions and CI", with no trailer.
+- **Guard.** One new commit, and no new tree or blob.
+- **Push.** `develop` was pushed without force at 14:22:52Z. GitHub marked pull request #1 merged, with merge commit `b212819`.
+- **CI on the merge.** Run 39268427587, a `push` to `develop` on `b212819`: success, with every step green, in 2m6s.
+
+### 12.3 Commit-message points accepted by the Owner
+
+- **`8f0b96a`.** Git reads the last paragraph of its message as two trailers keyed `N-09` and `N-10`. They summarize the bookkeeping and attribute nothing; the format came from the instruction.
+- **`677a6ce`.** This RF-6 checkpoint, accepted under D-090, has a message containing "(question 20: no AI agent operates production or staging)". That is the content of D-088, not an attribution.
+
+The Owner accepted both before the push. History is not rewritten (D-098).
+
+### 12.4 Acceptance criteria: final status
+
+| Criterion | Status | Reason |
+| --- | --- | --- |
+| AC-001-01 | PASS | Section 10.4 |
+| AC-001-02 | PASS | Section 10.4 |
+| AC-001-03 | PASS | The eleven commands pass locally (sections 10.1 and 11.6), in CI on the pull request (run 39250580770) and on its merge into `develop` (run 39268427587). The L5 step is the Playwright smoke test (EXC-34) |
+| AC-001-04 | PASS | Section 11.6, and in both CI runs |
+| AC-001-05 | PASS | As written (section 8) and as run: the workflow ran on the pull request and on the push to `develop`, with no secret beyond the read-only workflow token |
+| AC-001-06 | PASS | Section 10.4 |
+| AC-001-07 | PASS | Section 10.4. The secret scan passed on the tree and on the 31 commits of the first push (section 12.1) |
+| AC-001-08 | PASS | Windows locally (sections 6, 9 and 11.5). Linux on the CI runner, where the environment started and the smoke test opened the application, in both runs |
+| AC-001-09 | PASS | <ul><li>Gate GATE-PUBLISH satisfied (D-096, D-097).</li><li>Pushed on the Owner's authorization, with the publication guard passed.</li><li>Merged into `develop` by the Owner with a merge commit.</li><li>CI green on the pull request and on the merge.</li></ul> |
+
+### 12.5 Definition of Done: final status
+
+| Dimension | Status | Reason |
+| --- | --- | --- |
+| Business | PASS | Every criterion of section 12.4 |
+| UI and UX | N/A | No page or control |
+| Backend | N/A | No route or Action |
+| Database | N/A | No migration |
+| Security | PASS | Section 10.5. The publication guard passed on everything that was published |
+| Data integrity | N/A | Writes no business fact |
+| Performance | N/A | No request path |
+| Operations | N/A | No backup, runbook or status impact |
+| Verification | PASS | <ul><li>The command contract is green locally and in both CI runs.</li><li>The self-review is done (section 10.6).</li><li>The class-B review was remediated (section 11) and re-checked PASS.</li><li>The Owner accepted the Task (D-098).</li></ul> |
+
+### 12.6 Status
+
+`DONE` (D-098). TASK-003 becomes `READY`.
