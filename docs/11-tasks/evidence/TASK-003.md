@@ -3,7 +3,7 @@
 | | |
 | --- | --- |
 | Task | [TASK-003](../tasks/TASK-003-kernel-localization.md), size M, review class A, lane P |
-| Status | `VERIFYING` (section 11); the status of record is [TASK_PLAN](../TASK_PLAN.md) section 4 |
+| Status | `DONE` (D-100); the status of record is [TASK_PLAN](../TASK_PLAN.md) section 4 |
 | Instruction | The Owner's instruction of 19 October 2026, "TASK-003: Shared kernel, formatting and localization (executor instruction)", prepared by the planning agent on 19 October 2026 and sent by the Owner the same day, approving its whole content |
 | Branch | `task/TASK-003-kernel-localization`, created from `develop` (EXC-22) |
 | Base commit | `fc0055b49e9d179b5b7ed7d766121150dbd5bf66`, the D-098 bookkeeping commit on `develop` (parent `b212819a1761ffc468283d6813bf6ec7581d097e`) |
@@ -137,7 +137,7 @@ The readings of the remediation (section 10), R-25 for the duration formatter an
 | F-5 | The client keeps a once prop only while it moves between pages that include it (Inertia v3 documentation). The dictionary is shared on every Inertia response by the middleware, so every page includes it | Recorded |
 | F-6 | Brick Math runs its native calculator, because the image has neither GMP nor BCMath. It is exact; its speed is a matter for the performance Tasks (TASK-043, TASK-048) | Recorded |
 | F-7 | COPY_DECK names no validation message for a cost field, and its "too large" message for quantities names the line maximum 99.999.999,999, which does not fit a minimum-stock field (maximum 9.999.999.999,999). `CostRule` takes its messages from the FormRequest, and `QuantityRule` serves line and movement quantities; the Tasks that add a cost field (TASK-021, TASK-025) or a minimum-stock field (TASK-015) take their messages from COPY_DECK, through change control where it has none | Recorded for those Tasks |
-| F-8 | Found by the remediation after the merge of `develop` (section 10.2): COPY_DECK section 1.3 now also holds the percent format "One decimal with a decimal comma, directly followed by the percent sign" (32,0%), added by TASK-002 as CC-03 and approved by D-099. It is not among the formats that the contract's item 5 lists, nor in the remediation instruction or the decision, so it is not built: building it would be a scope the instruction does not authorize (its section "Not authorized"). AC-003-04 is read against the formats of contract item 5. The Task that first shows a percentage, or a decision of the planning agent, takes it | Recorded for the planning agent |
+| F-8 | Found by the remediation after the merge of `develop` (section 10.2): COPY_DECK section 1.3 now also holds the percent format "One decimal with a decimal comma, directly followed by the percent sign" (32,0%), added by TASK-002 as CC-03 and approved by D-099. It is not among the formats that the contract's item 5 lists, nor in the remediation instruction or the decision, so it is not built: building it would be a scope the instruction does not authorize (its section "Not authorized"). AC-003-04 is read against the formats of contract item 5. The Task that first shows a percentage, or a decision of the planning agent, takes it | Assigned to TASK-040 (its scope item 2), built in the server and client formatters with shared cases (D-100) |
 
 ## 6. Tests
 
@@ -572,7 +572,7 @@ No other defect was found. Every commit message reads "TASK-003: …" under the 
 
 ### 7.5 What is not verified, and why
 
-- **The fixes of the class-A review**: the planning agent's verification is pending, and a targeted re-review of A-01, A-02, A-03, A-06, A-07 and A-08 if it asks for one (decision section 6).
+- **The fixes of the class-A review**: verified by the planning agent on 20 October 2026, with no targeted re-review needed (section 9; D-100).
 - **The limits recorded as readings**: the seventh form of A-08 (R-28), a `Date` turned into text when it comes from outside interface code (R-34) and a key type derived in another module (R-35) are not caught by lint; code review covers them. The production body of a 422 response is TASK-008's (A-09 (b), OPEN_ITEMS T-26).
 - **The percent format** of COPY_DECK section 1.3 (CC-03): not built (F-8).
 - **The full-size differential run**: once, locally (section 6.2); the command contract and CI run the committed table at scale 0.1.
@@ -632,7 +632,12 @@ The remediation (section 10) pushes the branch again without force, after the pu
 - **Self-review** (EXC-70): sections 7.4 and 10.6.
 - **Reviewer's check** (EXC-70): the planning agent's decision on the class-A review (below) records its check of the findings against `0ee8ab7`.
 - **Adversarial review of class A** (EXC-71; contract section 8, "the adversarial review of the arithmetic"): run by Claude Opus 5.5 (`claude-opus-5-5`) at effort Max, in a new session separate from the executor's, on 20 October 2026 from 00:21:19 to 01:13:22, on `task/TASK-003-kernel-localization` at `0ee8ab7547198c5e5c72dd49d193ec735d3a4f44`; its command contract was green, and nothing was committed, pushed or fixed. Its report, `TASK-003-Adversarial-Review-Report.md`, 136,052 bytes, SHA-256 `b8a2012a7f65f8bec7416d52a4c8b09a9cec9f07adc86544f69b29c7cd7b591e` (checked by the remediation on 20 October 2026), found 10 MUST-FIX, 7 SHOULD-FIX and 2 NOTE findings. The planning agent's decision, `TASK-003-Adversarial-Review-Decision.md` (20 October 2026), marks every finding FIX except two parts that it records instead: the seventh form of A-08 (a reading) and A-09 (b) (OPEN_ITEMS T-26, for TASK-008).
-- **Verification by the planning agent**: pending (decision section 6).
+- **Verification by the planning agent** (20 October 2026): PASS. Each finding meets the required outcome of the decision against the code at `3cc9188`. The planning agent ruled acceptable, as limits of lint covered by code review, three items:
+  - the `toString()` of a `Date` from outside interface code (R-34);
+  - an alias of the global object;
+  - a key type derived in another module (R-35).
+
+  No targeted re-review was needed (D-100).
 
 Each finding with the decision, its regression test, the test's result before the fix (the run of section 10.4 on `67210f3` with the new tests in the working tree) and after it (section 10.5 and the run of record, section 7.1), the fix and its commit:
 
@@ -702,3 +707,49 @@ The same suites on the fixed working tree, from 03:49:44 to 03:53:44, before the
 ### 10.6 Self-review of the remediation (EXC-70)
 
 The diff `0ee8ab7..HEAD` was reviewed against the instruction, the decision's required outcomes, ADR-005, ADR-006 and the readings. Corrections made before the commits: the float rule first left `PHP_INT_MAX + $units` and `(string)` of an invalid sum unreported, so it gained the overflow and cast checks of R-33; the project's own exact-value code needed one change, `BusinessDate::compareTo()` with `strcmp()`; the exact-number rules first refused a property named `parseInt` of an object type, so property signatures are excluded; the key check first missed a key after a comment, so comments are skipped; the passing sample of the key check now counts 8 lookups instead of 7, because `@lang` in a Blade view is read; the dictionary of an earlier request stayed on Inertia's response factory within one test, so `handle()` drops it (R-37); Pint's `fully_qualified_strict_types` and `single_quote` fixes were applied to two new files; and test code that PHPStan level 9, ESLint or the typecheck refused was corrected. Every commit message reads "TASK-003: …" under the Owner's identity, with no trailer and no mention of an AI model, agent or tool. Every file is LF. `tests/Adversarial/` was never created.
+
+## 11. Close: acceptance, merge and `DONE` (20 October 2026)
+
+Under the Owner's instruction of 20 October 2026, "TASK-003 close: acceptance (D-100), merge of pull request #3 and bookkeeping", which the planning agent prepared the same day after its verification of the remediation (section 9). Executed by the implementation executor in Claude Code Desktop on the Owner's Windows machine, in the main working tree: Claude Opus 5.5 (`claude-opus-5-5`); effort XHigh, as the instruction names it (D-031, D-095), and the desktop app's record of the session shows effort `xhigh`; a new session dedicated to the close, started on 20 October 2026 at 04:40. Git ran with `GIT_OPTIONAL_LOCKS=0`.
+
+### 11.1 The Owner's decision
+
+"Owner menerima TASK-003 (D-100): cabang `task/TASK-003-kernel-localization` pada `3cc9188a05dc12126f7397c64b2ecd040752fa82` (PR #3, CI 39325756602 SUCCESS), dengan seluruh temuan review adversarial kelas A ditangani sesuai keputusan dan verifikasi planning agent tanggal 20 Oktober 2026, termasuk batas lint yang dicatat (R-28, R-34, R-35) dan T-26 untuk TASK-008. Format persen (F-8) dibangun oleh TASK-040 sesuai kontraknya. Owner menyetujui merge PR #3 ke `develop` dengan merge commit lokal atas identitas Owner dan menerima TASK-003 sebagai DONE setelah merge dan CI-nya berhasil sesuai instruksi ini." (D-100)
+
+### 11.2 Preflight
+
+Checked on 20 October 2026 from 04:44 to 04:45:
+
+- **The main working tree**: on `task/TASK-003-kernel-localization` at `3cc9188a05dc12126f7397c64b2ecd040752fa82`; nothing staged or modified; untracked only the three files of `Claude outputs/` and `plan-p0-p11-review.patch`; `tests/Adversarial/` absent.
+- **Local refs**: `develop` at `78ca172989a7e9876a3ffbc472a08235a4a99ffd`; `git worktree list` shows `develop` checked out nowhere, and the worktree `bantukasir-task002` on `task/TASK-002-p7-change-control-1` at `936be82`.
+- **Remote refs**, by an anonymous `git ls-remote origin`: `develop` `78ca172`; `task/TASK-003-kernel-localization` and `refs/pull/3/head` `3cc9188`; `task/TASK-002-p7-change-control-1` `936be82`; `task/TASK-001-toolchain-ci` `8f0b96a`; `main` `f7cecfe`; `plan/bantukasir-pos-v1` `86822d5`.
+- **Pull request #3**: `OPEN`, base `develop`, head `3cc9188`, mergeable. **CI run 39325756602**: `success`, head `3cc9188`, event `pull_request`.
+- **Tools**: no container of BantuKasir was running, so `docker compose down` was not needed; the volume and the image are kept. Gitleaks in `bantukasir-app:local`, run with `--network none`, prints `v8.30.1`.
+- **The branch brought up to date (EXC-36)**: `git merge origin/develop` on the Task branch printed "Already up to date."; HEAD stayed `3cc9188`.
+
+### 11.3 Merge commit
+
+`git switch develop` (HEAD `78ca172`), then `git merge --no-ff` of `task/TASK-003-kernel-localization`, without conflict, committed at 04:45:50:
+
+- **SHA**: `386f1388994282d143c105d815fa587244755d72`.
+- **Parents**: `78ca172989a7e9876a3ffbc472a08235a4a99ffd`, then `3cc9188a05dc12126f7397c64b2ecd040752fa82`.
+- **Tree**: `0b675dcbf27487b40f60bf602cb0fc4a8f814bc3`, equal to that of `3cc9188`.
+- **Identity**: the Owner's configured identity as author and committer.
+- **Message**: exactly the one line "Merge TASK-003 (pull request #3): shared kernel, formatting and localization"; `git interpret-trailers --parse` prints nothing. The executor's first check of the line count counted the blank line that `--format=%B` appends and stopped; the raw commit (`git cat-file commit`) shows the one line and its newline only.
+
+### 11.4 Guard, push and CI
+
+- **The guard**: `git rev-list develop --not origin/develop origin/task/TASK-003-kernel-localization` lists `386f138` only, and `git rev-list --objects` over the same range lists that commit object only, with no new tree or blob; its metadata is the Owner's identity and the one-line message. PASS.
+- **The push**: `git ls-remote` unchanged since the preflight; `git push origin refs/heads/develop:refs/heads/develop` once, without force, at 04:49: `78ca172..386f138`. `ls-remote` then shows `develop` at `386f138`, with every other ref unchanged.
+- **Pull request #3**: `MERGED` at 04:49:07, with merge commit `386f138`.
+- **CI run 39330437264** (`ci`, event `push`, head `386f138`), from 04:49:07 to 04:51:12: `success`.
+
+### 11.5 Status
+
+AC-003-01 to AC-003-06 pass (section 7.2). What the Verification row of section 7.3 lists as still pending is done: the planning agent's verification, with no targeted re-review needed (section 9), the Owner's acceptance (section 11.1) and the merge with its CI (sections 11.3 and 11.4). Every dimension of the Definition of Done is PASS or N/A. TASK-003 is `DONE` (D-100; TASK_PLAN section 4). TASK-004 and TASK-005 are `READY`.
+
+### 11.6 This bookkeeping
+
+- **The five files**: DECISIONS (the row and terms of D-100, the next free identifier D-101); REQUIREMENTS (sections 22 and 23); TASK_PLAN (its Decisions row, the rows of TASK-003, TASK-004 and TASK-005 with the recounted totals, and section 6); this evidence (its status, F-8, sections 7.5 and 9, and this section); and CURRENT_HANDOFF, last.
+- **The commit**: "docs: record the acceptance of TASK-003 (D-100)", on `386f138`, on `develop`.
+- **Its SHA and its CI run** are in the executor's report.
