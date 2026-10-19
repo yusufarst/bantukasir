@@ -2,10 +2,10 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-4B under D-083 and corrected under D-084, 17 October 2026 (Asia/Jakarta) |
+| Status | CURRENT — written in RF-4B under D-083 and corrected under D-084, 17 October 2026 (Asia/Jakarta); revised by TASK-002 under change control (section 22), 19 October 2026 (Asia/Jakarta) |
 | Phase | P7 — terminology and copy (AICWDF sections 4B and 18; REQ-NFR-01) |
-| Gate | P7-G2, terminology and copy (D-025): **artifacts ready for the Owner's review — NOT APPROVED**. Approval is a separate Owner decision that names the commit that contains the RF-4B correction (D-084) and the hash of each artifact: this document and [GLOSSARY](../02-domain/GLOSSARY.md) (plan decision P-10, D-070) |
-| Decisions | D-018, D-024, D-025, D-033, D-040, D-043, D-047, D-049, D-050, D-051, D-052, D-068, D-069, D-071, D-072, D-073, D-075, D-077, D-082, D-083, D-084 |
+| Gate | P7-G2, terminology and copy (D-025): **APPROVED** by D-086, with [GLOSSARY](../02-domain/GLOSSARY.md), as committed in `551b4eb`. Revised by TASK-002 under change control (section 22), whose package the Owner approves by the hash of each artifact at gate GATE-CC1 ([TASK_PLAN](../11-tasks/TASK_PLAN.md) section 3) |
+| Decisions | D-018, D-024, D-025, D-033, D-040, D-043, D-047, D-049, D-050, D-051, D-052, D-068, D-069, D-071, D-072, D-073, D-075, D-077, D-082, D-083, D-084, D-086, D-087, D-088 |
 | Structure | The six documents of gate P7-G1, approved by D-082: [USER_TASKS](USER_TASKS.md), [INFORMATION_ARCHITECTURE](INFORMATION_ARCHITECTURE.md), [NAVIGATION_CONTRACTS](NAVIGATION_CONTRACTS.md), [INTERACTION_INVENTORY](INTERACTION_INVENTORY.md), [UI_STATES](UI_STATES.md), [ADAPTIVE_AND_ACCESSIBILITY](ADAPTIVE_AND_ACCESSIBILITY.md) |
 | Related | [GLOSSARY](../02-domain/GLOSSARY.md), [ADR-005](../adr/ADR-005-localization-architecture.md), [TECHNICAL_RULES](../06-api-performance/TECHNICAL_RULES.md) section 4, [SECURITY_MODEL](../05-security/SECURITY_MODEL.md) |
 
@@ -50,6 +50,7 @@ This section is the localization contract that ADR-005 item 7 asks RF-4 to write
 | Days | Senin, Selasa, Rabu, Kamis, Jumat, Sabtu, Minggu | — | — |
 | Durations | A number and a unit word | 60 menit; 30 detik | — |
 | Counts | A number and the counted noun, no plural form | 3 produk; 12 baris | ADR-005 item 4 |
+| Percentage | One decimal with a decimal comma, directly followed by the percent sign | 32,0% | DESIGN_SYSTEM section 13; UXA-16 |
 
 Month and day names live under `ux.format.month.*` and `ux.format.day.*` (ADR-005 item 6). Formatting never depends on the browser's or the server's locale data.
 
@@ -69,7 +70,7 @@ The word is always shown with the amount, so the meaning never rests on colour o
 - For wording, this document and [GLOSSARY](../02-domain/GLOSSARY.md) prevail over the working labels of the six P7-G1 documents and over Indonesian labels written in other CURRENT documents. The rule those documents state is unchanged.
 - An Indonesian label written in an Owner decision keeps the decided form (section 2.2).
 - This document and GLOSSARY agree: GLOSSARY gives the term, this document the sentence that uses it. A difference between them is a defect, corrected by change control; until then GLOSSARY gives the term.
-- Until the Owner approves gate P7-G2 this wording is not approved (D-025).
+- Gate P7-G2 approved this wording (D-086). A later change is approved by hash through change control (section 22).
 
 ## 2. Writing rules
 
@@ -305,6 +306,7 @@ Controls that recur on many pages. A page row in sections 6 to 11 that uses one 
 | `ux.list.updated_at` | Diperbarui :waktu | Time of the last refresh of a live list (BR-INV-41) |
 | `ux.list.count` | :jumlah hasil | Result count of a list |
 | `ux.list.search_hint` | Ketik untuk mencari | Hint of a search field without its own hint |
+| `ux.action.more_actions` | Tindakan lain | Accessible name of an overflow button that holds a row's or a page's further actions (DESIGN_SYSTEM section 13) |
 
 ### 5.1 Shortcuts in accessible names
 
@@ -330,7 +332,7 @@ Sections 6 to 11 follow [INTERACTION_INVENTORY](INTERACTION_INVENTORY.md) page b
 | UXI-001 to UXI-022 | Navigation, sub-navigation, menu button | Section 4.3 | — | — |
 | UXI-023 | Account menu button | `ux.shell.account_menu` | Menu akun :nama | Accessible name; the button shows the display name |
 | UXI-024 | Account menu item | `access.account.title` | Akun saya | — |
-| UXI-025 | Account menu item | `commands.unresolved.menu_item` | Permintaan belum pasti (:jumlah) | Only while the user holds unresolved references |
+| UXI-025 | Account menu item | `commands.unresolved.menu_item` | Permintaan belum pasti (:jumlah) | Only while the user has unresolved requests: references in this browser or request receipts on the server (D-087) |
 | UXI-026 | Account menu item | `access.sign_out` | Keluar | Never closes a cash session (BR-CASH-11) |
 | UXI-027, UXI-028 | Sign-out warning, title | `access.sign_out_warning.title` | Masih ada permintaan yang statusnya belum pasti | SEC-CH-05 |
 | UXI-027, UXI-028 | Sign-out warning, body | `access.sign_out_warning.body` | Catatan permintaan itu tetap ada di peramban ini. Masuk lagi di perangkat dan peramban ini untuk mengecek statusnya. Sebaiknya cek dulu sebelum keluar. | The references stay in this browser only (SEC-CH-05, NC-13 (c)) |
@@ -415,7 +417,10 @@ Sections 6 to 11 follow [INTERACTION_INVENTORY](INTERACTION_INVENTORY.md) page b
 | UXI-055 | Row button | `ux.action.check_status` | Cek status | Results: section 14.2 |
 | UXI-056 | Row link | `ux.action.view_result` | Lihat hasil | After COMMITTED |
 | UXI-057 | Back | `ux.action.back_to`; `ux.action.back_home` | Kembali ke :halaman; Kembali ke halaman awal | — |
-| UXI-058 | Owner control for another user's request | — | No copy | Hidden by design until RF-5 (ADR-007 section 5) |
+| UXI-058 | Row of another user's request, for the Owner | `commands.requests.other_user` | Permintaan :nama | INTERACTION_CONTRACTS section 2.2 (D-087); with `commands.unresolved.row` and `ux.action.check_status` |
+| UXI-058 | Help | `commands.requests.other_user_help` | Cek status permintaan ini atas nama Pemilik. Jika belum tersimpan, permintaan ini tidak akan pernah tersimpan. | The Owner's check writes the fence (ADR-007 section 4) |
+| UXI-055 | Row known only from the server | `commands.requests.from_server` | Dikirim dari perangkat lain atau sebelum data peramban dihapus. | A request receipt without a reference in this browser (INTERACTION_CONTRACTS section 2.2; D-087) |
+| — | Lost-reference rule | `commands.requests.lost_help` | Jika permintaan tidak ada di daftar ini dan tidak ada di riwayat, tunggu :menit menit sejak dikirim. Setelah itu permintaan itu pasti tidak tersimpan dan Anda dapat mulai lagi. | INTERACTION_CONTRACTS section 2.4; `:menit` is the record-check wait of TR-TIME-03 |
 | — | Empty | `commands.unresolved.empty` | Tidak ada permintaan yang statusnya belum pasti. | UXS-02 |
 
 ### 6.8 UXP-007 Beranda
@@ -652,7 +657,7 @@ Sections 6 to 11 follow [INTERACTION_INVENTORY](INTERACTION_INVENTORY.md) page b
 
 | UXI | Element | Key | Copy | Note |
 | --- | --- | --- | --- | --- |
-| UXI-149 | Preview | `cash.assisted_close.responsible`; `cash.open.register` | Penanggung jawab; Laci kas | Figures and the refund reminder as section 7.5 |
+| UXI-149 | Preview | `cash.assisted_close.responsible`; `cash.open.register` | Penanggung jawab; Laci kas | Figures and the refund reminder as section 7.5; the responsible user's unresolved checkouts with `cash.close.unresolved_note`, `commands.unresolved.row` and `ux.action.check_status` (INTERACTION_CONTRACTS section 2.5; D-087) |
 | UXI-150 | Button | `cash.close.continue_count` | Lanjut hitung | — |
 | UXI-151 | Fields | `cash.close.physical_cash`; `cash.assisted_close.reason` | Uang fisik di laci; Alasan | Both mandatory |
 | UXI-152 | Button | `ux.action.review` | Tinjau | — |
@@ -843,7 +848,8 @@ Used on UXP-301 to UXP-308, in Product Search and in the stock pages.
 
 | UXI | Element | Key | Copy | Note |
 | --- | --- | --- | --- | --- |
-| UXI-206 | Section | `catalog.csv_import.format_title` | Format kolom | The column list itself is set in RF-5 (SEC-UP-05) |
+| UXI-206 | Section | `catalog.csv_import.format_title` | Format kolom | The column list is DOCUMENT_CONTRACTS DC-04 (SEC-UP-05) |
+| UXI-206 | Column headers | `catalog.csv_import.column.sku`; `catalog.csv_import.column.name`; `catalog.csv_import.column.category`; `catalog.csv_import.column.brand`; `catalog.csv_import.column.base_unit`; `catalog.csv_import.column.quantity_precision`; `catalog.csv_import.column.selling_price`; `catalog.csv_import.column.minimum_stock`; `catalog.csv_import.column.barcode` | SKU; Nama; Kategori; Merek; Satuan; Desimal; Harga jual; Stok minimum; Barcode | DOCUMENT_CONTRACTS DC-04, in its order; the file's header is matched against these texts after trimming and without regard to letter case |
 | UXI-206 | Text | `catalog.csv_import.format_intro` | Gunakan berkas CSV dengan pengodean UTF-8 dan judul kolom persis seperti daftar di bawah. Kolom lain tidak diterima. SKU dan barcode dibaca sebagai teks, sehingga angka nol di depan tetap ada. | BR-CAT-39 |
 | UXI-206 | Text | `catalog.csv_import.scope_note` | Impor hanya membuat produk baru dengan stok 0. Produk yang sudah ada tidak diubah, dan stok serta biaya tidak ikut diimpor. | BR-CAT-37, BR-CAT-38 |
 | UXI-206 | Text | `catalog.csv_import.limits` | Paling besar 2 MB dan 5.000 baris data. | BR-CAT-39 |
@@ -928,7 +934,7 @@ Used on UXP-301 to UXP-308, in Product Search and in the stock pages.
 | UXI-225 | Fields | `costing.evidence.total`; `costing.evidence.corrections` | Total biaya; Koreksi | — |
 | UXI-226 | Button | `costing.correction.title_correct`; `costing.correction.title_complete` | Koreksi biaya; Lengkapi biaya | "Lengkapi biaya" when UNKNOWN |
 | UXI-227 | Button | `inventory.reversal.title` | Batalkan mutasi | Owner only |
-| UXI-228 | Correction of an onboarding entry | — | No copy | Hidden by design: T-17 b is OPEN |
+| UXI-228 | Button | `inventory.reversal.title` | Batalkan mutasi | For an OPENING while onboarding is active (D-087, T-17 b); the replacement entry follows on UXP-413 (`inventory.opening_entry.replace`) |
 | UXI-229 | Back | `ux.action.back_to` | Kembali ke :halaman | — |
 
 ### 9.5 UXP-404 Barang masuk
@@ -1084,7 +1090,13 @@ Used on UXP-301 to UXP-308, in Product Search and in the stock pages.
 | UXI-289 | Review dialog, buttons | `inventory.onboarding.release`; `ux.action.cancel` | Akhiri masa input stok awal; Batal | Needs password confirmation (UXS-11) |
 | UXI-289 | Success | `inventory.onboarding.released` | Masa input stok awal selesai. Penjualan dan pencatatan stok bisa dilakukan lagi. | — |
 | UXI-290 | Uncertain panel | `ux.action.resend`; `ux.action.check_status`; `commands.family.onboarding.must_not` | Sections 12 and 14 | — |
-| UXI-291 | Correction of an onboarding entry | — | No copy | Hidden by design: T-17 b is OPEN |
+| UXI-291 | Button | `inventory.onboarding.withdraw_zero` | Tarik hitungan nol | For a zero-count entry (RC-14; D-087) |
+| UXI-291 | Review dialog, title | `inventory.onboarding.withdraw_zero_review.title` | Tarik hitungan nol? | — |
+| UXI-291 | Review dialog, body | `inventory.onboarding.withdraw_zero_review.body` | Hitungan nol ini tetap tercatat di riwayat, lalu produk ini bisa dihitung lagi. | Append-only (D-087) |
+| UXI-291 | Review dialog, reason | `inventory.onboarding.withdraw_zero_review.reason` | Alasan | RC-14 `reason` |
+| UXI-291 | Review dialog, buttons | `inventory.onboarding.withdraw_zero`; `ux.action.cancel` | Tarik hitungan nol; Batal | Needs password confirmation (UXS-11) |
+| UXI-291 | Success | `inventory.onboarding.zero_withdrawn` | Hitungan nol ditarik. | — |
+| UXI-291 | Button | `inventory.opening_entry.replace` | Catat ulang stok awal | For a product whose OPENING was reversed (RC-48; D-087) |
 
 ### 9.14 UXP-413 Input stok awal
 
@@ -1092,7 +1104,11 @@ Used on UXP-301 to UXP-308, in Product Search and in the stock pages.
 | --- | --- | --- | --- | --- |
 | UXI-292 | Field | `inventory.line.search` | Cari atau scan produk | — |
 | UXI-292 | Not eligible | `inventory.opening_entry.not_eligible` | Sudah punya mutasi stok; tidak bisa diisi stok awal. | BR-INV-26 |
-| UXI-292 | Already counted zero | `inventory.opening_entry.already_zero` | Sudah dihitung nol. | Entering it again is not offered (T-17 b) |
+| UXI-292 | Already counted zero | `inventory.opening_entry.already_zero` | Sudah dihitung nol. | Entering it again is not offered; a withdrawn zero count makes the product eligible again (D-087) |
+| UXI-292 | Reversed OPENING | `inventory.opening_entry.replace_eligible` | Stok awal dibatalkan; bisa dicatat ulang. | The replacement entry of RC-48 (D-087) |
+| UXI-294 | Replacement, reason | `inventory.opening_entry.replace_reason` | Alasan | RC-48 `reason`; one product per replacement |
+| UXI-296 | Review dialog, title of a replacement | `inventory.opening_entry.replace_review_title` | Tinjau stok awal pengganti | RC-48 (D-087) |
+| — | Success of a replacement | `inventory.opening_entry.replace_success` | Stok awal pengganti tersimpan. | — |
 | UXI-293 | Button | `catalog.product_create.title` | Tambah produk | Changed: was "Buat produk baru" (CW-04) |
 | UXI-294 | Row fields | `inventory.line.quantity`; `costing.field.line_cost`; `costing.field.cost_unknown`; `costing.field.zero_evidence`; `inventory.adjustment.count_reference`; `ux.action.remove_line` | Jumlah; Biaya; Biaya belum diketahui; Bukti atau alasan biaya nol; Referensi hitung; Hapus baris | Cost and count reference on positive rows |
 | UXI-294 | Hint | `inventory.opening_entry.quantity_help` | Isi 0 untuk produk yang sudah dihitung tetapi tidak ada stoknya. | BR-INV-27 |
@@ -1179,6 +1195,7 @@ Used on Beranda (UXP-007), Rekap harian (UXP-501) and Laporan keuangan (UXP-502)
 | UXI | Element | Key | Copy | Note |
 | --- | --- | --- | --- | --- |
 | UXI-308 | Periods | `reporting.period.today`; `reporting.period.last_7_days`; `reporting.period.this_month`; `reporting.period.last_month` | Hari Ini; 7 Hari; Bulan Ini; Bulan Lalu | BR-COST-37 (section 2.2) |
+| UXI-308 | Legend | `reporting.period.label` | Periode | Legend of the period choice (DESIGN_SYSTEM section 13) |
 | UXI-309 | Custom period | `reporting.period.custom` | Rentang Kustom | — |
 | UXI-309 | Fields | `reporting.period.start`; `reporting.period.end` | Dari tanggal; Sampai tanggal | Inclusive (BR-COST-37) |
 | UXI-309 | Buttons | `ux.action.apply`; `ux.action.cancel` | Terapkan; Batal | "Batal" keeps the previous period |
@@ -1186,6 +1203,7 @@ Used on Beranda (UXP-007), Rekap harian (UXP-501) and Laporan keuangan (UXP-502)
 | UXI-310 | Chart | `reporting.finance.trend`; `reporting.finance.trend_label` | Tren; accessible name: Grafik tren :ukuran | `:ukuran` is a figure label of section 10.1 |
 | UXI-310 | Point | `reporting.finance.trend_point` | :tanggal: :nilai | Shown and announced on pointer, focus or touch (D-018, UXA-19) |
 | UXI-311 | Toggle | `reporting.finance.show_table`; `reporting.finance.show_chart` | Tampilkan sebagai tabel; Tampilkan sebagai grafik | The second label while the table is shown |
+| UXI-311 | Table, date column | `reporting.finance.table_date` | Tanggal | Date column of the trend table (DESIGN_SYSTEM section 13) |
 | UXI-312 | Link | `costing.worklist.title` | Biaya perlu dilengkapi | When figures are incomplete |
 | — | Figures and completeness | Section 10.1; UXS-25 | — | — |
 | — | Empty | `reporting.finance.empty` | Belum ada penjualan pada periode ini. | UXS-02 |
@@ -1353,7 +1371,8 @@ Used on Beranda (UXP-007), Rekap harian (UXP-501) and Laporan keuangan (UXP-502)
 | UXI-361 | Hints | `config.profile.header_text_help`; `config.profile.footer_text_help`; `config.profile.document_label_help` | Dicetak di bagian atas struk dan dokumen.; Dicetak di bagian bawah struk dan dokumen, misalnya ucapan terima kasih.; Awalan atau label yang dicetak bersama nomor dokumen. | BR-CFG-01, D-062 |
 | UXI-362 | Logo | `config.profile.choose_logo`; `config.profile.replace_logo` | Pilih logo; Ganti logo | — |
 | UXI-362 | Hint | `config.profile.logo_rules` | PNG, JPEG, atau WebP, paling besar 5 MB. | BR-CFG-04 |
-| UXI-363 | Accent | `config.profile.accent` | Warna aksen | Hidden by design until RF-4C defines the accent set; the names of the colours are RF-4C copy |
+| UXI-363 | Accent | `config.profile.accent` | Warna aksen | The accent set of DESIGN_SYSTEM section 3.3 (D-086, D-087) |
+| UXI-363 | Options | `config.profile.accent_option.green`; `config.profile.accent_option.teal`; `config.profile.accent_option.blue`; `config.profile.accent_option.purple`; `config.profile.accent_option.graphite` | Hijau; Toska; Biru; Ungu; Grafit | The colour is never named by colour alone: each option shows its name (UXA-18) |
 | UXI-364 | Button | `config.profile_edit.submit` | Simpan sebagai versi baru | Needs password confirmation (UXS-11) |
 | UXI-364 | Hint | `config.profile_edit.version_help` | Struk dan dokumen lama tetap memakai versi saat dibuat. | BR-CFG-03 |
 | UXI-364 | Success | `config.profile_edit.success` | Profil usaha disimpan sebagai versi baru. | — |
@@ -1386,8 +1405,10 @@ Used on Beranda (UXP-007), Rekap harian (UXP-501) and Laporan keuangan (UXP-502)
 
 | UXI | Element | Key | Copy | Note |
 | --- | --- | --- | --- | --- |
-| — | Items | `config.system_status.backup`; `config.system_status.restore`; `config.system_status.disk`; `config.system_status.reconciliation` | Cadangan data terakhir; Uji pemulihan terakhir; Ruang penyimpanan; Rekonsiliasi harian | REQ-OPS-04. The evidence behind each item is set in RF-6 |
+| — | Items | `config.system_status.backup`; `config.system_status.restore`; `config.system_status.disk`; `config.system_status.reconciliation` | Cadangan data terakhir; Uji pemulihan terakhir; Ruang penyimpanan; Rekonsiliasi harian | REQ-OPS-04. The evidence behind each item: OPERATIONS_RUNBOOK section 5 |
+| — | Item | `config.system_status.backup_store` | Penyimpanan cadangan | The backup store's usage against its free allowance (ADR-010 item 11), shown by the Owner's answer of 19 October 2026 (section 22); its evidence: OPERATIONS_RUNBOOK section 5 |
 | — | Values | `config.system_status.ok_at`; `config.system_status.failed_at`; `config.system_status.age`; `config.system_status.disk_free` | Berhasil :waktu; Gagal :waktu; :durasi yang lalu; Tersisa :ukuran dari :total | — |
+| — | Value | `config.system_status.backup_store_usage` | Terpakai :ukuran dari :total | `:total` is the store's free allowance |
 | — | Not proven | `ux.state.unverified.label` | Belum Terverifikasi | UXS-43; never a passing look |
 | UXI-374 | Button | `ux.action.reload` | Muat ulang | — |
 | UXI-375 | Link | `inventory.incidents.title` | Insiden rekonsiliasi | When an incident is open |
@@ -1421,7 +1442,7 @@ Used on Beranda (UXP-007), Rekap harian (UXP-501) and Laporan keuangan (UXP-502)
 
 ### 11.14 Audit action labels
 
-The business audit records an action code per event (SCHEMA section 5.4); the list of codes is set with the commands in RF-5. Each code takes the label of its family below, so that Riwayat aktivitas reads in shop words.
+The business audit records an action code per event (SCHEMA section 5.4); the list of codes is INTERACTION_CONTRACTS section 8. Each code takes the label of its family below, so that Riwayat aktivitas reads in shop words.
 
 | Key | Copy | Family (TECHNICAL_RULES section 7.2; SECURITY_MODEL SEC-LOG-02) |
 | --- | --- | --- |
@@ -1457,6 +1478,11 @@ The business audit records an action code per event (SCHEMA section 5.4); the li
 | `audit.action.password_change` | Kata sandi diubah | — |
 | `audit.action.owner_recovery`; `audit.action.owner_replacement` | Pemulihan akses Pemilik; Penggantian Pemilik | Operator procedures |
 | `audit.action.print`; `audit.action.export` | Dokumen dicetak; Laporan diunduh | BR-AUD-06 |
+| `audit.action.opening_stock_replace` | Stok awal dicatat ulang | `OPENING_STOCK_REPLACE`, RC-48 (D-087) |
+| `audit.action.zero_count_withdraw` | Hitungan nol ditarik | `ZERO_COUNT_WITHDRAW`, RC-14 (D-087) |
+| `audit.action.onboarding_restore_hold` | Stok awal ditahan setelah pemulihan | `ONBOARDING_RESTORE_HOLD`, OP-04 (D-072) |
+| `audit.action.restore_reconciliation` | Rekonsiliasi pemulihan | `RESTORE_RECONCILIATION`, OP-05 (D-072, D-073) |
+| `audit.action.projection_rebuilt` | Data stok dan biaya dibangun ulang dari mutasi | `PROJECTION_REBUILT`, OP-07 (D-088) |
 
 ## 12. States
 
@@ -1484,6 +1510,7 @@ The states of [UI_STATES](UI_STATES.md) section 2, with their wording. The paren
 | UXS-17 Data changed | `ux.state.stale_version` | Data sudah berubah | Data ini berubah setelah Anda mulai. Periksa nilai terbaru di samping nilai yang Anda tinjau, lalu konfirmasi lagi. Tidak ada yang disimpan. | — | — |
 | UXS-18 Price changed | `ux.state.price_changed` | Harga berubah | Harga :jumlah produk berubah sejak dimasukkan ke keranjang. Periksa harga dan total yang baru. Line: `ux.state.price_changed.line`, Harga lama :lama → harga baru :baru. Total: `ux.state.price_changed.total`, Total baru :uang | Setuju harga baru | — |
 | UXS-19 Recount required | `ux.state.recount` | Ada transaksi baru; hitung ulang kas | Ada penjualan atau pengembalian dari laci setelah pratinjau dibuat. Sesi kas masih dibuka. Hitung ulang uang di laci, lalu tutup lagi. | — (step 1 with a new preview) | — |
+| UXS-19, an unresolved checkout | `ux.state.recount.unresolved_checkouts` | Ada penjualan yang statusnya belum pasti | Sesi kas masih dibuka karena ada penjualan yang statusnya belum pasti. Cek status penjualan itu dulu, lalu hitung ulang uang di laci dan tutup lagi. | — (step 1 with a new preview, where the unresolved checkout is listed with "Cek status") | D-088; the Owner's answer of 19 October 2026 (section 22) |
 | UXS-20 No connection | `ux.state.offline` | Tidak ada koneksi | Penyimpanan berhenti sampai koneksi kembali. Isian di halaman ini tetap ada selama halaman tidak ditutup. | — | — |
 | UXS-21 Not refreshed | `ux.state.stale_read` | Data belum diperbarui | Data terakhir diperbarui :waktu dan mungkin sudah berubah. | Muat ulang | — |
 | UXS-22 Could not load | `ux.state.load_failed` | Gagal memuat | Bagian ini tidak dapat dimuat. Bagian lain tetap bisa dipakai. | Coba lagi | — |
@@ -1547,7 +1574,7 @@ Every refusal carries its code and the key of its message (TECHNICAL_RULES secti
 | `INTENT_ABANDONED` | UXS-16 | `ux.state.abandoned` | — |
 | `STALE_VERSION` | UXS-17 | `ux.state.stale_version` | — |
 | `PRICE_CHANGED` | UXS-18 | `ux.state.price_changed` | — |
-| `RECOUNT_REQUIRED` | UXS-19 | `ux.state.recount` | — |
+| `RECOUNT_REQUIRED` | UXS-19 | `ux.state.recount`; `ux.state.recount.unresolved_checkouts` | The second when the reloaded close preview lists an unresolved checkout of the session's responsible user (G-27, D-088); no new code |
 | `VALIDATION_FAILED` | UXS-05 | `ux.state.validation` | Field messages: section 16 |
 | `INSUFFICIENT_STOCK` | UXS-31 | `ux.state.insufficient_stock` or `ux.state.insufficient_stock.reversal` | By the page |
 | `PRODUCT_INACTIVE` | UXS-32 | `ux.state.inactive.product` | — |
@@ -1660,7 +1687,7 @@ A disabled control shows its reason next to it and exposes it to assistive techn
 | `sales.refund.disabled_fully_refunded` | Sudah dikembalikan seluruhnya. | UXI-118 (BR-RFD-03) |
 | `sales.refund.disabled_unresolved` | Ada pengembalian uang yang statusnya belum pasti. Cek statusnya dulu. | UXI-118 |
 | `cash.close.disabled_unresolved` | Ada permintaan tutup sesi yang statusnya belum pasti. Cek statusnya dulu. | UXI-077, UXI-139, UXI-140, UXI-340 |
-| `cash.close.disabled_unresolved_checkout` | Ada penjualan di sesi ini yang statusnya belum pasti. Cek statusnya dulu. | UXI-103 (BR-CASH-16) |
+| `ux.disabled.unresolved_checkouts` | Ada penjualan yang statusnya belum pasti. Cek statusnya dulu sebelum menghitung laci. | UXI-103, UXI-150 (BR-CASH-16; INTERACTION_CONTRACTS section 2.5; D-087) |
 | `catalog.barcode_correction.disabled_unresolved` | Ada koreksi barcode yang statusnya belum pasti. Cek statusnya dulu. | UXI-174 |
 | `catalog.field.unit_lock_help` | Satuan dan jumlah desimal tidak bisa diubah setelah produk punya mutasi stok. | UXI-186 (BR-CAT-07) |
 | `catalog.csv_import.disabled_unresolved` | Ada impor yang statusnya belum pasti. Cek statusnya dulu. | UXI-207 |
@@ -1669,7 +1696,7 @@ A disabled control shows its reason next to it and exposes it to assistive techn
 | `inventory.disabled_unresolved_posting` | Ada barang masuk, barang keluar, atau penyesuaian yang statusnya belum pasti. Cek statusnya dulu. | UXI-217, UXI-221, UXI-231, UXI-253 |
 | `costing.disabled_unresolved` | Ada koreksi biaya yang statusnya belum pasti. Cek statusnya dulu. | UXI-226, UXI-249, UXI-314, UXI-324 |
 | `inventory.reversal.disabled_done` | Mutasi ini sudah dibatalkan. | UXI-227, UXI-250, UXI-266 (BR-INV-35) |
-| `inventory.reversal.disabled_unresolved` | Ada pembatalan mutasi yang statusnya belum pasti. Cek statusnya dulu. | UXI-227, UXI-250, UXI-266 |
+| `inventory.reversal.disabled_unresolved` | Ada pembatalan mutasi yang statusnya belum pasti. Cek statusnya dulu. | UXI-227, UXI-228, UXI-250, UXI-266 |
 | `costing.field.zero_disabled` | Biaya 0 hanya bisa diisi Pemilik. Pilih Biaya belum diketahui; Pemilik akan melengkapinya. | UXI-236, for Ops and Combined (BR-COST-04) |
 | `inventory.onboarding.disabled_unresolved` | Ada permintaan masa input stok awal yang statusnya belum pasti. Cek statusnya dulu. | UXI-285, UXI-289 |
 | `inventory.opening_entry.disabled_unresolved` | Ada input stok awal yang statusnya belum pasti. Cek statusnya dulu. | UXI-286 |
@@ -1677,7 +1704,7 @@ A disabled control shows its reason next to it and exposes it to assistive techn
 | `cash.registers.edit_disabled` | Laci kas ini sedang dipakai sesi kas yang dibuka. | UXI-368 (BR-CASH-02) |
 | `ux.disabled.unresolved_family` | Ada permintaan sejenis yang statusnya belum pasti. Cek statusnya dulu. | Every other control that would start a new command of a family with an unresolved request (NC-13 (a)) |
 
-The reasons cover the 48 rows of INTERACTION_INVENTORY section 3 that are disabled with a reason, except UXI-076, which the inventory counts there but which states no disabled condition (section 21, finding F-02).
+The reasons cover the 49 rows of INTERACTION_INVENTORY section 3 that are disabled with a reason, as TASK-002 re-derived them: UXI-076 is no longer counted (finding F-02), and UXI-150 and UXI-228 are (D-087).
 
 ## 16. Validation messages
 
@@ -1829,7 +1856,7 @@ The automatic stock refresh is not announced unless the user asked for it (UXA-1
 
 ## 19. Changes from the working labels
 
-Every working label of the six P7-G1 documents that this deck words differently. The six documents are not edited (D-082): their labels stay as working labels, and this table is the record of each change. The change is wording only; the control, its place, its visibility and its effect are those of the P7-G1 documents.
+Every working label of the six P7-G1 documents that this deck words differently. TASK-002 replaced these labels in the six documents under change control (finding F-03, section 22); this table stays the record of each change and its reason. The change is wording only; the control, its place, its visibility and its effect are those of the P7-G1 documents.
 
 | Where | Working label | Final copy | Reason |
 | --- | --- | --- | --- |
@@ -1885,7 +1912,7 @@ Every working label of the six P7-G1 documents that this deck words differently.
 | UXS-40, for a reversal | Koreksi tidak dapat dihitung ulang | Pembatalan tidak dapat dihitung ulang | A reversal is not a correction of cost (BR-INV-37); the cost correction keeps the working label |
 | UXS-42, for a password confirmation and for the current password | Gagal masuk | Konfirmasi gagal; Kata sandi sekarang tidak cocok | The sign-in keeps "Gagal masuk"; the other two failures are not a sign-in. Each stays one uniform text (TR-ERR-04) |
 
-Changed: **51 rows**. Every other working label of the six documents is kept as written, with the capitalization of CW-03 (section 20).
+Changed: **51 rows**. Every other working label of the six documents is kept as written, with the capitalization of CW-03 (section 20). The user-task names of USER_TASKS are not interface text and keep their names.
 
 ## 20. Coverage
 
@@ -1906,6 +1933,8 @@ Checks run on this deck against the six P7-G1 documents as committed in `d4c0594
 
 User-task labels of USER_TASKS section 3 name tasks for planning; they are not shown in the interface and have no key.
 
+Rechecked by TASK-002 on 19 October 2026 against the six documents as revised in its package: 385 of 385 interactions are named in sections 4 to 11; UXI-058, UXI-228, UXI-291 and UXI-363 are provided and have copy, and only UXI-244 and UXI-348, not provided, have "No copy"; 50 of 50 states have wording, and the close refusal of D-088 is a second text of UXS-19, not a new state; no working label of section 19 remains in the six documents outside the user-task names of USER_TASKS.
+
 ## 21. Findings and later steps
 
 ### 21.1 Findings carried forward
@@ -1919,6 +1948,8 @@ Findings about the six P7-G1 documents. F-01 to F-04 are non-blocking findings m
 | F-03 | The working labels listed in section 19 differ from this deck. | Wording follows this deck (section 1.5); the documents keep them until their next authorized revision |
 | F-04 | INFORMATION_ARCHITECTURE section 14 lists "Final wording of every label, message and state" as left to RF-4B. This deck writes it; it becomes binding with gate P7-G2. | Gate P7-G2 (the Owner) |
 | F-05 | A status check that gets no answer leads to UXS-14 in INTERACTION_INVENTORY UXI-086, the "Cek status" of the uncertain panel of UXP-102, which lists UXS-14 among its results, and, for UXP-006, in its NAVIGATION_CONTRACTS row ("A resolution that fails stays UNCERTAIN (UXS-14)") and in its row button UXI-055 ("UXS-14 when the check itself gets no answer"). Read literally, these rows move a held request (UXS-15, after IDEMPOTENCY_CONFLICT or EPOCH_STALE) into UXS-14, which offers "Kirim ulang"; ADR-007 section 5 and UI_STATES section 1 never repeat a held request. UI_STATES section 4 ("stays UNCERTAIN") agrees when UNCERTAIN includes HELD, as in ADR-007 section 5. This deck keeps the state the request was in (section 14.2, D-084). | RF-5, with the full interaction contracts: a status check without an answer leaves the request in the state it was in, so a held request stays UXS-15 with "Cek status" only; the rows are brought in line at the next authorized revision of INTERACTION_INVENTORY and NAVIGATION_CONTRACTS |
+
+TASK-002 applies F-01, F-02, F-03 and F-05 in the six documents and records F-04 as closed by D-086, which approved this wording (section 22).
 
 ### 21.2 Left to later steps
 
@@ -1942,3 +1973,47 @@ Findings about the six P7-G1 documents. F-01 to F-04 are non-blocking findings m
 | Any tax or buyer-identity text on documents | Gate G1 |
 | Real paper widths, printers and the tablet's on-screen keyboard | Gate DEVICES |
 | A text that a Task needs and that this deck does not name | Added here by change control before it ships (section 1.1) |
+
+Done by TASK-002 (section 22): the names of the accent colours; the CSV column headers of UXI-206; the labels of the audit action codes of INTERACTION_CONTRACTS section 8; the wording of UXI-058 and of the lost-reference rule; the wording of the corrections of onboarding entries (UXI-228, UXI-291); the texts of BR-CASH-16 in an Owner-assisted close.
+
+## 22. Change control
+
+Every change of change-control batch 1, [TASK-002](../11-tasks/tasks/TASK-002-p7-change-control-1.md), with its reason and the decision it comes from, so that the Owner reviews one list (PROJECT_RULES section 6). The package is approved by the Git blob, size and SHA-256 of each artifact at gate GATE-CC1 ([TASK_PLAN](../11-tasks/TASK_PLAN.md) section 3); the values are in the Task's [evidence](../11-tasks/evidence/TASK-002.md). Until then the texts added here are proposals and no Task uses them (section 1.1; [OPEN_ITEMS](../00-governance/OPEN_ITEMS.md) T-19, T-20). No page, control, state, navigation path, business rule or visual design changes beyond the rows that the later decisions named below already changed.
+
+### 22.1 Changes
+
+| ID | Change | Where | Reason | Source |
+| --- | --- | --- | --- | --- |
+| CC-01 | The gate rows name the approving decision | The six P7-G1 documents; this deck; GLOSSARY, at the Owner's request | Finding F-01: the rows still read "NOT APPROVED" | D-082; D-086; the Owner's answer of 19 October 2026 for GLOSSARY |
+| CC-02 | The precedence rule states that gate P7-G2 approved this wording | Section 1.5 | Finding F-04, closed: no other change needed | D-086 |
+| CC-03 | The percent format `32,0%` | Section 1.3 | OPEN_ITEMS T-19; DESIGN_SYSTEM section 13 | D-087 |
+| CC-04 | `ux.action.more_actions` | Section 5 | T-19 | D-087 |
+| CC-05 | The five accent names `config.profile.accent_option.*`; UXI-363 provided | Section 11.8; INTERACTION_INVENTORY UXI-363 | T-19; INTERACTION_CONTRACTS section 10 | D-086, D-087 |
+| CC-06 | `reporting.period.label` and `reporting.finance.table_date` | Section 10.3 | T-19 | D-087 |
+| CC-07 | `commands.requests.other_user`, `commands.requests.other_user_help`, `commands.requests.from_server` and `commands.requests.lost_help`; the note of UXI-025 | Sections 6.1 and 6.7 | T-20; INTERACTION_CONTRACTS sections 2.2, 2.4 and 11 | D-087 (N-07, ADR-009) |
+| CC-08 | `ux.disabled.unresolved_checkouts` for UXI-103 and UXI-150, in place of `cash.close.disabled_unresolved_checkout`, which named UXI-103 only and which no Task contract names | Section 15 | T-20; INTERACTION_CONTRACTS sections 2.5 and 11: one reason for both closes | D-087 |
+| CC-09 | The responsible user's unresolved checkouts in the Owner-assisted close preview, with existing keys only | Section 7.12, UXI-149 | INTERACTION_CONTRACTS section 2.5 | D-087 |
+| CC-10 | The corrections of onboarding entries: `inventory.onboarding.withdraw_zero` with its review dialog, reason and success; `inventory.opening_entry.replace` with its eligibility, reason, review title and success; UXI-228 "Batalkan mutasi" for an OPENING; the note of UXI-292 | Sections 9.4, 9.13 and 9.14 | T-20; INTERACTION_CONTRACTS section 11. The two "Alasan" labels are added by TASK-002 because RC-14 and RC-48 carry a `reason` | D-087 (T-17 b) |
+| CC-11 | The labels `audit.action.opening_stock_replace`, `audit.action.zero_count_withdraw`, `audit.action.onboarding_restore_hold`, `audit.action.restore_reconciliation` and `audit.action.projection_rebuilt`; the list of codes is INTERACTION_CONTRACTS section 8 | Section 11.14 | T-20 | D-072, D-073, D-087, D-088 |
+| CC-12 | The CSV column headers of DOCUMENT_CONTRACTS DC-04 that UXI-206 shows, `catalog.csv_import.column.*` | Section 8.9 | T-20 | D-087 (DC-04) |
+| CC-13 | A dedicated message for the close refused while a checkout is unresolved: `ux.state.recount.unresolved_checkouts`, a second text of UXS-19 with no new state, code or control | Sections 12 and 13.1 | The Owner's answer "A — Pesan khusus", with this wording, to question 1 of TASK-002 | D-088 (G-27); the Owner's answer of 19 October 2026 |
+| CC-14 | The backup store's usage as a fifth item of the system status: `config.system_status.backup_store` and `config.system_status.backup_store_usage`, with its evidence | Section 11.11; OPERATIONS_RUNBOOK section 5 | The Owner's answer "A — Tampilkan" to question 2 of TASK-002; ADR-010 item 11 | D-088 (ADR-010); the Owner's answer of 19 October 2026 |
+| CC-15 | The disabled reasons cover the 49 rows re-derived in INTERACTION_INVENTORY section 3; UXI-228 joins `inventory.reversal.disabled_unresolved` | Section 15 | Finding F-02 | D-087 |
+| CC-16 | The working labels of section 19 replaced by this deck's wording; the user-task names of USER_TASKS kept | The six P7-G1 documents; section 19 | Finding F-03 | D-082, D-086 |
+| CC-17 | The rows of INTERACTION_CONTRACTS section 10 applied: UXI-025, UXI-029, UXI-055, UXI-058, UXI-076, UXI-086, UXI-103, UXI-149, UXI-150, UXI-227, UXI-228, UXI-291, UXI-292 and UXI-363, with the decisions applied in INTERACTION_INVENTORY section 5 and UXI-291 in its section 6; the UXP-006 row of NAVIGATION_CONTRACTS. UXI-244 and UXI-348 stay not provided | INTERACTION_INVENTORY; NAVIGATION_CONTRACTS | OPEN_ITEMS T-20 | D-069, D-048, D-084, D-086, D-087 |
+| CC-18 | INTERACTION_INVENTORY section 3 re-derived from its rows: 383 working, 49 of them disabled with a reason, 0 hidden by design, 2 not provided, 385 in all | INTERACTION_INVENTORY section 3 | Finding F-02 | D-087 |
+| CC-19 | A status check without an answer leaves the request in the state it was in | INTERACTION_INVENTORY UXI-055 and UXI-086; NAVIGATION_CONTRACTS UXP-006 | Finding F-05 | D-084 |
+| CC-20 | The coverage rechecked; the findings and later steps marked as applied or done | Sections 20 and 21 | This change | — |
+
+### 22.2 Left for a later change control
+
+Read with the decisions named, as INTERACTION_CONTRACTS section 10 reads the rows above; not changed here, because neither this Task's contract nor INTERACTION_CONTRACTS section 10 names them:
+
+| Item | Reading | Decision |
+| --- | --- | --- |
+| INFORMATION_ARCHITECTURE: the capability map lists no UXI-058 (CAP-34), UXI-228 (CAP-15, CAP-17), UXI-291 (CAP-15) or UXI-363 (CAP-30); P7-G07, the T-17 b row of its open items and its list of decisions still before RF-5 describe the correction of onboarding entries as hidden | The rows are provided (CC-17) | D-086, D-087 |
+| INTERACTION_INVENTORY section 3: "The block acts only in the browser that holds the request" | The request receipts carry the block across devices (INTERACTION_CONTRACTS section 1.4) | D-087 |
+| UI_STATES UXS-19: its trigger names a Sale or a drawer-funded refund after the preview | An unresolved checkout also refuses the close (INTERACTION_CONTRACTS section 2.5), with the text of CC-13 | D-088 |
+| The intro of INTERACTION_INVENTORY and INFORMATION_ARCHITECTURE section 14 still call the labels provisional until gate P7-G2 | Gate P7-G2 is approved; this deck prevails (section 1.5) | D-086 |
+| RELEASE_PROCESS section 4 item 4 and the contract of TASK-039 name four system-status items | Five items (CC-14) | The Owner's answer of 19 October 2026 |
+| DESIGN_SYSTEM section 13, INTERACTION_CONTRACTS sections 8, 11 and 12, DOCUMENT_CONTRACTS DC-04 and the previews' `BK_COPY_PROPOSED` call these texts proposals | After gate GATE-CC1 they are approved copy in this deck; DESIGN_SYSTEM and the previews are approved artifacts and stay byte-identical | D-087 |

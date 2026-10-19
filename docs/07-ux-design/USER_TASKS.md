@@ -2,9 +2,9 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-4A under D-070 and, after the stop on finding F-03, D-071; corrected after the independent final review under D-072 to D-075; 11 October 2026 (Asia/Jakarta); amended for the Owner's payment-method decision Q38 under D-077 and D-079 (STATIC_QRIS removed), 17 October 2026 (Asia/Jakarta) |
+| Status | CURRENT — written in RF-4A under D-070 and, after the stop on finding F-03, D-071; corrected after the independent final review under D-072 to D-075; 11 October 2026 (Asia/Jakarta); amended for the Owner's payment-method decision Q38 under D-077 and D-079 (STATIC_QRIS removed), 17 October 2026 (Asia/Jakarta); revised by TASK-002 under change control — the gate row (finding F-01), the working labels of COPY_DECK section 19 (finding F-03), 19 October 2026 (Asia/Jakarta) |
 | Phase | P7 — user tasks for the information architecture |
-| Gate | P7-G1, navigation and page structure (D-025): **artifacts ready for the Owner's review — NOT APPROVED**. Approval is a separate Owner decision that names the checkpoint commit and the hash of each artifact (D-070); for this document, that is the checkpoint containing the Q38 amendment (D-079) |
+| Gate | P7-G1, navigation and page structure (D-025): **APPROVED** by D-082, as committed in `d4c0594`. Revised by TASK-002 under change control (OPEN_ITEMS T-19, T-20; [COPY_DECK](COPY_DECK.md) section 22), whose package the Owner approves by the hash of each artifact at gate GATE-CC1 ([TASK_PLAN](../11-tasks/TASK_PLAN.md) section 3) |
 | Decisions | D-017, D-018, D-024, D-025, D-032, D-033, D-036, D-039, D-040, D-047, D-049, D-067 to D-075, D-077 |
 | Related | [INFORMATION_ARCHITECTURE](INFORMATION_ARCHITECTURE.md), [NAVIGATION_CONTRACTS](NAVIGATION_CONTRACTS.md), [INTERACTION_INVENTORY](INTERACTION_INVENTORY.md), [UI_STATES](UI_STATES.md), [ADAPTIVE_AND_ACCESSIBILITY](ADAPTIVE_AND_ACCESSIBILITY.md) |
 
@@ -105,7 +105,7 @@ Counted in user actions. An action is one deliberate step: a scan, a key press o
 | Next sale after a receipt | PC and tablet | 0 | Scan the first item on UXP-103 (or 1 action: "Transaksi baru") | Printing is a separate, optional action |
 | Add an item to the cart | PC and tablet | 1 | One scan per base unit; a repeated scan adds to the same line (D-067) | A quantity edit is one more action |
 | Open a cash session | PC and tablet | 3 | On UXP-104 (reached through "Kasir"): type the opening cash → "Tinjau" (Ctrl+Enter) → "Buka sesi" (Ctrl+Enter); choosing the register is one more action when more than one is free | Review step kept (BR-CASH-05) |
-| Close one's own cash session | PC and tablet | 5 | From UXP-101: "Tutup sesi" → "Lanjut hitung" (Ctrl+Enter) → type the physical cash → "Tinjau" (Ctrl+Enter) → "Tutup sesi" (Ctrl+Enter) | Counting the drawer happens between the second and third action; a recount repeats from the preview (BR-CASH-14); review step kept (BR-CASH-13) |
+| Close one's own cash session | PC and tablet | 5 | From UXP-101: "Tutup sesi kas" → "Lanjut hitung" (Ctrl+Enter) → type the physical cash → "Tinjau" (Ctrl+Enter) → "Tutup sesi" (Ctrl+Enter) | Counting the drawer happens between the second and third action; a recount repeats from the preview (BR-CASH-14); review step kept (BR-CASH-13) |
 
 For every payment method there is one payment screen with one final action and no checkbox (D-040, BR-SALE-10 to BR-SALE-14). The receipt appears without a further confirmation (BR-SALE-14). Opening and closing a session keep their review step (BR-SALE-15).
 
