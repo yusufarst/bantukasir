@@ -186,3 +186,45 @@ The Task stays `VERIFYING` until the planning agent's review, the Owner's approv
 - **Not verified:** whether the readings left for a later change control (COPY_DECK section 22.2) are complete — they were found while applying the named rows, not by a full review of the six documents against every later decision; the wording itself, which is the Owner's to approve; nothing was rendered, because no preview changed.
 - **Not done here, each on its own instruction:** the planning agent's review; the Owner's approval by hash and its record as D-099; the bookkeeping of the approval in DECISIONS, OPEN_ITEMS T-19 and T-20, SOURCE_OF_TRUTH section 3, TASK_PLAN and CURRENT_HANDOFF; the merge of `develop` into the branch and the re-measurement (contract item 7); the merge into `develop`.
 - **The main working tree** was read only, before the worktree was created; no file there was changed by this Task.
+
+## 11. Publication (contract section 4.1 item 6; EXC-31, EXC-32)
+
+Commit identifiers in sections 11.1 and 11.2 are those of the original local commits, which section 11.4 replaces; none of them was ever pushed.
+
+### 11.1 Publication guard, first run (19 October 2026, 22:50)
+
+Over the four commits then on the branch, `d9e22d0`, `205fc60`, `9b83d95` and `8bdacbb`, against the baseline of D-097 as D-098 extends it:
+
+- **Repository secret scan:** `scripts/checks/secret-scan.sh` in the existing image `bantukasir-app:local` (Gitleaks 8.30.1), by `docker run --rm --network none`, with the worktree mounted read-only and, because a linked worktree keeps its Git data in the main repository, that repository's `.git` mounted read-only too; Git was pointed at them through environment variables only. Tree and commits: no leaks.
+- **Gitleaks with its default rules only** (a temporary configuration inside the container holding only `useDefault = true`, so that `.gitleaks.toml` is not loaded): no leaks.
+- **Privacy and client-data check:** one finding outside the baseline. The executor had written the local paths of the worktree and of the main working tree, without a user name, in seven places of this evidence and of CURRENT_HANDOFF; D-097 accepts such paths only where they already are (baseline item 4; N10-03). The push was stopped and the seven places were replaced by neutral references in a further local commit, `9b61d98`.
+- No binary file; the Owner's identity on every commit; no trailer and no AI attribution in a message.
+
+### 11.2 Publication guard, second run (19 October 2026, 23:00): push stopped
+
+With every validation of section 4 run again fail-closed (17 of 17 `PASS`) and the privacy check reading every line that any commit adds, not only the net difference, the guard failed: the two paths were still added by `d9e22d0` (3 lines) and `8bdacbb` (4 lines), although `9b61d98` removed them from the current text. The push was stopped; the stop was recorded in a local commit, `cf2fac8`; the Owner was asked to accept the paths as published history or to authorize a rewrite of the unpublished commits.
+
+### 11.3 The Owner's authorization
+
+Given in the executor's session on 19 October 2026, verbatim:
+
+1. "Saya mengizinkan penulisan ulang commit TASK-002 yang belum dipublikasikan agar dua path lokal hilang dari riwayat. Jelaskan dulu langkah persisnya untuk saya setujui sebelum dijalankan."
+2. After the executor's plan of steps 0 to 6: "Saya menyetujui rencana penulisan ulang langkah 0 sampai 6 persis seperti dijelaskan. Jalankan secara fail-closed; push dan buat PR hanya jika semua pemeriksaan PASS. Berhenti di VERIFYING, jangan merge."
+
+### 11.4 The rewrite (19 October 2026, 23:07 to 23:10)
+
+- **Step 0, safety copy.** A Git bundle of `origin/develop..cf2fac8`, created outside the repository and verified with `git bundle verify` (it holds `cf2fac8` and requires `fc0055b`), SHA-256 `5561be90650dc5a0c3eadd383b0de26a46e0bd861aa40c33b917d7a9b3a185bd`. No ref or branch was added to the repository; the original commits also stay in the local reflog.
+- **Step 1, rebuilt commits.** With plumbing only (`git hash-object -w`, a temporary index, `git write-tree`, `git commit-tree`), each original commit was rebuilt on `fc0055b` in order: its tree, with the local paths in this file and in CURRENT_HANDOFF replaced by the neutral references of `9b61d98`; in the rebuilt `8bdacbb`, the identifiers of the three earlier commits replaced by those of their rebuilt commits, so that sections 3 to 6 and CURRENT_HANDOFF name commits of the branch. Messages, author names, addresses and dates unchanged; the committer is the Owner's identity. `9b61d98` and `cf2fac8` are not carried over: this section replaces their content.
+- **Step 2, branch and worktree.** `git update-ref` of `refs/heads/task/TASK-002-p7-change-control-1` from `cf2fac8` to the rebuilt `8bdacbb`, with the old value checked, then `git read-tree -m -u` from the old tree to the new one; the worktree was clean before and after.
+- **Step 3, verification**, fail-closed: 28 of 28 `PASS` — each rebuilt commit differs from its original only in this file and CURRENT_HANDOFF; message, author and author date identical; no local path in the lines any rebuilt commit adds; the eight artifacts of the package in `1af8473` identical to those in `9b83d95`, so every blob, size and SHA-256 of section 5 is unchanged; the working tree equal to HEAD.
+
+| Original commit (local, never pushed) | Rebuilt commit | Subject |
+| --- | --- | --- |
+| `d9e22d0e98058d2023900f0a4ada77ae0f73b4b7` | `a30809ffc995cbe576b009cbff169639c6ccd200` | TASK-002: start |
+| `205fc601cb1253b9a834bc548533b52ab572cab5` | `7a37b9e916f1c6d0ab3964926efb4de4d69b5fdf` | TASK-002: apply change-control batch 1 to COPY_DECK, GLOSSARY, the P7-G1 documents and OPERATIONS_RUNBOOK |
+| `9b83d9591057f4ea96c0e0430a48e20dee6e8827` | `1af8473008496b754b811d3ca7a88d82de09f146` | TASK-002: cite a source decision for every change-control entry of COPY_DECK — the package commit |
+| `8bdacbb62698fbdb4d07bd922102d22b2f8c5d06` | `84018a475e8d420bbbe9f92648d50535be0e19c5` | TASK-002: record the evidence and set the Task to VERIFYING |
+| `9b61d98ce11c56d28004bd5fbe68571ffa4775f6` | — | Its neutral references are in every rebuilt commit |
+| `cf2fac8c34cc2c57fefdd021d675c9146aad379b` | — | Its record is this section |
+
+The guard over the rebuilt branch, the push, the pull request and its CI are recorded in a later section of this file, after the push.
