@@ -66,6 +66,24 @@ final class LocalizationTest extends TestCase
         $this->fail('The default message of a built-in rule did not throw.');
     }
 
+    /**
+     * TASK-003 adversarial finding A-09 (a): the three lookups of Laravel's
+     * ValidationException::summarize() are framework probes in tests, so that
+     * a request with several invalid fields answers 422; no other lookup of
+     * an English text is let through. The production body of a 422 response,
+     * which must never carry that summary, is TASK-008's (OPEN_ITEMS T-26).
+     */
+    public function test_exactly_the_three_summary_lookups_of_a_validation_exception_are_probes(): void
+    {
+        foreach (['(and :count more error)', '(and :count more errors)', 'The given data was invalid.'] as $summary) {
+            $this->assertTrue(MissingTranslationKey::isFrameworkProbe($summary), $summary);
+        }
+
+        foreach (['(and :count more warnings)', 'The given data was invalid', 'the given data was invalid.', 'validation.required', 'ux.format.month.smarch', 'Unauthenticated.'] as $text) {
+            $this->assertFalse(MissingTranslationKey::isFrameworkProbe($text), $text);
+        }
+    }
+
     public function test_the_dictionary_holds_every_text_by_its_full_key(): void
     {
         $dictionary = Dictionary::forInterface();
