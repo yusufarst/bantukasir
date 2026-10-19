@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-6 under D-088, 18 October 2026 (Asia/Jakarta); corrected under D-089, 18 October 2026: OPR-04, because no restore drill runs on the VPS (finding B-1 of the RF-6 review) |
+| Status | CURRENT — written in RF-6 under D-088, 18 October 2026 (Asia/Jakarta); corrected under D-089, 18 October 2026: OPR-04, because no restore drill runs on the VPS (finding B-1 of the RF-6 review); amended by TASK-002, 19 October 2026: section 5, the backup store's usage as a fifth item of the system status, by the Owner's answer (COPY_DECK section 22) |
 | Phase | P9 — operator procedures, scheduled commands, the evidence of the system status, monitoring, incident response and maintenance |
 | Replaces | The maintenance, reconciliation, monitoring and incident paragraphs of `docs/09-operations/legacy/09-DEPLOYMENT-OPS.md` and `docs/09-operations/legacy/P9-OPERATIONS.md` (LEGACY — SUPERSEDED, [LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 15) |
 | Decisions | D-034, D-048, D-049, D-063, D-068, D-072, D-073, D-087, D-088, D-089; [ADR-010](../adr/ADR-010-independent-backup-and-recovery-key-custody.md), [ADR-011](../adr/ADR-011-release-pipeline-environments-and-production-operation.md) |
@@ -72,7 +72,7 @@ The heartbeat monitor alerts the operator by email; the operator may add the Own
 
 ## 5. Evidence behind the system status (UXP-611)
 
-COPY_DECK section 11.11 names the four items and their values; this section fixes the evidence behind each (COPY_DECK section 21.2). The page reads all four in one request; a failed read is UXS-22, never a passing look. An item that is failed or "Belum Terverifikasi" also raises the attention item "Status sistem perlu dicek" on Beranda (UXI-064).
+COPY_DECK section 11.11 names the five items and their values; this section fixes the evidence behind each (COPY_DECK section 21.2). The page reads all five in one request; a failed read is UXS-22, never a passing look. An item that is failed or "Belum Terverifikasi" also raises the attention item "Status sistem perlu dicek" on Beranda (UXI-064).
 
 | Item | Evidence | "Berhasil :waktu" and ":durasi yang lalu" | "Gagal :waktu" | "Belum Terverifikasi" |
 | --- | --- | --- | --- | --- |
@@ -80,8 +80,9 @@ COPY_DECK section 11.11 names the four items and their values; this section fixe
 | Uji pemulihan terakhir (`config.system_status.restore`) | The newest `restore_drills` row | The newest drill passed, at most 35 days ago | The newest drill failed | No drill has been recorded; or the newest pass is older than 35 days |
 | Ruang penyimpanan (`config.system_status.disk`) | Free and total space of the file system that holds the file volume, measured when the page is read | "Tersisa :ukuran dari :total", with at least 20 % free | "Tersisa :ukuran dari :total" shown in the failed state when less than 20 % is free | The measurement could not be made |
 | Rekonsiliasi harian (`config.system_status.reconciliation`) | The newest `reconciliation_runs` row | The newest run completed with no mismatch, at most 26 hours ago | The newest run failed or found a mismatch; "Insiden rekonsiliasi" links to UXP-414 while an incident is open (UXI-375) | No run has been recorded; or the newest is older than 26 hours |
+| Penyimpanan cadangan (`config.system_status.backup_store`) | `store_bytes` of the newest successful `backup_runs` row, against the store's free allowance of 10 GB (ADR-010 items 4 and 11; BACKUP_RECOVERY section 6) | "Terpakai :ukuran dari :total", below 80 % of the allowance | "Terpakai :ukuran dari :total" shown in the failed state at 80 % of the allowance or more, when the operator applies the reduced retention (BACKUP_RECOVERY section 6) | No successful run has recorded the usage |
 
-The backup store's usage against its allowance is watched by the operator (section 4); it is not a separate item, so no copy is added.
+The backup store's usage against its allowance is the fifth item, as ADR-010 item 11 says, by the Owner's answer of 19 October 2026 to the question of TASK-002 ("A — Tampilkan"); the operator also acts on the store's cap alerts (section 4).
 
 ## 6. RB-03 — Incident response
 
