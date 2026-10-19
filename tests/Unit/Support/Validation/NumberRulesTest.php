@@ -54,6 +54,7 @@ final class NumberRulesTest extends TestCase
         yield 'a negative amount' => ['-1', self::MONEY_MIN];
         yield 'above the range' => ['1000000000000', self::MONEY_MAX];
         yield 'far above the range' => [str_repeat('9', 60), self::MONEY_MAX];
+        yield 'five thousand digits' => [str_repeat('9', 5000), self::MONEY_MAX];
     }
 
     #[DataProvider('money')]
@@ -82,6 +83,7 @@ final class NumberRulesTest extends TestCase
         yield 'a decimal zero at precision 0' => [0, '3.0', self::WHOLE];
         yield 'three decimals at precision 2' => [2, '1.505', 'Paling banyak 2 angka di belakang koma untuk produk ini.'];
         yield 'four decimals at precision 3' => [3, '0.0001', 'Paling banyak 3 angka di belakang koma untuk produk ini.'];
+        yield 'a trailing zero beyond precision 1' => [1, '1.50', 'Paling banyak 1 angka di belakang koma untuk produk ini.'];
         yield 'above the range' => [3, '100000000', self::QUANTITY_MAX];
         yield 'far above the range' => [0, str_repeat('9', 60), self::QUANTITY_MAX];
     }

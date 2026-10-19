@@ -62,6 +62,39 @@ final class CostArithmeticTest extends TestCase
         $this->assertSame('10', $previous->toCanonical());
     }
 
+    /**
+     * The same rule over random partial returns at every precision (the
+     * class-A adversarial review of TASK-003, area 2): no step is negative,
+     * the restored total equals the cumulative projection after every step,
+     * and the last return restores the whole projection.
+     */
+    public function test_the_cumulative_return_rule_leaves_no_residue_over_random_partial_returns(): void
+    {
+        mt_srand(20261020);
+
+        for ($i = 0; $i < 2000; $i++) {
+            $precision = mt_rand(0, 3);
+            $issued = mt_rand(1, 99999) * (10 ** $precision) + mt_rand(0, 10 ** $precision - 1);
+            $q = self::quantity($issued, $precision);
+            $allocation = Cost::of(mt_rand(0, 999999999).'.'.str_pad((string) mt_rand(0, 999999), 6, '0', STR_PAD_LEFT));
+            $returned = 0;
+            $restored = Cost::of('0');
+
+            while ($returned < $issued) {
+                $step = mt_rand(1, max(1, intdiv($issued - $returned, mt_rand(1, 4))));
+                $previous = Cost::mulDiv($allocation, self::quantity($returned, $precision), $q);
+                $returned += $step;
+                $current = Cost::mulDiv($allocation, self::quantity($returned, $precision), $q);
+                $restore = $current->minus($previous);
+                $this->assertGreaterThanOrEqual(0, $restore->compareTo(Cost::of('0')));
+                $restored = $restored->plus($restore);
+                $this->assertSame($current->toCanonical(), $restored->toCanonical());
+            }
+
+            $this->assertSame($allocation->toCanonical(), $restored->toCanonical(), 'the whole issue projection after the last return');
+        }
+    }
+
     public function test_a_unit_cost_and_a_moving_weighted_average_divide_exact_sums_once(): void
     {
         // A line cost of Rp10.000 for 3 units.
@@ -72,5 +105,10 @@ final class CostArithmeticTest extends TestCase
         $value = Cost::of('1000.5')->plus(Cost::of('999.5'));
 
         $this->assertSame('666.666667', Cost::quotient($value->amount(), BigDecimal::of('3'))->toCanonical());
+    }
+
+    private static function quantity(int $units, int $precision): Quantity
+    {
+        return Quantity::fromBigDecimal(BigDecimal::ofUnscaledValue($units, $precision), $precision);
     }
 }
