@@ -5,7 +5,7 @@
 | Status | CURRENT — written in RF-7 under D-090, 18 October 2026 (Asia/Jakarta); corrected under D-091 the same day, after the independent review of the baseline; approved by the Owner with every Task (gate GATE-P11), and corrected for review finding R-1, under D-092 the same day |
 | Phase | P11 — Task planning, dependencies and execution specifications |
 | Replaces | `docs/11-tasks/legacy/11-BUILD-PLAN.md`, `docs/11-tasks/legacy/P11-BUILD-UNITS.md` and `docs/11-tasks/legacy/build-units/` (LEGACY — SUPERSEDED, [LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 16); decision D-012 |
-| Decisions | D-012, D-031, D-066, D-088, D-090, D-091, D-092, D-094, D-095, D-096, D-097, D-098; FD-07, FD-08 |
+| Decisions | D-012, D-031, D-066, D-088, D-090, D-091, D-092, D-094, D-095, D-096, D-097, D-098, D-099; FD-07, FD-08 |
 | Related | [EXECUTION_CONTEXT](EXECUTION_CONTEXT.md), [DEPENDENCY_GRAPH](DEPENDENCY_GRAPH.md), [TRACEABILITY](TRACEABILITY.md), the Task contracts in [tasks/](tasks/), [TEST_STRATEGY](../08-testing/TEST_STRATEGY.md) |
 
 The implementation baseline of BantuKasir V1: 50 Tasks, their dependencies, gates and status, the order in which to run them, and where every requirement, workflow, suite, route, table and control is built. Nothing here authorizes a Task: each one starts only on the Owner's explicit instruction ([EXECUTION_CONTEXT](EXECUTION_CONTEXT.md) EXC-10), and none starts before gate GATE-P11.
@@ -50,7 +50,7 @@ Gates that a Task waits for, besides its dependencies. GATE-P11 to GATE-CC2 are 
 | GATE-P11 | The Owner approves this Task baseline (RF-7, D-090): the execution context, this plan, the dependency graph, the traceability and the 50 Task contracts. OPEN_ITEMS N-04 (whether the AICWDF-4.3 text joins the repository) has the deadline "RF-7 at the latest" and is decided with it. | Every Task | APPROVED — D-092, with N-04 decided |
 | GATE-BRANCH | OPEN_ITEMS N-12: the Owner decides when and how `develop` is created and `main` is brought forward (ADR-011 item 3); each branch operation and push needs its own authorization. RF-7 itself needs no transition (T-24, resolved in RF-7). | TASK-001 and every later implementation Task (EXC-22); and the `DONE` of TASK-002, which changes documents only: TASK-002 may be written before this gate, on the branch the Owner names, and is merged into `develop` after TASK-001 (EXC-37) | SATISFIED — D-094 |
 | GATE-PUBLISH | Before the first push of implementation work: OPEN_ITEMS N-09 decided and the one-time audit N-10 completed; before every push, the publication guard of D-076 (EXC-31). A pull request, its CI run and a merge into `develop` need a push. | The `DONE` of TASK-001 — its first push, its pull request, CI and its merge into `develop` — and so the start of every later implementation Task, all of which depend on TASK-001; every push after it. TASK-001 itself may start and be built and verified locally before it (EXC-31) | SATISFIED — N-09 decided (D-096) and the N-10 audit completed (D-097); the publication guard of D-076, with the known baseline of D-097, before every push |
-| GATE-CC1 | The Owner approves, by the Git blob, size and SHA-256 of each changed artifact, the change-control package of TASK-002 (OPEN_ITEMS T-19, T-20). | TASK-005, TASK-009, TASK-010 and every interface Task that uses a key it adds | OPEN — after TASK-002 |
+| GATE-CC1 | The Owner approves, by the Git blob, size and SHA-256 of each changed artifact, the change-control package of TASK-002 (OPEN_ITEMS T-19, T-20). | TASK-005, TASK-009, TASK-010 and every interface Task that uses a key it adds | SATISFIED — D-099 |
 | GATE-CC2 | The Owner approves by hash the artifacts that TASK-047 changes, when gate DEVICES changes a shortcut or a breakpoint; no approval is needed when the values are confirmed. | TASK-047 | OPEN — after TASK-046 |
 | EXECUTOR | The executor runs as Claude Opus 5.5 at the effort that the Owner's instruction names for the Task (D-031, D-095; EXECUTION_CONTEXT EXC-11; OPEN_ITEMS section 3). | Every Task | Checked at the start of each Task |
 | TARGET | The real server, Cloudflare, access, TLS and capacity, recorded by the operator (ENVIRONMENTS section 17; OPEN_ITEMS section 3). The operator is named by the Owner (RELEASE_PROCESS section 13). | TASK-044 (staging part), TASK-045, TASK-046, TASK-048, TASK-049 | OPEN |
@@ -69,7 +69,7 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | Task | Title | Phase | Lane | Size | Review | Depends on | Gates | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | [TASK-001](tasks/TASK-001-toolchain-ci.md) | Toolchain, repository conventions and CI | 1 | P | L | B | — | GATE-P11, GATE-BRANCH; before `DONE`: GATE-PUBLISH | `DONE` |
-| [TASK-002](tasks/TASK-002-p7-change-control-1.md) | P7 and copy change control, batch 1 | 1 | D | M | O | — | GATE-P11; before `DONE`: GATE-BRANCH, GATE-PUBLISH | `VERIFYING` |
+| [TASK-002](tasks/TASK-002-p7-change-control-1.md) | P7 and copy change control, batch 1 | 1 | D | M | O | — | GATE-P11; before `DONE`: GATE-BRANCH, GATE-PUBLISH | `DONE` |
 | [TASK-003](tasks/TASK-003-kernel-localization.md) | Shared kernel, formatting and localization | 1 | P | M | A | TASK-001 | — | `READY` |
 | [TASK-004](tasks/TASK-004-database-foundation.md) | Database foundation, roles and test harness | 1 | P | L | A | TASK-001, TASK-003 | — | `TODO` |
 | [TASK-005](tasks/TASK-005-design-system.md) | Design system and frontend foundation | 1 | P | L | B | TASK-002, TASK-003 | GATE-CC1 | `TODO` |
@@ -119,7 +119,7 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-049](tasks/TASK-049-release-readiness.md) | Release readiness: staging, UAT and first installation | 10 | R | L | V | TASK-045, TASK-047, TASK-048 | G1, G2, G3, G4, DEVICES, TARGET, GATE-PUBLISH | `TODO` |
 | [TASK-050](tasks/TASK-050-production-pilot.md) | Production release, cutover and pilot acceptance | 10 | R | L | V | TASK-049 | RELEASE, GATE-PUBLISH, G4 | `TODO` |
 
-Totals: `TODO` 47; `READY` 1; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 1; `DONE` 1; `SUPERSEDED` 0.
+Totals: `TODO` 47; `READY` 1; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 2; `SUPERSEDED` 0.
 
 ## 5. Implementation sequence
 
@@ -162,7 +162,7 @@ With more than one executor the Owner may run Tasks of different lanes at the sa
 
 ## 6. The first eligible Task
 
-**Status (D-098).** TASK-001 is `DONE`: merged into `develop` by the Owner's merge commit `b212819`, with CI green on its pull request and on the merge. [TASK-003](tasks/TASK-003-kernel-localization.md) is `READY` and is the next Task on the critical path (section 5.4); TASK-002 stays `READY` beside it. Each starts only on the Owner's instruction that names it. The paragraphs below record how TASK-001 and TASK-002 became eligible.
+**Status (D-099).** TASK-001 and TASK-002 are `DONE`. TASK-001 was merged into `develop` by `b212819` (D-098). TASK-002 was merged by `0e9a393`, with its package approved by hash as gate GATE-CC1 (D-099). [TASK-003](tasks/TASK-003-kernel-localization.md) is `READY` here and `VERIFYING` on its branch (pull request #3); it is the next Task on the critical path (section 5.4). Each Task starts only on the Owner's instruction that names it. The paragraphs below record how TASK-001 and TASK-002 became eligible.
 
 **[TASK-001](tasks/TASK-001-toolchain-ci.md) — Toolchain, repository conventions and CI** is the first eligible coding Task. It depends on no Task. Gate GATE-P11 is approved (D-092). Gate GATE-BRANCH is satisfied: `develop` exists, created locally by the branch operation the Owner authorized (D-094), so TASK-001 is `READY`; it starts when gate EXECUTOR holds and the Owner's instruction names it. It may be built and verified locally before gate GATE-PUBLISH, but it is `DONE` only when GATE-PUBLISH holds (N-09 decided, the N-10 audit completed and the publication guard passed), its branch is pushed on the Owner's authorization, its pull request is merged into `develop` and CI passes on the pull request and on the merge (EXC-31, EXC-32). Because every later implementation Task depends on TASK-001, GATE-PUBLISH is needed before any of them starts.
 
@@ -172,12 +172,13 @@ With more than one executor the Owner may run Tasks of different lanes at the sa
 
 | Item | Mapped to | Note |
 | --- | --- | --- |
-| OPEN_ITEMS T-19 | TASK-002, gate GATE-CC1 | The copy proposals of DESIGN_SYSTEM section 13 |
-| OPEN_ITEMS T-20 | TASK-002, gate GATE-CC1; TASK-047 for the shortcuts and breakpoints of gate DEVICES | INTERACTION_CONTRACTS sections 10 and 11, DC-04 headers, COPY_DECK findings F-01 to F-05, `PROJECTION_REBUILT`, the close-refusal message |
+| OPEN_ITEMS T-19 | TASK-002, gate GATE-CC1 — RESOLVED (D-099) | The copy proposals of DESIGN_SYSTEM section 13 |
+| OPEN_ITEMS T-20 | TASK-002, gate GATE-CC1 — RESOLVED (D-099); TASK-047 for the shortcuts and breakpoints of gate DEVICES | INTERACTION_CONTRACTS sections 10 and 11, DC-04 headers, COPY_DECK findings F-01 to F-05, `PROJECTION_REBUILT`, the close-refusal message |
 | OPEN_ITEMS T-21 | TASK-013 | A key rotation that can finish (BACKUP_RECOVERY BKP-22) |
 | OPEN_ITEMS T-22 | TASK-013 | Capacity of the free allowance with staging counted |
 | OPEN_ITEMS T-23 | TASK-006; its consequences in TASK-013 (the dump) and TASK-038 (the cleanup) | Database enforcement of the 365-day retention of the security log |
 | OPEN_ITEMS T-24 | RESOLVED in RF-7 (D-090) | The deadline of N-12 now reads: before TASK-001 |
+| OPEN_ITEMS T-25 | A change control before TASK-039; TASK-047 or an earlier P7 change control | COPY_DECK section 22.2: statements that later decisions overtook, among them four system-status items instead of five in RELEASE_PROCESS and the contract of TASK-039 |
 | OPEN_ITEMS N-12 | Gate GATE-BRANCH | RESOLVED as to the model (D-092): `develop` for implementation, `main` for releases; the creation of `develop` needs the Owner's own authorization, before TASK-001 |
 | OPEN_ITEMS N-09, N-10 | Gate GATE-PUBLISH | Before the first push of implementation work, and so before TASK-001 is `DONE` |
 | OPEN_ITEMS N-04 | Gate GATE-P11 | RESOLVED (D-092): the complete AICWDF-4.3 text is not added to the repository; the binding subset stays in `docs/00-governance` |

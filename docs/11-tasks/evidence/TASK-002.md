@@ -3,12 +3,12 @@
 | | |
 | --- | --- |
 | Task | [TASK-002](../tasks/TASK-002-p7-change-control-1.md), size M, review class O, lane D |
-| Status | `VERIFYING`; the status of record is [TASK_PLAN](../TASK_PLAN.md) section 4 |
+| Status | `DONE` (D-099); the status of record is [TASK_PLAN](../TASK_PLAN.md) section 4 |
 | Instruction | The Owner's instruction of 19 October 2026, "TASK-002: P7 and copy change control, batch 1 — executor instruction (parallel to TASK-003)", prepared by the planning agent the same day and sent by the Owner with his approval of its whole content |
 | Branch | `task/TASK-002-p7-change-control-1`, created from `develop` (EXC-22) in a linked worktree, the folder `bantukasir-task002` beside the main working tree, which is left to TASK-003 |
 | Base commit | `fc0055b49e9d179b5b7ed7d766121150dbd5bf66`, the D-098 bookkeeping commit on `develop` |
 | Executor | Implementation executor in Claude Code Desktop on the Owner's Windows machine; Claude Opus 5.5 (`claude-opus-5-5`); effort High, as the Owner's instruction names it (D-031, D-095), and the desktop app's record of the session shows effort `high`; a new session dedicated to TASK-002, separate from the TASK-003 session |
-| Gates | GATE-P11 APPROVED (D-092); GATE-BRANCH SATISFIED (D-094); GATE-PUBLISH SATISFIED (D-096, D-097); EXECUTOR checked at the start; GATE-CC1 is the Owner's approval of this package by hash, after this Task |
+| Gates | GATE-P11 APPROVED (D-092); GATE-BRANCH SATISFIED (D-094); GATE-PUBLISH SATISFIED (D-096, D-097); EXECUTOR checked at the start; GATE-CC1 SATISFIED (D-099) |
 | Authorized beyond local commits | The publication guard, non-force pushes of the Task branch, one pull request into `develop` marked as awaiting GATE-CC1, and watching its CI. No merge |
 
 Times are Asia/Jakarta. Statuses use the vocabulary of [TEST_STRATEGY](../../08-testing/TEST_STRATEGY.md) section 8 (`NOT_RUN`, `PASS`, `FAIL`, `BLOCKED`).
@@ -179,13 +179,13 @@ A proposal in the form of D-082, D-086 and D-087, for the Owner's decision. It i
 
 | Criterion | Status | Evidence |
 | --- | --- | --- |
-| AC-002-01 | `PASS`, with the Owner's approval of the texts pending at gate GATE-CC1 | Every proposal of DESIGN_SYSTEM section 13 and INTERACTION_CONTRACTS section 11 and every DC-04 header has its key, text and source in COPY_DECK (CC-03 to CC-12); the percent format is in section 1.3, and so are the unit words of durations that TASK-003 finding F-1 needs (CC-21, section 2.3); key coverage `PASS` (section 4). The texts are approved copy only when the Owner approves the package by hash |
+| AC-002-01 | `PASS`; the texts approved by the Owner at gate GATE-CC1 (D-099) | Every proposal of DESIGN_SYSTEM section 13 and INTERACTION_CONTRACTS section 11 and every DC-04 header has its key, text and source in COPY_DECK (CC-03 to CC-12); the percent format is in section 1.3, and so are the unit words of durations that TASK-003 finding F-1 needs (CC-21, section 2.3); key coverage `PASS` (section 4). The texts are approved copy by D-099 |
 | AC-002-02 | `PASS` | Every row of INTERACTION_CONTRACTS section 10 applied (CC-17); F-01, F-02, F-03 and F-05 applied, F-04 recorded as needing no change because D-086 closed it (CC-02); INTERACTION_INVENTORY section 3 re-derived from its rows (CC-18; section 4) |
 | AC-002-03 | `PASS` | No page, control, state, navigation path, business rule or visual design beyond those rows: the close-refusal message is a second text of UXS-19, the fifth status item is the Owner's answer, and no P7-G3 artifact changed (section 5.2); every entry of COPY_DECK section 22.1 cites a decision (after `1af8473`) |
 | AC-002-04 | `PASS` | Both answers verbatim in section 2 and applied: CC-13, CC-14; GLOSSARY's gate row at the Owner's request (CC-01) |
 | AC-002-05 | `PASS` | Section 5: 21 unchanged approved artifacts byte-identical to their approved blobs; 8 changed artifacts listed with blob, size and SHA-256 at the package commit |
 | AC-002-06 | `PASS` | Section 4: links, table shape, LF and trailing whitespace on all 11 changed files, with the checker's negative sample |
-| AC-002-07 | `NOT_RUN` | Waits for the merge into `develop`, which is not authorized by this instruction (contract item 7; EXC-36, EXC-37) |
+| AC-002-07 | `PASS` | Section 13: merged by `0e9a39393e02b4ac293bd57bff4da3ca8340eaa4` from a branch that contains `develop` (`fc0055b`; `git merge develop` brought nothing); the eight artifacts at `0e9a39393e02b4ac293bd57bff4da3ca8340eaa4` equal section 5.1 |
 
 ## 9. Definition of Done
 
@@ -199,15 +199,15 @@ A proposal in the form of D-082, D-086 and D-087, for the Owner's decision. It i
 | Data integrity | `N/A` | Writes no business fact |
 | Performance | `N/A` | No code |
 | Operations | `PASS` | The Owner's answer applied to OPERATIONS_RUNBOOK section 5; no backup or runbook procedure changes |
-| Verification | `PASS` for the checks; the Owner's approval by hash pending | Hashes, links, table shape and key coverage checked (section 4); gate GATE-CC1 is the Owner's decision on section 5.1 |
+| Verification | `PASS` | Hashes, links, table shape and key coverage checked (sections 4 and 12.3); the Owner's approval by hash, D-099 (section 13) |
 
-The Task stays `VERIFYING` until the planning agent's review, the Owner's approval by hash (GATE-CC1) and the merge into `develop` (AC-002-07), each on a separate instruction.
+The Task is `DONE` (section 13).
 
 ## 10. Self-review, and what is not verified
 
 - **Self-review** of the whole diff against the contract (EXC-70): it found one defect, entry CC-20 of COPY_DECK section 22.1 without a source decision, corrected in `1af8473`, after which every check of section 4 ran again. The row rewrites were compared with INTERACTION_CONTRACTS sections 2, 9 and 10 and with CAP-15 and CAP-17 of SECURITY_MODEL.
 - **Not verified:** whether the readings left for a later change control (COPY_DECK section 22.2) are complete — they were found while applying the named rows, not by a full review of the six documents against every later decision; the wording itself, which is the Owner's to approve; nothing was rendered, because no preview changed.
-- **Not done here, each on its own instruction:** the planning agent's review; the Owner's approval by hash and its record as D-099; the bookkeeping of the approval in DECISIONS, OPEN_ITEMS T-19 and T-20, SOURCE_OF_TRUTH section 3, TASK_PLAN and CURRENT_HANDOFF; the merge of `develop` into the branch and the re-measurement (contract item 7); the merge into `develop`.
+- **Not done here, each on its own instruction:** the planning agent's review; the Owner's approval by hash and its record as D-099; the bookkeeping of the approval in DECISIONS, OPEN_ITEMS T-19 and T-20, SOURCE_OF_TRUTH section 3, TASK_PLAN and CURRENT_HANDOFF; the merge of `develop` into the branch and the re-measurement (contract item 7); the merge into `develop`. Each was done later: sections 12 and 13.
 - **The main working tree** was read only, before the worktree was created; no file there was changed by this Task.
 
 ## 11. Publication (contract section 4.1 item 6; EXC-31, EXC-32)
@@ -303,4 +303,65 @@ This section, sections 2.3, 5, 6 and 8 of this file and TASK-002's own facts in 
 
 ### 12.5 Publication guard, push and CI
 
-Pending when this section was committed. The guard runs over the two commits of this remediation before the push, against the baseline of D-097 as D-098 extends it, as in section 11; the push is one non-force push of the Task branch; then the CI run of pull request #2. Their results are reported to the Owner in the executor's report, not in this commit.
+From the executor's report of the remediation and the planning agent's check of 20 October 2026:
+
+- the publication guard passed over `776b9cf` and `936be82`, against the baseline of D-097 as D-098 extends it;
+- one non-force push published the branch at `936be82`, the head of pull request #2;
+- CI run 39296406256 (event `pull_request`) passed on `936be82`.
+
+## 13. Close: gate GATE-CC1, merge and acceptance (20 October 2026)
+
+By the Owner's instruction "TASK-002 close: gate GATE-CC1 (D-099), merge of pull request #2 and acceptance", prepared by the planning agent on 20 October 2026 after its review of the package and sent by the Owner, which gives decision D-099. It authorizes, in this worktree only: `git merge develop` on the Task branch; one `--no-ff` merge commit of the branch into `develop`; the publication guard, a non-force push of `develop` and its CI, twice; the bookkeeping of this section in seven files, as one commit; and returning the worktree to the Task branch. Executor: Claude Opus 5.5 (`claude-opus-5-5`), effort XHigh as the instruction names it; the desktop app's record of the session shows model `claude-opus-5-5` and effort `xhigh`; a new session dedicated to this close. Session start: 20 October 2026 at 01:54.
+
+### 13.1 The Owner's decision
+
+D-099, in the Owner's words, verbatim: "Owner menyetujui GATE-CC1 (D-099): paket TASK-002 pada commit paket `776b9cf9f41d79088be66515afdee9c5e0b10864` di `task/TASK-002-p7-change-control-1` (PR #2, head `936be82d63ecc72653d446d1e87f1abbed767c07`), yaitu delapan dokumen dengan blob, ukuran, dan SHA-256 persis seperti tabel di bawah, beserta jawaban Owner di evidence TASK-002 bagian 2 dan daftar perubahan COPY_DECK bagian 22.1, CC-01 sampai CC-21. DESIGN_SYSTEM, KEY_SCREENS, dan previews tetap seperti D-087. Owner menyetujui merge PR #2 ke `develop` dengan merge commit lokal atas identitas Owner, dan menerima TASK-002 sebagai DONE setelah AC-002-07 terpenuhi sesuai instruksi ini."
+
+The table that the sentence names is section 5.1. Its terms are in [DECISIONS](../../00-governance/DECISIONS.md) section 6.
+
+### 13.2 The commit to be merged (EXC-36, EXC-37)
+
+- **Preflight**, read-only, from a script file that stops on the first difference: `PASS`.
+  - The worktree on `task/TASK-002-p7-change-control-1` at `936be82d63ecc72653d446d1e87f1abbed767c07`, with nothing staged, modified or untracked; local `develop` at `fc0055b49e9d179b5b7ed7d766121150dbd5bf66`, checked out in no worktree.
+  - An anonymous `git ls-remote origin`: `develop` at `fc0055b`; the branch and `refs/pull/2/head` at `936be82`; `task/TASK-003-kernel-localization` at `0ee8ab7`; `task/TASK-001-toolchain-ci` at `8f0b96a`; `main` at `f7cecfe`; `plan/bantukasir-pos-v1` at `86822d5`; no tag.
+  - Pull request #2 `OPEN`, base `develop`, head `936be82`, `MERGEABLE`.
+  - CI run 39296406256: `success`, head `936be82`, event `pull_request`.
+  - Docker answered, and `docker run --rm --network none --entrypoint gitleaks bantukasir-app:local version` printed `v8.30.1`.
+- **`git merge develop`** on the Task branch printed "Already up to date.". The merge base was `fc0055b`, `develop` itself, and HEAD stayed `936be82`.
+- **The package at `936be82`**: the blob, size and SHA-256 of each of the eight documents equal section 5.1; DESIGN_SYSTEM, KEY_SCREENS and the previews' tree with its 19 files equal the values of D-087 (section 5.2).
+
+### 13.3 Merge commit
+
+`git switch develop` (HEAD `fc0055b`), then `git merge --no-ff` of the Task branch with the message "Merge TASK-002 (pull request #2): P7 and copy change control, batch 1", without conflict, at 01:57:
+
+- the merge commit `0e9a39393e02b4ac293bd57bff4da3ca8340eaa4`;
+- its parents `fc0055b49e9d179b5b7ed7d766121150dbd5bf66` and then `936be82d63ecc72653d446d1e87f1abbed767c07`;
+- its tree `1f637d74aeb4bb9409d4d0d6ef7324630f4de25f`, equal to that of `936be82`;
+- its author and committer the Owner's configured identity;
+- its message exactly that one line, and `git interpret-trailers --parse` printed nothing.
+
+**AC-002-07**, measured at `0e9a393`: the eight documents equal section 5.1, and DESIGN_SYSTEM, KEY_SCREENS and the previews equal D-087. `PASS`.
+
+### 13.4 Guard, push and CI
+
+- **Guard** (EXC-31), from a script file that stops on the first failure: `PASS`.
+  - `git rev-list develop --not origin/develop origin/task/TASK-002-p7-change-control-1` listed `0e9a393` only.
+  - `git rev-list --objects` over the same range listed the commit object only: no new tree or blob.
+  - The identity and the message as in section 13.3, with no attribution.
+- **Push.** `git ls-remote` was unchanged since the preflight. One non-force push, `git push origin refs/heads/develop:refs/heads/develop`, moved `develop` from `fc0055b` to `0e9a393` at 01:58.
+- **After the push**, `ls-remote` showed `develop` at `0e9a393` and every other ref unchanged, except `refs/pull/2/merge`, which GitHub removed when it marked the pull request merged.
+- **Pull request #2** `MERGED` at 01:58:42, with merge commit `0e9a393`.
+- **CI:** run 39307066629, event `push` on `develop` at `0e9a393`: `success`. Its job "Command contract" ran from 01:58:45 to 02:00:48.
+
+### 13.5 Acceptance
+
+- AC-002-01 to AC-002-07: `PASS` (section 8).
+- The Definition of Done: every dimension `PASS` or `N/A` (section 9).
+- Gate GATE-CC1 SATISFIED (D-099); the gates before `DONE`, GATE-BRANCH and GATE-PUBLISH, hold.
+- Status: `DONE`.
+
+### 13.6 This bookkeeping
+
+- The seven files: DECISIONS, OPEN_ITEMS, SOURCE_OF_TRUTH, REQUIREMENTS, TASK_PLAN, this file and CURRENT_HANDOFF, which was updated last.
+- Committed on `develop`, on `0e9a393`, as "docs: record gate GATE-CC1 and the acceptance of TASK-002 (D-099)".
+- Its SHA and its CI run are in the executor's report.
