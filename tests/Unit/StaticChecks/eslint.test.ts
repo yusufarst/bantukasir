@@ -46,3 +46,28 @@ describe('ESLint and react/jsx-no-literals', () => {
         expect(result.messages).toEqual([]);
     });
 });
+
+describe('ESLint and exact numbers (ADR-006 items 5 and 6, TASK-003)', () => {
+    it('refuses Number(), parseFloat, parseInt, unary + and locale formatting', async () => {
+        const result = await lintSample('exact-numbers.ts');
+        const reported = result.messages.map((message) => `${message.line}:${message.ruleId ?? 'fatal'}`);
+
+        // Lines 6 to 13: Number(), parseFloat, Number.parseFloat, unary +,
+        // Intl.NumberFormat, toLocaleDateString, parseInt and window.Number.
+        expect(result.errorCount).toBe(reported.length);
+        expect(reported).toEqual([6, 7, 8, 9, 10, 11, 12, 13].map((line) => `${line}:no-restricted-syntax`));
+    });
+
+    it('passes canonical strings, BigInt and integer checks', async () => {
+        const result = await lintSample('exact-numbers-allowed.ts');
+
+        expect(result.messages).toEqual([]);
+    });
+
+    it('refuses them in TSX too, beside the literal rule', async () => {
+        const code = 'declare const price: string;\nexport const Total = () => <span>{+price}</span>;\n';
+        const [result] = await eslint.lintText(code, { filePath: 'resources/js/static-check-total.tsx' });
+
+        expect(result?.messages.map((message) => `${message.line}:${message.ruleId ?? 'fatal'}`)).toEqual(['2:no-restricted-syntax']);
+    });
+});
