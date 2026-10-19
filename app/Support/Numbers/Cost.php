@@ -32,11 +32,14 @@ final readonly class Cost implements JsonSerializable, Stringable
 
     /**
      * A canonical non-negative decimal string with at most six fractional
-     * digits, or the marker "UNKNOWN".
+     * digits, or the marker "UNKNOWN". A value that is not a string is refused
+     * at run time (TASK-003 finding A-11).
+     *
+     * @param  string  $canonical  any other type is refused at run time
      *
      * @throws NonCanonicalNumber
      */
-    public static function of(string $canonical): self
+    public static function of(mixed $canonical): self
     {
         if ($canonical === self::UNKNOWN) {
             return self::unknown();
@@ -75,12 +78,19 @@ final readonly class Cost implements JsonSerializable, Stringable
     /**
      * A value read from the columns of SCHEMA section 3.2: an amount column
      * alone, which holds a KNOWN value, or a status column (KNOWN or UNKNOWN)
-     * with its nullable amount column.
+     * with its nullable amount column. A value that is neither null nor a
+     * string is refused at run time (TASK-003 finding A-11).
+     *
+     * @param  string|null  $amount  any other type is refused at run time
+     * @param  string|null  $status  any other type is refused at run time
      *
      * @throws NonCanonicalNumber
      */
-    public static function fromDatabase(?string $amount, ?string $status = null): self
+    public static function fromDatabase(mixed $amount, mixed $status = null): self
     {
+        $amount = $amount === null ? null : CanonicalNumber::string($amount, 'cost');
+        $status = $status === null ? null : CanonicalNumber::string($status, 'cost status');
+
         if ($status === 'UNKNOWN' && $amount === null) {
             return self::unknown();
         }
@@ -95,12 +105,19 @@ final readonly class Cost implements JsonSerializable, Stringable
     /**
      * The exact dividend divided once, rounded half-up to six decimals
      * (ADR-008 section 5), for example a unit cost or a moving weighted
-     * average from exact sums.
+     * average from exact sums. A zero divisor is refused with the kernel's
+     * NumberOutOfRange, which the command Tasks map to VALIDATION_FAILED
+     * (R-21), never with Brick Math's DivisionByZeroException (TASK-003
+     * finding A-13, reading R-30).
      *
      * @throws NumberOutOfRange
      */
     public static function quotient(BigNumber $dividend, BigNumber $divisor): self
     {
+        if ($divisor->isZero()) {
+            throw NumberOutOfRange::for('cost divisor');
+        }
+
         return self::known($dividend->toBigDecimal()->dividedBy($divisor, self::SCALE, RoundingMode::HalfUp));
     }
 

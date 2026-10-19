@@ -24,11 +24,14 @@ final readonly class Quantity implements JsonSerializable, Stringable
     /**
      * A canonical decimal string with no more fractional digits, as written,
      * than the precision allows: "1.50" is accepted at precision 2 or 3, and
-     * "1.0" is refused at precision 0.
+     * "1.0" is refused at precision 0. A value that is not a string is
+     * refused at run time (TASK-003 finding A-11).
+     *
+     * @param  string  $canonical  any other type is refused at run time
      *
      * @throws NonCanonicalNumber
      */
-    public static function of(string $canonical, int $precision): self
+    public static function of(mixed $canonical, int $precision): self
     {
         $precision = self::checkPrecision($precision);
 
@@ -37,11 +40,14 @@ final readonly class Quantity implements JsonSerializable, Stringable
 
     /**
      * A value read from a `numeric(13,3)` column, which PostgreSQL returns
-     * with three decimals ("1.000" at precision 0).
+     * with three decimals ("1.000" at precision 0). Any other type than a
+     * string is refused at run time (TASK-003 finding A-11).
+     *
+     * @param  string  $value  any other type is refused at run time
      *
      * @throws NonCanonicalNumber
      */
-    public static function fromDatabase(string $value, int $precision): self
+    public static function fromDatabase(mixed $value, int $precision): self
     {
         return self::fromBigDecimal(CanonicalNumber::parse($value, self::MAX_PRECISION, true, 'quantity'), $precision);
     }

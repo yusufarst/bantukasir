@@ -48,13 +48,18 @@ final class CanonicalNumber
 
     /**
      * Parses a canonical string with at most $maxScale fractional digits, as
-     * written, and a sign only when $signed.
+     * written, and a sign only when $signed. A value that is not a string — a
+     * PHP float above all, which coercive typing would otherwise turn into a
+     * string first — is refused at run time (TASK-003 finding A-11).
+     *
+     * @param  string  $value  any other type is refused at run time
      *
      * @throws NonCanonicalNumber
      * @throws NumberOutOfRange when the string is longer than MAX_LENGTH
      */
-    public static function parse(string $value, int $maxScale, bool $signed, string $kind): BigDecimal
+    public static function parse(mixed $value, int $maxScale, bool $signed, string $kind): BigDecimal
     {
+        $value = self::string($value, $kind);
         $parts = self::split($value);
 
         if ($parts === null || strlen($parts['fraction']) > $maxScale || ($parts['negative'] && ! $signed)) {
@@ -66,6 +71,17 @@ final class CanonicalNumber
         }
 
         return BigDecimal::of($value);
+    }
+
+    /**
+     * The value itself when it is a PHP string; any other type is refused,
+     * never converted (ADR-006 items 2 and 5).
+     *
+     * @throws NonCanonicalNumber
+     */
+    public static function string(mixed $value, string $kind): string
+    {
+        return is_string($value) ? $value : throw NonCanonicalNumber::for($kind);
     }
 
     /**

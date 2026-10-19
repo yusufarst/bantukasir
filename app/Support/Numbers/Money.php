@@ -19,11 +19,15 @@ final readonly class Money implements JsonSerializable, Stringable
     private function __construct(private BigInteger $amount) {}
 
     /**
-     * A canonical integer string, signed, for example "75000" or "-2000".
+     * A canonical integer string, signed, for example "75000" or "-2000". A
+     * value that is not a string is refused at run time (TASK-003 finding
+     * A-11).
+     *
+     * @param  string  $canonical  any other type is refused at run time
      *
      * @throws NonCanonicalNumber
      */
-    public static function of(string $canonical): self
+    public static function of(mixed $canonical): self
     {
         return new self(CanonicalNumber::parse($canonical, 0, true, 'money amount')->toBigInteger());
     }
@@ -40,13 +44,16 @@ final readonly class Money implements JsonSerializable, Stringable
 
     /**
      * A value read from a `bigint` column: PDO returns an integer or a string,
-     * never a float.
+     * never a float. Any other type is refused at run time (TASK-003 finding
+     * A-11).
+     *
+     * @param  int|string  $value  any other type is refused at run time
      *
      * @throws NonCanonicalNumber
      */
-    public static function fromDatabase(int|string $value): self
+    public static function fromDatabase(mixed $value): self
     {
-        return is_int($value) ? new self(BigInteger::of($value)) : self::of($value);
+        return is_int($value) ? new self(BigInteger::of($value)) : self::of(CanonicalNumber::string($value, 'money amount'));
     }
 
     /**
