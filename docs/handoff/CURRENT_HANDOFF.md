@@ -2,13 +2,13 @@
 
 The current operational state of BantuKasir. This is the only document that says what is authorized now. Keep it short; history is in Git and in [DECISIONS](../00-governance/DECISIONS.md).
 
-Written 19 October 2026 (Asia/Jakarta) by the planning agent in the working tree of `develop` under D-021, on the Owner's instruction of that day, to record the acceptance of TASK-001 (D-098); the D-098 bookkeeping commit on `develop` commits it (section 1). The previous version is committed in `8f0b96a` and reached `develop` with the merge `b212819`.
+Written 19 October 2026 (Asia/Jakarta) by the planning agent in the working tree of `develop` under D-021, on the Owner's instruction of that day, to record the acceptance of TASK-001 (D-098); the D-098 bookkeeping commit on `develop` commits it (section 1). The previous version is committed in `8f0b96a` and reached `develop` with the merge `b212819`. On the branch `task/TASK-002-p7-change-control-1` the implementation executor of TASK-002 updated TASK-002's own facts the same day (EXECUTION_CONTEXT EXC-35); every other fact is `develop`'s as of `fc0055b`.
 
 ```text
 PROJECT:              BantuKasir (codename) — goods-only point of sale; one business and one stock pool per installation
 PROJECT STATE:        IMPLEMENTATION — TASK-001 DONE (D-098): the empty application, its toolchain and CI are on `develop` and published on GitHub; the re-foundation RF-0 to RF-7 is complete and the Task baseline approved (D-092)
 CURRENT STEP:         Between Tasks: TASK-001 accepted and merged; the D-098 bookkeeping to commit and push; then TASK-003, the next Task on the critical path, and TASK-002 beside it, each on the Owner's instruction
-CURRENT TASK:         none in progress — TASK-003 READY (next on the critical path) and TASK-002 READY (parallel); neither authorized
+CURRENT TASK:         TASK-002 VERIFYING on its branch — its package awaits the planning agent's review and the Owner's approval by hash (gate GATE-CC1); TASK-003 READY (next on the critical path)
 ```
 
 ## 1. Where the project stands
@@ -19,14 +19,15 @@ The re-foundation steps are in [REFOUNDATION_PLAN](../00-governance/REFOUNDATION
 - **Branches** (D-092, D-094): `develop` for implementation, on GitHub since 19 October 2026; `main` reserved for releases, unchanged at `f7cecfe` until the first release that the Owner authorizes; `plan/bantukasir-pos-v1` frozen at `6e18185`. The registers and this file are maintained on `develop`.
 - **Publication** (D-096, D-097): N-09 decided; the one-time audit N-10 complete; gate GATE-PUBLISH SATISFIED. Before every push the publication guard of D-076 runs (EXC-31) against the known baseline of D-097, which D-098 extends to the names of planned vendors.
 - **TASK-001 is `DONE`** (D-098; [evidence](../11-tasks/evidence/TASK-001.md) section 12): built and verified locally (D-094, D-095); the class-B review's findings remediated and re-checked; published with the bookkeeping commit `8f0b96a` and pull request #1, whose CI run 39250580770 passed; merged into `develop` by the Owner's local merge commit `b212819`, whose CI run 39268427587 passed; accepted by the Owner. Every criterion AC-001-01 to AC-001-09 passes.
+- **TASK-002 is `VERIFYING`** on `task/TASK-002-p7-change-control-1`, in a linked worktree, the folder `bantukasir-task002` beside the main working tree (section 2), by the Owner's instruction of 19 October 2026: the change-control package batch 1 — COPY_DECK, GLOSSARY's gate row, the six P7-G1 documents and OPERATIONS_RUNBOOK section 5 — committed in `1af8473`, with the Owner's two answers (a dedicated close-refusal message; the backup store's usage shown as a fifth system-status item), the change list in COPY_DECK section 22 and the hash table in its [evidence](../11-tasks/evidence/TASK-002.md) section 5. D-099 is reserved for the Owner's approval. Not merged.
 - **The D-098 bookkeeping** was written by the planning agent in the working tree of `develop` under D-021, in seven files (section 2); the implementation executor validates it, commits it on `develop` and pushes it with the publication guard, under the Owner's instruction. To confirm, run `git log -1 --format=%H%n%P -- docs/handoff/CURRENT_HANDOFF.md`: if the second line is `b212819a1761ffc468283d6813bf6ec7581d097e`, the first line is the D-098 bookkeeping commit; if the first line is `8f0b96afca80af354bd24cf2354c263cc166ae97`, it is not committed and its seven files are modified in the working tree.
 
 ### 1.1 The approved baseline
 
 - **50 Tasks**: 41 implementation Tasks (TASK-001, TASK-003 to TASK-042), 2 documentation and change-control Tasks (TASK-002, TASK-047) and 7 verification and release Tasks (TASK-043 to TASK-046, TASK-048 to TASK-050), in 10 phases and 8 lanes; sizes S 1, M 18, L 27, XL 4; review classes A 37, B 5, O 2, V 6. 84 dependency edges and 32 waves; the critical path runs through 32 Tasks — TASK-001 → 003 → 004 → 006 → 007 → 008 → 009 → 011 → 015 → 016 → 021 → 022 → 023 → 024 → 025 → 026 → 028 → 029 → 030 → 031 → 033 → 034 → 035 → 037 → 039 → 041 → 043 → 044 → 046 → 047 → 049 → 050 — and weighted by size its weight is 92.
 - **Order for one executor**: the order of the numbers, through ten milestones: M1 platform ready (TASK-011), M2 delivery path ready (TASK-014), M3 catalogue complete (TASK-020), M4 stock and cost complete (TASK-026), M5 first Sale end to end (TASK-031), M6 corrections complete (TASK-034), M7 operations complete (TASK-039), M8 product complete (TASK-042), M9 release candidate verified (TASK-048), M10 V1 in production (TASK-050).
-- **Statuses** (TASK_PLAN section 4, the status of record): TASK-001 `DONE` (D-098); TASK-002 and TASK-003 `READY`; the other 47 Tasks `TODO`, waiting for their dependencies.
-- **Gates** (TASK_PLAN section 3): GATE-P11 APPROVED (D-092); GATE-BRANCH SATISFIED (D-094); GATE-PUBLISH SATISFIED (D-096, D-097), with the publication guard before every push; GATE-CC1 OPEN — the package of TASK-002, before TASK-005, TASK-009 and TASK-010; GATE-CC2 OPEN; EXECUTOR checked at the start of each Task, at the effort that the Owner's instruction names (D-095); TARGET, DEVICES, G1 to G4, RELEASE and TESTS open (OPEN_ITEMS section 3).
+- **Statuses** (TASK_PLAN section 4, the status of record): TASK-001 `DONE` (D-098); TASK-002 `VERIFYING` (on its branch); TASK-003 `READY`; the other 47 Tasks `TODO`, waiting for their dependencies.
+- **Gates** (TASK_PLAN section 3): GATE-P11 APPROVED (D-092); GATE-BRANCH SATISFIED (D-094); GATE-PUBLISH SATISFIED (D-096, D-097), with the publication guard before every push; GATE-CC1 OPEN — the package of TASK-002, before TASK-005, TASK-009 and TASK-010, measured at `1af8473` and awaiting the Owner's approval by hash; GATE-CC2 OPEN; EXECUTOR checked at the start of each Task, at the effort that the Owner's instruction names (D-095); TARGET, DEVICES, G1 to G4, RELEASE and TESTS open (OPEN_ITEMS section 3).
 
 ### 1.2 Next steps
 
@@ -34,10 +35,10 @@ Each step needs the Owner's own instruction; nothing here authorizes one.
 
 1. **The D-098 bookkeeping** — committed on `develop` and pushed with the publication guard (section 1).
 2. **TASK-003 — Shared kernel, formatting and localization** — `READY`, the next Task on the critical path (TASK_PLAN section 5.4). It depends only on TASK-001 and waits for no gate other than EXECUTOR. Its instruction names the agent, the model and the effort chosen for it (EXC-10, EXC-11); the executor creates its branch from `develop` (EXC-22), and its pull request is merged like TASK-001's (EXC-32).
-3. **TASK-002 — P7 and copy change control, batch 1** — `READY`, documents only, beside TASK-003 on its own branch (EXC-37). It is merged into `develop` after `develop` is merged into its branch (EXC-36), and the Owner approves its package by hash (gate GATE-CC1) before TASK-005, TASK-009 and TASK-010.
+3. **TASK-002 — P7 and copy change control, batch 1** — `VERIFYING` on its own branch (section 1). Next, each on a separate instruction: the planning agent's review of the package; the Owner's approval by hash (gate GATE-CC1, D-099); the bookkeeping of that approval and of OPEN_ITEMS T-19 and T-20; the merge of `develop` into its branch with the package measured again (EXC-36, EXC-37); its merge into `develop`, before TASK-005, TASK-009 and TASK-010.
 4. **Repository settings, recommended and not blocking** — the Owner makes them himself; agents never change settings. N-08: block force pushes and deletion of `main`, `develop` and `plan/bantukasir-pos-v1`; a rule requiring pull requests on `develop` would reject the local merge commits and the direct bookkeeping pushes used so far. The default branch from `main` to `develop` (D-097).
 
-**Exact next action:** the Owner's instruction for the D-098 bookkeeping (the planning agent's "D-098 — TASK-001 acceptance bookkeeping"); then the Owner's instruction for TASK-003 and, if he chooses, for TASK-002.
+**Exact next action:** the Owner's instruction for the D-098 bookkeeping (the planning agent's "D-098 — TASK-001 acceptance bookkeeping"); then the Owner's instruction for TASK-003. For TASK-002: the planning agent's review of its package, then the Owner's decision on gate GATE-CC1.
 
 ## 2. Git baseline
 
@@ -45,6 +46,7 @@ Each step needs the Owner's own instruction; nothing here authorizes one.
 | --- | --- |
 | Branch | `develop` |
 | `task/TASK-001-toolchain-ci` | Created from `develop` at `a2cb971` on 18 October 2026 (EXC-22); 15 commits, from `3506b51` to `8f0b96a`, each named in its evidence; pushed on 19 October 2026 and merged into `develop` by `b212819` (pull request #1). Kept locally and on GitHub; deleting it needs the Owner's authorization |
+| `task/TASK-002-p7-change-control-1` | Created from `develop` at `fc0055b` on 19 October 2026 (EXC-22) by `git worktree add`, in a linked worktree, the folder `bantukasir-task002` beside the main working tree, which TASK-003 uses; its commits are named in the TASK-002 evidence. Keep the worktree; removing it or the branch needs the Owner's authorization |
 | `develop` head | `b212819a1761ffc468283d6813bf6ec7581d097e`, the merge of TASK-001 (D-098): parents `a2cb971` and `8f0b96a`; tree `f223127e6a6bedeebf11e7c03b337e5c8785da17`, equal to that of `8f0b96a`; the Owner's identity as author and committer; pushed on 19 October 2026 |
 | D-098 bookkeeping | Written by the planning agent in the working tree of `develop` under D-021 — DECISIONS, OPEN_ITEMS, REQUIREMENTS, TOOLCHAIN, TASK_PLAN, the TASK-001 evidence and this file, and nothing else — and committed by the implementation executor as one commit on `b212819`, under the Owner's instruction, then pushed (section 1 shows how to confirm it). Until then the seven files are modified and nothing is staged; never reset or restored |
 | Bookkeeping of D-096 and D-097 | `8f0b96afca80af354bd24cf2354c263cc166ae97`, on `2e7ffd2`, on `task/TASK-001-toolchain-ci`; reached `develop` with the merge of TASK-001 |
@@ -88,7 +90,7 @@ In the device shell, run Git with `GIT_OPTIONAL_LOCKS=0`; a plain `git status` t
 
 1. For the implementation executor: nothing until the Owner sends an instruction. The instructions of TASK-001, of its first publication and of its merge are carried out and reported.
 2. For the planning agent: its review of the executor's reports against the repository.
-3. For the Owner, each on its own: the D-098 bookkeeping; the TASK-003 instruction; the TASK-002 instruction; every push and merge; the settings of section 1.2, item 4.
+3. For the Owner, each on its own: the D-098 bookkeeping; the TASK-003 instruction; for TASK-002, the decision on gate GATE-CC1 after the planning agent's review; every push and merge; the settings of section 1.2, item 4.
 
 Nothing else. Every Task, every branch operation, every SSD operation, every commit and every push each need the Owner's separate, explicit authorization.
 
@@ -149,7 +151,7 @@ Latest Owner decisions (11 to 19 October 2026), recorded in [DECISIONS](../00-go
 
 D-019 to D-065 remain as recorded. The next free identifiers are D-099 and ADR-012.
 
-Decisions pending: the D-098 bookkeeping and its push; the TASK-003 instruction; each later push and merge; N-08 (branch protection) and the default branch; the TASK-002 instruction and, after it, the approval of its package by hash (gate GATE-CC1), with the Owner's answers on a dedicated message for the close refusal (D-088) and on the backup store's usage on the system status (ADR-010 item 11, OPERATIONS_RUNBOOK section 5); items N-03 and N-05 in [OPEN_ITEMS](../00-governance/OPEN_ITEMS.md).
+Decisions pending: the D-098 bookkeeping and its push; the TASK-003 instruction; each later push and merge; N-08 (branch protection) and the default branch; the approval of TASK-002's package by hash (gate GATE-CC1, D-099 reserved) — the Owner's answers on a dedicated message for the close refusal (D-088) and on the backup store's usage on the system status (ADR-010 item 11) were given in TASK-002 and are recorded in its evidence section 2; items N-03 and N-05 in [OPEN_ITEMS](../00-governance/OPEN_ITEMS.md).
 
 Open facts, not decisions: the server's provider, size and other services, and whether the domain is already on Cloudflare (gate TARGET); who the operator is (gate RELEASE); the number of products at go-live and whether a product list already exists (G2); whether one device is shared by several staff, the number of drawers and the usual opening float (G3); the receipt printer and paper width (DEVICES); the PKP/PPN status and tax-document needs (G1); whether LATANSA is the first installation. The first store's cashier devices are PC and tablet (OF-02), not yet verified. [PRODUCT_BLUEPRINT](../01-product/PRODUCT_BLUEPRINT.md) section 13 lists them.
 
@@ -160,10 +162,10 @@ Phase status is in REFOUNDATION_PLAN section 4. In summary: P0 was re-founded in
 ```text
 TASK PLAN (docs/11-tasks/TASK_PLAN.md section 4 is the status of record)
 - Baseline total:  50 Tasks, TASK-001 to TASK-050; approved by the Owner (D-092)
-- Todo 47 / Ready 2 / In progress 0 / Blocked 0 / Verifying 0 / Done 1 / Superseded 0
+- Todo 47 / Ready 1 / In progress 0 / Blocked 0 / Verifying 1 / Done 1 / Superseded 0
 - Done:            TASK-001 Toolchain, repository conventions and CI (D-098; merged into develop by b212819)
 - Ready:           TASK-003 Shared kernel, formatting and localization (next on the critical path; the Owner's instruction)
-                   TASK-002 P7 and copy change control, batch 1 (parallel; the Owner's instruction)
+- Verifying:       TASK-002 P7 and copy change control, batch 1 (on its branch; awaiting review and gate GATE-CC1)
 ```
 
 ## 7. Open blockers and gaps
@@ -177,7 +179,7 @@ TASK PLAN (docs/11-tasks/TASK_PLAN.md section 4 is the status of record)
 - Gates DEVICES ([DEVICE_VERIFICATION](../08-testing/DEVICE_VERIFICATION.md)), TARGET ([ENVIRONMENTS](../09-operations/ENVIRONMENTS.md) section 17) and RELEASE ([RELEASE_PROCESS](../10-release/RELEASE_PROCESS.md) section 12) are defined and open, and the operator is not yet named; they enter at TASK-044 to TASK-050. TESTS: the suites are defined and each has its owning and final-point Task (TRACEABILITY section 5); none has run; TASK-001's command contract and its smoke test pass locally and in CI.
 - Copy and P7 change control (T-19, T-20): carried by TASK-002 (gate GATE-CC1) and, for the shortcuts and breakpoints that gate DEVICES confirms or changes, TASK-047 (gate GATE-CC2).
 - Nonblocking findings of the RF-6 review (D-089), now mapped: T-21 and T-22 to TASK-013; T-23 to TASK-006, with its consequences in TASK-013 and TASK-038; T-24 is resolved (D-090).
-- Four readings left to the Task that meets them (TASK_PLAN section 7): the `labels` and `stock` contexts of RD-01 (TASK-015); the backup store's usage on the system status (TASK-002 asks the Owner; TASK-039); the shop's name and accent in the shell (TASK-010); the mechanism of T-23 within SCHEMA SCH-06 (TASK-006).
+- Four readings left to the Task that meets them (TASK_PLAN section 7): the `labels` and `stock` contexts of RD-01 (TASK-015); the backup store's usage on the system status (the Owner's answer in TASK-002: shown, as a fifth item, pending gate GATE-CC1; TASK-039); the shop's name and accent in the shell (TASK-010); the mechanism of T-23 within SCHEMA SCH-06 (TASK-006).
 - The logical schema exists (SCHEMA); no migration exists.
 - G1 proposals accepted by the Owner (D-075): the combined account's home on Stok without an OPEN session, no role switcher, Tunai preselected on the payment screen; the keyboard shortcuts and the 600 and 1024 CSS px breakpoints as provisional, verified in RF-4C in a desktop browser (KEY_SCREENS section 4) and still to be confirmed at gate DEVICES (DEVICE_VERIFICATION DVT-R4).
 - Accepted risks: the RF-1 safety bundle is on the same physical drive as the repository, a risk reduced by the SSD bundles and the push (D-027, D-065); no technical branch protection is configured on GitHub (D-065; whether to enable it is open for the Owner, D-076, OPEN_ITEMS N-08), and published content cannot be withdrawn — what was public before 6 October 2026 and everything on GitHub since the repository became public again, including the commits pushed while it was private (D-065, D-076); the client's domain and an old statement about the client's server in four published commits (N10-01, D-097); staging shares the production server (D-053); Owner lockout recovery needs a person with server access, and no account has a second factor (D-048, D-049); whoever holds a staff member's one-time link can act as that person until noticed (D-056); a checkout request still on its way to the server when its cash session is closed, corrected by an audited correction (D-088).
@@ -191,13 +193,13 @@ DATABASE:    logical schema only (SCHEMA); no migration; the local container hol
 AUTH:        LARAVEL_NATIVE; AICWDF-COMPAT-8; Google sign-in OFF (SECURITY_MODEL section 2)
 UI / UX:     gates P7-G1 (D-082), P7-G2 (D-086) and P7-G3 (D-087) APPROVED; the approved artifacts in docs/07-ux-design and docs/02-domain/GLOSSARY.md stay byte-identical, changed only by TASK-002 and TASK-047 with the Owner's approval by hash; routes of every control in docs/03-workflows/INTERACTION_CONTRACTS.md; V1 Indonesian only with translation keys from the first Task (D-050, ADR-005)
 HOSTING:     Cloudflare, VPS, Coolify; staging on the same server (D-053, ADR-003); backup off the server (ADR-010); release pipeline and environments (ADR-011); production and staging operated by a human operator, never an agent (D-088); server facts UNKNOWN
-TASKS:       50 Tasks approved (D-092): TODO 47, READY 2 (TASK-003, next on the critical path; TASK-002, parallel), DONE 1 (TASK-001, D-098); none in progress
+TASKS:       50 Tasks approved (D-092): TODO 47, READY 1 (TASK-003, next on the critical path), VERIFYING 1 (TASK-002, on its branch), DONE 1 (TASK-001, D-098)
 TESTS:       56 suites defined (ACCEPTANCE_SUITES), each with its owning and final-point Task (TRACEABILITY section 5); all NOT_RUN; TASK-001's command contract — static checks with their negative samples and smoke tests — PASS locally on 19 October 2026, again after the class-B review remediation, with the L1 suites also without network, and in CI on pull request #1 (run 39250580770) and on its merge into develop (run 39268427587)
 ```
 
 ## 9. Safe next action
 
-TASK-001 is `DONE` and merged into `develop` (section 1). Next, on the Owner's authorization: the D-098 bookkeeping commit on `develop` and its push with the publication guard; then the TASK-003 instruction, the next Task on the critical path. TASK-002 may be instructed beside it at any time.
+TASK-001 is `DONE` and merged into `develop` (section 1). Next, on the Owner's authorization: the D-098 bookkeeping commit on `develop` and its push with the publication guard; then the TASK-003 instruction, the next Task on the critical path. TASK-002 is `VERIFYING` on its branch, awaiting the planning agent's review and gate GATE-CC1; its worktree, the folder `bantukasir-task002`, is kept.
 
 If the repository differs from section 2 — a branch other than `develop`; a commit beyond `b212819` other than the D-098 bookkeeping commit; a staged file; or, before that commit, a modified tracked file other than its seven files: stop and report to the Owner.
 
