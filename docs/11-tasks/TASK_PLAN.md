@@ -179,6 +179,7 @@ With more than one executor the Owner may run Tasks of different lanes at the sa
 | OPEN_ITEMS T-23 | TASK-006; its consequences in TASK-013 (the dump) and TASK-038 (the cleanup) | Database enforcement of the 365-day retention of the security log |
 | OPEN_ITEMS T-24 | RESOLVED in RF-7 (D-090) | The deadline of N-12 now reads: before TASK-001 |
 | OPEN_ITEMS T-25 | A change control before TASK-039; TASK-047 or an earlier P7 change control | COPY_DECK section 22.2: statements that later decisions overtook, among them four system-status items instead of five in RELEASE_PROCESS and the contract of TASK-039 |
+| OPEN_ITEMS T-26 | TASK-008 | The error body of RT-07 never carries Laravel's English validation summary (AC-008-08) |
 | OPEN_ITEMS N-12 | Gate GATE-BRANCH | RESOLVED as to the model (D-092): `develop` for implementation, `main` for releases; the creation of `develop` needs the Owner's own authorization, before TASK-001 |
 | OPEN_ITEMS N-09, N-10 | Gate GATE-PUBLISH | Before the first push of implementation work, and so before TASK-001 is `DONE` |
 | OPEN_ITEMS N-04 | Gate GATE-P11 | RESOLVED (D-092): the complete AICWDF-4.3 text is not added to the repository; the binding subset stays in `docs/00-governance` |
