@@ -2,9 +2,9 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-4A under D-070 and, after the stop on finding F-03, D-071; corrected after the independent final review under D-072 to D-075; 11 October 2026 (Asia/Jakarta); amended for the Owner's payment-method decision Q38 under D-077 and D-079 (STATIC_QRIS removed), 17 October 2026 (Asia/Jakarta) |
+| Status | CURRENT — written in RF-4A under D-070 and, after the stop on finding F-03, D-071; corrected after the independent final review under D-072 to D-075; 11 October 2026 (Asia/Jakarta); amended for the Owner's payment-method decision Q38 under D-077 and D-079 (STATIC_QRIS removed), 17 October 2026 (Asia/Jakarta); gate row updated by TASK-002 (COPY_DECK finding F-01), 19 October 2026 (Asia/Jakarta) |
 | Phase | P7 — responsive and adaptive rules and the exact accessibility targets of REQ-UX-03 |
-| Gate | P7-G1, navigation and page structure (D-025): **artifacts ready for the Owner's review — NOT APPROVED**. Approval is a separate Owner decision that names the checkpoint commit and the hash of each artifact (D-070); for this document, that is the checkpoint containing the Q38 amendment (D-079) |
+| Gate | P7-G1, navigation and page structure (D-025): **APPROVED** by D-082, as committed in `d4c0594`. Revised by TASK-002 under change control (OPEN_ITEMS T-19, T-20; [COPY_DECK](COPY_DECK.md) section 22), whose package the Owner approves by the hash of each artifact at gate GATE-CC1 ([TASK_PLAN](../11-tasks/TASK_PLAN.md) section 3) |
 | Decisions | D-017, D-018, D-024, D-025, D-032, D-033, D-036, D-039, D-040, D-047, D-049, D-067 to D-075, D-077 |
 | Related | [USER_TASKS](USER_TASKS.md), [INFORMATION_ARCHITECTURE](INFORMATION_ARCHITECTURE.md), [NAVIGATION_CONTRACTS](NAVIGATION_CONTRACTS.md), [INTERACTION_INVENTORY](INTERACTION_INVENTORY.md), [UI_STATES](UI_STATES.md) |
 

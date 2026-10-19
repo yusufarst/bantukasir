@@ -2,9 +2,9 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-2 under D-041, 4 October 2026 (Asia/Jakarta); shop terms finalized in RF-4B under D-083, 17 October 2026 (Asia/Jakarta) |
+| Status | CURRENT — written in RF-2 under D-041, 4 October 2026 (Asia/Jakarta); shop terms finalized in RF-4B under D-083, 17 October 2026 (Asia/Jakarta); gate row updated by TASK-002 at the Owner's request (COPY_DECK finding F-01), 19 October 2026 (Asia/Jakarta) |
 | Phase | P2 — domain glossary; P7 — terminology (gate P7-G2) |
-| Gate | P7-G2, terminology and copy (D-025): **artifacts ready for the Owner's review — NOT APPROVED**. Approval is a separate Owner decision that names the RF-4B checkpoint commit and the hash of this document and of [COPY_DECK](../07-ux-design/COPY_DECK.md) (plan decision P-10, D-070) |
+| Gate | P7-G2, terminology and copy (D-025): **APPROVED** by D-086, with [COPY_DECK](../07-ux-design/COPY_DECK.md), as committed in `551b4eb`. Revised by TASK-002 under change control (COPY_DECK section 22), whose package the Owner approves by the hash of each artifact at gate GATE-CC1 ([TASK_PLAN](../11-tasks/TASK_PLAN.md) section 3) |
 | Map | [DOMAIN_MODEL](DOMAIN_MODEL.md); interface wording: [COPY_DECK](../07-ux-design/COPY_DECK.md) |
 
 One concept, one canonical English term, one Indonesian shop term. Repository documents, code identifiers and Task contracts use the English term. The interface uses the Indonesian term; the exact wording of every label, message and state is in [COPY_DECK](../07-ux-design/COPY_DECK.md), which uses these terms.
