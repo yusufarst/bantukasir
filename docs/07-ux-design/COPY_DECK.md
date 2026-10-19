@@ -48,11 +48,11 @@ This section is the localization contract that ADR-005 item 7 asks RF-4 to write
 | Sale and cash session numbers | As stored | 20261005-000123 | D-062 |
 | Months | Januari, Februari, Maret, April, Mei, Juni, Juli, Agustus, September, Oktober, November, Desember | — | D-018 |
 | Days | Senin, Selasa, Rabu, Kamis, Jumat, Sabtu, Minggu | — | — |
-| Durations | A number and a unit word | 60 menit; 30 detik | — |
+| Durations | A number and a unit word | 60 menit; 30 detik | CC-21 |
 | Counts | A number and the counted noun, no plural form | 3 produk; 12 baris | ADR-005 item 4 |
 | Percentage | One decimal with a decimal comma, directly followed by the percent sign | 32,0% | DESIGN_SYSTEM section 13; UXA-16 |
 
-Month and day names live under `ux.format.month.*` and `ux.format.day.*` (ADR-005 item 6). Formatting never depends on the browser's or the server's locale data.
+Month and day names live under `ux.format.month.*` and `ux.format.day.*`, and the unit words of durations under `ux.format.duration.minute` (menit) and `ux.format.duration.second` (detik) (ADR-005 item 6; CC-21). Formatting never depends on the browser's or the server's locale data.
 
 ### 1.4 Variance words
 
@@ -2004,6 +2004,7 @@ Every change of change-control batch 1, [TASK-002](../11-tasks/tasks/TASK-002-p7
 | CC-18 | INTERACTION_INVENTORY section 3 re-derived from its rows: 383 working, 49 of them disabled with a reason, 0 hidden by design, 2 not provided, 385 in all | INTERACTION_INVENTORY section 3 | Finding F-02 | D-087 |
 | CC-19 | A status check without an answer leaves the request in the state it was in | INTERACTION_INVENTORY UXI-055 and UXI-086; NAVIGATION_CONTRACTS UXP-006 | Finding F-05 | D-084 |
 | CC-20 | The coverage rechecked; the findings and later steps marked as applied or done | Sections 20 and 21 | The checks of section 20 kept true after CC-01 to CC-19 | D-082, D-086 |
+| CC-21 | The unit words of durations: `ux.format.duration.minute` "menit" and `ux.format.duration.second` "detik" | Section 1.3 | TASK-003 finding F-1: the durations of `ux.state.throttled`, `ux.state.session_warning` and `ux.announce.session_warning` need keyed unit words (section 1.1) | The Owner's approval of 19 October 2026 |
 
 ### 22.2 Left for a later change control
 
@@ -2017,3 +2018,4 @@ Read with the decisions named, as INTERACTION_CONTRACTS section 10 reads the row
 | The intro of INTERACTION_INVENTORY and INFORMATION_ARCHITECTURE section 14 still call the labels provisional until gate P7-G2 | Gate P7-G2 is approved; this deck prevails (section 1.5) | D-086 |
 | RELEASE_PROCESS section 4 item 4 and the contract of TASK-039 name four system-status items | Five items (CC-14) | The Owner's answer of 19 October 2026 |
 | DESIGN_SYSTEM section 13, INTERACTION_CONTRACTS sections 8, 11 and 12, DOCUMENT_CONTRACTS DC-04 and the previews' `BK_COPY_PROPOSED` call these texts proposals | After gate GATE-CC1 they are approved copy in this deck; DESIGN_SYSTEM and the previews are approved artifacts and stay byte-identical | D-087 |
+| `config.system_status.age` (`:durasi yang lalu`) | A unit above minutes (hours, days) needs its own keys, through change control before TASK-039 builds the item | TASK-003 finding F-1; CC-21 |
