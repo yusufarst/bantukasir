@@ -227,4 +227,22 @@ Given in the executor's session on 19 October 2026, verbatim:
 | `9b61d98ce11c56d28004bd5fbe68571ffa4775f6` | — | Its neutral references are in every rebuilt commit |
 | `cf2fac8c34cc2c57fefdd021d675c9146aad379b` | — | Its record is this section |
 
-The guard over the rebuilt branch, the push, the pull request and its CI are recorded in a later section of this file, after the push.
+The guard over the rebuilt branch, the push, the pull request and its CI are in section 11.5.
+
+### 11.5 Guard over the rebuilt branch, push, pull request and CI (19 October 2026)
+
+- **Validations and publication guard, third run (23:16)**, over the five commits `a30809f`, `7a37b9e`, `1af8473`, `84018a4` and `3c1abe8`. Every step was fail-closed and read its own exit code: 26 of 26 `PASS`.
+  - The validations of section 4, with the package checked at `1af8473` and at HEAD.
+  - The package of `1af8473` compared with that of the original `9b83d95`.
+  - The order of the rebuilt branch.
+  - The evidence and CURRENT_HANDOFF naming `1af8473` as the package commit.
+  - The repository's secret scan in `bantukasir-app:local`, with no network and read-only mounts, Gitleaks 8.30.1: tree and 5 commits, no leaks.
+  - Gitleaks with its default rules only: 5 commits, no leaks.
+  - The privacy and client-data check of every line that any commit adds (500 lines) and of the messages: 0 matches outside the baseline. The one match of the domain pattern is `sales.id`, a database column, and no local path is left.
+  - No binary file. The Owner's identity as author and committer of every commit. Messages with no trailer, no `Key: value` last line and no AI attribution.
+- **Push** without force: `refs/heads/task/TASK-002-p7-change-control-1` at `3c1abe870a9672f3b7c0f20c823cd95f931b723b`, a new branch on GitHub. `develop` (`fc0055b`) and `main` (`f7cecfe`) are unchanged.
+- **Pull request** #2, `develop` ← `task/TASK-002-p7-change-control-1`, titled "TASK-002 — P7 and copy change control, batch 1 (awaiting GATE-CC1)".
+  - Its body links the contract, this evidence, the hash table and the change list by absolute URL.
+  - No reviewer, label, auto-merge or AI attribution.
+- **CI on the pull request:** run 39284635263, `pull_request` on `3c1abe8`: `success`. Its job "Command contract" ran from 16:20:17Z to 16:22:06Z with every step green.
+- This section is added by a later commit. That commit has its own guard before its push, and its CI run is reported to the Owner.
