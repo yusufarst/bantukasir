@@ -73,6 +73,46 @@ final class FormatCasesTest extends TestCase
         }
     }
 
+    /**
+     * A-16: Format::cost() itself refuses a figure with more than six
+     * decimals, as the client does, whatever built the figure (BR-NUM-03).
+     */
+    public function test_a_cost_figure_with_more_than_six_decimals_is_refused(): void
+    {
+        foreach (['0.4999999', '-0.5000001', '1.0000000', '12000.0000001'] as $figure) {
+            try {
+                $text = Format::cost(BigDecimal::of($figure));
+                $this->fail("Format::cost({$figure}) gave {$text}");
+            } catch (NonCanonicalNumber) {
+                $this->addToAssertionCount(1);
+            }
+        }
+
+        $this->assertSame('Rp1', Format::cost(BigDecimal::of('0.500000')));
+        $this->assertSame('−Rp1', Format::cost(BigDecimal::of('-0.5')));
+    }
+
+    /**
+     * A-14: both formatters refuse an instant before 1964-01-01 00:00 in
+     * Asia/Jakarta, the scope of the client's fixed offset (R-12), whatever
+     * the instant's own time zone.
+     */
+    public function test_an_instant_before_1964_in_asia_jakarta_is_refused(): void
+    {
+        foreach (['1963-12-31T16:59:59.999999Z', '1963-12-31T23:59:59+07:00', '1963-12-31T23:59:59.999999+07:00', '1000-01-01T00:00:00Z'] as $instant) {
+            foreach ([fn () => Format::dateTime(CarbonImmutable::parse($instant)), fn () => Format::timeOfDay(CarbonImmutable::parse($instant))] as $format) {
+                try {
+                    $text = $format();
+                    $this->fail("{$instant} gave {$text}");
+                } catch (InvalidArgumentException) {
+                    $this->addToAssertionCount(1);
+                }
+            }
+        }
+
+        $this->assertSame('01 Januari 1964, 00.00.00', Format::dateTime(CarbonImmutable::parse('1964-01-01T00:00:00+07:00')));
+    }
+
     public function test_the_tables_dictionary_is_the_ux_format_texts_of_lang_id(): void
     {
         $formats = array_filter(Dictionary::forInterface(), fn (string $key): bool => str_starts_with($key, 'ux.format.'), ARRAY_FILTER_USE_KEY);

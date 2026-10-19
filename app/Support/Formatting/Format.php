@@ -5,6 +5,7 @@ namespace App\Support\Formatting;
 use App\Support\Numbers\CanonicalNumber;
 use App\Support\Numbers\Cost;
 use App\Support\Numbers\Money;
+use App\Support\Numbers\NonCanonicalNumber;
 use App\Support\Numbers\Quantity;
 use App\Support\Time\BusinessDate;
 use Brick\Math\BigDecimal;
@@ -27,6 +28,9 @@ final class Format
     private const string MINUS = "\u{2212}";
 
     private const string RUPIAH = 'Rp';
+
+    /** 1964-01-01 00:00 in Asia/Jakarta, 1963-12-31T17:00:00Z, in Unix seconds. */
+    private const int FIRST_INSTANT = -189414000;
 
     /**
      * Money: "Rp1.234.567"; a negative amount "−Rp2.000".
@@ -58,6 +62,12 @@ final class Format
     public static function cost(Cost|BigDecimal $figure): string
     {
         $figure = $figure instanceof Cost ? $figure->amount() : $figure;
+
+        // A cost figure has at most six decimals (BR-NUM-03), as the client
+        // refuses one with more (TASK-003 finding A-16).
+        if ($figure->getScale() > Cost::SCALE) {
+            throw NonCanonicalNumber::excessScale('cost figure');
+        }
 
         return self::money(Money::fromBigInteger($figure->toScale(0, RoundingMode::HalfUp)->toBigInteger()));
     }
@@ -106,15 +116,15 @@ final class Format
 
     /**
      * The number of a count, "5.000"; the counted noun is in the copy that
-     * holds the count (COPY_DECK section 1.3).
+     * holds the count (COPY_DECK section 1.3). A value that is not an int — a
+     * float above all, which coercive typing would truncate — is refused at
+     * run time (TASK-003 finding A-18).
+     *
+     * @param  int  $count  a whole number of 0 or more; any other value is refused at run time
      */
-    public static function count(int $count): string
+    public static function count(mixed $count): string
     {
-        if ($count < 0) {
-            throw new InvalidArgumentException('A count is never negative.');
-        }
-
-        return self::group((string) $count);
+        return self::group((string) self::wholeNumber($count, 'A count'));
     }
 
     /**
@@ -208,8 +218,19 @@ final class Format
         return $value;
     }
 
+    /**
+     * The instant in Asia/Jakarta. An instant before 1964-01-01 00:00 there,
+     * 1963-12-31T17:00:00Z, is refused, as the client refuses it: since then
+     * Asia/Jakarta has kept the fixed offset +07:00 that the client applies
+     * (R-12), and before it the time-zone database gives other offsets
+     * (TASK-003 finding A-14, reading R-31).
+     */
     private static function jakarta(DateTimeInterface $instant): CarbonImmutable
     {
+        if ($instant->getTimestamp() < self::FIRST_INSTANT) {
+            throw new InvalidArgumentException('An instant before 1964 in Asia/Jakarta is outside the formats (R-12).');
+        }
+
         return CarbonImmutable::instance($instant)->setTimezone(BusinessDate::TIME_ZONE);
     }
 
