@@ -28,5 +28,7 @@ final class FloatSamples
         $half = $amount / 2;
         $square = $amount ** 2;
         $rounded = round($amount);
+        $converted = \Brick\Math\BigDecimal::of('1.5')->toFloat();
+        $days = \Carbon\CarbonImmutable::now()->diffInDays();
     }
 }

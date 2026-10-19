@@ -70,7 +70,9 @@ final class PhpstanRulesTest extends TestCase
 
     public function test_floats_are_refused_in_exact_value_code_only(): void
     {
-        $this->assertSame([10, 12, 14, 19, 26, 27, 28, 29, 30], $this->linesOf('FloatSamples.php', 'bantukasir.floatInExactValue'));
+        // Lines 31 and 32: Brick Math's toFloat() and Carbon's diffInDays(),
+        // calls that return a float (TASK-003).
+        $this->assertSame([10, 12, 14, 19, 26, 27, 28, 29, 30, 31, 32], $this->linesOf('FloatSamples.php', 'bantukasir.floatInExactValue'));
         $this->assertSame([], $this->linesOf('FloatsOutsideScope.php', 'bantukasir.floatInExactValue'));
     }
 
