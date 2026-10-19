@@ -1,6 +1,7 @@
 import { createInertiaApp } from '@inertiajs/react';
 import type { ComponentType } from 'react';
 import { createRoot } from 'react-dom/client';
+import { installDictionary } from '@/lib/i18n';
 
 // Client-side Inertia, set up without the optional Inertia Vite plugin so that
 // no server-side rendering is generated (STACK_AND_MODULES section 1). Pages are
@@ -18,6 +19,9 @@ void createInertiaApp({
         return (await page()).default;
     },
     setup({ el, App, props }) {
+        // The interface dictionary arrives once, with the first page of a full
+        // page load (ADR-005 item 4); t() reads it from then on.
+        installDictionary(props.initialPage.props.dictionary);
         createRoot(el).render(<App {...props} />);
     },
 });

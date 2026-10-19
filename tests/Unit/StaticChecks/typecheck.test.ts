@@ -24,3 +24,23 @@ describe('the TypeScript typecheck', () => {
         expect(errorsOf('well-typed.ts')).toEqual([]);
     });
 });
+
+describe('the typecheck of t() (ADR-005 item 5, TASK-003)', () => {
+    it('refuses a key missing from lang/id and wrong placeholders', () => {
+        const errors = errorsOf('translation-keys.ts').map((diagnostic) => {
+            const line = diagnostic.file?.getLineAndCharacterOfPosition(diagnostic.start ?? 0).line ?? -1;
+
+            return `${line + 1}:${diagnostic.code}`;
+        });
+
+        // Line 5: a key missing from lang/id is not a TranslationKey (TS2345);
+        // line 6: the placeholders are missing (TS2554); line 7: a text
+        // without placeholders takes none (TS2554); line 8: a placeholder has
+        // no value (TS2345).
+        expect(errors).toEqual(['5:2345', '6:2554', '7:2554', '8:2345']);
+    });
+
+    it('passes a key of lang/id with exactly its placeholders', () => {
+        expect(errorsOf('translation-keys-valid.ts')).toEqual([]);
+    });
+});

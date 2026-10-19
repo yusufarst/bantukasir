@@ -1,0 +1,12 @@
+{
+    "description": "The replacement of :name placeholders (COPY_DECK section 1.2, ADR-005 item 4), run on the server through Laravel's translator by tests/Unit/Localization/PlaceholderCasesTest.php and on the client through t() by tests/Unit/Support/i18n.test.ts, so that both give the same text.",
+    "cases": [
+        { "case": "the variance of COPY_DECK section 1.4", "text": ":uang (:keterangan)", "replacements": { "uang": "−Rp2.000", "keterangan": "kurang" }, "expected": "−Rp2.000 (kurang)" },
+        { "case": "a placeholder used twice", "text": ":jumlah dari :jumlah", "replacements": { "jumlah": "3" }, "expected": "3 dari 3" },
+        { "case": "the longest placeholder wins", "text": ":jumlah, :jumlah_baris", "replacements": { "jumlah": "3", "jumlah_baris": "12" }, "expected": "3, 12" },
+        { "case": "capitalized and upper-case forms", "text": ":Nama; :NAMA; :nama", "replacements": { "nama": "budi" }, "expected": "Budi; BUDI; budi" },
+        { "case": "a replaced value is not searched again", "text": ":produk dan :jumlah", "replacements": { "produk": ":jumlah", "jumlah": "2" }, "expected": ":jumlah dan 2" },
+        { "case": "an unknown placeholder stays", "text": "Paling banyak :maks baris.", "replacements": { "jumlah": "3" }, "expected": "Paling banyak :maks baris." },
+        { "case": "a colon that is not a placeholder", "text": "Zona waktu: WIB (:waktu)", "replacements": { "waktu": "13.45" }, "expected": "Zona waktu: WIB (13.45)" }
+    ]
+}

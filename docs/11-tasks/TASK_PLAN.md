@@ -70,7 +70,7 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | [TASK-001](tasks/TASK-001-toolchain-ci.md) | Toolchain, repository conventions and CI | 1 | P | L | B | — | GATE-P11, GATE-BRANCH; before `DONE`: GATE-PUBLISH | `DONE` |
 | [TASK-002](tasks/TASK-002-p7-change-control-1.md) | P7 and copy change control, batch 1 | 1 | D | M | O | — | GATE-P11; before `DONE`: GATE-BRANCH, GATE-PUBLISH | `DONE` |
-| [TASK-003](tasks/TASK-003-kernel-localization.md) | Shared kernel, formatting and localization | 1 | P | M | A | TASK-001 | — | `READY` |
+| [TASK-003](tasks/TASK-003-kernel-localization.md) | Shared kernel, formatting and localization | 1 | P | M | A | TASK-001 | — | `VERIFYING` |
 | [TASK-004](tasks/TASK-004-database-foundation.md) | Database foundation, roles and test harness | 1 | P | L | A | TASK-001, TASK-003 | — | `TODO` |
 | [TASK-005](tasks/TASK-005-design-system.md) | Design system and frontend foundation | 1 | P | L | B | TASK-002, TASK-003 | GATE-CC1 | `TODO` |
 | [TASK-006](tasks/TASK-006-authentication.md) | Authentication, one-time links, audit and security log | 2 | P | L | A | TASK-004, TASK-005 | — | `TODO` |
@@ -119,7 +119,7 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-049](tasks/TASK-049-release-readiness.md) | Release readiness: staging, UAT and first installation | 10 | R | L | V | TASK-045, TASK-047, TASK-048 | G1, G2, G3, G4, DEVICES, TARGET, GATE-PUBLISH | `TODO` |
 | [TASK-050](tasks/TASK-050-production-pilot.md) | Production release, cutover and pilot acceptance | 10 | R | L | V | TASK-049 | RELEASE, GATE-PUBLISH, G4 | `TODO` |
 
-Totals: `TODO` 47; `READY` 1; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 2; `SUPERSEDED` 0.
+Totals: `TODO` 47; `READY` 0; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 1; `DONE` 2; `SUPERSEDED` 0.
 
 ## 5. Implementation sequence
 
@@ -179,6 +179,7 @@ With more than one executor the Owner may run Tasks of different lanes at the sa
 | OPEN_ITEMS T-23 | TASK-006; its consequences in TASK-013 (the dump) and TASK-038 (the cleanup) | Database enforcement of the 365-day retention of the security log |
 | OPEN_ITEMS T-24 | RESOLVED in RF-7 (D-090) | The deadline of N-12 now reads: before TASK-001 |
 | OPEN_ITEMS T-25 | A change control before TASK-039; TASK-047 or an earlier P7 change control | COPY_DECK section 22.2: statements that later decisions overtook, among them four system-status items instead of five in RELEASE_PROCESS and the contract of TASK-039 |
+| OPEN_ITEMS T-26 | TASK-008 | The error body of RT-07 never carries Laravel's English validation summary (AC-008-08) |
 | OPEN_ITEMS N-12 | Gate GATE-BRANCH | RESOLVED as to the model (D-092): `develop` for implementation, `main` for releases; the creation of `develop` needs the Owner's own authorization, before TASK-001 |
 | OPEN_ITEMS N-09, N-10 | Gate GATE-PUBLISH | Before the first push of implementation work, and so before TASK-001 is `DONE` |
 | OPEN_ITEMS N-04 | Gate GATE-P11 | RESOLVED (D-092): the complete AICWDF-4.3 text is not added to the repository; the binding subset stays in `docs/00-governance` |
