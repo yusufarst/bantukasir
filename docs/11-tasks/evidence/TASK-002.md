@@ -78,6 +78,12 @@ Belum Terverifikasi: pemakaian tidak dapat diukur
 Sumber: ADR-010 item 11, REQ-OPS-04
 ```
 
+### 2.3 The Owner's approval of the duration keys
+
+Given to the planning agent on 19 October 2026, after the package of section 5.3, to resolve finding F-1 of TASK-003, and carried into the executor's instruction "TASK-002 remediation: CC-21, the unit words of durations", which the Owner sent with his authorization. His words, verbatim: "Owner sudah menyetujui penambahan dua kunci durasi "menit" dan "detik" untuk menyelesaikan F-1 TASK-003."
+
+Applied as CC-21 of COPY_DECK section 22.1: `ux.format.duration.minute` "menit" and `ux.format.duration.second` "detik" in section 1.3, and in section 22.2 the reading that a unit above minutes for `config.system_status.age` needs its own keys before TASK-039 (section 12).
+
 ## 3. The package (contract items 1, 3, 4 and 5)
 
 Built on 19 October 2026 between 22:13 and 22:36 and committed in two change commits: `7a37b9e916f1c6d0ab3964926efb4de4d69b5fdf` ("TASK-002: apply change-control batch 1 to COPY_DECK, GLOSSARY, the P7-G1 documents and OPERATIONS_RUNBOOK"), parent `a30809ffc995cbe576b009cbff169639c6ccd200`, the start commit; and `1af8473008496b754b811d3ca7a88d82de09f146` ("TASK-002: cite a source decision for every change-control entry of COPY_DECK"), which the self-review added because entry CC-20 cited no decision (AC-002-03). The package commit is `1af8473`.
@@ -115,9 +121,30 @@ Run by the implementation executor on 19 October 2026, with Node.js 24.18.0 on t
 
 ## 5. Hashes at the package commit (contract item 6; AC-002-05)
 
-Measured on `1af8473008496b754b811d3ca7a88d82de09f146` on 19 October 2026 at 22:36: the blob that the commit records for the path, its size and the SHA-256 of its bytes. The working-tree files are byte-identical to these blobs.
+The package commit is `776b9cf9f41d79088be66515afdee9c5e0b10864` ("TASK-002: add the unit words of durations (CC-21)"), parent `885ff6361b174a04860aeafc8358edbb243eaa23`, which changes COPY_DECK alone (section 12). Measured on it on 20 October 2026 at 00:25: the blob that the commit records for the path, its size and the SHA-256 of its bytes. Seven of the eight artifacts keep the values they had at `1af8473`; COPY_DECK carries new values. The working-tree files are byte-identical to these blobs.
 
 ### 5.1 Changed artifacts: the package for gate GATE-CC1
+
+| Document | Approved by | Git blob at `776b9cf` | Bytes | SHA-256 of the committed content | Against `1af8473` |
+| --- | --- | --- | --- | --- | --- |
+| `docs/07-ux-design/USER_TASKS.md` | D-082 | `46578840baf44fdfc20d464a93441c411a9c136a` | 19,281 | `07016e5c55eb2fcb01a932bf17c40d8ebeae51394cb8c102327bead5cc7f595b` | Unchanged |
+| `docs/07-ux-design/INFORMATION_ARCHITECTURE.md` | D-082 | `a8c5656d2924a08a97c2e0d1c9a21ddd26f4f75a` | 67,912 | `616c4fb33762a5f05329d77b7fcff9074eaa64f8592202775f21e11825fd8a46` | Unchanged |
+| `docs/07-ux-design/NAVIGATION_CONTRACTS.md` | D-082 | `660792f9ee804e0d82221655e365f83bf4b980b5` | 41,838 | `61a472e7263c29370aec40f779aa820d44007e30aa00027e455800f3b84d7be3` | Unchanged |
+| `docs/07-ux-design/INTERACTION_INVENTORY.md` | D-082 | `e9ff14be7c70d32ae5905225e09362bc769527fa` | 171,475 | `3fefb52eea0a6694d0666ebf9e4d921b8a41cfaeb71efe8c21a44eaceaad96d9` | Unchanged |
+| `docs/07-ux-design/UI_STATES.md` | D-082 | `99108c805260526ddb6233dc633b439aab8c63ae` | 39,768 | `b64424a625b128cfbba5befde317703a6c5eaa5886ad475b85a429bfc20266db` | Unchanged |
+| `docs/07-ux-design/ADAPTIVE_AND_ACCESSIBILITY.md` | D-082 | `aaee7044e1f7a8e682ad05d5f4bbb947736cf744` | 18,394 | `54f8e206090a02847db3f802bb290f3665c89b1816ae1fdc6da01ae8a8045f70` | Unchanged |
+| `docs/02-domain/GLOSSARY.md` | D-086 | `fa002797363d01a1071f3c2bbf9c332839e02497` | 27,435 | `524afefbd639b1d5d71b28197eefe2d0ffc569381e4dbdac4a531dd36a295bf8` | Unchanged |
+| `docs/07-ux-design/COPY_DECK.md` | D-086 | `8002d473a27a7d8fa7118d3e9b3db14739c3686f` | 197,581 | `e3c389f224729849eee91a102b1d6c8da39d09444287328bc34b6b9dec450cd8` | Changed by CC-21 |
+
+OPERATIONS_RUNBOOK at `776b9cf` is unchanged: blob `ab503187e08e98d0d785896aa27db6eb6de0ca56` (section 5.3).
+
+### 5.2 Unchanged approved artifacts
+
+Each is byte-identical at `1af8473` and at `776b9cf` to the blob, size and SHA-256 that D-087 approved: `docs/07-ux-design/DESIGN_SYSTEM.md` (`35f756723d6518359daf24a9b78f33e250360780`), `docs/07-ux-design/KEY_SCREENS.md` (`2bbb7513f161bab13fe4144c1901fe0bae6a3f15`) and the 19 files of `docs/07-ux-design/previews/`, whose tree is `61f48f92fba53111738b66ec3330beb8431a9f57` as at `7318322`. D-087's table holds every value, unchanged.
+
+### 5.3 The package at `1af8473`, superseded by CC-21
+
+Measured on `1af8473008496b754b811d3ca7a88d82de09f146` on 19 October 2026 at 22:36, in the same way. Superseded by CC-21: the package for gate GATE-CC1 is now that of section 5.1.
 
 | Document | Approved by | Git blob at `1af8473` | Bytes | SHA-256 of the committed content |
 | --- | --- | --- | --- | --- |
@@ -132,15 +159,11 @@ Measured on `1af8473008496b754b811d3ca7a88d82de09f146` on 19 October 2026 at 22:
 
 OPERATIONS_RUNBOOK is not an approved P7 artifact; its section 5 changes only by the Owner's answer. The seven other documents have the same values at `7a37b9e`; COPY_DECK there had blob `35f91e41fe0f2b20f6b67cb247244c23a9c363a9`, 196,876 bytes, SHA-256 `ebb09727da31612dce7bd1a79bdef9ad806767d9278fae783495598b7d46d54f`, superseded by the correction. For the record, OPERATIONS_RUNBOOK at `1af8473`: blob `ab503187e08e98d0d785896aa27db6eb6de0ca56`, 21,733 bytes, SHA-256 `2694267a8335e391de22b98f67901b762c279494e397187678c26b5d8fed2797`.
 
-### 5.2 Unchanged approved artifacts
-
-Each is byte-identical at `1af8473` to the blob, size and SHA-256 that D-087 approved: `docs/07-ux-design/DESIGN_SYSTEM.md` (`35f756723d6518359daf24a9b78f33e250360780`), `docs/07-ux-design/KEY_SCREENS.md` (`2bbb7513f161bab13fe4144c1901fe0bae6a3f15`) and the 19 files of `docs/07-ux-design/previews/`, whose tree is `61f48f92fba53111738b66ec3330beb8431a9f57` as at `7318322`. D-087's table holds every value, unchanged.
-
 ## 6. Proposed record of the approval (D-099)
 
 A proposal in the form of D-082, D-086 and D-087, for the Owner's decision. It is not in DECISIONS and approves nothing until the Owner gives it (contract item 6).
 
-> **D-099 — Approval of gate GATE-CC1, P7 and copy change control batch 1.** The Owner approves the package of TASK-002 as committed in `1af8473008496b754b811d3ca7a88d82de09f146` on `task/TASK-002-p7-change-control-1`: the eight documents of section 5.1, each named by its Git blob, size and SHA-256; the Owner's answers recorded in section 2 (the dedicated close-refusal message `ux.state.recount.unresolved_checkouts` with its wording; the backup store's usage as the fifth system-status item; GLOSSARY's gate row updated); the change list of COPY_DECK section 22.1, CC-01 to CC-20. DESIGN_SYSTEM, KEY_SCREENS and the previews stay as D-087 approved them. The texts added become approved copy (COPY_DECK section 1.1), and OPEN_ITEMS T-19 and T-20 are resolved, except the shortcuts and breakpoints of gate DEVICES (TASK-047, gate GATE-CC2). Before the merge into `develop`, `develop` is merged into the branch and every artifact is measured again on the commit to be merged; a value that differs is approved again (EXECUTION_CONTEXT EXC-37; contract item 7).
+> **D-099 — Approval of gate GATE-CC1, P7 and copy change control batch 1.** The Owner approves the package of TASK-002 as committed in `776b9cf9f41d79088be66515afdee9c5e0b10864` on `task/TASK-002-p7-change-control-1`: the eight documents of section 5.1, each named by its Git blob, size and SHA-256; the Owner's answers recorded in section 2 (the dedicated close-refusal message `ux.state.recount.unresolved_checkouts` with its wording; the backup store's usage as the fifth system-status item; GLOSSARY's gate row updated; the unit words of durations, section 2.3); the change list of COPY_DECK section 22.1, CC-01 to CC-21. DESIGN_SYSTEM, KEY_SCREENS and the previews stay as D-087 approved them. The texts added become approved copy (COPY_DECK section 1.1), and OPEN_ITEMS T-19 and T-20 are resolved, except the shortcuts and breakpoints of gate DEVICES (TASK-047, gate GATE-CC2). Before the merge into `develop`, `develop` is merged into the branch and every artifact is measured again on the commit to be merged; a value that differs is approved again (EXECUTION_CONTEXT EXC-37; contract item 7).
 
 ## 7. Readings and technical choices
 
@@ -156,7 +179,7 @@ A proposal in the form of D-082, D-086 and D-087, for the Owner's decision. It i
 
 | Criterion | Status | Evidence |
 | --- | --- | --- |
-| AC-002-01 | `PASS`, with the Owner's approval of the texts pending at gate GATE-CC1 | Every proposal of DESIGN_SYSTEM section 13 and INTERACTION_CONTRACTS section 11 and every DC-04 header has its key, text and source in COPY_DECK (CC-03 to CC-12); the percent format is in section 1.3; key coverage `PASS` (section 4). The texts are approved copy only when the Owner approves the package by hash |
+| AC-002-01 | `PASS`, with the Owner's approval of the texts pending at gate GATE-CC1 | Every proposal of DESIGN_SYSTEM section 13 and INTERACTION_CONTRACTS section 11 and every DC-04 header has its key, text and source in COPY_DECK (CC-03 to CC-12); the percent format is in section 1.3, and so are the unit words of durations that TASK-003 finding F-1 needs (CC-21, section 2.3); key coverage `PASS` (section 4). The texts are approved copy only when the Owner approves the package by hash |
 | AC-002-02 | `PASS` | Every row of INTERACTION_CONTRACTS section 10 applied (CC-17); F-01, F-02, F-03 and F-05 applied, F-04 recorded as needing no change because D-086 closed it (CC-02); INTERACTION_INVENTORY section 3 re-derived from its rows (CC-18; section 4) |
 | AC-002-03 | `PASS` | No page, control, state, navigation path, business rule or visual design beyond those rows: the close-refusal message is a second text of UXS-19, the fifth status item is the Owner's answer, and no P7-G3 artifact changed (section 5.2); every entry of COPY_DECK section 22.1 cites a decision (after `1af8473`) |
 | AC-002-04 | `PASS` | Both answers verbatim in section 2 and applied: CC-13, CC-14; GLOSSARY's gate row at the Owner's request (CC-01) |
@@ -246,3 +269,38 @@ The guard over the rebuilt branch, the push, the pull request and its CI are in 
   - No reviewer, label, auto-merge or AI attribution.
 - **CI on the pull request:** run 39284635263, `pull_request` on `3c1abe8`: `success`. Its job "Command contract" ran from 16:20:17Z to 16:22:06Z with every step green.
 - This section is added by a later commit. That commit has its own guard before its push, and its CI run is reported to the Owner.
+
+## 12. Remediation CC-21: the unit words of durations (20 October 2026)
+
+By the Owner's instruction "TASK-002 remediation: CC-21, the unit words of durations", prepared by the planning agent on 19 October 2026 and sent by the Owner with his authorization, which limits the work to this worktree, two local commits, the publication guard, one non-force push of the Task branch and watching the CI of pull request #2. Executor: Claude Opus 5.5 (`claude-opus-5-5`), effort High as the instruction names it; the desktop app's record of the session shows model `claude-opus-5-5` and effort `high`; a new session dedicated to this remediation. Session start: 20 October 2026 at 00:17.
+
+### 12.1 Preflight
+
+Read-only, before any edit. HEAD `885ff6361b174a04860aeafc8358edbb243eaa23` on `task/TASK-002-p7-change-control-1`; nothing staged, modified or untracked in the worktree; `git ls-remote origin`: the branch and `refs/pull/2/head` at `885ff63`, `develop` at `fc0055b49e9d179b5b7ed7d766121150dbd5bf66`. At HEAD the eight package artifacts had exactly the blobs, sizes and SHA-256 of section 5.3, and the 21 unchanged approved artifacts the values of D-087 (section 5.2), the previews' tree `61f48f92fba53111738b66ec3330beb8431a9f57` with 19 files: `PASS`.
+
+### 12.2 The change
+
+COPY_DECK only, as the instruction's section 2 states: in section 1.3 the Source of the Durations row reads `CC-21`, its example "60 menit; 30 detik" kept; the sentence under that table names `ux.format.duration.minute` (menit) and `ux.format.duration.second` (detik); entry CC-21 appended to section 22.1; the row of `config.system_status.age` appended to section 22.2. No statement of sections 20 and 21 became untrue — neither counts or lists the format keys, and section 21.2 already sends a missing text to change control — so both are unchanged. The Status, Gate and Decisions rows are unchanged. Committed alone in `776b9cf9f41d79088be66515afdee9c5e0b10864`, "TASK-002: add the unit words of durations (CC-21)", parent `885ff63`, at 00:25, the new package commit.
+
+Sections 3 and 4 record the package as first built and checked at `1af8473`; section 5 and this section supersede them for the package commit.
+
+### 12.3 Checks (contract section 7; AC-002-05, AC-002-06)
+
+Node.js 24.18.0 on the host and Git 2.55.0.windows.3, in the worktree, with the executor's own scripts kept outside the repository. Each check script exits non-zero on any failure, and each passed before its commit. The steps around the commits were written under `set -euo pipefail` in the shell tool's top-level command, which, as found later in the session, does not stop there on a failure; so every assertion of those steps was run again, read-only, from a script file in which a failure stops the run, before the guard: 27 of 27 `PASS`.
+
+| Check | Result |
+| --- | --- |
+| Links and heading anchors, table shape, no CR byte, no trailing whitespace, a final newline, no other control character, on COPY_DECK | `PASS` — 0 defects, before the commit |
+| The checker's negative sample: a CR, a trailing space, a row with an extra cell, a broken link and a broken anchor | `PASS` — all five reported |
+| Key coverage, as in section 4 | `PASS` — 14 names found, 13 copy keys present, `sales.id` a database column; `ux.format.duration.minute` and `ux.format.duration.second` present literally |
+| Only COPY_DECK in the change: the working tree before the commit, the index before the commit, and `git diff 885ff63 776b9cf` | `PASS` |
+| Hashes at `776b9cf`: the seven other package artifacts equal to their `1af8473` values; COPY_DECK different; the 21 unchanged approved artifacts equal to D-087; the previews' tree and its 19 files | `PASS` (section 5) |
+| OPERATIONS_RUNBOOK at `776b9cf` | Unchanged, blob `ab503187e08e98d0d785896aa27db6eb6de0ca56` |
+
+### 12.4 Bookkeeping
+
+This section, sections 2.3, 5, 6 and 8 of this file and TASK-002's own facts in CURRENT_HANDOFF, committed as "TASK-002: record the package hashes after CC-21". DECISIONS, OPEN_ITEMS and every other file are unchanged; D-099 is not recorded.
+
+### 12.5 Publication guard, push and CI
+
+Pending when this section was committed. The guard runs over the two commits of this remediation before the push, against the baseline of D-097 as D-098 extends it, as in section 11; the push is one non-force push of the Task branch; then the CI run of pull request #2. Their results are reported to the Owner in the executor's report, not in this commit.
