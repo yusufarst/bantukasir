@@ -2003,7 +2003,7 @@ Every change of change-control batch 1, [TASK-002](../11-tasks/tasks/TASK-002-p7
 | CC-17 | The rows of INTERACTION_CONTRACTS section 10 applied: UXI-025, UXI-029, UXI-055, UXI-058, UXI-076, UXI-086, UXI-103, UXI-149, UXI-150, UXI-227, UXI-228, UXI-291, UXI-292 and UXI-363, with the decisions applied in INTERACTION_INVENTORY section 5 and UXI-291 in its section 6; the UXP-006 row of NAVIGATION_CONTRACTS. UXI-244 and UXI-348 stay not provided | INTERACTION_INVENTORY; NAVIGATION_CONTRACTS | OPEN_ITEMS T-20 | D-069, D-048, D-084, D-086, D-087 |
 | CC-18 | INTERACTION_INVENTORY section 3 re-derived from its rows: 383 working, 49 of them disabled with a reason, 0 hidden by design, 2 not provided, 385 in all | INTERACTION_INVENTORY section 3 | Finding F-02 | D-087 |
 | CC-19 | A status check without an answer leaves the request in the state it was in | INTERACTION_INVENTORY UXI-055 and UXI-086; NAVIGATION_CONTRACTS UXP-006 | Finding F-05 | D-084 |
-| CC-20 | The coverage rechecked; the findings and later steps marked as applied or done | Sections 20 and 21 | This change | — |
+| CC-20 | The coverage rechecked; the findings and later steps marked as applied or done | Sections 20 and 21 | The checks of section 20 kept true after CC-01 to CC-19 | D-082, D-086 |
 
 ### 22.2 Left for a later change control
 
