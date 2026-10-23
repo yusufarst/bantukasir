@@ -452,6 +452,25 @@ run tick.sh
 expect_first "3 /effort high sets the executor bk-executor-high and keeps the review agents of the table" '^RUN start TASK-004 agent=bk-executor-high review=bk-reviewer-xhigh verify=bk-reviewer-high effort=high '
 if [ -z "$(stget owner.effortOverride)" ]; then expect_out "3 the /effort override is then cleared and its source named" "^Effort: high, from the Owner's /effort comment, issue comment 601$"; else failc "3 the /effort override is then cleared and its source named" "$OUT"; fi
 
+# A tick interrupted after the marker merge.lastPr and before the evidence:
+# the merge is verified again, not taken as recorded.
+merge_setup
+M="$(simulate_merge "$OEMAIL")"
+merged_fixtures "$M" completed success
+stset merge.lastPr 7
+run tick.sh
+first | grep -q '^RUN start TASK-004 ' && [ "$(stget merge.lastSha)" = "$M" ] && [ "$(stget merge.prHead)" = "$HEADSHA" ] && [[ "$(stget merge.developCiRun)" =~ ^[0-9]+$ ]] && printf '%s\n' "$OUT" | grep -q "squash commit $M on develop" && pass "3 a marker without its evidence gives a new verification, and the delegation names the verified merge" || failc "3 a marker without its evidence gives a new verification" "$OUT"
+merge_setup
+M="$(simulate_merge "$OEMAIL")"
+merged_fixtures "$M" completed success
+stset merge.lastSha "$M"
+stset merge.prHead "$HEADSHA"
+stset merge.developCiRun 42
+stset merge.lastPr 7
+stset owner.stopAfterMerge 1
+run tick.sh
+expect_first "3 a recorded merge with the Owner's /stop pending gives STOPPED OWNER_STOP, not a new Task" '^STOPPED OWNER_STOP '
+
 # ---------------------------------------------------------------- 4. tick, lock and liveness
 setup
 g switch -q -c task/TASK-004-database-foundation
@@ -581,6 +600,13 @@ task_pr
 : > "$FIX/gh/issue_comments_7"
 run tick.sh
 if [ "$(stget pr.number)" = 7 ] && grep -q RECONSTRUCTED "$SD/log"; then expect_first "6 no state with one open loop pull request is reconstructed" '^NOOP AWAIT_MERGE pr=7$'; else failc "6 no state with one open loop pull request is reconstructed" "$OUT"; fi
+rm -rf -- "$SD"
+fx_comments issue_comments_7 801 yusufarst "/stop"
+run tick.sh
+if [ "$(stget pr.number)" = 7 ] && [ "$(stget loop.phase)" = STOPPED ]; then expect_first "6 a reconstruction over a comment of the Owner gives STOPPED STATE_RECONSTRUCTED" '^STOPPED STATE_RECONSTRUCTED #7 holds 1 comment'; else failc "6 a reconstruction over a comment of the Owner gives STOPPED STATE_RECONSTRUCTED" "$OUT"; fi
+rm -rf -- "$SD"
+: > "$FIX/gh/issue_comments_7"
+run tick.sh
 : > "$CL/.git/index.lock"
 run tick.sh
 o1="$(first)"

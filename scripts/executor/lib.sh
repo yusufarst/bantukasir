@@ -338,11 +338,15 @@ gh_get() { gh_call get gh api --method GET "$@"; }
 max_id() { printf '%s\n' "$1" | awk -F'|' 'function gt(a, b) { return length(a) > length(b) || (length(a) == length(b) && a > b) } BEGIN { m = "0" } $1 ~ /^[0-9]+$/ && gt($1, m) { m = $1 } END { print m }'; }
 # adopt_state <pr> <branch> <head>: AWAIT_MERGE for that pull request, with
 # the highest existing comment identifiers (state.sh adopt, tick.sh step 4).
+# It sets ADOPT_OWNER_COMMENTS to the number of the Owner's comments that
+# those identifiers pass over: a reconstruction stops on any for his
+# reconciliation, since a lost state may not have processed them.
 adopt_state() {
     local pr="$1" br="$2" head="$3" ic rc rv kind
     ic="$(gh_issue_comments "$pr")" || return 1
     rc="$(gh_review_comments "$pr")" || return 1
     rv="$(gh_reviews "$pr")" || return 1
+    ADOPT_OWNER_COMMENTS="$(printf '%s\n' "$ic" "$rc" "$rv" | awk -F'|' -v o="$OWNER_LOGIN" '$1 ~ /^[0-9]+$/ && $2 == o && $3 != "" { n++ } END { print n + 0 }')"
     case "$br" in ops/*) kind=ops ;; *) kind=task ;; esac
     st_set loop.phase AWAIT_MERGE
     st_set pr.number "$pr"

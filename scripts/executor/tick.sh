@@ -315,21 +315,32 @@ verify_merge() {  # pr merge-sha head-sha
     prci="$(merge_ci_runs "$p" pull_request || echo unknown)"
     acc=""
     [ "$(st_get merge.acceptedSha)" = "$m" ] && acc="$(st_get merge.acceptedByOwner)"
-    st_set merge.lastPr "$pr"
+    # The evidence first and the marker merge.lastPr last, so that a tick
+    # interrupted in between finds no marker and verifies the merge again.
     st_set merge.lastSha "$m"
     st_set merge.prHead "$p"
     st_set merge.kind "$(st_get task.kind)"
     st_set merge.task "$(st_get task.id)"
     st_set merge.prCiRun "${prci#PASS }"
     st_set merge.developCiRun "${ci#PASS }"
+    st_set merge.lastPr "$pr"
     st_unset merge.acceptedByOwner
     st_unset merge.acceptedSha
     st_unset merge.pendingSha
     log_event "MERGE_VERIFIED pr=$pr merge=$m head=$p ci=${ci#PASS }${acc:+ accepted by the Owner: $acc}"
+    merge_done "$pr"
+}
+# merge_recorded <pr> <merge-sha> <head-sha>: the marker and the evidence of a
+# verified merge of that pull request are all in the state.
+merge_recorded() {
+    [ "$(st_get merge.lastPr)" = "$1" ] && [ "$(st_get merge.lastSha)" = "$2" ] && [ "$(st_get merge.prHead)" = "$3" ] && is_int "$(st_get merge.developCiRun)"
+}
+# merge_done <pr>: after a verified merge, the Owner's /stop, otherwise SELECT.
+merge_done() {
     if [ "$(st_get owner.stopAfterMerge)" = 1 ]; then
         st_unset owner.stopAfterMerge
         st_set loop.phase SELECT
-        stopped OWNER_STOP "after the merge of #$pr, by the Owner's /stop"
+        stopped OWNER_STOP "after the merge of #$1, by the Owner's /stop"
     fi
     st_set loop.phase SELECT
     phase_select
@@ -361,10 +372,7 @@ phase_await() {
         noop AWAIT_MERGE "pr=$pr"
     fi
     [ "$merged" = true ] || stopped PR_CLOSED "#$pr was closed without a merge"
-    if [ "$(st_get merge.lastPr)" = "$pr" ]; then
-        st_set loop.phase SELECT
-        phase_select
-    fi
+    if merge_recorded "$pr" "$msha" "$hsha"; then merge_done "$pr"; fi
     verify_merge "$pr" "$msha" "$hsha"
 }
 
@@ -522,6 +530,7 @@ if [ -z "$PHASE" ]; then
             adopt_state "$rn" "$rref" "$rsha" || gh_unavailable "comments of #$rn"
             log_event "RECONSTRUCTED pr=$rn branch=$rref head=$rsha"
             PHASE=AWAIT_MERGE
+            [ "$ADOPT_OWNER_COMMENTS" = 0 ] || stopped STATE_RECONSTRUCTED "#$rn holds $ADOPT_OWNER_COMMENTS comment(s) of the Owner that the lost state may not have processed; reconcile them, then resume"
         else
             stopped NOT_INITIALIZED "no state; open pull request #$rn does not match the local branch $rref"
         fi

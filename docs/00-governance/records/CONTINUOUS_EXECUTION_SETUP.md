@@ -234,3 +234,22 @@ By the Owner's instruction, the test was changed in this pull request:
 `scripts/checks/npm-audit.mjs` and `npm-audit-accepted.json` did not change. Checked on 23 October 2026 on the Owner's computer, with the report of `npm audit --json` given to the check through `--report` (the check cannot start npm itself on Windows, which needs a shell for `npm.cmd`): `braces` 3.0.3 gives exit 0, the failure seen in CI; `lodash` 4.17.15 gives exit 1 and three lines matching the new assertion. The test itself runs only in CI's container.
 
 Not changed, and for the Owner: [TOOLCHAIN](../TOOLCHAIN.md) and CURRENT_HANDOFF record that the shadcn/ui CLI is not installed because of this advisory, for TASK-005; that ground no longer holds.
+
+### 8.3 Third round, at `151933c`
+
+The automated review of `151933c` raised two P2 findings, fixed by the Owner's instruction "Remediasi terbatas PR #4 — HEAD 151933c", each edit under `scripts/executor/` approved at its own prompt.
+
+| Finding | Defect | Fix |
+| --- | --- | --- |
+| P2, `tick.sh` | `verify_merge` wrote the marker `merge.lastPr` first and the evidence after it, and `phase_await` took `merge.lastPr` alone as proof of a recorded merge. A tick interrupted in between left the marker without its evidence, or with the previous merge's, and the next tick selected the next Task, whose CE-50 record would name wrong evidence | The evidence is written first and the marker last. `merge_recorded` accepts a merge as recorded only when the marker, the merge commit, the pull request's head and the CI run on `develop` all match; otherwise the merge is verified again. Both paths end in `merge_done`, so the Owner's pending `/stop` is honoured after a recorded merge as after a verified one |
+| P2, `lib.sh` | A reconstruction of a lost state (tick step 4) set the comment cursors to the highest identifiers, so an Owner's change request, `/stop` or `/effort` posted before the state was lost and not yet processed was never acted on | `adopt_state` counts the Owner's comments that the cursors pass over. A reconstruction that passes over any gives `STOPPED STATE_RECONSTRUCTED`, and the Owner reconciles them, by a new comment where one is still needed, then resumes. The Owner's own `state.sh adopt` keeps its behaviour |
+
+Regression tests in `selftest.sh`:
+
+- Case 3: a state holding the marker of #7 without its evidence gives a new verification, `RUN start`, and the merge commit, head and CI run recorded and named in the delegation.
+- Case 3: a recorded merge with the Owner's `/stop` pending gives `STOPPED OWNER_STOP`, not a new Task.
+- Case 6: a reconstruction over an Owner's `/stop` comment gives `STOPPED STATE_RECONSTRUCTED #7 holds 1 comment …`.
+
+Not changed: inside `merge_done`, a tick interrupted after it clears `owner.stopAfterMerge` and before it records `OWNER_STOP` still loses that `/stop`; the window is the code's as before, and outside these findings.
+
+The self-test after the fixes: exit 0, `SUMMARY 170 passed, 0 failed`, 641 s. Read against the code at `151933c`, the three new assertions fail there: the marker alone led to `RUN start` without the evidence, the shortcut went to `SELECT` past the pending `/stop`, and the reconstruction gave `NOOP AWAIT_MERGE`. The self-test was not run against that code. The permission rules did not change, so the 84 permission probes were not repeated.
