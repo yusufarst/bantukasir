@@ -220,3 +220,17 @@ Regression tests in `selftest.sh`:
 - Case 12: with only another application's successful check run on the commit, `wait-ci` gives `CI PENDING`. The fixtures of the existing `wait-ci` cases now name the check run `Command contract`, as GitHub does, and the PASS case also holds another application's check run.
 
 The self-test after the fixes: exit 0, `SUMMARY 167 passed, 0 failed`, 625 s. Read against the code at `0bbda10`, the two new assertions of refusal and pending fail there: that `commit.sh` committed the extra path, and that `wait-ci` printed `CI PASS`. The self-test was not run against that code. The permission rules did not change, so the 84 permission probes were not repeated.
+
+### 8.2 The npm audit's network test, at `194daa8`
+
+CI at `194daa8` failed twice, the second time after the one re-run of CE-42, in `npm run lint`: `tests/Network/npm-audit.test.ts` expected the audit of a sample lockfile with `braces` 3.0.3 to fail on the high advisory GHSA-vfj7-8cjw-p6xm, and the audit passed. GitHub withdrew that advisory on 23 October 2026 at 12:53 UTC ("not a practically exploitable vulnerability"), and the registry's bulk advisory endpoint no longer reports anything for `braces` 3.0.3. The failure is outside this change, and it would fail any CI run with that test, `develop` included.
+
+By the Owner's instruction, the test was changed in this pull request:
+
+- The sample is `lodash` 4.17.15, for which the registry reports three high advisories (GHSA-35jh-r3h4-6jhm, GHSA-p6mc-m468-83gw, GHSA-r5fr-rjxr-66jc), so the proof does not rest on one advisory.
+- The assertion requires exit status 1 and a line `lodash: GHSA-… (high|critical)`, not one advisory's identifier.
+- The check runs with an empty list of accepted advisories (`--accepted`), so the project's own acceptances cannot hide the proof.
+
+`scripts/checks/npm-audit.mjs` and `npm-audit-accepted.json` did not change. Checked on 23 October 2026 on the Owner's computer, with the report of `npm audit --json` given to the check through `--report` (the check cannot start npm itself on Windows, which needs a shell for `npm.cmd`): `braces` 3.0.3 gives exit 0, the failure seen in CI; `lodash` 4.17.15 gives exit 1 and three lines matching the new assertion. The test itself runs only in CI's container.
+
+Not changed, and for the Owner: [TOOLCHAIN](../TOOLCHAIN.md) and CURRENT_HANDOFF record that the shadcn/ui CLI is not installed because of this advisory, for TASK-005; that ground no longer holds.
