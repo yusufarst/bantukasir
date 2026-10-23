@@ -399,6 +399,9 @@ resume_state() {
     prev="$(st_get loop.prevPhase)"
     st_set loop.phase "${prev:-SELECT}"
     if [ -n "${1:-}" ]; then st_set_text owner.note "$1"; fi
+    # The Owner's resume after OWNER_STOP consumes his /stop, also when the
+    # tick that recorded the stop ended before it cleared the /stop.
+    [ "$(st_get loop.stopReason)" != OWNER_STOP ] || st_unset owner.stopAfterMerge
     st_unset loop.stopReason
     st_unset loop.stopDetail
     st_unset loop.prevPhase

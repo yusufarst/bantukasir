@@ -470,6 +470,23 @@ stset merge.lastPr 7
 stset owner.stopAfterMerge 1
 run tick.sh
 expect_first "3 a recorded merge with the Owner's /stop pending gives STOPPED OWNER_STOP, not a new Task" '^STOPPED OWNER_STOP '
+# Recovery: a tick killed in merge_done before OWNER_STOP is recorded keeps the
+# /stop; the next tick stops, and the Owner's resume then continues.
+merge_setup
+M="$(simulate_merge "$OEMAIL")"
+merged_fixtures "$M" completed success
+stset owner.stopAfterMerge 1
+run EXECUTOR_INTERRUPT=owner_stop tick.sh
+ok=0
+if [ "$(stget owner.stopAfterMerge)" = 1 ] && [ "$(stget loop.phase)" = AWAIT_MERGE ] && [ "$(stget merge.lastSha)" = "$M" ]; then
+    run tick.sh
+    if first | grep -q '^STOPPED OWNER_STOP ' && [ "$(stget loop.prevPhase)" = SELECT ] && [ -z "$(stget owner.stopAfterMerge)" ]; then
+        run state.sh resume
+        run tick.sh
+        first | grep -q '^RUN start TASK-004 ' && ok=1
+    fi
+fi
+[ "$ok" = 1 ] && pass "3 a tick killed before OWNER_STOP is recorded keeps the /stop: the next tick stops, the resume continues" || failc "3 a tick killed before OWNER_STOP is recorded keeps the /stop" "$OUT"
 
 # ---------------------------------------------------------------- 4. tick, lock and liveness
 setup

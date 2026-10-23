@@ -250,6 +250,16 @@ Regression tests in `selftest.sh`:
 - Case 3: a recorded merge with the Owner's `/stop` pending gives `STOPPED OWNER_STOP`, not a new Task.
 - Case 6: a reconstruction over an Owner's `/stop` comment gives `STOPPED STATE_RECONSTRUCTED #7 holds 1 comment …`.
 
-Not changed: inside `merge_done`, a tick interrupted after it clears `owner.stopAfterMerge` and before it records `OWNER_STOP` still loses that `/stop`; the window is the code's as before, and outside these findings.
+Not changed in this round: inside `merge_done`, a tick interrupted after it cleared `owner.stopAfterMerge` and before it recorded `OWNER_STOP` lost that `/stop`. Section 8.4 closes that window.
 
 The self-test after the fixes: exit 0, `SUMMARY 170 passed, 0 failed`, 641 s. Read against the code at `151933c`, the three new assertions fail there: the marker alone led to `RUN start` without the evidence, the shortcut went to `SELECT` past the pending `/stop`, and the reconstruction gave `NOOP AWAIT_MERGE`. The self-test was not run against that code. The permission rules did not change, so the 84 permission probes were not repeated.
+
+### 8.4 Final patch, at `dd874b2`: the Owner's `/stop` in `merge_done`
+
+By the Owner's instruction "Final patch D-101 — PR #4", only this window was closed, each edit under `scripts/executor/` approved at its own prompt.
+
+- **Defect.** `merge_done` cleared `owner.stopAfterMerge` and set `SELECT` before it recorded `OWNER_STOP`. A tick that ended in between left the state in `SELECT`, or in `AWAIT_MERGE` with a recorded merge, without the `/stop`, and the next tick started a Task.
+- **Fix.** `merge_done` writes nothing before the stop. `record_stop` takes the phase to resume to (`STOP_PREV`, here `SELECT`, as before) and clears `owner.stopAfterMerge` (`STOP_CLEARS`) only after `STOPPED`, its reason and its detail are written. A tick that ends earlier leaves the `/stop` pending in `AWAIT_MERGE`, and the next tick finds the merge recorded (section 8.3) and stops. `resume_state` clears `owner.stopAfterMerge` when it resumes from `OWNER_STOP`, which covers a tick that ended after the stop was recorded and before the `/stop` was cleared.
+- **Regression test** (case 3). In self-test mode only, `EXECUTOR_INTERRUPT=owner_stop` makes `merge_done` kill its own tick with `kill -9`, so that no exit handler runs, just before the stop. Afterwards the `/stop` is still pending, the phase is `AWAIT_MERGE` and the merge is recorded. The next tick gives `STOPPED OWNER_STOP`, with `loop.prevPhase=SELECT` and the `/stop` cleared. After `state.sh resume`, the next tick gives `RUN start`. In the code at `dd874b2`, the same kill would have come after the `/stop` was cleared and `SELECT` was set, and the next tick would have given `RUN start` at once; that was read, not run.
+
+The self-test after the patch: exit 0, `SUMMARY 171 passed, 0 failed`, 696 s. The earlier `/stop` cases of case 3 still pass. The permission rules did not change, so the 84 permission probes were not repeated.

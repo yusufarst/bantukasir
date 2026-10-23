@@ -52,13 +52,16 @@ take_lock() {
     if [ "$DRY" = 1 ]; then HELD=DRYRUN; return 0; fi
     HELD="$(lock_take)" || { HELD=""; return 1; }
 }
+# record_stop <REASON> [detail]: STOP_PREV overrides the phase to resume to;
+# STOP_CLEARS names a key cleared only once the stop is recorded (merge_done).
 record_stop() {
     local ph
     ph="$(st_get loop.phase)"
-    [ "$ph" = STOPPED ] || st_set loop.prevPhase "${ph:-SELECT}"
+    [ "$ph" = STOPPED ] || st_set loop.prevPhase "${STOP_PREV:-${ph:-SELECT}}"
     st_set loop.phase STOPPED
     st_set loop.stopReason "$1"
     st_set_text loop.stopDetail "${2:-}"
+    [ -z "${STOP_CLEARS:-}" ] || st_unset "$STOP_CLEARS"
     release_held
     log_event "STOPPED $1 ${2:-}"
 }
@@ -336,10 +339,13 @@ merge_recorded() {
     [ "$(st_get merge.lastPr)" = "$1" ] && [ "$(st_get merge.lastSha)" = "$2" ] && [ "$(st_get merge.prHead)" = "$3" ] && is_int "$(st_get merge.developCiRun)"
 }
 # merge_done <pr>: after a verified merge, the Owner's /stop, otherwise SELECT.
+# Nothing is written before OWNER_STOP is recorded, and the /stop is cleared
+# only after it: a tick interrupted on the way leaves the /stop pending, and
+# the next tick stops again.
 merge_done() {
     if [ "$(st_get owner.stopAfterMerge)" = 1 ]; then
-        st_unset owner.stopAfterMerge
-        st_set loop.phase SELECT
+        if selftest_mode && [ "${EXECUTOR_INTERRUPT:-}" = owner_stop ]; then kill -9 $$; fi
+        STOP_PREV=SELECT STOP_CLEARS=owner.stopAfterMerge
         stopped OWNER_STOP "after the merge of #$1, by the Owner's /stop"
     fi
     st_set loop.phase SELECT
