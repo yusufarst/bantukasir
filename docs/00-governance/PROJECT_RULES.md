@@ -54,7 +54,7 @@ The re-foundation is carried out in steps RF-0 to RF-7, described in [REFOUNDATI
 
 Rules:
 
-1. Every step and every phase needs the Owner's explicit authorization before it starts. Finishing one never authorizes the next.
+1. Every step and every phase needs the Owner's explicit authorization before it starts. Finishing one never authorizes the next. For Tasks, the continuous execution of D-101 ([EXECUTION_CONTEXT](../11-tasks/EXECUTION_CONTEXT.md) section 19) starts the next eligible Task after the Owner merges the previous one.
 2. Before substantial work, establish: the Git baseline; the planning state; the latest Owner decision; open Owner decisions; current gaps and accepted risks; the design status; the Task status; the exact next authorized action; what is not authorized.
 3. A phase is not complete because documents were drafted or a screen renders. Completion needs self-review, validation, adversarial review where the risk warrants it, Owner approval where required, a checkpoint commit, and an updated handoff.
 
@@ -82,7 +82,7 @@ Evidence that a change invalidates is marked for re-run. Old evidence is never e
 
 ## 7. Task model (from P11 onward)
 
-Execution uses explicit bounded Tasks, defined in P11 after P0 to P10 are coherent. Statuses are `TODO`, `READY`, `IN_PROGRESS`, `BLOCKED`, `VERIFYING`, `DONE`, `SUPERSEDED`. A Task is not `READY` because it exists, and not `DONE` because code compiles or a page renders. One executor works on one Task at a time. Task identifiers are permanent. The Task baseline — [TASK_PLAN](../11-tasks/TASK_PLAN.md), the contracts in `docs/11-tasks/tasks/` and the rules of [EXECUTION_CONTEXT](../11-tasks/EXECUTION_CONTEXT.md) — was written in RF-7 (D-090) and approved by the Owner (D-092, gate GATE-P11); TASK_PLAN section 4 is the only record of a Task's status.
+Execution uses explicit bounded Tasks, defined in P11 after P0 to P10 are coherent. Statuses are `TODO`, `READY`, `IN_PROGRESS`, `BLOCKED`, `VERIFYING`, `DONE`, `SUPERSEDED`. A Task is not `READY` because it exists, and not `DONE` because code compiles or a page renders. One executor works on one Task at a time. Task identifiers are permanent. The Task baseline — [TASK_PLAN](../11-tasks/TASK_PLAN.md), the contracts in `docs/11-tasks/tasks/` and the rules of [EXECUTION_CONTEXT](../11-tasks/EXECUTION_CONTEXT.md) — was written in RF-7 (D-090) and approved by the Owner (D-092, gate GATE-P11); TASK_PLAN section 4 is the only record of a Task's status; under continuous execution, the in-flight status of the one Task in progress is held as EXECUTION_CONTEXT section 19 says (D-101).
 
 ## 8. Working loop between planner and executor
 
@@ -94,7 +94,9 @@ Execution uses explicit bounded Tasks, defined in P11 after P0 to P10 are cohere
 6. The planner checks the report against the repository.
 7. The planner requests remediation or prepares the next instruction for the Owner to authorize.
 
-Decision D-021 additionally allows the planner to write planning and re-foundation documents directly into the working tree, with no commits and no other Git mutations; the executor on Windows validates independently and creates the checkpoint commit.
+Under D-101 the Tasks run in the continuous execution of [EXECUTION_CONTEXT](../11-tasks/EXECUTION_CONTEXT.md) section 19, without steps 2 to 7 for each Task: the executor selects the next eligible Task, an isolated reviewer agent reviews it, the Owner approves its commits and pushes and merges its pull request, and the next Task starts. The planner keeps that section, answers the stops the Owner brings to it and may audit any merged Task. This departure from the framework's loop is FD-10.
+
+Decision D-021 additionally allows the planner to write planning and re-foundation documents directly into the working tree, with no commits and no other Git mutations; the executor on Windows validates independently and creates the checkpoint commit. While continuous execution is in force, those changes reach `develop` through an `ops/` branch, written only between Tasks with the scheduled task paused or in a separate worktree (EXECUTION_CONTEXT CE-81).
 
 ## 9. Git safety
 
@@ -103,8 +105,8 @@ Decision D-021 additionally allows the planner to write planning and re-foundati
 - Before any checkpoint or publication, inspect the branch, HEAD, remote baseline, divergence, working tree, index and staged diff.
 - Stage exact, intended paths. Never `git add -A`. Do not stage ignored tooling folders (`.local/`, `.agents/`).
 - Do not use reset, clean or restore to tidy up, and do not overwrite unrelated work.
-- Use only the Owner's configured Git author and committer identity. Never add AI, model or tool attribution to a commit. Do not rewrite old commits to remove past attribution.
-- No push, merge, pull request or deployment without explicit authorization for that exact action.
+- Use only the Owner's configured Git author and committer identity. Never add AI, model or tool attribution to a commit. Do not rewrite old commits to remove past attribution. The squash commit that GitHub creates when the Owner merges a pull request of continuous execution records GitHub as committer; D-101 accepts it.
+- No push, merge, pull request or deployment without explicit authorization for that exact action. Under continuous execution the Owner authorizes each push of a Task branch at its permission prompt, D-101 authorizes the Task's pull request into `develop`, and the merge stays the Owner's (EXECUTION_CONTEXT section 19).
 - The branch model for implementation is [ADR-011](../adr/ADR-011-release-pipeline-environments-and-production-operation.md) item 3, written when P9 and P10 were rebuilt (RF-6, D-088): `develop`, one branch per Task, and `main` as the released line. Until the Owner authorizes the transition (OPEN_ITEMS N-12), `main` holds an obsolete baseline and must not be modified (D-022).
 
 ## 10. Windows and line endings

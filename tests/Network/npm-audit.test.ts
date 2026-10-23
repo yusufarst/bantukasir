@@ -28,15 +28,21 @@ afterEach(() => {
 
 describe('the npm dependency audit against the registry', () => {
     it('fails on a high advisory of a locked package', () => {
-        // braces 3.0.3 has the high advisory GHSA-vfj7-8cjw-p6xm and no fix.
+        // lodash 4.17.15 has three high advisories in the registry, so the proof
+        // does not rest on one advisory, which GitHub may withdraw, as it
+        // withdrew GHSA-vfj7-8cjw-p6xm of braces on 23 October 2026. An empty
+        // list of accepted advisories keeps the proof independent of the
+        // project's own acceptances.
         const project = temporaryDirectory();
-        writeFileSync(path.join(project, 'package.json'), JSON.stringify({ name: 'audit-sample', private: true, dependencies: { braces: '3.0.3' } }));
+        writeFileSync(path.join(project, 'package.json'), JSON.stringify({ name: 'audit-sample', private: true, dependencies: { lodash: '4.17.15' } }));
+        const accepted = path.join(project, 'accepted.json');
+        writeFileSync(accepted, '[]');
         const lock = spawnSync('npm', ['install', '--package-lock-only', '--ignore-scripts', '--no-audit', '--no-fund'], { cwd: project, encoding: 'utf8' });
         expect(lock.status, lock.stderr).toBe(0);
 
-        const run = spawnSync('node', ['scripts/checks/npm-audit.mjs', project], { encoding: 'utf8' });
+        const run = spawnSync('node', ['scripts/checks/npm-audit.mjs', project, `--accepted=${accepted}`], { encoding: 'utf8' });
 
         expect(run.status).toBe(1);
-        expect(run.stdout).toContain('braces: GHSA-vfj7-8cjw-p6xm (high)');
+        expect(run.stdout).toMatch(/^ {2}lodash: GHSA-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4} \((high|critical)\) /m);
     });
 });

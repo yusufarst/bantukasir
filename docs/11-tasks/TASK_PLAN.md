@@ -2,19 +2,19 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-7 under D-090, 18 October 2026 (Asia/Jakarta); corrected under D-091 the same day, after the independent review of the baseline; approved by the Owner with every Task (gate GATE-P11), and corrected for review finding R-1, under D-092 the same day |
+| Status | CURRENT — written in RF-7 under D-090, 18 October 2026 (Asia/Jakarta); corrected under D-091 the same day, after the independent review of the baseline; approved by the Owner with every Task (gate GATE-P11), and corrected for review finding R-1, under D-092 the same day; amended under D-101, 23 October 2026, for continuous execution: the introduction, sections 1, 5.1 and 6, and gate EXECUTOR |
 | Phase | P11 — Task planning, dependencies and execution specifications |
 | Replaces | `docs/11-tasks/legacy/11-BUILD-PLAN.md`, `docs/11-tasks/legacy/P11-BUILD-UNITS.md` and `docs/11-tasks/legacy/build-units/` (LEGACY — SUPERSEDED, [LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 16); decision D-012 |
-| Decisions | D-012, D-031, D-066, D-088, D-090, D-091, D-092, D-094, D-095, D-096, D-097, D-098, D-099, D-100; FD-07, FD-08 |
+| Decisions | D-012, D-031, D-066, D-088, D-090, D-091, D-092, D-094, D-095, D-096, D-097, D-098, D-099, D-100, D-101; FD-07, FD-08, FD-10 |
 | Related | [EXECUTION_CONTEXT](EXECUTION_CONTEXT.md), [DEPENDENCY_GRAPH](DEPENDENCY_GRAPH.md), [TRACEABILITY](TRACEABILITY.md), the Task contracts in [tasks/](tasks/), [TEST_STRATEGY](../08-testing/TEST_STRATEGY.md) |
 
-The implementation baseline of BantuKasir V1: 50 Tasks, their dependencies, gates and status, the order in which to run them, and where every requirement, workflow, suite, route, table and control is built. Nothing here authorizes a Task: each one starts only on the Owner's explicit instruction ([EXECUTION_CONTEXT](EXECUTION_CONTEXT.md) EXC-10), and none starts before gate GATE-P11.
+The implementation baseline of BantuKasir V1: 50 Tasks, their dependencies, gates and status, the order in which to run them, and where every requirement, workflow, suite, route, table and control is built. Nothing here authorizes a Task: each one starts only on the Owner's explicit instruction ([EXECUTION_CONTEXT](EXECUTION_CONTEXT.md) EXC-10) or under the continuous execution of D-101 (EXECUTION_CONTEXT section 19), and none starts before gate GATE-P11.
 
 ## 1. How to read
 
 - **Identifiers** are `TASK-NNN`, permanent and never reused (FD-08, EXC-80). Their order is the recommended order for one executor and is also a valid dependency order: every Task depends only on Tasks with a smaller number.
 - **Authority.** This plan is the record of the list of Tasks, their dependencies, gates and status. Each Task contract in [tasks/](tasks/) is the record of that Task's scope, acceptance criteria, tests, evidence and Definition of Done. [DEPENDENCY_GRAPH](DEPENDENCY_GRAPH.md) and [TRACEABILITY](TRACEABILITY.md) are generated from the same data; where a contract and this plan disagree, the plan prevails for dependencies, gates and status, the contract for scope, and the difference is a defect to correct.
-- **Status** uses the vocabulary of PROJECT_RULES section 7 with the entry rules of EXECUTION_CONTEXT section 4. Section 4 below is the only place a status is recorded.
+- **Status** uses the vocabulary of PROJECT_RULES section 7 with the entry rules of EXECUTION_CONTEXT section 4. Section 4 below is the only place a status is recorded; under continuous execution, the `IN_PROGRESS`, `VERIFYING` and `BLOCKED` of the Task in flight are held by the executor state and its pull request (EXECUTION_CONTEXT CE-21).
 - **Size** — S, M, L or XL — is a relative planning judgement of the work, used to weigh the critical path; it is not an estimate of hours and promises no date.
 - **Review class** — A, B, O or V — sets the reviews before a Task is done (EXECUTION_CONTEXT section 12).
 - **Lanes** group Tasks that can run beside each other with separate executors (EXC-12): P platform trunk; D documents and change control; O operations and delivery; C catalogue; I inventory and costing; S cash and sales; R reports, audit views and release; V verification.
@@ -52,7 +52,7 @@ Gates that a Task waits for, besides its dependencies. GATE-P11 to GATE-CC2 are 
 | GATE-PUBLISH | Before the first push of implementation work: OPEN_ITEMS N-09 decided and the one-time audit N-10 completed; before every push, the publication guard of D-076 (EXC-31). A pull request, its CI run and a merge into `develop` need a push. | The `DONE` of TASK-001 — its first push, its pull request, CI and its merge into `develop` — and so the start of every later implementation Task, all of which depend on TASK-001; every push after it. TASK-001 itself may start and be built and verified locally before it (EXC-31) | SATISFIED — N-09 decided (D-096) and the N-10 audit completed (D-097); the publication guard of D-076, with the known baseline of D-097, before every push |
 | GATE-CC1 | The Owner approves, by the Git blob, size and SHA-256 of each changed artifact, the change-control package of TASK-002 (OPEN_ITEMS T-19, T-20). | TASK-005, TASK-009, TASK-010 and every interface Task that uses a key it adds | SATISFIED — D-099 |
 | GATE-CC2 | The Owner approves by hash the artifacts that TASK-047 changes, when gate DEVICES changes a shortcut or a breakpoint; no approval is needed when the values are confirmed. | TASK-047 | OPEN — after TASK-046 |
-| EXECUTOR | The executor runs as Claude Opus 5.5 at the effort that the Owner's instruction names for the Task (D-031, D-095; EXECUTION_CONTEXT EXC-11; OPEN_ITEMS section 3). | Every Task | Checked at the start of each Task |
+| EXECUTOR | The executor runs as Claude Opus 5.5 at the effort that the Owner's instruction names for the Task, or under continuous execution at the effort of EXECUTION_CONTEXT CE-11 (D-031, D-095, D-101; EXECUTION_CONTEXT EXC-11; OPEN_ITEMS section 3). | Every Task | Checked at the start of each Task |
 | TARGET | The real server, Cloudflare, access, TLS and capacity, recorded by the operator (ENVIRONMENTS section 17; OPEN_ITEMS section 3). The operator is named by the Owner (RELEASE_PROCESS section 13). | TASK-044 (staging part), TASK-045, TASK-046, TASK-048, TASK-049 | OPEN |
 | DEVICES | The shop's real devices, printers and media, and the Owner's decision on DEVICE01 (DEVICE_VERIFICATION). | TASK-046, TASK-049 | OPEN |
 | G1 | The tax and legal position and the commercial receipt policy (OPEN_ITEMS section 3). | TASK-049 | OPEN |
@@ -125,7 +125,7 @@ Totals: `TODO` 45; `READY` 2; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE
 
 ### 5.1 Recommended order
 
-One executor runs the Tasks in the order of their numbers. The milestones below are points where a coherent part of V1 works end to end on `develop`; they authorize nothing.
+One executor runs the Tasks in the order of their numbers; under continuous execution this order is its selection rule (EXECUTION_CONTEXT CE-10, D-101). The milestones below are points where a coherent part of V1 works end to end on `develop`; they authorize nothing.
 
 | Milestone | Reached after | What works |
 | --- | --- | --- |
@@ -162,7 +162,7 @@ With more than one executor the Owner may run Tasks of different lanes at the sa
 
 ## 6. The first eligible Task
 
-**Status (D-100).** TASK-001, TASK-002 and TASK-003 are `DONE`. They were merged into `develop` by `b212819` (D-098), `0e9a393` (D-099) and `386f138` (D-100). [TASK-004](tasks/TASK-004-database-foundation.md) is `READY` and is the next Task on the critical path (section 5.4). [TASK-005](tasks/TASK-005-design-system.md) is `READY` beside it, with gate GATE-CC1 satisfied. Each Task starts only on the Owner's instruction that names it. The paragraphs below record how TASK-001 and TASK-002 became eligible.
+**Status (D-100, D-101).** TASK-001, TASK-002 and TASK-003 are `DONE`. They were merged into `develop` by `b212819` (D-098), `0e9a393` (D-099) and `386f138` (D-100). [TASK-004](tasks/TASK-004-database-foundation.md) is `READY` and is the next Task on the critical path (section 5.4). [TASK-005](tasks/TASK-005-design-system.md) is `READY` too, with gate GATE-CC1 satisfied, and runs after TASK-004, both being lane P (EXC-12). From D-101 the Tasks run under continuous execution (EXECUTION_CONTEXT section 19): each starts after the Owner squash-merges the previous pull request, TASK-004 first, at effort XHigh, after the setup pull request of D-101. The paragraphs below record how TASK-001 and TASK-002 became eligible.
 
 **[TASK-001](tasks/TASK-001-toolchain-ci.md) — Toolchain, repository conventions and CI** is the first eligible coding Task. It depends on no Task. Gate GATE-P11 is approved (D-092). Gate GATE-BRANCH is satisfied: `develop` exists, created locally by the branch operation the Owner authorized (D-094), so TASK-001 is `READY`; it starts when gate EXECUTOR holds and the Owner's instruction names it. It may be built and verified locally before gate GATE-PUBLISH, but it is `DONE` only when GATE-PUBLISH holds (N-09 decided, the N-10 audit completed and the publication guard passed), its branch is pushed on the Owner's authorization, its pull request is merged into `develop` and CI passes on the pull request and on the merge (EXC-31, EXC-32). Because every later implementation Task depends on TASK-001, GATE-PUBLISH is needed before any of them starts.
 

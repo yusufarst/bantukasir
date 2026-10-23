@@ -2,13 +2,13 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-2 under D-041, 4 October 2026 (Asia/Jakarta); amended in RF-6 under D-088, 18 October 2026: the reading of the "Tests" column (section 1), REQ-OPS-01, REQ-NFR-05, and sections 22 and 23; amended under D-089, 18 October 2026: the trace of D-089 in sections 22 and 23; amended in RF-7 under D-090, 18 October 2026: the trace of D-090 in sections 22 and 23; amended under D-091, 18 October 2026: the trace of D-091 in sections 22 and 23; amended under D-092, 18 October 2026: the trace of D-092 in sections 22 and 23; amended under D-093, 18 October 2026: the trace of D-093 in sections 22 and 23; amended under D-094 and D-095, 18 October 2026: the trace of D-094 and D-095 in sections 22 and 23; amended under D-096, 19 October 2026: the trace of D-096 in sections 22 and 23; amended under D-097, 19 October 2026: the trace of D-097 in sections 22 and 23; amended under D-098, 19 October 2026: the trace of D-098 in sections 22 and 23 |
+| Status | CURRENT — written in RF-2 under D-041, 4 October 2026 (Asia/Jakarta); amended in RF-6 under D-088, 18 October 2026: the reading of the "Tests" column (section 1), REQ-OPS-01, REQ-NFR-05, and sections 22 and 23; amended under D-089, 18 October 2026: the trace of D-089 in sections 22 and 23; amended in RF-7 under D-090, 18 October 2026: the trace of D-090 in sections 22 and 23; amended under D-091, 18 October 2026: the trace of D-091 in sections 22 and 23; amended under D-092, 18 October 2026: the trace of D-092 in sections 22 and 23; amended under D-093, 18 October 2026: the trace of D-093 in sections 22 and 23; amended under D-094 and D-095, 18 October 2026: the trace of D-094 and D-095 in sections 22 and 23; amended under D-096, 19 October 2026: the trace of D-096 in sections 22 and 23; amended under D-097, 19 October 2026: the trace of D-097 in sections 22 and 23; amended under D-098, 19 October 2026: the trace of D-098 in sections 22 and 23; amended under D-099, D-100 and D-101, 20 to 23 October 2026: the trace of those decisions in sections 22 and 23, and the range of decisions named in the introduction and in section 22 |
 | Phase | P1 — functional and non-functional requirements, acceptance criteria |
 | Replaces | `docs/01-product/legacy/requirements/core.json` and `docs/01-product/legacy/requirements/CORE-MAP.md` (CORE-001 to CORE-073) |
 | Product | [PRODUCT_BLUEPRINT](PRODUCT_BLUEPRINT.md) |
 | Domain rules | [DOMAIN_MODEL](../02-domain/DOMAIN_MODEL.md), [CATALOG_BARCODE](../02-domain/CATALOG_BARCODE.md), [INVENTORY](../02-domain/INVENTORY.md), [COSTING](../02-domain/COSTING.md), [SALES_CASH](../02-domain/SALES_CASH.md) |
 
-The requirement register of BantuKasir V1. Each requirement says what the product must do, how acceptance is judged, where the requirement comes from, and which acceptance suite tests it (the column as written before RF-6; the current mapping is ACCEPTANCE_SUITES section 5). Section 21 maps every legacy CORE entry to these requirements; section 22 traces every decision D-001 to D-098.
+The requirement register of BantuKasir V1. Each requirement says what the product must do, how acceptance is judged, where the requirement comes from, and which acceptance suite tests it (the column as written before RF-6; the current mapping is ACCEPTANCE_SUITES section 5). Section 21 maps every legacy CORE entry to these requirements; section 22 traces every decision D-001 to D-101.
 
 ## 1. How to read this register
 
@@ -344,7 +344,7 @@ Every legacy Core entry CORE-001 to CORE-073 (`core.json`, `CORE-MAP.md`) is map
 
 ## 22. Decision traceability
 
-Every decision D-001 to D-098 is either traced to at least one requirement or rule, or classified as having no product or domain content.
+Every decision D-001 to D-101 is either traced to at least one requirement or rule, or classified as having no product or domain content.
 
 | Decision | Product or domain content | Traced to |
 | --- | --- | --- |
@@ -448,7 +448,8 @@ Every decision D-001 to D-098 is either traced to at least one requirement or ru
 | D-098 | Acceptance of TASK-001 (`DONE`): published, merged into `develop` with a merge commit, CI green on the pull request and on the merge; TASK-003 `READY`; two commit-message points accepted; the baseline of the publication guard extended to the names of planned vendors | Non-product/domain — governance ([TASK_PLAN](../11-tasks/TASK_PLAN.md) section 4) |
 | D-099 | Approval of gate GATE-CC1, P7 and copy change control batch 1: the eight documents of TASK-002's package at `776b9cf`, each named by its hash, with the Owner's answers and CC-01 to CC-21; TASK-002 merged into `develop` and `DONE` | REQ-UX-01, REQ-UX-03 |
 | D-100 | Acceptance of TASK-003 (`DONE`): the kernel, formatting and localization with the remediation of its class-A review, merged into `develop` with a merge commit, CI green on the pull request and on the merge; TASK-004 and TASK-005 `READY` | Non-product/domain — governance ([TASK_PLAN](../11-tasks/TASK_PLAN.md) section 4) |
+| D-101 | Continuous Task execution: the next eligible Task starts after the Owner squash-merges the previous Task's pull request into `develop`; the Owner approves each commit and each push; an isolated reviewer agent makes the reviews; the effort per Task follows a table that adds Medium; a local scheduled task of Claude Code Desktop is the trigger | Non-product/domain — governance ([EXECUTION_CONTEXT](../11-tasks/EXECUTION_CONTEXT.md) section 19) |
 
 ## 23. Counts
 
-Re-derived from this register: 23 sections; 134 requirement rows in sections 2 to 19, all with distinct identifiers; no requirement pending; 73 legacy CORE entries, of which 72 are mapped (9 of them adapted by later decisions) and 1 is retired (section 21); 100 decisions, of which 56 are traced to requirements or rules and 44 are classified as non-product/domain (section 22).
+Re-derived from this register: 23 sections; 134 requirement rows in sections 2 to 19, all with distinct identifiers; no requirement pending; 73 legacy CORE entries, of which 72 are mapped (9 of them adapted by later decisions) and 1 is retired (section 21); 101 decisions, of which 56 are traced to requirements or rules and 45 are classified as non-product/domain (section 22).
