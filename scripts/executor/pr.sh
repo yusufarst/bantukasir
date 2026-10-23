@@ -67,7 +67,11 @@ case "$sub" in
             existing="$(gh_open_prs)" || refuse "GITHUB_UNAVAILABLE"
             line="$(printf '%s\n' "$existing" | awk -F'|' -v b="$br" -v r="$REPO" '$2 == b && $5 == r { print; exit }')"
             if [ -n "$line" ]; then
-                IFS='|' read -r n _ hsha _ _ url <<< "$line"
+                IFS='|' read -r n pbr hsha _ _ url <<< "$line"
+                is_int "$n" && [ "$pbr" = "$br" ] || refuse "OPEN_PR unreadable pull request for $br"
+                [ "$hsha" = "$(git rev-parse HEAD)" ] || refuse "HEAD #$n has the head $hsha; the local HEAD is $(git rev-parse HEAD)"
+                if [ -f "$STATE_FILE" ]; then st_set pr.number "$n"; st_set pr.head "$hsha"; fi
+                log_event "PR_ALREADY_OPEN $n $br"
                 echo "PR $n $url (already open)"
                 exit 0
             fi

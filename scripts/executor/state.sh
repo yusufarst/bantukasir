@@ -95,17 +95,19 @@ case "$cmd" in
             case "$reason" in MERGE_AUTHOR | MERGE_CONTENT) ;; *) echo "REFUSED ACCEPT_MERGE the stop is $reason, not MERGE_AUTHOR or MERGE_CONTENT"; exit 1 ;; esac
             pending="$(st_get merge.pendingSha)"
             if [ -z "$pending" ] || [ "$ACCEPT" != "$pending" ]; then echo "REFUSED ACCEPT_MERGE the stop concerns ${pending:-no merge commit}"; exit 1; fi
-            if [ "$CONT" = 1 ] && lock_exists; then echo "REFUSED LOCKED"; exit 1; fi
-            st_set merge.lastPr "$(st_get pr.number)"
-            st_set merge.lastSha "$ACCEPT"
-            st_set merge.prHead "$(st_get pr.head)"
-            st_set merge.kind "$(st_get task.kind)"
-            st_set merge.task "$(st_get task.id)"
-            st_set merge.acceptedByOwner "$reason"
+            # The acceptance waives only that check; the tick completes the
+            # merge's verification (local develop, CI on develop), so no
+            # session takes the lock here.
+            if [ "$CONT" = 1 ]; then echo "REFUSED ACCEPT_MERGE --continue: the next tick completes the merge's verification"; exit 1; fi
+            accepted=""
+            [ "$(st_get merge.acceptedSha)" = "$ACCEPT" ] && accepted="$(st_get merge.acceptedByOwner)"
+            case " $accepted " in *" $reason "*) ;; *) accepted="${accepted:+$accepted }$reason" ;; esac
+            st_set merge.acceptedSha "$ACCEPT"
+            st_set merge.acceptedByOwner "$accepted"
             st_unset merge.pendingSha
-            st_set loop.prevPhase SELECT
+            st_set loop.prevPhase AWAIT_MERGE
             resume_state "$NOTE"
-            log_event "MERGE_ACCEPTED_BY_OWNER $ACCEPT after $reason"
+            log_event "MERGE_ACCEPTED_BY_OWNER $ACCEPT after $reason; the verification continues"
         else
             if [ "$CONT" = 1 ] && lock_exists; then echo "REFUSED LOCKED"; exit 1; fi
             resume_state "$NOTE"

@@ -33,7 +33,7 @@ Every script is bash for Git for Windows (`#!/usr/bin/env bash`, `set -euo pipef
 
 ### 2.1 The state (CE-20, CE-21)
 
-The state is `bantukasir-executor/` in the Git common directory: `state` (Git configuration format, written only with `git config -f`), `log` (one line per event, Asia/Jakarta time), `lock/`, the change requests and ignored comments waiting for the next delegation (`requests`, `ignored`), the guard's stamp and candidates, and the review packages (`review/<task>/r<n>/`). The keys are those of section 4.1 of the instruction, with these additions: `task.title`, `task.contract`, `task.effortSource`, `owner.effortSource`, `owner.lastResumeCommentId`, `merge.pendingSha`, `merge.acceptedByOwner`, `ci.head`, `ci.failedHead`. Free text — `loop.stopDetail` and `owner.note` — is stored as `b64:<base64>`, so that no value can be read as an option of `git config`; `state.sh show` decodes it.
+The state is `bantukasir-executor/` in the Git common directory: `state` (Git configuration format, written only with `git config -f`), `log` (one line per event, Asia/Jakarta time), `lock/`, the change requests and ignored comments waiting for the next delegation (`requests`, `ignored`), the guard's stamp and candidates, and the review packages (`review/<task>/r<n>/`). The keys are those of section 4.1 of the instruction, with these additions: `task.title`, `task.contract`, `task.effortSource`, `owner.effortSource`, `owner.lastResumeCommentId`, `merge.pendingSha`, `merge.acceptedByOwner`, `merge.acceptedSha` (section 8), `ci.head`, `ci.failedHead`. Free text — `loop.stopDetail` and `owner.note` — is stored as `b64:<base64>`, so that no value can be read as an option of `git config`; `state.sh show` decodes it.
 
 ### 2.2 The lock and its liveness check (CE-22, CE-24)
 
@@ -185,3 +185,22 @@ The nine writes under `.claude/` (the settings, the seven agents, the two `Edit`
 ## 7. Merge
 
 Recorded by the next Task (EXECUTION_CONTEXT CE-50).
+
+## 8. Remediation of the review of pull request #4
+
+On 23 October 2026 the automated review of pull request #4 at `3ce2893` raised two findings, which the Owner verified. By his instruction "Remediasi terbatas PR #4 — D-101", only those two were fixed, in the second session, and every edit under `scripts/executor/` was approved at its own prompt.
+
+| Finding | Defect | Fix |
+| --- | --- | --- |
+| P1, `state.sh` | After `STOPPED MERGE_AUTHOR` or `STOPPED MERGE_CONTENT`, `resume --accept-merge <sha>` recorded the merge and set `SELECT`, so the checks after that predicate (local `develop`, green CI on `develop` at the merge) were skipped and the next tick could start a Task on an unverified base | `resume --accept-merge` records `merge.acceptedSha` and adds the stop's reason to `merge.acceptedByOwner` (both reasons when a merge needs both), then restores `AWAIT_MERGE`. In `verify_merge`, `merge_accepted` waives only the accepted predicate for that merge commit; every other check runs as before, and the merge is recorded only after CI on `develop` passes, when both keys are cleared and the log names the acceptance. `--continue` with `--accept-merge` is refused, because the tick, not a session holding the lock, completes the verification |
+| P2, `pr.sh` | `open`, when the branch's pull request was already open, printed it and exited without recording `pr.number` and `pr.head`; after an interruption between the creation and the record, `AWAIT_MERGE` would stop with `STATE_INVALID` | The already-open path checks the pull request's number and branch, refuses `HEAD` when its head is not the local HEAD, and records `pr.number` and `pr.head` when a state exists, as the creation path does |
+
+This changes the instruction's section 4.2, under which `--accept-merge` set `SELECT`, by the Owner's remediation instruction.
+
+Regression tests in `selftest.sh`:
+
+- Case 3, the MERGE_AUTHOR exception: `--continue` is refused; after the acceptance the phase is `AWAIT_MERGE` and no merge is recorded; the next tick gives `NOOP DEVELOP_CI_PENDING`; after CI passes, `RUN start`, the merge recorded, local `develop` fast-forwarded and the acceptance cleared.
+- Case 3, the MERGE_CONTENT exception: after the acceptance a diverged local `develop` gives `STOPPED DEVELOP_DIVERGED`; once it is restored and the loop resumed, a red CI on `develop` gives `STOPPED DEVELOP_CI_RED`.
+- Case 12: an open pull request whose head is not the local HEAD gives `REFUSED HEAD` and records nothing; with the right head, `PR 7 … (already open)` and `pr.number` and `pr.head` recorded.
+
+The previous test of case 3, which expected `SELECT` after the acceptance, was replaced. The self-test after the fixes: exit 0, `SUMMARY 164 passed, 0 failed`, 626 s. Read against the code at `3ce2893`, which recorded the merge at the acceptance and never refused `--continue`, and whose `pr.sh open` neither refused a different head nor recorded an open pull request, the assertions on what follows an acceptance and on an already open pull request fail there; the self-test was not run against that code. The permission rules did not change, so the 84 permission probes were not repeated.

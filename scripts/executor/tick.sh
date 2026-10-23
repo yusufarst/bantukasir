@@ -264,8 +264,15 @@ merge_ci_runs() {  # sha event: "PASS id", "PENDING", "FAIL url"
         END { if (!n || p) print "PENDING"; else if (f != "") print "FAIL " f; else print "PASS " best }'
 }
 
+# merge_accepted <merge-sha> <MERGE_CONTENT|MERGE_AUTHOR>: the Owner accepted
+# that exception for that merge commit (state.sh resume --accept-merge).
+merge_accepted() {
+    [ "$(st_get merge.acceptedSha)" = "$1" ] || return 1
+    case " $(st_get merge.acceptedByOwner) " in *" $2 "*) return 0 ;; *) return 1 ;; esac
+}
+
 verify_merge() {  # pr merge-sha head-sha
-    local pr="$1" m="$2" h="$3" p a b ae cb ci ok prci
+    local pr="$1" m="$2" h="$3" p a b ae cb ci ok prci acc
     STEP=merge
     p="$(st_get pr.head)"
     [ "$h" = "$p" ] || stopped PR_HEAD_MOVED "#$pr was merged with head $h; the recorded head is $p"
@@ -279,12 +286,12 @@ verify_merge() {  # pr merge-sha head-sha
         b="$(git diff "$(git merge-base "$m^1" "$p")" "$p" | git patch-id --stable | cut -d' ' -f1)"
         [ -n "$a" ] && [ "$a" = "$b" ] && ok=1
     fi
-    if [ "$ok" != 1 ]; then
+    if [ "$ok" != 1 ] && ! merge_accepted "$m" MERGE_CONTENT; then
         [ "$DRY" = 1 ] || st_set merge.pendingSha "$m"
         stopped MERGE_CONTENT "merge commit $m of #$pr does not carry exactly the head $p"
     fi
     ae="$(git log -1 --format=%ae "$m")"
-    if [ "$ae" != "$OWNER_EMAIL" ]; then
+    if [ "$ae" != "$OWNER_EMAIL" ] && ! merge_accepted "$m" MERGE_AUTHOR; then
         [ "$DRY" = 1 ] || st_set merge.pendingSha "$m"
         stopped MERGE_AUTHOR "merge commit $m of #$pr has the author e-mail $ae"
     fi
@@ -306,6 +313,8 @@ verify_merge() {  # pr merge-sha head-sha
         FAIL*) stopped DEVELOP_CI_RED "merge $m of #$pr: ${ci#FAIL }" ;;
     esac
     prci="$(merge_ci_runs "$p" pull_request || echo unknown)"
+    acc=""
+    [ "$(st_get merge.acceptedSha)" = "$m" ] && acc="$(st_get merge.acceptedByOwner)"
     st_set merge.lastPr "$pr"
     st_set merge.lastSha "$m"
     st_set merge.prHead "$p"
@@ -314,8 +323,9 @@ verify_merge() {  # pr merge-sha head-sha
     st_set merge.prCiRun "${prci#PASS }"
     st_set merge.developCiRun "${ci#PASS }"
     st_unset merge.acceptedByOwner
+    st_unset merge.acceptedSha
     st_unset merge.pendingSha
-    log_event "MERGE_VERIFIED pr=$pr merge=$m head=$p ci=${ci#PASS }"
+    log_event "MERGE_VERIFIED pr=$pr merge=$m head=$p ci=${ci#PASS }${acc:+ accepted by the Owner: $acc}"
     if [ "$(st_get owner.stopAfterMerge)" = 1 ]; then
         st_unset owner.stopAfterMerge
         st_set loop.phase SELECT

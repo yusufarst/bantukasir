@@ -388,13 +388,34 @@ expect_first "3 a squash commit carrying extra content gives STOPPED MERGE_CONTE
 merge_setup
 other="merge-author@example.com"
 M="$(simulate_merge "$other")"
-merged_fixtures "$M" completed success
+merged_fixtures "$M" in_progress ""
 run tick.sh
 expect_first "3 another author e-mail gives STOPPED MERGE_AUTHOR" '^STOPPED MERGE_AUTHOR '
+run state.sh resume --accept-merge "$M" --continue
+expect_first "3 resume --accept-merge refuses --continue" '^REFUSED ACCEPT_MERGE '
 run state.sh resume --accept-merge "$M"
-[ "$(stget merge.lastSha)" = "$M" ] && [ "$(stget loop.phase)" = SELECT ] && pass "3 resume --accept-merge records the merge" || failc "3 resume --accept-merge" "$OUT"
+[ -z "$(stget merge.lastSha)" ] && [ "$(stget loop.phase)" = AWAIT_MERGE ] && pass "3 resume --accept-merge returns to the merge's verification without recording the merge" || failc "3 resume --accept-merge returns to the merge's verification" "$OUT"
 run tick.sh
-expect_first "3 after --accept-merge the next tick gives RUN start" '^RUN start TASK-004 '
+expect_first "3 after --accept-merge, CI on develop pending still gives NOOP DEVELOP_CI_PENDING" '^NOOP DEVELOP_CI_PENDING '
+fx_ci "$M" push completed success
+run tick.sh
+expect_first "3 then success gives RUN start" '^RUN start TASK-004 '
+[ "$(stget merge.lastSha)" = "$M" ] && [ "$(g rev-parse develop)" = "$M" ] && [ -z "$(stget merge.acceptedByOwner)" ] && pass "3 the accepted merge is recorded only after its checks, local develop fast-forwarded" || failc "3 the accepted merge is recorded only after its checks" "$OUT"
+
+merge_setup
+M="$(simulate_merge "$OEMAIL" extra)"
+merged_fixtures "$M" completed failure
+run tick.sh
+expect_first "3 extra content, before an acceptance, gives STOPPED MERGE_CONTENT" '^STOPPED MERGE_CONTENT '
+run state.sh resume --accept-merge "$M"
+DEV0="$(g rev-parse develop)"
+g update-ref refs/heads/develop "$(g commit-tree "$DEV0^{tree}" -p "$DEV0" -m diverged)"
+run tick.sh
+expect_first "3 after --accept-merge, a diverged local develop still gives STOPPED DEVELOP_DIVERGED" '^STOPPED DEVELOP_DIVERGED '
+g update-ref refs/heads/develop "$DEV0"
+run state.sh resume
+run tick.sh
+expect_first "3 after --accept-merge, a failed CI on develop still gives STOPPED DEVELOP_CI_RED" '^STOPPED DEVELOP_CI_RED '
 
 merge_setup
 M="$(simulate_merge "$OEMAIL")"
@@ -826,6 +847,15 @@ printf 'A plain description that ends with a sentence.\n' > "$SB/body.md"
 printf 'https://github.com/yusufarst/bantukasir/pull/7\n' > "$FIX/gh/pr_create"
 run pr.sh open --title "TASK-003 — Shared kernel" --body-file "$SB/body.md"
 expect_first "12 pr.sh open opens a pull request with a valid body" '^PR 7 https://github.com/yusufarst/bantukasir/pull/7$'
+git config -f "$SD/state" --unset-all pr.number
+git config -f "$SD/state" --unset-all pr.head
+printf '7|%s|%040d|yusufarst|yusufarst/bantukasir|https://github.com/yusufarst/bantukasir/pull/7\n' "$TB" 0 > "$FIX/gh/open_prs"
+run pr.sh open --title "TASK-003 — Shared kernel" --body-file "$SB/body.md"
+[ -z "$(stget pr.number)" ] && expect_first "12 pr.sh open refuses an open pull request whose head is not the local HEAD" '^REFUSED HEAD ' || failc "12 pr.sh open refuses an open pull request whose head is not the local HEAD" "$OUT"
+printf '7|%s|%s|yusufarst|yusufarst/bantukasir|https://github.com/yusufarst/bantukasir/pull/7\n' "$TB" "$HEADSHA" > "$FIX/gh/open_prs"
+run pr.sh open --title "TASK-003 — Shared kernel" --body-file "$SB/body.md"
+first | grep -qE '^PR 7 https://github.com/yusufarst/bantukasir/pull/7 \(already open\)$' && [ "$(stget pr.number)" = 7 ] && [ "$(stget pr.head)" = "$HEADSHA" ] && pass "12 pr.sh open records the number and head of an already open pull request" || failc "12 pr.sh open records the number and head of an already open pull request" "$OUT"
+: > "$FIX/gh/open_prs"
 printf '1|ci|in_progress||https://github.com/yusufarst/bantukasir/runs/1\n' > "$FIX/gh/check_runs_$HEADSHA.1"
 printf '1|ci|completed|success|https://github.com/yusufarst/bantukasir/runs/1\n' > "$FIX/gh/check_runs_$HEADSHA.2"
 run EXECUTOR_POLL_SECONDS=0 pr.sh wait-ci
