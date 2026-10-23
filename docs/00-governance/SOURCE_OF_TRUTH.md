@@ -8,10 +8,10 @@ When sources disagree, the higher one prevails:
 
 1. the latest Owner decision recorded in [DECISIONS](DECISIONS.md);
 2. [AGENTS.md](../../AGENTS.md) and the documents in this folder;
-3. the active Task contract: the contract in [`docs/11-tasks/tasks/`](../11-tasks/tasks/) of a Task that the Owner has authorized by name and that is `IN_PROGRESS` (none is active yet: the Task baseline is approved, D-092, and no Task has started);
+3. the active Task contract: the contract in [`docs/11-tasks/tasks/`](../11-tasks/tasks/) of the Task in progress, which the Owner has authorized by name or which continuous execution has selected ([EXECUTION_CONTEXT](../11-tasks/EXECUTION_CONTEXT.md) section 19, D-101);
 4. current ADRs in `docs/adr/` (index: [docs/adr/README.md](../adr/README.md));
 5. the product, domain, workflow, architecture, security, design, testing, operations and release documents listed in section 3;
-6. implementation and tests (none exist yet);
+6. implementation and tests;
 7. [CURRENT_HANDOFF](../handoff/CURRENT_HANDOFF.md);
 8. chat and session context.
 
@@ -68,6 +68,7 @@ RF-2 also listed known cases for `docs/05-security/legacy/04-AUTH-RBAC-SECURITY.
 | [REFOUNDATION_PLAN.md](REFOUNDATION_PLAN.md) | Re-foundation steps RF-0 to RF-7 | CURRENT |
 | [LEGACY_INDEX.md](LEGACY_INDEX.md) | Where older material went and how to recover it | CURRENT |
 | [records/REFOUNDATION_ANALYSIS_2026-10-03.md](records/REFOUNDATION_ANALYSIS_2026-10-03.md) | Re-foundation analysis report, revision 2 | RECORD |
+| [records/CONTINUOUS_EXECUTION_SETUP.md](records/CONTINUOUS_EXECUTION_SETUP.md) | The setup of continuous execution (D-101): the files added, their verification and the settings of the scheduled task | RECORD |
 | [legacy/P0-GOVERNANCE.md](legacy/P0-GOVERNANCE.md) | Former governance document | LEGACY — SUPERSEDED by PROJECT_RULES |
 | [legacy/10-DECISIONS.md](legacy/10-DECISIONS.md) | Original full text of D-001 to D-018 | LEGACY — SUPERSEDED by DECISIONS for status; kept as the original wording |
 | [legacy/GAPS-CHANGES.md](legacy/GAPS-CHANGES.md) | Former gap and change register | LEGACY — SUPERSEDED by OPEN_ITEMS |
@@ -204,7 +205,8 @@ Production data protection is CURRENT in [PRODUCTION_DATA_SAFETY](PRODUCTION_DAT
 
 | Path | Subject | Status | Replaced in |
 | --- | --- | --- | --- |
-| [EXECUTION_CONTEXT.md](../11-tasks/EXECUTION_CONTEXT.md) | The rules every Task executor follows: reading, authorization, statuses, the start of a Task, Git, engineering, the database, the interface, standing test obligations, evidence, reviews, Definition of Done, stop conditions, closing, change control | CURRENT (RF-7, D-090; corrected by D-091); approved by the Owner (D-092) | — |
+| [EXECUTION_CONTEXT.md](../11-tasks/EXECUTION_CONTEXT.md) | The rules every Task executor follows: reading, authorization, statuses, the start of a Task, Git, engineering, the database, the interface, standing test obligations, evidence, reviews, Definition of Done, stop conditions, closing, change control, continuous execution | CURRENT (RF-7, D-090; corrected by D-091); approved by the Owner (D-092); amended by D-095 (EXC-11) and D-101 (section 19, continuous execution) | — |
+| [`scripts/executor/`](../../scripts/executor/), [`.claude/settings.json`](../../.claude/settings.json) and [`.claude/agents/`](../../.claude/agents/) | The implementation of continuous execution (EXECUTION_CONTEXT section 19): the dispatcher's tick, the executor state and lock, the snapshot of the working tree, the publication guard, the commit, push and pull-request scripts, the permission rules, and the executor and reviewer agents | CURRENT (D-101); set up and verified as [records/CONTINUOUS_EXECUTION_SETUP.md](records/CONTINUOUS_EXECUTION_SETUP.md) records | — |
 | [TASK_PLAN.md](../11-tasks/TASK_PLAN.md) | The 50 Tasks: gates, the register of their status (the only record of a Task's status), the implementation sequence, the first eligible Task, the open items mapped, the former Build Units | CURRENT (RF-7, D-090; corrected by D-091 and D-092); approved by the Owner (D-092) | — |
 | [`tasks/`](../11-tasks/tasks/) (50 files `TASK-NNN-<name>.md`) | One contract per Task: goal, prerequisites, reading, scope and ownership, traceability, acceptance criteria, tests, evidence, Definition of Done, stop conditions, expected files | CURRENT (RF-7, D-090; eleven contracts corrected by D-091, two by D-092); approved by the Owner (D-092) | — |
 | [DEPENDENCY_GRAPH.md](../11-tasks/DEPENDENCY_GRAPH.md) | The dependencies of the Tasks, lanes and waves, the critical path | CURRENT (RF-7, D-090; corrected by D-091 and D-092); approved by the Owner (D-092); generated from TASK_PLAN, which prevails | — |
@@ -212,7 +214,7 @@ Production data protection is CURRENT in [PRODUCTION_DATA_SAFETY](PRODUCTION_DAT
 | [legacy/11-BUILD-PLAN.md](../11-tasks/legacy/11-BUILD-PLAN.md), [legacy/P11-BUILD-UNITS.md](../11-tasks/legacy/P11-BUILD-UNITS.md) | Former build plan, dependency graph and estimates | LEGACY — SUPERSEDED by TASK_PLAN and DEPENDENCY_GRAPH (D-090) | RF-7; removal in a later authorized step |
 | `legacy/build-units/` (27 cards and `registry.json`) | Former Build Units | LEGACY — SUPERSEDED by the Task contracts; each Build Unit is mapped in TASK_PLAN section 9 (FD-08, D-090) | RF-7; removal in a later authorized step |
 
-No Build Unit may be executed; the Tasks replace them (FD-08). The Task baseline was written in RF-7 (D-090), corrected (D-091, D-092) and approved by the Owner (D-092; gate GATE-P11 of TASK_PLAN section 3). Each Task starts only on an instruction of the Owner that names it (EXECUTION_CONTEXT EXC-10). A Task's evidence is kept in `docs/11-tasks/evidence/`, created by the first Task that starts (EXECUTION_CONTEXT section 11).
+No Build Unit may be executed; the Tasks replace them (FD-08). The Task baseline was written in RF-7 (D-090), corrected (D-091, D-092) and approved by the Owner (D-092; gate GATE-P11 of TASK_PLAN section 3). Each Task starts only on an instruction of the Owner that names it (EXECUTION_CONTEXT EXC-10) or under continuous execution (EXECUTION_CONTEXT section 19, D-101). A Task's evidence is kept in `docs/11-tasks/evidence/`, created by the first Task that starts (EXECUTION_CONTEXT section 11).
 
 ### docs/handoff
 

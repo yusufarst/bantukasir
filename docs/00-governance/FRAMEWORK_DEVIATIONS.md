@@ -14,6 +14,7 @@ Status values: `APPROVED` (Owner approved), `RECORDED` (no Owner approval requir
 | FD-06 | Hosting other than the framework default | WITHDRAWN — D-053 adopted the framework topology |
 | FD-07 | Dedicated final-verification Tasks kept | RECORDED — applied in RF-7 (D-090) |
 | FD-08 | Build Unit identifiers replaced by `TASK-NNN` | RECORDED — applied in RF-7 (D-090) |
+| FD-10 | Continuous Task execution: the next eligible Task starts after the Owner's merge, without an instruction per Task | APPROVED — D-101 |
 
 Question numbers refer to [OPEN_ITEMS](OPEN_ITEMS.md).
 
@@ -131,6 +132,27 @@ OWNER APPROVAL REQUIRED: NO
 ```
 
 Applied in RF-7 (D-090): the Tasks are `TASK-001` to `TASK-050`, and [TASK_PLAN](../11-tasks/TASK_PLAN.md) section 9 maps each of the 27 Build Units to the Tasks that carry it.
+
+## FD-10
+
+```text
+FRAMEWORK DEVIATION: Continuous Task execution
+AICWDF RULE: The planner-executor working loop, with one Owner-authorized instruction
+  per Task and no automatic advancement, as adopted in PROJECT_RULES section 8 and
+  AGENTS.md section 6
+BANTUKASIR REASON: The Owner's directive of D-101: after he squash-merges a Task's pull
+  request, the next READY Task starts without his typing an instruction; one executor
+  runs a long, strictly ordered baseline of Tasks
+BENEFIT: No manual step between Tasks; the Owner keeps every approval that carries
+  risk (each commit, each push, each merge); every rule of EXECUTION_CONTEXT still
+  applies
+RISK: Less planner attention per Task; reduced by the isolated read-only reviewer
+  agent, at an effort set by the Task's risk, CI, the publication guard, the stop
+  conditions of CE-70 and the planning agent's audits of merged Tasks
+OWNER APPROVAL REQUIRED: YES
+```
+
+Approved by D-101 (23 October 2026) and applied in [EXECUTION_CONTEXT](../11-tasks/EXECUTION_CONTEXT.md) section 19. The identifier FD-09 was never used (see the conformance actions below).
 
 ## Conformance actions (not deviations)
 
