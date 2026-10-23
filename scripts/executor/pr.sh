@@ -105,7 +105,9 @@ case "$sub" in
         while :; do
             runs="$(gh_check_runs "$sha")" || runs="__ERROR__"
             if [ "$runs" != "__ERROR__" ] && [ -n "$runs" ]; then
-                res="$(printf '%s\n' "$runs" | awk -F'|' 'NF >= 4 { n++; if ($3 != "completed") p = 1; else if ($4 != "success" && $4 != "neutral" && $4 != "skipped") f = f " " $2 " " $5 } END { if (p) print "PENDING"; else if (f != "") print "FAIL" f; else print "PASS" }')"
+                # PASS needs the job of .github/workflows/ci.yml to succeed,
+                # not only the check runs that happen to exist on the commit.
+                res="$(printf '%s\n' "$runs" | awk -F'|' -v req="Command contract" 'NF >= 4 { n++; if ($3 != "completed") p = 1; else if ($2 == req) { if ($4 == "success") c = 1; else f = f " " $2 " " $5 } else if ($4 != "success" && $4 != "neutral" && $4 != "skipped") f = f " " $2 " " $5 } END { if (p) print "PENDING"; else if (f != "") print "FAIL" f; else if (!c) print "PENDING"; else print "PASS" }')"
                 case "$res" in
                     PASS) log_event "CI PASS $sha"; echo "CI PASS $sha"; exit 0 ;;
                     FAIL*)

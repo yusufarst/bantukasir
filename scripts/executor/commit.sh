@@ -102,10 +102,10 @@ if ! git add -- "${PATHS[@]}"; then unstage; echo "FAILED staging"; exit 3; fi
 wanted="$(printf '%s\n' "${PATHS[@]}" | LC_ALL=C sort -u)"
 if [ "$merging" = 1 ]; then
     [ -z "$(git diff --name-only --diff-filter=U)" ] || { unstage; echo "FAILED unmerged paths remain"; exit 3; }
-    staged="$(printf '%s\n' "${PATHS[@]}" | while IFS= read -r p; do git diff --cached --quiet HEAD -- "$p" || printf '%s\n' "$p"; done | LC_ALL=C sort -u)"
-else
-    staged="$(git diff --cached --name-only --no-renames | LC_ALL=C sort -u)"
 fi
+# The whole index, in a merge too: git commit records all of it, so every
+# staged path must be one given, and so one checked above.
+staged="$(git diff --cached --name-only --no-renames HEAD | LC_ALL=C sort -u)"
 if [ "$staged" != "$wanted" ]; then
     unstage
     echo "FAILED the staged set differs from the paths given (a path without a change, or another path)"

@@ -204,3 +204,19 @@ Regression tests in `selftest.sh`:
 - Case 12: an open pull request whose head is not the local HEAD gives `REFUSED HEAD` and records nothing; with the right head, `PR 7 … (already open)` and `pr.number` and `pr.head` recorded.
 
 The previous test of case 3, which expected `SELECT` after the acceptance, was replaced. The self-test after the fixes: exit 0, `SUMMARY 164 passed, 0 failed`, 626 s. Read against the code at `3ce2893`, which recorded the merge at the acceptance and never refused `--continue`, and whose `pr.sh open` neither refused a different head nor recorded an open pull request, the assertions on what follows an acceptance and on an already open pull request fail there; the self-test was not run against that code. The permission rules did not change, so the 84 permission probes were not repeated.
+
+### 8.1 Second round, at `0bbda10`
+
+The automated review of `0bbda10` raised two more findings, fixed by the Owner's instruction "Perbaiki 2 temuan Codex terbaru pada PR #4", each edit under `scripts/executor/` approved at its own prompt.
+
+| Finding | Defect | Fix |
+| --- | --- | --- |
+| P1, `commit.sh` | In a merge of `develop` (`MERGE_HEAD`), the staged set was computed only over the paths given, while `git commit` records the whole index: a path staged before the call and not given was committed without the exact-path comparison or the excluded and protected-path checks | The staged set is the whole index against `HEAD` in a merge too, and must equal the paths given, each of which passed the per-path checks. A consequence: in a merge of `develop` every path the merge changes must be given, so on a `task/` branch a merge that brings a change under `scripts/executor/` or `.claude/` is refused with `PROTECTED_PATH` and waits for the Owner |
+| P2, `pr.sh` | `wait-ci` printed `CI PASS` as soon as every check run on the commit had succeeded, even when the `Command contract` job of `.github/workflows/ci.yml` had not yet appeared | `CI PASS` requires a completed `Command contract` check run with the conclusion `success`. While it is missing the result is pending, and any other conclusion of it is a failure. Any other check run still fails CI when it fails |
+
+Regression tests in `selftest.sh`:
+
+- Case 8: in a merge of `develop` in progress, with a path staged beforehand, `commit.sh` given only the merge's own path refuses (`FAILED the staged set differs …`, no commit); given both paths it makes the merge commit.
+- Case 12: with only another application's successful check run on the commit, `wait-ci` gives `CI PENDING`. The fixtures of the existing `wait-ci` cases now name the check run `Command contract`, as GitHub does, and the PASS case also holds another application's check run.
+
+The self-test after the fixes: exit 0, `SUMMARY 167 passed, 0 failed`, 625 s. Read against the code at `0bbda10`, the two new assertions of refusal and pending fail there: that `commit.sh` committed the extra path, and that `wait-ci` printed `CI PASS`. The self-test was not run against that code. The permission rules did not change, so the 84 permission probes were not repeated.

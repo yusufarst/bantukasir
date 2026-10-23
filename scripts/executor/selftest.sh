@@ -672,6 +672,24 @@ printf 'two\n' > "$CL/two.txt"
 cm -m "TASK-004: two" -- two.txt
 rm -f -- "$CL/.git/hooks/pre-commit"
 [ "$RC" = 3 ] && [ -z "$(g diff --cached --name-only)" ] && [ -f "$CL/two.txt" ] && pass "8 commit.sh unstages its own paths when the commit fails" || failc "8 commit.sh failed commit" "$OUT"
+# A merge of develop in progress (EXC-36), on a branch of its own: the whole
+# index must be the paths given.
+D0="$(g rev-parse develop)"
+g switch -q -c task/TASK-004-merge-check
+g switch -q develop
+printf 'dev\n' > "$CL/dev.txt"
+g add dev.txt
+g commit -q -m "develop moves"
+g switch -q task/TASK-004-merge-check
+g merge -q --no-ff --no-commit develop > /dev/null 2>&1 || true
+printf 'extra\n' > "$CL/extra.txt"
+g add extra.txt
+cm -m "TASK-004: merge develop" -- dev.txt
+[ "$RC" = 3 ] && first | grep -q '^FAILED the staged set differs' && ! g rev-parse -q --verify HEAD^2 > /dev/null && pass "8 commit.sh in a merge refuses an index holding a path not given" || failc "8 commit.sh in a merge refuses an index holding a path not given" "$OUT"
+cm -m "TASK-004: merge develop" -- dev.txt extra.txt
+first | grep -qE '^COMMITTED [0-9a-f]{40}$' && g rev-parse -q --verify HEAD^2 > /dev/null && pass "8 commit.sh in a merge commits when the paths given are the whole index" || failc "8 commit.sh in a merge commits when the paths given are the whole index" "$OUT"
+g switch -q task/TASK-004-database-foundation
+g update-ref refs/heads/develop "$D0"
 
 # ---------------------------------------------------------------- 9. push.sh
 stamp_head() { printf '%s\nHEAD --not --remotes=origin\n' "$(g rev-parse HEAD)" > "$SD/guard-pass"; }
@@ -856,22 +874,27 @@ printf '7|%s|%s|yusufarst|yusufarst/bantukasir|https://github.com/yusufarst/bant
 run pr.sh open --title "TASK-003 — Shared kernel" --body-file "$SB/body.md"
 first | grep -qE '^PR 7 https://github.com/yusufarst/bantukasir/pull/7 \(already open\)$' && [ "$(stget pr.number)" = 7 ] && [ "$(stget pr.head)" = "$HEADSHA" ] && pass "12 pr.sh open records the number and head of an already open pull request" || failc "12 pr.sh open records the number and head of an already open pull request" "$OUT"
 : > "$FIX/gh/open_prs"
-printf '1|ci|in_progress||https://github.com/yusufarst/bantukasir/runs/1\n' > "$FIX/gh/check_runs_$HEADSHA.1"
-printf '1|ci|completed|success|https://github.com/yusufarst/bantukasir/runs/1\n' > "$FIX/gh/check_runs_$HEADSHA.2"
+printf '2|another app|completed|success|https://github.com/yusufarst/bantukasir/runs/2\n1|Command contract|in_progress||https://github.com/yusufarst/bantukasir/runs/1\n' > "$FIX/gh/check_runs_$HEADSHA.1"
+printf '2|another app|completed|success|https://github.com/yusufarst/bantukasir/runs/2\n1|Command contract|completed|success|https://github.com/yusufarst/bantukasir/runs/1\n' > "$FIX/gh/check_runs_$HEADSHA.2"
 run EXECUTOR_POLL_SECONDS=0 pr.sh wait-ci
 expect_first "12 wait-ci gives PASS after pending" "^CI PASS $HEADSHA$"
 fails_ok=1
 for i in 1 2 3 4; do
     h="$(printf '%039d%s' 0 "$i")"
     fx_pr 7 open false "" "$h" "$TB"
-    printf '1|ci|completed|failure|https://github.com/yusufarst/bantukasir/runs/%s\n' "$i" > "$FIX/gh/check_runs_$h"
+    printf '1|Command contract|completed|failure|https://github.com/yusufarst/bantukasir/runs/%s\n' "$i" > "$FIX/gh/check_runs_$h"
     run pr.sh wait-ci
     if [ "$i" -lt 4 ]; then first | grep -q "^CI FAIL $h failure $i of 3" || fails_ok=0; else first | grep -q "^CI FAIL LIMIT $h failure 4" || fails_ok=0; fi
 done
 [ "$fails_ok" = 1 ] && pass "12 wait-ci counts failures and gives CI FAIL LIMIT at the fourth" || failc "12 wait-ci failures" "$OUT"
+h="$(printf '%040d' 6)"
+fx_pr 7 open false "" "$h" "$TB"
+printf '2|another app|completed|success|https://github.com/yusufarst/bantukasir/runs/6\n' > "$FIX/gh/check_runs_$h"
+run EXECUTOR_POLL_SECONDS=1 pr.sh wait-ci --max-seconds 0
+expect_first "12 wait-ci gives CI PENDING while the Command contract check is missing, though another check passed" "^CI PENDING $h$"
 h="$(printf '%040d' 5)"
 fx_pr 7 open false "" "$h" "$TB"
-printf '1|ci|queued||https://github.com/yusufarst/bantukasir/runs/5\n' > "$FIX/gh/check_runs_$h"
+printf '1|Command contract|queued||https://github.com/yusufarst/bantukasir/runs/5\n' > "$FIX/gh/check_runs_$h"
 stset ci.head "$h"
 stset ci.waitStart "$(( $(date +%s) - 3601 ))"
 run pr.sh wait-ci
