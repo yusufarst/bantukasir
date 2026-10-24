@@ -147,3 +147,14 @@ describe('ESLint and exact numbers (ADR-006 items 5 and 6, TASK-003)', () => {
         expect(result?.messages.map((message) => `${message.line}:${message.ruleId ?? 'fatal'}`)).toEqual(['2:no-restricted-syntax']);
     });
 });
+
+describe('the JSX literal rule beside the attributes TASK-005 allows for the design system', () => {
+    it('passes SVG geometry, input and shortcut attributes, data attributes and the fixed-value props', async () => {
+        expect((await lintSample('design-system-controls.tsx')).messages).toEqual([]);
+    });
+
+    it('still refuses a literal in every attribute or prop that holds text', async () => {
+        expect(taggedLines('design-system-literals.tsx').size).toBe(7);
+        expect(await unreported('design-system-literals.tsx', ['no-restricted-syntax', 'react/jsx-no-literals'])).toEqual([]);
+    });
+});

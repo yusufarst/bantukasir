@@ -91,7 +91,9 @@ final class LocalizationTest extends TestCase
         $this->assertSame('Oktober', $dictionary['ux.format.month.october']);
         $this->assertSame(':uang (:keterangan)', $dictionary['ux.format.variance']);
         $this->assertSame('menit', $dictionary['ux.format.duration.minute']);
-        $this->assertCount(32, $dictionary);
+        // Every key of lang/id (TASK-003 had 32; each interface Task adds its own).
+        $this->assertCount(count(Dictionary::fromDirectory(dirname(__DIR__, 3).'/lang/id')), $dictionary);
+        $this->assertGreaterThanOrEqual(32, count($dictionary));
 
         foreach ($dictionary as $key => $text) {
             $this->assertSame($text, __($key), $key);

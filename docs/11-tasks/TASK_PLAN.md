@@ -72,8 +72,8 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-002](tasks/TASK-002-p7-change-control-1.md) | P7 and copy change control, batch 1 | 1 | D | M | O | — | GATE-P11; before `DONE`: GATE-BRANCH, GATE-PUBLISH | `DONE` |
 | [TASK-003](tasks/TASK-003-kernel-localization.md) | Shared kernel, formatting and localization | 1 | P | M | A | TASK-001 | — | `DONE` |
 | [TASK-004](tasks/TASK-004-database-foundation.md) | Database foundation, roles and test harness | 1 | P | L | A | TASK-001, TASK-003 | — | `DONE` |
-| [TASK-005](tasks/TASK-005-design-system.md) | Design system and frontend foundation | 1 | P | L | B | TASK-002, TASK-003 | GATE-CC1 | `READY` |
-| [TASK-006](tasks/TASK-006-authentication.md) | Authentication, one-time links, audit and security log | 2 | P | L | A | TASK-004, TASK-005 | — | `TODO` |
+| [TASK-005](tasks/TASK-005-design-system.md) | Design system and frontend foundation | 1 | P | L | B | TASK-002, TASK-003 | GATE-CC1 | `DONE` |
+| [TASK-006](tasks/TASK-006-authentication.md) | Authentication, one-time links, audit and security log | 2 | P | L | A | TASK-004, TASK-005 | — | `READY` |
 | [TASK-007](tasks/TASK-007-authorization-shell.md) | Authorization framework, security baseline and application shell | 2 | P | L | A | TASK-006 | — | `TODO` |
 | [TASK-008](tasks/TASK-008-command-platform.md) | Command platform (server) | 2 | P | L | A | TASK-007 | — | `TODO` |
 | [TASK-009](tasks/TASK-009-command-client.md) | Command client, recovery and unresolved requests | 2 | P | M | A | TASK-008, TASK-002 | GATE-CC1 | `TODO` |
@@ -119,7 +119,7 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-049](tasks/TASK-049-release-readiness.md) | Release readiness: staging, UAT and first installation | 10 | R | L | V | TASK-045, TASK-047, TASK-048 | G1, G2, G3, G4, DEVICES, TARGET, GATE-PUBLISH | `TODO` |
 | [TASK-050](tasks/TASK-050-production-pilot.md) | Production release, cutover and pilot acceptance | 10 | R | L | V | TASK-049 | RELEASE, GATE-PUBLISH, G4 | `TODO` |
 
-Totals: `TODO` 45; `READY` 1; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 4; `SUPERSEDED` 0.
+Totals: `TODO` 44; `READY` 1; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 5; `SUPERSEDED` 0.
 
 ## 5. Implementation sequence
 

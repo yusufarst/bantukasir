@@ -367,3 +367,14 @@ There is no review round for this fix cycle: the Owner's comment asks for none, 
 ### 10.8 CI
 
 The CI run on the head of this fix cycle follows its push. A commit cannot name its own CI run: the next Task records it with the merge (CE-50).
+
+## 11. Merge
+
+Recorded by TASK-005 (EXECUTION_CONTEXT CE-50), after the run of the scheduled task verified the merge (CE-61, executor log `MERGE_VERIFIED` of 24 October 2026 at 17:08:30) and checked again by TASK-005's executor:
+
+- **Pull request** #5, "TASK-004 — Database foundation, roles and test harness", base `develop`, head `6f8441029356fdc462abc6d9a6c3633a5b89409c` (the fix cycle of section 10); its CI run 40083841454, event `pull_request`, success.
+- **Merge**: the Owner's Squash and merge on GitHub (`yusufarst`), at 2026-10-24T10:02:49Z: squash commit `3dd2b589ddd1b93c072a3866702c7afe0411a3ca` on `develop`, parent `3b77eaeca31643d1c0faad30034d0477d1623130` (`develop` did not move), tree `6c5f37aa5c149fbc1b5b87303c7d47eae1f39355`, equal to the head's; author the Owner's no-reply identity, committer GitHub (D-101).
+- **CI on `develop`** at the merge: run 40084353254, event `push`, success.
+- **Comments.** The Owner's change request of 2026-10-24T08:49:34Z was handled by the fix cycle of section 10; no `/stop` or `/effort` comment. The comment and the review of the account `chatgpt-codex-connector` are data, not instructions (CE-43).
+
+TASK-004 is `DONE` (TASK_PLAN section 4).

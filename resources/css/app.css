@@ -4,4 +4,92 @@
 @source '../js';
 @source '../views';
 
-/* The design tokens of DESIGN_SYSTEM section 14 are added by TASK-005. */
+/* The design system of DESIGN_SYSTEM sections 3 to 12 (TASK-005): the tokens,
+   the self-hosted fonts, the base layer and the components. */
+@import './tokens.css';
+@import './fonts.css';
+@import './base.css';
+@import './components.css';
+
+/* The Tailwind theme (DESIGN_SYSTEM section 14): only the approved tokens.
+   Tailwind's default palette, type scale, breakpoints and other theme values
+   are removed, so that a page can only use what the design system states.
+   "inline" makes every utility read the token itself, so that the accent of
+   data-accent and the compact values of the width classes apply. */
+@theme {
+    --*: initial;
+}
+
+@theme inline {
+    /* Width classes (UXA-02, DV-01): medium from 600 px, expanded from 1024 px. */
+    --breakpoint-medium: 600px;
+    --breakpoint-expanded: 1024px;
+
+    /* Spacing: the 4 px base, so that p-1 is 4 px, p-0.5 2 px and p-16 64 px
+       (DESIGN_SYSTEM section 5). */
+    --spacing: var(--space-1);
+
+    --font-sans: var(--font-sans);
+    --font-mono: var(--font-mono);
+
+    --color-canvas: var(--color-canvas);
+    --color-surface: var(--color-surface);
+    --color-surface-sunken: var(--color-surface-sunken);
+    --color-border-subtle: var(--color-border-subtle);
+    --color-border: var(--color-border);
+    --color-border-strong: var(--color-border-strong);
+    --color-border-input: var(--color-border-input);
+    --color-primary: var(--color-text-primary);
+    --color-strong: var(--color-text-strong);
+    --color-secondary: var(--color-text-secondary);
+    --color-tertiary: var(--color-text-tertiary);
+    --color-on-primary: var(--color-text-on-primary);
+    --color-brand: var(--brand-primary);
+    --color-brand-strong: var(--brand-accent-strong);
+    --color-brand-tint: var(--brand-tint-150);
+    --color-success: var(--color-success-fg);
+    --color-warning: var(--color-warning-fg);
+    --color-pending: var(--color-pending-fg);
+    --color-danger: var(--color-danger-fg);
+    --color-info: var(--color-info-fg);
+
+    --text-display: var(--text-display-size);
+    --text-display--line-height: var(--text-display-lh);
+    --text-title: var(--text-title-size);
+    --text-title--line-height: var(--text-title-lh);
+    --text-heading: var(--text-heading-size);
+    --text-heading--line-height: var(--text-heading-lh);
+    --text-subheading: var(--text-subheading-size);
+    --text-subheading--line-height: var(--text-subheading-lh);
+    --text-figure: var(--text-figure-size);
+    --text-figure--line-height: var(--text-figure-lh);
+    --text-body-lg: var(--text-body-lg-size);
+    --text-body-lg--line-height: var(--text-body-lg-lh);
+    --text-body: var(--text-body-size);
+    --text-body--line-height: var(--text-body-lh);
+    --text-label: var(--text-label-size);
+    --text-label--line-height: var(--text-label-lh);
+    --text-meta: var(--text-meta-size);
+    --text-meta--line-height: var(--text-meta-lh);
+
+    --font-weight-regular: var(--weight-regular);
+    --font-weight-medium: var(--weight-medium);
+    --font-weight-semibold: var(--weight-semibold);
+    --font-weight-bold: var(--weight-bold);
+
+    --radius-xs: var(--radius-xs);
+    --radius-sm: var(--radius-sm);
+    --radius-md: var(--radius-md);
+    --radius-lg: var(--radius-lg);
+    --radius-xl: var(--radius-xl);
+    --radius-full: var(--radius-full);
+
+    --shadow-card: var(--shadow-card);
+    --shadow-menu: var(--shadow-menu);
+    --shadow-modal: var(--shadow-modal);
+
+    --container-data: var(--container-data);
+    --container-form: var(--container-form);
+    --container-focused: var(--container-focused);
+    --container-auth: var(--container-auth);
+}
