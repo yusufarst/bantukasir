@@ -184,7 +184,16 @@ The nine writes under `.claude/` (the settings, the seven agents, the two `Edit`
 
 ## 7. Merge
 
-Recorded by the next Task (EXECUTION_CONTEXT CE-50).
+Recorded by the next Task, TASK-004 (EXECUTION_CONTEXT CE-50), from GitHub and Git on 24 October 2026; the tick had verified the merge as CE-61 says at 01:41 (`MERGE_VERIFIED` in the executor state's log).
+
+| Fact | Value |
+| --- | --- |
+| Pull request | #4, "ops — Continuous execution (D-101)", from `ops/continuous-execution` into `develop`, opened by the Owner's account |
+| Its head | `2ead8a01d72c0e5dea0135c8c2a82cd68f939360` |
+| CI on the pull request | Run 39996923878, event `pull_request` on `2ead8a0`, success (23 October 2026, 17:39:55 to 17:42:05 UTC) |
+| Merge | The Owner's Squash and merge on 23 October 2026 at 18:11:42 UTC (24 October, 01:11:42 Asia/Jakarta) |
+| Merge commit | `3b77eaeca31643d1c0faad30034d0477d1623130` on `develop`, parent `7fed319` (the D-100 bookkeeping commit); author the Owner's GitHub no-reply identity, committer GitHub; its tree `6f703bdc9d97f23a8b43e9e67e52f18b4ee5198f` equals that of `2ead8a0` |
+| CI on `develop` | Run 40001302943, event `push` on `3b77eae`, success (18:11:44 to 18:14:04 UTC) |
 
 ## 8. Remediation of the review of pull request #4
 

@@ -2,6 +2,7 @@
 
 namespace Tests\PHPStan;
 
+use App\Database\Identifier;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Query\Expression;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,8 @@ use PHPStan\Type\ObjectType;
  * TR-VAL-07: SQL is never built from input, and every parameter is bound. The
  * SQL of a raw query method must be a constant string — a literal, a constant
  * or a concatenation of them — and a placeholder in it needs its bindings.
+ * Since TASK-004 it may also concatenate, at the call, names quoted by
+ * App\Database\Identifier::quote(), for the grants that name roles.
  *
  * @implements Rule<Node\Expr\CallLike>
  */
@@ -87,19 +90,67 @@ final class RawSqlRule implements Rule
             return [];
         }
 
-        $strings = $sqlType->getConstantStrings();
+        $strings = array_map(fn ($string): string => $string->getValue(), $sqlType->getConstantStrings());
 
         if ($strings === []) {
-            return [$this->error('SQL built from a value that is not a constant string (TR-VAL-07); pass input as a binding.')];
+            $strings = $this->identifierConcatenation($args[0]->value, $scope);
+        }
+
+        if ($strings === null || $strings === []) {
+            return [$this->error('SQL built from a value that is not a constant string (TR-VAL-07); pass input as a binding, or a name through Identifier::quote().')];
         }
 
         foreach ($strings as $string) {
-            if ($this->hasPlaceholder($string->getValue()) && (! $takesBindings || count($args) < 2)) {
+            if ($this->hasPlaceholder($string) && (! $takesBindings || count($args) < 2)) {
                 return [$this->error('SQL with a placeholder and no bindings (TR-VAL-07).')];
             }
         }
 
         return [];
+    }
+
+    /**
+     * PostgreSQL takes no binding for a name — a role, a table, a column. SQL
+     * may therefore also be a concatenation, written at the call, of constant
+     * strings and of names passed through App\Database\Identifier::quote(),
+     * which accepts only the identifiers of this schema and quotes them
+     * (TASK-004). Returns the SQL with each quoted name replaced by a
+     * neutral identifier, for the placeholder check; null for anything else.
+     *
+     * @return list<string>|null
+     */
+    private function identifierConcatenation(Node\Expr $expression, Scope $scope): ?array
+    {
+        if ($expression instanceof Node\Expr\BinaryOp\Concat) {
+            $left = $this->identifierConcatenation($expression->left, $scope);
+            $right = $this->identifierConcatenation($expression->right, $scope);
+
+            if ($left === null || $right === null) {
+                return null;
+            }
+
+            $joined = [];
+
+            foreach ($left as $start) {
+                foreach ($right as $end) {
+                    $joined[] = $start.$end;
+                }
+            }
+
+            return $joined;
+        }
+
+        if ($expression instanceof Node\Expr\StaticCall
+            && $expression->class instanceof Node\Name
+            && $scope->resolveName($expression->class) === Identifier::class
+            && $expression->name instanceof Node\Identifier
+            && $expression->name->toLowerString() === 'quote') {
+            return ['"identifier"'];
+        }
+
+        $strings = $scope->getType($expression)->getConstantStrings();
+
+        return $strings === [] ? null : array_map(fn ($string): string => $string->getValue(), $strings);
     }
 
     /**

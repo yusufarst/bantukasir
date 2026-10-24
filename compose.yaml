@@ -13,6 +13,15 @@
 #   docker compose run --rm playwright npm run test:e2e
 # The environment holds synthetic data only and no secret: PostgreSQL accepts
 # connections without a password, only on the project's internal network.
+#
+# The database (TASK-004): at every start the service db-setup runs
+# database/setup/local.sh, which runs database/setup/setup.sql — the script of
+# ENVIRONMENTS ENV-30 — for the local database bantukasir (marker local) and the
+# test database bantukasir_test (marker test), with three local roles, and then
+# its self-test. The application connects as the runtime role; migrations run
+# only as the migration role (SCHEMA section 10):
+#   docker compose exec app php artisan migrate --database=pgsql_migration
+# The tests migrate and reset bantukasir_test only (TEST_STRATEGY TS-07).
 
 name: bantukasir
 
@@ -33,9 +42,14 @@ services:
             DB_HOST: db
             DB_PORT: "5432"
             DB_DATABASE: bantukasir
-            DB_USERNAME: postgres
-            # The tables of the database session driver and cache store belong
-            # to TASK-006 and TASK-004; until then local runs use files.
+            # The local roles of database/setup/local.sh; no password (above).
+            DB_USERNAME: bk_runtime
+            DB_MIGRATION_USERNAME: bk_migration
+            BACKUP_DB_USERNAME: bk_backup
+            APP_ENVIRONMENT_NAME: local
+            # The database session driver and cache store need their tables in
+            # a migrated local database: the cache tables since TASK-004, the
+            # sessions table from TASK-006. Local runs use files until then.
             SESSION_DRIVER: file
             CACHE_STORE: file
             # Local runs are plain HTTP; every other environment sets true.
@@ -52,6 +66,8 @@ services:
         depends_on:
             db:
                 condition: service_healthy
+            db-setup:
+                condition: service_completed_successfully
         healthcheck:
             # Healthy when Nginx, PHP-FPM and Laravel answer without a server
             # error; the application has no route of its own yet.
@@ -73,6 +89,21 @@ services:
             interval: 2s
             timeout: 5s
             retries: 30
+
+    db-setup:
+        # The setup of the local databases (TASK-004), with psql of the same
+        # pinned image; it runs once per start and exits.
+        image: postgres:18.6-trixie@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336
+        entrypoint: ["sh", "/setup/local.sh"]
+        environment:
+            PGHOST: db
+            PGUSER: postgres
+        volumes:
+            - ./database/setup:/setup:ro
+        depends_on:
+            db:
+                condition: service_healthy
+        restart: "no"
 
     node:
         image: node:24.22.0-trixie-slim@sha256:7f486cabe892bff8fef04c0f7da8dba84a560be3e4e2740b7a86afc57ebec315
