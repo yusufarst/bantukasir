@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-3A under D-055, 4 October 2026 (Asia/Jakarta); amended in RF-6 under D-088, 18 October 2026: the Operations module and its dependencies; section 3 adapted by TASK-001 under STK-22, 19 October 2026, with `tests/Network/` added the same day after its review of class B |
+| Status | CURRENT — written in RF-3A under D-055, 4 October 2026 (Asia/Jakarta); amended in RF-6 under D-088, 18 October 2026: the Operations module and its dependencies; section 3 adapted by TASK-001 under STK-22, 19 October 2026, with `tests/Network/` added the same day after its review of class B; and by TASK-004, 24 October 2026: the database infrastructure in sections 2 and 2.1, the command points in STK-31, and the folders of the provider, the setup and the test harness in section 3 |
 | Phase | P4 — application architecture |
 | Replaces | The stack, module and structure sections of `docs/04-architecture/legacy/P4-ARCHITECTURE.md` and the module paragraph of `docs/04-architecture/legacy/02-ARCHITECTURE.md` ([LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 8) |
 | Decisions | D-004, D-005, D-050; [ADR-001](../adr/ADR-001-stack-and-modular-monolith.md), [ADR-002](../adr/ADR-002-minimum-runtime-infrastructure.md), [ADR-004](../adr/ADR-004-authentication.md), [ADR-005](../adr/ADR-005-localization-architecture.md), [ADR-006](../adr/ADR-006-exact-numbers.md), [ADR-007](../adr/ADR-007-command-identity-and-idempotency.md) |
@@ -59,6 +59,8 @@ One application, one database. Modules are folders and namespaces with an owner 
 
 A shared kernel holds the value objects every module uses: money, quantity, cost (ADR-006), business date and clock, and the formatting helpers of ADR-005. It depends on no module.
 
+The database infrastructure, `app/Database/` (TASK-004, its contract's module "Infrastructure (database)"), holds what every module, migration and operator command uses of the database's roles and rights: the role marks, the environment marker (ENVIRONMENTS ENV-04), the privilege matrix's reader, the privilege check, the grants procedure, quoted identifiers and the command points of the test harness. It owns no entity and depends on no module; like the shared kernel, every module may use it.
+
 ### 2.1 Dependencies
 
 A module may read from the modules listed for it; writes across modules happen only through an Action that calls each module's own services. The graph has no cycle.
@@ -66,6 +68,7 @@ A module may read from the modules listed for it; writes across modules happen o
 | Module | May depend on |
 | --- | --- |
 | Shared kernel | — |
+| Database infrastructure | — (every module may depend on it, as on the shared kernel) |
 | Audit, Commands, Media | Shared kernel |
 | Access | Audit, Commands, shared kernel |
 | Configuration | Media, Audit, Commands, Access (actor), shared kernel |
@@ -122,6 +125,13 @@ Adaptations recorded by TASK-001 for Laravel 13 and the command contract (STK-22
 - `tests/Fixtures/` holds the negative samples of the static checks, which the build, the linters and the analysis exclude; `tests/PHPStan/` holds the project's PHPStan rules.
 - `scripts/checks/` holds the static checks of TEST_STRATEGY section 6 that are not a tool's own command; `docker/` holds the files of the local container environment, which TASK-012 replaces with the release image.
 
+Folders added by TASK-004 for the database foundation; the module boundaries do not change:
+
+- `app/Database/` is the database infrastructure of section 2. It is not part of the shared kernel of `app/Support/`, so the exact-value rule of PHPStan does not apply to it; it handles no money, quantity or cost.
+- `app/Providers/` holds `DatabaseServiceProvider`, registered in `bootstrap/providers.php`: the migration discipline (EXECUTION_CONTEXT EXC-41). The framework needs a service provider for it (STK-22).
+- `database/setup/` holds the setup script of ENVIRONMENTS ENV-30 and the local and CI runner and self-test that the service `db-setup` of `compose.yaml` runs; `database/privileges.php` is the machine-readable privilege matrix of SCHEMA section 10, which each table's Task extends (EXC-43).
+- `tests/Harness/` holds the test harness — the test database, the helpers of the test families, the race and failure-injection harness and the fixture builder of "Toko Contoh" — which `tests/Feature/` and `tests/Concurrency/` use; `tests/Fixtures/Migrations/` holds test-only migrations.
+
 | ID | Rule | Source |
 | --- | --- | --- |
 | STK-20 | Concurrency, constraint and rollback tests run against real PostgreSQL with committed fixtures and independent connections, never inside one wrapping transaction and never on SQLite or mocks. | TOOLCHAIN, L-P4 §Testing implications (input), L-P6 |
@@ -133,6 +143,6 @@ Adaptations recorded by TASK-001 for Laravel 13 and the command contract (STK-22
 | ID | Rule | Source |
 | --- | --- | --- |
 | STK-30 | No interface, factory, plugin system or extra layer is created "just in case". A boundary is created only when AICWDF §15.1.8 gives a reason: an external service is involved, the technology may change independently of business rules, several implementations are plausible now, the roadmap names a future integration, or test isolation materially benefits. | AICWDF §15.1.8, L-P4 §Struktur modular minimal |
-| STK-31 | Boundaries that do exist, and why: the authentication boundary (AICWDF §4A.9); the payment method list without a provider adapter (ARCHITECTURE section 5); file storage through the framework's storage abstraction; the clock, for testing time rules. | AICWDF §4A.9, §15.1, D-036 |
+| STK-31 | Boundaries that do exist, and why: the authentication boundary (AICWDF §4A.9); the payment method list without a provider adapter (ARCHITECTURE section 5); file storage through the framework's storage abstraction; the clock, for testing time rules; the command points of a command's transaction (`App\Database\CommandPoints`, TASK-004), for the race and failure-injection tests of TEST_STRATEGY TS-20 and TS-21, bound in the application to points that do nothing. | AICWDF §4A.9, §15.1, D-036, TS-20, TS-21 |
 | STK-32 | Not created: a repository class per table, an event bus, CQRS, a domain-driven-design framework, a generic workflow engine, a tenant layer, a provider adapter for payments, a notification abstraction. | L-P4, D-038, D-036, ADR-002 |
 | STK-33 | Standard Laravel patterns are used where they are sufficient. | AICWDF §15 |

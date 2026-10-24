@@ -17,6 +17,12 @@ return [
 
     'env' => env('APP_ENV', 'production'),
 
+    // The environment's name — local, test, drill, staging or production —
+    // which equals the marker of its database (ENVIRONMENTS ENV-04; TASK-004).
+    // A test-database reset and the fixture builder read both and refuse on a
+    // difference, and so do the operator procedures and the release preflight.
+    'environment_name' => env('APP_ENVIRONMENT_NAME'),
+
     'debug' => (bool) env('APP_DEBUG', false),
 
     'url' => env('APP_URL', 'http://localhost'),

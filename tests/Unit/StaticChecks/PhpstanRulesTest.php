@@ -65,7 +65,11 @@ final class PhpstanRulesTest extends TestCase
 
     public function test_sql_from_input_and_unbound_placeholders_are_refused(): void
     {
-        $this->assertSame([13, 14, 15, 16, 17, 18, 19], $this->linesOf('RawSqlSamples.php', 'bantukasir.rawSql'));
+        // Lines 21 to 24 (TASK-004): a name quoted by Identifier::quote() is
+        // accepted only in a concatenation of constant strings, and its SQL
+        // still needs bindings for a placeholder; the lines that only
+        // concatenate quoted names, below them, pass.
+        $this->assertSame([14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24], $this->linesOf('RawSqlSamples.php', 'bantukasir.rawSql'));
     }
 
     public function test_floats_are_refused_in_exact_value_code_only(): void

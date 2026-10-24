@@ -48,7 +48,7 @@ Pinned by TASK-001 (STK-01) in `composer.json` and `composer.lock`, `package.jso
 | Vitest | 5.0.5 | MIT | None published; latest release | `npm audit`: none | VERIFIED |
 | Playwright | `@playwright/test` 1.64.1, image `mcr.microsoft.com/playwright:v1.64.1-noble` | Apache-2.0 | None published; latest release | `npm audit`: none | VERIFIED |
 | Node.js (LTS) | 24.22.0, image `node:24.22.0-trixie-slim`; `@types/node` 24.19.2 | MIT | LTS "Krypton": maintenance from 20 October 2026, end of life 30 April 2028 | Latest 24.x release | VERIFIED |
-| PostgreSQL | 18.6, image `postgres:18.6-trixie` | PostgreSQL License | Major 18 supported to 14 November 2030 | Current minor; no fix listed after 18.6 | VERIFIED |
+| PostgreSQL | 18.6, image `postgres:18.6-trixie` (digest `sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336`), for the server and, in the same image, for `psql`, which runs the setup script `database/setup/setup.sql`; the setup refuses another major version | PostgreSQL License | Major 18 supported to 14 November 2030 | Current minor; no fix listed after 18.6 | VERIFIED; the features that SCHEMA relies on proven on it by TASK-004 (SCHEMA section 15, [TASK-004 evidence](../11-tasks/evidence/TASK-004.md) section 6): UTF-8, libc provider, locale `en_US.utf8` of glibc 2.41, `pg_trgm` 1.6 |
 | Nginx | 1.30.6-1~trixie, from nginx.org | BSD-2-Clause | Stable branch 1.30 | Not affected by any advisory that nginx.org lists | VERIFIED |
 | Gitleaks (secret scan) | 8.30.1, image `ghcr.io/gitleaks/gitleaks:v8.30.1` | MIT | Latest release | No advisory affects 8.30.1 | VERIFIED |
 

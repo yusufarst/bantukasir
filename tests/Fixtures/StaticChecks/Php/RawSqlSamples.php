@@ -2,6 +2,7 @@
 
 namespace Tests\Fixtures\StaticChecks;
 
+use App\Database\Identifier;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\Expression;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,10 @@ function rawSqlFromInput(string $name, Builder $query): void
     $query->whereRaw('name = ?');
     $query->orderByRaw($name);
     DB::raw('lower(name) = ?');
+    DB::statement('GRANT SELECT ON TABLE sample_items TO '.Identifier::quote($name).$name);
+    DB::statement('GRANT SELECT ON TABLE sample_items TO '.strtolower($name));
+    DB::statement('select ? from '.Identifier::quote($name));
+    DB::statement("GRANT SELECT ON TABLE sample_items TO {$name}");
 }
 
 function rawSqlBound(string $name, Builder $query): void
@@ -27,4 +32,6 @@ function rawSqlBound(string $name, Builder $query): void
     $query->select('id');
     DB::raw('count(*)');
     DB::statement("select 'a?b'");
+    DB::statement('GRANT SELECT ON TABLE sample_items TO '.Identifier::quote($name));
+    DB::select('select ? from '.Identifier::quote($name), [$name]);
 }

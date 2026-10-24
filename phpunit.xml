@@ -5,9 +5,19 @@
     (composer test:postgres); L3 in tests/Concurrency (composer test:race). The
     suite Network, tests/Network, holds the negative proofs of the dependency
     audit that need Packagist's advisories; composer lint runs it after the
-    audit itself. A test is never retried until it passes (TS-08). Sessions and
-    the cache use the array driver and store until TASK-004 and TASK-006 create
-    their tables.
+    audit itself. A test is never retried until it passes (TS-08).
+
+    The tests on PostgreSQL use the test database bantukasir_test (marker
+    "test"), which database/setup/local.sh creates beside the local database,
+    with the local roles of that script and no password (TASK-004): the
+    application connects as the runtime role, the harness migrates and resets
+    as the migration role (tests/Harness/TestDatabase.php). DB_URL is left
+    empty: only the runtime connection reads it, and a URL would override its
+    host, port and database, so every connection takes its target from the
+    same values; the harness also refuses, before any write or reset, a
+    connection that does not reach the test database (TASK-004 evidence
+    section 10). Sessions and the cache use the array driver and store, except
+    in the tests of the database cache store; the sessions table is TASK-006's.
 -->
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
@@ -43,5 +53,26 @@
         <env name="SESSION_DRIVER" value="array" force="true"/>
         <env name="CACHE_STORE" value="array" force="true"/>
         <env name="DB_CONNECTION" value="pgsql" force="true"/>
+        <env name="DB_URL" value="" force="true"/>
+        <env name="APP_ENVIRONMENT_NAME" value="test" force="true"/>
+        <env name="DB_DATABASE" value="bantukasir_test" force="true"/>
+        <env name="DB_USERNAME" value="bk_runtime" force="true"/>
+        <env name="DB_MIGRATION_USERNAME" value="bk_migration" force="true"/>
+        <env name="BACKUP_DB_USERNAME" value="bk_backup" force="true"/>
+        <!--
+            Laravel reads $_SERVER before $_ENV, and in the containers $_SERVER
+            holds the container's own environment, so each value is also set
+            there (TASK-004); the <env> entries reach child processes.
+        -->
+        <server name="APP_ENV" value="testing"/>
+        <server name="SESSION_DRIVER" value="array"/>
+        <server name="CACHE_STORE" value="array"/>
+        <server name="DB_CONNECTION" value="pgsql"/>
+        <server name="DB_URL" value=""/>
+        <server name="APP_ENVIRONMENT_NAME" value="test"/>
+        <server name="DB_DATABASE" value="bantukasir_test"/>
+        <server name="DB_USERNAME" value="bk_runtime"/>
+        <server name="DB_MIGRATION_USERNAME" value="bk_migration"/>
+        <server name="BACKUP_DB_USERNAME" value="bk_backup"/>
     </php>
 </phpunit>

@@ -1,3 +1,7 @@
 <?php
 
-return [];
+use App\Providers\DatabaseServiceProvider;
+
+return [
+    DatabaseServiceProvider::class,
+];
