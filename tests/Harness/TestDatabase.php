@@ -19,6 +19,15 @@ use RuntimeException;
  * environment name both say "test". The runtime role, which the application
  * and the tests use, keeps its production privileges and never truncates.
  *
+ * Before every migration and every reset, each connection of the harness —
+ * migration, runtime and backup — must be its own marked role on a database
+ * whose marker and the configured name are "test", and the runtime and backup
+ * connections must reach the same database as the migration connection: the
+ * runtime connection alone reads DB_URL, which overrides its host, port and
+ * database (config/database.php), so the migration connection's marker alone
+ * proves nothing about where the tests write (evidence section 10). Every
+ * observer and race worker is held to the same database.
+ *
  * Test-only tables are named harness_*; a test creates and drops its own, and
  * the reset drops any that a failed run left behind.
  */
@@ -32,18 +41,21 @@ final class TestDatabase
 
     private static bool $migrated = false;
 
+    private static ?string $identity = null;
+
     /**
-     * Migrates the test database once per process, as the migration role.
+     * Migrates the test database once per process, as the migration role,
+     * after the check of every connection, which runs at every call.
      *
      * @throws DatabaseRefused
      */
     public static function prepare(): void
     {
+        self::requireTestDatabase();
+
         if (self::$migrated) {
             return;
         }
-
-        self::requireTestDatabase();
 
         $status = Artisan::call('migrate', ['--database' => self::MIGRATION, '--force' => true]);
 
@@ -120,9 +132,13 @@ final class TestDatabase
     }
 
     /**
-     * The migration role's connection to the test database, after both
-     * checks: the marker and the configured name are "test", and the
-     * connection is the migration role.
+     * The migration role's connection to the test database, after the checks
+     * of every connection of the harness, which only read: the migration
+     * connection (the given one, or the harness's) is the migration role on a
+     * database whose marker and the configured name are "test"; the runtime
+     * and backup connections are their own roles on that same database. The
+     * database's identity is then recorded for the observers and the race
+     * workers.
      *
      * @throws DatabaseRefused
      */
@@ -130,9 +146,83 @@ final class TestDatabase
     {
         $migration ??= DB::connection(self::MIGRATION);
 
-        EnvironmentMarker::require($migration, ['test']);
-        DatabaseRoles::requireCurrent($migration, 'migration');
+        $identity = self::verify($migration, 'migration');
+        self::verify(DB::connection(self::RUNTIME), 'runtime', $identity);
+        self::verify(DB::connection(self::BACKUP), 'backup', $identity);
+
+        self::$identity = $identity;
 
         return $migration;
+    }
+
+    /**
+     * Refuses unless the connection is the role of this kind on the test
+     * database: the database's marker and the configured environment name are
+     * both "test", the connection's role is the one marked with this kind
+     * (DatabaseRoles), and, when an identity is given, the database is that
+     * one. It only reads, and returns the database's identity.
+     *
+     * @param  'migration'|'runtime'|'backup'  $kind
+     *
+     * @throws DatabaseRefused
+     */
+    public static function verify(ConnectionInterface $connection, string $kind, ?string $identity = null): string
+    {
+        EnvironmentMarker::require($connection, ['test']);
+        DatabaseRoles::requireCurrent($connection, $kind);
+
+        $actual = self::identity($connection);
+
+        if ($identity !== null && $actual !== $identity) {
+            throw new DatabaseRefused(sprintf(
+                'The %s connection reaches the database %s, not the test database %s (TS-07).',
+                $kind,
+                $actual,
+                $identity,
+            ));
+        }
+
+        return $actual;
+    }
+
+    /**
+     * The identity of the connection's database: its cluster's system
+     * identifier, its OID and its name, as "system/oid/name". Two connections
+     * reach the same database exactly when they give the same identity,
+     * whatever host name, address or port each used.
+     *
+     * @throws DatabaseRefused
+     */
+    public static function identity(ConnectionInterface $connection): string
+    {
+        // pg_catalog's functions and operator by name: nothing of the schema
+        // public can change the answer.
+        $identity = $connection->scalar(<<<'SQL'
+            select pg_catalog.concat_ws('/', (pg_catalog.pg_control_system()).system_identifier, d.oid, d.datname)
+            from pg_catalog.pg_database d
+            where d.datname operator(pg_catalog.=) pg_catalog.current_database()
+            SQL);
+
+        if (! is_string($identity) || preg_match('/\A\d+\/\d+\/.+\z/', $identity) !== 1) {
+            throw new DatabaseRefused('The identity of the database could not be read.');
+        }
+
+        return $identity;
+    }
+
+    /**
+     * The identity of the test database as the last check of this process
+     * recorded it (requireTestDatabase, which every test on the database runs
+     * before it starts).
+     *
+     * @throws DatabaseRefused when no check has passed in this process
+     */
+    public static function verifiedIdentity(): string
+    {
+        if (self::$identity === null) {
+            throw new DatabaseRefused('No connection of the harness has been checked in this process (TestDatabase::requireTestDatabase).');
+        }
+
+        return self::$identity;
     }
 }

@@ -7,6 +7,7 @@ use Tests\Harness\DatabaseTestCase;
 use Tests\Harness\Probe\ProbeCommand;
 use Tests\Harness\Race\InjectedFailure;
 use Tests\Harness\Race\Worker;
+use Tests\Harness\TestDatabase;
 
 /**
  * The self-tests of the race harness (AC-004-05; TEST_STRATEGY TS-20): two
@@ -145,6 +146,25 @@ final class RaceHarnessTest extends DatabaseTestCase
         $this->assertNothingIn(['harness_identities', 'harness_log']);
     }
 
+    public function test_a_worker_refuses_a_connection_to_any_database_but_the_test_database_of_its_test(): void
+    {
+        // A DB_URL in the worker's environment takes its runtime connection
+        // to the local database of the same cluster (config/database.php).
+        $runtime = (array) config('database.connections.'.TestDatabase::RUNTIME);
+        $url = sprintf('pgsql://%s@%s:%s/bantukasir', self::text($runtime['username'] ?? null), self::text($runtime['host'] ?? null), self::text($runtime['port'] ?? null));
+        $elsewhere = Worker::start(ProbeCommand::class, ['key' => 'elsewhere'], ['after_identity'], null, ['DB_URL' => $url]);
+        $unnamed = Worker::start(ProbeCommand::class, ['key' => 'unnamed'], ['after_identity'], null, [Worker::DATABASE => '']);
+        $another = Worker::start(ProbeCommand::class, ['key' => 'another'], ['after_identity'], null, [Worker::DATABASE => '1/1/bantukasir_test']);
+        $this->workers[] = $elsewhere;
+        $this->workers[] = $unnamed;
+        $this->workers[] = $another;
+
+        $this->assertSame('The database marker "local" differs from the environment name "test" (ENV-04).', $elsewhere->finish()->failureMessage());
+        $this->assertSame('The race worker needs the identity of the test database ('.Worker::DATABASE.').', $unnamed->finish()->failureMessage());
+        $this->assertSame('The runtime connection reaches the database '.TestDatabase::verifiedIdentity().', not the test database 1/1/bantukasir_test (TS-07).', $another->finish()->failureMessage());
+        $this->assertNothingIn(['harness_identities', 'harness_log']);
+    }
+
     /**
      * @param  array<string, mixed>  $arguments
      * @param  list<string>  $barriers
@@ -155,5 +175,10 @@ final class RaceHarnessTest extends DatabaseTestCase
         $this->workers[] = $worker;
 
         return $worker;
+    }
+
+    private static function text(mixed $value): string
+    {
+        return is_string($value) || is_int($value) ? (string) $value : self::fail('The configuration holds '.get_debug_type($value));
     }
 }

@@ -13,8 +13,9 @@ use Tests\TestCase;
 
 /**
  * The base of every test on the database (TEST_STRATEGY sections 3 to 5;
- * TASK-004). Before each test the test database is migrated, once per
- * process, and reset (TestDatabase). The test's own writes go through the
+ * TASK-004). Before each test every connection of the harness is checked to
+ * reach the test database, which is then migrated, once per process, and
+ * reset (TestDatabase). The test's own writes go through the
  * runtime role, as the application's do (SCH-53); its assertions read through
  * an independent connection, a separate PostgreSQL session that sees only
  * what was committed (TS-03); nothing runs inside a wrapping transaction.
@@ -45,8 +46,11 @@ abstract class DatabaseTestCase extends TestCase
             $this->migration()->statement('DROP TABLE IF EXISTS '.Identifier::quote($table).' CASCADE');
         }
 
-        foreach ($this->observers as $observer) {
-            DB::purge($observer);
+        // Every session the test opened ends with it: the framework leaves
+        // them to the garbage collector, and the check of every connection
+        // before each test opens the backup connection too.
+        foreach ([...$this->observers, TestDatabase::RUNTIME, TestDatabase::MIGRATION, TestDatabase::BACKUP] as $connection) {
+            DB::purge($connection);
         }
 
         $this->testTables = [];
@@ -77,7 +81,9 @@ abstract class DatabaseTestCase extends TestCase
 
     /**
      * A new session of the runtime role, independent of every other
-     * connection of the test, for reading what was committed.
+     * connection of the test, for reading what was committed; refused unless
+     * it reaches the test database that the harness checked before the test
+     * (TestDatabase::verify).
      */
     protected function observer(): Connection
     {
@@ -85,7 +91,10 @@ abstract class DatabaseTestCase extends TestCase
         config(['database.connections.'.$name => config('database.connections.'.TestDatabase::RUNTIME)]);
         $this->observers[] = $name;
 
-        return DB::connection($name);
+        $observer = DB::connection($name);
+        TestDatabase::verify($observer, 'runtime', TestDatabase::verifiedIdentity());
+
+        return $observer;
     }
 
     /**

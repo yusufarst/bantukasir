@@ -3,22 +3,25 @@
 /*
  * The process of a race worker (TEST_STRATEGY TS-20, TS-21; TASK-004): one
  * competing command in a process of its own, with its own connection, started
- * by Tests\Harness\Race\Worker. It refuses to run outside the testing
- * environment and outside the test database; it binds PipePoints, so that the
- * test controls the command's interleaving through standard input and output
- * (Protocol), runs the scenario and reports its result or its failure.
+ * by Tests\Harness\Race\Worker. Before its command it refuses to run outside
+ * the testing environment, and on any connection but the runtime role on the
+ * test database that its test checked, whose identity the worker's environment
+ * gives (Worker::DATABASE, TestDatabase::verify); it binds PipePoints, so that
+ * the test controls the command's interleaving through standard input and
+ * output (Protocol), runs the scenario and reports its result or its failure.
  *
  * Usage: php tests/Harness/Race/process.php <scenario class> <arguments as base64 JSON> <barriers, comma-separated, or -> <fail after write step k, or ->
  */
 
 use App\Database\CommandPoints;
-use App\Database\EnvironmentMarker;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Tests\Harness\Race\PipePoints;
 use Tests\Harness\Race\Protocol;
 use Tests\Harness\Race\Scenario;
+use Tests\Harness\Race\Worker;
+use Tests\Harness\TestDatabase;
 
 $root = dirname(__DIR__, 3);
 
@@ -35,7 +38,13 @@ try {
         throw new RuntimeException('The race worker runs only in the testing environment.');
     }
 
-    EnvironmentMarker::require(DB::connection(), ['test']);
+    $identity = getenv(Worker::DATABASE);
+
+    if (! is_string($identity) || $identity === '') {
+        throw new RuntimeException('The race worker needs the identity of the test database ('.Worker::DATABASE.').');
+    }
+
+    TestDatabase::verify(DB::connection(), 'runtime', $identity);
 
     if (! is_string($class) || ! str_starts_with($class, 'Tests\\') || ! is_subclass_of($class, Scenario::class)) {
         throw new RuntimeException('The race worker runs a Scenario of the test suite only.');

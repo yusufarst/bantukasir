@@ -6,6 +6,7 @@ use Illuminate\Database\ConnectionInterface;
 use RuntimeException;
 use Symfony\Component\Process\InputStream;
 use Symfony\Component\Process\Process;
+use Tests\Harness\TestDatabase;
 
 /**
  * One competing command of a race test, in its own process with its own
@@ -28,6 +29,13 @@ use Symfony\Component\Process\Process;
 final class Worker
 {
     public const float WAIT_SECONDS = 20.0;
+
+    /**
+     * The variable that gives the worker the identity of the test database
+     * that its test checked (TestDatabase::verifiedIdentity()); the worker
+     * refuses to run on any other (process.php).
+     */
+    public const string DATABASE = 'HARNESS_TEST_DATABASE';
 
     private readonly InputStream $input;
 
@@ -61,7 +69,7 @@ final class Worker
         return new self(new Process(
             [PHP_BINARY, $root.'/tests/Harness/Race/process.php', $scenario, base64_encode(json_encode($arguments, JSON_THROW_ON_ERROR)), $barriers === [] ? '-' : implode(',', $barriers), $failAfter === null ? '-' : (string) $failAfter],
             $root,
-            $environment + self::environment(),
+            $environment + [self::DATABASE => TestDatabase::verifiedIdentity()] + self::environment(),
         ));
     }
 
