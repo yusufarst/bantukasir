@@ -388,6 +388,14 @@ On 25 October 2026 from 05:35:58 to 06:03:48, by the implementation executor, on
 
 The code that passed CI on `fd71860` fails the same way here, with more tests, so the timeouts come from this machine's speed during the runs — the Docker host shared its 3.4 GiB with other projects' containers, busy during the first runs — not from the fix, which changes no position of the specimen's non-zero data. The suite is not retried until it passes (TS-08): the local result stays FAIL by time, and the run of record of the browser suite for this fix cycle is CI's on the pull request's new head (section 10.9), on GitHub's runner, as `.github/workflows/ci.yml` runs it. Finding F-6 records the margin.
 
+**The local run after the condition was removed.** On the Owner's instruction to settle the local result before the merge, the cause above was removed instead of the suite being run again under it: one run, declared before it started and accepted whatever its result, by the implementation executor on 25 October 2026, on the commit `d8b9546` with no tracked change, as `.github/workflows/ci.yml` runs it (`docker compose up -d --build --wait`, `npm ci`, `npm run build`, then `docker compose run --rm playwright npm run test:e2e`; `APP_PORT=18080`). With the Owner's approval, the seven containers of the machine's other projects were paused for the run and unpaused after it; nothing of this repository changed. Dataset: synthetic only. The runs of the table above stay as they are (TS-32).
+
+| Run | Tree | Result |
+| --- | --- | --- |
+| 18:17:47 to 18:20:56, 4 workers, the other projects' containers paused | `d8b9546` | **PASS**: 92 passed in 3.0 minutes, none timed out; the slowest, "the specimen at 1440x900 passes the accessibility checks", in 16.3 s |
+
+With this run the browser suite passes locally on the pull request's head, beside the other commands of the contract above and CI run 40145303707 on the same commit. F-6 stays open: the slowest test uses about half of Playwright's 30 s limit, so a machine loaded by other work can reach it again.
+
 ### 10.6 Findings
 
 - **F-5 (fixed, section 10.2).** A period of zero net sales was drawn at the top of the trend chart.
