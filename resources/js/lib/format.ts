@@ -14,6 +14,9 @@ const MINUS = '−';
 
 const RUPIAH = 'Rp';
 
+/** The currency symbol of COPY_DECK section 1.3, for the prefix of a rupiah field (TASK-005). */
+export const RUPIAH_SYMBOL = RUPIAH;
+
 /**
  * Asia/Jakarta is UTC+07:00, Western Indonesia Time, without daylight saving
  * since 1964, so the client shifts an instant by this offset instead of

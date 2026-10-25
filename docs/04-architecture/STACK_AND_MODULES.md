@@ -132,6 +132,12 @@ Folders added by TASK-004 for the database foundation; the module boundaries do 
 - `database/setup/` holds the setup script of ENVIRONMENTS ENV-30 and the local and CI runner and self-test that the service `db-setup` of `compose.yaml` runs; `database/privileges.php` is the machine-readable privilege matrix of SCHEMA section 10, which each table's Task extends (EXC-43).
 - `tests/Harness/` holds the test harness — the test database, the helpers of the test families, the race and failure-injection harness and the fixture builder of "Toko Contoh" — which `tests/Feature/` and `tests/Concurrency/` use; `tests/Fixtures/Migrations/` holds test-only migrations.
 
+Folders added by TASK-005 for the design system; the module boundaries do not change:
+
+- `resources/js/components/ui/` holds the design system's components (DESIGN_SYSTEM section 8), the shortcut registry and the catalogue of the states; `resources/js/layouts/` the layout primitives and page archetypes; `resources/css/` the tokens, the font faces, the base layer and the components' stylesheet; `public/fonts/inter/` the self-hosted Inter files with their licence.
+- `app/Http/ContentSecurityPolicy.php` builds the policy of SECURITY_MODEL SEC-HDR-03 for one request's nonce; the middleware of TASK-007 applies it to every response.
+- `app/Http/Controllers/Testing/` and `resources/js/pages/Testing/` hold the component specimen, which `routes/web.php` registers only in the local and testing environments; it is not a route of ROUTE_CONTRACTS. `tests/Browser/support/` holds the browser harness that every interface Task reuses: the widths, the watch of the page (CSP, console, origin) and the measurements.
+
 | ID | Rule | Source |
 | --- | --- | --- |
 | STK-20 | Concurrency, constraint and rollback tests run against real PostgreSQL with committed fixtures and independent connections, never inside one wrapping transaction and never on SQLite or mocks. | TOOLCHAIN, L-P4 §Testing implications (input), L-P6 |

@@ -120,8 +120,17 @@ const keyAssertions = [
 // shown. The seventh form of the review, a literal bound to a variable and
 // rendered later, is a limit of lint that code review covers.
 const textCharacter = '/[\\p{L}\\p{N}]/u';
+// TASK-005 adds, for the design system's components: the geometry and
+// presentation attributes of SVG; the attributes of inputs and keyboard
+// shortcuts that never hold text; data attributes, which no stylesheet shows
+// (no attr() in content, tests/Unit/Design/assets.test.ts); and the props
+// of the components whose type is a union of fixed values — variant, size,
+// tone, icon, shortcut, kind, width, align, level, urgency — which a TypeScript type
+// keeps from holding text.
 const nonTextAttributes =
-    'className|class|type|role|key|id|htmlFor|for|name|href|src|srcSet|rel|target|method|action|autoComplete|inputMode|encType|accept|dir|lang|tabIndex|form|style|data-testid|aria-(controls|describedby|labelledby|live|current|haspopup|hidden|expanded|pressed|selected|checked|disabled|invalid|required|atomic|busy|relevant|orientation|sort|autocomplete|owns|activedescendant|errormessage|details|level|modal|multiline|multiselectable|readonly)';
+    'className|class|type|role|key|id|htmlFor|for|name|href|src|srcSet|rel|target|method|action|autoComplete|inputMode|encType|accept|dir|lang|tabIndex|form|style|data-testid|aria-(controls|describedby|labelledby|live|current|haspopup|hidden|expanded|pressed|selected|checked|disabled|invalid|required|atomic|busy|relevant|orientation|sort|autocomplete|owns|activedescendant|errormessage|details|level|modal|multiline|multiselectable|readonly|keyshortcuts)' +
+    '|viewBox|d|fill|stroke|strokeWidth|strokeLinecap|strokeLinejoin|cx|cy|r|x|y|x1|x2|y1|y2|points|transform|focusable|enterKeyHint|spellCheck|scope|data-[a-z0-9-]+' +
+    '|variant|size|tone|icon|shortcut|kind|width|align|level|urgency';
 const notShown = [
     ":not(:matches(CallExpression[callee.name='t'], CallExpression[callee.property.name='t']) > Literal:first-child)",
     `:not(JSXAttribute[name.name=/^(${nonTextAttributes})$/] *)`,

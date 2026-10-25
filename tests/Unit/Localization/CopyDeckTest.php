@@ -11,7 +11,8 @@ use PHPUnit\Framework\TestCase;
  * its text verbatim. The month and day names are the rows "Months" and "Days"
  * of COPY_DECK section 1.3, under `ux.format.month.*` and `ux.format.day.*`
  * with English leaves; the unit words of durations are named in the text of
- * section 1.3 (CC-21).
+ * section 1.3 (CC-21); the texts of the states are those of section 12
+ * (TASK-005).
  */
 final class CopyDeckTest extends TestCase
 {
@@ -29,6 +30,7 @@ final class CopyDeckTest extends TestCase
                 str_starts_with($key, 'ux.format.month.') => $this->listItem($deck, 'Months', self::MONTHS, substr($key, strlen('ux.format.month.'))),
                 str_starts_with($key, 'ux.format.day.') => $this->listItem($deck, 'Days', self::DAYS, substr($key, strlen('ux.format.day.'))),
                 str_starts_with($key, 'ux.format.duration.') => $this->named($deck, $key),
+                str_starts_with($key, 'ux.state.') => $this->state($deck, $key),
                 default => $this->row($deck, $key),
             };
         }
@@ -64,6 +66,59 @@ final class CopyDeckTest extends TestCase
         $this->assertContains($matches[1][0], array_map(fn (string $example): string => (string) preg_replace('/^[0-9]+ /', '', trim($example)), $examples));
 
         return $matches[1][0];
+    }
+
+    /**
+     * A state text of section 12 (TASK-005), whose rows are "| state | `key` |
+     * title or label | body | action | changed |". The key of a row is the
+     * parent of its texts: `.title` is the title column and `.body` the body
+     * column, without its notes — "Accessible: " before it, and what follows
+     * " Then ", " Line: ", " Staff: " or " Receiving: ", which name other
+     * texts; a row whose key is a label (`ux.state.inactive.label`) holds it
+     * in the title column. Any other text is named inline by its full key, as
+     * "`key`: text", "`key`, text" or "text (`key`)", and stands there whole:
+     * up to the next inline label ("Total: `…`") or the end of the cell, its
+     * full stop included.
+     */
+    private function state(string $deck, string $key): string
+    {
+        $start = strpos($deck, "\n## 12. States");
+        $end = strpos($deck, "\n## 13. ");
+        $this->assertIsInt($start);
+        $this->assertIsInt($end);
+        $section = substr($deck, $start, $end - $start);
+
+        preg_match_all('/^\| [^|]+ \| `(ux\.state\.[a-z_.]+)` \| ([^|]*) \| ([^|]*) \|/m', $section, $rows, PREG_SET_ORDER);
+        $columns = [];
+
+        foreach ($rows as $row) {
+            $columns[$row[1]] = [trim($row[2]), trim($row[3])];
+        }
+
+        if (array_key_exists($key, $columns)) {
+            return $columns[$key][0];
+        }
+
+        $parent = substr($key, 0, (int) strrpos($key, '.'));
+        $leaf = substr($key, strlen($parent) + 1);
+
+        if (array_key_exists($parent, $columns) && $leaf === 'title') {
+            return $columns[$parent][0];
+        }
+
+        if (array_key_exists($parent, $columns) && $leaf === 'body') {
+            $body = (string) preg_replace('/^Accessible: /', '', $columns[$parent][1]);
+
+            return trim((string) preg_replace('/ (Then|Line:|Staff:|Receiving:) .*$/', '', $body));
+        }
+
+        $quoted = preg_quote($key, '/');
+        $found = preg_match('/`'.$quoted.'`[:,] (.+?)(?= [A-Z][A-Za-z ]*: `| \|)/', $section, $after)
+            ?: preg_match('/(?:\| |: |; )((?:[^|:;(]|:(?=[a-z]))+?) \(`'.$quoted.'`\)/', $section, $after);
+
+        $this->assertSame(1, $found, "COPY_DECK section 12 names {$key} with its text.");
+
+        return trim($after[1]);
     }
 
     /**
