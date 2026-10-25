@@ -20,12 +20,20 @@ const PAD_TOP = 16;
 const PAD_BOTTOM = 16;
 const GRID_LINES = 4;
 
-/** The vertical position of a value, computed in whole rupiah with BigInt, never as a float (ADR-006). */
-function yOf(value: bigint, min: bigint, max: bigint): string {
-    const span = max - min === 0n ? 1n : max - min;
+/**
+ * The vertical position of a value, computed in whole rupiah with BigInt,
+ * never as a float (ADR-006). The range always holds zero, so it is empty
+ * only when every value of the period is zero: the series then lies on the
+ * baseline, where zero is drawn, not at the top of the plot.
+ */
+export function yOf(value: bigint, min: bigint, max: bigint): string {
+    if (max === min) {
+        return String(HEIGHT - PAD_BOTTOM);
+    }
+
     const plot = BigInt(HEIGHT - PAD_TOP - PAD_BOTTOM);
 
-    return String(BigInt(PAD_TOP) + ((max - value) * plot) / span);
+    return String(BigInt(PAD_TOP) + ((max - value) * plot) / (max - min));
 }
 
 /**

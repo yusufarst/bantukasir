@@ -4,7 +4,7 @@
 | --- | --- |
 | Task | [TASK-005](../tasks/TASK-005-design-system.md), size L, review class B, lane P |
 | Status | `DONE` when the Owner squash-merges its pull request and CI passes on `develop` at the merge (EXECUTION_CONTEXT CE-50, CE-61); until then `develop` shows `READY`. The status of record is [TASK_PLAN](../TASK_PLAN.md) section 4 |
-| Instruction | D-101, continuous execution (EXECUTION_CONTEXT section 19, CE-01): the selection of CE-10 at `origin/develop` `3dd2b58`, the lowest-numbered `READY` Task with its dependencies `DONE` and its gate GATE-CC1 satisfied; mode `start`, delegated by `scripts/executor/tick.sh` on 24 October 2026 at 17:08 to the agent `bk-executor-high`. The Owner's own words for this run: follow the whole D-101 contract; each commit and each push need his separate approval; no merge. After the stop `REVIEW_MUST_FIX` (section 9.2), resumed in mode `resume` on 24 October 2026 at 21:01, in the phase `REVIEW`, with the Owner's answer D-102 as his note (CE-72; section 9.3). After the second stop `REVIEW_MUST_FIX` (section 9.4), resumed in mode `resume` on 24 October 2026 at 22:49, in the phase `REVIEW`, with the Owner's answer D-103 as his note (section 9.5) |
+| Instruction | D-101, continuous execution (EXECUTION_CONTEXT section 19, CE-01): the selection of CE-10 at `origin/develop` `3dd2b58`, the lowest-numbered `READY` Task with its dependencies `DONE` and its gate GATE-CC1 satisfied; mode `start`, delegated by `scripts/executor/tick.sh` on 24 October 2026 at 17:08 to the agent `bk-executor-high`. The Owner's own words for this run: follow the whole D-101 contract; each commit and each push need his separate approval; no merge. After the stop `REVIEW_MUST_FIX` (section 9.2), resumed in mode `resume` on 24 October 2026 at 21:01, in the phase `REVIEW`, with the Owner's answer D-102 as his note (CE-72; section 9.3). After the second stop `REVIEW_MUST_FIX` (section 9.4), resumed in mode `resume` on 24 October 2026 at 22:49, in the phase `REVIEW`, with the Owner's answer D-103 as his note (section 9.5). After the pull request, the fix cycle for the Owner's change request, in mode `fix` on 25 October 2026 at 05:30 (section 10) |
 | Branch | `task/TASK-005-design-system`, created from `origin/develop` (CE-02) |
 | Base commit | `3dd2b589ddd1b93c072a3866702c7afe0411a3ca`, the squash commit of pull request #5 (TASK-004) on `develop` |
 | Executor | The implementation executor agent `bk-executor-high` in Claude Code Desktop on the Owner's Windows machine, in the main working tree; Claude Opus 5.5 (`claude-opus-5-5`); effort High, from the table of EXECUTION_CONTEXT section 19 (CE-11) |
@@ -189,7 +189,7 @@ The run of record after review round 2, from 21:16:31 to 21:32:12 on the tree of
 | Data integrity | N/A | Writes no business fact; amounts stay canonical strings and BigInt in the components (ADR-006) |
 | Performance | N/A | No request path |
 | Operations | N/A | No backup, runbook or status impact |
-| Verification | PASS | The command contract green locally (section 7.1); the self-review (section 7.4); the reviewer's check of class B and its verification (section 9); CI follows the push (section 7.6) |
+| Verification | PASS | The command contract green locally (section 7.1); the self-review (section 7.4); the reviewer's check of class B and its verification (section 9); CI follows the push (section 7.6). After the fix cycle of section 10: every command PASS locally except the browser suite, which failed locally by Playwright's 30 s timeout only, as the code of `fd71860` does on the same machine (section 10.5), so its run of record is CI's on the new head (section 10.9) |
 
 ### 7.4 Self-review (EXC-70)
 
@@ -218,7 +218,7 @@ After review round 3 (D-103) the fixes of section 9.5 were self-reviewed against
 
 ### 7.6 CI
 
-The CI run on the pull request's head follows its push. A commit cannot name its own CI run: the next Task records the pull request, its last CI run, the merge commit and the CI run on `develop` in a final section "Merge" of this file (EXECUTION_CONTEXT CE-50).
+The CI run on the pull request's head follows its push; after the fix cycle of section 10, the run on its new head (section 10.9). A commit cannot name its own CI run: the next Task records the pull request, its last CI run, the merge commit and the CI run on `develop` in a final section "Merge" of this file (EXECUTION_CONTEXT CE-50).
 
 ## 8. The publication guard's preview (CE-31)
 
@@ -333,3 +333,76 @@ The package `review/TASK-005/r4` of the executor state, written on 24 October 20
 | R-30 | NOTE | The fallback of R-22 reaches the button of the menu that holds the focus; an item of a sub-menu, whose button also leaves the page, would not get the focus back to the root menu's button. `Menu` has no sub-menu, so TASK-005 cannot meet it | For a later Task that adds sub-menus: walk up to the root menu's button. Nothing in TASK-005 |
 
 No MUST-FIX or SHOULD-FIX is open; the review of the Task is complete (CE-40, D-103).
+
+## 10. Fix cycle 1: the Owner's change request (CE-43)
+
+### 10.1 The request
+
+- **The Owner's comment.** Issue comment 6389095208 by the Owner's account `yusufarst` on pull request #6, on 25 October 2026 at 03:22 (Asia/Jakarta), on the head `fd71860dc2bb1b166a9a74b85d3f1823cf6a9de5`: close the finding P2 on `TrendChart` before the merge; when every value of the period is zero, the line must lie on the baseline (`HEIGHT - PAD_BOTTOM`), not at the top; keep the BigInt computation and add a regression test, the case of a single point of zero included; only this defect within TASK-005; the verification of the repository's rules in force; each commit and push at its own prompt; CI green; then the stop at `AWAIT_MERGE`; no TASK-006 and no change of D-104 in this pull request.
+- **The Owner's `/stop`.** Issue comment 6389070379 by `yusufarst`, of 03:19: `/stop`. The run that verifies the merge of this pull request stops instead of starting TASK-006 (CE-62); the executor state records it.
+- **The run.** `scripts/executor/tick.sh` delegated it on 25 October 2026 at 05:30 in mode `fix` to the agent `bk-executor-high` (Claude Opus 5.5, `claude-opus-5-5`, CE-13; effort High by the table of EXECUTION_CONTEXT section 19), from the phase `CI`, with the lock of that run. The executor state, the branch at `fd71860`, `origin/task/TASK-005-design-system` and the open pull request's head agreed; nothing was staged or modified; untracked only `Claude outputs/` and `plan-p0-p11-review.patch` (CURRENT_HANDOFF section 2).
+- **The finding it names** is the review comment 4367727651 of `chatgpt-codex-connector[bot]` on `resources/js/components/ui/TrendChart.tsx` at `fd71860`: data under CE-43, which the Owner's comment made a change request. The account's issue comment 6386607560 and review 5638953084 are its summaries; nothing was done for them.
+
+### 10.2 The defect (F-5)
+
+`TrendChart` starts both ends of its range at zero, so the range always holds zero and is empty only when every value is zero. For that case `yOf` replaced the empty span with 1, and `PAD_TOP + (max - value) × plot / 1` put zero at `PAD_TOP`, 16, the top of the plot: a period of no sales was drawn as a flat line along the top edge, as if it were the highest value, with its area filling the whole plot. Reproduced before the fix by the regression tests of section 10.4.
+
+### 10.3 The fix
+
+`yOf` returns the baseline `HEIGHT - PAD_BOTTOM`, 224, when the range is empty, and otherwise divides by the range as before; the computation stays in whole rupiah with BigInt (ADR-006). `yOf` is exported for its unit test. The area's base, `yOf(0n, …)`, is the same baseline, so a zero series and its area lie on the bottom grid line. Nothing else changes: with a non-empty range every position is as before, and the specimen's data are unchanged. Files: `resources/js/components/ui/TrendChart.tsx` and the new `tests/Unit/Design/trendChart.test.ts`.
+
+### 10.4 Tests
+
+`tests/Unit/Design/trendChart.test.ts` (L1, Vitest, 6 tests): `yOf` with an empty range gives the baseline; with a range, the highest value the top (16), zero the baseline (224) and the middle value 120; exact positions for amounts beyond the safe range of a float; and the component rendered on the server (`renderToStaticMarkup` inside `AnnouncerProvider`): a period of three zero days and **a single point of zero** each draw the line, the points and the area on 224, the y of the bottom grid line; a series 0, 1,052,000 and 2,104,000 still draws 224, 120 and 16.
+
+Run against the logic before the fix — the old body of `yOf` put back for the run at about 05:35, then the fix restored — three tests failed (the empty range "Expected 224, Received 16", the zero period and the single point of zero); with the fix all six pass.
+
+### 10.5 The command contract
+
+On 25 October 2026 from 05:35:58 to 06:03:48, by the implementation executor, on the working tree of the branch at `fd71860` with the fix of section 10.3, uncommitted, as `.github/workflows/ci.yml` runs it, each command in the containers of the local environment started with `docker compose up -d --build --wait` (`APP_PORT=18080`, section 1). Dataset: synthetic only.
+
+| Command | Result |
+| --- | --- |
+| `composer validate --strict --no-check-all` | PASS |
+| `composer lint` | PASS: Pint clean, 138 files; translation keys 119 used, all present, no literal user-facing text; translation types current, 197 keys; migration review: 1 migration; secret scan: no leaks; `composer audit`: no advisory; the suite Network: 2 tests |
+| `composer analyse` | PASS: PHPStan level 9, no error |
+| `composer test:unit` | PASS: 499 tests, 382,232 assertions |
+| `composer test:postgres` | PASS: 171 tests, 1,259 assertions |
+| `composer test:race` | PASS: 8 tests, 60 assertions |
+| `npm ci`, then `npm run lint` | PASS: ESLint clean; npm audit: no high or critical advisory apart from those accepted with a reason; its network proof: 1 test passed |
+| `npm run typecheck` | PASS |
+| `npm run test:unit` | PASS: 12 files, 474 tests — the 468 of section 7.1 and the 6 of section 10.4 |
+| `npm run build` | PASS |
+| `npm run test:e2e` | **FAIL locally by time, not by behaviour**: 91 of 92 passed; one test exceeded Playwright's default limit of 30 s (below) |
+
+**The browser suite on this machine.** In every local run the failures were the 30 s test timeout and nothing else: no assertion, axe violation, console error or CSP violation failed.
+
+| Run | Tree | Result |
+| --- | --- | --- |
+| 05:56:25 to 06:03:48, the run above, 4 workers | the fix | 91 passed; "the specimen at 1440x900 passes the accessibility checks" timed out inside axe's `analyze()` (30.1 s) |
+| 06:04:24 to 06:12:47, the same command again | the fix | the same: 91 passed, the same test timed out (31.3 s) |
+| 06:14:32 to 06:20:09, `--workers=2` | the fix | the same: 91 passed, the same test timed out (30.0 s) |
+| That test alone, three times | the fix | PASS in 20.5 s, 14.6 s and 13.1 s |
+| 06:22:55 to 06:37:14, after `npm run build` | **before the fix**: the old body of `yOf` put back for the comparison, the code of `fd71860`, whose CI run passed | 88 passed, **4 timed out**: the specimen's accessibility checks at 1366x768 and 1024x768, the card and dialog sizes, and Ctrl+Enter from the stepper's field; 14.1 minutes |
+| 06:38:49 to 06:48:42, after the fix was restored and built again | the fix | 91 passed; "the specimen at 390x844 passes the accessibility checks" timed out (30.1 s) |
+
+The code that passed CI on `fd71860` fails the same way here, with more tests, so the timeouts come from this machine's speed during the runs — the Docker host shared its 3.4 GiB with other projects' containers, busy during the first runs — not from the fix, which changes no position of the specimen's non-zero data. The suite is not retried until it passes (TS-08): the local result stays FAIL by time, and the run of record of the browser suite for this fix cycle is CI's on the pull request's new head (section 10.9), on GitHub's runner, as `.github/workflows/ci.yml` runs it. Finding F-6 records the margin.
+
+### 10.6 Findings
+
+- **F-5 (fixed, section 10.2).** A period of zero net sales was drawn at the top of the trend chart.
+- **F-6 (for the Owner or a later Task).** The specimen's browser tests run under Playwright's default limit of 30 s per test; on a loaded local machine some of them reach it (section 10.5), while alone they take 13 to 21 s. Raising the limit, or splitting the axe check from the measurements, changes the harness and is outside this fix cycle, which the Owner limited to the defect of F-5.
+
+### 10.7 Self-review (EXC-70)
+
+The diff of the fix cycle from `fd71860` was reviewed against the Owner's comment, DESIGN_SYSTEM 8.13, UXA-19 and ADR-006. The empty range occurs only when every value is zero, because both ends of the range start at zero, so the baseline is the right place for every value of that series; a range with negative values, which net sales per day do not have in V1, is unchanged. No float enters the computation; `HEIGHT - PAD_BOTTOM` is a whole number of the drawing. The export of `yOf` adds no user-facing text; ESLint, the JSX literal rule and the typecheck pass. Every file is LF.
+
+There is no review round for this fix cycle: the Owner's comment asks for the verification of the repository's rules in force, and CE-42 gives a targeted verification only to a fix that changes the production behaviour of a class-A Task, while TASK-005 is of class B; the reviews of section 9 stay complete.
+
+### 10.8 The publication guard's preview (CE-31)
+
+`bash scripts/executor/guard.sh --preview`, on 25 October 2026 at about 06:51, on the working tree with this section's records, against `origin/develop`: the same 47 candidates as section 8 — the two font files, the 44 npm registry addresses of `package-lock.json` and the licence address of `OFL.txt` — each judged as there, none a real finding. The fix cycle adds none: its two files hold no address, host, e-mail address or home-directory path. The guard runs again on the commits before the push.
+
+### 10.9 CI
+
+The CI run on the head of this fix cycle follows its push. A commit cannot name its own CI run: the next Task records it with the merge (CE-50).
