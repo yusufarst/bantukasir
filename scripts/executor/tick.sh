@@ -16,7 +16,7 @@
 # "WAKE <key> <first line>" for an event, whose key the decision point that
 # reached it names: the same while the same condition lasts, new for a new
 # occurrence (D-104); loop.seq, which each RUN and each resume advance, tells
-# apart the occurrences of a recovery, a selection and a green CI. A real tick
+# apart the occurrences of a recovery, a selection, a green CI and a stop. A real tick
 # writes bantukasir-executor/last-tick, "<epoch>|<first line>", when it ends,
 # also on TICK_ERROR. --explain prints a Task's parsed row, its eligibility and
 # its three agents with their efforts, without any write; with --worktree it
@@ -162,7 +162,8 @@ ops_change_request() {
 event() { [ -n "$EVENT" ] || EVENT="$1"; }
 # stop_event <REASON> [id]: a stop is an event unless the state was already
 # STOPPED for that reason before the tick; <id> is the pull request's head, else
-# the Task, else "-".
+# the Task, else "-". The key ends with loop.seq, so that the same stop found
+# again after the Owner's resume is a new event, not one already acknowledged.
 stop_event() {
     local pr id
     if [ "$PHASE_BEFORE" = STOPPED ] && [ "$REASON_BEFORE" = "$1" ]; then return 0; fi
@@ -174,7 +175,7 @@ stop_event() {
     else
         id="$(st_get task.id)"
     fi
-    event "STOPPED_NEW:$1:${pr:--}:${id:--}"
+    event "STOPPED_NEW:$1:${pr:--}:${id:--}:$(seq_of)"
 }
 # cr_key: the comment cursors after processing, the key of change requests.
 cr_key() { printf '%s-%s-%s' "$(st_get pr.lastIssueCommentId)" "$(st_get pr.lastReviewCommentId)" "$(st_get pr.lastReviewId)"; }
