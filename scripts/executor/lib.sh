@@ -371,6 +371,10 @@ adopt_state() {
     st_unset loop.stopReason
     st_unset loop.stopDetail
     st_unset loop.prevPhase
+    # Like a resume, an adoption is a new occurrence for the watcher's keys.
+    local s
+    s="$(st_get loop.seq)"
+    st_set loop.seq $(( ${s:-0} + 1 ))
 }
 # fill_task_from_plan <TASK-NNN> <branch>: the Task's row and agents from
 # TASK_PLAN and the effort table at origin/develop, for an adopted or

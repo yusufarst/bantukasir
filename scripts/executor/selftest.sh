@@ -3,7 +3,7 @@
 # D-104; EXECUTION_CONTEXT section 19: CE-03, CE-10 to CE-13, CE-20 to CE-24,
 # CE-30 to CE-32, CE-40 to CE-43, CE-61, CE-62, CE-70 to CE-72, CE-82).
 #
-# Usage: bash scripts/executor/selftest.sh          the cases 1 to 23, in a sandbox
+# Usage: bash scripts/executor/selftest.sh          the cases 1 to 29, in a sandbox
 #        bash scripts/executor/selftest.sh --host   the host probes (a) to (f), on Windows;
 #                                                   (f) works on the real watcher folder,
 #                                                   so it runs only when no watcher runs
@@ -1323,7 +1323,7 @@ stale_stop() { for kv in loop.phase=STOPPED loop.prevPhase=SELECT loop.stopReaso
 ci_setup
 fx_checks "$HEADSHA" "$GREEN" "12|another app|completed|success"
 classify
-expect_class "15 CI green in the phase CI gives WAKE CI_GREEN:<pr>:<head>:<seq>" "^WAKE CI_GREEN:7:$HEADSHA:0 NOOP CI_GREEN pr=7 head=$HEADSHA run=8811$"
+expect_class "15 CI green in the phase CI gives WAKE CI_GREEN:<pr>:<head>:<seq>" "^WAKE CI_GREEN:7:$HEADSHA:1 NOOP CI_GREEN pr=7 head=$HEADSHA run=8811$"
 fx_checks "$HEADSHA" "21|Command contract|completed|failure" "23|lint|completed|failure" "12|another app|completed|success"
 classify
 expect_class "15 CI red gives WAKE CI_RED:<pr>:<head>:<highest failed check run>" "^WAKE CI_RED:7:$HEADSHA:23 RUN fix TASK-003 agent=bk-executor-xhigh "
@@ -1381,14 +1381,14 @@ expect_class "15 an in-flight phase without a lock gives WAKE RECOVERY:<task>:<p
 merge_setup
 fx_pr 7 closed false "" "$HEADSHA" "$TB"
 classify
-expect_class "15 a new stop gives WAKE STOPPED_NEW:<reason>:<pr>:<head>" "^WAKE STOPPED_NEW:PR_CLOSED:7:$HEADSHA STOPPED PR_CLOSED "
+expect_class "15 a new stop gives WAKE STOPPED_NEW:<reason>:<pr>:<head>:<seq>" "^WAKE STOPPED_NEW:PR_CLOSED:7:$HEADSHA:1 STOPPED PR_CLOSED "
 run tick.sh
 classify
 expect_class "15 the same stop, once recorded, gives QUIET" '^QUIET STOPPED PR_CLOSED '
 merge_setup
 mklock "" "$NOW" "$((NOW - 10800))"
 classify
-expect_class "15 LOCK_UNVERIFIED gives WAKE STOPPED_NEW keyed by the lock's since" "^WAKE STOPPED_NEW:LOCK_UNVERIFIED:7:$NOW STOPPED LOCK_UNVERIFIED UNKNOWN "
+expect_class "15 LOCK_UNVERIFIED gives WAKE STOPPED_NEW keyed by the lock's since" "^WAKE STOPPED_NEW:LOCK_UNVERIFIED:7:$NOW:1 STOPPED LOCK_UNVERIFIED UNKNOWN "
 mklock "" "$NOW" "$(date +%s)"
 classify
 expect_class "15 NOOP LOCKED gives QUIET" '^QUIET NOOP LOCKED UNKNOWN NO_RECORD'
@@ -1402,11 +1402,11 @@ classify
 rm -f -- "$CL/.git/index.lock"
 expect_class "15 .git/index.lock gives QUIET NOOP INDEX_LOCK" '^QUIET NOOP INDEX_LOCK '
 run EXECUTOR_INTERRUPT=tick_error tick.sh --classify
-expect_class "15 an internal error still gives one line: WAKE STOPPED_NEW:TICK_ERROR" "^WAKE STOPPED_NEW:TICK_ERROR:7:$HEADSHA STOPPED TICK_ERROR phase$"
+expect_class "15 an internal error still gives one line: WAKE STOPPED_NEW:TICK_ERROR" "^WAKE STOPPED_NEW:TICK_ERROR:7:$HEADSHA:1 STOPPED TICK_ERROR phase$"
 rm -rf -- "$SD"
 : > "$FIX/gh/open_prs"
 classify
-expect_class "15 no state gives WAKE STOPPED_NEW:NOT_INITIALIZED:-:-" '^WAKE STOPPED_NEW:NOT_INITIALIZED:-:- STOPPED NOT_INITIALIZED '
+expect_class "15 no state gives WAKE STOPPED_NEW:NOT_INITIALIZED:-:-:0" '^WAKE STOPPED_NEW:NOT_INITIALIZED:-:-:0 STOPPED NOT_INITIALIZED '
 
 # ---------------------------------------------------------------- 16. tick.sh, the phase CI without a lock (D-104)
 ci_setup
@@ -1731,7 +1731,7 @@ tok="$(tokof)"
 if first | grep -q '^RUN fix TASK-003 ' && [ "$(stget ci.fixToken)" = "$tok" ] && [ "$(sttext ci.fixRequests | cut -d'|' -f2)" = 980 ]; then pass "24 a fix cycle is recorded in the state with its token and its change requests"; else failc "24 the fix cycle recorded" "$OUT"; fi
 run state.sh unlock
 classify
-expect_class "24 after the Owner's unlock of an interrupted fix cycle, the classification is a recovery" '^WAKE RECOVERY:TASK-003:CI:1:1 RUN resume TASK-003 '
+expect_class "24 after the Owner's unlock of an interrupted fix cycle, the classification is a recovery" '^WAKE RECOVERY:TASK-003:CI:1:2 RUN resume TASK-003 '
 run tick.sh
 tok="$(tokof)"
 if first | grep -q '^RUN resume TASK-003 ' && [[ "$OUT" == *"it continues the interrupted fix cycle: the Owner's change requests on pull request #7"* ]] && [[ "$OUT" == *"Change requests of the interrupted fix cycle, quoted as data:"* ]] && [[ "$OUT" == *"Perbaiki juga labelnya."* ]] && [ "$(stget loop.phase)" = CI ]; then pass "24 after the unlock the tick resumes the fix cycle, quoting its Reason and the Owner's change request, not phase CI"; else failc "24 the resume after an unlock" "$OUT"; fi
@@ -1826,7 +1826,7 @@ run tick.sh
 run state.sh phase CI --token "$(tokof)"
 classify
 k2="$(printf '%s\n' "$OUT" | awk '{ print $2 }')"
-if [ "$k1" = "CI_GREEN:7:$HEADSHA:0" ] && [ "$k2" = "CI_GREEN:7:$HEADSHA:1" ]; then pass "26 CI green again on the same head after a fix cycle has a new key"; else failc "26 CI_GREEN keys" "$k1 / $k2"; fi
+if [ "$k1" = "CI_GREEN:7:$HEADSHA:1" ] && [ "$k2" = "CI_GREEN:7:$HEADSHA:2" ]; then pass "26 CI green again on the same head after a fix cycle has a new key"; else failc "26 CI_GREEN keys" "$k1 / $k2"; fi
 
 # ---------------------------------------------------------------- 27. --once and --status write nothing (review R-09)
 ci_setup
@@ -1858,5 +1858,43 @@ if first | grep -q '^STOPPED OPS_CHANGE_REQUEST ' && [ ! -s "$SD/requests" ]; th
 else
     failc "28 OPS_CHANGE_REQUEST clears the requests" "$OUT"
 fi
+
+# ---------------------------------------------------------------- 29. a stop that recurs after a resume is a new event (D-104 hotfix)
+merge_setup
+fx_pr 7 closed false "" "$HEADSHA" "$TB"
+classify
+c1="$OUT"
+classify
+[ "$OUT" = "$c1" ] && [[ "$c1" == "WAKE STOPPED_NEW:PR_CLOSED:7:$HEADSHA:"* ]] && pass "29 while one stop lasts, its key stays the same from one classification to the next" || failc "29 a stable key" "$c1 / $OUT"
+run EXECUTOR_POLL_SECONDS=0 EXECUTOR_WATCH_MAX_POLLS=2 watch.sh
+o1="$OUT"
+k1="$(cut -d'|' -f2 "$WD/event" 2> /dev/null || true)"
+run tick.sh
+run watch.sh --ack
+a1="$(first)"
+fx_pr 7 open false "" "$HEADSHA" "$TB"
+run state.sh resume
+run tick.sh
+r1="$(first)"
+fx_pr 7 closed false "" "$HEADSHA" "$TB"
+run EXECUTOR_POLL_SECONDS=0 EXECUTOR_WATCH_MAX_POLLS=2 watch.sh
+o2="$OUT"
+k2="$(cut -d'|' -f2 "$WD/event" 2> /dev/null || true)"
+if [ "$k1" = "STOPPED_NEW:PR_CLOSED:7:$HEADSHA:1" ] && [[ "$o1" == "BANTUKASIR WATCHER EVENT $k1 — follow EXECUTION_CONTEXT CE-03 — STOPPED PR_CLOSED "* ]] && [ "$a1" = "ACKED $k1" ] && [ "$r1" = "NOOP AWAIT_MERGE pr=7" ]; then pass "29 a pull request closed is emitted, the host's tick records the stop and --ack acknowledges it; reopened and resumed, the tick waits for the merge"; else failc "29 the first stop" "$o1 / $k1 / $a1 / $r1"; fi
+if [ "$k2" = "STOPPED_NEW:PR_CLOSED:7:$HEADSHA:2" ] && [ "$(printf '%s\n' "$o2" | wc -l)" -eq 1 ] && [[ "$o2" == "BANTUKASIR WATCHER EVENT $k2 — follow EXECUTION_CONTEXT CE-03 — STOPPED PR_CLOSED "* ]] && grep -qxF "$k1" "$WD/ack" && ! grep -qxF "$k2" "$WD/ack"; then pass "29 the same stop after the Owner's resume has a new key and is emitted, not suppressed by the earlier acknowledgment"; else failc "29 the recurring stop" "$o2 / $k2"; fi
+run tick.sh
+t2="$(first)"
+run watch.sh --ack
+if [[ "$t2" == "STOPPED PR_CLOSED "* ]] && [ "$(first)" = "ACKED $k2" ] && [ "$(stget loop.stopReason)" = PR_CLOSED ]; then pass "29 the host's tick then records the second stop and --ack acknowledges its new key"; else failc "29 the delivery of the recurring stop" "$t2 / $OUT"; fi
+# Leaving the stop by an adoption rather than a resume (hotfix verification H-01).
+fx_pr 7 open false "" "$HEADSHA" "$TB"
+printf '7|%s|%s|yusufarst|yusufarst/bantukasir|https://github.com/yusufarst/bantukasir/pull/7\n' "$TB" "$HEADSHA" > "$FIX/gh/open_prs"
+run state.sh adopt --pr 7 --kind task
+fx_pr 7 closed false "" "$HEADSHA" "$TB"
+: > "$FIX/gh/open_prs"
+run EXECUTOR_POLL_SECONDS=0 EXECUTOR_WATCH_MAX_POLLS=2 watch.sh
+o3="$OUT"
+k3="$(cut -d'|' -f2 "$WD/event" 2> /dev/null || true)"
+if [ "$k3" = "STOPPED_NEW:PR_CLOSED:7:$HEADSHA:3" ] && [[ "$o3" == "BANTUKASIR WATCHER EVENT $k3 — "* ]] && grep -qxF "$k2" "$WD/ack"; then pass "29 the same stop after an adoption out of it has a new key too, and is emitted"; else failc "29 the recurring stop after an adoption" "$o3 / $k3"; fi
 
 summary
