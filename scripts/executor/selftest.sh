@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
-# scripts/executor/selftest.sh: the self-test of continuous execution (D-101;
-# EXECUTION_CONTEXT section 19: CE-10 to CE-13, CE-20 to CE-24, CE-30 to CE-32,
-# CE-40 to CE-43, CE-61, CE-62, CE-70 to CE-72).
+# scripts/executor/selftest.sh: the self-test of continuous execution (D-101,
+# D-104; EXECUTION_CONTEXT section 19: CE-03, CE-10 to CE-13, CE-20 to CE-24,
+# CE-30 to CE-32, CE-40 to CE-43, CE-61, CE-62, CE-70 to CE-72, CE-82).
 #
-# Usage: bash scripts/executor/selftest.sh          the cases 1 to 14, in a sandbox
-#        bash scripts/executor/selftest.sh --host   the host probes (a) to (e), on Windows
+# Usage: bash scripts/executor/selftest.sh          the cases 1 to 23, in a sandbox
+#        bash scripts/executor/selftest.sh --host   the host probes (a) to (f), on Windows;
+#                                                   (f) works on the real watcher folder,
+#                                                   so it runs only when no watcher runs
 # Without --host it works in a temporary directory outside the repository: a
 # bare origin and a clone, with fixture answers for GitHub and, where a test
 # cannot create the case, for processes (EXECUTOR_SELFTEST=1,
@@ -84,6 +86,30 @@ if [ "${1:-}" = --host ]; then
     s5="$(holder_state "$(now)" "$b" "$tmp/holder")"
     echo "  $s5"
     case "$s5" in UNKNOWN*) pass "host (e) empty record: $s5" ;; *) failc "host (e) $s5" ;; esac
+    echo "== (f) the watcher lock, on the real watcher folder"
+    ws="$(bash "$HERE/watch.sh" --status | sed -n '1p')"
+    if [ "$ws" != "WATCHER none" ]; then
+        failc "host (f) needs no watcher running: --status gives $ws"
+    else
+        tk0="$(grep -c ' TAKEOVER ' "$WATCH_DIR/log" 2> /dev/null || true)"
+        bash "$HERE/watch.sh" --test-wake 30 > "$tmp/w1" 2>&1 &
+        w1=$!
+        for i in $(seq 1 60); do [ -s "$WATCH_DIR/lock/ctime" ] && break; sleep 1; done
+        o2="$(bash "$HERE/watch.sh" --test-wake 5)"
+        echo "  a second watcher: $o2"
+        case "$o2" in "WATCHER_RUNNING "*) pass "host (f) a second watcher gets WATCHER_RUNNING" ;; *) failc "host (f) a second watcher: $o2" ;; esac
+        p1="$(cat "$WATCH_DIR/lock/pid" 2> /dev/null || true)"
+        taskkill //PID "$p1" //F > /dev/null 2>&1 || true
+        wait "$w1" 2> /dev/null || true
+        sleep 1
+        echo "  the first watcher, Windows PID $p1, killed"
+        o3="$(bash "$HERE/watch.sh" --test-wake 5)"
+        echo "  then: $o3"
+        tk1="$(grep -c ' TAKEOVER ' "$WATCH_DIR/log" 2> /dev/null || true)"
+        if printf '%s\n' "$o3" | grep -qE '^BANTUKASIR WATCHER EVENT TEST:[0-9]+ — follow EXECUTION_CONTEXT CE-03 — test wake after 5 s$' && [ "${tk1:-0}" -gt "${tk0:-0}" ]; then pass "host (f) the killed watcher's lock is taken over with TAKEOVER logged, and the test wake prints its line"; else failc "host (f) the takeover: $o3"; fi
+        o4="$(bash "$HERE/watch.sh" --status | sed -n '1p')"
+        if [ "$o4" = "WATCHER none" ]; then pass "host (f) --status then shows none"; else failc "host (f) --status: $o4"; fi
+    fi
     summary
     exit $?
 fi
@@ -296,9 +322,15 @@ run state.sh unlock
 run state.sh resume
 [ "$RC" = 1 ] && [ "$(first)" = NOT_STOPPED ] && [ "$(hashstate)" = "$h0" ] && pass "1 resume without a stop gives NOT_STOPPED and changes nothing" || failc "1 resume without a stop" "$OUT"
 stset loop.phase BUILD
+stset pr.number 7
+stset pr.head "$(printf '%040d' 8)"
+printf '1|Command contract|in_progress||https://github.com/yusufarst/bantukasir/actions/runs/81/job/1\n' > "$FIX/gh/check_runs_$(printf '%040d' 8)"
 mklock "" "$NOW" "$NOW"
 run state.sh phase AWAIT_MERGE --token selftesttoken
-[ "$(stget loop.phase)" = AWAIT_MERGE ] && [ ! -e "$SD/lock" ] && pass "1 AWAIT_MERGE releases the lock" || failc "1 AWAIT_MERGE releases the lock" "$OUT"
+[ "$RC" = 1 ] && first | grep -q '^REFUSED CI_NOT_GREEN ' && [ "$(stget loop.phase)" = BUILD ] && [ -e "$SD/lock" ] && pass "1 AWAIT_MERGE refuses while the required job has not passed on pr.head, and keeps the lock (D-104)" || failc "1 AWAIT_MERGE refuses without a green CI" "$OUT"
+printf '1|Command contract|completed|success|https://github.com/yusufarst/bantukasir/actions/runs/81/job/1\n' > "$FIX/gh/check_runs_$(printf '%040d' 8)"
+run state.sh phase AWAIT_MERGE --token selftesttoken
+[ "$(stget loop.phase)" = AWAIT_MERGE ] && [ ! -e "$SD/lock" ] && pass "1 AWAIT_MERGE, with the required job passed on pr.head, releases the lock" || failc "1 AWAIT_MERGE releases the lock" "$OUT"
 stset loop.phase BUILD
 mklock "" "$NOW" "$NOW"
 run state.sh stop TEST_STOP --token selftesttoken --detail "a detail"
@@ -649,8 +681,10 @@ if [ "$(sttext owner.note)" = "$note" ] && [ "$(stget owner.lastResumeCommentId)
 # ---------------------------------------------------------------- 7. the real plan
 real_plan="$REPO_ROOT/docs/11-tasks/TASK_PLAN.md"
 real_ctx="$REPO_ROOT/docs/11-tasks/EXECUTION_CONTEXT.md"
+# The lowest-numbered READY row, found without the parser (D-104: no fixed Task).
+want="$(awk '/^## 4\./ { s = 1; next } /^## / { s = 0 } s && /^\| \[TASK-[0-9]+\]/ && /\| `READY` \|[[:space:]]*$/' "$real_plan" | grep -oE '^\| \[TASK-[0-9]+\]' | grep -oE 'TASK-[0-9]+' | sort | head -n 1 || true)"
 OUT="$(cd "$REPO_ROOT" && . "$HERE/lib.sh" && select_task "$real_plan")"
-case "$OUT" in "OK TASK-004|"*) pass "7 the real plan selects TASK-004" ;; *) failc "7 the real plan selects TASK-004" "$OUT" ;; esac
+case "$OUT" in "OK $want|"*) pass "7 the real plan selects its lowest-numbered READY Task, $want" ;; *) failc "7 the real plan selects its lowest-numbered READY Task, ${want:-none found}" "$OUT" ;; esac
 for spec in "TASK-004 bk-executor-xhigh bk-reviewer-xhigh bk-reviewer-high" "TASK-005 bk-executor-high bk-reviewer-high bk-reviewer-high" "TASK-021 bk-executor-max bk-reviewer-max bk-reviewer-xhigh" "TASK-044 bk-executor-high bk-reviewer-high bk-reviewer-high" "TASK-047 bk-executor-medium bk-reviewer-high bk-reviewer-high"; do
     set -- $spec
     got="$(cd "$REPO_ROOT" && . "$HERE/lib.sh" && cl="$(plan_rows "$real_plan" | awk -F'|' -v t="$1" '$1 == t { print $4 }')" && effort_row "$real_ctx" "$1" "$cl" | cut -d'|' -f2-)"
@@ -1195,5 +1229,634 @@ bad="$(printf '%s\n%s\n%s\n' "$allow_have" "$ask_have" "$deny_have" | grep -E '^
 [ -z "$bad" ] && pass "14 settings: no path rule for Write, NotebookEdit, MultiEdit or Glob" || failc "14 settings path rules: $bad"
 bad="$(printf '%s\n' "$allow_have" | grep -E '^Bash\((docker compose \*|docker run|gh api|bash -|sh )' || true)"
 [ -z "$bad" ] && pass "14 settings: no broad allow entry for docker compose *, docker run, gh api, bash - or sh" || failc "14 settings broad allow: $bad"
+printf '%s\n' "$allow_have" | grep -qxF 'Bash(bash scripts/executor/watch.sh*)' && pass "14 settings: the allow entry of watch.sh (D-104)" || failc "14 settings: the allow entry of watch.sh is missing"
+# The executor agents of D-104: one body, the new steps, no wait for CI.
+b0="$(tail -n +7 "$REPO_ROOT/.claude/agents/bk-executor-high.md")"
+ok=1
+for lvl in medium xhigh max; do [ "$(tail -n +7 "$REPO_ROOT/.claude/agents/bk-executor-$lvl.md")" = "$b0" ] || ok=0; done
+for s in '3. Local checks (EXECUTION_CONTEXT CE-44):' '4. Review (CE-40), once:' '7. Report and end (CE-41, CE-60):' 'Do not wait for CI.' '- wait for CI or poll GitHub in a loop;' 'Never repeat the full review.' 'Mode `fix`: the delegation'"'"'s Reason names a red CI'; do printf '%s\n' "$b0" | grep -qF -- "$s" || ok=0; done
+if printf '%s\n' "$b0" | grep -qF -e 'pr.sh wait-ci' -e '8. Green'; then ok=0; fi
+[ "$ok" = 1 ] && pass "13 the four executor agents share one body with the steps of D-104, without a wait for CI" || failc "13 the executor agents' bodies (D-104)"
+
+# ================================================================ D-104
+WD="$SD/watch"
+GREEN="11|Command contract|completed|success"
+# fx_checks <sha> <id|name|status|conclusion>...: the check runs of a head,
+# each with the URL of its job in the workflow run 88<id>.
+fx_checks() {
+    local f="$FIX/gh/check_runs_$1" c id nm st co
+    shift
+    : > "$f"
+    for c in "$@"; do
+        IFS='|' read -r id nm st co <<< "$c"
+        printf '%s|%s|%s|%s|https://github.com/yusufarst/bantukasir/actions/runs/88%s/job/%s\n' "$id" "$nm" "$st" "$co" "$id" "$id" >> "$f"
+    done
+}
+# ci_setup: a fresh sandbox with #7 adopted, then in the phase CI without a
+# lock, its 60 minutes started now on its head.
+ci_setup() {
+    merge_setup
+    stset loop.phase CI
+    stset ci.head "$HEADSHA"
+    stset ci.waitStart "$(date +%s)"
+}
+classify() { run tick.sh --classify; }
+expect_class() { if [ "$(printf '%s\n' "$OUT" | wc -l)" -eq 1 ] && first | grep -E -- "$2" > /dev/null; then pass "$1"; else failc "$1" "$OUT"; fi; }
+inflight_task004() { for kv in loop.phase=BUILD task.id=TASK-004 task.kind=task task.branch=task/TASK-004-database-foundation task.agent=bk-executor-xhigh task.reviewAgent=bk-reviewer-xhigh task.verifyAgent=bk-reviewer-high task.effort=xhigh task.resumes=0; do stset "${kv%%=*}" "${kv#*=}"; done; }
+dead_holder() {  # sets DREC, the record of a process that has ended
+    live_process
+    kill "$LPID" 2> /dev/null || true
+    wait "$LPID" 2> /dev/null || true
+    sleep 1
+    DREC="$LREC"
+}
+# fx_classify <line>...: the classification of each poll of the watcher, the
+# last one repeating (the fixture watch/classify in place of the tick).
+fx_classify() {
+    local i=0 l
+    mkdir -p "$FIX/watch"
+    rm -f -- "$FIX/watch/classify" "$FIX/watch/classify".*
+    for l in "$@"; do i=$((i + 1)); printf '%s\n' "$l" > "$FIX/watch/classify.$i"; done
+}
+no_classify() { rm -rf -- "$FIX/watch"; }
+# bg_watch [VAR=value]...: a watcher in the background in the sandbox clone;
+# sets BGW and waits for its lock.
+bg_watch() {
+    local envs=() i
+    while [[ "${1:-}" =~ ^[A-Z_][A-Z0-9_]*= ]]; do envs+=("$1"); shift; done
+    (cd "$CL" && exec env EXECUTOR_SELFTEST=1 EXECUTOR_FIXTURES="$FIX" HOME="$SB/home" USERPROFILE="$SB/home" "${envs[@]}" bash "$HERE/watch.sh" > "$SB/bgw.out" 2>&1) &
+    BGW=$!
+    BGPIDS+=("$BGW")
+    for i in $(seq 1 60); do [ -s "$WD/lock/ctime" ] && return 0; sleep 1; done
+    return 1
+}
+# kill_watcher: kills the watcher of the lock at once, so that no trap runs.
+kill_watcher() {
+    local p
+    p="$(cat "$WD/lock/pid" 2> /dev/null || true)"
+    if [ -r "/proc/$$/winpid" ]; then taskkill //PID "$p" //F > /dev/null 2>&1 || true; else kill -9 "$p" 2> /dev/null || true; fi
+    wait "$BGW" 2> /dev/null || true
+    sleep 1
+}
+sdhash() { (cd "$SD" && find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum 2> /dev/null) | sha256sum | cut -d' ' -f1; }
+WAKE_RE='^BANTUKASIR WATCHER EVENT'
+OB=ops/selftest-watch
+# ops_pr: an ops/ branch with one commit, pushed, with an open pull request #8.
+ops_pr() {
+    g switch -q -c "$OB" develop
+    printf 'ops\n' > "$CL/ops.txt"
+    g add ops.txt
+    g commit -q -m "ops: a change"
+    g push -q origin "$OB"
+    g fetch -q origin
+    OHEAD="$(g rev-parse HEAD)"
+    fx_pr 8 open false "" "$OHEAD" "$OB"
+    printf '8|%s|%s|yusufarst|yusufarst/bantukasir|https://github.com/yusufarst/bantukasir/pull/8\n' "$OB" "$OHEAD" > "$FIX/gh/open_prs"
+    : > "$FIX/gh/issue_comments_8"
+    : > "$FIX/gh/review_comments_8"
+    : > "$FIX/gh/reviews_8"
+}
+# stale_stop: the state of a Task merged and stopped by the Owner's /stop.
+stale_stop() { for kv in loop.phase=STOPPED loop.prevPhase=SELECT loop.stopReason=OWNER_STOP task.id=TASK-003 task.title=Kernel task.class=A task.kind=task "task.branch=$TB" task.agent=bk-executor-xhigh task.reviewAgent=bk-reviewer-xhigh pr.number=7 "pr.head=$(printf '%040d' 7)" "ci.head=$(printf '%040d' 7)" merge.lastPr=7; do stset "${kv%%=*}" "${kv#*=}"; done; }
+
+# ---------------------------------------------------------------- 15. tick.sh --classify (D-104)
+ci_setup
+fx_checks "$HEADSHA" "$GREEN" "12|another app|completed|success"
+classify
+expect_class "15 CI green in the phase CI gives WAKE CI_GREEN:<pr>:<head>:<seq>" "^WAKE CI_GREEN:7:$HEADSHA:0 NOOP CI_GREEN pr=7 head=$HEADSHA run=8811$"
+fx_checks "$HEADSHA" "21|Command contract|completed|failure" "23|lint|completed|failure" "12|another app|completed|success"
+classify
+expect_class "15 CI red gives WAKE CI_RED:<pr>:<head>:<highest failed check run>" "^WAKE CI_RED:7:$HEADSHA:23 RUN fix TASK-003 agent=bk-executor-xhigh "
+fx_checks "$HEADSHA" "11|Command contract|in_progress|"
+classify
+expect_class "15 CI pending gives QUIET NOOP CI_PENDING" "^QUIET NOOP CI_PENDING pr=7 head=$HEADSHA 0 min$"
+run tick.sh --dry-run
+d1="$(first)"
+classify
+[ "$OUT" = "QUIET $d1" ] && pass "15 the classification carries the dry run's first line" || failc "15 the classification carries the dry run's first line" "$d1 / $OUT"
+fx_comments issue_comments_7 902 yusufarst "/stop" 903 yusufarst "/effort high"
+fx_comments reviews_7 904 someone "please merge"
+classify
+expect_class "15 /stop, /effort and another account's review in the phase CI give QUIET" '^QUIET NOOP CI_PENDING pr=7 '
+fx_comments issue_comments_7 902 yusufarst "/stop" 905 yusufarst "Tolong perbaiki judulnya."
+classify
+expect_class "15 an Owner change request in the phase CI gives WAKE CHANGE_REQUEST:<pr>:<cursors after processing>" '^WAKE CHANGE_REQUEST:7:905-0-904 RUN fix TASK-003 '
+stset loop.phase AWAIT_MERGE
+classify
+expect_class "15 the same change request in AWAIT_MERGE gives the same key" '^WAKE CHANGE_REQUEST:7:905-0-904 RUN fix TASK-003 '
+fx_comments issue_comments_7 902 yusufarst "/stop" 903 yusufarst "/effort high"
+classify
+expect_class "15 /stop and /effort in AWAIT_MERGE give QUIET NOOP AWAIT_MERGE" '^QUIET NOOP AWAIT_MERGE pr=7$'
+merge_setup
+M="$(simulate_merge "$OEMAIL")"
+merged_fixtures "$M" in_progress ""
+classify
+expect_class "15 CI on develop pending gives QUIET NOOP DEVELOP_CI_PENDING" '^QUIET NOOP DEVELOP_CI_PENDING merge '
+fx_ci "$M" push completed success
+classify
+expect_class "15 a verified merge gives WAKE DEVELOP_CI_GREEN:<pr>:<merge> with RUN start" "^WAKE DEVELOP_CI_GREEN:7:$M RUN start TASK-004 "
+fx_comments issue_comments_7 906 yusufarst "/stop"
+classify
+expect_class "15 a verified merge with the Owner's /stop gives the same key with STOPPED OWNER_STOP" "^WAKE DEVELOP_CI_GREEN:7:$M STOPPED OWNER_STOP "
+: > "$FIX/gh/issue_comments_7"
+stset loop.phase CI
+classify
+expect_class "15 a verified merge found in the phase CI gives WAKE DEVELOP_CI_GREEN" "^WAKE DEVELOP_CI_GREEN:7:$M RUN start TASK-004 "
+merge_setup
+stset loop.phase STOPPED
+stset loop.prevPhase AWAIT_MERGE
+stset loop.stopReason PR_HEAD_MOVED
+classify
+expect_class "15 an unchanged stop gives QUIET STOPPED" '^QUIET STOPPED PR_HEAD_MOVED$'
+fx_comments issue_comments_7 950 yusufarst "/resume Sudah saya cek."
+classify
+expect_class "15 an Owner /resume comment gives WAKE RESUMED:<pr>:<comment>, whatever follows" '^WAKE RESUMED:7:950 NOOP AWAIT_MERGE pr=7$'
+setup
+select_state
+classify
+expect_class "15 the phase SELECT gives WAKE RESUMED:SELECT:<origin/develop>:<seq> with RUN start" "^WAKE RESUMED:SELECT:$(g rev-parse origin/develop):0 RUN start TASK-004 "
+inflight_task004
+classify
+expect_class "15 an in-flight phase without a lock gives WAKE RECOVERY:<task>:<phase>:<resumes>:<seq>" '^WAKE RECOVERY:TASK-004:BUILD:1:0 RUN resume TASK-004 '
+merge_setup
+fx_pr 7 closed false "" "$HEADSHA" "$TB"
+classify
+expect_class "15 a new stop gives WAKE STOPPED_NEW:<reason>:<pr>:<head>" "^WAKE STOPPED_NEW:PR_CLOSED:7:$HEADSHA STOPPED PR_CLOSED "
+run tick.sh
+classify
+expect_class "15 the same stop, once recorded, gives QUIET" '^QUIET STOPPED PR_CLOSED '
+merge_setup
+mklock "" "$NOW" "$((NOW - 10800))"
+classify
+expect_class "15 LOCK_UNVERIFIED gives WAKE STOPPED_NEW keyed by the lock's since" "^WAKE STOPPED_NEW:LOCK_UNVERIFIED:7:$NOW STOPPED LOCK_UNVERIFIED UNKNOWN "
+mklock "" "$NOW" "$(date +%s)"
+classify
+expect_class "15 NOOP LOCKED gives QUIET" '^QUIET NOOP LOCKED UNKNOWN NO_RECORD'
+rm -rf -- "$SD/lock"
+: > "$FIX/gh/FAIL"
+classify
+rm -f -- "$FIX/gh/FAIL"
+expect_class "15 GitHub unreachable gives QUIET NOOP GITHUB_UNAVAILABLE" '^QUIET NOOP GITHUB_UNAVAILABLE '
+: > "$CL/.git/index.lock"
+classify
+rm -f -- "$CL/.git/index.lock"
+expect_class "15 .git/index.lock gives QUIET NOOP INDEX_LOCK" '^QUIET NOOP INDEX_LOCK '
+run EXECUTOR_INTERRUPT=tick_error tick.sh --classify
+expect_class "15 an internal error still gives one line: WAKE STOPPED_NEW:TICK_ERROR" "^WAKE STOPPED_NEW:TICK_ERROR:7:$HEADSHA STOPPED TICK_ERROR phase$"
+rm -rf -- "$SD"
+: > "$FIX/gh/open_prs"
+classify
+expect_class "15 no state gives WAKE STOPPED_NEW:NOT_INITIALIZED:-:-" '^WAKE STOPPED_NEW:NOT_INITIALIZED:-:- STOPPED NOT_INITIALIZED '
+
+# ---------------------------------------------------------------- 16. tick.sh, the phase CI without a lock (D-104)
+ci_setup
+fx_checks "$HEADSHA" "11|Command contract|in_progress|"
+h1="$(hashstate)"
+run tick.sh
+if [ "$(hashstate)" = "$h1" ] && [ ! -e "$SD/lock" ]; then expect_first "16 pending gives NOOP CI_PENDING and changes nothing" "^NOOP CI_PENDING pr=7 head=$HEADSHA 0 min$"; else failc "16 pending gives NOOP CI_PENDING and changes nothing" "$OUT"; fi
+fx_checks "$HEADSHA" "$GREEN"
+run tick.sh
+if [ "$(stget loop.phase)" = AWAIT_MERGE ] && [ ! -e "$SD/lock" ] && grep -q "CI PASS $HEADSHA" "$SD/log"; then expect_first "16 green sets AWAIT_MERGE and gives NOOP CI_GREEN" "^NOOP CI_GREEN pr=7 head=$HEADSHA run=8811$"; else failc "16 green sets AWAIT_MERGE and gives NOOP CI_GREEN" "$OUT"; fi
+run tick.sh
+expect_first "16 then the tick waits for the merge" '^NOOP AWAIT_MERGE pr=7$'
+stset loop.phase CI
+fx_checks "$HEADSHA" "21|Command contract|completed|failure"
+run tick.sh
+if [ "$(stget loop.phase)" = CI ] && [ -e "$SD/lock" ] && [ "$(stget ci.failures)" = 1 ] && [[ "$OUT" == *"Command contract https://github.com/yusufarst/bantukasir/actions/runs/8821/job/21"* ]] && [[ "$OUT" == *"failure 1 of 3 (CE-42)"* ]]; then expect_first "16 red takes the lock and gives RUN fix naming the failing check, failure 1 of 3" '^RUN fix TASK-003 agent=bk-executor-xhigh '; else failc "16 red takes the lock and gives RUN fix naming the failing check, failure 1 of 3" "$OUT"; fi
+dead_holder
+mklock "$DREC" "$NOW" "$(date +%s)"
+run tick.sh
+if grep -q 'TAKEOVER INACTIVE PROCESSES_GONE' "$SD/log" && [ "$(stget loop.phase)" = CI ] && [ "$(stget task.resumes)" = 1 ]; then expect_first "16 a lock taken over from a dead holder in the phase CI gives RUN resume" '^RUN resume TASK-003 '; else failc "16 a lock taken over from a dead holder in the phase CI gives RUN resume" "$OUT"; fi
+ci_setup
+fx_checks "$HEADSHA" "21|Command contract|completed|failure"
+stset ci.failures 3
+run tick.sh
+if [ "$(stget loop.phase)" = STOPPED ] && [ ! -e "$SD/lock" ]; then expect_first "16 the fourth red head gives STOPPED CI_FAILURE_LIMIT" "^STOPPED CI_FAILURE_LIMIT #7 failure 4 on $HEADSHA$"; else failc "16 the fourth red head gives STOPPED CI_FAILURE_LIMIT" "$OUT"; fi
+ci_setup
+fx_checks "$HEADSHA" "11|Command contract|queued|"
+stset ci.waitStart "$(( $(date +%s) - 3600 ))"
+run tick.sh
+expect_first "16 pending 60 minutes after the push gives STOPPED CI_TIMEOUT" "^STOPPED CI_TIMEOUT #7 head $HEADSHA pending for 60 minutes$"
+ci_setup
+fx_checks "$HEADSHA" "11|Command contract|in_progress|"
+stset ci.head "$(printf '%040d' 9)"
+stset ci.waitStart 12345
+run tick.sh
+if [ "$(stget ci.head)" = "$HEADSHA" ] && [ "$(stget ci.waitStart)" != 12345 ]; then expect_first "16 a new head restarts the 60 minutes" '^NOOP CI_PENDING pr=7 '; else failc "16 a new head restarts the 60 minutes" "$OUT"; fi
+fx_comments issue_comments_7 960 yusufarst "Ganti teks tombolnya."
+run tick.sh
+if [ "$(stget loop.phase)" = CI ] && [ -e "$SD/lock" ] && [[ "$OUT" == *"Ganti teks tombolnya."* ]]; then expect_first "16 an Owner change request in the phase CI gives RUN fix with his words" '^RUN fix TASK-003 '; else failc "16 an Owner change request in the phase CI gives RUN fix with his words" "$OUT"; fi
+ci_setup
+stset task.kind ops
+fx_checks "$HEADSHA" "21|Command contract|completed|failure"
+run tick.sh
+if [ "$(stget loop.phase)" = STOPPED ] && [ ! -e "$SD/lock" ]; then expect_first "16 a red ops pull request gives STOPPED CI_RED" '^STOPPED CI_RED #7 Command contract https://'; else failc "16 a red ops pull request gives STOPPED CI_RED" "$OUT"; fi
+ci_setup
+M="$(simulate_merge "$OEMAIL")"
+merged_fixtures "$M" completed success
+run tick.sh
+if [ "$(stget merge.lastSha)" = "$M" ] && [ "$(stget merge.lastPr)" = 7 ]; then expect_first "16 a merged pull request in the phase CI goes through the merge path" '^RUN start TASK-004 '; else failc "16 a merged pull request in the phase CI goes through the merge path" "$OUT"; fi
+
+# ---------------------------------------------------------------- 17. state.sh phase CI (D-104)
+setup
+stset loop.phase PUBLISH
+stset pr.number 7
+stset pr.head "$(printf '%040d' 7)"
+stset ci.head "$(printf '%040d' 6)"
+stset ci.waitStart 100
+mklock "" "$NOW" "$NOW"
+run state.sh phase CI --token selftesttoken
+if [ "$(first)" = "PHASE CI" ] && [ ! -e "$SD/lock" ] && [ "$(stget loop.phase)" = CI ] && [ "$(stget ci.head)" = "$(printf '%040d' 7)" ] && [ "$(stget ci.waitStart)" -gt 100 ] && grep -q ' LOCK_RELEASED token=selftesttoken at CI$' "$SD/log"; then pass "17 phase CI releases the lock, sets ci.head and ci.waitStart on a new head, and logs the release by its token"; else failc "17 phase CI on a new head" "$OUT"; fi
+stset loop.phase PUBLISH
+stset ci.waitStart 100
+mklock "" "$NOW" "$NOW"
+run state.sh phase CI --token selftesttoken
+[ "$(stget ci.waitStart)" = 100 ] && [ "$(stget ci.head)" = "$(printf '%040d' 7)" ] && [ ! -e "$SD/lock" ] && pass "17 phase CI on the same head keeps ci.head and ci.waitStart" || failc "17 phase CI on the same head" "$OUT"
+git config -f "$SD/state" --unset-all pr.number
+stset loop.phase PUBLISH
+mklock "" "$NOW" "$NOW"
+run state.sh phase CI --token selftesttoken
+if [ "$RC" = 1 ] && [ -e "$SD/lock" ] && [ "$(stget loop.phase)" = PUBLISH ]; then expect_first "17 phase CI without a pull request refuses with REFUSED NO_PR and keeps the lock" '^REFUSED NO_PR'; else failc "17 phase CI without a pull request" "$OUT"; fi
+run state.sh stop TEST_STOP --token selftesttoken
+grep -q ' LOCK_RELEASED token=selftesttoken at STOPPED TEST_STOP$' "$SD/log" && [ ! -e "$SD/lock" ] && pass "17 stop logs the release by its token" || failc "17 stop logs the release by its token" "$OUT"
+
+# ---------------------------------------------------------------- 18. the dry run and the classification write nothing (D-104)
+nowrite() {  # label: --dry-run and --classify leave every file of the executor state as it was
+    local h ok=1
+    h="$(sdhash)"
+    run tick.sh --dry-run
+    [ "$(sdhash)" = "$h" ] || ok=0
+    run tick.sh --classify
+    [ "$(sdhash)" = "$h" ] || ok=0
+    run EXECUTOR_INTERRUPT=tick_error tick.sh --classify
+    [ "$(sdhash)" = "$h" ] || ok=0
+    [ "$ok" = 1 ] && pass "18 --dry-run and --classify write nothing: $1" || failc "18 --dry-run and --classify write nothing: $1" "$OUT"
+}
+ci_setup
+fx_checks "$HEADSHA" "21|Command contract|completed|failure"
+fx_comments issue_comments_7 970 yusufarst "Satu permintaan." 971 someone "data only"
+printf 'issue comment|1|yusufarst|eA==\n' > "$SD/requests"
+printf 'issue comment|2|someone|eQ==\n' > "$SD/ignored"
+printf '1|NOOP AWAIT_MERGE pr=7\n' > "$SD/last-tick"
+nowrite "the phase CI, red, with comments, requests, ignored and last-tick"
+inflight_task004
+dead_holder
+mklock "$DREC" "$NOW" "$NOW"
+nowrite "an in-flight phase with a dead holder's lock"
+merge_setup
+M="$(simulate_merge "$OEMAIL")"
+merged_fixtures "$M" completed success
+fx_comments issue_comments_7 972 yusufarst "/stop"
+nowrite "a verified merge with the Owner's /stop"
+stset loop.phase STOPPED
+stset loop.stopReason PR_HEAD_MOVED
+fx_pr 7 open false "" "$HEADSHA" "$TB"
+fx_comments issue_comments_7 973 yusufarst "/resume"
+nowrite "a stop with an Owner /resume comment"
+rm -f -- "$SD/last-tick"
+run tick.sh
+lt="$(cat "$SD/last-tick" 2> /dev/null || true)"
+[ -n "$(first)" ] && [ "${lt#*|}" = "$(first)" ] && [[ "${lt%%|*}" =~ ^[0-9]+$ ]] && pass "18 a real tick writes last-tick, <epoch>|<first line>" || failc "18 a real tick writes last-tick" "$lt / $OUT"
+rm -rf -- "$SD/lock"
+run EXECUTOR_INTERRUPT=tick_error tick.sh
+lt="$(cat "$SD/last-tick" 2> /dev/null || true)"
+[ "${lt#*|}" = "STOPPED TICK_ERROR phase" ] && pass "18 a real tick writes last-tick on TICK_ERROR too" || failc "18 last-tick on TICK_ERROR" "$lt / $OUT"
+
+# ---------------------------------------------------------------- 19. watch.sh --ack and the redelivery (D-104)
+ci_setup
+fx_checks "$HEADSHA" "21|Command contract|completed|failure"
+run watch.sh --ack
+expect_first "19 --ack without an event gives NO_EVENT" '^NO_EVENT$'
+KEY="CI_RED:7:$HEADSHA:21"
+run EXECUTOR_POLL_SECONDS=0 EXECUTOR_WATCH_MAX_POLLS=3 watch.sh
+if [ "$OUT" = "BANTUKASIR WATCHER EVENT $KEY — follow EXECUTION_CONTEXT CE-03 — RUN fix TASK-003 agent=bk-executor-xhigh review=bk-reviewer-xhigh verify=bk-reviewer-high effort=xhigh token=DRYRUN" ] && [ ! -e "$WD/lock" ] && grep -q "^[^ ]* EVENT [0-9]* $KEY " "$WD/log" && grep -q "^[0-9]*|$KEY|RUN fix " "$WD/event"; then pass "19 the watcher emits a red CI with exactly its one line, writes the event and releases its lock"; else failc "19 the watcher emits a red CI" "$OUT"; fi
+run watch.sh --ack
+expect_first "19 --ack before a real tick gives NOT_ACKED no real tick since the event" "^NOT_ACKED $KEY no real tick since the event$"
+e="$(cut -d'|' -f1 "$WD/event")"
+ok=1
+for l in "NOOP GITHUB_UNAVAILABLE git fetch origin, run 1" "NOOP INDEX_LOCK .git/index.lock present, run 1" "NOOP LOCKED ACTIVE 1, heartbeat 0 min ago" "STOPPED TICK_ERROR phase"; do
+    printf '%s|%s\n' "$((e + 1))" "$l" > "$SD/last-tick"
+    run watch.sh --ack
+    [ "$(first)" = "NOT_ACKED $KEY the tick printed $l" ] || ok=0
+done
+[ "$ok" = 1 ] && pass "19 --ack after a tick that printed NOOP GITHUB_UNAVAILABLE, NOOP INDEX_LOCK, NOOP LOCKED or STOPPED TICK_ERROR gives NOT_ACKED" || failc "19 NOT_ACKED after an unfinished tick" "$OUT"
+printf '%s|%s\n' "$((e - 1))" "NOOP AWAIT_MERGE pr=7" > "$SD/last-tick"
+run watch.sh --ack
+expect_first "19 a last tick older than the event gives NOT_ACKED" "^NOT_ACKED $KEY no real tick since the event$"
+run tick.sh
+tok="$(first | sed -n 's/.* token=\([0-9a-f]\{32\}\)$/\1/p')"
+run watch.sh --ack
+expect_first "19 after a RUN whose delegation still holds the executor lock, NOT_ACKED" "^NOT_ACKED $KEY the delegation of token ${tok:0:8} still holds the executor lock$"
+run state.sh unlock
+run watch.sh --ack
+expect_first "19 a delegation whose lock was released by unlock, not by its own token, gives NOT_ACKED" "^NOT_ACKED $KEY the delegation of token ${tok:0:8} did not end through state.sh$"
+mklock "" "$NOW" "$NOW"
+printf '%s\n' "$tok" > "$SD/lock/token"
+run state.sh phase CI --token "$tok"
+run watch.sh --ack
+expect_first "19 a delegation that ended through state.sh but left the same red CI gives NOT_ACKED: the event is still current" "^NOT_ACKED $KEY the event is still current: RUN fix TASK-003 "
+[ ! -s "$WD/ack" ] && pass "19 nothing was acknowledged so far" || failc "19 nothing was acknowledged so far" "$(cat "$WD/ack")"
+# A classification that cannot check the state acknowledges nothing (review R-01).
+ok=1
+for l in "QUIET NOOP GITHUB_UNAVAILABLE open pull requests, run 1" "QUIET NOOP INDEX_LOCK .git/index.lock present, run 1" "QUIET NOOP LOCKED ACTIVE 1, heartbeat 0 min ago" "WAKE STOPPED_NEW:TICK_ERROR:7:$HEADSHA STOPPED TICK_ERROR phase" "QUIET STOPPED LOCK_UNVERIFIED UNKNOWN NO_RECORD" "garbage" "$(printf 'QUIET NOOP CI_PENDING pr=7\nQUIET a second line')"; do
+    fx_classify "$l"
+    run watch.sh --ack
+    first | grep -q "^NOT_ACKED $KEY the event cannot be checked now: " || ok=0
+done
+no_classify
+[ "$ok" = 1 ] && [ ! -s "$WD/ack" ] && pass "19 a fresh classification of GitHub unavailable, an index lock, a held lock, an internal error, an unverified lock or an unreadable result gives NOT_ACKED" || failc "19 NOT_ACKED when the event cannot be checked" "$OUT"
+fx_checks "$HEADSHA" "31|Command contract|in_progress|"
+run watch.sh --ack
+if [ "$(first)" = "ACKED $KEY" ] && grep -qxF "$KEY" "$WD/ack" && grep -q " ACK $KEY " "$WD/log"; then pass "19 a real tick, the release by the delegation's token and the event consumed give ACKED"; else failc "19 ACKED" "$OUT"; fi
+run watch.sh --ack
+expect_first "19 --ack again gives ALREADY_ACKED" "^ALREADY_ACKED $KEY$"
+fx_checks "$HEADSHA" "21|Command contract|completed|failure"
+run EXECUTOR_POLL_SECONDS=0 EXECUTOR_WATCH_MAX_POLLS=2 watch.sh
+if [ "$OUT" = WATCHER_MAX_POLLS ]; then pass "19 an acknowledged key is not emitted again"; else failc "19 an acknowledged key is not emitted again" "$OUT"; fi
+stset loop.phase STOPPED
+stset loop.stopReason PR_CLOSED
+printf '%s|STOPPED_NEW:PR_CLOSED:7:%s|STOPPED PR_CLOSED x\n' "$(date +%s)" "$HEADSHA" > "$WD/event"
+printf '%s|STOPPED PR_CLOSED x\n' "$(( $(date +%s) + 1 ))" > "$SD/last-tick"
+run watch.sh --ack
+expect_first "19 a stop is acknowledged once a real tick printed it" "^ACKED STOPPED_NEW:PR_CLOSED:7:$HEADSHA$"
+fx_classify "WAKE TESTKEY:1 NOOP TEST line"
+T0="$(date +%s)"
+wr() { run EXECUTOR_NOW="$1" EXECUTOR_POLL_SECONDS=0 EXECUTOR_WATCH_MAX_POLLS=2 watch.sh; }
+wr "$T0"
+expect_class "19 an unacknowledged key is emitted" "$WAKE_RE TESTKEY:1 — follow EXECUTION_CONTEXT CE-03 — NOOP TEST line$"
+wr "$((T0 + 299))"
+expect_class "19 it is not emitted again within 5 minutes" '^WATCHER_MAX_POLLS$'
+wr "$((T0 + 300))"
+expect_class "19 it is emitted again after 5 minutes" "$WAKE_RE TESTKEY:1 — "
+wr "$((T0 + 600))"
+expect_class "19 and a third time after 5 more minutes" "$WAKE_RE TESTKEY:1 — "
+wr "$((T0 + 900))"
+expect_class "19 after 3 emissions without an acknowledgment, one WATCHER_STALL:REDELIVERY" "$WAKE_RE WATCHER_STALL:REDELIVERY:TESTKEY:1 — "
+wr "$((T0 + 1500))"
+expect_class "19 then neither the key nor its stall is emitted again" '^WATCHER_MAX_POLLS$'
+no_classify
+
+# ---------------------------------------------------------------- 20. watch.sh, the watcher (D-104)
+setup
+fx_classify "QUIET NOOP AWAIT_MERGE pr=7"
+if bg_watch EXECUTOR_POLL_SECONDS=1 EXECUTOR_WATCH_MAX_POLLS=90; then
+    run EXECUTOR_POLL_SECONDS=0 EXECUTOR_WATCH_MAX_POLLS=1 watch.sh
+    expect_class "20 a second watcher gets WATCHER_RUNNING <pid> since <time>" '^WATCHER_RUNNING [0-9]+ since [0-9T:+-]+$'
+    run watch.sh --test-wake 5
+    expect_class "20 --test-wake while a watcher runs gets WATCHER_RUNNING" '^WATCHER_RUNNING [0-9]+ since '
+    run watch.sh --status
+    expect_first "20 --status shows the running watcher" '^WATCHER running [0-9]+ since '
+    run watch.sh --once
+    expect_class "20 --once prints one classification" '^QUIET NOOP AWAIT_MERGE pr=7$'
+    kill_watcher
+    run watch.sh --status
+    expect_first "20 --status shows a killed watcher dead" '^WATCHER dead [0-9]+$'
+    run EXECUTOR_POLL_SECONDS=0 EXECUTOR_WATCH_MAX_POLLS=1 watch.sh
+    if grep -q ' TAKEOVER dead ' "$WD/log" && [ ! -e "$WD/lock" ]; then expect_class "20 a dead watcher's lock is taken over, with TAKEOVER logged" '^WATCHER_MAX_POLLS$'; else failc "20 a dead watcher's lock is taken over" "$OUT"; fi
+    run watch.sh --status
+    expect_first "20 --status then shows none" '^WATCHER none$'
+else
+    failc "20 the background watcher took no lock" "$(cat "$SB/bgw.out" 2> /dev/null)"
+fi
+mkdir -p "$WD/lock"
+run EXECUTOR_POLL_SECONDS=0 EXECUTOR_WATCH_MAX_POLLS=1 watch.sh
+expect_class "20 a young lock without a record gives WATCHER_RUNNING unverified" '^WATCHER_RUNNING unverified$'
+touch -d '2 minutes ago' "$WD/lock"
+run EXECUTOR_POLL_SECONDS=0 EXECUTOR_WATCH_MAX_POLLS=1 watch.sh
+if grep -q ' TAKEOVER dead .* INCOMPLETE' "$WD/log"; then expect_class "20 a lock left without a record for a minute is taken over" '^WATCHER_MAX_POLLS$'; else failc "20 an incomplete lock is taken over" "$OUT"; fi
+mkdir -p "$WD/lock"
+printf '1\n' > "$WD/lock/pid"
+printf 'x\n' > "$WD/lock/ctime"
+: > "$FIX/proc/fail"
+run EXECUTOR_POLL_SECONDS=0 EXECUTOR_WATCH_MAX_POLLS=1 watch.sh
+expect_class "20 a lock whose liveness cannot be read gives WATCHER_RUNNING unverified" '^WATCHER_RUNNING unverified$'
+rm -rf -- "$WD/lock"
+run EXECUTOR_POLL_SECONDS=0 EXECUTOR_WATCH_MAX_POLLS=1 watch.sh
+rm -f -- "$FIX/proc/fail"
+[ -z "$OUT" ] && [ ! -e "$WD/lock" ] && grep -q 'cannot be read' "$WD/log" && pass "20 a watcher that cannot read its own creation time gives the lock back and ends without a line" || failc "20 an unreadable identity" "$OUT"
+rm -f -- "$WD/event"
+run watch.sh --test-wake 5
+if [ ! -e "$WD/lock" ] && [ ! -e "$WD/event" ]; then expect_class "20 --test-wake prints its line, writes no event and releases the lock" '^BANTUKASIR WATCHER EVENT TEST:[0-9]+ — follow EXECUTION_CONTEXT CE-03 — test wake after 5 s$'; else failc "20 --test-wake" "$OUT"; fi
+run watch.sh --test-wake 4
+[ "$RC" = 2 ] && expect_first "20 --test-wake below 5 seconds is refused" '^USAGE ' || failc "20 --test-wake 4" "$OUT"
+GH="QUIET NOOP GITHUB_UNAVAILABLE open pull requests, run 1"
+fx_classify "$GH" "$GH" "QUIET NOOP AWAIT_MERGE pr=7" "$GH" "$GH" "$GH"
+run EXECUTOR_POLL_SECONDS=0 EXECUTOR_WATCH_STALL_POLLS=3 EXECUTOR_WATCH_MAX_POLLS=10 watch.sh
+if [ "$(cat "$FIX/watch/classify.count")" = 6 ] && grep -q ' STALL WATCHER_STALL:GITHUB_UNAVAILABLE:' "$WD/log"; then expect_class "20 NOOP GITHUB_UNAVAILABLE in 30 polls in a row (3 here) gives WATCHER_STALL:GITHUB_UNAVAILABLE:<epoch>" "$WAKE_RE WATCHER_STALL:GITHUB_UNAVAILABLE:[0-9]+ — "; else failc "20 the GitHub stall" "$OUT"; fi
+fx_classify "QUIET NOOP INDEX_LOCK .git/index.lock present, run 1"
+run EXECUTOR_POLL_SECONDS=0 EXECUTOR_WATCH_STALL_POLLS=3 EXECUTOR_WATCH_MAX_POLLS=10 watch.sh
+expect_class "20 NOOP INDEX_LOCK in a row gives WATCHER_STALL:INDEX_LOCK:<epoch>" "$WAKE_RE WATCHER_STALL:INDEX_LOCK:[0-9]+ — "
+DM="$(printf '%040d' 5)"
+fx_classify "QUIET NOOP DEVELOP_CI_PENDING merge $DM of #7"
+run EXECUTOR_POLL_SECONDS=0 EXECUTOR_WATCH_STALL_POLLS=2 EXECUTOR_WATCH_MAX_POLLS=3 watch.sh
+if [ "$(grep -c " PR_MERGED 7 $DM$" "$WD/log")" = 1 ]; then expect_class "20 the first NOOP DEVELOP_CI_PENDING of a merge logs PR_MERGED once, without a wake" '^WATCHER_MAX_POLLS$'; else failc "20 PR_MERGED" "$OUT"; fi
+fx_classify "QUIET NOOP DEVELOP_CI_PENDING merge $DM of #7"
+run EXECUTOR_POLL_SECONDS=0 EXECUTOR_WATCH_STALL_POLLS=2 EXECUTOR_WATCH_MAX_POLLS=10 watch.sh
+if [ "$(grep -c " PR_MERGED 7 $DM$" "$WD/log")" = 1 ]; then expect_class "20 NOOP DEVELOP_CI_PENDING for one merge in 60 polls (4 here) gives WATCHER_STALL:DEVELOP_CI_PENDING:<sha>" "$WAKE_RE WATCHER_STALL:DEVELOP_CI_PENDING:$DM — "; else failc "20 the stall of CI on develop" "$OUT"; fi
+fx_classify "garbage" "QUIET NOOP AWAIT_MERGE pr=7" "garbage" "$(printf 'QUIET NOOP AWAIT_MERGE pr=7\nQUIET a second line')" "garbage"
+run EXECUTOR_POLL_SECONDS=0 EXECUTOR_WATCH_MAX_POLLS=10 watch.sh
+pc="$(cat "$FIX/watch/classify.count" 2> /dev/null || true)"
+if [ "$pc" = 5 ]; then expect_class "20 three unparseable results in a row, two lines among them, give WATCHER_STALL:UNPARSEABLE:<epoch>" "$WAKE_RE WATCHER_STALL:UNPARSEABLE:[0-9]+ — follow EXECUTION_CONTEXT CE-03 — garbage$"; else failc "20 UNPARSEABLE after ${pc:-no} polls" "$OUT"; fi
+no_classify
+
+# ---------------------------------------------------------------- 21. state.sh adopt (D-104)
+setup
+ops_pr
+stale_stop
+run state.sh adopt --pr 8 --kind ops
+if [ "$RC" = 0 ] && [ "$(stget owner.stopAfterMerge)" = 1 ] && [ "$(stget task.kind)" = ops ] && [ "$(stget task.branch)" = "$OB" ] && [ -z "$(stget task.id)" ] && [ -z "$(stget task.title)" ] && [ -z "$(stget task.agent)" ] && [ -z "$(stget ci.head)" ] && [ "$(stget pr.number)" = 8 ] && [ "$(stget loop.phase)" = AWAIT_MERGE ] && grep -q 'OWNER_STOP_KEPT pr=8' "$SD/log"; then expect_first "21 adopt from OWNER_STOP keeps the stop and drops the stale task, pr and ci fields" '^ADOPTED pr=8 phase=AWAIT_MERGE .* stop kept$'; else failc "21 adopt from OWNER_STOP" "$OUT"; fi
+rm -rf -- "$SB/work"
+git clone -q -b develop "$SB/origin.git" "$SB/work"
+git -C "$SB/work" config user.name "$ONAME"
+git -C "$SB/work" config user.email "$OEMAIL"
+git -C "$SB/work" merge -q --squash "origin/$OB" > /dev/null
+git -C "$SB/work" commit -q -m "ops: a change (#8)"
+git -C "$SB/work" push -q origin develop
+OM="$(git -C "$SB/work" rev-parse HEAD)"
+fx_pr 8 closed true "$OM" "$OHEAD" "$OB"
+: > "$FIX/gh/open_prs"
+fx_ci "$OM" push completed success
+fx_ci "$OHEAD" pull_request completed success
+run tick.sh
+if [ "$(stget loop.stopReason)" = OWNER_STOP ] && [ "$(stget merge.lastPr)" = 8 ] && [ "$(stget merge.kind)" = ops ]; then expect_first "21 the merge of the adopted pull request then gives STOPPED OWNER_STOP" '^STOPPED OWNER_STOP after the merge of #8'; else failc "21 the merge after adopt" "$OUT"; fi
+setup
+ops_pr
+stale_stop
+stset loop.stopReason PR_CLOSED
+run state.sh adopt --pr 8 --kind ops
+[ "$RC" = 0 ] && [ -z "$(stget owner.stopAfterMerge)" ] && ! grep -qs OWNER_STOP_KEPT "$SD/log" && ! first | grep -q 'stop kept' && pass "21 adopt from STOPPED with another reason keeps no stop" || failc "21 adopt from another stop" "$OUT"
+setup
+ops_pr
+stale_stop
+stset loop.phase SELECT
+run state.sh adopt --pr 8 --kind ops
+[ "$RC" = 0 ] && [ -z "$(stget owner.stopAfterMerge)" ] && ! first | grep -q 'stop kept' && [ -z "$(stget task.id)" ] && pass "21 adopt from SELECT keeps no stop and drops the stale task" || failc "21 adopt from SELECT" "$OUT"
+
+# ---------------------------------------------------------------- 22. push.sh after a Task (D-104)
+setup
+ops_pr
+stale_stop
+printf 'more\n' >> "$CL/ops.txt"
+run commit.sh -m "ops: more" -- ops.txt
+stamp_head
+ph0="$(stget pr.head)"
+run push.sh
+if [ "$(stget pr.head)" = "$ph0" ] && [ "$(g ls-remote origin "refs/heads/$OB" | cut -f1)" = "$(g rev-parse HEAD)" ]; then expect_first "22 on an ops/ branch, the stale task.branch of a Task stopped after its merge restricts nothing, and pr.head stays" "^PUSHED $OB "; else failc "22 the push after a Task" "$OUT"; fi
+stset loop.phase BUILD
+printf 'again\n' >> "$CL/ops.txt"
+run commit.sh -m "ops: again" -- ops.txt
+stamp_head
+run push.sh
+expect_first "22 with a Task in flight on another branch the push is refused" '^REFUSED BRANCH the state.s branch is '
+stset loop.phase STOPPED
+stset loop.prevPhase CI
+run push.sh
+expect_first "22 STOPPED from an in-flight phase still refuses another branch" '^REFUSED BRANCH the state.s branch is '
+
+# ---------------------------------------------------------------- 23. review-pack.sh on an ops/ branch (D-104)
+setup
+ops_pr
+stale_stop
+run review-pack.sh --base develop --round 1
+pk="$(first | sed -n 's/^PACKAGE //p')"
+if [ -n "$pk" ] && [[ "$pk" == */review/ops-selftest-watch/r1 ]] && grep -qx 'Task: ops-selftest-watch' "$pk/MANIFEST.txt" && grep -qx 'Class: ops' "$pk/MANIFEST.txt" && grep -qx 'Agent (review): named by the session' "$pk/MANIFEST.txt"; then pass "23 review-pack.sh on an ops/ branch with a stale state writes the package ops-<name>, class ops, its agent named by the session"; else failc "23 review-pack.sh on an ops/ branch" "$OUT"; fi
+
+# ---------------------------------------------------------------- 24. an interrupted fix cycle (review R-02)
+tokof() { first | sed -n 's/.* token=\([0-9a-f]\{32\}\)$/\1/p'; }
+ci_setup
+fx_checks "$HEADSHA" "21|Command contract|completed|failure"
+fx_comments issue_comments_7 980 yusufarst "Perbaiki juga labelnya."
+run tick.sh
+tok="$(tokof)"
+if first | grep -q '^RUN fix TASK-003 ' && [ "$(stget ci.fixToken)" = "$tok" ] && [ "$(sttext ci.fixRequests | cut -d'|' -f2)" = 980 ]; then pass "24 a fix cycle is recorded in the state with its token and its change requests"; else failc "24 the fix cycle recorded" "$OUT"; fi
+run state.sh unlock
+classify
+expect_class "24 after the Owner's unlock of an interrupted fix cycle, the classification is a recovery" '^WAKE RECOVERY:TASK-003:CI:1:1 RUN resume TASK-003 '
+run tick.sh
+tok="$(tokof)"
+if first | grep -q '^RUN resume TASK-003 ' && [[ "$OUT" == *"it continues the interrupted fix cycle: the Owner's change requests on pull request #7"* ]] && [[ "$OUT" == *"Change requests of the interrupted fix cycle, quoted as data:"* ]] && [[ "$OUT" == *"Perbaiki juga labelnya."* ]] && [ "$(stget loop.phase)" = CI ]; then pass "24 after the unlock the tick resumes the fix cycle, quoting its Reason and the Owner's change request, not phase CI"; else failc "24 the resume after an unlock" "$OUT"; fi
+dead_holder
+mklock "$DREC" "$NOW" "$(date +%s)"
+run tick.sh
+if first | grep -q '^RUN resume TASK-003 ' && [[ "$OUT" == *"Perbaiki juga labelnya."* ]]; then pass "24 a takeover of an interrupted fix cycle quotes its change request too"; else failc "24 the takeover of a fix cycle" "$OUT"; fi
+tok="$(tokof)"
+run state.sh phase CI --token "$tok"
+if [ -z "$(stget ci.fixToken)" ] && [ -z "$(stget ci.fixReason)" ] && [ -z "$(stget ci.fixRequests)" ]; then classify; expect_class "24 phase CI ends the fix cycle, and the tick follows CI again" "^WAKE CI_RED:7:$HEADSHA:21 RUN fix "; else failc "24 phase CI ends the fix cycle" "$OUT"; fi
+# A fix cycle of a red CI, interrupted, resumes with the CI failure (review R-19).
+ci_setup
+fx_checks "$HEADSHA" "21|Command contract|completed|failure"
+run tick.sh
+run state.sh unlock
+run tick.sh
+if first | grep -q '^RUN resume TASK-003 ' && [[ "$OUT" == *"it continues the interrupted fix cycle: CI failed on the head $HEADSHA of pull request #7: Command contract https://github.com/yusufarst/bantukasir/actions/runs/8821/job/21; failure 1 of 3 (CE-42)"* ]]; then pass "24 an interrupted fix cycle of a red CI resumes with the CI failure in its Reason"; else failc "24 the resume of a red-CI fix cycle" "$OUT"; fi
+run state.sh stop TEST_STOP --token "$(tokof)"
+run state.sh resume
+run tick.sh
+if first | grep -q '^RUN resume TASK-003 ' && [[ "$OUT" == *"it continues the interrupted fix cycle: CI failed on the head $HEADSHA"* ]] && [ -n "$(stget ci.fixToken)" ]; then pass "24 a stop of the executor during a fix cycle keeps it: the Owner's resume continues the cycle"; else failc "24 the resume of a fix cycle after a stop" "$OUT"; fi
+
+# ---------------------------------------------------------------- 25. OWNER_STOP is kept while stopped (review R-03)
+merge_setup
+M="$(simulate_merge "$OEMAIL")"
+merged_fixtures "$M" completed success
+fx_comments issue_comments_7 985 yusufarst "/stop"
+run tick.sh
+expect_first "25 the merge with the Owner's /stop gives STOPPED OWNER_STOP" '^STOPPED OWNER_STOP '
+: > "$FIX/gh/FAIL"
+run tick.sh
+run tick.sh
+run tick.sh
+rm -f -- "$FIX/gh/FAIL"
+if first | grep -q '^STOPPED OWNER_STOP kept over GITHUB_UNAVAILABLE .*; a resume resumes the Owner.s stop$' && [ "$(stget loop.stopReason)" = OWNER_STOP ] && [ "$(stget loop.prevPhase)" = SELECT ] && grep -q 'STOP_KEPT OWNER_STOP over GITHUB_UNAVAILABLE' "$SD/log"; then pass "25 a third GitHub failure while STOPPED OWNER_STOP prints the Owner's stop with it as the detail, and the Owner's stop stays recorded (review R-18)"; else failc "25 OWNER_STOP over GITHUB_UNAVAILABLE" "$OUT"; fi
+: > "$FIX/gh/FAIL"
+classify
+rm -f -- "$FIX/gh/FAIL"
+expect_class "25 its classification is QUIET: the recorded stop has not changed" '^QUIET STOPPED OWNER_STOP kept over GITHUB_UNAVAILABLE '
+: > "$CL/.git/index.lock"
+run tick.sh
+run tick.sh
+run tick.sh
+o1="$(first)"
+rm -f -- "$CL/.git/index.lock"
+run EXECUTOR_INTERRUPT=tick_error tick.sh
+if [ "$(stget loop.stopReason)" = OWNER_STOP ] && grep -q 'STOP_KEPT OWNER_STOP over INDEX_LOCK' "$SD/log" && grep -q 'STOP_KEPT OWNER_STOP over TICK_ERROR' "$SD/log" && [[ "$o1" == "STOPPED OWNER_STOP kept over INDEX_LOCK "* ]] && first | grep -q '^STOPPED OWNER_STOP kept over TICK_ERROR phase; '; then pass "25 neither INDEX_LOCK nor TICK_ERROR replaces OWNER_STOP, and each prints the Owner's stop"; else failc "25 OWNER_STOP over INDEX_LOCK and TICK_ERROR" "$o1 / $OUT"; fi
+e="$(( $(date +%s) - 5 ))"
+mkdir -p "$WD"
+printf '%s|RESUMED:7:999|NOOP AWAIT_MERGE pr=7\n' "$e" > "$WD/event"
+run watch.sh --ack
+o1="$(first)"
+mkdir -p "$FIX/watch"
+printf 'QUIET STOPPED OWNER_STOP kept over GITHUB_UNAVAILABLE open pull requests, 4 runs in a row; a resume resumes the Owner%ss stop\n' "'" > "$FIX/watch/classify"
+printf '%s|NOOP AWAIT_MERGE pr=7\n' "$(date +%s)" > "$SD/last-tick"
+run watch.sh --ack
+rm -f -- "$FIX/watch/classify" "$WD/event"
+if [[ "$o1" == "NOT_ACKED RESUMED:7:999 the tick printed STOPPED OWNER_STOP kept over TICK_ERROR phase; "* ]] && first | grep -q '^NOT_ACKED RESUMED:7:999 the event cannot be checked now: QUIET STOPPED OWNER_STOP kept over GITHUB_UNAVAILABLE '; then pass "25 --ack refuses after a tick of OWNER_STOP kept over TICK_ERROR, and on a fresh classification of OWNER_STOP kept over GITHUB_UNAVAILABLE (review R-23)"; else failc "25 --ack with OWNER_STOP kept" "$o1 / $OUT"; fi
+run tick.sh
+expect_first "25 with GitHub back the tick still gives STOPPED OWNER_STOP, never RUN start" '^STOPPED OWNER_STOP '
+
+# ---------------------------------------------------------------- 26. a new occurrence has a new key (review R-04)
+setup
+select_state
+inflight_task004
+classify
+k1="$(printf '%s\n' "$OUT" | awk '{ print $2 }')"
+run tick.sh
+run state.sh stop TEST_STOP --token "$(tokof)"
+run state.sh resume
+classify
+k2="$(printf '%s\n' "$OUT" | awk '{ print $2 }')"
+if [ "$k1" = RECOVERY:TASK-004:BUILD:1:0 ] && [ "$k2" = RECOVERY:TASK-004:BUILD:1:2 ]; then pass "26 a recovery after the Owner's resume has a new key, though task.resumes starts again at 0"; else failc "26 RECOVERY keys" "$k1 / $k2"; fi
+setup
+select_state
+classify
+k1="$(printf '%s\n' "$OUT" | awk '{ print $2 }')"
+printf 'x\n' > "$CL/unknown.txt"
+run tick.sh
+rm -f -- "$CL/unknown.txt"
+run state.sh resume
+classify
+k2="$(printf '%s\n' "$OUT" | awk '{ print $2 }')"
+case "$k1|$k2" in RESUMED:SELECT:*:0"|"RESUMED:SELECT:*:1) pass "26 a selection resumed after a stop in SELECT has a new key, develop unmoved" ;; *) failc "26 RESUMED:SELECT keys" "$k1 / $k2" ;; esac
+ci_setup
+fx_checks "$HEADSHA" "$GREEN"
+classify
+k1="$(printf '%s\n' "$OUT" | awk '{ print $2 }')"
+run tick.sh
+fx_comments issue_comments_7 986 yusufarst "Ubah komentar kodenya saja."
+run tick.sh
+run state.sh phase CI --token "$(tokof)"
+classify
+k2="$(printf '%s\n' "$OUT" | awk '{ print $2 }')"
+if [ "$k1" = "CI_GREEN:7:$HEADSHA:0" ] && [ "$k2" = "CI_GREEN:7:$HEADSHA:1" ]; then pass "26 CI green again on the same head after a fix cycle has a new key"; else failc "26 CI_GREEN keys" "$k1 / $k2"; fi
+
+# ---------------------------------------------------------------- 27. --once and --status write nothing (review R-09)
+ci_setup
+fx_checks "$HEADSHA" "21|Command contract|completed|failure"
+run EXECUTOR_POLL_SECONDS=0 EXECUTOR_WATCH_MAX_POLLS=1 watch.sh
+h="$(sdhash)"
+run watch.sh --once
+o1="$OUT"
+run watch.sh --status
+[ "$(sdhash)" = "$h" ] && [ -s "$WD/event" ] && printf '%s\n' "$o1" | grep -q '^WAKE CI_RED:7:' && printf '%s\n' "$OUT" | grep -q '^ACKNOWLEDGED no$' && pass "27 watch.sh --once and --status write nothing, the watcher's folder included" || failc "27 --once and --status write nothing" "$o1 / $OUT"
+
+# ---------------------------------------------------------------- 28. comments stay with their pull request (review R-10)
+merge_setup
+M="$(simulate_merge "$OEMAIL")"
+merged_fixtures "$M" completed success
+fx_comments issue_comments_7 990 yusufarst "Komentar setelah merge." 991 someone "data only"
+run tick.sh
+if first | grep -q '^RUN start TASK-004 ' && [[ "$OUT" != *"Komentar setelah merge."* ]] && [[ "$OUT" != *"data only"* ]]; then pass "28 RUN start after a merge quotes no comment of the merged pull request"; else failc "28 comments of the merged pull request" "$OUT"; fi
+setup
+ops_pr
+stale_stop
+run state.sh adopt --pr 8 --kind ops
+fx_comments issue_comments_8 992 yusufarst "Ubah satu kalimat."
+run tick.sh
+if first | grep -q '^STOPPED OPS_CHANGE_REQUEST ' && [ ! -s "$SD/requests" ]; then
+    run state.sh resume
+    run tick.sh
+    if [ "$(first)" = "NOOP AWAIT_MERGE pr=8" ] && [ "$(stget owner.stopAfterMerge)" = 1 ]; then pass "28 an ops change request stops once and is not kept: the resume waits for the merge, the Owner's stop still kept"; else failc "28 the resume after OPS_CHANGE_REQUEST" "$OUT"; fi
+else
+    failc "28 OPS_CHANGE_REQUEST clears the requests" "$OUT"
+fi
 
 summary

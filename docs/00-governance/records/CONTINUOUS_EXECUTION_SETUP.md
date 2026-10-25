@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | RECORD ([SOURCE_OF_TRUTH](../SOURCE_OF_TRUTH.md)) |
+| Status | RECORD ([SOURCE_OF_TRUTH](../SOURCE_OF_TRUTH.md)); amended under D-104: section 9 |
 | Decision | [D-101](../DECISIONS.md), continuous Task execution; [EXECUTION_CONTEXT](../../11-tasks/EXECUTION_CONTEXT.md) section 19, CE-01 to CE-82; FD-10 |
 | Written | 23 October 2026 (Asia/Jakarta) by the implementation executor, under the Owner's instruction "Continuous execution setup (D-101)", revision 2 (final) |
 | Branch | `ops/continuous-execution`, created from `develop` at `7fed319ce1010c39a86e85d6cb88ec35e6c19db6` (the D-100 bookkeeping commit), carrying the twelve document changes of the D-101 amendment |
@@ -74,6 +74,8 @@ The three reviewer agents have `tools: Read, Grep, Glob` and `disallowedTools: B
 11. **`SubagentHandback`.** Each reviewer listed Read, Grep and Glob, and also `SubagentHandback`, a tool the Claude Code runtime gives every subagent to return its report to the session that invoked it. It neither runs a command nor writes a file. The instruction expects Read, Grep and Glob only; the difference was reported to the Owner, who directed that the setup continue.
 
 ## 4. The scheduled task
+
+Not used since D-104 (section 9); kept as the record of D-101's setup.
 
 The Owner creates it (D-101; the instruction, section 9). Its settings:
 
@@ -272,3 +274,170 @@ By the Owner's instruction "Final patch D-101 — PR #4", only this window was c
 - **Regression test** (case 3). In self-test mode only, `EXECUTOR_INTERRUPT=owner_stop` makes `merge_done` kill its own tick with `kill -9`, so that no exit handler runs, just before the stop. Afterwards the `/stop` is still pending, the phase is `AWAIT_MERGE` and the merge is recorded. The next tick gives `STOPPED OWNER_STOP`, with `loop.prevPhase=SELECT` and the `/stop` cleared. After `state.sh resume`, the next tick gives `RUN start`. In the code at `dd874b2`, the same kill would have come after the `/stop` was cleared and `SELECT` was set, and the next tick would have given `RUN start` at once; that was read, not run.
 
 The self-test after the patch: exit 0, `SUMMARY 171 passed, 0 failed`, 696 s. The earlier `/stop` cases of case 3 still pass. The permission rules did not change, so the 84 permission probes were not repeated.
+
+## 9. D-104: the host session and the watcher
+
+Written 25 October 2026 (Asia/Jakarta) by the implementation executor under the Owner's instruction "D-104: the watcher of the host session, the CI wait, the local checks and the review rule" and his two implementation clarifications ([D-104](../DECISIONS.md)), on the branch `ops/d104-watcher` from `origin/develop` at `d375e91769ac700b71fd0d172ea1ac4cfff3b28d`, the squash merge of TASK-005's pull request #6. Claude Opus 5.5 (`claude-opus-5-5`), effort High as the Owner's session setting; a new local Desktop session in the main working tree, worktree off.
+
+### 9.1 Files changed
+
+| File | Change |
+| --- | --- |
+| `scripts/executor/watch.sh` | New: the watcher of the host session, with its lock, its heartbeat, its events and their acknowledgment (`--ack`), `--status`, `--once` and `--test-wake` |
+| `scripts/executor/tick.sh` | `--classify`; the event that each decision point names, with `loop.seq` telling occurrences apart; the phase `CI` without a lock (`phase_ci`); the fix cycle recorded in the state (`ci.fixToken`, its Reason and change requests) and resumed when interrupted; `OWNER_STOP` never recorded over; the comments of an `ops/` change request and of a merged pull request not kept for the next delegation; the file `last-tick` of a real tick; the delegation's `Session:` line |
+| `scripts/executor/lib.sh` | `ci_result`, the rule of a green CI shared with `pr.sh wait-ci`; `ci_count_failure`; `task_in_flight`; the paths of `last-tick` and of the watcher's folder; `adopt_state` drops the sections `task`, `pr` and `ci`; `resume_state` advances `loop.seq` |
+| `scripts/executor/state.sh` | `phase CI` and `phase AWAIT_MERGE` refuse `NO_PR`; `phase CI` sets `ci.head` and `ci.waitStart` on a new head; `phase AWAIT_MERGE` refuses `CI_NOT_GREEN` unless the required job passed on `pr.head`; both end the recorded fix cycle and release the lock; each release by the holder logs `LOCK_RELEASED token=<token> at <phase>`; `adopt` keeps an `OWNER_STOP` |
+| `scripts/executor/pr.sh` | `wait-ci` uses `ci_result` and `ci_count_failure`; kept for manual use and for `ops/` pull requests |
+| `scripts/executor/push.sh` | The state's `task.branch` restricts the push only while a Task is in flight |
+| `scripts/executor/review-pack.sh` | The Task, its class and its agents come from the state only when the state's `task.branch` is the current branch; otherwise from the branch, `ops-<name>` with class `ops` for an `ops/` branch |
+| `scripts/executor/selftest.sh` | Case 7 corrected; cases 13 and 14 extended; cases 15 to 23 added; the host probe (f) |
+| `.claude/settings.json` | One allow rule, `Bash(bash scripts/executor/watch.sh*)` |
+| `.claude/agents/bk-executor-medium.md`, `-high.md`, `-xhigh.md`, `-max.md` | Steps 3, 4 and 7 and the modes `resume` and `fix` of the instruction's Appendix B; "wait for CI or poll GitHub in a loop" added to "Never"; the bodies stay identical |
+| [DECISIONS](../DECISIONS.md), [EXECUTION_CONTEXT](../../11-tasks/EXECUTION_CONTEXT.md), [TEST_STRATEGY](../../08-testing/TEST_STRATEGY.md), [FRAMEWORK_DEVIATIONS](../FRAMEWORK_DEVIATIONS.md), [SOURCE_OF_TRUTH](../SOURCE_OF_TRUTH.md), this record, the [TASK-005 evidence](../../11-tasks/evidence/TASK-005.md) and [CURRENT_HANDOFF](../../handoff/CURRENT_HANDOFF.md) | D-104 and the rules it amends; the merge of pull request #6 (CE-50) |
+
+### 9.2 The host text, verbatim
+
+The Owner starts the host session with this text (EXECUTION_CONTEXT CE-03):
+
+```text
+BantuKasir host session (D-104; EXECUTION_CONTEXT CE-03). Follow these rules for the whole session. If you lose them, read EXECUTION_CONTEXT CE-03 and docs/00-governance/records/CONTINUOUS_EXECUTION_SETUP.md section 9; read no other file unless I ask.
+A. Now, whenever I write "lanjut", and whenever a background command prints a line beginning "BANTUKASIR WATCHER EVENT":
+   1. Run exactly: bash scripts/executor/tick.sh
+   2. If its first line begins with RUN, invoke the subagent named by agent= on that line, in the foreground, giving it, verbatim, all the output after that first line as its task, and wait until it finishes.
+   3. Run: bash scripts/executor/watch.sh --ack
+   4. Start as a background command: bash scripts/executor/watch.sh
+   5. Reply with the tick's first line, then the subagent's report if there was one. If the first line is NOOP CI_GREEN or begins with STOPPED, add two or three sentences in Bahasa Indonesia saying what I must do. End the turn.
+B. When a background command prints a line beginning WATCHER_RUNNING, reply with that line only and end the turn.
+C. When a background watcher ends without a line of A or B, follow A once. If the next watcher also ends so, do not start another: tell me in Bahasa Indonesia and wait for "lanjut".
+D. When I ask you to run bash scripts/executor/state.sh resume, with my note if I give one, or bash scripts/executor/state.sh unlock, run it, then follow A.
+E. Run nothing else unless I ask. Never run the tick twice in one turn.
+```
+
+### 9.3 The Owner's steps
+
+- **Start the host session.** In the Desktop app's Code tab, a new local session with the folder `C:\Projects\bantukasir`, worktree off, model Claude Opus 5.5 and the permission mode of his choice; paste the host text of 9.2 as the first message. The session runs the tick at once.
+- **`lanjut`.** Typed in the host session, it runs the tick by hand: when no wake came, after a stop he has removed, or to check the state.
+- **Stopping the host.** Stopping the session, or its background watcher, stops new runs; a run in progress continues until its next stop (CE-62).
+- **After the computer slept or the Desktop app closed.** The watcher stopped with them. He types `lanjut` in the host session, or starts a new host session; the tick reads the state and GitHub again (CE-24).
+- **A fresh host session** when its context has grown large: each Task runs in its own subagent context anyway, so a new host session loses nothing.
+- **The scheduled task** of D-101, `bantukasir-executor`, stays paused or deleted.
+
+### 9.4 Verification
+
+Every check ran on 25 October 2026 (Asia/Jakarta) on the working tree of `ops/d104-watcher`, before its commit.
+
+**Preflight** (the instruction's section 2): every item as expected. The untracked files are `Claude outputs/` and `plan-p0-p11-review.patch`; `.claude/settings.local.json` exists and is ignored by the user-global rule (section 5.1). The executor state: `STOPPED`, `OWNER_STOP`, `loop.prevPhase=SELECT`, no `owner.stopAfterMerge`, `merge.lastPr=6`, no lock. Pull request #6 merged as `d375e917…`, equal to `origin/develop` and local `develop`, with its head `eff83350…`; no open pull request into `develop`; CI run 40189802249 on `develop` succeeded. The dry run's first line: `STOPPED OWNER_STOP after the merge of #6, by the Owner's /stop`. The next free identifier: D-104. No effort override.
+
+**Self-test** (`bash scripts/executor/selftest.sh`):
+
+- Before the change, on `origin/develop`: `SUMMARY 170 passed, 1 failed`. The failure was case 7, "the real plan selects TASK-004", as expected: the real plan's lowest `READY` Task is TASK-006 since TASK-005's merge.
+- First run after the change, 21:02 to 21:37: `SUMMARY 262 passed, 2 failed`. Both failures were defects of the new cases, not of the scripts. In case 18 the tick that tested `last-tick` on `TICK_ERROR` met the lock that the previous real tick of the case had taken, and printed `NOOP LOCKED`. In case 20 the regular expression of the `UNPARSEABLE` stall left out the part `— follow EXECUTION_CONTEXT CE-03 —` of the line, although the watcher emitted at the fifth poll as expected, which a separate run in a temporary sandbox confirmed. Both cases were corrected.
+- Second run, 21:39 to 22:12, before the review: exit 0, `SUMMARY 264 passed, 0 failed`.
+- After the fixes of the review, 23:08 to 23:39: exit 0, `SUMMARY 281 passed, 0 failed`.
+- After the fix of the targeted check's R-18, 26 October 2026, 00:11 to 00:35: exit 0, `SUMMARY 284 passed, 0 failed`.
+- Run of record, after the fix of R-23, 00:41 to 01:21, begun after the last change to `scripts/executor/` (00:41:04) and with no change to `.claude/` since 25 October at 20:49: exit 0, `SUMMARY 285 passed, 0 failed`, with `bash -n` of each of the eleven scripts and no CR in the scripts, the agents, the settings or this record.
+- Cases whose expected behaviour D-104 changes: case 7, which now finds the lowest-numbered `READY` row of the real TASK_PLAN without the parser (TASK-006 today); and case 1's `phase AWAIT_MERGE`, which now refuses `CI_NOT_GREEN` while the required job has not passed on `pr.head` and releases the lock once it has (review R-05). Every other existing case is kept and passes as before: case 12's `wait-ci` cases through `ci_result`, and the adoption, push and review-package cases of cases 1, 9 and 11 through the changed scripts. Cases 13 and 14 gain one check each: the four executor bodies are identical and hold the steps of D-104, without `pr.sh wait-ci`; the allow rule of `watch.sh` is present.
+- Cases added: 15, the classification (each event of `--classify` and each kind of `QUIET`, `/stop` and `/effort` included, and one line on an internal error); 16, the phase `CI` without a lock; 17, `state.sh phase CI`; 18, the dry run and the classification write nothing, and a real tick writes `last-tick`; 19, the acknowledgment and the redelivery, with every refusal of clarification 1 (no real tick, a tick that did not finish, a delegation that still holds the lock, a lock released other than by its token, an event still current) and the bound of three deliveries and one stall; 20, the watcher (`WATCHER_RUNNING`, a takeover of a killed watcher and of an incomplete lock, an unreadable process list, an unreadable own identity, `--test-wake`, the stalls, `PR_MERGED` without a wake, `UNPARSEABLE`); 21, `adopt`; 22, `push.sh`; 23, `review-pack.sh`; and, as the regression cases of the review's MUST-FIX and SHOULD-FIX findings, case 19's refusals when the fresh classification cannot check the state (R-01), 24, an interrupted fix cycle after an unlock and after a takeover (R-02), 25, `OWNER_STOP` kept over GitHub, index-lock and internal-error stops (R-03), 26, new keys for a new recovery, selection and green CI (R-04), 27, `--once` and `--status` write nothing (R-09), and 28, the comments of a merged or an `ops/` pull request not quoted to a later delegation (R-10). Read against the code before the fixes, the assertions of the regression cases of R-01 to R-05 and R-10 fail there; case 27 adds a proof that the code already met. None was run against the old code.
+
+**Host probes** (`bash scripts/executor/selftest.sh --host`): `SUMMARY 9 passed, 0 failed` at 22:13, again after the fixes of the review at 23:39, and on the final code on 26 October at 01:22. Probe (f), on the real watcher folder with no watcher running: a second `--test-wake 5` gave `WATCHER_RUNNING 11260 since 2026-10-25T22:13:09+07:00`; after `taskkill` of the first watcher, `--test-wake 5` took its lock over, logged `TAKEOVER`, printed `BANTUKASIR WATCHER EVENT TEST:1792941204 — follow EXECUTION_CONTEXT CE-03 — test wake after 5 s` and released the lock; `--status` then showed `WATCHER none`.
+
+**Local checks** (CE-44 applied to this change, and the Owner's clarification 2), in the containers of the local environment as `.github/workflows/ci.yml` runs them:
+
+| Check | Command | Result |
+| --- | --- | --- |
+| `composer validate` | `docker compose exec -T app composer validate --strict --no-check-all` | PASS, "./composer.json is valid" |
+| `composer lint` | `docker compose exec -T app composer lint` | PASS: Pint 138 files; translation keys and types; migration review; the secret scan of the tree, no leaks, and of the commits not on GitHub, none yet; no audit advisory; the Network suite, 2 tests |
+| `composer analyse` | `docker compose exec -T app composer analyse` | PASS, no errors |
+| `npm run lint` | `docker compose run --rm node npm run lint` | PASS, with the npm audit's network test |
+| `npm run typecheck` | `docker compose run --rm node npm run typecheck` | PASS |
+
+After the fixes of the review, which changed only shell scripts and documents, `composer lint` ran again on the final tree on 26 October at 01:25, with the environment started again by `APP_PORT=18080 docker compose up -d --wait` after the computer's restart: PASS, Pint 138 files, no leaks in the tree, no advisory, the Network suite 2 tests. `composer validate`, `composer analyse`, `npm run lint` and `npm run typecheck` read no file that the fixes changed, and their results above stand. The change touches `scripts/executor/`, the permission settings, the agent definitions and documents; among the test suites only `CopyDeckTest` reads documents, and it reads COPY_DECK, which does not change, so the application suites are unaffected and were not run locally. The full command contract runs in CI on the pull request's head.
+
+**The publication guard's preview** (`bash scripts/executor/guard.sh --preview`): `GUARD PREVIEW PASS`, no candidate, before the review and again on the final tree on 26 October at 01:26.
+
+**Read-only checks on the real repository** (22:25): `bash scripts/executor/tick.sh --classify` and `bash scripts/executor/watch.sh --once` each gave `QUIET STOPPED OWNER_STOP after the merge of #6, by the Owner's /stop`; `bash scripts/executor/watch.sh --status` gave `WATCHER none`, `HEARTBEAT none`, `EVENT none`.
+
+**Review** (CE-40 as amended; the instruction's section 7). The self-review of the whole diff, then the package `bash scripts/executor/review-pack.sh --base d375e91769ac700b71fd0d172ea1ac4cfff3b28d --round 1` (`ops-d104-watcher/r1`, tree `cddabdbccfffa4f414876dfbdcee6e04eff75dd5`), reviewed by `bk-reviewer-high` (Claude Opus 5.5, effort High) in the mode `review`, adversarially. A first invocation was cut off by an unexpected restart of the computer before it reported; it was invoked again on the same package, which `--check` showed `UNCHANGED` after the restart and after the review. Verdict FAIL: 6 MUST-FIX, 4 SHOULD-FIX, 7 NOTE.
+
+| ID | Severity | Finding | Outcome |
+| --- | --- | --- | --- |
+| R-01 | MUST-FIX | `--ack` acknowledged an event when its fresh classification could not check the state (GitHub unavailable, an index lock, a held lock, an internal error, nothing), which hid a red CI left on the same head | Fixed (reading 9.5 item 8); regression in case 19 |
+| R-02 | MUST-FIX | After the Owner's `state.sh unlock` of an interrupted fix cycle, the tick read CI again in place of resuming it, losing the Owner's change request and ignoring the fix work in the tree; a takeover's resume quoted neither | Fixed: the fix cycle stays in the state until `phase CI`; regression case 24 |
+| R-03 | MUST-FIX | While `STOPPED` for `OWNER_STOP`, a third GitHub failure, an index lock or an internal error recorded its reason over the Owner's stop, and a resume of it went to `SELECT` and `RUN start` | Fixed: `STOP_KEPT`; regression case 25 |
+| R-04 | MUST-FIX | The keys `RECOVERY`, `RESUMED:SELECT` and `CI_GREEN` could repeat for a new occurrence, so that an earlier acknowledgment silenced a needed wake | Fixed: `loop.seq` ends those keys; regression case 26 |
+| R-05 | MUST-FIX | `state.sh phase AWAIT_MERGE` set `AWAIT_MERGE` without any check of CI | Fixed: `CI_NOT_GREEN`; case 1 |
+| R-06 | MUST-FIX | The proof of auto-wake and of the automatic delegation was not yet recorded, while CE-03, CE-72 and CURRENT_HANDOFF state the wake | The 3-minute wake check below, recorded before the commit |
+| R-07 | SHOULD-FIX | CE-70 says the tick counts and stops on the watcher's stall of CI on `develop`; it sets no such limit | Not changed: CE-70's text is the instruction's, verbatim; reading 9.5 item 9 |
+| R-08 | SHOULD-FIX | CE-60 has the host name the next Task, which the host text does not have it read | Not changed: the host text is verbatim; reading 9.5 item 10 |
+| R-09 | SHOULD-FIX | No case proved that `--once` and `--status` write nothing | Fixed: case 27 |
+| R-10 | SHOULD-FIX | The change requests of an `ops/` stop were kept and stopped every resume; the comments of a merged pull request were quoted to the next Task's executor | Fixed; case 28 |
+| R-11, R-12, R-14, R-15 | NOTE | Concurrent real ticks in `CI`; a race of three watchers in a takeover; a resume after `CI_FAILURE_LIMIT`; `WATCHER_RUNNING unverified` under rule B | Recorded as known limits (9.6) |
+| R-13 | NOTE | D-104's "Unchanged" listed the lock as unchanged, although it is now released at `CI` | Reworded in D-104's terms |
+| R-16 | NOTE | `push.sh` restricts the branch only while a Task is in flight; every other protection holds | None needed |
+| R-17 | NOTE | The documents describe the adoption before it is made | Checked after `state.sh adopt` (section 9 of the instruction) |
+
+**The 3-minute wake check** (the instruction's section 8; review R-06), on the code after the fixes of the review, with the Owner present:
+
+- **Armed** at 23:40:58: `watch.sh --status` showed `WATCHER none`; `bash scripts/executor/watch.sh --test-wake 180` was started as a background command of this Desktop session, and `--status` then showed `WATCHER running 27156 since 2026-10-25T23:40:58+07:00`.
+- **The second watcher was refused**: `bash scripts/executor/watch.sh` in the foreground printed at once `WATCHER_RUNNING 27156 since 2026-10-25T23:40:58+07:00`. The session then told the Owner not to type anything and ended its turn at 23:41:09.
+- **Woken** at 23:44:05, by the end of the background command, which printed `BANTUKASIR WATCHER EVENT TEST:1792946638 — follow EXECUTION_CONTEXT CE-03 — test wake after 180 s`; the Owner typed nothing in between.
+- **Auto-wake: proven.** The end of a background command started a new turn of the session without the Owner's input.
+- **Automatic delegation from a woken turn: proven.** In the woken turn, without the Owner's input, the session invoked the built-in `general-purpose` subagent with the probe task; it ran the four commands and reported: 1, `STOPPED OWNER_STOP after the merge of #6, by the Owner's /stop`; 2, `WATCHER none`, `HEARTBEAT none`, `EVENT none`; 3, `PROBE commit.sh`; 4, `PROBE push.sh`.
+- **The two prompts.** In that run the Owner answered every prompt with Allow once and did not note whether both prompts appeared, so `push.sh --probe` ran instead of being denied; that result is not counted as a proof. By his instruction only the permission test was repeated, each probe by its own subagent and announced beforehand: the prompt of `bash scripts/executor/commit.sh --probe` appeared, he answered Allow once, and it printed `PROBE commit.sh`; the prompt of `bash scripts/executor/push.sh --probe` appeared, he answered Deny, and the subagent stopped without running it. Both subagents joined `cd /c/Projects/bantukasir && ` to the command; the `ask` rules matched it so.
+- The watcher's lock, its event line and its exit did not change after this check, so it was not repeated.
+
+**The targeted check of the MUST-FIX fixes.** `bk-reviewer-high`, in the mode `verify`, from the package `ops-d104-watcher/r2` (`--previous` r1, tree `588fd0f0e6c1b2d5cfd7b983dbdf89879c690d35`). Verdict FAIL: R-01, R-02, R-04, R-05 and R-06 FIXED; R-03 fixed as required, but its fix introduced a new MUST-FIX.
+
+| ID | Severity | Finding | Outcome |
+| --- | --- | --- | --- |
+| R-18 | MUST-FIX | With `OWNER_STOP` kept, the tick printed the later stop (`STOPPED GITHUB_UNAVAILABLE …`), which the host reports, while a resume resumes `OWNER_STOP` and starts the next Task | Fixed: the line names the kept stop (reading 9.5 item 8); regression in case 25 |
+| R-19 | SHOULD-FIX | No case for an interrupted fix cycle of a red CI, nor for a stop and resume during a fix cycle | Fixed: two assertions in case 24 |
+| R-20 | SHOULD-FIX | A resumed fix cycle does not read the pull request again before the resumed run | Recorded as a known limit (9.6) |
+| R-21 | NOTE | `CI_RED` and `CHANGE_REQUEST` keys carry no `loop.seq` | Recorded as a known limit (9.6) |
+| R-22 | NOTE | The run of record must be tied to the tree it tested | The run after the fix of R-18 is the run of record; no file under `scripts/executor/` or `.claude/` changed after it began |
+
+**The one more targeted check**, of the fix of R-18 alone: `bk-reviewer-high`, in the mode `verify`, from the package `ops-d104-watcher/r3` (`--previous` r2, tree `09f2ec627f53e52a8f77d095704dc4cf6537f80d`). Verdict PASS: R-18 FIXED, no MUST-FIX open.
+
+| ID | Severity | Finding | Outcome |
+| --- | --- | --- | --- |
+| R-23 | SHOULD-FIX | `--ack`'s refusals after a tick that did not finish, and on a classification that cannot check the state, did not yet know the forms `STOPPED OWNER_STOP kept over TICK_ERROR`, `… GITHUB_UNAVAILABLE` and `… INDEX_LOCK` | Fixed in `watch.sh`, with an assertion in case 25 |
+| R-24 | NOTE | `STOPPED LOCK_UNVERIFIED`, which is never recorded and asks for `state.sh unlock`, and a usage error still print their own reason while `OWNER_STOP` is recorded | None needed: neither is a resume of another stop |
+
+**The package checks.** `bash scripts/executor/review-pack.sh --check` of r1 printed `UNCHANGED` after the restart, before the review that reported. It was not run after each review and check returned, as CE-40 asks; the evidence in its place: the three agents have the tools Read, Grep and Glob only; the manifests of r1, r2 and r3 hold the same HEAD `d375e91769ac700b71fd0d172ea1ac4cfff3b28d` and the same state hash `3b7579edb88e292a69f1501268ebdee59eb9f51cad456565defdb1aa81b4bf1f`; each package's previous tree is the tree of the one before it; and r3's `fix.patch` holds only the fix of R-18 and its records. The fix of R-23 came after the last check, as a SHOULD-FIX, which CE-40 has verified by its regression case and the local checks, not by another check.
+
+### 9.5 Readings
+
+The readings of D-104's terms ([DECISIONS](../DECISIONS.md) section 6) apply. These are the executor's readings of the instruction's implementation details, not the Owner's words:
+
+1. **Events.** The first decision point of a tick that names an event wins, so a verified merge (`DEVELOP_CI_GREEN`) or a resume (`RESUMED`) keeps its key whatever follows it — a new Task, `OWNER_STOP` or another stop. An internal error of `--classify` still prints one line, `WAKE STOPPED_NEW:TICK_ERROR:…`, unless the state was already stopped for `TICK_ERROR`.
+2. **The acknowledgment** (the Owner's clarification 1). `--ack` requires, besides a real tick after the event that did not end in `NOOP GITHUB_UNAVAILABLE`, `NOOP INDEX_LOCK`, `NOOP LOCKED` or `STOPPED TICK_ERROR`: for a `RUN`, that the executor lock no longer holds that run's token and that the log holds `LOCK_RELEASED token=<that token>`, which only `state.sh phase CI|AWAIT_MERGE` and `state.sh stop` write, each after checking the token; and, except for a stop or a stall, that a fresh classification no longer gives the same key. A stop or a stall is acknowledged once a real tick printed it, since the host then reported it. Every refusal is `NOT_ACKED <key> <reason>`.
+3. **Redelivery.** An unacknowledged key is emitted again only while the classification still gives it, at most once in 5 minutes and at most three times; then `WATCHER_STALL:REDELIVERY:<key>` once, and nothing more for that key. The count is taken from the watcher's log, so it survives a new watcher.
+4. **The watcher's lock.** A lock directory without its record is being written: younger than a minute it gives `WATCHER_RUNNING unverified`, older it is taken over as `INCOMPLETE`. A watcher that cannot read its own creation time gives the lock back and ends without a line, which the host text's rule C covers. A takeover moves the dead lock aside and takes it over only if it is still the one found dead.
+5. **`--test-wake`** takes the lock as the watcher does and writes no event file, so that `--ack` never sees a test.
+6. **`ci_result`** takes the workflow run of `PASS` from the URL of the `Command contract` job, and from the runs of `ci.yml` on the head when that URL holds none.
+7. **An adopted pull request** goes to `AWAIT_MERGE` at once, as before D-104 (CE-82): the tick does not follow its CI; the session that opened it waits for CI with `bash scripts/executor/pr.sh wait-ci`, and CE-61 still requires CI green on `develop` at the merge. A Task's own pull request reaches `AWAIT_MERGE` only through the tick's green CI on its head (CE-41).
+8. **The fixes of the review** (9.4), each with its regression case:
+   - `--ack` refuses also when its fresh classification cannot check the state — GitHub unavailable, an index lock, a held or unverified lock, an internal error, or an unreadable result (R-01);
+   - a fix cycle stays in the state (`ci.fixToken`, `ci.fixReason`, `ci.fixRequests`) until `state.sh phase CI` or `phase AWAIT_MERGE` ends it; in the phase `CI` the marker without a lock, as after the Owner's `state.sh unlock`, gives `RUN resume` with that Reason and those change requests, not a new reading of CI. A stop of the executor keeps the marker, so that his resume continues the cycle (R-02);
+   - while the state is `STOPPED` for `OWNER_STOP`, another stop is never recorded over it: it is logged as `STOP_KEPT`, and the tick's first line is `STOPPED OWNER_STOP kept over <reason> …; a resume resumes the Owner's stop`, whose classification stays `QUIET` (R-03, R-18);
+   - `loop.seq`, which each `RUN` of a real tick and each resume advance, ends the keys `RECOVERY`, `RESUMED:SELECT` and `CI_GREEN`, which a condition could otherwise repeat for a new occurrence (R-04);
+   - `state.sh phase AWAIT_MERGE` refuses `CI_NOT_GREEN` unless the required job passed on `pr.head` (R-05); the executor agents no longer use it, since they end with `CI`;
+   - the change requests of an `ops/` pull request are dropped at its `OPS_CHANGE_REQUEST` stop, which the log records, and the comments of a merged pull request are dropped at the selection, so that no delegation quotes them as the next Task's (R-10).
+9. **CE-70's stall of CI on `develop`** (review R-07). The watcher's stall wakes the host, whose tick then prints `NOOP DEVELOP_CI_PENDING` and the Owner reads it in the host's reply; the tick sets no limit of its own on CI on `develop`, which CE-70 names among the stops only when it fails. The rule's text is the Owner's instruction, verbatim, and is kept.
+10. **CE-60's report** (review R-08). The host's report on `NOOP CI_GREEN` names the pull request and its head from that line; the next Task and its effort are in the pull request's description and in the executor's report at the end of its run, which the host text (rule E) does not have the host read again.
+11. **The self-test** reads the watcher's classifications from the fixture `watch/classify` where a case needs a sequence; the stall of CI on `develop` counts twice `EXECUTOR_WATCH_STALL_POLLS`, as 60 is twice 30; and `EXECUTOR_INTERRUPT=tick_error` makes a tick fail at its last step, in self-test mode only.
+
+### 9.6 Known limits
+
+- An executor that ends while it holds the lock is found only by `LOCK_UNVERIFIED` after 2 hours, as under D-101: the holder record names the Desktop app's processes, which outlive the delegation (section 6).
+- An identical stop that recurs for the same head is not announced again.
+- The watcher stops with the Desktop app or the computer's sleep, and `lanjut` recovers.
+- A background command that ends silently cannot wake the host.
+- An event left unacknowledged after three deliveries and its stall stays silent until the Owner types `lanjut`.
+- A watcher that still runs while an executor works — after a `lanjut` typed while it ran — fetches from GitHub every minute; a fetch of the executor that changes the same remote-tracking ref at the same moment can fail, and the executor then retries or stops.
+- In the phase `CI` the tick counts a red head and advances the comment cursors without the lock: two real ticks at the same moment, from a `lanjut` in a second session, could count a head twice or quote a request twice. CE-22 and CE-02 exclude a second session by procedure (review R-11).
+- A watcher that moves a lock back, having found it replaced during its takeover, can race a third watcher's `mkdir`; two watchers could then run, and the executor lock and the state still serialize their ticks (review R-12).
+- A resume after `CI_FAILURE_LIMIT` stops again at once: the count of red heads is not reset, and only a green CI on the same head, after an Owner's re-run, continues the loop (review R-14).
+- `WATCHER_RUNNING unverified`, when the process list cannot be read, is answered by the host as one line under rule B, and no watcher then runs until the Owner types `lanjut` (review R-15).
+- An interrupted fix cycle is resumed without reading the pull request again: a pull request merged, closed or moved during the cycle is found by the tick after the resumed run sets `CI`, not before it. The takeover path behaved so under D-101 already (review R-20).
+- The keys `CI_RED` and `CHANGE_REQUEST` carry no `loop.seq`: if a stop arises between the watcher's classification and the host's tick, the acknowledged key can come back after a resume made outside the host session and stay silent until `lanjut` (review R-21).

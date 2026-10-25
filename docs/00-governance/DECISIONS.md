@@ -4,7 +4,7 @@ The single log of decisions for BantuKasir. A decision made in conversation does
 
 ## 1. How to use this log
 
-- Identifiers are permanent and continue the original numbering. The next free identifier is **D-104**.
+- Identifiers are permanent and continue the original numbering. The next free identifier is **D-105**.
 - "Source" says who decided: **Owner**, or **Planner** (a planning agent acting on its own authority under the rules of the time).
 - "Status" says whether the decision is in force today. `REVALIDATION PENDING` means the decision still applies but the Owner has been asked to re-confirm it; the item number refers to [OPEN_ITEMS](OPEN_ITEMS.md).
 - D-001 to D-018 were recorded on 2 and 3 October 2026 in the former register, now [legacy/10-DECISIONS.md](legacy/10-DECISIONS.md). The table below summarizes them in English. For the exact meaning of D-001 to D-018 the original Indonesian wording governs; for whether a decision is in force, this log governs.
@@ -121,9 +121,10 @@ All by the Owner (Asia/Jakarta). D-019 to D-025 answer the questions of the [re-
 | D-098 | Acceptance of TASK-001: published with the bookkeeping commit `8f0b96a` and pull request #1, merged into `develop` by the Owner's local merge commit `b212819a1761ffc468283d6813bf6ec7581d097e`, with CI green on the pull request (run 39250580770) and on the merge (run 39268427587); every acceptance criterion AC-001-01 to AC-001-09 passes; two commit-message points accepted; the baseline of the publication guard extended to the names of planned vendors and technologies. | Governance. TASK-001 is `DONE`; TASK-003 is `READY`, next on the critical path; TASK-002 stays `READY`. Extends the guard baseline of D-097. N-08 stays OPEN. No other Task, setting change, branch deletion, release or deployment. Terms in section 6. For the pull requests of continuous execution, the Owner's squash merge on GitHub replaces the local merge commit (D-101). |
 | D-099 | Approval of gate GATE-CC1, P7 and copy change control batch 1: the package of TASK-002 as committed in `776b9cf9f41d79088be66515afdee9c5e0b10864`, its eight documents each named by its hash, with the Owner's answers and COPY_DECK's change list CC-01 to CC-21; the merge of pull request #2 into `develop` by the Owner's local merge commit `0e9a39393e02b4ac293bd57bff4da3ca8340eaa4`, with CI green on the pull request (run 39296406256) and on the merge (run 39307066629); acceptance of TASK-002. | P7 and copy. Gate GATE-CC1 is SATISFIED; the texts added are approved copy; for the eight documents the hashes of D-082 and D-086 are superseded, and DESIGN_SYSTEM, KEY_SCREENS and the previews stay as D-087 approved them. TASK-002 is `DONE`. OPEN_ITEMS T-19 resolved; T-20 resolved except the shortcuts and breakpoints of gate DEVICES (TASK-047, gate GATE-CC2); T-25 opened. No other Task, setting change, branch deletion, release or deployment. Terms in section 6. |
 | D-100 | Acceptance of TASK-003: the shared kernel, formatting and localization at `3cc9188a05dc12126f7397c64b2ecd040752fa82`, with the remediation of its class-A adversarial review and the duration formatter, verified by the planning agent; pull request #3 (CI run 39325756602) merged into `develop` by the Owner's local merge commit `386f1388994282d143c105d815fa587244755d72`, with CI green on the merge (run 39330437264); the limits of lint recorded as R-28, R-34 and R-35 accepted; the percent format (F-8) left to TASK-040. | Governance. TASK-003 is `DONE`; TASK-004, next on the critical path, and TASK-005 are `READY`. OPEN_ITEMS T-26 stays open for TASK-008. No other Task, setting change, branch deletion, release or deployment. Terms in section 6. |
-| D-101 | Continuous Task execution: the Tasks run one after another, the next eligible Task starting after the Owner squash-merges the previous Task's pull request into `develop` on GitHub; the Owner approves each commit and each push at its prompt; an isolated, read-only reviewer agent makes the reviews at an effort set by the Task's class and risk; the effort per Task follows a table that adds Medium; an hourly local scheduled task of Claude Code Desktop is the trigger, with a state, a lock and recovery; no auto-merge. | Governance. EXECUTION_CONTEXT section 19 (CE-01 to CE-82) and the rules that point to it. For the Tasks of continuous execution it supersedes the instruction per Task of EXC-10, the merge commit of D-091 and D-098 and the effort set of D-031 and D-095, and it amends D-021. AGENTS.md, CLAUDE.md, PROJECT_RULES, TEST_STRATEGY section 11, TASK_PLAN, REQUIREMENTS, SOURCE_OF_TRUTH and OPEN_ITEMS are aligned; FD-10. In force from the Owner's squash merge of its setup pull request. No Task, dependency, gate, scope or business rule changes. Terms in section 6. |
+| D-101 | Continuous Task execution: the Tasks run one after another, the next eligible Task starting after the Owner squash-merges the previous Task's pull request into `develop` on GitHub; the Owner approves each commit and each push at its prompt; an isolated, read-only reviewer agent makes the reviews at an effort set by the Task's class and risk; the effort per Task follows a table that adds Medium; an hourly local scheduled task of Claude Code Desktop is the trigger, with a state, a lock and recovery; no auto-merge. | Governance. EXECUTION_CONTEXT section 19 (CE-01 to CE-82) and the rules that point to it. For the Tasks of continuous execution it supersedes the instruction per Task of EXC-10, the merge commit of D-091 and D-098 and the effort set of D-031 and D-095, and it amends D-021. AGENTS.md, CLAUDE.md, PROJECT_RULES, TEST_STRATEGY section 11, TASK_PLAN, REQUIREMENTS, SOURCE_OF_TRUTH and OPEN_ITEMS are aligned; FD-10. In force from the Owner's squash merge of its setup pull request. No Task, dependency, gate, scope or business rule changes. Terms in section 6. Amended by D-104: the trigger, the CI wait, the review cadence and the local checks. |
 | D-102 | TASK-005, the stop after the verification of its review fixes: the MUST-FIX R-15 is fixed within TASK-005 as the verification proposed — the exception of the shortcut registry for Ctrl+Enter narrowed to the radio items, the fields of a command form and the field of the quantity stepper, while a menu button and a menu item keep the key — with browser tests for a menu button, a menu item and a menu item that opens a review dialog; the SHOULD-FIX findings R-16 and R-20 are fixed too. | Governance; within TASK-005's scope. The fixes take the one verification pass of EXECUTION_CONTEXT CE-40 by the verification agent of CE-11; a MUST-FIX still open after it, or a finding that needs the Owner, stops the Task again. No other Task, scope, approved artifact or business rule changes. Terms in section 6. |
 | D-103 | TASK-005, the second stop after the verification of its review fixes: the MUST-FIX R-22 is fixed within TASK-005 as proposed — a layer opened from a menu item also remembers that menu's button, the element whose `aria-controls` names the menu, and gives the focus back to it when the remembered item is no longer connected — with the regression tests of R-22 kept; the findings R-23 to R-28 are settled too; the fixes take one more verification pass by `bk-reviewer-high`. | Governance; within TASK-005's scope. Like D-102: a MUST-FIX still open after that pass, or a finding that needs the Owner, stops the Task again. No other Task, scope, approved artifact or business rule changes. Terms in section 6. |
+| D-104 | Continuous execution (D-101) is triggered by the watcher of a local Desktop host session instead of the scheduled task, with the Owner's `lanjut` as the manual path; the executor ends after its pull request and the tick follows CI; local checks are those the contract requires and those relevant to the change, with the full command contract in CI on the final head; one review per Task, the last fix of each MUST-FIX proven by a regression test and a targeted check, otherwise a stop. | Governance. IN FORCE from the Owner's squash merge of its `ops/` pull request. Amends D-101: EXECUTION_CONTEXT section 19 (CE-02 to CE-04, CE-21, CE-22, CE-24, CE-40 to CE-42, the new CE-44, CE-50, CE-60, CE-62, CE-70 to CE-72, CE-80 to CE-82), EXC-71 and section 15; TEST_STRATEGY sections 10 and 11; FD-10. The scheduled task of D-101 is not used. No Task, dependency, gate, scope, acceptance criterion, test or business rule changes. Terms in section 6. |
 
 ## 4. Facts supplied by the Owner
 
@@ -146,7 +147,7 @@ All by the Owner (Asia/Jakarta). D-019 to D-025 answer the questions of the [re-
 | Whoever holds a staff member's one-time link, including the Owner who issued it, can set that person's password and act under their identity until the staff member notices. Controls: single use, 60-minute expiry, shown once and only to its issuer, revocable, issuance and use audited, staff handover guidance and reporting of a password they did not set. | Owner | D-056 |
 | A request that is still on its way to the server when the same user starts the same business action on another device, in another browser or after clearing the browser's data is not blocked, because no receipt of it exists yet; if both commit, the duplicate is a real record. It is handled by an audited correction — a refund or return of the duplicate Sale, or a reversal of a duplicate receiving or manual issue — and the history keeps both. Controls: the request receipts that block a family on every device for every request that reached the server (ADR-009), the status check, the record-check wait of 10 minutes, the refusal of a close while a checkout is unresolved (G-27) and the shop's guidance UG-04 and UG-08. | Owner | D-088 (N-07, D-074) |
 
-## 6. Terms of D-031 to D-103
+## 6. Terms of D-031 to D-104
 
 The Owner gave these decisions with detailed limits. The limits below are part of each decision.
 
@@ -1667,3 +1668,104 @@ The Owner gives this decision on 24 October 2026 as his answer to the second sto
   - The fixes take one more verification pass by `bk-reviewer-high`.
 - **How CE-40 applies** (the executor's reading, as for D-102). The fixes are review fixes of the phase `REVIEW`, in which the run continues; the pass the Owner names is their one verification pass, from a new package. A MUST-FIX still open after it, a finding that needs the Owner, or a change of scope stops the Task again, with no further round.
 - **Unchanged:** the scope, acceptance criteria and tests of TASK-005's contract; every approved P7 artifact, DESIGN_SYSTEM, KEY_SCREENS, the previews and COPY_DECK; every business rule; EXECUTION_CONTEXT section 19 and its scripts.
+
+### D-104 — Continuous execution: the host session's watcher, the CI wait, the local checks and the review rule
+
+The Owner gave this decision on 25 October 2026 to the planning agent, in three messages: his clarification "OWNER CLARIFICATION — LOCAL BACKGROUND WATCHER", his directive "OWNER DIRECTIVE — SAMAKAN EXECUTION FLOW BANTUKASIR DENGAN MULTIPLECORP", and his approval "OWNER APPROVAL — D-104 REVISI 2" of the planning agent's design, revision 2, with two conditions. The planning agent then prepared the executor's instruction "D-104: the watcher of the host session, the CI wait, the local checks and the review rule", to which the Owner added two implementation clarifications. The full wording is held in the Owner's Claude Project; these terms are its record in the repository. The implementation executor carried it out on the branch `ops/d104-watcher` and recorded the setup in [CONTINUOUS_EXECUTION_SETUP](records/CONTINUOUS_EXECUTION_SETUP.md) section 9.
+
+- **The Owner's words**, verbatim.
+  - The clarification, in full:
+
+    > OWNER CLARIFICATION — LOCAL BACKGROUND WATCHER
+    > Saya ingin mekanisme continuous execution BantuKasir menggunakan local background watcher di Claude Code Desktop, BUKAN fitur Scheduled.
+    > Watcher harus mendeteksi CI PR, lalu berhenti di AWAIT_MERGE. Setelah saya melakukan Squash and merge secara manual di GitHub, watcher mendeteksi merge dan CI develop yang sukses, kemudian otomatis memicu Claude Code untuk mengerjakan Task READY berikutnya.
+    > Jangan gunakan polling AI, executor paralel, auto-merge, atau layanan berbayar. Pertahankan seluruh pemeriksaan CE-61, lock, deduplikasi, /stop, dan persetujuan commit/push secara terpisah.
+    > Sebelum implementasi, buktikan bahwa watcher lokal benar-benar dapat memulai sesi executor Claude Code secara otomatis, bukan sekadar menampilkan status atau menjalankan tick.sh tanpa delegasi.
+    > Integrasikan perubahan ini secara sempit dengan rencana D-104. Jangan mengubah repository atau memulai TASK-006 sebelum saya menyetujui rancangan teknisnya.
+    > PR #6 tetap ditangani terpisah sesuai change request yang sudah dikirim.
+
+  - The directive, the parts quoted:
+
+    > Saya tidak meminta BantuKasir mengembangkan sistem otomasi rumit. Saya ingin proses penyelesaian setiap TASK mengikuti workflow nyata yang sudah berjalan pada MULTIPLECORP.
+
+    > Untuk BantuKasir, branch integrasi PR #6 adalah `develop`. Jangan menggantinya menjadi `main` hanya karena MULTIPLECORP memakai `main`.
+
+    > Saya ingin perilaku operasional tersebut ditiru, bukan diwajibkan menggunakan teknologi internal yang sama.
+
+    > Jika `asyncRewake` memang diperlukan, implementasikan secara aman. Jika background command cukup dan terbukti pada lingkungan ini, tidak perlu membuat mekanisme tambahan.
+
+    > Bedakan bukti auto-wake dari klaim bahwa Executor mampu bekerja otomatis. Jangan menjanjikan auto-resume jika belum terbukti.
+
+    > Jika auto-wake belum bekerja, gunakan mekanisme manual `lanjut` sementara. Jangan sampai seluruh progres coding tertunda hanya karena fitur otomasi tambahan belum sempurna.
+
+    > - Satu review utama per TASK, kecuali ada temuan material yang mewajibkan pemeriksaan lanjutan.
+    > - Temuan minor yang aman dicatat tanpa menghambat penyelesaian TASK.
+    > - Keputusan Owner dikumpulkan menjadi satu checkpoint jika memungkinkan.
+    > - Gabungkan record keputusan dan DONE ke commit yang sama apabila sah dan aman.
+    > - Jalankan tes terdampak selama iterasi; full suite dijalankan hanya bila gate atau perubahan memang memerlukannya.
+    > - Optimalkan filesystem Docker/WSL2 jika ditemukan bottleneck nyata seperti MULTIPLECORP.
+    > - Gunakan model dan thinking effort sesuai risiko; hindari sub-agent, analisis, dan tool call yang tidak diperlukan.
+    > - Keamanan, otorisasi, integritas transaksi/data, dan required CI tidak boleh dilewati.
+
+    > **Watcher:** mendeteksi perubahan GitHub dan membangunkan sesi bila mekanisme host mendukungnya. Watcher tidak memiliki kewenangan memberi izin baru.
+
+    > Tujuan akhirnya: **satu TASK selesai, CI hijau, Owner merge, lalu TASK berikutnya berjalan dengan gangguan dan konsumsi token seminimal mungkin, tanpa mengorbankan keselamatan.**
+
+  - The approval, in full, with its two conditions:
+
+    > OWNER APPROVAL — D-104 REVISI 2
+    > Saya menyetujui arah D-104 revisi 2 dengan dua ketentuan:
+    >
+    > 1. Optimasi local checks tidak boleh melewati tes lokal yang diwajibkan kontrak Task atau pengujian yang relevan terhadap dampak perubahan. Full CI tetap wajib pada HEAD final.
+    > 2. MUST-FIX boleh langsung diperbaiki tanpa mengulang review penuh, tetapi perbaikan terakhir harus terbukti melalui regression test dan pemeriksaan terarah. Jika tidak dapat ditutup dengan aman, STOP.
+    >
+    > Tidak perlu membuat revisi 3 atau mengulang review desain. Masukkan dua ketentuan ini langsung dalam instruksi implementasi D-104.
+    > Prioritas pertama tetap selesaikan PR #6 menggunakan dispatcher manual di Claude Code Desktop biasa, BUKAN Scheduled. Pertahankan /stop setelah merge.
+    > Setelah PR #6 selesai dan OWNER_STOP terverifikasi, siapkan satu instruksi implementasi D-104 melalui ops PR, sesuai change control. Jangan mulai TASK-006 sebelum /stop dicabut secara sah.
+    > Tetap prioritaskan kecepatan eksekusi, penghematan token, dan minimnya checkpoint yang tidak diperlukan.
+
+  - His two implementation clarifications at the head of the executor's instruction, in full:
+
+    > 1. Watcher acknowledgment: `watch.sh --ack` must not permanently acknowledge or suppress an event based only on a newer timestamp or the existence of a `last-tick` line. Associate the acknowledgment with the exact emitted event, and require reliable evidence that its real tick and, if the tick returned `RUN`, its foreground executor delegation completed successfully. A failed, interrupted, or unverified delegation must remain recoverable/redeliverable (deduplicated and bounded), without starting parallel executors. Add corresponding failure/recovery selftests and include them in the one required review. Keep the watcher read-only with respect to GitHub; no watcher may grant approvals.
+    >
+    > 2. Local checks on this ops pull request: section 6's checks are minimums, not a waiver of the proposed CE-44 static checks. Also execute `composer validate`, `composer analyse`, `npm run lint`, and `npm run typecheck` in their documented local/container environment. Keep all contract-mandated and impact-relevant checks, and the full required CI on the final PR head. If a mandated local check cannot run, report the evidence and STOP rather than silently treating CI as a substitute.
+
+- **What it decides.**
+  - **The trigger and the CI wait** (CE-03, CE-41, CE-42). A local session of the Desktop app, the host session, runs the tick at its start, on the Owner's `lanjut` and on each event of its watcher, and hands a `RUN` to the executor agent in the foreground. The watcher, `scripts/executor/watch.sh`, is a background command of that session: Bash, Git and `gh` only, never a model, with no authority. Every 60 seconds it runs a dry run of the tick that classifies the state, and on an event it prints one line and exits, which wakes the host. The executor ends its run after its pull request, with the phase `CI`, which releases the lock; the tick follows CI on the pull request's head without the lock. Green: `AWAIT_MERGE`. Red: a fix cycle by the Task's executor agent, at most three; a fourth red head is the stop `CI_FAILURE_LIMIT`, and CI still pending 60 minutes after the push is the stop `CI_TIMEOUT`. No model turn is spent while CI runs. The scheduled task of D-101 is not used.
+  - **The local checks** (CE-44): the tests the contract names, the tests and suites the change touches or affects, the static checks of the command contract, and the suites that CE-44 names for the database, concurrency and the frontend; the full command contract locally where a foundation changes, a CI failure is reproduced, or an unaffected suite cannot be shown. The full command contract runs in CI on every push and must pass on the final head.
+  - **The review rule** (CE-40). One review per Task. Every MUST-FIX and each valid, cheap SHOULD-FIX within scope is fixed with a regression test; only a MUST-FIX brings a targeted check of its fixes by the verification agent, and one more targeted check of a fix it still finds open. The last fix of every MUST-FIX is thus proven by its regression test and a targeted check; one that cannot be closed so is a stop. The review is never repeated in full.
+  - **The events and their acknowledgment.** Each decision point of the tick names its event: CI green or red on the pull request, an Owner change request, a merge verified with CI green on `develop`, a resume, a recovery and a new stop, with a key that stays the same while the condition lasts. The watcher adds its own stalls. After its tick the host acknowledges the event with `watch.sh --ack`, which records it only on evidence (the Owner's clarification 1): a real tick after the event that did not end in `NOOP GITHUB_UNAVAILABLE`, `NOOP INDEX_LOCK`, `NOOP LOCKED` or `STOPPED TICK_ERROR`; for a `RUN`, the release of the executor lock by that run's own token through `state.sh`; and, except for a stop or a stall, a classification that no longer gives that key. An event left unacknowledged is emitted again after 5 minutes while its condition lasts, at most three times, and then once as a stall.
+  - **`lanjut`.** The Owner's message `lanjut` in the host session runs the tick by hand: when no wake comes, after the computer slept, after the Desktop app closed or with a new host session.
+  - **One report** holds every open question of a Task known at that point, and minor and safe findings are recorded, never a stop (CE-71).
+  - **The mechanics of an `ops/` pull request after a Task.** `push.sh` restricts the branch to the state's `task.branch` only while a Task is in flight; `state.sh adopt` keeps the Owner's `OWNER_STOP` through the merge of the adopted pull request and drops the stale fields of the previous Task; `review-pack.sh` names the package by the branch when the state belongs to another branch (CONTINUOUS_EXECUTION_SETUP section 9).
+- **Readings.** These are the executor's readings, not the Owner's words.
+  - **"Full CI tetap wajib pada HEAD final".** `AWAIT_MERGE` is set only for the head on which the required job `Command contract` passed. Every push starts CI again. CE-61 continues only with CI green on `develop` at the merge.
+  - **Condition 2.** The last fix of each MUST-FIX is proven by its regression test and a targeted check by the verification agent. A MUST-FIX that cannot be closed so is a stop.
+  - **EXC-71's "fixes verified".** For class A this is met by the regression tests, the local checks and CI for every fix, and by the targeted checks for the MUST-FIX fixes.
+  - **`PR_MERGED`.** It is logged, not woken on. The verified merge with CI green on `develop` wakes the host.
+  - **`asyncRewake`.** It is built only if the wake fails and the Owner then asks for it.
+  - **MULTIPLECORP was not inspected** (AGENTS.md rule 5). Its behaviour was taken from the Owner's own description.
+  - **"Deduplicated and bounded"** (clarification 1). An unacknowledged event is emitted at most once in 5 minutes and at most three times; then the watcher emits `WATCHER_STALL:REDELIVERY:<key>` once and that key no more. No parallel executor can start: a `RUN` needs the executor lock, which a delegation holds until it ends.
+  - **"Reliable evidence" of a completed delegation** (clarification 1). A delegation ends through its scripts — the phase `CI` or `AWAIT_MERGE`, or a stop — and each of them logs the release of the lock with the token that the tick's `RUN` line named. A release by `state.sh unlock`, a takeover or a session that ended while it held the lock leaves no such line, and the event stays unacknowledged. The check of the current classification keeps an event that the tick did not consume, such as a red CI left on the same head, redeliverable, and so does a classification that cannot check the state — GitHub unavailable, an index lock, a held or unverified lock, an internal error; a stop or a stall is acknowledged once a real tick has printed it, since the Owner then has its report.
+  - **The Owner's stop holds until he resumes it.** While the loop is `STOPPED` for `OWNER_STOP`, a later stop — GitHub unreachable, an index lock, an internal error — is never recorded over it: it is logged, and the tick prints `STOPPED OWNER_STOP kept over <reason> …; a resume resumes the Owner's stop`, so that the stop the host reports is the one that `state.sh resume` resumes (CE-71, CE-72).
+  - **A fix cycle interrupted** — its lock taken over, or released by the Owner's `state.sh unlock` — is resumed with its Reason and the Owner's change requests, which the state keeps until the executor sets `CI` again (CE-24).
+  - **`AWAIT_MERGE`** is refused by `state.sh phase AWAIT_MERGE` unless the required job passed on the pull request's head (CE-41).
+- **The proof** (the instruction's section 8, on 25 October 2026; CONTINUOUS_EXECUTION_SETUP section 9.4). Two separate results:
+  - **auto-wake: proven.** A test watcher started as a background command of a Desktop session woke that session after 180 seconds, by its end, without the Owner's input; a second watcher started meanwhile was refused at once with `WATCHER_RUNNING`;
+  - **automatic delegation from a woken turn: proven.** In the woken turn, without the Owner's input, the session handed a probe to a subagent, which ran the dry run of the tick, `watch.sh --status` and the two probes of `commit.sh` and `push.sh`.
+
+  The prompt of each probe, repeated by the Owner's instruction, appeared on its own: he allowed `commit.sh --probe` and denied `push.sh --probe`. That a full executor delegation runs to its end from a woken turn is shown by no Task yet; the first Task run by the host session shows it.
+- **What it amends.**
+  - D-101: the trigger, the CI wait, the review cadence and the local checks.
+  - EXECUTION_CONTEXT: CE-02 to CE-04, CE-21, CE-22, CE-24, CE-40 to CE-42, the new CE-44, CE-50, CE-60, CE-62, CE-70 to CE-72 and CE-80 to CE-82; EXC-71; section 15.
+  - TEST_STRATEGY sections 10 and 11.
+  - FD-10.
+- **Unchanged:**
+  - the checks of CE-61;
+  - the lock's takeover rule (CE-22), the lock being now released at `CI` as well;
+  - deduplication (CE-23);
+  - the separate prompts for each commit and each push, and the publication guard (CE-30, CE-31);
+  - `/stop`, `/effort` and `/resume`;
+  - the effort table of CE-11;
+  - the gates;
+  - the 50 Tasks, their scope, acceptance criteria and tests.

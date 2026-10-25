@@ -18,6 +18,7 @@
       "Bash(bash scripts/executor/guard.sh*)",
       "Bash(bash scripts/executor/pr.sh *)",
       "Bash(bash scripts/executor/selftest.sh*)",
+      "Bash(bash scripts/executor/watch.sh*)",
       "Bash(bash scripts/checks/*)",
       "Bash(git status*)",
       "Bash(git diff*)",

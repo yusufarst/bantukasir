@@ -1,41 +1,73 @@
 #!/usr/bin/env bash
-# scripts/executor/tick.sh: the dispatcher's only command (D-101; EXECUTION_CONTEXT
-# CE-03, CE-10 to CE-13, CE-20 to CE-24, CE-41, CE-43, CE-50, CE-61, CE-62,
-# CE-70 to CE-72, CE-82).
+# scripts/executor/tick.sh: the tick of continuous execution, which the host
+# session runs at its start, on the Owner's lanjut and on each event of its
+# watcher (D-101, D-104; EXECUTION_CONTEXT CE-03, CE-10 to CE-13, CE-20 to
+# CE-24, CE-41 to CE-43, CE-50, CE-61, CE-62, CE-70 to CE-72, CE-82).
 #
-# Usage: bash scripts/executor/tick.sh [--dry-run]
+# Usage: bash scripts/executor/tick.sh [--dry-run | --classify]
 #        bash scripts/executor/tick.sh --explain TASK-NNN [--worktree]
 # The first line of the output is exactly one of:
 #   NOOP <CODE> <detail>
 #   STOPPED <REASON> <detail>
 #   RUN <start|resume|fix> <TASK-NNN|ops> agent=<name> review=<name> verify=<name> effort=<level> token=<token>
 # A RUN line is followed by a blank line and the delegation. --dry-run decides
-# and prints, writing no state and taking no lock. --explain prints a Task's
-# parsed row, its eligibility and its three agents with their efforts, without
-# any write; with --worktree it reads the working tree instead of origin/develop.
+# and prints, writing no state and taking no lock. --classify is a dry run that
+# prints one line instead, for the watcher (watch.sh): "QUIET <first line>", or
+# "WAKE <key> <first line>" for an event, whose key the decision point that
+# reached it names: the same while the same condition lasts, new for a new
+# occurrence (D-104); loop.seq, which each RUN and each resume advance, tells
+# apart the occurrences of a recovery, a selection and a green CI. A real tick
+# writes bantukasir-executor/last-tick, "<epoch>|<first line>", when it ends,
+# also on TICK_ERROR. --explain prints a Task's parsed row, its eligibility and
+# its three agents with their efforts, without any write; with --worktree it
+# reads the working tree instead of origin/develop.
+# In the phase CI without a lock the tick follows CI on the pull request's head
+# (CE-41, CE-42): pending NOOP CI_PENDING; green AWAIT_MERGE and NOOP CI_GREEN;
+# red, or an Owner change request, a fix cycle, the only case that takes the
+# lock. A fix cycle leaves ci.fixToken, its Reason and its change requests in
+# the state until state.sh phase CI ends it: a cycle interrupted, whether its
+# lock is taken over or released by the Owner's unlock, is resumed with them
+# (CE-24). A stop found while STOPPED for OWNER_STOP is never recorded over
+# the Owner's stop, and prints "STOPPED OWNER_STOP kept over <REASON> ..."
+# (CE-71, CE-72).
 # Exit code: always 0; an unexpected internal error prints STOPPED TICK_ERROR <where>.
 set -euo pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-STEP=start DONE=0 DRY=0 NOWRITE=0 GHFAIL=0 HELD="" TOOK_OVER="" REASON="" OPEN="" EXPLAIN="" WORKTREE=0
+STEP=start DONE=0 DRY=0 CLASSIFY=0 REAL=0 NOWRITE=0 GHFAIL=0 HELD="" TOOK_OVER="" REASON="" OPEN="" EXPLAIN="" WORKTREE=0
+EVENT="" FIRST_LINE="" PHASE_BEFORE="" REASON_BEFORE=""
 TMPS=()
 ERRF="$(mktemp)"
 TMPS+=("$ERRF")
 exec 3>&2 2> "$ERRF"
+# --classify prints only its own line: the tick's output is discarded.
+case " $* " in *" --classify "*) CLASSIFY=1; DRY=1; exec 4>&1 1> /dev/null ;; esac
 
 on_exit() {
     set +e
     if [ "$DONE" != 1 ]; then
-        echo "STOPPED TICK_ERROR $STEP"
+        EVENT=""
+        if owner_stop_kept TICK_ERROR; then
+            out "STOPPED OWNER_STOP kept over TICK_ERROR $STEP; a resume resumes the Owner's stop"
+            stop_event OWNER_STOP
+        else
+            out "STOPPED TICK_ERROR $STEP"
+            stop_event TICK_ERROR
+        fi
         tail -n 5 "$ERRF" | sed 's/^/  /'
         if [ "$DRY" = 0 ] && [ -n "$(st_get loop.phase)" ] && { [ -n "$HELD" ] || ! lock_exists; }; then record_stop TICK_ERROR "$STEP"; fi
+    fi
+    [ "$REAL" = 0 ] || write_last_tick
+    if [ "$CLASSIFY" = 1 ]; then
+        exec 1>&4
+        classification
     fi
     rm -rf -- "${TMPS[@]}"
     exit 0
 }
 trap on_exit EXIT
 
-out() { printf '%s\n' "$*"; }
+out() { [ -n "$FIRST_LINE" ] || FIRST_LINE="$*"; printf '%s\n' "$*"; }
 reset_counters() { st_unset counter.githubUnavailable; }
 finish() {
     if [ "$DRY" = 0 ] && [ "$NOWRITE" = 0 ] && [ "$GHFAIL" = 0 ]; then reset_counters; fi
@@ -54,9 +86,16 @@ take_lock() {
 }
 # record_stop <REASON> [detail]: STOP_PREV overrides the phase to resume to;
 # STOP_CLEARS names a key cleared only once the stop is recorded (merge_done).
+# The Owner's stop holds until he resumes it: another stop found while the
+# state is STOPPED for OWNER_STOP is logged, not recorded over it (D-104).
 record_stop() {
     local ph
     ph="$(st_get loop.phase)"
+    if [ "$ph" = STOPPED ] && [ "$(st_get loop.stopReason)" = OWNER_STOP ] && [ "$1" != OWNER_STOP ]; then
+        release_held
+        log_event "STOP_KEPT OWNER_STOP over $1 ${2:-}"
+        return 0
+    fi
     [ "$ph" = STOPPED ] || st_set loop.prevPhase "${STOP_PREV:-${ph:-SELECT}}"
     st_set loop.phase STOPPED
     st_set loop.stopReason "$1"
@@ -65,11 +104,24 @@ record_stop() {
     release_held
     log_event "STOPPED $1 ${2:-}"
 }
+# owner_stop_kept <REASON>: the state is STOPPED for OWNER_STOP and REASON is
+# another stop, which neither replaces it nor is printed as if it had.
+owner_stop_kept() { [ "$1" != OWNER_STOP ] && [ "$(st_get loop.phase)" = STOPPED ] && [ "$(st_get loop.stopReason)" = OWNER_STOP ]; }
 # stopped <REASON> [detail]: prints the stop and records it, unless another
-# session holds the lock (then the state is left to that session).
+# session holds the lock (then the state is left to that session). While the
+# Owner's stop is recorded, the line names it, with the later stop as its
+# detail, so that what the host reports is what a resume resumes (CE-71, CE-72).
 stopped() {
     local reason="$1"
     shift
+    if owner_stop_kept "$reason"; then
+        stop_event OWNER_STOP
+        out "STOPPED OWNER_STOP kept over $reason${*:+ $*}; a resume resumes the Owner's stop"
+        [ "$DRY" = 1 ] || log_event "STOP_KEPT OWNER_STOP over $reason${*:+ $*}"
+        release_held
+        finish
+    fi
+    stop_event "$reason"
     out "STOPPED $reason${*:+ $*}"
     if [ "$DRY" = 0 ] && [ -n "$(st_get loop.phase)" ] && { [ -n "$HELD" ] || ! lock_exists; }; then record_stop "$reason" "$*"; fi
     finish
@@ -95,6 +147,46 @@ tooling_check() {
     fi
 }
 mktmp() { local t; t="$(mktemp -d)"; TMPS+=("$t"); printf '%s\n' "$t"; }
+# ops_change_request <pr>: an ops/ pull request changes only by an Owner
+# instruction (CE-82); its change requests are in the log, and are not kept
+# for a later delegation.
+ops_change_request() {
+    rm -f -- "$REQ_FILE"
+    stopped OPS_CHANGE_REQUEST "#$1 has $CR change request(s); an ops/ pull request changes only by an Owner instruction (CE-82)"
+}
+
+# ---------------------------------------------------------------- events (D-104)
+# event <key>: the event that this tick reached, for the watcher. The first
+# decision point that names one wins, so a verified merge or a resume keeps
+# its key whatever follows it.
+event() { [ -n "$EVENT" ] || EVENT="$1"; }
+# stop_event <REASON> [id]: a stop is an event unless the state was already
+# STOPPED for that reason before the tick; <id> is the pull request's head, else
+# the Task, else "-".
+stop_event() {
+    local pr id
+    if [ "$PHASE_BEFORE" = STOPPED ] && [ "$REASON_BEFORE" = "$1" ]; then return 0; fi
+    pr="$(st_get pr.number)"
+    if [ -n "${2:-}" ]; then
+        id="$2"
+    elif [ -n "$pr" ]; then
+        id="$(st_get pr.head)"
+    else
+        id="$(st_get task.id)"
+    fi
+    event "STOPPED_NEW:$1:${pr:--}:${id:--}"
+}
+# cr_key: the comment cursors after processing, the key of change requests.
+cr_key() { printf '%s-%s-%s' "$(st_get pr.lastIssueCommentId)" "$(st_get pr.lastReviewCommentId)" "$(st_get pr.lastReviewId)"; }
+# seq_of: loop.seq, the occurrence part of the keys that a condition can repeat.
+seq_of() { local s; s="$(st_get loop.seq)"; printf '%s' "${s:-0}"; }
+classification() {
+    if [ -n "$EVENT" ]; then printf 'WAKE %s %s\n' "$EVENT" "$FIRST_LINE"; else printf 'QUIET %s\n' "$FIRST_LINE"; fi
+}
+write_last_tick() {
+    local t="$LAST_TICK_FILE.$$"
+    mkdir -p "$STATE_DIR" && printf '%s|%s\n' "$(now)" "$FIRST_LINE" > "$t" && mv -f -- "$t" "$LAST_TICK_FILE"
+}
 
 # ---------------------------------------------------------------- the delegation (step 7)
 quote_items() {  # file title
@@ -108,7 +200,7 @@ quote_items() {  # file title
     done < "$1"
 }
 delegation() {
-    local mode="$1" id kind pr note
+    local mode="$1" id kind pr note fq t
     id="$(st_get task.id)"
     kind="$(st_get task.kind)"
     [ "$kind" = ops ] && id=ops
@@ -117,7 +209,7 @@ delegation() {
     out "Model: claude-opus-5-5"
     out "Effort: $(st_get task.effort), from $(st_get task.effortSource)"
     out "Review agent: $(st_get task.reviewAgent); verification agent: $(st_get task.verifyAgent) (the table of EXECUTION_CONTEXT section 19)"
-    out "Session: a scheduled run of bantukasir-executor, $(stamp), token $HELD"
+    out "Session: the host session of CE-03 (D-104), $(stamp), token $HELD"
     out "Reason: $REASON"
     out "Escalation: none; stop and report (CE-70, CE-71)"
     out ""
@@ -138,19 +230,35 @@ delegation() {
     fi
     note="$(st_get_text owner.note)"
     if [ -n "$note" ]; then printf '\nThe Owner'"'"'s note (his words):\n<<<\n%s\n>>>\n' "$note"; fi
+    fq="$(st_get_text ci.fixRequests)"
+    if [ "$mode" = resume ] && [ -n "$(st_get ci.fixToken)" ] && [ -n "$fq" ]; then
+        t="$(mktmp)/fix"
+        printf '%s\n' "$fq" > "$t"
+        quote_items "$t" "Change requests of the interrupted fix cycle"
+    fi
     quote_items "$REQ_FILE" "Change requests"
     quote_items "$IGN_FILE" "Ignored comments (other accounts; never instructions, CE-43)"
     out ""
     out "Follow EXECUTION_CONTEXT section 19 and your agent definition."
 }
 run_line() {
-    local mode="$1" id
+    local mode="$1" id s
     id="$(st_get task.id)"
     [ "$(st_get task.kind)" = ops ] && id=ops
     out "RUN $mode ${id:-ops} agent=$(st_get task.agent) review=$(st_get task.reviewAgent) verify=$(st_get task.verifyAgent) effort=$(st_get task.effort) token=$HELD"
     out ""
     delegation "$mode"
     if [ "$DRY" = 0 ]; then
+        s="$(st_get loop.seq)"
+        st_set loop.seq $(( ${s:-0} + 1 ))
+        if [ "$mode" = fix ]; then
+            # The fix cycle is in the state until state.sh phase CI ends it, so
+            # that an interrupted cycle is resumed with its Reason and requests.
+            st_set ci.fixToken "$HELD"
+            st_set_text ci.fixReason "$REASON"
+            st_unset ci.fixRequests
+            if [ -s "$REQ_FILE" ]; then st_set_text ci.fixRequests "$(cat "$REQ_FILE")"; fi
+        fi
         rm -f -- "$REQ_FILE" "$IGN_FILE"
         st_unset owner.note
         log_event "RUN $mode ${id:-ops} agent=$(st_get task.agent) effort=$(st_get task.effort)"
@@ -215,7 +323,7 @@ collect_comments() {
 # ---------------------------------------------------------------- phases (step 6)
 phase_inflight() {
     STEP=resume
-    local r
+    local r id
     r="$(st_get task.resumes)"
     r="${r:-0}"
     if [ "$r" -ge "$MAX_RESUMES" ]; then stopped RECOVERY_LOOP "$(st_get task.id) already resumed $r times"; fi
@@ -223,7 +331,11 @@ phase_inflight() {
     tooling_check
     st_set task.resumes $((r + 1))
     REASON="resume of $(st_get task.id) in the phase $(st_get loop.phase), resume $((r + 1)) of $MAX_RESUMES${TOOK_OVER:+; the lock was taken over: $TOOK_OVER, evidence in the log}"
+    if [ "$(st_get loop.phase)" = CI ] && [ -n "$(st_get ci.fixToken)" ]; then REASON="$REASON; it continues the interrupted fix cycle: $(st_get_text ci.fixReason)"; fi
     [ "$DRY" = 1 ] || lock_heartbeat
+    id="$(st_get task.id)"
+    [ "$(st_get task.kind)" != ops ] || id=ops
+    event "RECOVERY:${id:-ops}:$(st_get loop.phase):$((r + 1)):$(seq_of)"
     run_line resume
 }
 
@@ -248,6 +360,7 @@ phase_stopped() {
                     st_set owner.lastResumeCommentId "$id"
                     resume_state "$note"
                     log_event "RESUMED_BY_COMMENT $id after $reason"
+                    event "RESUMED:$pr:$id"
                     dispatch "$(st_get loop.phase)"
                     return 0
                 fi
@@ -343,6 +456,7 @@ merge_recorded() {
 # only after it: a tick interrupted on the way leaves the /stop pending, and
 # the next tick stops again.
 merge_done() {
+    event "DEVELOP_CI_GREEN:$1:$(st_get merge.lastSha)"
     if [ "$(st_get owner.stopAfterMerge)" = 1 ]; then
         if selftest_mode && [ "${EXECUTOR_INTERRUPT:-}" = owner_stop ]; then kill -9 $$; fi
         STOP_PREV=SELECT STOP_CLEARS=owner.stopAfterMerge
@@ -368,11 +482,12 @@ phase_await() {
         [ "$hsha" = "$(st_get pr.head)" ] || stopped PR_HEAD_MOVED "#$pr head is $hsha; the recorded head is $(st_get pr.head)"
         [ "$(git rev-parse -q --verify "refs/heads/$(st_get task.branch)" || true)" = "$hsha" ] || stopped LOCAL_AHEAD "local $(st_get task.branch) differs from the head of #$pr"
         if [ "$CR" -gt 0 ]; then
-            if [ "$(st_get task.kind)" = ops ]; then stopped OPS_CHANGE_REQUEST "#$pr has $CR change request(s); an ops/ pull request changes only by an Owner instruction (CE-82)"; fi
+            if [ "$(st_get task.kind)" = ops ]; then ops_change_request "$pr"; fi
             take_lock || { NOWRITE=1; noop LOCKED "taken by another run"; }
             tooling_check
             st_set loop.phase CI
             REASON="the Owner's change requests on pull request #$pr (CE-43), handled as a fix cycle"
+            event "CHANGE_REQUEST:$pr:$(cr_key)"
             run_line fix
         fi
         noop AWAIT_MERGE "pr=$pr"
@@ -380,6 +495,70 @@ phase_await() {
     [ "$merged" = true ] || stopped PR_CLOSED "#$pr was closed without a merge"
     if merge_recorded "$pr" "$msha" "$hsha"; then merge_done "$pr"; fi
     verify_merge "$pr" "$msha" "$hsha"
+}
+
+# phase_ci: CI on the pull request, followed without the lock (CE-41 to CE-43,
+# D-104); only a fix cycle takes the lock, and the phase stays CI for it.
+phase_ci() {
+    STEP=ci
+    local pr info state merged msha hsha href bref res checks fid k start wait
+    pr="$(st_get pr.number)"
+    [ -n "$pr" ] || stopped STATE_INVALID "CI without a pull request"
+    info="$(gh_pr "$pr")" || gh_unavailable "pull request #$pr"
+    { read -r state; read -r merged; read -r msha; read -r hsha; read -r href; read -r bref; read -r _; read -r _; read -r _; } <<< "$info"
+    [ -n "$state" ] || gh_unavailable "pull request #$pr"
+    STEP=comments
+    collect_comments "$pr"
+    STEP=ci
+    [ "$bref" = "$BASE" ] || stopped PR_BASE "#$pr is into $bref"
+    if [ "$state" != open ]; then
+        [ "$merged" = true ] || stopped PR_CLOSED "#$pr was closed without a merge"
+        if merge_recorded "$pr" "$msha" "$hsha"; then merge_done "$pr"; fi
+        verify_merge "$pr" "$msha" "$hsha"
+    fi
+    [ "$hsha" = "$(st_get pr.head)" ] || stopped PR_HEAD_MOVED "#$pr head is $hsha; the recorded head is $(st_get pr.head)"
+    [ "$(git rev-parse -q --verify "refs/heads/$(st_get task.branch)" || true)" = "$hsha" ] || stopped LOCAL_AHEAD "local $(st_get task.branch) differs from the head of #$pr"
+    if [ "$CR" -gt 0 ]; then
+        if [ "$(st_get task.kind)" = ops ]; then ops_change_request "$pr"; fi
+        take_lock || { NOWRITE=1; noop LOCKED "taken by another run"; }
+        tooling_check
+        REASON="the Owner's change requests on pull request #$pr (CE-43), handled as a fix cycle"
+        event "CHANGE_REQUEST:$pr:$(cr_key)"
+        run_line fix
+    fi
+    # The 60 minutes start with each new head; a dry run sets them in its copy.
+    if [ "$(st_get ci.head)" != "$hsha" ] || ! is_int "$(st_get ci.waitStart)"; then
+        st_set ci.head "$hsha"
+        st_set ci.waitStart "$(now)"
+    fi
+    STEP=ci-result
+    res="$(ci_result "$hsha")" || gh_unavailable "check runs of $hsha"
+    case "$res" in
+        "PASS "*)
+            st_set loop.phase AWAIT_MERGE
+            log_event "CI PASS $hsha"
+            event "CI_GREEN:$pr:$hsha:$(seq_of)"
+            noop CI_GREEN "pr=$pr head=$hsha run=${res#PASS }"
+            ;;
+        FAIL*)
+            checks="${res#FAIL}"
+            checks="${checks%|*}"
+            fid="${res##*|}"
+            k="$(ci_count_failure "$hsha")"
+            log_event "CI FAIL $hsha failure $k"
+            [ "$k" -le "$MAX_CI_FAILURES" ] || stopped CI_FAILURE_LIMIT "#$pr failure $k on $hsha"
+            [ "$(st_get task.kind)" != ops ] || stopped CI_RED "#$pr$checks"
+            take_lock || { NOWRITE=1; noop LOCKED "taken by another run"; }
+            tooling_check
+            REASON="CI failed on the head $hsha of pull request #$pr:$checks; failure $k of $MAX_CI_FAILURES (CE-42)"
+            event "CI_RED:$pr:$hsha:$fid"
+            run_line fix
+            ;;
+    esac
+    start="$(st_get ci.waitStart)"
+    wait=$(( $(now) - start ))
+    [ "$wait" -lt $(( CI_MAX_MINUTES * 60 )) ] || stopped CI_TIMEOUT "#$pr head $hsha pending for $CI_MAX_MINUTES minutes"
+    noop CI_PENDING "pr=$pr head=$hsha $((wait / 60)) min"
 }
 
 phase_select() {
@@ -421,6 +600,9 @@ phase_select() {
     st_drop_section push
     st_drop_section pr
     st_drop_section task
+    # The comments collected on the previous pull request belong to it, not
+    # to the new Task (CE-43).
+    rm -f -- "$REQ_FILE" "$IGN_FILE"
     st_set task.id "$id"
     st_set task.title "$title"
     st_set task.class "$class"
@@ -436,6 +618,7 @@ phase_select() {
     st_set task.resumes 0
     st_set loop.phase BUILD
     REASON="the selection of CE-10 at origin/$BASE $(git rev-parse --short "origin/$BASE"): the lowest-numbered READY Task, its dependencies DONE and its gates satisfied"
+    event "RESUMED:SELECT:$(git rev-parse "origin/$BASE"):$(seq_of)"
     run_line start
 }
 
@@ -444,7 +627,10 @@ dispatch() {
         STOPPED) phase_stopped ;;
         AWAIT_MERGE) phase_await ;;
         SELECT) phase_select ;;
-        BUILD | REVIEW | PUBLISH | CI) phase_inflight ;;
+        # CI holds no lock (CE-41); a lock taken over in CI, or the marker of a
+        # fix cycle left after the Owner's unlock, is an interrupted fix cycle.
+        CI) if [ -n "$HELD" ] || [ -n "$(st_get ci.fixToken)" ]; then phase_inflight; else phase_ci; fi ;;
+        BUILD | REVIEW | PUBLISH) phase_inflight ;;
         *) stopped STATE_INVALID "phase ${1:-none}" ;;
     esac
 }
@@ -478,6 +664,7 @@ explain() {
 while [ $# -gt 0 ]; do
     case "$1" in
         --dry-run) DRY=1; shift ;;
+        --classify) CLASSIFY=1; DRY=1; shift ;;
         --explain) EXPLAIN="${2:-}"; shift 2 ;;
         --worktree) WORKTREE=1; shift ;;
         *) out "STOPPED TICK_ERROR usage: unknown argument $1"; DONE=1; exit 0 ;;
@@ -491,6 +678,7 @@ if [ -n "$EXPLAIN" ]; then
     exit 0
 fi
 
+[ "$DRY" = 1 ] || REAL=1
 if [ "$DRY" = 1 ]; then
     t="$(mktmp)"
     [ -f "$STATE_FILE" ] && cp "$STATE_FILE" "$t/state" || : > "$t/state"
@@ -498,6 +686,9 @@ if [ "$DRY" = 1 ]; then
     [ -f "$IGN_FILE" ] && cp "$IGN_FILE" "$t/ignored" || : > "$t/ignored"
     STATE_FILE="$t/state" REQ_FILE="$t/requests" IGN_FILE="$t/ignored" LOG_FILE=/dev/null
 fi
+# The phase and stop before the tick: a stop is new unless it was recorded.
+PHASE_BEFORE="$(st_get loop.phase)"
+REASON_BEFORE="$(st_get loop.stopReason)"
 
 # 1. Effort overrides (CE-13).
 STEP=effort
@@ -564,6 +755,7 @@ if lock_exists; then
             hb="$(lock_read heartbeat)"
             age=$(( $(now) - ${hb:-0} ))
             if is_int "$hb" && [ "$age" -lt $(( LOCK_ESCALATE_MINUTES * 60 )) ]; then noop LOCKED "$hs, heartbeat $((age / 60)) min ago"; fi
+            stop_event LOCK_UNVERIFIED "$(lock_read since)"
             out "STOPPED LOCK_UNVERIFIED $hs, heartbeat $((age / 60)) min ago; the Owner checks that no session works on the Task and runs bash scripts/executor/state.sh unlock"
             DONE=1
             exit 0
@@ -573,4 +765,5 @@ fi
 
 # 6. By phase.
 STEP=phase
+if selftest_mode && [ "${EXECUTOR_INTERRUPT:-}" = tick_error ]; then false; fi
 dispatch "$PHASE"

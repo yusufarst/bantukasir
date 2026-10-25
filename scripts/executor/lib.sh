@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 # scripts/executor/lib.sh: the shared library of continuous execution (D-101,
-# EXECUTION_CONTEXT section 19). Sourced by the other scripts, never run.
+# D-104, EXECUTION_CONTEXT section 19). Sourced by the other scripts, never run.
 #
 # CE rules: CE-10 and CE-11 (the parsers of TASK_PLAN section 4 and of the
 # effort table), CE-20 (the executor state), CE-22 (the lock and the liveness
 # check of its holder), CE-30 (the invocation identity that keeps a commit and
 # its push in separate Bash calls), CE-31 (the message and path rules shared by
-# commit.sh, guard.sh and pr.sh), CE-43 (the accounts whose comments count).
+# commit.sh, guard.sh and pr.sh), CE-41 and CE-42 (ci_result, the rule of a
+# green CI on a pull request's head, and the count of red heads), CE-43 (the
+# accounts whose comments count), CE-82 (adopt_state).
 #
 # Usage: . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 # Exit codes: it exits 2 when the current directory is not in a Git work tree;
@@ -16,7 +18,8 @@
 # prints simple lines (gh api ... --jq, free text as base64). With both
 # EXECUTOR_SELFTEST=1 and EXECUTOR_FIXTURES=<dir> set, and only then, they read
 # fixture files instead (selftest.sh); EXECUTOR_SELFTEST=1 alone never reaches
-# GitHub. EXECUTOR_NOW and EXECUTOR_POLL_SECONDS are honoured only then too.
+# GitHub. EXECUTOR_NOW, EXECUTOR_POLL_SECONDS and the EXECUTOR_WATCH_* settings
+# of watch.sh are honoured only then too.
 
 REPO=yusufarst/bantukasir
 OWNER_LOGIN=yusufarst
@@ -340,7 +343,9 @@ max_id() { printf '%s\n' "$1" | awk -F'|' 'function gt(a, b) { return length(a) 
 # the highest existing comment identifiers (state.sh adopt, tick.sh step 4).
 # It sets ADOPT_OWNER_COMMENTS to the number of the Owner's comments that
 # those identifiers pass over: a reconstruction stops on any for his
-# reconciliation, since a lost state may not have processed them.
+# reconciliation, since a lost state may not have processed them. The sections
+# task, pr and ci of an earlier Task are dropped first, so that an adopted
+# ops/ pull request carries no stale task.id (D-104).
 adopt_state() {
     local pr="$1" br="$2" head="$3" ic rc rv kind
     ic="$(gh_issue_comments "$pr")" || return 1
@@ -348,6 +353,9 @@ adopt_state() {
     rv="$(gh_reviews "$pr")" || return 1
     ADOPT_OWNER_COMMENTS="$(printf '%s\n' "$ic" "$rc" "$rv" | awk -F'|' -v o="$OWNER_LOGIN" '$1 ~ /^[0-9]+$/ && $2 == o && $3 != "" { n++ } END { print n + 0 }')"
     case "$br" in ops/*) kind=ops ;; *) kind=task ;; esac
+    st_drop_section task
+    st_drop_section pr
+    st_drop_section ci
     st_set loop.phase AWAIT_MERGE
     st_set pr.number "$pr"
     st_set pr.head "$head"
@@ -406,6 +414,10 @@ resume_state() {
     st_unset loop.stopDetail
     st_unset loop.prevPhase
     if [ -n "$(st_get task.resumes)" ]; then st_set task.resumes 0; fi
+    # A resume is a new occurrence for the watcher's keys (tick.sh, D-104).
+    local s
+    s="$(st_get loop.seq)"
+    st_set loop.seq $(( ${s:-0} + 1 ))
 }
 
 # ---------------------------------------------------------------- parsers (CE-10, CE-11)
@@ -513,4 +525,62 @@ agent_effort() {
     local f=".claude/agents/$1.md" e=""
     [ -f "$f" ] && e="$(awk '/^---/ { n++; next } n == 1 && /^effort:/ { print $2; exit }' "$f")"
     printf '%s\n' "${e:-${2:-${1##*-}}}"
+}
+
+# ---------------------------------------------------------------- CI and the host session (D-104)
+# The last real tick (tick.sh) and the folder of the watcher (watch.sh).
+LAST_TICK_FILE="$STATE_DIR/last-tick"
+WATCH_DIR="$STATE_DIR/watch"
+# task_in_flight: a Task or an adopted pull request is in flight: the phase
+# BUILD, REVIEW, PUBLISH, CI or AWAIT_MERGE, or STOPPED from one of them
+# (push.sh).
+task_in_flight() {
+    local ph
+    ph="$(st_get loop.phase)"
+    [ "$ph" != STOPPED ] || ph="$(st_get loop.prevPhase)"
+    case "$ph" in BUILD | REVIEW | PUBLISH | CI | AWAIT_MERGE) return 0 ;; esac
+    return 1
+}
+# ci_result <sha>: CI on a pull request's head (CE-41): "PASS <workflow run
+# id>", "PENDING", or "FAIL <the failing checks with their URLs>|<highest
+# failed check-run id>". PASS needs the job Command contract of
+# .github/workflows/ci.yml completed with success and every other check run
+# successful, neutral or skipped; any check run not completed is PENDING, and
+# so is a missing Command contract. It fails when GitHub cannot be read.
+ci_result() {
+    local runs res id
+    runs="$(gh_check_runs "$1")" || return 1
+    res="$(printf '%s\n' "$runs" | awk -F'|' -v req="Command contract" '
+        function gt(a, b) { return length(a) > length(b) || (length(a) == length(b) && a > b) }
+        NF >= 4 {
+            if ($3 != "completed") p = 1
+            else if ($2 == req && $4 == "success") { c = 1; u = $5 }
+            else if ($2 == req || ($4 != "success" && $4 != "neutral" && $4 != "skipped")) { f = f " " $2 " " $5; if (gt($1, m)) m = $1 }
+        }
+        END { if (p) print "PENDING"; else if (f != "") print "FAIL" f "|" m; else if (!c) print "PENDING"; else print "PASS " u }')"
+    case "$res" in
+        "PASS "*)
+            id="$(printf '%s\n' "${res#PASS }" | sed -n 's#.*/actions/runs/\([0-9][0-9]*\).*#\1#p')"
+            if [ -z "$id" ]; then
+                id="$(gh_ci_runs "$1" pull_request | awk -F'|' '$2 == "completed" && $3 == "success" && $1 + 0 > m + 0 { m = $1 } END { if (m != "") print m }')" || id=""
+            fi
+            printf 'PASS %s\n' "${id:-unknown}"
+            ;;
+        *) printf '%s\n' "$res" ;;
+    esac
+}
+# ci_count_failure <sha>: counts a red CI once per head commit (ci.failedHead,
+# ci.failures) and prints the count of the Task's red heads (CE-42).
+ci_count_failure() {
+    local fl
+    case $'\n'"$(st_all ci.failedHead)"$'\n' in
+        *$'\n'"$1"$'\n'*) ;;
+        *)
+            st_add ci.failedHead "$1"
+            fl="$(st_get ci.failures)"
+            st_set ci.failures $(( ${fl:-0} + 1 ))
+            ;;
+    esac
+    fl="$(st_get ci.failures)"
+    printf '%s\n' "${fl:-0}"
 }

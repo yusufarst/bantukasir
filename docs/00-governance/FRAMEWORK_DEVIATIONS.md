@@ -14,7 +14,7 @@ Status values: `APPROVED` (Owner approved), `RECORDED` (no Owner approval requir
 | FD-06 | Hosting other than the framework default | WITHDRAWN — D-053 adopted the framework topology |
 | FD-07 | Dedicated final-verification Tasks kept | RECORDED — applied in RF-7 (D-090) |
 | FD-08 | Build Unit identifiers replaced by `TASK-NNN` | RECORDED — applied in RF-7 (D-090) |
-| FD-10 | Continuous Task execution: the next eligible Task starts after the Owner's merge, without an instruction per Task | APPROVED — D-101 |
+| FD-10 | Continuous Task execution: the next eligible Task starts after the Owner's merge, without an instruction per Task | APPROVED — D-101, D-104 |
 
 Question numbers refer to [OPEN_ITEMS](OPEN_ITEMS.md).
 
@@ -152,7 +152,7 @@ RISK: Less planner attention per Task; reduced by the isolated read-only reviewe
 OWNER APPROVAL REQUIRED: YES
 ```
 
-Approved by D-101 (23 October 2026) and applied in [EXECUTION_CONTEXT](../11-tasks/EXECUTION_CONTEXT.md) section 19. The identifier FD-09 was never used (see the conformance actions below).
+Approved by D-101 (23 October 2026) and applied in [EXECUTION_CONTEXT](../11-tasks/EXECUTION_CONTEXT.md) section 19. Its trigger is the watcher of a local Desktop host session, with the Owner's `lanjut` as the manual path (D-104). The identifier FD-09 was never used (see the conformance actions below).
 
 ## Conformance actions (not deviations)
 

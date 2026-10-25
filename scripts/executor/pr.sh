@@ -103,27 +103,22 @@ case "$sub" in
         if selftest_mode && is_int "${EXECUTOR_POLL_SECONDS:-}"; then poll="$EXECUTOR_POLL_SECONDS"; fi
         t0="$(date +%s)"
         while :; do
-            runs="$(gh_check_runs "$sha")" || runs="__ERROR__"
-            if [ "$runs" != "__ERROR__" ] && [ -n "$runs" ]; then
-                # PASS needs the job of .github/workflows/ci.yml to succeed,
-                # not only the check runs that happen to exist on the commit.
-                res="$(printf '%s\n' "$runs" | awk -F'|' -v req="Command contract" 'NF >= 4 { n++; if ($3 != "completed") p = 1; else if ($2 == req) { if ($4 == "success") c = 1; else f = f " " $2 " " $5 } else if ($4 != "success" && $4 != "neutral" && $4 != "skipped") f = f " " $2 " " $5 } END { if (p) print "PENDING"; else if (f != "") print "FAIL" f; else if (!c) print "PENDING"; else print "PASS" }')"
-                case "$res" in
-                    PASS) log_event "CI PASS $sha"; echo "CI PASS $sha"; exit 0 ;;
-                    FAIL*)
-                        if ! st_all ci.failedHead | grep -qx "$sha"; then
-                            st_add ci.failedHead "$sha"
-                            fl="$(st_get ci.failures)"
-                            st_set ci.failures $(( ${fl:-0} + 1 ))
-                        fi
-                        fl="$(st_get ci.failures)"
-                        log_event "CI FAIL $sha failure $fl"
-                        if [ "$fl" -gt "$MAX_CI_FAILURES" ]; then echo "CI FAIL LIMIT $sha failure $fl:${res#FAIL}"; exit 1; fi
-                        echo "CI FAIL $sha failure $fl of $MAX_CI_FAILURES:${res#FAIL}"
-                        exit 1
-                        ;;
-                esac
-            fi
+            # PASS needs the job of .github/workflows/ci.yml to succeed, not
+            # only the check runs that happen to exist on the commit; the rule
+            # is ci_result's, which the tick's phase CI uses too (D-104).
+            res="$(ci_result "$sha")" || res=""
+            case "$res" in
+                PASS*) log_event "CI PASS $sha"; echo "CI PASS $sha"; exit 0 ;;
+                FAIL*)
+                    fl="$(ci_count_failure "$sha")"
+                    checks="${res#FAIL}"
+                    checks="${checks%|*}"
+                    log_event "CI FAIL $sha failure $fl"
+                    if [ "$fl" -gt "$MAX_CI_FAILURES" ]; then echo "CI FAIL LIMIT $sha failure $fl:$checks"; exit 1; fi
+                    echo "CI FAIL $sha failure $fl of $MAX_CI_FAILURES:$checks"
+                    exit 1
+                    ;;
+            esac
             if [ $(( $(now) - start )) -ge $(( CI_MAX_MINUTES * 60 )) ]; then log_event "CI TIMEOUT $sha"; echo "CI TIMEOUT $sha pending for $CI_MAX_MINUTES minutes"; exit 1; fi
             if [ $(( $(date +%s) - t0 + poll )) -gt "$max" ]; then echo "CI PENDING $sha"; exit 4; fi
             sleep "$poll"

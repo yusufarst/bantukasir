@@ -1,16 +1,19 @@
 #!/usr/bin/env bash
-# scripts/executor/push.sh: the only way the executor pushes (D-101;
-# EXECUTION_CONTEXT CE-30, CE-31, EXC-31, AGENTS rule 11). An ask rule of
-# .claude/settings.json, so the Owner approves each push at its own prompt.
+# scripts/executor/push.sh: the only way the executor pushes (D-101, D-104;
+# EXECUTION_CONTEXT CE-30, CE-31, CE-82, EXC-31, AGENTS rule 11). An ask rule
+# of .claude/settings.json, so the Owner approves each push at its own prompt.
 #
 # Usage: bash scripts/executor/push.sh
 #        bash scripts/executor/push.sh --probe    prints PROBE push.sh, changes nothing
 # It refuses, with one line "REFUSED <CODE> <detail>": a branch other than
-# task/... or ops/..., and a detached HEAD; when the state records task.branch,
-# any other branch; SAME_INVOCATION, the Bash call of the last commit;
-# UNAPPROVED_COMMIT <sha>, a commit of HEAD --not --remotes=origin that
-# commit.sh did not create; a guard stamp that is missing or not HEAD;
-# NOT_FAST_FORWARD, when origin/<branch> is not an ancestor of HEAD (a stop).
+# task/... or ops/..., and a detached HEAD; while a Task is in flight (the
+# phase BUILD, REVIEW, PUBLISH, CI or AWAIT_MERGE, or STOPPED from one of
+# them), any branch other than the state's task.branch, whereas the recorded
+# branch of a finished Task restricts nothing (D-104); SAME_INVOCATION, the
+# Bash call of the last commit; UNAPPROVED_COMMIT <sha>, a commit of
+# HEAD --not --remotes=origin that commit.sh did not create; a guard stamp that
+# is missing or not HEAD; NOT_FAST_FORWARD, when origin/<branch> is not an
+# ancestor of HEAD (a stop).
 # Then it records the call in push.lastInvocation, pushes
 # refs/heads/<branch> without force, checks it with git ls-remote, and sets
 # pr.head when the state records an open pull request for the branch.
@@ -29,7 +32,9 @@ case "$br" in
     *) refuse "BRANCH ${br:-detached HEAD}: only a task/ or ops/ branch is pushed" ;;
 esac
 tb="$(st_get task.branch)"
-[ -z "$tb" ] || [ "$tb" = "$br" ] || refuse "BRANCH the state's branch is $tb, not $br"
+if task_in_flight; then
+    [ -z "$tb" ] || [ "$tb" = "$br" ] || refuse "BRANCH the state's branch is $tb, not $br, and it is in flight ($(st_get loop.phase))"
+fi
 
 inv="$(invocation_id)" || refuse "INVOCATION the Bash call could not be identified"
 [ "$inv" != "$(st_get commit.lastInvocation)" ] || refuse "SAME_INVOCATION a commit ran in this Bash call; push in a separate call"
