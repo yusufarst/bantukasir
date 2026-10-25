@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # scripts/executor/review-pack.sh: the review package that the isolated,
-# read-only reviewer agent reads (D-101; EXECUTION_CONTEXT CE-40).
+# read-only reviewer agent reads (D-101, D-104; EXECUTION_CONTEXT CE-40).
 #
 # Usage: bash scripts/executor/review-pack.sh --base <sha> --round <n> [--previous <package>]
 #        bash scripts/executor/review-pack.sh --check <package>
@@ -11,6 +11,10 @@
 # stat.txt, files.txt (the changed paths with their status) and, with
 # --previous, fix.patch (git diff <previous tree> <tree>). It prints the
 # package's path for the Read tool. It never overwrites a package.
+# The Task, its class and its agents come from the state only when the state's
+# task.branch is the current branch; otherwise from the branch: TASK-NNN for
+# task/TASK-NNN-..., or ops-<name> with class ops for ops/<name>, the agent
+# then named by the session (D-104).
 # --check computes the snapshot tree, HEAD, the index hash and the state hash
 # again and prints UNCHANGED when all four equal the manifest, otherwise
 # CHANGED <what>, which is a stop.
@@ -45,10 +49,20 @@ fi
 
 [ -n "$BASE_SHA" ] && is_int "$ROUND" || usage
 base="$(git rev-parse --verify "$BASE_SHA^{commit}")" || { echo "REFUSED unknown base $BASE_SHA"; exit 1; }
-task="$(st_get task.id)"
 br="$(cur_branch)"
+task="" class="" ragent="" vagent=""
+if [ -n "$br" ] && [ "$(st_get task.branch)" = "$br" ]; then
+    task="$(st_get task.id)"
+    class="$(st_get task.class)"
+    ragent="$(st_get task.reviewAgent)"
+    vagent="$(st_get task.verifyAgent)"
+fi
 if [ -z "$task" ]; then
-    case "$br" in task/TASK-*) task="$(task_of_branch "$br")" ;; ops/*) task="ops-${br#ops/}" ;; *) task=none ;; esac
+    case "$br" in
+        task/TASK-*) task="$(task_of_branch "$br")" ;;
+        ops/*) task="ops-${br#ops/}"; class="${class:-ops}" ;;
+        *) task=none ;;
+    esac
 fi
 task="${task//\//-}"
 pkg="$STATE_DIR/review/$task/r$ROUND"
@@ -57,10 +71,10 @@ prevtree="none"
 if [ -n "$PREV" ]; then
     [ -f "$PREV/MANIFEST.txt" ] || { echo "REFUSED no manifest in $PREV"; exit 1; }
     prevtree="$(mval "$PREV" Tree)"
-    agent="$(st_get task.verifyAgent)"
+    agent="$vagent"
     role=verification
 else
-    agent="$(st_get task.reviewAgent)"
+    agent="$ragent"
     role=review
 fi
 tree="$(snapshot_tree)"
@@ -68,11 +82,11 @@ mkdir -p "$pkg"
 {
     echo "MANIFEST of the review package $task round $ROUND (D-101, EXECUTION_CONTEXT CE-40)"
     echo "Task: $task"
-    echo "Class: $(st_get task.class)"
+    echo "Class: $class"
     echo "Base: $base"
     echo "Tree: $tree"
     echo "Previous tree: $prevtree"
-    echo "Agent ($role): ${agent:-none recorded}"
+    echo "Agent ($role): ${agent:-named by the session}"
     echo "Time: $(stamp)"
     echo "HEAD: $(git rev-parse HEAD)"
     echo "Index: $(index_hash)"

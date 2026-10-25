@@ -1,20 +1,30 @@
 #!/usr/bin/env bash
-# scripts/executor/state.sh: the executor state and its lock (D-101,
-# EXECUTION_CONTEXT CE-20 to CE-24, CE-71, CE-72, CE-82).
+# scripts/executor/state.sh: the executor state and its lock (D-101, D-104;
+# EXECUTION_CONTEXT CE-20 to CE-24, CE-41, CE-71, CE-72, CE-82).
 #
 # Usage: bash scripts/executor/state.sh <subcommand>
 #   show                                       the state, the lock and the log's tail
 #   heartbeat --token T                        refreshes the heartbeat
 #   phase <BUILD|REVIEW|PUBLISH|CI|AWAIT_MERGE> --token T
-#                                              sets the phase; AWAIT_MERGE releases the lock
+#                                              sets the phase; CI and AWAIT_MERGE release the lock.
+#                                              both need the pull request (REFUSED NO_PR keeps the
+#                                              lock); CI, when ci.head is not pr.head, sets ci.head
+#                                              and ci.waitStart, the start of the 60 minutes, and
+#                                              AWAIT_MERGE refuses CI_NOT_GREEN unless the required
+#                                              job passed on pr.head (CE-41); both end the fix
+#                                              cycle that tick.sh recorded (ci.fixToken)
 #   stop <REASON> --token T [--detail "<text>"]  records STOPPED and releases the lock
 #   resume [--note "<text>"] [--continue] [--accept-merge <sha>]
 #                                              the Owner's resume (an ask rule)
 #   unlock                                     the Owner's release of the lock (an ask rule)
 #   adopt --pr N --kind ops|task [--task TASK-NNN]
-#                                              the Owner's adoption of a pull request (an ask rule)
+#                                              the Owner's adoption of a pull request (an ask rule);
+#                                              from OWNER_STOP it keeps the stop for the merge
 #   probe-holder                               read-only: the holder record and its state
 #   probe-invocation                           read-only: the invocation identity
+# A release by the holder of the lock (phase CI or AWAIT_MERGE, stop) logs
+# "LOCK_RELEASED token=<token> at <phase>": the evidence that a delegation
+# ended through its scripts, which watch.sh --ack requires (D-104).
 # Exit codes: 0 done; 1 refused, NOT_STOPPED, NO_LOCK or LOCK_LOST (the calling
 # session stops at once on LOCK_LOST); 2 usage.
 set -euo pipefail
@@ -70,10 +80,34 @@ case "$cmd" in
     phase)
         case "$ARG" in BUILD | REVIEW | PUBLISH | CI | AWAIT_MERGE) ;; *) usage "phase BUILD|REVIEW|PUBLISH|CI|AWAIT_MERGE" ;; esac
         need_token
+        case "$ARG" in CI | AWAIT_MERGE) [ -n "$(st_get pr.number)" ] && [ -n "$(st_get pr.head)" ] || { echo "REFUSED NO_PR the state has no pull request; the lock is kept"; exit 1; } ;; esac
+        if [ "$ARG" = CI ]; then
+            # The tick follows CI without the lock (CE-41): the 60 minutes
+            # start with each new head.
+            if [ "$(st_get ci.head)" != "$(st_get pr.head)" ]; then
+                st_set ci.head "$(st_get pr.head)"
+                st_set ci.waitStart "$(now)"
+            fi
+        fi
+        if [ "$ARG" = AWAIT_MERGE ]; then
+            # AWAIT_MERGE only for the head on which the required job passed
+            # (CE-41, D-104).
+            res="$(ci_result "$(st_get pr.head)")" || { echo "REFUSED GITHUB_UNAVAILABLE the lock is kept"; exit 1; }
+            case "$res" in "PASS "*) ;; *) echo "REFUSED CI_NOT_GREEN $(st_get pr.head): ${res%%|*}; the lock is kept"; exit 1 ;; esac
+        fi
         st_set loop.phase "$ARG"
         lock_heartbeat
         log_event "PHASE $ARG"
-        if [ "$ARG" = AWAIT_MERGE ]; then lock_release; log_event "LOCK_RELEASED"; fi
+        case "$ARG" in
+            CI | AWAIT_MERGE)
+                # The end of a run, or of a fix cycle (tick.sh run_line fix).
+                st_unset ci.fixToken
+                st_unset ci.fixReason
+                st_unset ci.fixRequests
+                lock_release
+                log_event "LOCK_RELEASED token=$TOKEN at $ARG"
+                ;;
+        esac
         echo "PHASE $ARG"
         ;;
     stop)
@@ -86,6 +120,7 @@ case "$cmd" in
         st_set_text loop.stopDetail "$DETAIL"
         lock_release
         log_event "STOPPED $ARG $DETAIL"
+        log_event "LOCK_RELEASED token=$TOKEN at STOPPED $ARG"
         echo "STOPPED $ARG${DETAIL:+ $DETAIL}"
         ;;
     resume)
@@ -144,10 +179,20 @@ case "$cmd" in
         [ "$author" = "$OWNER_LOGIN" ] || { echo "REFUSED AUTHOR #$PR is by $author"; exit 1; }
         [ "$hsha" = "$(git rev-parse HEAD)" ] || { echo "REFUSED HEAD #$PR head $hsha differs from HEAD"; exit 1; }
         case "$KIND:$br" in ops:ops/* | task:task/TASK-*) ;; *) echo "REFUSED KIND $KIND does not match $br"; exit 1 ;; esac
+        # The Owner's /stop holds through the merge of a pull request adopted
+        # in it: the loop stops again until he resumes it (CE-82, D-104).
+        keep=0
+        if [ "$ph" = STOPPED ] && [ "$(st_get loop.stopReason)" = OWNER_STOP ]; then keep=1; fi
         adopt_state "$PR" "$br" "$hsha" || { echo "REFUSED GITHUB_UNAVAILABLE"; exit 1; }
         if [ -n "$TASK" ]; then st_set task.id "$TASK"; fi
+        if [ "$keep" = 1 ]; then
+            st_set owner.stopAfterMerge 1
+            log_event "OWNER_STOP_KEPT pr=$PR"
+        fi
         log_event "ADOPTED pr=$PR kind=$KIND branch=$br head=$hsha"
-        echo "ADOPTED pr=$PR phase=AWAIT_MERGE head=$hsha comments<=$(st_get pr.lastIssueCommentId)/$(st_get pr.lastReviewCommentId)/$(st_get pr.lastReviewId)"
+        kept=""
+        [ "$keep" = 0 ] || kept=" stop kept"
+        echo "ADOPTED pr=$PR phase=AWAIT_MERGE head=$hsha comments<=$(st_get pr.lastIssueCommentId)/$(st_get pr.lastReviewCommentId)/$(st_get pr.lastReviewId)$kept"
         ;;
     probe-holder)
         rec="$(holder_record)"

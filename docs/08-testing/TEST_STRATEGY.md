@@ -2,10 +2,10 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-6 under D-088, 18 October 2026 (Asia/Jakarta); amended under D-091 the same day: the samples of the secret scan (section 6) and the L5 critical paths of a pull request (section 7); amended under D-101, 23 October 2026: the reviews under continuous execution (section 11) |
+| Status | CURRENT — written in RF-6 under D-088, 18 October 2026 (Asia/Jakarta); amended under D-091 the same day: the samples of the secret scan (section 6) and the L5 critical paths of a pull request (section 7); amended under D-101, 23 October 2026: the reviews under continuous execution (section 11); amended under D-104, 25 October 2026: sections 10 and 11 |
 | Phase | P8 — test levels, harness, test families, CI gates, evidence, acceptance gates and the Definition of Done |
 | Replaces | `docs/08-testing/legacy/P8-QUALITY.md`, the method, evidence and Definition of Done sections of `docs/08-testing/legacy/08-TESTING-ACCEPTANCE.md`, and `docs/04-architecture/legacy/P4-ARCHITECTURE.md` §Testing implications (all LEGACY — SUPERSEDED, [LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 15) |
-| Decisions | D-006, D-025, D-075, D-087, D-088, D-091, D-101; FD-07; [ADR-006](../adr/ADR-006-exact-numbers.md), [ADR-007](../adr/ADR-007-command-identity-and-idempotency.md), [ADR-008](../adr/ADR-008-cost-allocation-representation.md), [ADR-009](../adr/ADR-009-command-receipts-and-reconciled-outcomes.md), [ADR-011](../adr/ADR-011-release-pipeline-environments-and-production-operation.md) |
+| Decisions | D-006, D-025, D-075, D-087, D-088, D-091, D-101, D-104; FD-07; [ADR-006](../adr/ADR-006-exact-numbers.md), [ADR-007](../adr/ADR-007-command-identity-and-idempotency.md), [ADR-008](../adr/ADR-008-cost-allocation-representation.md), [ADR-009](../adr/ADR-009-command-receipts-and-reconciled-outcomes.md), [ADR-011](../adr/ADR-011-release-pipeline-environments-and-production-operation.md) |
 | Related | [ACCEPTANCE_SUITES](ACCEPTANCE_SUITES.md), [DEVICE_VERIFICATION](DEVICE_VERIFICATION.md), [REQUIREMENTS](../01-product/REQUIREMENTS.md), [TECHNICAL_RULES](../06-api-performance/TECHNICAL_RULES.md) section 8, [SCHEMA](../04-architecture/SCHEMA.md) section 9.4, [SECURITY_MODEL](../05-security/SECURITY_MODEL.md) section 15 |
 
 How BantuKasir is proven. Rules are numbered `TS-nn`; identifiers are permanent. This strategy turns the race matrix, the test families of SCHEMA, the security tests of SECURITY_MODEL and the acceptance criteria of REQUIREMENTS into a test plan that the Tasks of RF-7 implement; the suites themselves are ACCEPTANCE_SUITES. Nothing has been run: no code exists.
@@ -150,12 +150,12 @@ Every Task records, for each dimension, `PASS`, `FAIL`, `BLOCKED` or `N/A` with 
 | Data integrity | Append-only facts; atomic audit and result; identity and idempotency; the races and failure injection that name it |
 | Performance | Bounded queries and paging; the budgets of TECHNICAL_RULES section 13 measured at the final point |
 | Operations | Backup and restore impact (new tables in the manifest's counts, new files in the backup); runbooks and status evidence updated |
-| Verification | The command contract green; self-review; the independent review of section 11 where it applies; evidence recorded |
+| Verification | The command contract green — in CI on the pull request's final head, with the local checks of EXECUTION_CONTEXT CE-44; self-review; the independent review of section 11 where it applies; evidence recorded |
 
 ## 11. Reviews
 
 - Every Task: the executor's self-review and the reviewer's check of its evidence against the repository. Under continuous execution the isolated reviewer agent makes the reviewer's check ([EXECUTION_CONTEXT](../11-tasks/EXECUTION_CONTEXT.md) CE-40, D-101).
-- A Task that touches money, stock, cash sessions, cost, authorization, recovery, a migration or an operator procedure also gets an independent adversarial review in a separate session before it is done; its findings are fixed and verified (D-075 review method). Under continuous execution, the isolated, read-only reviewer agent is that separate session, at the effort that EXECUTION_CONTEXT CE-11 sets by the Task's class and risk, with one review and one verification of the fixes (CE-40, D-101).
+- A Task that touches money, stock, cash sessions, cost, authorization, recovery, a migration or an operator procedure also gets an independent adversarial review in a separate session before it is done; its findings are fixed and verified (D-075 review method). Under continuous execution, the isolated, read-only reviewer agent is that separate session, at the effort that EXECUTION_CONTEXT CE-11 sets by the Task's class and risk, with one review, and a targeted check of the fixes of MUST-FIX findings (CE-40, D-101, D-104).
 
 ## 12. Final verification
 
