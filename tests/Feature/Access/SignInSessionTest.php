@@ -32,6 +32,9 @@ final class SignInSessionTest extends DatabaseTestCase
     {
         parent::setUp();
 
+        // The pages render the root view, whose assets the PHP tests never
+        // read (Tests\TestCase).
+        $this->withoutVite();
         $this->travelTo('2026-10-17T02:00:00Z');
         $this->rina = TokoContoh::person('Rina');
         $this->useDatabaseSessions();

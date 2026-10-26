@@ -33,6 +33,9 @@ final class PasswordChangeTest extends DatabaseTestCase
     {
         parent::setUp();
 
+        // The account pages render the root view, whose assets the PHP tests
+        // never read (Tests\TestCase).
+        $this->withoutVite();
         $this->rina = TokoContoh::person('Rina');
         $this->useDatabaseSessions();
     }

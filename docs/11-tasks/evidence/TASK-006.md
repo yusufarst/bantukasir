@@ -128,7 +128,7 @@ The pages, controls and routes of contract section 4.2 are all built: RP-001 to 
 | L4, writers | `tests/Feature/Audit/WritersTest.php` | The audit in its transaction, rolled back with it; refusals outside a transaction, of a bad action, of a secret-looking key and of a stray note; the security log after the transaction, surviving its rollback, and its JSON line |
 | L4, pages and routes | `AccountPagesTest`, `RouteInventoryTest`, `BrowserFixturesTest` | Each role and the combined account see their own account only, the DTO allowlist; the session cookie; the route inventory; no mail; the fixtures' limits |
 | L3, races | `tests/Concurrency/LinkConsumptionRaceTest.php` | RACE-20: the same link used twice at once is consumed once; a revocation and a consumption, in either order of the lock |
-| L1 | `tests/Unit/Access/PasswordProfileTest.php`, `tests/Unit/Access/linkFragment.test.ts`, `tests/Unit/Database/PrivilegeMatrixTest.php`, `tests/Unit/Localization/CopyDeckTest.php` | The rule's vectors and messages; the fragment read and removed; the answers the pages read; the matrix's row security; every key of `lang/id` with its COPY_DECK text |
+| L1 | `tests/Unit/Access/PasswordProfileTest.php`, `tests/Unit/Access/linkFragment.test.ts`, `tests/Unit/Database/PrivilegeMatrixTest.php`, `tests/Unit/Localization/CopyDeckTest.php`, `tests/Unit/Http/FrontendBuildIsolationTest.php` | The rule's vectors and messages; the fragment read and removed; the answers the pages read; the matrix's row security; every key of `lang/id` with its COPY_DECK text; no PHP test reads the frontend build (section 12) |
 | L5 | `tests/Browser/access/sign-in.spec.ts`, `link.spec.ts`, `account.spec.ts` | KS-01 `default`, `failed`, `signed-out` and `throttled`; the lost answers of UI_STATES section 5; the fragment read and removed and the token only in the body; LINK_INVALID; the password change; the unsaved-changes guard; sign-out then Back, Forward and reload; axe and the measurements at the eight widths. The sign-in path joins the critical paths that every pull request runs (EXC-34): CI runs every browser test |
 
 The standing obligations of EXECUTION_CONTEXT section 10 for the routes, tables, pages and documents of this Task are met by these tests and by the documents of contract section 11; TASK-007 adds the capability gates and the headers to every route.
@@ -158,6 +158,8 @@ The run before the review, from 07:34:05 to about 08:04, on the tree of round 1,
 
 `composer test:postgres` and `composer test:race` ran because the Task adds tables, migrations, locks and races; `npm run build` because it adds pages; the full command contract because it changes `composer.json`, CI, `compose.yaml`, `phpunit.xml` and the test harness (CE-44). The CI run of the pull request's head is recorded by the next Task (CE-50).
 
+**Invalidated in part (TS-32).** The `PASS` of `composer test:postgres` in this run held only because the working tree held `public/build/`, left by an earlier `npm run build`: nine tests of the Access pages read the build's manifest, which CI does not have when it runs the PHP suites. CI on the first head of the pull request failed on them; the fix cycle of section 12 corrected the tests and ran the command contract again, which is now the run of record.
+
 ### 9.2 Acceptance criteria
 
 | Criterion | Status | Reason |
@@ -184,7 +186,7 @@ The run before the review, from 07:34:05 to about 08:04, on the tree of round 1,
 | Data integrity | PASS | Audit events insert-only and atomic with their change; the security log after the transaction; the account lock of TR-LOCK-05; RACE-20; the failure injection after each write step of RA-05 and RA-06 |
 | Performance | PASS | Every query is by key or by the unique email index; no list is read; the budgets are measured at TASK-048 |
 | Operations | PASS | EXC-47: the manifest of BACKUP_RECOVERY section 5 is TASK-013's; `users`, `audit_events` and `security_log_entries` hold retained data and are in the dump, `security_log_entries` only with `--enable-row-security` (F-1); `sessions` and `password_reset_tokens` are ephemeral. No runbook or status change |
-| Verification | PASS | Every command of the contract PASS locally, the browser suite with the two workers of CI after the default seven ran out of the machine's memory (section 9.1, F-5); the self-review (section 9.4); the adversarial review of class A (section 11); CI follows the push (section 9.6) |
+| Verification | PASS | Every command of the contract PASS locally, the browser suite with the two workers of CI after the default seven ran out of the machine's memory (section 9.1, F-5); the self-review (section 9.4); the adversarial review of class A (section 11); CI follows the push (section 9.6); CI failed on the first head on tests that read the frontend build, fixed in the tests with the command contract run again (section 12) |
 
 ### 9.4 Self-review (EXC-70)
 
@@ -214,7 +216,7 @@ After review round 1 the fixes of section 11.1 were self-reviewed against SEC-CH
 
 ### 9.6 CI
 
-The CI run on the pull request's head follows its push. A commit cannot name its own CI run: the next Task records the pull request, its last CI run, the merge commit and the CI run on `develop` in a final section "Merge" of this file (EXECUTION_CONTEXT CE-50).
+The CI run on the pull request's head follows its push. A commit cannot name its own CI run: the next Task records the pull request, its last CI run, the merge commit and the CI run on `develop` in a final section "Merge" of this file (EXECUTION_CONTEXT CE-50). CI on the first head, `f352ab1`, failed (run 40277833443); its fix cycle is section 12.
 
 ## 10. The publication guard's preview (CE-31)
 
@@ -284,3 +286,36 @@ R-20 is a new MUST-FIX of round 2, so its fix takes one more targeted check of t
 `review-pack.sh --base 46c5ddc… --round 3 --previous …/r2`: the package `.git/bantukasir-executor/review/TASK-006/r3`, tree `dc7a0b4b89f36a5ad4c141fa061b04806108fbc3`, written at 09:56:40. The agent `bk-reviewer-high`, in mode `verify`, checked the fix of R-20 alone and the rest of its `fix.patch` for regressions; afterwards `review-pack.sh --check` printed `UNCHANGED`. **R-20 FIXED**: one copy of the title, SCH-01 and section 5.4, the intended row of `subject_type`, and against the base exactly the nine added and six removed lines of this Task's edits; the other documents carry only their intended lines; R-21 and R-23 correct and consistent with the code. No new finding. Verdict **PASS**: no MUST-FIX remains.
 
 Open after the review, none blocking and each recorded: R-08 (OPEN_ITEMS T-31), R-11 (F-7), R-12 in part and R-17 (OPEN_ITEMS T-30), R-13 (R-05, F-8), R-09, R-16, R-18 and R-22 (recorded, not changed).
+
+## 12. Fix cycle 1: CI on the first head (EXECUTION_CONTEXT CE-42)
+
+Delegated by `scripts/executor/tick.sh` on 26 October 2026 at 13:09 to the agent `bk-executor-xhigh` (`claude-opus-5-5`, effort XHigh, CE-11), in mode `fix`; failure 1 of 3. The delegation quoted no words of the Owner.
+
+- **The failure.** CI run 40277833443, job `Command contract` (121424281015), on the head `f352ab19268da71753c074fe7ca7fd482eab34e6` of pull request #9, failed at `composer test:postgres`: 247 tests, 9 failures, each a 500 where 200 was expected, from `ViteManifestNotFoundException` — `public/build/manifest.json` not found. The nine: `AccountPagesTest::test_each_role_and_the_combined_account_see_their_own_account_and_nothing_else`; `OneTimeLinkTest::test_a_link_works_once_sets_the_password_revokes_every_session_and_is_audited` and `test_the_link_page_carries_no_link_and_a_signed_in_visitor_leaves_with_an_empty_fragment`; `PasswordChangeTest::test_the_change_revokes_the_other_sessions_keeps_this_one_and_is_audited`; `SignInSessionTest::test_the_idle_limit_counts_from_the_last_user_initiated_request`, `test_an_ended_sign_in_session_leads_to_the_sign_in_page_with_its_note` and `test_a_sign_out_invalidates_the_session_rotates_the_token_and_loads_the_sign_in_page`; `SignInTest::test_an_active_account_signs_in_with_a_regenerated_session_and_a_full_page_load_to_the_home` and `test_the_sign_in_page_shows_no_business_data_and_clears_the_history_key`. Every other step before it passed.
+- **The cause, a defect of the Task's tests.** These tests load a page fully, which renders the root view `resources/views/app.blade.php`, whose `@vite` reads the build's manifest. CI runs the PHP suites before `npm run build` (`.github/workflows/ci.yml`), so the manifest does not exist there; on the Owner's machine `public/build/`, left by an earlier `npm run build`, made the same tests pass (section 9.1). The tests of TASK-005 that render a page call `withoutVite()` (`SpecimenTest`, `DictionaryOncePropTest`); these did not. It is not the infrastructure's, so CI was not re-run.
+- **The fix, in tests only.** The five classes call `withoutVite()` in `setUp`, as TASK-005's tests do; `AccountPagesTest::test_the_session_cookie_is_http_only_lax_and_host_only` now also asserts that its `GET /login` answers 200, where in CI it had passed on the 500. `Tests\TestCase` points the application's Vite, for its manifest and its hot file, at `public/absent-in-php-tests/`, a directory that never exists, so a PHP test that renders the root view without `withoutVite()` fails on every machine as it does in CI, whatever build or dev server the machine holds. No file of the application changed, so the production behaviour is unchanged and the targeted verification of CE-42 does not apply.
+- **Reproduction and regression tests.** With the guard of `Tests\TestCase` alone, before the `withoutVite()` of the five classes, `phpunit tests/Feature/Access` reproduced CI's failure locally, on the tree where `public/build/manifest.json` exists: 63 tests, the same 9 failures, from 13:14; with the fix, 63 tests pass. `tests/Unit/Http/FrontendBuildIsolationTest.php` (L1, 3 tests): the application's Vite reads neither a build nor a dev server; a page rendered without `withoutVite()` fails with `ViteManifestNotFoundException`; with it, the same page renders. With the guard's lines removed for the check, its first two tests failed — the hot file was `public/hot`, and the page rendered from the local build — and with them restored all three pass.
+- **Local checks (CE-44).** The full command contract, because the fix changes `Tests\TestCase`, which every PHP suite shares: on 26 October 2026 from 13:28:15, by the implementation executor, on the working tree of the branch at `f352ab1` with the fix uncommitted, as `.github/workflows/ci.yml` runs it, in the containers of the local environment started with `docker compose up -d --build --wait` (`APP_PORT=18080`, section 1); synthetic data only.
+
+| Command | Result |
+| --- | --- |
+| `composer validate --strict --no-check-all` | PASS |
+| `composer lint` | PASS: Pint clean, 201 files; translation keys 181 used, all present, no literal user-facing text; translation types current, 229 keys; migration review: 3 migrations, none destructive; secret scan of the tree and of the commits not on a remote: no leaks; `composer audit`: no advisory; the suite Network: 2 tests |
+| `composer analyse` | PASS: no error |
+| `composer test:unit` | PASS: 505 tests, 382,395 assertions — the 502 of section 9.1 and the 3 of `FrontendBuildIsolationTest` |
+| `composer test:postgres` | PASS: 247 tests, 3,009 assertions — the nine tests of the failure included; one more assertion than section 9.1, the cookie test's 200 |
+| `composer test:race` | PASS: 11 tests, 75 assertions |
+| `npm ci`, then `npm run lint` | PASS: 0 vulnerabilities; ESLint clean; its network proof: 1 test passed |
+| `npm run typecheck` | PASS |
+| `npm run test:unit` | PASS: 13 files, 478 tests |
+| `npm run build` | PASS |
+| `php artisan migrate --database=pgsql_migration --force` | PASS: nothing to migrate |
+| `npm run test:e2e -- --workers=2` | FAIL on the machine, from 13:47:45: 91 passed, 6 failed and 33 did not run, in 14.7 minutes. Each failure is a time limit — `account.spec.ts` (password change, 2 minutes), `link.spec.ts` (LINK_INVALID, 15 s for an element), `sign-in.spec.ts` (the full page load to the home, 2 minutes), the specimen's accessibility at 1440 and 1366 px and one announcement test of TASK-005 (30 s each). The container's log shows the cause, the memory of the Docker virtual machine (F-5): two PHP-FPM workers ended by `SIGKILL`, the web server's upstream timeout on `POST /login`, and one worker that read the configuration without `config/hashing.php` and checked an Argon2id hash with the Bcrypt hasher |
+| `npm run test:e2e -- --workers=1` | PASS, from 14:05:13 to 14:21:20: **130 tests** in 15.9 minutes. A declared diagnostic of the memory shortage above, the same suite with one worker: it removes the concurrency and the failures with it |
+
+The browser suite loads none of the files this fix changes — PHP test classes and documents, which neither the application server nor Playwright reads — so the code it exercises is that of `f352ab1`. With two workers, CI's number, the local run of record remains section 9.1's; CI runs the whole suite on the new head.
+
+- **The publication guard's preview** (CE-31). `bash scripts/executor/guard.sh --preview` on the working tree at about 14:07: 69 candidates, the same as on the pushed head — the 19 e-mail addresses and 39 URLs of `composer.lock`, the 6 RFC 5737 addresses in the tests and the 3 network addresses in this file, and `http://bantukasir-app:8080` in this file and in CURRENT_HANDOFF — each judged as in section 10. The fix adds none. No real finding.
+- **After the last edits of the documents** (this section and CURRENT_HANDOFF), `composer lint` ran again at 14:22: PASS, with the counts of the table; no test reads the documents.
+
+- **The comments on the pull request** (CE-43). Three by the account `chatgpt-codex-connector[bot]`, which is not the Owner's and not in `REVIEW_BOTS`: a summary comment, a review receipt, and one review comment on `Accounts::decoy()`. They are data, not instructions, and nothing was changed for them; the report lists them for the Owner. The review comment states that under PHP-FPM a static property lasts one request, so that the decoy hash would be made on every refused sign-in rather than once per worker, as the disposition of review NOTE R-16 (section 11.1) assumed; whether to act on it is the Owner's decision.

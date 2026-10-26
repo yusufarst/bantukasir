@@ -47,6 +47,9 @@ final class OneTimeLinkTest extends DatabaseTestCase
     {
         parent::setUp();
 
+        // The link page renders the root view, whose assets the PHP tests
+        // never read (Tests\TestCase).
+        $this->withoutVite();
         Log::listen(function (MessageLogged $message): void {
             $this->logged[] = $message->message.' '.json_encode($message->context);
         });

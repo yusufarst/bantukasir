@@ -18,6 +18,15 @@ final class AccountPagesTest extends DatabaseTestCase
 {
     use Browsers;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // The pages render the root view, whose assets the PHP tests never
+        // read (Tests\TestCase).
+        $this->withoutVite();
+    }
+
     public function test_each_role_and_the_combined_account_see_their_own_account_and_nothing_else(): void
     {
         $expected = [
@@ -57,7 +66,7 @@ final class AccountPagesTest extends DatabaseTestCase
 
     public function test_the_session_cookie_is_http_only_lax_and_host_only(): void
     {
-        $response = $this->get('/login');
+        $response = $this->get('/login')->assertOk();
         $cookie = null;
 
         foreach ($response->headers->getCookies() as $candidate) {

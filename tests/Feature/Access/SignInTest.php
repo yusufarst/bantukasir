@@ -27,6 +27,15 @@ final class SignInTest extends DatabaseTestCase
 
     private const string FAILURE = 'Periksa email dan kata sandi Anda, lalu coba lagi.';
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // The sign-in page renders the root view, whose assets the PHP tests
+        // never read (Tests\TestCase).
+        $this->withoutVite();
+    }
+
     public function test_an_active_account_signs_in_with_a_regenerated_session_and_a_full_page_load_to_the_home(): void
     {
         $rina = TokoContoh::person('Rina');
