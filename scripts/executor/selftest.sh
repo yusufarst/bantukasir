@@ -2044,6 +2044,15 @@ tick30 $((E0 + 60))
 expect_first "30 findings that arrive with the review's terminal sign give RUN fix, not a merge" '^RUN fix TASK-003 '
 if ! merge_called && grep -q 'BOT_FINDING review comment 303' "$SD/log" && [ "$(stget loop.phase)" = CI ]; then pass "30 the late finding is a change request in the phase CI"; else failc "30 the late finding" "$OUT"; fi
 
+# The Owner's /stop written between the first reading of the comments and the
+# second, just before the merge, withholds it too.
+d105_setup
+mv "$FIX/gh/issue_comments_7" "$FIX/gh/issue_comments_7.1"
+fx_comments issue_comments_7.2 213 yusufarst "/stop"
+tick30 $((E0 + 200))
+expect_first "30 a /stop read just before the merge withholds it: NOOP AWAIT_MERGE" '^NOOP AWAIT_MERGE pr=7$'
+if ! merge_called && [ "$(stget owner.stopAfterMerge)" = 1 ]; then pass "30 the late /stop is recorded and nothing is merged"; else failc "30 the late /stop" "$OUT"; fi
+
 d105_setup
 rm -f -- "$FIX/gh/pr_7.2"
 printf '1|Command contract|completed|failure|https://github.com/yusufarst/bantukasir/actions/runs/8813/job/1\n' > "$FIX/gh/check_runs_$HEADSHA"

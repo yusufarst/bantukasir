@@ -583,6 +583,8 @@ auto_merge() {
         event "CHANGE_REQUEST:$pr:$(cr_key)"
         run_line fix
     fi
+    # A /stop read only now withholds the merge as well (CE-62).
+    merge_eligible || noop AWAIT_MERGE "pr=$pr"
     if [ "$DRY" = 1 ]; then
         event "AUTO_MERGE:$pr:$h:$(seq_of)"
         noop AUTO_MERGE "pr=$pr head=$h review=$REVIEW_STATUS"
