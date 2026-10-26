@@ -20,11 +20,21 @@ use LogicException;
 final class Accounts
 {
     /**
-     * An Argon2id hash of a random text, made once per process, that a
-     * sign-in checks when no usable account matches, so that the time of the
-     * answer does not tell whether the email exists (SEC-AUTH-08, TR-ERR-04).
+     * The decoy hash (SEC-AUTH-08, TR-ERR-04): an Argon2id hash with the
+     * parameters of config/hashing.php, made ahead of time by the configured
+     * hasher of a random text that was discarded, so that no password is
+     * known to match it. A refused sign-in checks it in place of a stored
+     * hash, and so does a password check of an account without a password:
+     * one verification of the same cost as a wrong password's, and no hash
+     * made during the request. A hash made at run time and kept in a static
+     * property would be made on every refused sign-in, because PHP-FPM starts
+     * each request with its static properties at their defaults (TASK-006
+     * evidence section 13). The result of checking it is never used, so even
+     * a text that matched it would sign nobody in. When the configured
+     * parameters change (TASK-048), tests/Unit/Access/DecoyHashTest.php fails
+     * and gives a replacement made the same way.
      */
-    private static ?string $decoy = null;
+    public const string DECOY_HASH = '$argon2id$v=19$m=65536,t=4,p=1$dC5XdzFMQy5qd1hTcHBmWA$0C/ow8TxFL5zP7L3ldhru1TJBLw0x/Bbp9Tu3D0TCWs';
 
     public function __construct(
         private readonly Hasher $hasher,
@@ -90,7 +100,7 @@ final class Accounts
         $hash = $user?->password;
 
         if ($user === null || ! $user->isActive() || $hash === null) {
-            $this->hasher->check($password, self::decoy($this->hasher));
+            $this->hasher->check($password, self::DECOY_HASH);
 
             return null;
         }
@@ -137,7 +147,7 @@ final class Accounts
         $hash = $user->password;
 
         if ($hash === null) {
-            $this->hasher->check($password, self::decoy($this->hasher));
+            $this->hasher->check($password, self::DECOY_HASH);
 
             return false;
         }
@@ -184,11 +194,6 @@ final class Accounts
         }
 
         return $sessions->delete();
-    }
-
-    private static function decoy(Hasher $hasher): string
-    {
-        return self::$decoy ??= $hasher->make(bin2hex(random_bytes(16)));
     }
 
     private static function requireTransaction(): void

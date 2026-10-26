@@ -9,7 +9,10 @@
 | parameters are PHP's defaults until TASK-048 benchmarks them on the target
 | server; a stored hash whose parameters are lower than these is hashed again
 | at the next sign-in (App\Domain\Access\Accounts::rehashIfNeeded). The hasher
-| verifies that a stored hash is Argon2id before it checks it.
+| verifies that a stored hash is Argon2id before it checks it. The decoy hash
+| that a refused sign-in checks, Accounts::DECOY_HASH, has these parameters;
+| when they change, tests/Unit/Access/DecoyHashTest.php fails and gives its
+| replacement.
 |
 */
 

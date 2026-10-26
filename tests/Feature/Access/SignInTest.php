@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Hashing\Argon2IdHasher;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Tests\Harness\Access\HashingProbe;
 use Tests\Harness\DatabaseTestCase;
 use Tests\Harness\Fixtures\TokoContoh;
 use Tests\Harness\Http\Browsers;
@@ -136,6 +137,48 @@ final class SignInTest extends DatabaseTestCase
         );
         $this->assertStringNotContainsString('nobody@contoh.test', json_encode($entries, JSON_THROW_ON_ERROR));
         $this->assertNull(session()->getOldInput('password'));
+    }
+
+    /**
+     * The Owner's change request on pull request #9 (evidence section 13): a
+     * refused sign-in does the password work of a wrong password — one check
+     * of a hash at a stored password's cost — and makes no hash, in every
+     * request, as PHP-FPM serves each one with fresh static properties.
+     */
+    public function test_every_refused_sign_in_checks_one_hash_at_a_stored_passwords_cost_and_makes_none(): void
+    {
+        $rina = TokoContoh::person('Rina');
+        $agus = TokoContoh::person('Agus');
+        $dewi = TokoContoh::person('Dewi');
+        $at = '2026-10-17 09:00:00+00';
+
+        DB::table('users')->where('id', $agus['id'])->update(['status' => 'DEACTIVATED', 'deactivated_at' => $at]);
+        DB::table('users')->where('id', $dewi['id'])->update(['status' => 'ANONYMIZED', 'deactivated_at' => $at, 'anonymized_at' => $at, 'password' => null]);
+        $hendra = DB::transaction(fn (): User => app(Accounts::class)->create('Hendra', 'hendra@contoh.test', [Role::SuperAdmin]));
+        $stored = DB::table('users')->where('id', $rina['id'])->value('password');
+        $this->assertIsString($stored);
+
+        $probe = HashingProbe::install($this->app);
+        $attempts = [
+            'wrong password' => [$rina['email'], 'Salah#'.$rina['password'], $stored],
+            'unknown email' => ['nobody@contoh.test', $rina['password'], Accounts::DECOY_HASH],
+            'deactivated account' => [$agus['email'], $agus['password'], Accounts::DECOY_HASH],
+            'anonymized account' => [$dewi['email'], $dewi['password'], Accounts::DECOY_HASH],
+            'account without a password' => [$hendra->email, $rina['password'], Accounts::DECOY_HASH],
+        ];
+        $address = 0;
+
+        foreach ($attempts as $case => [$email, $password, $checked]) {
+            $probe->newRequest();
+            $this->withServerVariables(['REMOTE_ADDR' => '192.0.2.'.(++$address)]);
+
+            $this->from('/login')->post('/login', ['email' => $email, 'password' => $password])->assertRedirect('/login');
+            $this->assertGuest();
+            $this->assertSame(['form' => [self::FAILURE]], $this->flashedErrors(), $case);
+            $this->assertSame(0, $probe->made, $case.': no hash is made during the request');
+            $this->assertSame([$checked], $probe->checked, $case.': exactly one hash is checked');
+            $this->assertSame(password_get_info($stored), password_get_info($checked), $case.': at the cost of a stored password');
+        }
     }
 
     public function test_the_sign_in_bucket_throttles_an_email_and_address_after_five_attempts(): void
