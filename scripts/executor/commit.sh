@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # scripts/executor/commit.sh: the only way the executor commits (D-101;
-# EXECUTION_CONTEXT CE-30, EXC-30, AGENTS rules 9, 11 and 12). An ask rule of
-# .claude/settings.json, so the Owner approves each commit at its own prompt.
+# EXECUTION_CONTEXT CE-30, EXC-30, AGENTS rules 9, 11 and 12; D-105). An allow
+# rule of .claude/settings.json since D-105: the Owner authorized routine commits.
 #
 # Usage: bash scripts/executor/commit.sh -m <subject> [-m <paragraph>]... -- <file>...
 #        bash scripts/executor/commit.sh --probe    prints PROBE commit.sh, changes nothing

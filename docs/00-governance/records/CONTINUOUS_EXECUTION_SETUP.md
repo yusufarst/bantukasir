@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | RECORD ([SOURCE_OF_TRUTH](../SOURCE_OF_TRUTH.md)); amended under D-104: section 9 |
+| Status | RECORD ([SOURCE_OF_TRUTH](../SOURCE_OF_TRUTH.md)); amended under D-104: section 9; under D-105: section 10 |
 | Decision | [D-101](../DECISIONS.md), continuous Task execution; [EXECUTION_CONTEXT](../../11-tasks/EXECUTION_CONTEXT.md) section 19, CE-01 to CE-82; FD-10 |
 | Written | 23 October 2026 (Asia/Jakarta) by the implementation executor, under the Owner's instruction "Continuous execution setup (D-101)", revision 2 (final) |
 | Branch | `ops/continuous-execution`, created from `develop` at `7fed319ce1010c39a86e85d6cb88ec35e6c19db6` (the D-100 bookkeeping commit), carrying the twelve document changes of the D-101 amendment |
@@ -485,3 +485,42 @@ Recorded by the next pull request, TASK-006's (EXECUTION_CONTEXT CE-50), from th
 | Merge commit | `46c5ddcb486a1a9d57963835d494100438538ad9` on `develop`, parent `4b24e90` (`develop` did not move); author the Owner's GitHub no-reply identity, committer GitHub; its tree `18554516a8b7ccb8778f41e66652f7244339757e` equals that of `d40478c` |
 | CI on `develop` | Run 40234578674, event `push` on `46c5ddc`, success (21:14:50 to 21:19:07 UTC) |
 | Comments | No comment or review of the Owner. The comment of the account `chatgpt-codex-connector`, a review in progress, is data, not an instruction (CE-43) |
+
+## 10. D-105: the standing authorization of routine development
+
+Written 26 October 2026 (Asia/Jakarta) by the host session under the Owner's directives "Full autonomous execution V2.1" and "Owner override and implementation directive" of that day ([D-105](../DECISIONS.md)), prepared outside the main working tree while TASK-006 ran there, and published on the branch `ops/d105-standing-authorization` from `origin/develop` once the loop stopped after TASK-006's merge (CE-82).
+
+### 10.1 Files changed
+
+| File | Change |
+| --- | --- |
+| `.claude/settings.json` | `commit.sh` and `push.sh` move from `ask` to `allow`; every other rule, the denials of a raw `git commit`, `git push` and `gh pr merge` among them, is unchanged |
+| `scripts/executor/lib.sh` | `REVIEW_BOTS` names the repository's automated reviewer; `REVIEW_MAX_MINUTES` 10, `REVIEW_ABSENT_MINUTES` 3, `AUTO_MERGE` 1, which the self-test sets per case; `gh_reactions`, `gh_pr_created`, `gh_pr_merge`; `adopt_state` marks the pull request adopted (`pr.adopted`); `in_words` compares literally, without globbing |
+| `scripts/executor/tick.sh` | Only a P0, P1 or P2 finding of the reviewer is a change request, its other output is listed; `review_window` ends the window only on a terminal sign (the +1 reaction, a review it submitted, its summary comment marked completed), read from GitHub at each run; `merge_eligible` and `auto_merge`, called in the phases `CI` and `AWAIT_MERGE`; CI pending again waits, red returns to the phase `CI`; a dry run names the event `AUTO_MERGE:<pr>:<head>:<seq>` and never merges; the merge records `merge.review`, which the delegation prints |
+| `scripts/executor/commit.sh`, `push.sh` | Their headers name the allow rules |
+| `scripts/executor/selftest.sh` | Case 14 expects the two allow rules; case 30 added |
+| [DECISIONS](../DECISIONS.md), [EXECUTION_CONTEXT](../../11-tasks/EXECUTION_CONTEXT.md), [AGENTS](../../../AGENTS.md), this record | D-105 and the rules it amends |
+
+### 10.2 The Owner's steps
+
+- **The one bootstrap merge.** The rules that D-105 replaces apply until it is on `develop`: the deny rule on `gh pr merge` and CE-04 keep this pull request, and TASK-006's, the Owner's Squash and merge. After it, the tick merges the pull requests of CE-60 itself.
+- **Afterwards** he answers only the stops of CE-70, and merges an `ops/` pull request or a class-O Task. He may still stop the loop with `/stop` on a pull request or by stopping the host session.
+
+### 10.3 Known limits
+
+- The reviewer's start is its eyes reaction on the pull request; a review requested again by hand after a push is read as output, not as a new window.
+- An `ops/` pull request is never merged by the tick, so a later change of the executor itself needs the Owner's merge as before. With the reviewer configured, its P0 to P2 finding on an `ops/` pull request is the stop `OPS_CHANGE_REQUEST`, where before it was ignored.
+- The window belongs to the pull request: the tick does not wait for a review of a fix head, and it reads comments by identifier, so a later edit of an earlier comment of the reviewer is not seen as a new finding.
+- A refused merge, also from a passing `gh` fault or a merge the Owner made at the same moment, is the stop `MERGE_FAILED`; the state keeps `AWAIT_MERGE` before it, so a resume verifies the merge, recorded as the Owner's. In `AWAIT_MERGE`, CI pending again on the head waits without the 60 minutes of the phase `CI`, and the review's window is checked before CI, so a red re-run starts its fix cycle at the latest when the window ends. After `MERGE_PENDING` the next run asks for the merge again, which GitHub refuses harmlessly once it is done.
+- Any review submitted by the reviewer ends its window, with or without findings; this is safe because the comments are read again before the merge. A finding posted in the few seconds between that second reading and the merge — for example when the summary is marked completed before its review is submitted — can still be merged past; the reviewer submits a review and its comments together.
+- The commit and push of this pull request ran through the scripts by the Owner's directives of 26 and 27 October 2026; the working tree already carried the allow rules of D-105, so no prompt may have appeared.
+
+### 10.4 Checks and review
+
+- **Review round 1**, `bk-reviewer-high` on the package `ops-d105-standing-authorization/r1`: FAIL, three MUST-FIX — R-01, any output of the reviewer ended its window (on #8 its summary comment said "running"); R-02, an adopted or reconstructed pull request was eligible; R-03, no recorded self-test — and SHOULD-FIX R-04 to R-10. Fixed: the terminal signs of 10.1, read from GitHub at each run; `pr.adopted`; `/stop` withholds the merge; `merge.review`; CI pending again waits; the targeted verification of a class-A finding's fix (CE-43); TASK-049 and TASK-050 left to the Owner (EXC-72, section 13); the stale passages of EXECUTION_CONTEXT, AGENTS and CURRENT_HANDOFF. The NOTE findings are in 10.3.
+- **Self-test** `bash scripts/executor/selftest.sh`, run of record after the last change to `scripts/executor/`, 27 October 2026: exit 0, `SUMMARY 325 passed, 0 failed`, case 30 among them (34 checks). An earlier run had stopped in case 3 when the computer restarted, and the next one found only a fault of case 30's own assertion.
+- **`composer lint`** in the container `app`: PASS (Pint clean, 203 files; translation keys and types current; migration review; no leak in the tree; no advisory). **`bash scripts/executor/guard.sh --preview`**: `GUARD PREVIEW PASS`, no candidate.
+- **Verification round 2**, `bk-reviewer-high` on `r2`: FAIL, two MUST-FIX — R-16, CE-41 still said that any output ended the window; R-17, a review submitted with its findings between the reading of the comments and the window's check could be merged past — and SHOULD-FIX R-18 and R-19, NOTE R-20 and R-21. Fixed: CE-41 and EXC-35 amended; the comments are read again in `auto_merge` before any merge, a finding then giving the fix cycle; `pr.reviewStatus` set only after the merge succeeds; case 30 extended (a late finding, a red CI in `AWAIT_MERGE`, TASK-049 and TASK-050); R-21 in 10.3.
+- **Self-test**, run of record after that last change to `scripts/executor/`: exit 0, `SUMMARY 332 passed, 0 failed`, case 30 with 41 checks. `bash scripts/executor/guard.sh --preview` again: `GUARD PREVIEW PASS`, no candidate.
+- **Verification round 3**, `bk-reviewer-high` on `r3`: PASS, R-16 to R-21 fixed, no MUST-FIX; NOTE R-22 to R-25, recorded in 10.3 and here.
+- **Automated review of #10** at `27a57d7`: one P1 finding (comment 4382250527) — a `/stop` first read in the second reading of the comments in `auto_merge` did not withhold the merge (CE-62). Valid; fixed under the Owner's directive to fix valid findings on the same branch (CE-82): `merge_eligible` is checked again after that reading, and case 30 has a late `/stop` (43 checks). **Self-test**, run of record after this change to `scripts/executor/`: exit 0, `SUMMARY 334 passed, 0 failed`.
