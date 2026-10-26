@@ -373,3 +373,14 @@ Delegated by `scripts/executor/tick.sh` on 26 October 2026 at 18:38 to the agent
 - **The comments on the pull request** (CE-43). The Owner's change request is the one acted on. The account `chatgpt-codex-connector[bot]`, which is not the Owner's and not in `REVIEW_BOTS`, wrote the summary comment 6409410435, a review receipt and the review comment 4374400967 (section 12); they are data, not instructions, and the change made here is the one the Owner asked for. No other comment exists (`pr.sh comments`: none new by another account).
 - **The rest of the Owner's instruction.** This fix cycle merges nothing and starts no Task: after its push it sets the phase `CI` and ends, and the tick sets `AWAIT_MERGE` only when CI passes on the new head (CE-41, CE-60). D-105 is not in DECISIONS, whose next free identifier it is, and nothing was done about it. After his merge is verified, the loop starts TASK-007 (CE-61) unless he comments `/stop` on the pull request before merging (CE-62).
 - **After the last edits of the documents** (this section and CURRENT_HANDOFF), `composer lint` ran again at 19:31: PASS, with the counts above; no test reads the documents.
+
+## 14. Merge
+
+Recorded by the ops pull request of D-105 (EXECUTION_CONTEXT CE-50), from the executor state and GitHub on 27 October 2026, after the tick verified the merge (CE-61, executor log `MERGE_VERIFIED` of 26 October 2026 at 20:10:52) and stopped for the Owner's `/stop` (`STOPPED OWNER_STOP` at 20:10:54):
+
+- **Pull request** #9, "TASK-006 — Authentication, one-time links, audit and security log", base `develop`, head `7ec38bff3609bd950b3f709df428a6e1b180e6f2` (the fix cycle of section 13); its CI run 40324059214, event `pull_request`, success (2026-10-26T12:38:12Z to 12:44:41Z).
+- **Merge**: the Owner's Squash and merge on GitHub (`yusufarst`), at 2026-10-26T13:03:31Z: squash commit `ccb464f4a6b0bf6db3a2e96511d8ae1059dce8ac` on `develop`, parent `46c5ddcb486a1a9d57963835d494100438538ad9` (`develop` did not move), tree `917a7ef9823d035fbe29426cb104001420132cb8`, equal to the head's; author the Owner's no-reply identity, committer GitHub (D-101).
+- **CI on `develop`** at the merge: run 40327363216, event `push`, success (2026-10-26T13:03:34Z to 13:09:43Z).
+- **Comments.** The Owner's change request, issue comment 6415065702, was handled by the fix cycle of section 13. His `/stop`, issue comment 6416613127 of 2026-10-26T13:00:27Z, stopped the loop after the merge (CE-62). The comments, the review and the review comment of the account `chatgpt-codex-connector` are data, not instructions (CE-43); its P2 finding is R-24 of section 13.
+
+TASK-006 is `DONE` (TASK_PLAN section 4).

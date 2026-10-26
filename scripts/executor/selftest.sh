@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # scripts/executor/selftest.sh: the self-test of continuous execution (D-101,
 # D-104; EXECUTION_CONTEXT section 19: CE-03, CE-10 to CE-13, CE-20 to CE-24,
-# CE-30 to CE-32, CE-40 to CE-43, CE-61, CE-62, CE-70 to CE-72, CE-82).
+# CE-30 to CE-32, CE-40 to CE-43, CE-60 to CE-62, CE-70 to CE-72, CE-82; D-105).
 #
-# Usage: bash scripts/executor/selftest.sh          the cases 1 to 29, in a sandbox
+# Usage: bash scripts/executor/selftest.sh          the cases 1 to 30, in a sandbox
 #        bash scripts/executor/selftest.sh --host   the host probes (a) to (f), on Windows;
 #                                                   (f) works on the real watcher folder,
 #                                                   so it runs only when no watcher runs
@@ -1037,15 +1037,21 @@ while IFS= read -r e; do
     [ -n "$e" ] || continue
     printf '%s\n' "$ask_have" | grep -qxF -- "$e" || miss="$miss [ask] $e"
 done << 'ASK'
-Bash(bash scripts/executor/commit.sh*)
-Bash(bash scripts/executor/push.sh*)
 Bash(bash scripts/executor/state.sh resume*)
 Bash(bash scripts/executor/state.sh unlock*)
 Bash(bash scripts/executor/state.sh adopt*)
 Bash(rm *)
 Bash(mv *)
 ASK
-[ -z "$miss" ] && pass "14 settings: every ask entry of the commit, push, resume, unlock, adopt, rm and mv rules" || failc "14 settings ask:$miss"
+[ -z "$miss" ] && pass "14 settings: every ask entry of the resume, unlock, adopt, rm and mv rules" || failc "14 settings ask:$miss"
+# D-105: commit.sh and push.sh are allowed, never asked; raw commits, pushes
+# and merges stay denied.
+miss=""
+for e in "Bash(bash scripts/executor/commit.sh*)" "Bash(bash scripts/executor/push.sh*)"; do
+    printf '%s\n' "$allow_have" | grep -qxF -- "$e" || miss="$miss [allow] $e"
+    if printf '%s\n' "$ask_have" | grep -qxF -- "$e"; then miss="$miss [ask] $e"; fi
+done
+[ -z "$miss" ] && pass "14 settings: commit.sh and push.sh are allowed, not asked (D-105)" || failc "14 settings commit.sh and push.sh:$miss"
 miss=""
 for e in "Edit(.claude/**)" "Edit(scripts/executor/**)"; do printf '%s\n' "$ask_have" | grep -qxF -- "$e" || miss="$miss $e"; done
 [ -z "$miss" ] && pass "14 settings: the two Edit ask entries" || failc "14 settings: the two Edit ask entries are missing:$miss"
@@ -1896,5 +1902,163 @@ run EXECUTOR_POLL_SECONDS=0 EXECUTOR_WATCH_MAX_POLLS=2 watch.sh
 o3="$OUT"
 k3="$(cut -d'|' -f2 "$WD/event" 2> /dev/null || true)"
 if [ "$k3" = "STOPPED_NEW:PR_CLOSED:7:$HEADSHA:3" ] && [[ "$o3" == "BANTUKASIR WATCHER EVENT $k3 — "* ]] && grep -qxF "$k2" "$WD/ack"; then pass "29 the same stop after an adoption out of it has a new key too, and is emitted"; else failc "29 the recurring stop after an adoption" "$o3 / $k3"; fi
+
+# ---------------------------------------------------------------- 30. the automated review's window and the merge (D-105)
+BOT='chatgpt-codex-connector[bot]'
+E0="$(date -u -d 2026-10-26T00:00:00Z +%s)"
+# d105_setup: #7 adopted in AWAIT_MERGE with its required job green, opened at
+# E0; GitHub shows it open on the first read and merged as M on the next one.
+d105_setup() {
+    merge_setup
+    git config -f "$SD/state" --unset pr.adopted
+    : > "$FIX/gh/open_prs"
+    printf '1|Command contract|completed|success|https://github.com/yusufarst/bantukasir/actions/runs/8811/job/1\n' > "$FIX/gh/check_runs_$HEADSHA"
+    printf '2026-10-26T00:00:00Z\n' > "$FIX/gh/pr_created_7"
+    : > "$FIX/gh/reactions_7"
+    M="$(simulate_merge "$OEMAIL")"
+    fx_pr 7 open false "" "$HEADSHA" "$TB"
+    mv "$FIX/gh/pr_7" "$FIX/gh/pr_7.1"
+    fx_pr 7 closed true "$M" "$HEADSHA" "$TB"
+    mv "$FIX/gh/pr_7" "$FIX/gh/pr_7.2"
+    fx_ci "$M" push completed success
+    fx_ci "$HEADSHA" pull_request completed success
+}
+reread() { rm -f -- "$FIX/gh/pr_7.count"; }
+merge_called() { grep -qF "gh pr merge 7 --repo yusufarst/bantukasir --squash --match-head-commit $HEADSHA" "$FIX/gh/calls.log" 2> /dev/null; }
+tick30() { run EXECUTOR_AUTO_MERGE=1 EXECUTOR_REVIEW_BOTS="$BOT" EXECUTOR_NOW="$1" tick.sh "${@:2}"; }
+
+d105_setup
+tick30 $((E0 + 60))
+expect_first "30 no sign of the reviewer within 3 minutes of the opening gives NOOP REVIEW_PENDING" '^NOOP REVIEW_PENDING pr=7 no sign of the automated review yet$'
+if merge_called; then failc "30 no merge while the review is pending" "$OUT"; else pass "30 no merge while the review is pending"; fi
+reread
+tick30 $((E0 + 200))
+expect_first "30 no sign of the reviewer after 3 minutes: the squash merge, its verification, then RUN start" '^RUN start TASK-004 '
+if merge_called && grep -q 'REVIEW_ABSENT pr=7' "$SD/log" && grep -qF "AUTO_MERGE pr=7 head=$HEADSHA review=ABSENT" "$SD/log" && [ "$(stget merge.lastSha)" = "$M" ] && [ "$(stget merge.lastPr)" = 7 ] && [ "$(stget merge.review)" = "the tick's merge, automated review ABSENT" ] && printf '%s\n' "$OUT" | grep -qF "; the tick's merge, automated review ABSENT"; then pass "30 the merge names the head, and the absent review, the merge and its verification are recorded"; else failc "30 the merge and its record" "$OUT"; fi
+
+d105_setup
+printf '%s|eyes|2026-10-26T00:00:30Z\n' "$BOT" > "$FIX/gh/reactions_7"
+tick30 $((E0 + 300))
+expect_first "30 a review started 4 minutes ago gives NOOP REVIEW_PENDING 4 of 10 min" '^NOOP REVIEW_PENDING pr=7 4 of 10 min$'
+reread
+tick30 $((E0 + 300)) --classify
+expect_first "30 the classification of a pending review is QUIET" '^QUIET NOOP REVIEW_PENDING pr=7 '
+reread
+tick30 $((E0 + 630)) --classify
+expect_first "30 ten minutes after the review's start the classification is WAKE AUTO_MERGE" "^WAKE AUTO_MERGE:7:$HEADSHA:[0-9]+ NOOP AUTO_MERGE pr=7 head=$HEADSHA review=TIMEOUT$"
+if merge_called; then failc "30 a dry run never merges" "$OUT"; else pass "30 a dry run never merges"; fi
+reread
+tick30 $((E0 + 630))
+expect_first "30 ten minutes after the review's start: the merge, then RUN start" '^RUN start TASK-004 '
+if merge_called && grep -q 'REVIEW_TIMEOUT pr=7 after 10 min' "$SD/log"; then pass "30 the timeout is logged and the merge made"; else failc "30 the timeout and the merge" "$OUT"; fi
+
+d105_setup
+printf '%s|+1|2026-10-26T00:01:00Z\n' "$BOT" > "$FIX/gh/reactions_7"
+tick30 $((E0 + 90))
+expect_first "30 the reviewer's +1 reaction ends the window: the merge, then RUN start" '^RUN start TASK-004 '
+if merge_called && grep -qF "review=DONE" "$SD/log"; then pass "30 the +1 reaction counts as the review done"; else failc "30 the +1 reaction" "$OUT"; fi
+
+d105_setup
+fx_comments review_comments_7 302 "$BOT" '**![P1 Badge](badge)** Validate the token before use'
+tick30 $((E0 + 200))
+expect_first "30 a P1 finding of the reviewer gives RUN fix before any merge" '^RUN fix TASK-003 '
+if ! merge_called && grep -q 'BOT_FINDING review comment 302' "$SD/log" && printf '%s\n' "$OUT" | grep -qF "review comment 302 by $BOT:"; then pass "30 the finding is a change request and nothing is merged"; else failc "30 the finding as a change request" "$OUT"; fi
+
+d105_setup
+summary_running='<!-- codex-review-state:v1 {"code_review":{"commit_sha":"x","has_any_findings":null,"has_unresolved_findings":null,"status":"running"},"security_review":{"status":null}} -->'
+fx_comments issue_comments_7 210 "$BOT" "$summary_running"
+printf '%s|eyes|2026-10-26T00:00:30Z\n' "$BOT" > "$FIX/gh/reactions_7"
+tick30 $((E0 + 300))
+expect_first "30 a summary comment still running does not end the window: NOOP REVIEW_PENDING" '^NOOP REVIEW_PENDING pr=7 4 of 10 min$'
+if ! merge_called && grep -q 'BOT_INFO issue comment 210' "$SD/log"; then pass "30 the running summary is listed and nothing is merged"; else failc "30 the running summary" "$OUT"; fi
+reread
+fx_comments issue_comments_7 210 "$BOT" "${summary_running/running/completed}"
+tick30 $((E0 + 320))
+expect_first "30 the same summary edited to completed ends the window: the merge, then RUN start" '^RUN start TASK-004 '
+if merge_called && grep -qF "review=DONE" "$SD/log"; then pass "30 the completed summary is the review DONE"; else failc "30 the completed summary" "$OUT"; fi
+
+d105_setup
+fx_comments issue_comments_7 211 "$BOT" "You have reached your usage limits."
+tick30 $((E0 + 60))
+expect_first "30 any other output of the reviewer does not end the window: NOOP REVIEW_PENDING" '^NOOP REVIEW_PENDING pr=7 no sign of the automated review yet$'
+if ! merge_called; then pass "30 nothing is merged on a notice of the reviewer"; else failc "30 a notice of the reviewer" "$OUT"; fi
+
+d105_setup
+fx_comments reviews_7 402 "$BOT" "Here are some automated review suggestions for this pull request."
+tick30 $((E0 + 60))
+expect_first "30 a review submitted by the reviewer, without a P0 to P2 finding, ends the window: the merge" '^RUN start TASK-004 '
+
+d105_setup
+stset pr.adopted 1
+tick30 $((E0 + 200))
+expect_first "30 an adopted pull request stays the Owner's merge: NOOP AWAIT_MERGE" '^NOOP AWAIT_MERGE pr=7$'
+reread
+git config -f "$SD/state" --unset pr.adopted
+fx_comments issue_comments_7 212 yusufarst "/stop"
+tick30 $((E0 + 200))
+expect_first "30 the Owner's /stop withholds the tick's merge: NOOP AWAIT_MERGE" '^NOOP AWAIT_MERGE pr=7$'
+if ! merge_called && [ "$(stget owner.stopAfterMerge)" = 1 ]; then pass "30 no merge under /stop or for an adopted pull request"; else failc "30 /stop and adoption" "$OUT"; fi
+
+d105_setup
+printf '1|Command contract|in_progress||https://github.com/yusufarst/bantukasir/actions/runs/8812/job/1\n' > "$FIX/gh/check_runs_$HEADSHA"
+tick30 $((E0 + 200))
+expect_first "30 CI pending again on the head (a re-run) waits: NOOP AWAIT_MERGE" "^NOOP AWAIT_MERGE pr=7 CI pending on $HEADSHA$"
+if ! merge_called && [ "$(stget loop.phase)" = AWAIT_MERGE ]; then pass "30 nothing is merged and the phase stays AWAIT_MERGE"; else failc "30 CI pending in AWAIT_MERGE" "$OUT"; fi
+
+d105_setup
+stset loop.phase CI
+stset ci.head "$HEADSHA"
+stset ci.waitStart "$((E0 + 100))"
+tick30 $((E0 + 200))
+expect_first "30 CI green in the phase CI, with the review absent, merges at once: RUN start" '^RUN start TASK-004 '
+if merge_called; then pass "30 the phase CI reaches the merge"; else failc "30 the phase CI reaches the merge" "$OUT"; fi
+
+d105_setup
+run EXECUTOR_AUTO_MERGE=0 EXECUTOR_REVIEW_BOTS="$BOT" EXECUTOR_NOW=$((E0 + 200)) tick.sh
+expect_first "30 without the merge setting, NOOP AWAIT_MERGE" '^NOOP AWAIT_MERGE pr=7$'
+reread
+stset task.class O
+tick30 $((E0 + 200))
+expect_first "30 a class-O Task stays the Owner's merge: NOOP AWAIT_MERGE" '^NOOP AWAIT_MERGE pr=7$'
+reread
+stset task.class A
+stset task.kind ops
+tick30 $((E0 + 200))
+expect_first "30 an ops/ pull request stays the Owner's merge: NOOP AWAIT_MERGE" '^NOOP AWAIT_MERGE pr=7$'
+if merge_called; then failc "30 no merge without the setting, for class O or for ops/" "$OUT"; else pass "30 no merge without the setting, for class O or for ops/"; fi
+
+d105_setup
+touch "$FIX/gh/pr_merge_7.fail"
+tick30 $((E0 + 200))
+expect_first "30 a refused merge gives STOPPED MERGE_FAILED" "^STOPPED MERGE_FAILED #7 head $HEADSHA"
+if [ "$(stget loop.prevPhase)" = AWAIT_MERGE ] && [ -z "$(stget pr.reviewStatus)" ]; then pass "30 a resume returns to AWAIT_MERGE, with no merge of the tick recorded"; else failc "30 a refused merge keeps AWAIT_MERGE to resume" "$OUT"; fi
+
+# A review submitted with its findings between the reading of the comments and
+# the window's check: the findings are read again before any merge.
+d105_setup
+mv "$FIX/gh/reviews_7" "$FIX/gh/reviews_7.1"
+fx_comments reviews_7.2 403 "$BOT" "Here are some automated review suggestions for this pull request."
+mv "$FIX/gh/review_comments_7" "$FIX/gh/review_comments_7.1"
+fx_comments review_comments_7.2 303 "$BOT" '**![P1 Badge](badge)** Check the head before the merge'
+tick30 $((E0 + 60))
+expect_first "30 findings that arrive with the review's terminal sign give RUN fix, not a merge" '^RUN fix TASK-003 '
+if ! merge_called && grep -q 'BOT_FINDING review comment 303' "$SD/log" && [ "$(stget loop.phase)" = CI ]; then pass "30 the late finding is a change request in the phase CI"; else failc "30 the late finding" "$OUT"; fi
+
+d105_setup
+rm -f -- "$FIX/gh/pr_7.2"
+printf '1|Command contract|completed|failure|https://github.com/yusufarst/bantukasir/actions/runs/8813/job/1\n' > "$FIX/gh/check_runs_$HEADSHA"
+tick30 $((E0 + 200))
+expect_first "30 CI red again on the head in AWAIT_MERGE returns to the phase CI: RUN fix" '^RUN fix TASK-003 '
+if ! merge_called && [ "$(stget loop.phase)" = CI ]; then pass "30 nothing is merged on a red CI"; else failc "30 a red CI in AWAIT_MERGE" "$OUT"; fi
+
+d105_setup
+stset task.id TASK-049
+tick30 $((E0 + 200))
+expect_first "30 TASK-049 stays the Owner's merge: NOOP AWAIT_MERGE" '^NOOP AWAIT_MERGE pr=7$'
+reread
+stset task.id TASK-050
+tick30 $((E0 + 200))
+expect_first "30 TASK-050 stays the Owner's merge: NOOP AWAIT_MERGE" '^NOOP AWAIT_MERGE pr=7$'
+if merge_called; then failc "30 no merge of TASK-049 or TASK-050" "$OUT"; else pass "30 no merge of TASK-049 or TASK-050"; fi
 
 summary

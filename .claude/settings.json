@@ -12,6 +12,8 @@
     "disableBypassPermissionsMode": "disable",
     "allow": [
       "Bash(bash scripts/executor/tick.sh*)",
+      "Bash(bash scripts/executor/commit.sh*)",
+      "Bash(bash scripts/executor/push.sh*)",
       "Bash(bash scripts/executor/state.sh *)",
       "Bash(bash scripts/executor/snapshot.sh*)",
       "Bash(bash scripts/executor/review-pack.sh*)",
@@ -99,8 +101,6 @@
       "WebFetch(domain:code.claude.com)"
     ],
     "ask": [
-      "Bash(bash scripts/executor/commit.sh*)",
-      "Bash(bash scripts/executor/push.sh*)",
       "Bash(bash scripts/executor/state.sh resume*)",
       "Bash(bash scripts/executor/state.sh unlock*)",
       "Bash(bash scripts/executor/state.sh adopt*)",

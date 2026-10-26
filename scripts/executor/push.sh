@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# scripts/executor/push.sh: the only way the executor pushes (D-101, D-104;
-# EXECUTION_CONTEXT CE-30, CE-31, CE-82, EXC-31, AGENTS rule 11). An ask rule
-# of .claude/settings.json, so the Owner approves each push at its own prompt.
+# scripts/executor/push.sh: the only way the executor pushes (D-101, D-104,
+# D-105; EXECUTION_CONTEXT CE-30, CE-31, CE-82, EXC-31, AGENTS rule 11). An allow
+# rule of .claude/settings.json since D-105: the Owner authorized routine pushes.
 #
 # Usage: bash scripts/executor/push.sh
 #        bash scripts/executor/push.sh --probe    prints PROBE push.sh, changes nothing

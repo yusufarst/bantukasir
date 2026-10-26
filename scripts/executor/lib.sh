@@ -26,8 +26,16 @@ OWNER_LOGIN=yusufarst
 OWNER_NAME="Yusuf Arif Setiawan"
 OWNER_EMAIL=134618411+yusufarst@users.noreply.github.com
 BASE=develop
-# Bot accounts whose comments are read as findings (CE-43); none is configured.
-REVIEW_BOTS=""
+# Bot accounts whose comments are read as findings (CE-43, D-105): the
+# automated reviewer of the repository.
+REVIEW_BOTS="chatgpt-codex-connector[bot]"
+# The automated review's window (CE-41, D-105): at most REVIEW_MAX_MINUTES
+# from its start, the bot's eyes reaction on the pull request; with no sign of
+# it REVIEW_ABSENT_MINUTES after the pull request opened, it is absent.
+REVIEW_MAX_MINUTES=10
+REVIEW_ABSENT_MINUTES=3
+# The tick's squash merge of an eligible pull request (CE-60, D-105).
+AUTO_MERGE=1
 # KNOWN_UNTRACKED: plan-p0-p11-review.patch, everything under "Claude outputs/"
 # and .claude/settings.local.json (known_untracked below).
 LOCK_ESCALATE_MINUTES=120
@@ -56,6 +64,11 @@ export GIT_OPTIONAL_LOCKS=0
 # ---------------------------------------------------------------- self-test mode
 selftest_mode() { [ "${EXECUTOR_SELFTEST:-}" = 1 ] && [ -n "${EXECUTOR_FIXTURES:-}" ] && [ -d "${EXECUTOR_FIXTURES:-}" ]; }
 fx() { printf '%s/%s' "$EXECUTOR_FIXTURES" "$1"; }
+# The self-test sets the reviewer and the merge per case (D-105).
+if selftest_mode; then
+    REVIEW_BOTS="${EXECUTOR_REVIEW_BOTS:-}"
+    AUTO_MERGE="${EXECUTOR_AUTO_MERGE:-0}"
+fi
 # fixture_out <name>: the fixture <name>, or the next of a sequence <name>.1,
 # <name>.2 ... (the last one repeats), or nothing.
 fixture_out() {
@@ -79,7 +92,7 @@ now() { if selftest_mode && is_int "${EXECUTOR_NOW:-}"; then printf '%s\n' "$EXE
 stamp() { date -u -d "@$(( $(now) + 25200 ))" +%Y-%m-%dT%H:%M:%S+07:00; }
 b64e() { printf '%s' "$1" | base64 -w0; }
 b64d() { printf '%s' "$1" | base64 -d 2> /dev/null || true; }
-in_words() { local x="$1" w; for w in $2; do [ "$x" = "$w" ] && return 0; done; return 1; }
+in_words() { case " $2 " in *" $1 "*) return 0 ;; esac; return 1; }
 cur_branch() { git symbolic-ref --short -q HEAD || true; }
 task_of_branch() { case "$1" in task/TASK-[0-9][0-9][0-9]-*) printf '%s\n' "${1:5:8}" ;; esac; }
 is_windows() { [ -r "/proc/$$/winpid" ]; }
@@ -337,6 +350,10 @@ gh_pr_create() { gh_call pr_create gh pr create --repo "$REPO" --base "$BASE" --
 gh_pr_edit_body() { gh_call pr_edit gh pr edit "$1" --repo "$REPO" --body-file "$2"; }
 gh_run_rerun() { gh_call "rerun_$1" gh run rerun "$1" --failed --repo "$REPO"; }
 gh_get() { gh_call get gh api --method GET "$@"; }
+# The automated review's signs and the merge (CE-41, CE-60, D-105).
+gh_reactions() { gh_call "reactions_$1" gh api --paginate "repos/$REPO/issues/$1/reactions?per_page=100" --jq '.[] | "\(.user.login)|\(.content)|\(.created_at)"'; }
+gh_pr_created() { gh_call "pr_created_$1" gh api "repos/$REPO/pulls/$1" --jq '.created_at'; }
+gh_pr_merge() { gh_call "pr_merge_$1" gh pr merge "$1" --repo "$REPO" --squash --match-head-commit "$2"; }
 # max_id <lines "id|...">: the highest identifier, or 0.
 max_id() { printf '%s\n' "$1" | awk -F'|' 'function gt(a, b) { return length(a) > length(b) || (length(a) == length(b) && a > b) } BEGIN { m = "0" } $1 ~ /^[0-9]+$/ && gt($1, m) { m = $1 } END { print m }'; }
 # adopt_state <pr> <branch> <head>: AWAIT_MERGE for that pull request, with
@@ -359,6 +376,8 @@ adopt_state() {
     st_set loop.phase AWAIT_MERGE
     st_set pr.number "$pr"
     st_set pr.head "$head"
+    # Its earlier comments are passed over: the tick never merges it (D-105).
+    st_set pr.adopted 1
     st_set task.branch "$br"
     st_set task.kind "$kind"
     if [ "$kind" = task ]; then

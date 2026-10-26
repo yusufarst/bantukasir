@@ -29,7 +29,11 @@
 # lock is taken over or released by the Owner's unlock, is resumed with them
 # (CE-24). A stop found while STOPPED for OWNER_STOP is never recorded over
 # the Owner's stop, and prints "STOPPED OWNER_STOP kept over <REASON> ..."
-# (CE-71, CE-72).
+# (CE-71, CE-72). Under D-105, once CI is green, the pull request of a Task of
+# review class A, B or V waits for the automated review's window (at most
+# REVIEW_MAX_MINUTES, NOOP REVIEW_PENDING) and is then squash-merged by the
+# tick and verified (CE-60, CE-61); an ops/ pull request and a class-O Task
+# stay the Owner's merge (NOOP AWAIT_MERGE).
 # Exit code: always 0; an unexpected internal error prints STOPPED TICK_ERROR <where>.
 set -euo pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
@@ -225,7 +229,7 @@ delegation() {
     fi
     if [ -n "$pr" ]; then out "Pull request: #$pr, head $(st_get pr.head)"; else out "Pull request: none yet"; fi
     if [ -n "$(st_get merge.lastPr)" ]; then
-        out "Previous merge to record (CE-50): pull request #$(st_get merge.lastPr) ($(st_get merge.kind) $(st_get merge.task)), head $(st_get merge.prHead), CI run $(st_get merge.prCiRun); squash commit $(st_get merge.lastSha) on $BASE, CI run $(st_get merge.developCiRun)${MERGE_NOTE:-}"
+        out "Previous merge to record (CE-50): pull request #$(st_get merge.lastPr) ($(st_get merge.kind) $(st_get merge.task)), head $(st_get merge.prHead), CI run $(st_get merge.prCiRun); squash commit $(st_get merge.lastSha) on $BASE, CI run $(st_get merge.developCiRun)${MERGE_NOTE:-}$( [ -z "$(st_get merge.review)" ] || printf '; %s' "$(st_get merge.review)")"
     else
         out "Previous merge to record (CE-50): none recorded"
     fi
@@ -295,9 +299,16 @@ process_comments() {
                 log_event "CHANGE_REQUEST $kind $id"
             fi
         elif [ -n "$REVIEW_BOTS" ] && in_words "$login" "$REVIEW_BOTS"; then
+            # A P0, P1 or P2 finding of the reviewer is a change request to
+            # judge; the rest is listed (D-105). Its window is review_window's.
             [ -n "$t" ] || continue
-            printf '%s|%s|%s|%s\n' "$kind" "$id" "$login" "$(b64e "$body")" >> "$REQ_FILE"
-            log_event "BOT_FINDING $kind $id $login"
+            if printf '%s\n' "$t" | grep -qE 'P[0-2] Badge'; then
+                printf '%s|%s|%s|%s\n' "$kind" "$id" "$login" "$(b64e "$body")" >> "$REQ_FILE"
+                log_event "BOT_FINDING $kind $id $login"
+            else
+                printf '%s|%s|%s|%s\n' "$kind" "$id" "$login" "$(b64e "$body")" >> "$IGN_FILE"
+                log_event "BOT_INFO $kind $id $login"
+            fi
         else
             [ -n "$t" ] || continue
             printf '%s|%s|%s|%s\n' "$kind" "$id" "$login" "$(b64e "$body")" >> "$IGN_FILE"
@@ -440,6 +451,8 @@ verify_merge() {  # pr merge-sha head-sha
     st_set merge.task "$(st_get task.id)"
     st_set merge.prCiRun "${prci#PASS }"
     st_set merge.developCiRun "${ci#PASS }"
+    # D-105: how the merge was made and the automated review's window then.
+    if [ -n "$(st_get pr.reviewStatus)" ]; then st_set merge.review "the tick's merge, automated review $(st_get pr.reviewStatus)"; else st_set merge.review "the Owner's merge"; fi
     st_set merge.lastPr "$pr"
     st_unset merge.acceptedByOwner
     st_unset merge.acceptedSha
@@ -467,6 +480,122 @@ merge_done() {
     phase_select
 }
 
+# ---------------------------------------------------------------- the automated review and the merge (D-105)
+epoch_of() { [ -n "$1" ] && date -u -d "$1" +%s 2> /dev/null || true; }
+# bot_reacted <content> < reactions: a reaction of the reviewer with that content.
+bot_reacted() { awk -F'|' -v b="$REVIEW_BOTS" -v c="$1" 'BEGIN { n = split(b, w, " "); for (i = 1; i <= n; i++) B[w[i]] = 1 } ($1 in B) && $2 == c { print $3; f = 1; exit } END { exit !f }'; }
+# review_state_of <lines "id|login|base64">: the status of the reviewer's
+# summary comment, which it edits in place ("running", then "completed").
+review_state_of() {
+    local id login b64 s out=""
+    while IFS='|' read -r id login b64 _; do
+        [ -n "$login" ] && in_words "$login" "$REVIEW_BOTS" || continue
+        s="$(b64d "$b64" | tr -d '\r' | grep -o '"code_review":{[^}]*}' | grep -o '"status":"[a-z_]*"' | head -n 1 | cut -d'"' -f4)" || s=""
+        [ -z "$s" ] || out="$s"
+    done <<< "$1"
+    printf '%s' "$out"
+}
+# review_window <pr>: returns once the automated review of the pull request is
+# over, with REVIEW_STATUS: NONE, no reviewer configured; DONE, a terminal sign
+# of it — its +1 reaction, a review it submitted with its findings, or its
+# summary comment "completed"; ABSENT, no sign of it REVIEW_ABSENT_MINUTES
+# after the opening; TIMEOUT, REVIEW_MAX_MINUTES after its start, its eyes
+# reaction (or the opening, while its summary says "running"). Any other output
+# of it does not end the window. Otherwise NOOP REVIEW_PENDING. Every sign is
+# read from GitHub at each run, so a dry run decides as a real one does; the
+# window is the pull request's, never restarted by a later push (CE-41).
+review_window() {
+    local pr="$1" start opened r rv ic st ts
+    REVIEW_STATUS=NONE
+    [ -n "$REVIEW_BOTS" ] || return 0
+    REVIEW_STATUS=DONE
+    r="$(gh_reactions "$pr")" || gh_unavailable "reactions of #$pr"
+    if printf '%s\n' "$r" | bot_reacted "+1" > /dev/null; then return 0; fi
+    rv="$(gh_reviews "$pr")" || gh_unavailable "reviews of #$pr"
+    if printf '%s\n' "$rv" | awk -F'|' -v b="$REVIEW_BOTS" 'BEGIN { n = split(b, w, " "); for (i = 1; i <= n; i++) B[w[i]] = 1 } ($2 in B) { f = 1 } END { exit !f }'; then return 0; fi
+    ic="$(gh_issue_comments "$pr")" || gh_unavailable "issue comments of #$pr"
+    st="$(review_state_of "$ic")"
+    [ "$st" != completed ] || return 0
+    ts="$(printf '%s\n' "$r" | bot_reacted eyes || true)"
+    start="$(epoch_of "$ts")"
+    opened="$(st_get pr.openedAt)"
+    if ! is_int "$opened"; then
+        ts="$(gh_pr_created "$pr")" || gh_unavailable "pull request #$pr"
+        opened="$(epoch_of "$ts")"
+        is_int "$opened" || gh_unavailable "the opening time of #$pr"
+        st_set pr.openedAt "$opened"
+    fi
+    if ! is_int "$start" && [ -n "$st" ]; then start="$opened"; fi
+    if ! is_int "$start"; then
+        if [ $(( $(now) - opened )) -ge $(( REVIEW_ABSENT_MINUTES * 60 )) ]; then
+            REVIEW_STATUS=ABSENT
+            [ "$(st_get pr.reviewLogged)" = ABSENT ] || { st_set pr.reviewLogged ABSENT; log_event "REVIEW_ABSENT pr=$pr"; }
+            return 0
+        fi
+        noop REVIEW_PENDING "pr=$pr no sign of the automated review yet"
+    fi
+    if [ $(( $(now) - start )) -ge $(( REVIEW_MAX_MINUTES * 60 )) ]; then
+        REVIEW_STATUS=TIMEOUT
+        [ "$(st_get pr.reviewLogged)" = TIMEOUT ] || { st_set pr.reviewLogged TIMEOUT; log_event "REVIEW_TIMEOUT pr=$pr after $REVIEW_MAX_MINUTES min"; }
+        return 0
+    fi
+    noop REVIEW_PENDING "pr=$pr $(( ($(now) - start) / 60 )) of $REVIEW_MAX_MINUTES min"
+}
+# merge_eligible: the tick merges the pull request of a Task of review class
+# A, B or V that it opened itself. It leaves to the Owner (CE-60): an ops/ pull
+# request; a class-O Task; TASK-049 and TASK-050, the release and production
+# Tasks; a pull request adopted or reconstructed, whose earlier comments were
+# passed over; and any pull request under his /stop (CE-62).
+merge_eligible() {
+    [ "$AUTO_MERGE" = 1 ] && [ "$(st_get task.kind)" = task ] || return 1
+    [ "$(st_get pr.adopted)" != 1 ] && [ "$(st_get owner.stopAfterMerge)" != 1 ] || return 1
+    case "$(st_get task.id)" in TASK-049 | TASK-050) return 1 ;; esac
+    case "$(st_get task.class)" in A | B | V) return 0 ;; esac
+    return 1
+}
+# auto_merge <pr> <head>: after the review's window and with the required job
+# passed on the head, the squash merge of the head and then its verification
+# (CE-60, CE-61). CI pending on the head waits; red returns to the phase CI
+# and its fix cycle. A dry run only names the event.
+auto_merge() {
+    local pr="$1" h="$2" res info state merged msha hsha
+    STEP=auto-merge
+    review_window "$pr"
+    res="$(ci_result "$h")" || gh_unavailable "check runs of $h"
+    case "$res" in
+        "PASS "*) ;;
+        PENDING) noop AWAIT_MERGE "pr=$pr CI pending on $h" ;;
+        *)
+            st_set loop.phase CI
+            phase_ci
+            ;;
+    esac
+    # The sign that ended the window may have come with findings written after
+    # this run read the comments: read them again before any merge (CE-43).
+    STEP=comments
+    collect_comments "$pr"
+    STEP=auto-merge
+    if [ "$CR" -gt 0 ]; then
+        take_lock || { NOWRITE=1; noop LOCKED "taken by another run"; }
+        tooling_check
+        st_set loop.phase CI
+        REASON="the change requests on pull request #$pr, the automated reviewer's findings among them (CE-43), handled as a fix cycle"
+        event "CHANGE_REQUEST:$pr:$(cr_key)"
+        run_line fix
+    fi
+    if [ "$DRY" = 1 ]; then
+        event "AUTO_MERGE:$pr:$h:$(seq_of)"
+        noop AUTO_MERGE "pr=$pr head=$h review=$REVIEW_STATUS"
+    fi
+    log_event "AUTO_MERGE pr=$pr head=$h review=$REVIEW_STATUS"
+    gh_pr_merge "$pr" "$h" > /dev/null || stopped MERGE_FAILED "#$pr head $h: the squash merge was refused"
+    st_set pr.reviewStatus "$REVIEW_STATUS"
+    info="$(gh_pr "$pr")" || gh_unavailable "pull request #$pr"
+    { read -r state; read -r merged; read -r msha; read -r hsha; read -r _; read -r _; read -r _; read -r _; read -r _; } <<< "$info"
+    [ "$merged" = true ] || noop MERGE_PENDING "pr=$pr"
+    verify_merge "$pr" "$msha" "$hsha"
+}
+
 phase_await() {
     STEP=await
     local pr info state merged msha hsha href bref
@@ -491,6 +620,7 @@ phase_await() {
             event "CHANGE_REQUEST:$pr:$(cr_key)"
             run_line fix
         fi
+        if merge_eligible; then auto_merge "$pr" "$hsha"; fi
         noop AWAIT_MERGE "pr=$pr"
     fi
     [ "$merged" = true ] || stopped PR_CLOSED "#$pr was closed without a merge"
@@ -539,6 +669,7 @@ phase_ci() {
             st_set loop.phase AWAIT_MERGE
             log_event "CI PASS $hsha"
             event "CI_GREEN:$pr:$hsha:$(seq_of)"
+            if [ "$DRY" = 0 ] && merge_eligible; then auto_merge "$pr" "$hsha"; fi
             noop CI_GREEN "pr=$pr head=$hsha run=${res#PASS }"
             ;;
         FAIL*)
