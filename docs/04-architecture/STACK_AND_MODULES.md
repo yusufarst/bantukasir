@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-3A under D-055, 4 October 2026 (Asia/Jakarta); amended in RF-6 under D-088, 18 October 2026: the Operations module and its dependencies; section 3 adapted by TASK-001 under STK-22, 19 October 2026, with `tests/Network/` added the same day after its review of class B; and by TASK-004, 24 October 2026: the database infrastructure in sections 2 and 2.1, the command points in STK-31, and the folders of the provider, the setup and the test harness in section 3 |
+| Status | CURRENT — written in RF-3A under D-055, 4 October 2026 (Asia/Jakarta); amended in RF-6 under D-088, 18 October 2026: the Operations module and its dependencies; section 3 adapted by TASK-001 under STK-22, 19 October 2026, with `tests/Network/` added the same day after its review of class B; and by TASK-004, 24 October 2026: the database infrastructure in sections 2 and 2.1, the command points in STK-31, and the folders of the provider, the setup and the test harness in section 3; and by TASK-006, 26 October 2026: the folders of authentication and of its test harness in section 3 |
 | Phase | P4 — application architecture |
 | Replaces | The stack, module and structure sections of `docs/04-architecture/legacy/P4-ARCHITECTURE.md` and the module paragraph of `docs/04-architecture/legacy/02-ARCHITECTURE.md` ([LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 8) |
 | Decisions | D-004, D-005, D-050; [ADR-001](../adr/ADR-001-stack-and-modular-monolith.md), [ADR-002](../adr/ADR-002-minimum-runtime-infrastructure.md), [ADR-004](../adr/ADR-004-authentication.md), [ADR-005](../adr/ADR-005-localization-architecture.md), [ADR-006](../adr/ADR-006-exact-numbers.md), [ADR-007](../adr/ADR-007-command-identity-and-idempotency.md) |
@@ -137,6 +137,11 @@ Folders added by TASK-005 for the design system; the module boundaries do not ch
 - `resources/js/components/ui/` holds the design system's components (DESIGN_SYSTEM section 8), the shortcut registry and the catalogue of the states; `resources/js/layouts/` the layout primitives and page archetypes; `resources/css/` the tokens, the font faces, the base layer and the components' stylesheet; `public/fonts/inter/` the self-hosted Inter files with their licence.
 - `app/Http/ContentSecurityPolicy.php` builds the policy of SECURITY_MODEL SEC-HDR-03 for one request's nonce; the middleware of TASK-007 applies it to every response.
 - `app/Http/Controllers/Testing/` and `resources/js/pages/Testing/` hold the component specimen, which `routes/web.php` registers only in the local and testing environments; it is not a route of ROUTE_CONTRACTS. `tests/Browser/support/` holds the browser harness that every interface Task reuses: the widths, the watch of the page (CSP, console, origin) and the measurements.
+
+Folders added by TASK-006 for authentication; the module boundaries do not change:
+
+- `app/Http/Auth/` holds the Access module's side of Fortify: the stages of the sign-in pipeline, the responses that Fortify's contracts ask for, the times of the sign-in session, the rate limits, and the answers to a signed-out request and to an invalid link. `app/Providers/AccessServiceProvider.php`, registered in `bootstrap/providers.php`, binds them; the framework needs a service provider for it (STK-22).
+- `tests/Harness/Http/` holds the harness of several browsers' sessions in one test; `tests/Harness/Access/` the race scenarios of the one-time link; `tests/Harness/Browser/` the fixtures of the browser tests of the Access pages, whose routes `routes/web.php` loads only where the specimen is enabled and the file exists.
 
 | ID | Rule | Source |
 | --- | --- | --- |

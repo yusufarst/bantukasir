@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 import { Icon } from '@/components/ui/Icon';
 import { cn } from '@/lib/cn';
 import { t } from '@/lib/i18n';
@@ -39,8 +39,13 @@ export function PageHeader({
 }: {
     title: string;
     subtitle?: ReactNode;
-    /** "Kembali ke :halaman" with the destination's title, or "Kembali ke halaman awal" for the role's home (NC-01, NC-12). */
-    back?: { href: string; page?: string };
+    /**
+     * "Kembali ke :halaman" with the destination's title, or "Kembali ke
+     * halaman awal" for the role's home (NC-01, NC-12). On a create, edit or
+     * command page `onNavigate` applies the unsaved-changes guard (NC-03),
+     * as its cancel does.
+     */
+    back?: { href: string; page?: string; onNavigate?: (event: MouseEvent<HTMLAnchorElement>) => void };
     actions?: ReactNode;
 }) {
     const backLabel = back === undefined ? undefined : back.page === undefined ? t('ux.action.back_home') : t('ux.action.back_to', { halaman: back.page });
@@ -48,7 +53,7 @@ export function PageHeader({
     return (
         <header>
             {back !== undefined && (
-                <a className={'bk-back'} href={back.href}>
+                <a className={'bk-back'} href={back.href} onClick={back.onNavigate}>
                     <Icon name={'arrow-left'} />
                     <span>{backLabel}</span>
                 </a>

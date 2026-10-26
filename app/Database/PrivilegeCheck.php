@@ -30,6 +30,11 @@ use Illuminate\Database\ConnectionInterface;
  *    anyone but the owner are exactly the matrix's, column privileges included;
  *    no view, materialized view, foreign table or composite type; every table
  *    and sequence of the matrix present (SCH-44, SCH-45);
+ *  - row security: enabled, and never forced, on exactly the tables whose
+ *    matrix entry lists policies, whose policies are exactly those —
+ *    permissive, for PUBLIC, with the same command and expressions — and no
+ *    policy on any other table (SCHEMA SCH-06 and section 5.4, OPEN_ITEMS
+ *    T-23; TASK-006);
  *  - no function or operator in public outside an extension (SCH-06); the
  *    extensions are plpgsql and pg_trgm, the latter owned by the migration role
  *    (ENV-33);
@@ -90,6 +95,7 @@ final class PrivilegeCheck
             ...$this->database($connection, $roles),
             ...$this->schemas($connection, $roles),
             ...$this->relations($connection, $roles),
+            ...$this->rowSecurity($connection),
             ...$this->routinesAndExtensions($connection, $roles),
             ...$this->ownershipAndDefaults($connection, $roles),
         ];
@@ -408,6 +414,105 @@ final class PrivilegeCheck
         }
 
         return self::compare('sequence '.$sequence, $grants, $expected);
+    }
+
+    /**
+     * The row security of every table of public, and every policy of the
+     * database, compared with the matrix.
+     *
+     * @return list<string>
+     */
+    private function rowSecurity(ConnectionInterface $connection): array
+    {
+        $findings = [];
+        $tables = $connection->select(<<<'SQL'
+            select c.relname, c.relrowsecurity, c.relforcerowsecurity
+            from pg_catalog.pg_class c
+            join pg_catalog.pg_namespace n on n.oid = c.relnamespace
+            where n.nspname = 'public' and c.relkind in ('r', 'p')
+              and not exists (select from pg_catalog.pg_depend d
+                              where d.classid = 'pg_catalog.pg_class'::regclass and d.objid = c.oid and d.deptype = 'e')
+            order by c.relname
+            SQL);
+
+        foreach ($tables as $row) {
+            $table = (array) $row;
+            $name = self::text($table['relname']);
+
+            if (! $this->matrix->has($name)) {
+                continue;
+            }
+
+            $expected = $this->matrix->policies($name) !== [];
+
+            if ($table['relrowsecurity'] !== $expected) {
+                $findings[] = sprintf('table %s: row security %s, expected %s', $name, $table['relrowsecurity'] === true ? 'enabled' : 'disabled', $expected ? 'enabled' : 'disabled');
+            }
+
+            if ($table['relforcerowsecurity'] !== false) {
+                $findings[] = sprintf('table %s: row security forced, which the schema never does', $name);
+            }
+        }
+
+        $policies = $connection->select(<<<'SQL'
+            select n.nspname, c.relname, p.polname,
+                   case p.polcmd when 'r' then 'SELECT' when 'a' then 'INSERT' when 'w' then 'UPDATE' when 'd' then 'DELETE' else 'ALL' end as command,
+                   p.polpermissive,
+                   p.polroles operator(pg_catalog.=) '{0}'::pg_catalog.oid[] as public,
+                   pg_catalog.pg_get_expr(p.polqual, p.polrelid) as using_expression,
+                   pg_catalog.pg_get_expr(p.polwithcheck, p.polrelid) as check_expression
+            from pg_catalog.pg_policy p
+            join pg_catalog.pg_class c on c.oid = p.polrelid
+            join pg_catalog.pg_namespace n on n.oid = c.relnamespace
+            order by n.nspname, c.relname, p.polname
+            SQL);
+
+        $present = [];
+
+        foreach ($policies as $row) {
+            $policy = (array) $row;
+            $table = self::text($policy['relname']);
+            $name = self::text($policy['polname']);
+            $label = sprintf('policy %s on %s', $name, $table);
+
+            if (self::text($policy['nspname']) !== 'public' || ! $this->matrix->has($table) || ! array_key_exists($name, $this->matrix->policies($table))) {
+                $findings[] = $label.': not in the privilege matrix (database/privileges.php)';
+
+                continue;
+            }
+
+            $present[$table][] = $name;
+            $want = $this->matrix->policies($table)[$name];
+            $have = [
+                'command' => self::text($policy['command']),
+                'using' => $policy['using_expression'] === null ? null : self::text($policy['using_expression']),
+                'check' => $policy['check_expression'] === null ? null : self::text($policy['check_expression']),
+            ];
+
+            foreach (['command', 'using', 'check'] as $part) {
+                if ($have[$part] !== $want[$part]) {
+                    $findings[] = sprintf('%s: %s is %s, expected %s', $label, $part, json_encode($have[$part]), json_encode($want[$part]));
+                }
+            }
+
+            if ($policy['polpermissive'] !== true) {
+                $findings[] = $label.': restrictive, expected permissive';
+            }
+
+            if ($policy['public'] !== true) {
+                $findings[] = $label.': names roles, expected PUBLIC';
+            }
+        }
+
+        foreach (array_keys($this->matrix->tables()) as $table) {
+            foreach (array_keys($this->matrix->policies($table)) as $name) {
+                if (! in_array($name, $present[$table] ?? [], true)) {
+                    $findings[] = sprintf('policy %s on %s: in the privilege matrix but missing', $name, $table);
+                }
+            }
+        }
+
+        return $findings;
     }
 
     /**

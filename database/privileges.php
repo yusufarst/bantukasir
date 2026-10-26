@@ -19,6 +19,13 @@
 |             as true, and update as true for every column or as the list of
 |             its columns. "backup" is optional: the backup role always reads
 |             every table, and inserts only where it says insert (SCH-42).
+|             "row_security" is optional, and only for a table of class L: its
+|             row security policies by name, each with its command (SELECT,
+|             INSERT or DELETE) and its USING and WITH CHECK expressions as
+|             PostgreSQL deparses them (pg_get_expr), or null. Each policy is
+|             permissive and names no role, so it applies to the runtime and
+|             backup roles alike; row security is enabled on the table and
+|             never forced (SCHEMA SCH-06 and section 5.4, OPEN_ITEMS T-23).
 | sequences   The sequences that the runtime role uses, with usage (SCH-44).
 |             Every other sequence, those behind identity and serial columns
 |             included, gives the runtime role nothing; a sequence that no
@@ -45,6 +52,41 @@ return [
         'migrations' => [
             'class' => null,
             'runtime' => [],
+        ],
+        'sessions' => [
+            'class' => 'E',
+            'runtime' => ['select' => true, 'insert' => true, 'update' => true, 'delete' => true],
+        ],
+        'password_reset_tokens' => [
+            'class' => 'E',
+            'runtime' => ['select' => true, 'insert' => true, 'update' => true, 'delete' => true],
+        ],
+
+        // Access (SCHEMA section 5.1; TASK-006).
+        'users' => [
+            'class' => 'M',
+            'runtime' => [
+                'select' => true,
+                'insert' => true,
+                'update' => ['display_name', 'email', 'password', 'role_operations_admin', 'role_cashier', 'status', 'deactivated_at', 'anonymized_at', 'version', 'updated_at'],
+            ],
+        ],
+
+        // Audit (SCHEMA section 5.4; TASK-006).
+        'audit_events' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'security_log_entries' => [
+            'class' => 'L',
+            'runtime' => ['select' => true, 'insert' => true, 'delete' => true],
+            // The retention of SEC-LOG-05 held by the database (OPEN_ITEMS T-23):
+            // a removal admits only an entry older than 365 days (8,760 hours).
+            'row_security' => [
+                'security_log_entries_add' => ['command' => 'INSERT', 'using' => null, 'check' => 'true'],
+                'security_log_entries_read' => ['command' => 'SELECT', 'using' => 'true', 'check' => null],
+                'security_log_entries_retention' => ['command' => 'DELETE', 'using' => "(occurred_at < (now() - '8760:00:00'::interval))", 'check' => null],
+            ],
         ],
 
     ],

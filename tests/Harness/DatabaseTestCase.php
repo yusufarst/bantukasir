@@ -98,6 +98,17 @@ abstract class DatabaseTestCase extends TestCase
     }
 
     /**
+     * A value read from the database that the test expects to be a text, such
+     * as a column read with value().
+     */
+    protected function readText(mixed $value): string
+    {
+        $this->assertIsString($value);
+
+        return $value;
+    }
+
+    /**
      * Registers a test-only table, which the test creates as the migration
      * role with constant SQL, to be dropped after the test. Its name starts
      * with harness_ (TestDatabase).

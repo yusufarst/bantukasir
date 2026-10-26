@@ -47,11 +47,11 @@ services:
             DB_MIGRATION_USERNAME: bk_migration
             BACKUP_DB_USERNAME: bk_backup
             APP_ENVIRONMENT_NAME: local
-            # The database session driver and cache store need their tables in
-            # a migrated local database: the cache tables since TASK-004, the
-            # sessions table from TASK-006. Local runs use files until then.
-            SESSION_DRIVER: file
-            CACHE_STORE: file
+            # Sign-in sessions in the database and the rate limiter's counters
+            # in the database cache store (ADR-002; TASK-006): the local
+            # database is migrated first, with the command above.
+            SESSION_DRIVER: database
+            CACHE_STORE: database
             # Local runs are plain HTTP; every other environment sets true.
             SESSION_SECURE_COOKIE: "false"
         volumes:

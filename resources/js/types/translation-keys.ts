@@ -4,6 +4,32 @@
 
 /** Every key of the interface dictionary, with the names of its placeholders. */
 export interface TranslationPlaceholders {
+    'access.account.email': never;
+    'access.account.name': never;
+    'access.account.roles': never;
+    'access.account.staff_note': never;
+    'access.account.title': never;
+    'access.change_password.current': never;
+    'access.change_password.lost_answer': never;
+    'access.change_password.success': never;
+    'access.change_password.title': never;
+    'access.password_rule': never;
+    'access.role.cashier': never;
+    'access.role.list': 'peran';
+    'access.role.operations_admin': never;
+    'access.role.super_admin': never;
+    'access.set_password.intro': never;
+    'access.set_password.lost_answer': never;
+    'access.set_password.new': never;
+    'access.set_password.repeat': never;
+    'access.set_password.submit': never;
+    'access.set_password.success': never;
+    'access.set_password.title': never;
+    'access.set_password.to_sign_in': never;
+    'access.sign_in.email': never;
+    'access.sign_in.password': never;
+    'access.sign_in.submit': never;
+    'access.sign_in.title': never;
     'ux.action.back_home': never;
     'ux.action.back_to': 'halaman';
     'ux.action.cancel': never;
@@ -11,6 +37,7 @@ export interface TranslationPlaceholders {
     'ux.action.clear_filters': never;
     'ux.action.done': never;
     'ux.action.edit_again': never;
+    'ux.action.hide_password': never;
     'ux.action.leave': never;
     'ux.action.load_more': never;
     'ux.action.more_actions': never;
@@ -22,6 +49,7 @@ export interface TranslationPlaceholders {
     'ux.action.retry': never;
     'ux.action.review': never;
     'ux.action.save': never;
+    'ux.action.show_password': never;
     'ux.action.stay': never;
     'ux.announce.added': 'jumlah' | 'produk';
     'ux.announce.loaded': never;
@@ -63,6 +91,7 @@ export interface TranslationPlaceholders {
     'ux.list.updated_at': 'waktu';
     'ux.nav.menu_close': never;
     'ux.nav.menu_open': never;
+    'ux.shell.document_title_public': 'halaman';
     'ux.state.abandoned.body': never;
     'ux.state.abandoned.title': never;
     'ux.state.barcode_ineligible.title': never;
@@ -196,6 +225,9 @@ export interface TranslationPlaceholders {
     'ux.validation.money': never;
     'ux.validation.money_max': never;
     'ux.validation.money_min': never;
+    'ux.validation.password': never;
+    'ux.validation.password_max': never;
+    'ux.validation.password_repeat': never;
     'ux.validation.quantity_decimals': 'desimal';
     'ux.validation.quantity_max': never;
     'ux.validation.quantity_positive': never;

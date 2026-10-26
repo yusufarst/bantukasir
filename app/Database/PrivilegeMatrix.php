@@ -10,10 +10,13 @@ use InvalidArgumentException;
  * runtime role's privileges stay within what that class allows — a retained
  * fact is never updated or deleted by the runtime role (SCH-02), the security
  * log is never updated, and only a projection or ephemeral data is deleted.
+ * A table of class L holds row security policies — its retention, which the
+ * database enforces (OPEN_ITEMS T-23, TASK-006) — and no other class does.
  *
  * @phpstan-type Runtime array{select: bool, insert: bool, update: bool|list<string>, delete: bool}
  * @phpstan-type Backup array{select: true, insert: bool}
- * @phpstan-type Table array{class: string|null, runtime: Runtime, backup: Backup}
+ * @phpstan-type Policy array{command: 'SELECT'|'INSERT'|'DELETE', using: string|null, check: string|null}
+ * @phpstan-type Table array{class: string|null, runtime: Runtime, backup: Backup, row_security: array<string, Policy>}
  */
 final class PrivilegeMatrix
 {
@@ -142,13 +145,24 @@ final class PrivilegeMatrix
     }
 
     /**
+     * The row security policies of a table, by name in name order; empty
+     * when row security is off for it.
+     *
+     * @return array<string, Policy>
+     */
+    public function policies(string $table): array
+    {
+        return $this->table($table)['row_security'];
+    }
+
+    /**
      * @return Table
      */
     private static function parseTable(string $name, mixed $entry): array
     {
         if (! is_array($entry) || ! array_key_exists('class', $entry) || ! array_key_exists('runtime', $entry)
-            || array_diff(array_keys($entry), ['class', 'runtime', 'backup']) !== []) {
-            throw new InvalidArgumentException(sprintf('The table %s needs "class" and "runtime", and at most "backup" besides.', $name));
+            || array_diff(array_keys($entry), ['class', 'runtime', 'backup', 'row_security']) !== []) {
+            throw new InvalidArgumentException(sprintf('The table %s needs "class" and "runtime", and at most "backup" and "row_security" besides.', $name));
         }
 
         $class = $entry['class'];
@@ -162,7 +176,52 @@ final class PrivilegeMatrix
 
         self::within($name, $class, $runtime);
 
-        return ['class' => $class, 'runtime' => $runtime, 'backup' => $backup];
+        $policies = self::rowSecurity($name, $class, $entry['row_security'] ?? []);
+
+        return ['class' => $class, 'runtime' => $runtime, 'backup' => $backup, 'row_security' => $policies];
+    }
+
+    /**
+     * The row security of a table: only a table of class L has it, and then
+     * it has a DELETE policy, the retention that bounds the runtime role's
+     * DELETE (SCHEMA section 4, class L; OPEN_ITEMS T-23).
+     *
+     * @return array<string, Policy>
+     */
+    private static function rowSecurity(string $table, ?string $class, mixed $policies): array
+    {
+        if (! is_array($policies)) {
+            throw new InvalidArgumentException(sprintf('The row security of %s is a map of policies.', $table));
+        }
+
+        if (($policies === []) !== ($class !== 'L')) {
+            throw new InvalidArgumentException(sprintf('A table of class L, and only such a table, has row security policies; %s is of class %s.', $table, json_encode($class)));
+        }
+
+        $parsed = [];
+
+        foreach ($policies as $name => $policy) {
+            if (! is_array($policy) || array_keys($policy) !== ['command', 'using', 'check']
+                || ! in_array($policy['command'], ['SELECT', 'INSERT', 'DELETE'], true)
+                || ! (is_string($policy['using']) || $policy['using'] === null)
+                || ! (is_string($policy['check']) || $policy['check'] === null)) {
+                throw new InvalidArgumentException(sprintf('A row security policy of %s holds command (SELECT, INSERT or DELETE), using and check, in that order.', $table));
+            }
+
+            if (($policy['command'] === 'INSERT') !== ($policy['using'] === null) || ($policy['command'] === 'INSERT') !== ($policy['check'] !== null)) {
+                throw new InvalidArgumentException(sprintf('A row security policy of %s has a WITH CHECK expression for INSERT and a USING expression otherwise.', $table));
+            }
+
+            $parsed[self::name($name)] = ['command' => $policy['command'], 'using' => $policy['using'], 'check' => $policy['check']];
+        }
+
+        if ($class === 'L' && ! in_array('DELETE', array_column($parsed, 'command'), true)) {
+            throw new InvalidArgumentException(sprintf('The table %s of class L needs a DELETE policy, its retention.', $table));
+        }
+
+        ksort($parsed);
+
+        return $parsed;
     }
 
     /**

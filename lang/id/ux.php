@@ -51,6 +51,10 @@ return [
         'quantity_whole' => 'Produk ini dihitung utuh. Isi tanpa koma.',
         'quantity_max' => 'Jumlah terlalu besar. Paling banyak 99.999.999,999.',
         'required' => 'Wajib diisi.',
+        // The password fields (TASK-006; COPY_DECK section 16.1).
+        'password' => 'Kata sandi belum memenuhi syarat: minimal 8 karakter, dengan huruf besar, huruf kecil, angka, dan simbol.',
+        'password_max' => 'Paling banyak 128 karakter.',
+        'password_repeat' => 'Kata sandi yang diulang tidak sama.',
     ],
     // The shared actions, lists, navigation, announcements and disabled
     // reasons that the design system's components use (TASK-005; COPY_DECK
@@ -75,11 +79,19 @@ return [
         'save' => 'Simpan',
         'more_actions' => 'Tindakan lain',
         'remove_line' => 'Hapus baris',
+        // The password visibility toggle (TASK-006; COPY_DECK section 5).
+        'show_password' => 'Tampilkan kata sandi',
+        'hide_password' => 'Sembunyikan kata sandi',
     ],
     'list' => [
         'updated_at' => 'Diperbarui :waktu',
         'count' => ':jumlah hasil',
         'search_hint' => 'Ketik untuk mencari',
+    ],
+    // The document title of the pages without business data (TASK-006;
+    // COPY_DECK section 4.2).
+    'shell' => [
+        'document_title_public' => ':halaman',
     ],
     'nav' => [
         'menu_open' => 'Buka menu',
