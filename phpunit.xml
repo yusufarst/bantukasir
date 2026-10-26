@@ -17,7 +17,9 @@
     same values; the harness also refuses, before any write or reset, a
     connection that does not reach the test database (TASK-004 evidence
     section 10). Sessions and the cache use the array driver and store, except
-    in the tests of the database cache store; the sessions table is TASK-006's.
+    in the tests of the database cache store and of the database session
+    driver (TASK-006); the copy of the security log on the container output
+    goes to a memory stream.
 -->
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
@@ -52,6 +54,8 @@
         <env name="APP_ENV" value="testing" force="true"/>
         <env name="SESSION_DRIVER" value="array" force="true"/>
         <env name="CACHE_STORE" value="array" force="true"/>
+        <env name="LOG_SECURITY_STREAM" value="php://memory" force="true"/>
+        <env name="SESSION_SECURE_COOKIE" value="true" force="true"/>
         <env name="DB_CONNECTION" value="pgsql" force="true"/>
         <env name="DB_URL" value="" force="true"/>
         <env name="APP_ENVIRONMENT_NAME" value="test" force="true"/>
@@ -67,6 +71,8 @@
         <server name="APP_ENV" value="testing"/>
         <server name="SESSION_DRIVER" value="array"/>
         <server name="CACHE_STORE" value="array"/>
+        <server name="LOG_SECURITY_STREAM" value="php://memory"/>
+        <server name="SESSION_SECURE_COOKIE" value="true"/>
         <server name="DB_CONNECTION" value="pgsql"/>
         <server name="DB_URL" value=""/>
         <server name="APP_ENVIRONMENT_NAME" value="test"/>

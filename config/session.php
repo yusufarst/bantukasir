@@ -32,9 +32,14 @@ return [
     |
     */
 
-    'lifetime' => (int) env('SESSION_LIFETIME', 120),
+    // BantuKasir (ADR-004 item 8, SECURITY_MODEL SEC-SESS-02; TASK-006): 30
+    // minutes, fixed here. Every request refreshes the framework's own idle
+    // lifetime, so the limits of the sign-in session — 30 minutes without a
+    // user-initiated request and 12 hours absolute — are enforced by
+    // App\Http\Middleware\EnsureSignInSession, not by this value.
+    'lifetime' => 30,
 
-    'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', false),
+    'expire_on_close' => false,
 
     /*
     |--------------------------------------------------------------------------
@@ -47,7 +52,8 @@ return [
     |
     */
 
-    'encrypt' => env('SESSION_ENCRYPT', false),
+    // Session data is encrypted at rest (SEC-SESS-01; TASK-006).
+    'encrypt' => true,
 
     /*
     |--------------------------------------------------------------------------
@@ -169,7 +175,10 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    // Secure unless an environment that answers over plain HTTP says
+    // otherwise: the local environment of compose.yaml sets false (SEC-SESS-01;
+    // TASK-006 review finding R-07).
+    'secure' => (bool) env('SESSION_SECURE_COOKIE', true),
 
     /*
     |--------------------------------------------------------------------------

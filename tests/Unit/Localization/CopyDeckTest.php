@@ -40,15 +40,55 @@ final class CopyDeckTest extends TestCase
     }
 
     /**
-     * The copy cell of the row `| `key` | copy | ... |`.
+     * The copy cell of the row `| `key` | copy | ... |`. A key that no row
+     * starts with is a key of a page (TASK-006): the tables of sections 4 and
+     * 6 name it in a later cell, alone or in a list separated by "; ", and
+     * give its copy in the next cell, at the same position of a list of the
+     * same length; a copy may follow a label in lower case that says when it
+     * applies ("after a success: Masuk"). Every row that names such a key
+     * gives it the same copy.
      */
     private function row(string $deck, string $key): string
     {
         $found = preg_match_all('/^\| `'.preg_quote($key, '/').'` \| ([^|]*) \|/m', $deck, $matches);
 
-        $this->assertSame(1, $found, "COPY_DECK names {$key} in exactly one row.");
+        if ($found !== 0) {
+            $this->assertSame(1, $found, "COPY_DECK names {$key} in exactly one row.");
 
-        return trim($matches[1][0]);
+            return trim($matches[1][0]);
+        }
+
+        $copies = [];
+
+        foreach (preg_split('/\R/', $deck) ?: [] as $line) {
+            if (! str_starts_with($line, '| ')) {
+                continue;
+            }
+
+            $cells = array_map(trim(...), explode('|', trim($line, ' |')));
+
+            foreach ($cells as $at => $cell) {
+                if (! isset($cells[$at + 1]) || preg_match('/^`[a-z0-9_.]+`(; `[a-z0-9_.]+`)*$/', $cell) !== 1) {
+                    continue;
+                }
+
+                $keys = array_map(static fn (string $named): string => trim($named, '`'), explode('; ', $cell));
+                $position = array_search($key, $keys, true);
+
+                if ($position === false) {
+                    continue;
+                }
+
+                $texts = count($keys) === 1 ? [$cells[$at + 1]] : explode('; ', $cells[$at + 1]);
+                $this->assertCount(count($keys), $texts, "COPY_DECK gives each key of {$cell} its copy.");
+                $copies[] = (string) preg_replace('/^[a-z][a-z ]*: /', '', trim($texts[$position]));
+            }
+        }
+
+        $this->assertNotSame([], $copies, "COPY_DECK names {$key} in a row.");
+        $this->assertSame([$copies[0]], array_values(array_unique($copies)), "COPY_DECK gives {$key} one copy.");
+
+        return $copies[0];
     }
 
     /**

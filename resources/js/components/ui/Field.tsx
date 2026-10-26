@@ -1,4 +1,4 @@
-import { createContext, useContext, useId, type FormEvent, type InputHTMLAttributes, type KeyboardEvent, type ReactNode, type Ref } from 'react';
+import { createContext, useContext, useId, useState, type FormEvent, type InputHTMLAttributes, type KeyboardEvent, type ReactNode, type Ref } from 'react';
 import { cn } from '@/lib/cn';
 import { RUPIAH_SYMBOL } from '@/lib/format';
 import { t } from '@/lib/i18n';
@@ -122,6 +122,63 @@ export function TextInput({ size = 'md', prefix, suffix, icon, numeric = false, 
                     {suffix}
                 </span>
             )}
+        </div>
+    );
+}
+
+/** A password is never altered by the keyboard, shown or not (TR-VAL-05). */
+const NO_ALTERATION = 'off';
+
+/**
+ * A password field (TASK-006): a TextInput of type password with the toggle
+ * "Tampilkan kata sandi" (UXI-040; COPY_DECK section 5), a 44 px button inside
+ * the control's boundary whose state is pressed while the password is shown.
+ * Paste and password managers are allowed (SEC-AUTH-05): the autocomplete
+ * value names the field's purpose, and nothing blocks pasting.
+ */
+export function PasswordInput({
+    size = 'md',
+    value,
+    onValueChange,
+    autoComplete,
+    ref,
+    ...rest
+}: Omit<TextInputProps, 'type' | 'value' | 'onChange' | 'prefix' | 'suffix' | 'icon' | 'numeric' | 'autoComplete'> & {
+    value: string;
+    onValueChange: (value: string) => void;
+    autoComplete: 'current-password' | 'new-password';
+}) {
+    const field = useContext(FieldIds);
+    const [shown, setShown] = useState(false);
+
+    if (field === null) {
+        throw new Error('A PasswordInput is placed inside a Field, which gives it its label (UXA-13).');
+    }
+
+    const label = shown ? t('ux.action.hide_password') : t('ux.action.show_password');
+
+    return (
+        <div className={cn('bk-input', size === 'lg' && 'bk-input--lg', size === 'xl' && 'bk-input--xl')} data-invalid={field.invalid} data-disabled={rest.disabled === true}>
+            <input
+                {...rest}
+                ref={ref}
+                id={field.id}
+                className={'bk-input__control'}
+                type={shown ? 'text' : 'password'}
+                value={value}
+                onChange={(event) => onValueChange(event.target.value)}
+                autoComplete={autoComplete}
+                autoCapitalize={NO_ALTERATION}
+                autoCorrect={NO_ALTERATION}
+                spellCheck={false}
+                required={field.required}
+                aria-required={field.required ? true : undefined}
+                aria-invalid={field.invalid ? true : undefined}
+                aria-describedby={field.describedBy}
+            />
+            <button type={'button'} className={'bk-input__btn'} aria-pressed={shown} aria-label={label} title={label} onClick={() => setShown(!shown)}>
+                <Icon name={shown ? 'eye-off' : 'eye'} />
+            </button>
         </div>
     );
 }

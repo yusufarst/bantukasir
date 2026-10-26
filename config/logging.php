@@ -1,5 +1,6 @@
 <?php
 
+use Monolog\Formatter\JsonFormatter;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Processor\PsrLogMessageProcessor;
@@ -47,6 +48,22 @@ return [
             ],
             'formatter' => env('LOG_STDERR_FORMATTER'),
             'processors' => [PsrLogMessageProcessor::class],
+        ],
+
+        // The copy of each security log entry on the container's output, which
+        // Docker collects with the application's other log lines (SECURITY_MODEL
+        // SEC-LOG-03, ENVIRONMENTS section 14; TASK-006): one JSON line per
+        // entry, with the fields of the stored entry only — never a secret, a
+        // token, a password, a cookie, a user agent or a payload
+        // (App\Domain\Audit\SecurityLog). The tests send it to a memory stream.
+        'security' => [
+            'driver' => 'monolog',
+            'level' => 'info',
+            'handler' => StreamHandler::class,
+            'handler_with' => [
+                'stream' => env('LOG_SECURITY_STREAM', 'php://stderr'),
+            ],
+            'formatter' => JsonFormatter::class,
         ],
 
         'null' => [

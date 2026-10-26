@@ -3,6 +3,7 @@ import type { ComponentType } from 'react';
 import { createRoot } from 'react-dom/client';
 import { installCspNonce } from '@/lib/csp';
 import { installDictionary } from '@/lib/i18n';
+import { captureLinkFragment } from '@/lib/linkFragment';
 
 // Client-side Inertia, set up without the optional Inertia Vite plugin so that
 // no server-side rendering is generated (STACK_AND_MODULES section 1). Pages are
@@ -12,6 +13,11 @@ const pages = import.meta.glob<{ default: ComponentType }>('./pages/**/*.tsx');
 // The styles that libraries inject at run time receive the nonce of the
 // content security policy (SEC-HDR-03, TASK-005): before the first render.
 const nonce = installCspNonce(document);
+
+// The one-time link's fragment is read and removed before Inertia starts,
+// which would otherwise keep it in the page it stores in the browser history
+// (SEC-ACC-05; TASK-006).
+captureLinkFragment(window);
 
 void createInertiaApp({
     nonce,

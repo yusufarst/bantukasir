@@ -27,17 +27,48 @@ final class PrivilegeMatrixTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_the_committed_matrix_holds_the_tables_of_task_004(): void
+    public function test_the_committed_matrix_holds_the_tables_of_task_004_and_task_006(): void
     {
         $matrix = PrivilegeMatrix::load();
 
-        $this->assertSame(['cache', 'cache_locks', 'migrations'], array_keys($matrix->tables()));
+        $this->assertSame(['audit_events', 'cache', 'cache_locks', 'migrations', 'password_reset_tokens', 'security_log_entries', 'sessions', 'users'], array_keys($matrix->tables()));
         $this->assertSame(['SELECT', 'INSERT', 'UPDATE', 'DELETE'], $matrix->tablePrivileges('cache', 'runtime'));
         $this->assertSame(['SELECT', 'INSERT', 'UPDATE', 'DELETE'], $matrix->tablePrivileges('cache_locks', 'runtime'));
         $this->assertSame([], $matrix->tablePrivileges('migrations', 'runtime'));
         $this->assertSame(['SELECT'], $matrix->tablePrivileges('migrations', 'backup'));
         $this->assertSame([], $matrix->updateColumns('cache'));
         $this->assertSame([], $matrix->sequences());
+
+        // TASK-006 (SCHEMA section 10).
+        $this->assertSame(['SELECT', 'INSERT'], $matrix->tablePrivileges('users', 'runtime'));
+        $this->assertSame(['display_name', 'email', 'password', 'role_operations_admin', 'role_cashier', 'status', 'deactivated_at', 'anonymized_at', 'version', 'updated_at'], $matrix->updateColumns('users'));
+        $this->assertSame(['SELECT', 'INSERT', 'UPDATE', 'DELETE'], $matrix->tablePrivileges('sessions', 'runtime'));
+        $this->assertSame(['SELECT', 'INSERT', 'UPDATE', 'DELETE'], $matrix->tablePrivileges('password_reset_tokens', 'runtime'));
+        $this->assertSame(['SELECT', 'INSERT'], $matrix->tablePrivileges('audit_events', 'runtime'));
+        $this->assertSame(['SELECT', 'INSERT', 'DELETE'], $matrix->tablePrivileges('security_log_entries', 'runtime'));
+
+        foreach (array_keys($matrix->tables()) as $table) {
+            $this->assertSame($table === 'security_log_entries', $matrix->policies($table) !== [], $table);
+        }
+
+        $this->assertSame([
+            'security_log_entries_add' => ['command' => 'INSERT', 'using' => null, 'check' => 'true'],
+            'security_log_entries_read' => ['command' => 'SELECT', 'using' => 'true', 'check' => null],
+            'security_log_entries_retention' => ['command' => 'DELETE', 'using' => "(occurred_at < (now() - '8760:00:00'::interval))", 'check' => null],
+        ], $matrix->policies('security_log_entries'));
+    }
+
+    public function test_row_security_belongs_to_a_table_of_class_l_with_a_delete_policy(): void
+    {
+        $retention = ['retention' => ['command' => 'DELETE', 'using' => '(true)', 'check' => null]];
+
+        $this->assertRefused(['t' => ['class' => 'L', 'runtime' => ['select' => true, 'delete' => true]]], 'only such a table, has row security');
+        $this->assertRefused(['t' => ['class' => 'E', 'runtime' => ['select' => true], 'row_security' => $retention]], 'only such a table, has row security');
+        $this->assertRefused(['t' => ['class' => 'L', 'runtime' => ['select' => true], 'row_security' => ['read' => ['command' => 'SELECT', 'using' => 'true', 'check' => null]]]], 'needs a DELETE policy');
+        $this->assertRefused(['t' => ['class' => 'L', 'runtime' => ['select' => true], 'row_security' => ['all' => ['command' => 'ALL', 'using' => 'true', 'check' => null]]]], 'command (SELECT, INSERT or DELETE)');
+        $this->assertRefused(['t' => ['class' => 'L', 'runtime' => ['select' => true], 'row_security' => ['add' => ['command' => 'INSERT', 'using' => 'true', 'check' => null], ...$retention]]], 'WITH CHECK expression for INSERT');
+        $this->assertRefused(['t' => ['class' => 'L', 'runtime' => ['select' => true], 'row_security' => ['retention' => ['command' => 'DELETE', 'using' => null, 'check' => 'true']]]], 'WITH CHECK expression for INSERT');
+        $this->assertRefused(['t' => ['class' => 'L', 'runtime' => ['select' => true], 'row_security' => ['Retention' => $retention['retention']]]], 'Not a name of this schema');
     }
 
     public function test_a_matrix_within_the_classes_is_read(): void
@@ -46,7 +77,7 @@ final class PrivilegeMatrixTest extends TestCase
             'users' => ['class' => 'M', 'runtime' => ['select' => true, 'insert' => true, 'update' => ['display_name', 'version']]],
             'stock_movements' => ['class' => 'F', 'runtime' => ['select' => true, 'insert' => true]],
             'barcode_active_mappings' => ['class' => 'P', 'runtime' => ['select' => true, 'insert' => true, 'delete' => true]],
-            'security_log_entries' => ['class' => 'L', 'runtime' => ['select' => true, 'insert' => true, 'delete' => true]],
+            'security_log_entries' => ['class' => 'L', 'runtime' => ['select' => true, 'insert' => true, 'delete' => true], 'row_security' => ['retention' => ['command' => 'DELETE', 'using' => '(true)', 'check' => null]]],
             'backup_runs' => ['class' => 'F', 'runtime' => ['select' => true], 'backup' => ['insert' => true]],
         ], ['sale_number_seq' => ['runtime' => ['usage' => true]]]);
 

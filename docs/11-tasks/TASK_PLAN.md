@@ -73,8 +73,8 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-003](tasks/TASK-003-kernel-localization.md) | Shared kernel, formatting and localization | 1 | P | M | A | TASK-001 | — | `DONE` |
 | [TASK-004](tasks/TASK-004-database-foundation.md) | Database foundation, roles and test harness | 1 | P | L | A | TASK-001, TASK-003 | — | `DONE` |
 | [TASK-005](tasks/TASK-005-design-system.md) | Design system and frontend foundation | 1 | P | L | B | TASK-002, TASK-003 | GATE-CC1 | `DONE` |
-| [TASK-006](tasks/TASK-006-authentication.md) | Authentication, one-time links, audit and security log | 2 | P | L | A | TASK-004, TASK-005 | — | `READY` |
-| [TASK-007](tasks/TASK-007-authorization-shell.md) | Authorization framework, security baseline and application shell | 2 | P | L | A | TASK-006 | — | `TODO` |
+| [TASK-006](tasks/TASK-006-authentication.md) | Authentication, one-time links, audit and security log | 2 | P | L | A | TASK-004, TASK-005 | — | `DONE` |
+| [TASK-007](tasks/TASK-007-authorization-shell.md) | Authorization framework, security baseline and application shell | 2 | P | L | A | TASK-006 | — | `READY` |
 | [TASK-008](tasks/TASK-008-command-platform.md) | Command platform (server) | 2 | P | L | A | TASK-007 | — | `TODO` |
 | [TASK-009](tasks/TASK-009-command-client.md) | Command client, recovery and unresolved requests | 2 | P | M | A | TASK-008, TASK-002 | GATE-CC1 | `TODO` |
 | [TASK-010](tasks/TASK-010-bootstrap-profile-media.md) | Installation bootstrap, BusinessProfile and media | 2 | P | L | A | TASK-008, TASK-002 | GATE-CC1 | `TODO` |
@@ -119,7 +119,7 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-049](tasks/TASK-049-release-readiness.md) | Release readiness: staging, UAT and first installation | 10 | R | L | V | TASK-045, TASK-047, TASK-048 | G1, G2, G3, G4, DEVICES, TARGET, GATE-PUBLISH | `TODO` |
 | [TASK-050](tasks/TASK-050-production-pilot.md) | Production release, cutover and pilot acceptance | 10 | R | L | V | TASK-049 | RELEASE, GATE-PUBLISH, G4 | `TODO` |
 
-Totals: `TODO` 44; `READY` 1; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 5; `SUPERSEDED` 0.
+Totals: `TODO` 43; `READY` 1; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 6; `SUPERSEDED` 0.
 
 ## 5. Implementation sequence
 
@@ -176,12 +176,13 @@ With more than one executor the Owner may run Tasks of different lanes at the sa
 | OPEN_ITEMS T-20 | TASK-002, gate GATE-CC1 — RESOLVED (D-099); TASK-047 for the shortcuts and breakpoints of gate DEVICES | INTERACTION_CONTRACTS sections 10 and 11, DC-04 headers, COPY_DECK findings F-01 to F-05, `PROJECTION_REBUILT`, the close-refusal message |
 | OPEN_ITEMS T-21 | TASK-013 | A key rotation that can finish (BACKUP_RECOVERY BKP-22) |
 | OPEN_ITEMS T-22 | TASK-013 | Capacity of the free allowance with staging counted |
-| OPEN_ITEMS T-23 | TASK-006; its consequences in TASK-013 (the dump) and TASK-038 (the cleanup) | Database enforcement of the 365-day retention of the security log |
+| OPEN_ITEMS T-23 | TASK-006 — RESOLVED, by row security (SCHEMA section 5.4); its consequences in TASK-013 (the dump, with `--enable-row-security`) and TASK-038 (the cleanup) | Database enforcement of the 365-day retention of the security log |
 | OPEN_ITEMS T-24 | RESOLVED in RF-7 (D-090) | The deadline of N-12 now reads: before TASK-001 |
 | OPEN_ITEMS T-25 | A change control before TASK-039; TASK-047 or an earlier P7 change control | COPY_DECK section 22.2: statements that later decisions overtook, among them four system-status items instead of five in RELEASE_PROCESS and the contract of TASK-039 |
 | OPEN_ITEMS T-26 | TASK-008 | The error body of RT-07 never carries Laravel's English validation summary (AC-008-08) |
 | OPEN_ITEMS T-27 | TASK-008, with TASK-006 and TASK-015 | The trimming of input against the database's `[[:space:]]` (SCH-14; TASK-004 finding F-2) |
 | OPEN_ITEMS T-28 | TASK-012 (worker pool); gate TARGET (proxy settings) | The two duties of TR-TIME-03 named for the foundation Task (TASK-004 review finding R-22) |
+| OPEN_ITEMS T-29 | A change control of COPY_DECK before TASK-009 and TASK-011 | A key that is both a text and the parent of other keys: the role descriptions and the command families (TASK-006 finding F-3) |
 | OPEN_ITEMS N-12 | Gate GATE-BRANCH | RESOLVED as to the model (D-092): `develop` for implementation, `main` for releases; the creation of `develop` needs the Owner's own authorization, before TASK-001 |
 | OPEN_ITEMS N-09, N-10 | Gate GATE-PUBLISH | Before the first push of implementation work, and so before TASK-001 is `DONE` |
 | OPEN_ITEMS N-04 | Gate GATE-P11 | RESOLVED (D-092): the complete AICWDF-4.3 text is not added to the repository; the binding subset stays in `docs/00-governance` |
@@ -193,7 +194,7 @@ With more than one executor the Owner may run Tasks of different lanes at the sa
 | Reading: the `labels` and `stock` contexts of RD-01 | TASK-015 | INTERACTION_CONTRACTS section 3.1 lists them; ROUTE_CONTRACTS RD-01 does not; no control of section 9 uses them |
 | Reading: the backup store's usage on the system status | TASK-002 (the Owner's answer), TASK-039 | ADR-010 item 11 and OPERATIONS_RUNBOOK section 5 differ |
 | Reading: the shop's name and accent in the shell | TASK-010 | SECURITY_MODEL SEC-CH-02 does not name them; DESIGN_SYSTEM section 7.2 shows them |
-| Reading: the mechanism of T-23 | TASK-006 | SCHEMA SCH-06 excludes triggers, rules, stored procedures and `SECURITY DEFINER` functions |
+| Reading: the mechanism of T-23 | TASK-006 — settled: a row security policy, which SCH-06 now names as a privilege | SCHEMA SCH-06 excludes triggers, rules, stored procedures and `SECURITY DEFINER` functions |
 
 ## 8. Change control of the baseline
 

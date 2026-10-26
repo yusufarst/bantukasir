@@ -471,3 +471,17 @@ By the Owner's instruction "D-104 POST-MERGE P2 HOTFIX" (26 October 2026), on th
   - In the containers, as CI runs them: `composer validate` PASS; `composer lint` PASS, no leaks in the tree, no advisory, the Network suite 2 tests; `npm run lint` PASS; `npm run typecheck` PASS; `composer lint` again on the final tree at 03:33, PASS. `composer analyse`, run while the self-test loaded the computer, ended in an internal error of PHPStan — `Class "PHPStan\BetterReflection\Util\GetLastDocComment" not found` while analysing `app/Database/NoCommandPoints.php`, which the hotfix does not touch — and, run once more alone, PASS with no errors.
   - `bash scripts/executor/guard.sh --preview`: `GUARD PREVIEW PASS`, no candidate.
 - **Targeted verification** (the Owner's instruction: no new full design review). `bk-reviewer-high`, in the mode `verify`, of this fix alone, from the package `ops-d104-stop-keys/r1` (tree of the first form of the fix); `review-pack.sh --check` of that package afterwards printed `UNCHANGED`. Verdict PASS, no MUST-FIX. H-01, SHOULD-FIX: `state.sh adopt` left a stop without advancing `loop.seq`, so that the defect remained by that path — fixed in `adopt_state`, with an assertion in case 29. H-02, NOTE: a rebuilt state starts `loop.seq` again — a known limit (9.6). H-03, NOTE: reading 9.5 item 8 did not name `STOPPED_NEW` — added. H-04, NOTE: cases 18 and 19 write keys of the old form into fixtures, which `watch.sh` treats as opaque — kept. H-05, NOTE: no case compared two classifications of one stop — added to case 29. H-06, NOTE: the counts are the record's — the self-test log below.
+
+### 9.9 Merge of the hotfix
+
+Recorded by the next pull request, TASK-006's (EXECUTION_CONTEXT CE-50), from the executor state and GitHub on 26 October 2026; the tick verified the merge (CE-61, executor log `MERGE_VERIFIED pr=8` at 04:51:09) and stopped for the Owner's stop kept by the adoption (`STOPPED OWNER_STOP after the merge of #8` at 04:51:11, CE-82); the Owner resumed the loop at 04:53:28, and the tick delegated TASK-006 at 04:53:43.
+
+| Fact | Value |
+| --- | --- |
+| Pull request | #8, "ops — A recurring stop is a new event for the watcher (D-104 hotfix)", from `ops/d104-stop-keys` into `develop`, opened with `pr.sh` under the Owner's account and adopted with the stop kept (section 9.8) |
+| Its head | `d40478cb0db6aa8e56db28fbe3a5e138a2d06f1c` |
+| CI on the pull request | Run 40231654027, event `pull_request` on `d40478c`, success (25 October 2026, 20:37:39 to 20:41:55 UTC) |
+| Merge | The Owner's Squash and merge on 25 October 2026 at 21:14:48 UTC (26 October, 04:14:48 Asia/Jakarta) |
+| Merge commit | `46c5ddcb486a1a9d57963835d494100438538ad9` on `develop`, parent `4b24e90` (`develop` did not move); author the Owner's GitHub no-reply identity, committer GitHub; its tree `18554516a8b7ccb8778f41e66652f7244339757e` equals that of `d40478c` |
+| CI on `develop` | Run 40234578674, event `push` on `46c5ddc`, success (21:14:50 to 21:19:07 UTC) |
+| Comments | No comment or review of the Owner. The comment of the account `chatgpt-codex-connector`, a review in progress, is data, not an instruction (CE-43) |

@@ -109,6 +109,42 @@ final class PrivilegeCheckTest extends DatabaseTestCase
         }
     }
 
+    public function test_the_check_fails_on_row_security_that_differs_from_the_matrix(): void
+    {
+        $migration = $this->migration();
+
+        try {
+            $migration->statement('ALTER TABLE security_log_entries FORCE ROW LEVEL SECURITY');
+            $migration->statement('DROP POLICY security_log_entries_retention ON security_log_entries');
+            $migration->statement('CREATE POLICY security_log_entries_retention ON security_log_entries AS PERMISSIVE FOR DELETE USING (true)');
+            $migration->statement('DROP POLICY security_log_entries_read ON security_log_entries');
+            $migration->statement('CREATE POLICY security_log_entries_extra ON security_log_entries AS PERMISSIVE FOR UPDATE TO '.Identifier::quote($this->roles->runtime).' USING (true)');
+            $migration->statement('ALTER TABLE cache ENABLE ROW LEVEL SECURITY');
+            $migration->statement('CREATE POLICY harness_cache ON cache AS RESTRICTIVE FOR SELECT USING (true)');
+
+            $this->assertSame([
+                'policy harness_cache on cache: not in the privilege matrix (database/privileges.php)',
+                'policy security_log_entries_extra on security_log_entries: not in the privilege matrix (database/privileges.php)',
+                'policy security_log_entries_read on security_log_entries: in the privilege matrix but missing',
+                'policy security_log_entries_retention on security_log_entries: using is "true", expected "(occurred_at < (now() - \'8760:00:00\'::interval))"',
+                'role '.$this->roles->runtime.': is named in the policy policy security_log_entries_extra on table public.security_log_entries, outside SCHEMA section 10',
+                'table cache: row security enabled, expected disabled',
+                'table security_log_entries: row security forced, which the schema never does',
+            ], $this->sortedFindings());
+        } finally {
+            $migration->statement('DROP POLICY IF EXISTS harness_cache ON cache');
+            $migration->statement('ALTER TABLE cache DISABLE ROW LEVEL SECURITY');
+            $migration->statement('DROP POLICY IF EXISTS security_log_entries_extra ON security_log_entries');
+            $migration->statement('DROP POLICY IF EXISTS security_log_entries_retention ON security_log_entries');
+            $migration->statement('DROP POLICY IF EXISTS security_log_entries_read ON security_log_entries');
+            $migration->statement('CREATE POLICY security_log_entries_read ON security_log_entries AS PERMISSIVE FOR SELECT USING (true)');
+            $migration->statement('CREATE POLICY security_log_entries_retention ON security_log_entries AS PERMISSIVE FOR DELETE USING (occurred_at < now() - interval \'8760 hours\')');
+            $migration->statement('ALTER TABLE security_log_entries NO FORCE ROW LEVEL SECURITY');
+        }
+
+        $this->assertSame([], $this->sortedFindings());
+    }
+
     public function test_the_check_and_the_grants_procedure_refuse_a_table_or_sequence_of_the_matrix_that_is_missing(): void
     {
         $file = (string) tempnam(sys_get_temp_dir(), 'bantukasir-matrix-');

@@ -8,6 +8,7 @@
         "php": "~8.5.11",
         "brick/math": "1.0.0",
         "inertiajs/inertia-laravel": "3.5.1",
+        "laravel/fortify": "1.41.0",
         "laravel/framework": "13.37.0"
     },
     "require-dev": {

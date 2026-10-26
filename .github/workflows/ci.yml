@@ -5,8 +5,10 @@
 # by digest as the db service container, Node.js and Playwright. It holds no
 # secret of any environment and publishes nothing; the only credential is the
 # token GitHub issues to the workflow, read-only and not kept in the checkout.
-# No scheduled trigger is used. The L5 step is the Playwright smoke test until
-# TASK-006 adds the sign-in path (EXECUTION_CONTEXT EXC-34).
+# No scheduled trigger is used. The L5 step runs every browser test, the
+# sign-in path of TASK-006 among them (EXECUTION_CONTEXT EXC-34), on the local
+# database, which the migrations bring to the schema first, as the migration
+# role, as on the Owner's machine (compose.yaml).
 name: ci
 
 on:
@@ -89,6 +91,9 @@ jobs:
 
             - name: npm run build
               run: docker compose run --rm node npm run build
+
+            - name: Migrate the local database of the browser tests
+              run: docker compose exec -T app php artisan migrate --database=pgsql_migration --force
 
             - name: npm run test:e2e
               run: docker compose run --rm playwright npm run test:e2e

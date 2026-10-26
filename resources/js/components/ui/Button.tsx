@@ -188,6 +188,7 @@ export function ButtonLink({
     size = 'md',
     icon,
     className,
+    onClick,
 }: {
     label: string;
     href: string;
@@ -195,10 +196,13 @@ export function ButtonLink({
     size?: Exclude<ButtonSize, 'final'>;
     icon?: IconName;
     className?: string;
+    /** A guard before the page is left, such as the unsaved-changes dialog (UXS-45). */
+    onClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
 }) {
     return (
         <a
             href={href}
+            onClick={onClick}
             className={cn('bk-btn', `bk-btn--${variant}`, size === 'lg' && 'bk-btn--lg', size === 'xl' && 'bk-btn--xl', className)}
             data-variant={variant}
         >

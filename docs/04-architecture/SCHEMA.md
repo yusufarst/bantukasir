@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-3B under D-059, 5 October 2026 (Asia/Jakarta); amended in RF-5 under D-087, 18 October 2026: command request receipts and restore reconciliation (section 5.3), the onboarding states and the correction of onboarding entries before release (section 5.7), one line per product in a Sale (section 5.9), guards G-22 to G-26; amended in RF-6 under D-088, 18 October 2026 (Asia/Jakarta): the retention of request receipts and of the security log, the tables of section 5.12, guard G-27, the backup role (SCH-42), the operator (SCH-46) and the RF-6 items of section 16; corrected under D-089, 18 October 2026: the marking and settlement of request receipts (section 5.3, G-27, sections 9, 10 and 11; finding B-2 of the RF-6 review); section 15 extended by TASK-004, 24 October 2026: the facts proven on the pinned versions (SCH-52), with no difference from this document |
+| Status | CURRENT — written in RF-3B under D-059, 5 October 2026 (Asia/Jakarta); amended in RF-5 under D-087, 18 October 2026: command request receipts and restore reconciliation (section 5.3), the onboarding states and the correction of onboarding entries before release (section 5.7), one line per product in a Sale (section 5.9), guards G-22 to G-26; amended in RF-6 under D-088, 18 October 2026 (Asia/Jakarta): the retention of request receipts and of the security log, the tables of section 5.12, guard G-27, the backup role (SCH-42), the operator (SCH-46) and the RF-6 items of section 16; corrected under D-089, 18 October 2026: the marking and settlement of request receipts (section 5.3, G-27, sections 9, 10 and 11; finding B-2 of the RF-6 review); section 15 extended by TASK-004, 24 October 2026: the facts proven on the pinned versions (SCH-52), with no difference from this document; amended by TASK-006, 26 October 2026: the row security that holds the retention of the security log in the database, SCH-06 and sections 5.4 and 10 (OPEN_ITEMS T-23) |
 | Phase | P4 — logical database schema; with [ARCHITECTURE](ARCHITECTURE.md) and [STACK_AND_MODULES](STACK_AND_MODULES.md) it completes P4 |
 | Replaces | `docs/04-architecture/legacy/02-ARCHITECTURE.md` §Constraint database and the schema-delivery part of §Payment extension boundary dan schema delivery; `docs/04-architecture/legacy/P4-ARCHITECTURE.md` §Schema, immutability dan constraints ([LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 9) |
 | Decisions | D-006, D-032 to D-038, D-042 to D-054, D-060 to D-062, D-067 to D-074, D-077, D-086, D-087; [ADR-006](../adr/ADR-006-exact-numbers.md), [ADR-007](../adr/ADR-007-command-identity-and-idempotency.md), [ADR-008](../adr/ADR-008-cost-allocation-representation.md), [ADR-009](../adr/ADR-009-command-receipts-and-reconciled-outcomes.md) |
@@ -31,7 +31,7 @@ PostgreSQL DDL appears in this document **only as specification text** (plan dec
 | SCH-03 | **Constraint first.** Every rule that one row, one unique index or one foreign key can hold is held by the database, so that a defect in application code cannot store a row that breaks it. A rule over several rows is held by a guard under the locks of TECHNICAL_RULES section 7 (section 8). A check constraint never reads another row or table, because PostgreSQL requires check constraints to depend only on the row being checked. | BR-DOM-05, D-006; PostgreSQL documentation (section 15) |
 | SCH-04 | **Exact numbers.** Money is `bigint` whole rupiah; quantities and cost values are `numeric` with a fixed scale; every numeric column has an explicit lower and upper bound; no floating-point type is used (section 3.2). | ADR-006, BR-NUM-01 to BR-NUM-04 |
 | SCH-05 | **One installation, one business.** No table has a tenant, outlet, branch, warehouse, location or reservation column. | BR-DOM-01, D-038 |
-| SCH-06 | **No logic in the database.** No trigger, rule, stored procedure or `SECURITY DEFINER` function enforces this schema or carries business behaviour. Enforcement is by constraints, privileges and guards in the Actions, so that every effect is visible in application code and migrations. | ARC-04, TECHNICAL_RULES TR-TX-02 |
+| SCH-06 | **No logic in the database.** No trigger, rule, stored procedure or `SECURITY DEFINER` function enforces this schema or carries business behaviour. Enforcement is by constraints, privileges and guards in the Actions, so that every effect is visible in application code and migrations. A row security policy that narrows a privilege to the rows a predicate admits, written in a migration like a check constraint, is a privilege in this sense; the only one is the retention of the security log (section 5.4). | ARC-04, TECHNICAL_RULES TR-TX-02 |
 | SCH-07 | **Time.** Every fact time is `timestamptz` set by the server from the application clock in UTC; a business date is a `date` in Asia/Jakarta computed by the server; a client-supplied time is never a fact. | BR-NUM-05, ARC-50, TR-HTTP-08 |
 | SCH-08 | **Retention by class.** Retained business and audit facts are never hard-deleted or rewritten. Only the ephemeral technical data whose lifecycle an existing decision sets may expire or be cleaned up (section 4). | D-042, D-044, D-054, BR-KEEP-01 to BR-KEEP-08, PDS §1 |
 | SCH-09 | **Foreign keys follow the domain relationships.** A foreign key may point across module boundaries in either direction (for example a stock movement to the SaleLine it issues). It creates no code dependency: only the owning module writes its tables, and Actions orchestrate modules. | DOMAIN_MODEL section 4, STK-11, STK-12 |
@@ -351,7 +351,7 @@ Written by the status check (reports, in a transaction of its own after the `EPO
 | `actor_kind`, `actor_user_id`, `actor_process`; `actor_display_name` | | Section 3.4; for a process, its name |
 | `operator_note` | `text` null | up to 1,000; only when `actor_kind = 'OPERATOR_PROCEDURE'` (SECURITY_MODEL section 14) |
 | `command_id` | `bigint` null | Null for authentication endpoints and operator procedures, which have no envelope (TR-CMD-07) |
-| `subject_type`, `subject_id` | `text`, `bigint` null | The primary record; both null or both set |
+| `subject_type`, `subject_id` | `text`, `bigint` null | The primary record; both null or both set; `subject_type` matches `^[a-z][a-z0-9_]{0,63}$`, as `actor_process` does |
 | `product_id`, `cash_session_id` | `bigint` null | Filters (BR-AUD-04) |
 | `reference` | `text` null | up to 100; a document number or reference, for filtering |
 | `reason` | `text` null | up to 1,000 |
@@ -360,6 +360,7 @@ Written by the status check (reports, in a transaction of its own after the `EPO
 
 - Written in the transaction of the change it records, and rolled back with it (BR-AUD-01). The only events written outside a command's transaction are those of section 5.8 (`cost_incomplete_marks`) and of operator procedures, which have no envelope.
 - Never contains a password, link token, secret, session identifier or full payload (BR-AUD-05).
+- A nullable text column with a maximum length, here and in `security_log_entries`, holds at least one character: null is the absence, never an empty text (TASK-006).
 - Runtime privileges: `SELECT`, `INSERT` (SEC-LOG-04).
 
 **`security_log_entries`** — class L. The security log (SEC-LOG-03).
@@ -371,14 +372,16 @@ Written by the status check (reports, in a transaction of its own after the `EPO
 | `actor_kind` | `text` | `USER`, `ANONYMOUS` (before sign-in), `OPERATOR_PROCEDURE`, `SCHEDULED_COMMAND` |
 | `actor_user_id`, `actor_process` | null | As section 3.4, both null for `ANONYMOUS` |
 | `subject_user_id` | `bigint` null | The account the event concerns, when known |
-| `request_id` | `text` | up to 64 |
-| `route_name` | `text` null | up to 200 |
+| `request_id` | `text` | 1–64 |
+| `route_name` | `text` null | 1–200 |
 | `outcome_code` | `text` | `^[A-Z][A-Z0-9_]{0,63}$` |
 | `client_address` | `inet` null | The client address, taken only from the trusted proxy chain (ADR-003 item 10; SECURITY_MODEL section 11); null when no request carries the event (an operator procedure or a scheduled command) |
 
 - Written by the request after its business transaction has ended, committed or rolled back, and never inside it (SEC-LOG-03, TR-TX-02).
 - It stores no typed identifier, password, token, cookie, session identifier, user agent or payload (SEC-LOG-03, SEC-CH-08). The client address is personal data and is kept only as long as the log itself (SEC-LOG-05). Only the Owner reads it (CAP-32).
 - Runtime privileges: `SELECT`, `INSERT`, `DELETE`. Its retention is 365 days from `occurred_at` (SEC-LOG-05; D-088): the scheduled housekeeping removes older entries in bounded batches and never a younger one; no other path deletes an entry. The standard-output copy of each entry follows the platform's log rotation ([ENVIRONMENTS](../09-operations/ENVIRONMENTS.md) section 14).
+- **The database holds the retention** (OPEN_ITEMS T-23, resolved by TASK-006). Row security is enabled on the table, not forced, with three permissive policies that name no role (`PUBLIC`): `security_log_entries_read` for `SELECT` using `true`, `security_log_entries_add` for `INSERT` with the check `true`, and `security_log_entries_retention` for `DELETE` using `occurred_at < now() - interval '8760 hours'`. A `DELETE` by the runtime role therefore sees only the entries older than 365 days — 8,760 hours, a fixed length that no session time zone or change of daylight saving time can shorten — so a removal of a younger entry matches no row and removes nothing. No policy admits an `UPDATE`, which the runtime role does not hold either. The migration role owns the table and is not subject to the policies; it deletes nothing. The privilege check (`db:check-privileges`) compares the row security of every table and these policies with `database/privileges.php` and fails on any difference.
+- **The backup dump** (TASK-013). The policies apply to the backup role as well. `pg_dump` sets `row_security` off by default, and a role subject to row security then fails on this table ("query would be affected by row-level security policy"); the dump runs with `--enable-row-security`, under which the read policy admits every entry and the dump is complete. PostgreSQL also refuses `COPY FROM` into this table for a role subject to its policies, so a restore loads it as the owner, the migration role, as [BACKUP_RECOVERY](../09-operations/BACKUP_RECOVERY.md) RB-01 step 9 restores every table. TASK-006 proved both on PostgreSQL 18.6 ([evidence](../11-tasks/evidence/TASK-006.md)).
 
 ### 5.5 Media
 
@@ -1554,7 +1557,7 @@ Runtime privileges per table (S = `SELECT`, I = `INSERT`, U = `UPDATE` of the li
 | `command_request_receipts` | E | ✓ | ✓ | `outcome`, `outcome_at`, `held_code`, `settled_by_command_id`, `settled_by_user_id` | ✓ (resolved rows, by housekeeping) |
 | `stale_intent_reports`, `intent_reconciliations` | F | ✓ | ✓ | — | — |
 | `audit_events` | F | ✓ | ✓ | — | — |
-| `security_log_entries` | L | ✓ | ✓ | — | ✓ (entries older than 365 days, by housekeeping) |
+| `security_log_entries` | L | ✓ | ✓ | — | ✓ (entries older than 365 days, by housekeeping; held by the row security of section 5.4) |
 | `stored_files` | F | ✓ | ✓ | — | — |
 | `categories` | M | ✓ | ✓ | `name`, `active`, `version`, `updated_at` | — |
 | `products` | M | ✓ | ✓ | `sku`, `name`, `category_id`, `brand`, `base_unit`, `quantity_precision`, `current_price_revision_id`, `minimum_stock`, `active`, `photo_file_id`, `version`, `updated_at` | — |
