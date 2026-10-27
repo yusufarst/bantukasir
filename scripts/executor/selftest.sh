@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # scripts/executor/selftest.sh: the self-test of continuous execution (D-101,
 # D-104; EXECUTION_CONTEXT section 19: CE-03, CE-10 to CE-13, CE-20 to CE-24,
-# CE-30 to CE-32, CE-40 to CE-43, CE-60 to CE-62, CE-70 to CE-72, CE-82; D-105).
+# CE-30 to CE-32, CE-40 to CE-43, CE-60 to CE-62, CE-70 to CE-72, CE-82; D-105, D-107).
 #
 # Usage: bash scripts/executor/selftest.sh          the cases 1 to 30, in a sandbox
 #        bash scripts/executor/selftest.sh --host   the host probes (a) to (f), on Windows;
@@ -349,7 +349,7 @@ fx_comments issue_comments_7 101 yusufarst "old one" 205 someone "old two"
 fx_comments review_comments_7 301 yusufarst "old review comment"
 fx_comments reviews_7 401 yusufarst "old review"
 run state.sh adopt --pr 7 --kind task
-[ "$RC" = 0 ] && [ "$(stget loop.phase)" = AWAIT_MERGE ] && [ "$(stget pr.lastIssueCommentId)" = 205 ] && [ "$(stget pr.lastReviewCommentId)" = 301 ] && [ "$(stget pr.lastReviewId)" = 401 ] && [ "$(stget task.agent)" = bk-executor-xhigh ] && pass "1 adopt works without a state and records the comment identifiers" || failc "1 adopt without a state" "$OUT"
+[ "$RC" = 0 ] && [ "$(stget loop.phase)" = AWAIT_MERGE ] && [ "$(stget pr.lastIssueCommentId)" = 205 ] && [ "$(stget pr.lastReviewCommentId)" = 301 ] && [ "$(stget pr.lastReviewId)" = 401 ] && [ "$(stget task.agent)" = bk-executor-high ] && pass "1 adopt works without a state and records the comment identifiers" || failc "1 adopt without a state" "$OUT"
 cp "$SD/state" "$SB/state.adopted"
 mklock "" "$NOW" "$NOW"
 run state.sh adopt --pr 7 --kind task
@@ -372,7 +372,7 @@ run tick.sh
 body="$(printf 'Tolong perbaiki dua hal:\n  - baris kedua, berindentasi\n\nbaris terakhir: nilai = 100%%')"
 fx_comments issue_comments_7 209 yusufarst "$body"
 run tick.sh
-if first | grep -qE '^RUN fix TASK-003 agent=bk-executor-xhigh review=bk-reviewer-xhigh verify=bk-reviewer-high effort=xhigh token=[0-9a-f]{32}$' && [[ "$OUT" == *"$body"* ]] && printf '%s\n' "$OUT" | grep -q 'someone-else'; then pass "2 a multi-line Owner comment gives RUN fix with its text intact"; else failc "2 RUN fix" "$OUT"; fi
+if first | grep -qE '^RUN fix TASK-003 agent=bk-executor-high review=bk-reviewer-high verify=bk-reviewer-high effort=high token=[0-9a-f]{32}$' && [[ "$OUT" == *"$body"* ]] && printf '%s\n' "$OUT" | grep -q 'someone-else'; then pass "2 a multi-line Owner comment gives RUN fix with its text intact"; else failc "2 RUN fix" "$OUT"; fi
 [ "$(stget loop.phase)" = CI ] && [ -e "$SD/lock" ] && pass "2 RUN fix sets CI and holds the lock" || failc "2 RUN fix state"
 await_reset
 : > "$FIX/gh/issue_comments_7"
@@ -406,7 +406,7 @@ run tick.sh
 expect_first "3 CI on develop pending gives NOOP DEVELOP_CI_PENDING" '^NOOP DEVELOP_CI_PENDING '
 fx_ci "$M" push completed success
 run tick.sh
-expect_first "3 then success gives RUN start TASK-004 with the agents of the table" '^RUN start TASK-004 agent=bk-executor-xhigh review=bk-reviewer-xhigh verify=bk-reviewer-high effort=xhigh token=[0-9a-f]{32}$'
+expect_first "3 then success gives RUN start TASK-004 with the agents of the table" '^RUN start TASK-004 agent=bk-executor-high review=bk-reviewer-high verify=bk-reviewer-high effort=high token=[0-9a-f]{32}$'
 if [ "$(stget merge.lastPr)" = 7 ] && [ "$(stget merge.lastSha)" = "$M" ] && [ "$(g rev-parse develop)" = "$M" ]; then expect_out "3 the merge is recorded, local develop fast-forwarded, the delegation names the previous merge" "Previous merge to record \(CE-50\): pull request #7"; else failc "3 the merge is recorded, local develop fast-forwarded, the delegation names the previous merge" "$OUT"; fi
 run tick.sh
 expect_first "4 a second tick right after a RUN start gives NOOP LOCKED" '^NOOP LOCKED ACTIVE '
@@ -476,13 +476,13 @@ run tick.sh
 expect_first "3 after resume the next tick gives RUN start" '^RUN start TASK-004 '
 
 merge_setup
-fx_comments issue_comments_7 601 yusufarst "/effort high"
+fx_comments issue_comments_7 601 yusufarst "/effort xhigh"
 run tick.sh
 M="$(simulate_merge "$OEMAIL")"
 merged_fixtures "$M" completed success
 run tick.sh
-expect_first "3 /effort high sets the executor bk-executor-high and keeps the review agents of the table" '^RUN start TASK-004 agent=bk-executor-high review=bk-reviewer-xhigh verify=bk-reviewer-high effort=high '
-if [ -z "$(stget owner.effortOverride)" ]; then expect_out "3 the /effort override is then cleared and its source named" "^Effort: high, from the Owner's /effort comment, issue comment 601$"; else failc "3 the /effort override is then cleared and its source named" "$OUT"; fi
+expect_first "3 /effort xhigh sets the executor bk-executor-xhigh above the table and keeps the review agents of the table" '^RUN start TASK-004 agent=bk-executor-xhigh review=bk-reviewer-high verify=bk-reviewer-high effort=xhigh '
+if [ -z "$(stget owner.effortOverride)" ]; then expect_out "3 the /effort override is then cleared and its source named" "^Effort: xhigh, from the Owner's /effort comment, issue comment 601$"; else failc "3 the /effort override is then cleared and its source named" "$OUT"; fi
 
 # A tick interrupted after the marker merge.lastPr and before the evidence:
 # the merge is verified again, not taken as recorded.
@@ -625,6 +625,8 @@ run tick.sh
 expect_first "5 a READY row with a dependency not DONE gives STOPPED PLAN_INCONSISTENT" '^STOPPED PLAN_INCONSISTENT TASK-004 dependency TASK-003 is TODO;'
 run tick.sh --explain TASK-046
 expect_out "5 the gate \"operator named\" counts as unsatisfied" 'gate operator named not satisfied;'
+run tick.sh --explain TASK-004
+if printf '%s\n' "$OUT" | grep -qx 'EXECUTOR bk-executor-high effort=high' && printf '%s\n' "$OUT" | grep -qx 'REVIEW bk-reviewer-high effort=high' && printf '%s\n' "$OUT" | grep -qx 'VERIFY bk-reviewer-high effort=high'; then pass "5 --explain names High and its agents for a class-A Task not named in the table (D-107)"; else failc "5 --explain of a class-A Task (D-107)" "$OUT"; fi
 
 # ---------------------------------------------------------------- 6. tick, environment
 setup
@@ -685,12 +687,34 @@ real_ctx="$REPO_ROOT/docs/11-tasks/EXECUTION_CONTEXT.md"
 want="$(awk '/^## 4\./ { s = 1; next } /^## / { s = 0 } s && /^\| \[TASK-[0-9]+\]/ && /\| `READY` \|[[:space:]]*$/' "$real_plan" | grep -oE '^\| \[TASK-[0-9]+\]' | grep -oE 'TASK-[0-9]+' | sort | head -n 1 || true)"
 OUT="$(cd "$REPO_ROOT" && . "$HERE/lib.sh" && select_task "$real_plan")"
 case "$OUT" in "OK $want|"*) pass "7 the real plan selects its lowest-numbered READY Task, $want" ;; *) failc "7 the real plan selects its lowest-numbered READY Task, ${want:-none found}" "$OUT" ;; esac
-for spec in "TASK-004 bk-executor-xhigh bk-reviewer-xhigh bk-reviewer-high" "TASK-005 bk-executor-high bk-reviewer-high bk-reviewer-high" "TASK-021 bk-executor-max bk-reviewer-max bk-reviewer-xhigh" "TASK-044 bk-executor-high bk-reviewer-high bk-reviewer-high" "TASK-047 bk-executor-medium bk-reviewer-high bk-reviewer-high"; do
+for spec in "TASK-004 bk-executor-high bk-reviewer-high bk-reviewer-high" "TASK-008 bk-executor-high bk-reviewer-high bk-reviewer-high" "TASK-005 bk-executor-high bk-reviewer-high bk-reviewer-high" "TASK-021 bk-executor-max bk-reviewer-max bk-reviewer-xhigh" "TASK-044 bk-executor-high bk-reviewer-high bk-reviewer-high" "TASK-047 bk-executor-medium bk-reviewer-high bk-reviewer-high"; do
     set -- $spec
     got="$(cd "$REPO_ROOT" && . "$HERE/lib.sh" && cl="$(plan_rows "$real_plan" | awk -F'|' -v t="$1" '$1 == t { print $4 }')" && effort_row "$real_ctx" "$1" "$cl" | cut -d'|' -f2-)"
     [ "$got" = "$2|$3|$4" ] && pass "7 $1: $2, $3, $4" || failc "7 $1 agents" "$got"
 done
 set --
+# D-107: the rows Max, XHigh and Medium by name, the highest first; High for
+# every other Task, whatever its class. An XHigh exception named in a copy of
+# the real table picks the XHigh agents.
+x="$(mktemp -d)"
+{
+    printf '## 19. Continuous execution\n\n'
+    awk '/^## 19\./ { s = 1; next } /^## / { s = 0 } s && /^\| (Effort|---|Max|XHigh|High|Medium) /' "$real_ctx" | sed 's/^| XHigh | None at present |/| XHigh | TASK-008, TASK-021, TASK-047 |/'
+} > "$x/ctx"
+for spec in "TASK-008 A xhigh|bk-executor-xhigh|bk-reviewer-xhigh|bk-reviewer-high" "TASK-009 A high|bk-executor-high|bk-reviewer-high|bk-reviewer-high" "TASK-012 B high|bk-executor-high|bk-reviewer-high|bk-reviewer-high" "TASK-021 A max|bk-executor-max|bk-reviewer-max|bk-reviewer-xhigh" "TASK-047 O xhigh|bk-executor-xhigh|bk-reviewer-xhigh|bk-reviewer-high" "TASK-080 A high|bk-executor-high|bk-reviewer-high|bk-reviewer-high"; do
+    set -- $spec
+    got="$(cd "$REPO_ROOT" && . "$HERE/lib.sh" && effort_row "$x/ctx" "$1" "$2")"
+    [ "$got" = "$3" ] && pass "7 D-107 $1 of class $2 with an XHigh row naming TASK-008, TASK-021 and TASK-047: $3" || failc "7 D-107 $1 of class $2" "$got"
+done
+set --
+got="$(cd "$REPO_ROOT" && . "$HERE/lib.sh" && effort_row "$real_ctx" TASK-047 O)"
+[ "$got" = "medium|bk-executor-medium|bk-reviewer-high|bk-reviewer-high" ] && [ "$(cd "$REPO_ROOT" && . "$HERE/lib.sh" && effort_row "$real_ctx" TASK-007 A)" = "high|bk-executor-high|bk-reviewer-high|bk-reviewer-high" ] && pass "7 D-107 the real table: TASK-047 Medium, a class-A Task High" || failc "7 D-107 the real table" "$got"
+bad=""
+for id in TASK-021 TASK-025 TASK-028 TASK-030 TASK-033 TASK-034 TASK-035 TASK-037; do
+    [ "$(cd "$REPO_ROOT" && . "$HERE/lib.sh" && effort_row "$real_ctx" "$id" A)" = "max|bk-executor-max|bk-reviewer-max|bk-reviewer-xhigh" ] || bad="$bad $id"
+done
+[ -z "$bad" ] && pass "7 D-107 the eight Max Tasks keep Max" || failc "7 D-107 Max Tasks not at Max:$bad"
+rm -rf -- "$x"
 
 # ---------------------------------------------------------------- 8. commit.sh
 setup
@@ -1332,7 +1356,7 @@ classify
 expect_class "15 CI green in the phase CI gives WAKE CI_GREEN:<pr>:<head>:<seq>" "^WAKE CI_GREEN:7:$HEADSHA:1 NOOP CI_GREEN pr=7 head=$HEADSHA run=8811$"
 fx_checks "$HEADSHA" "21|Command contract|completed|failure" "23|lint|completed|failure" "12|another app|completed|success"
 classify
-expect_class "15 CI red gives WAKE CI_RED:<pr>:<head>:<highest failed check run>" "^WAKE CI_RED:7:$HEADSHA:23 RUN fix TASK-003 agent=bk-executor-xhigh "
+expect_class "15 CI red gives WAKE CI_RED:<pr>:<head>:<highest failed check run>" "^WAKE CI_RED:7:$HEADSHA:23 RUN fix TASK-003 agent=bk-executor-high "
 fx_checks "$HEADSHA" "11|Command contract|in_progress|"
 classify
 expect_class "15 CI pending gives QUIET NOOP CI_PENDING" "^QUIET NOOP CI_PENDING pr=7 head=$HEADSHA 0 min$"
@@ -1428,7 +1452,7 @@ expect_first "16 then the tick waits for the merge" '^NOOP AWAIT_MERGE pr=7$'
 stset loop.phase CI
 fx_checks "$HEADSHA" "21|Command contract|completed|failure"
 run tick.sh
-if [ "$(stget loop.phase)" = CI ] && [ -e "$SD/lock" ] && [ "$(stget ci.failures)" = 1 ] && [[ "$OUT" == *"Command contract https://github.com/yusufarst/bantukasir/actions/runs/8821/job/21"* ]] && [[ "$OUT" == *"failure 1 of 3 (CE-42)"* ]]; then expect_first "16 red takes the lock and gives RUN fix naming the failing check, failure 1 of 3" '^RUN fix TASK-003 agent=bk-executor-xhigh '; else failc "16 red takes the lock and gives RUN fix naming the failing check, failure 1 of 3" "$OUT"; fi
+if [ "$(stget loop.phase)" = CI ] && [ -e "$SD/lock" ] && [ "$(stget ci.failures)" = 1 ] && [[ "$OUT" == *"Command contract https://github.com/yusufarst/bantukasir/actions/runs/8821/job/21"* ]] && [[ "$OUT" == *"failure 1 of 3 (CE-42)"* ]]; then expect_first "16 red takes the lock and gives RUN fix naming the failing check, failure 1 of 3" '^RUN fix TASK-003 agent=bk-executor-high '; else failc "16 red takes the lock and gives RUN fix naming the failing check, failure 1 of 3" "$OUT"; fi
 dead_holder
 mklock "$DREC" "$NOW" "$(date +%s)"
 run tick.sh
@@ -1535,7 +1559,7 @@ run watch.sh --ack
 expect_first "19 --ack without an event gives NO_EVENT" '^NO_EVENT$'
 KEY="CI_RED:7:$HEADSHA:21"
 run EXECUTOR_POLL_SECONDS=0 EXECUTOR_WATCH_MAX_POLLS=3 watch.sh
-if [ "$OUT" = "BANTUKASIR WATCHER EVENT $KEY — follow EXECUTION_CONTEXT CE-03 — RUN fix TASK-003 agent=bk-executor-xhigh review=bk-reviewer-xhigh verify=bk-reviewer-high effort=xhigh token=DRYRUN" ] && [ ! -e "$WD/lock" ] && grep -q "^[^ ]* EVENT [0-9]* $KEY " "$WD/log" && grep -q "^[0-9]*|$KEY|RUN fix " "$WD/event"; then pass "19 the watcher emits a red CI with exactly its one line, writes the event and releases its lock"; else failc "19 the watcher emits a red CI" "$OUT"; fi
+if [ "$OUT" = "BANTUKASIR WATCHER EVENT $KEY — follow EXECUTION_CONTEXT CE-03 — RUN fix TASK-003 agent=bk-executor-high review=bk-reviewer-high verify=bk-reviewer-high effort=high token=DRYRUN" ] && [ ! -e "$WD/lock" ] && grep -q "^[^ ]* EVENT [0-9]* $KEY " "$WD/log" && grep -q "^[0-9]*|$KEY|RUN fix " "$WD/event"; then pass "19 the watcher emits a red CI with exactly its one line, writes the event and releases its lock"; else failc "19 the watcher emits a red CI" "$OUT"; fi
 run watch.sh --ack
 expect_first "19 --ack before a real tick gives NOT_ACKED no real tick since the event" "^NOT_ACKED $KEY no real tick since the event$"
 e="$(cut -d'|' -f1 "$WD/event")"
