@@ -3,9 +3,11 @@
 // Interface dictionary, file access (ADR-005; COPY_DECK section 1.1): sign-in,
 // account, users and one-time links. Its keys are copied verbatim from
 // COPY_DECK by the first Task that uses them. TASK-006 adds those of the
-// roles (section 3) and of UXP-001 to UXP-004 (sections 6.2 to 6.5).
+// roles (section 3) and of UXP-001 to UXP-004 (sections 6.2 to 6.5);
+// TASK-007 the account menu's "Keluar" (section 6.1).
 
 return [
+    'sign_out' => 'Keluar',
     'role' => [
         'super_admin' => 'Pemilik',
         'operations_admin' => 'Admin Operasional',

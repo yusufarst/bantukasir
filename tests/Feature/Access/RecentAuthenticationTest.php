@@ -27,7 +27,7 @@ final class RecentAuthenticationTest extends DatabaseTestCase
     {
         parent::setUp();
 
-        Route::middleware(['web', 'auth', 'signin.session', 'password.confirm'])
+        Route::middleware(['web', 'auth', 'signin.session', 'capability:CAP-01', 'password.confirm'])
             ->post('/testing/recent-auth', function () {
                 $this->ran++;
 
@@ -119,5 +119,20 @@ final class RecentAuthenticationTest extends DatabaseTestCase
     public function test_a_page_gets_the_failure_on_the_validation_channel(): void
     {
         $this->from('/account')->post('/user/confirm-password', ['password' => 'Salah#1'], ['X-Inertia' => 'true'])->assertRedirect('/account');
+    }
+
+    public function test_an_inertia_visit_or_a_form_without_a_recent_confirmation_answers_423_too(): void
+    {
+        // TASK-006 finding F-7, fixed by TASK-007: the framework sent every
+        // request that does not ask for JSON to a confirmation page that does
+        // not exist, which answered 500. Every channel now gets 423, which
+        // opens the recent-authentication dialog of the shell (UXS-11).
+        $this->post('/testing/recent-auth', [], ['X-Inertia' => 'true', 'X-Requested-With' => 'XMLHttpRequest'])->assertStatus(423);
+        $this->post('/testing/recent-auth')->assertStatus(423);
+        $this->assertSame(0, $this->ran);
+
+        $this->postJson('/user/confirm-password', ['password' => $this->rina['password']])->assertStatus(201);
+        $this->post('/testing/recent-auth', [], ['X-Inertia' => 'true', 'X-Requested-With' => 'XMLHttpRequest'])->assertStatus(201);
+        $this->assertSame(1, $this->ran);
     }
 }

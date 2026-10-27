@@ -2,20 +2,21 @@
 
 namespace App\Http\Controllers\Testing;
 
-use App\Http\ContentSecurityPolicy;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Vite;
 use Inertia\Inertia;
-use Symfony\Component\HttpFoundation\Response;
+use Inertia\Response;
 
 /**
  * The component specimen of the design system (TASK-005 scope item 8): every
  * component of DESIGN_SYSTEM section 8 and the state presentations, with
  * synthetic data, for the browser tests and their accessibility, width,
- * zoom, contrast and CSP checks. It exists only in the local and testing
- * environments — routes/web.php registers it nowhere else — and is not a
- * route of ROUTE_CONTRACTS: it reads and writes nothing and shows no business
- * data. Its response carries the content security policy of SEC-HDR-03.
+ * zoom, contrast and CSP checks; and the specimen of the application shell
+ * (TASK-007), which frames a page with synthetic destinations of every role,
+ * on the side navigation, the icon rail of the till and the compact top bar,
+ * because no destination of the navigation exists yet. Both exist only in the
+ * local and testing environments — routes/web.php registers them nowhere
+ * else — and are not routes of ROUTE_CONTRACTS: they read and write nothing
+ * and show no business data. Their answers carry the content security policy
+ * of SEC-HDR-03, as every answer does (App\Http\Middleware\SecurityHeaders).
  */
 final class SpecimenController
 {
@@ -27,12 +28,13 @@ final class SpecimenController
         return in_array($environment, self::ENVIRONMENTS, true);
     }
 
-    public function __invoke(Request $request): Response
+    public function __invoke(): Response
     {
-        $nonce = Vite::useCspNonce();
-        $response = Inertia::render('Testing/Specimen')->toResponse($request);
-        $response->headers->set('Content-Security-Policy', ContentSecurityPolicy::header($nonce));
+        return Inertia::render('Testing/Specimen');
+    }
 
-        return $response;
+    public function shell(): Response
+    {
+        return Inertia::render('Testing/ShellSpecimen');
     }
 }

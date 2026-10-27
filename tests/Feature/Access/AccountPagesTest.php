@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Access;
 
+use Tests\Harness\Channels\ChannelInspector;
 use Tests\Harness\DatabaseTestCase;
 use Tests\Harness\Fixtures\TokoContoh;
 use Tests\Harness\Http\Browsers;
@@ -17,6 +18,10 @@ use Tests\Harness\Http\Browsers;
 final class AccountPagesTest extends DatabaseTestCase
 {
     use Browsers;
+    use ChannelInspector;
+
+    /** The kind of account of each person of Toko Contoh (Allowlists::ACTORS). */
+    private const array ACTORS = ['Hendra' => 'owner', 'Agus' => 'ops', 'Rina' => 'cashier', 'Dewi' => 'combined'];
 
     protected function setUp(): void
     {
@@ -50,15 +55,19 @@ final class AccountPagesTest extends DatabaseTestCase
             $this->assertSame('access/Account', $page['component']);
             $this->assertTrue($page['encryptHistory']);
             $props = (array) $page['props'];
-            $this->assertSame(['account', 'errors', 'passwordChanged'], self::propNames($props));
+            $this->assertSame(['account', 'auth', 'errors', 'passwordChanged'], self::propNames($props));
             $this->assertSame(['displayName' => $person, 'email' => $account['email'], 'roles' => $roles, 'owner' => $owner], $props['account']);
             $this->assertFalse($props['passwordChanged']);
+            // Every field, against the allowlists of the role (TASK-007).
+            $this->assertPageChannel($response, self::ACTORS[$person], [$account['password']]);
 
-            $form = $this->get('/account/password')->assertOk()->viewData('page');
+            $formResponse = $this->get('/account/password')->assertOk();
+            $form = $formResponse->viewData('page');
             $this->assertIsArray($form);
             $this->assertSame('access/ChangePassword', $form['component']);
             $this->assertTrue($form['encryptHistory']);
-            $this->assertSame(['errors'], self::propNames((array) $form['props']));
+            $this->assertSame(['auth', 'errors'], self::propNames((array) $form['props']));
+            $this->assertPageChannel($formResponse, self::ACTORS[$person], [$account['password']]);
 
             $this->post('/logout')->assertRedirect(route('login'));
         }

@@ -30,6 +30,7 @@ export interface TranslationPlaceholders {
     'access.sign_in.password': never;
     'access.sign_in.submit': never;
     'access.sign_in.title': never;
+    'access.sign_out': never;
     'ux.action.back_home': never;
     'ux.action.back_to': 'halaman';
     'ux.action.cancel': never;
@@ -89,8 +90,11 @@ export interface TranslationPlaceholders {
     'ux.list.count': 'jumlah';
     'ux.list.search_hint': never;
     'ux.list.updated_at': 'waktu';
+    'ux.nav.main': never;
     'ux.nav.menu_close': never;
     'ux.nav.menu_open': never;
+    'ux.nav.sub': 'halaman';
+    'ux.shell.account_menu': 'nama';
     'ux.shell.document_title_public': 'halaman';
     'ux.state.abandoned.body': never;
     'ux.state.abandoned.title': never;

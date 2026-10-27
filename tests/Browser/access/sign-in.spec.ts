@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect as baseExpect, test, type Page } from '@playwright/test';
-import { resetPeople, ACCESS_TIMEOUT, ACCESS_WAIT, SECURE_LOCAL_ORIGIN, signIn, unexpected, type Account } from '../support/access';
+import { HOME, resetPeople, ACCESS_TIMEOUT, ACCESS_WAIT, SECURE_LOCAL_ORIGIN, signIn, unexpected, type Account } from '../support/access';
 import { measure } from '../support/measure';
 import { contextAt, watch, WIDTHS } from '../support/specimen';
 
@@ -49,7 +49,7 @@ test('a sign-in is a full page load to the home and the sign-in session reaches 
 
     await signIn(page, rina);
     expect(navigations, 'the sign-in page and then a full page load').toBeGreaterThanOrEqual(2);
-    expect(new URL(page.url()).pathname).toBe('/');
+    expect(new URL(page.url()).pathname).toBe(HOME);
 
     await page.goto('/account');
     await expect(page.getByRole('heading', { level: 1, name: 'Akun saya' })).toBeVisible();
@@ -136,7 +136,7 @@ test('the password toggle shows and hides the password and Enter submits the for
     await expect(password).toHaveAttribute('type', 'password');
 
     await page.getByLabel('Email').fill(rina.email);
-    await Promise.all([page.waitForURL((url) => url.pathname === '/'), password.press('Enter')]);
+    await Promise.all([page.waitForURL((url) => url.pathname === HOME), password.press('Enter')]);
 });
 
 test('a lost answer shows the connection notice and keeps the email', async ({ page, context }) => {
@@ -155,7 +155,7 @@ test('a lost answer shows the connection notice and keeps the email', async ({ p
 
     await page.unroute('**/login');
     await page.getByLabel('Kata sandi', { exact: true }).fill(rina.password);
-    await Promise.all([page.waitForURL((url) => url.pathname === '/'), page.getByRole('button', { name: 'Masuk' }).click()]);
+    await Promise.all([page.waitForURL((url) => url.pathname === HOME), page.getByRole('button', { name: 'Masuk' }).click()]);
 });
 
 for (const width of WIDTHS) {

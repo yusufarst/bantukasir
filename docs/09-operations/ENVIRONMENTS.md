@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-6 under D-088, 18 October 2026 (Asia/Jakarta); corrected under D-089, 18 October 2026: decryption and the restore-drill target off the VPS (ENV-01, sections 2, 3, 6 and 16; finding B-1 of the RF-6 review) |
+| Status | CURRENT — written in RF-6 under D-088, 18 October 2026 (Asia/Jakarta); corrected under D-089, 18 October 2026: decryption and the restore-drill target off the VPS (ENV-01, sections 2, 3, 6 and 16; finding B-1 of the RF-6 review); the names of the settings of trusted hosts, trusted proxies and HSTS added to section 11 by TASK-007, 27 October 2026 |
 | Phase | P9 — environments, access, configuration, network, certificates, scheduled tasks, logs, monitoring and the free-tier record |
 | Replaces | The runtime, configuration and TLS paragraphs of `docs/09-operations/legacy/09-DEPLOYMENT-OPS.md` and `docs/09-operations/legacy/P9-OPERATIONS.md`; `docs/04-architecture/legacy/P4-ARCHITECTURE.md` §Deployment, operasi dan maintenance (all LEGACY — SUPERSEDED, [LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 15) |
 | Decisions | D-005, D-053, D-076, D-088, D-089; [ADR-002](../adr/ADR-002-minimum-runtime-infrastructure.md), [ADR-003](../adr/ADR-003-hosting-topology.md), [ADR-010](../adr/ADR-010-independent-backup-and-recovery-key-custody.md), [ADR-011](../adr/ADR-011-release-pipeline-environments-and-production-operation.md) |
@@ -120,7 +120,9 @@ Rules are set in the provider's network firewall. A host firewall such as ufw is
 | --- | --- | --- | --- |
 | Environment name | Set | Set | Equals the database marker (ENV-04) |
 | Debug | Off | Off | Off in every environment except local (TR-ERR-02) |
-| Application URL, trusted hosts | Set | — | The environment's hostname |
+| Application URL, trusted hosts | Set | — | The environment's hostname (`APP_URL`, `APP_TRUSTED_HOSTS`, `config/security.php`); an HTTPS address sends plain HTTP to HTTPS (SEC-HDR-04) |
+| Trusted proxy hops | Set | — | The platform's proxy and Cloudflare's published ranges, never a wildcard (`APP_TRUSTED_PROXIES`; section 10) |
+| Strict-Transport-Security | Off until verified | — | Turned on by the operator once HTTPS is verified on the target; `includeSubDomains` only when every subdomain is (`APP_HSTS`, `APP_HSTS_SUBDOMAINS`; SEC-HDR-02) |
 | Application key | Set | — | Per environment; previous keys listed during a rotation (section 16) |
 | Runtime database credential | Set | — | SCHEMA SCH-41 |
 | Backup database credential | — | Set | SCHEMA SCH-42 |
