@@ -1,4 +1,5 @@
-import { expect as baseExpect, test, type Browser, type BrowserContext } from '@playwright/test';
+import { expect as baseExpect, test, type Browser, type BrowserContext, type Page } from '@playwright/test';
+import { SIGN_OUT_WAIT_SECONDS } from '../../../resources/js/lib/sessionTimes';
 import { ACCESS_TIMEOUT, ACCESS_WAIT, HOME, resetPeople, SECURE_LOCAL_ORIGIN, signIn, unexpected, type Account, type Person } from '../support/access';
 import { watch } from '../support/specimen';
 
@@ -155,6 +156,122 @@ test('a sign-out in one tab ends the sign-in session in the other tabs of the br
     await expect(second.getByRole('heading', { level: 1, name: 'Masuk' })).toBeVisible();
     await second.goBack();
     await expect(second.getByText(agus.email)).toHaveCount(0);
+});
+
+/**
+ * Holds the sign-out of a tab: the request reaches the server only when the
+ * returned `release` is called, so that until then the sign-in session is
+ * still valid on the server. `sent` resolves when the tab has sent it.
+ */
+async function holdSignOut(page: Page): Promise<{ sent: Promise<void>; release: () => void }> {
+    let release = (): void => undefined;
+    let reached = (): void => undefined;
+    const held = new Promise<void>((resolve) => {
+        release = resolve;
+    });
+    const sent = new Promise<void>((resolve) => {
+        reached = resolve;
+    });
+
+    await page.route('**/logout', async (route) => {
+        reached();
+        await held;
+        await route.continue();
+    });
+
+    return { sent, release };
+}
+
+/** Signs out through the account menu of the shell (UXI-023, UXI-026). */
+async function chooseSignOut(page: Page, name: string): Promise<void> {
+    await page.getByRole('button', { name: `Menu akun ${name}` }).click();
+    await page.getByRole('menuitem', { name: 'Keluar' }).click();
+}
+
+const LOADING = 'main [data-state="loading"]';
+
+test("a sign-out hides every tab at once, and the others load their next page only once the server has answered it (pull request #11's review)", async ({ context }) => {
+    const { Agus: agus } = await resetPeople(context, ['Agus']);
+    const first = await context.newPage();
+
+    await signIn(first, agus);
+    const second = await context.newPage();
+    await second.goto(HOME);
+    await expect(second.getByText(agus.email)).toBeVisible();
+    await second.evaluate(() => window.sessionStorage.setItem('bk-test', 'x'));
+
+    // What happened, in order: the sign-out's answer in the first tab, and
+    // every page the second tab asked for after the sign-out started.
+    const events: string[] = [];
+    first.on('response', (response) => {
+        if (new URL(response.url()).pathname === '/logout') {
+            events.push('signed out');
+        }
+    });
+    second.on('request', (request) => {
+        if (request.isNavigationRequest() && request.frame() === second.mainFrame()) {
+            events.push(`second loads ${new URL(request.url()).pathname}`);
+        }
+    });
+
+    const signOut = await holdSignOut(first);
+    await chooseSignOut(first, 'Agus');
+    await signOut.sent;
+
+    // The sign-out is not answered yet, so the sign-in session is still valid
+    // on the server: both tabs show nothing of Agus, the second has cleared its
+    // history key and its storage, and neither asks for another page.
+    for (const tab of [first, second]) {
+        await expect(tab.locator(LOADING)).toBeVisible();
+        await expect(tab.getByText(agus.email)).toHaveCount(0);
+        await expect(tab.getByRole('button', { name: 'Menu akun Agus' })).toHaveCount(0);
+    }
+
+    expect(await second.evaluate(() => window.sessionStorage.getItem('bk-test'))).toBeNull();
+    expect(await second.evaluate(() => window.sessionStorage.getItem('historyKey'))).toBeNull();
+    await second.waitForTimeout(2_000);
+    await expect(second.locator(LOADING)).toBeVisible();
+    expect(events).toEqual([]);
+
+    // Once the server has answered, the second tab loads the application's
+    // address, which the server answers with the sign-in page.
+    signOut.release();
+    await first.waitForURL((url) => url.pathname === '/login');
+    await second.waitForURL((url) => url.pathname === '/login');
+    await expect(second.getByRole('heading', { level: 1, name: 'Masuk' })).toBeVisible();
+    await expect(second.getByText(agus.email)).toHaveCount(0);
+    expect(events).toEqual(['signed out', 'second loads /', 'second loads /login']);
+});
+
+test("a tab hidden by a sign-out that it never hears the answer of asks the server after its wait, and a later answer still ends its page (pull request #11's review)", async ({ context }) => {
+    const { Agus: agus } = await resetPeople(context, ['Agus']);
+
+    await context.clock.install();
+    const first = await context.newPage();
+    await signIn(first, agus);
+    const second = await context.newPage();
+    await second.goto('/account/password');
+    await expect(second.getByRole('heading', { level: 1, name: 'Ubah kata sandi' })).toBeVisible();
+
+    const signOut = await holdSignOut(first);
+    await chooseSignOut(first, 'Agus');
+    await signOut.sent;
+    await expect(second.locator(LOADING)).toBeVisible();
+
+    // The wait passes and the sign-out is still unanswered: the second tab
+    // asks the server, whose answer is the truth — the sign-in session is
+    // still valid, so it is Agus's home.
+    await context.clock.fastForward((SIGN_OUT_WAIT_SECONDS + 1) * 1000);
+    await second.waitForURL((url) => url.pathname === HOME);
+    await expect(second.getByRole('button', { name: 'Menu akun Agus' })).toBeVisible();
+
+    // The answer then comes: the page the second tab loaded hears it and
+    // loads the application's address again, now the sign-in page.
+    signOut.release();
+    await first.waitForURL((url) => url.pathname === '/login');
+    await second.waitForURL((url) => url.pathname === '/login');
+    await expect(second.getByRole('heading', { level: 1, name: 'Masuk' })).toBeVisible();
+    await expect(second.getByRole('button', { name: 'Menu akun Agus' })).toHaveCount(0);
 });
 
 /**

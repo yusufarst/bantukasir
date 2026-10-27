@@ -39,6 +39,17 @@ export const ABSOLUTE_NOTICE_SECONDS = 15 * 60;
 /** SEC-SESS-02: while the user types, at most one user-activity request a minute. */
 export const ACTIVITY_INTERVAL_SECONDS = 60;
 
+/**
+ * SEC-CH-04: how long a tab whose page another tab's sign-out has hidden
+ * waits for that tab to report the server's answer before it loads the
+ * application's address anyway. Longer than the proxy's wait for the
+ * application, 125 seconds (ENVIRONMENTS section 7), itself above the
+ * application's limit of 60 seconds a request (TECHNICAL_RULES section 9): by
+ * then the tab that signs out has had an answer, or the proxy's timeout, and
+ * has reported it, unless it was closed first.
+ */
+export const SIGN_OUT_WAIT_SECONDS = 130;
+
 const MILLISECONDS = 1000;
 
 /** The deadlines of the times an answer carried, counted from when it arrived. */

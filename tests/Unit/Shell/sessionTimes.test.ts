@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ABSOLUTE_NOTICE_SECONDS, ACTIVITY_INTERVAL_SECONDS, WARNING_LEAD_SECONDS, afterActivity, deadlinesOf, laterOf, mayReportActivity, timeLeft, viewAt } from '@/lib/sessionTimes';
+import { ABSOLUTE_NOTICE_SECONDS, ACTIVITY_INTERVAL_SECONDS, SIGN_OUT_WAIT_SECONDS, WARNING_LEAD_SECONDS, afterActivity, deadlinesOf, laterOf, mayReportActivity, timeLeft, viewAt } from '@/lib/sessionTimes';
 
 // The client timers of the sign-in session (AC-007-06; SECURITY_MODEL
 // SEC-SESS-02; UI_STATES UXS-23; ADAPTIVE_AND_ACCESSIBILITY UXA-21; TASK-007):
@@ -66,5 +66,19 @@ describe('the user-activity request while typing', () => {
         expect(ACTIVITY_INTERVAL_SECONDS).toBe(60);
         expect(mayReportActivity(59_999, 0)).toBe(false);
         expect(mayReportActivity(60_000, 0)).toBe(true);
+    });
+});
+
+describe("a tab hidden by another tab's sign-out", () => {
+    // The proxy's wait for the application (ENVIRONMENTS section 7) and the
+    // application's limit a request (TECHNICAL_RULES section 9): the tab that
+    // signs out has its answer within them, so the hidden tab waits longer
+    // before it asks the server itself (pull request #11's review).
+    const PROXY_ORIGIN_TIMEOUT_SECONDS = 125;
+    const APPLICATION_LIMIT_SECONDS = 60;
+
+    it('waits longer than the sign-out can take to be answered', () => {
+        expect(SIGN_OUT_WAIT_SECONDS).toBeGreaterThan(PROXY_ORIGIN_TIMEOUT_SECONDS);
+        expect(SIGN_OUT_WAIT_SECONDS).toBeGreaterThan(APPLICATION_LIMIT_SECONDS);
     });
 });

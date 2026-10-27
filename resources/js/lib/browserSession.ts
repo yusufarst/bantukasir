@@ -8,8 +8,12 @@ import { router } from '@inertiajs/react';
 // sign-in page is loaded with a full page load, so that no page data stays in
 // memory and no page restored from history can be decrypted. The other tabs
 // of the same browser share the sign-in session's cookie: they are told, and
-// do the same. TASK-009 keeps the unresolved command references, which
-// survive a sign-out (SEC-CH-05).
+// do the same. A sign-out tells them twice: when it starts, so that they hide
+// their page and clear their data at once, and when the server has answered
+// it, so that they load the next page only once the sign-in session has ended
+// there — until then the application's address would answer them with the
+// home and the user's data again (pull request #11's review). TASK-009 keeps
+// the unresolved command references, which survive a sign-out (SEC-CH-05).
 
 const SIGN_IN = '/login';
 
@@ -24,11 +28,18 @@ const ENDED = '/';
 
 const CHANNEL = 'bk-sign-in-session';
 
+// The messages between the tabs: `signing_out`, a tab has started a sign-out
+// whose answer it does not have yet; `ended`, the sign-in session is over —
+// the server answered a sign-out, a limit was reached, or the server answered
+// that it had ended; `deadlines`, the limits a tab learned from the server.
 // The deadlines name the user whose sign-in session they are: a tab never
 // takes another user's deadlines as its own, so a page of a user whose
 // session ended on the server is never kept alive by the next user's
 // sign-in in another tab (THR-18; TASK-007 review finding R-27).
-type TabMessage = { readonly type: 'ended' } | { readonly type: 'deadlines'; readonly userId: number; readonly idleAt: number; readonly absoluteAt: number };
+type TabMessage =
+    | { readonly type: 'signing_out' }
+    | { readonly type: 'ended' }
+    | { readonly type: 'deadlines'; readonly userId: number; readonly idleAt: number; readonly absoluteAt: number };
 
 let channel: BroadcastChannel | null | undefined;
 
@@ -67,14 +78,22 @@ export function followOtherTab(): void {
 }
 
 /**
- * Signs out (UXI-026, UXI-035; RA-02): the browser's data cleared and the
- * other tabs told first; the server answers with a full page load to the
- * sign-in page, and when no answer arrives the browser loads it anyway
- * (UI_STATES section 5).
+ * Signs out (UXI-026, UXI-035; RA-02): the browser's data cleared, and the
+ * other tabs told at once to hide their page; the server answers with a full
+ * page load to the sign-in page, and when no answer arrives the browser loads
+ * it anyway (UI_STATES section 5).
+ *
+ * The other tabs are told that the sign-in session has ended only once the
+ * server has answered — its full page load, or a refusal — because until then
+ * the sign-in session is still valid for them (pull request #11's review).
+ * Without an answer — a lost connection (TR-ERR-01) or a visit cancelled —
+ * they are not told it, and wait for their bound (SIGN_OUT_WAIT_SECONDS).
  */
 export function signOut(): void {
     clearBrowserData();
-    tabs()?.postMessage({ type: 'ended' } satisfies TabMessage);
+    tabs()?.postMessage({ type: 'signing_out' } satisfies TabMessage);
+
+    let answered = true;
 
     router.post(
         '/logout',
@@ -86,9 +105,17 @@ export function signOut(): void {
                 return false;
             },
             onNetworkError: () => {
+                answered = false;
                 window.location.assign(SIGN_IN);
 
                 return false;
+            },
+            onFinish: (visit) => {
+                if (!visit.completed) {
+                    window.location.assign(SIGN_IN);
+                } else if (answered) {
+                    tabs()?.postMessage({ type: 'ended' } satisfies TabMessage);
+                }
             },
         },
     );
@@ -99,8 +126,12 @@ export function shareDeadlines(userId: number, idleAt: number, absoluteAt: numbe
     tabs()?.postMessage({ type: 'deadlines', userId, idleAt, absoluteAt } satisfies TabMessage);
 }
 
-/** Listens to the other tabs: an ended sign-in session, or deadlines they learned, with the user they belong to. */
-export function listenToOtherTabs(onEnded: () => void, onDeadlines: (userId: number, idleAt: number, absoluteAt: number) => void): () => void {
+/** Listens to the other tabs: a sign-out started, an ended sign-in session, or deadlines they learned, with the user they belong to. */
+export function listenToOtherTabs(
+    onSigningOut: () => void,
+    onEnded: () => void,
+    onDeadlines: (userId: number, idleAt: number, absoluteAt: number) => void,
+): () => void {
     const source = tabs();
 
     if (source === null) {
@@ -114,7 +145,9 @@ export function listenToOtherTabs(onEnded: () => void, onDeadlines: (userId: num
             return;
         }
 
-        if (message.type === 'ended') {
+        if (message.type === 'signing_out') {
+            onSigningOut();
+        } else if (message.type === 'ended') {
             onEnded();
         } else if (
             message.type === 'deadlines' &&

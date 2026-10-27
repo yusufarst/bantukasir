@@ -6,7 +6,7 @@ import { Dialog, Drawer, UnsavedDialog } from '@/components/ui/Dialog';
 import { Icon } from '@/components/ui/Icon';
 import type { IconName } from '@/components/ui/icons';
 import { Menu, type MenuEntry } from '@/components/ui/Menu';
-import { StateNotice } from '@/components/ui/States';
+import { Loading, StateNotice } from '@/components/ui/States';
 import type { StateId } from '@/components/ui/stateCatalogue';
 import { useWidthClass } from '@/layouts/widthClass';
 import { NO_CONNECTION, retrySeconds, stateOfStatus } from '@/lib/answers';
@@ -15,7 +15,7 @@ import { formatDuration, formatTimeOfDay } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import { DESTINATIONS, SUB_DESTINATIONS, navigationFor, subNavigationFor, type AreaId, type DestinationId, type RoleCode, type SubDestinationId } from '@/lib/navigation';
 import { useOnline } from '@/lib/online';
-import { afterActivity, deadlinesOf, laterOf, mayReportActivity, timeLeft, viewAt, type Deadlines, type SessionTimes } from '@/lib/sessionTimes';
+import { SIGN_OUT_WAIT_SECONDS, afterActivity, deadlinesOf, laterOf, mayReportActivity, timeLeft, viewAt, type Deadlines, type SessionTimes } from '@/lib/sessionTimes';
 
 // UXP-000, the application shell (DESIGN_SYSTEM 7.2; INFORMATION_ARCHITECTURE
 // sections 4 and 5; NAVIGATION_CONTRACTS UXP-000; INTERACTION_INVENTORY
@@ -28,9 +28,11 @@ import { afterActivity, deadlinesOf, laterOf, mayReportActivity, timeLeft, viewA
 // mirrors both limits of the sign-in session with its own timers, warns before
 // the idle limit (UXS-23, "Tetap masuk"), tells when the 12-hour limit ends,
 // and clears the history key and the browser's data at sign-out, at either
-// limit and on a change of user; a page restored from the back-forward cache
-// is fetched again. The shop's name, initials and accent are TASK-010's; the
-// unresolved-requests item and banner are TASK-009's.
+// limit and on a change of user; from the start of a sign-out in any tab of
+// the browser, every signed-in page hides until its next page loads; a page
+// restored from the back-forward cache is fetched again. The shop's name,
+// initials and accent are TASK-010's; the unresolved-requests item and banner
+// are TASK-009's.
 
 /** The shared props of a signed-in page (SEC-CH-02; App\DTO\Access\SignedInData). */
 export interface SignedIn {
@@ -108,21 +110,32 @@ let lastUserRequestAt = 0;
 let knownUserId: number | null = null;
 let installed = false;
 let leaving = false;
+/** A sign-out has started in this browser: the page shows nothing of the user until the next page loads. */
+let hidden = false;
 const listeners = new Set<() => void>();
+
+function notify(): void {
+    listeners.forEach((listener) => listener());
+}
 
 function setDeadlines(next: Deadlines, share: boolean): void {
     deadlines = next;
-    listeners.forEach((listener) => listener());
+    notify();
 
     if (share && knownUserId !== null) {
         shareDeadlines(knownUserId, next.idleAt, next.absoluteAt);
     }
 }
 
-function subscribeDeadlines(listener: () => void): () => void {
+function subscribe(listener: () => void): () => void {
     listeners.add(listener);
 
     return () => listeners.delete(listener);
+}
+
+function hidePage(): void {
+    hidden = true;
+    notify();
 }
 
 /** Leaves once, whichever timer, tab or answer ends the sign-in session first. */
@@ -131,6 +144,39 @@ function leaveOnce(): void {
         leaving = true;
         leaveSignedInSession();
     }
+}
+
+/**
+ * Signs out once (UXI-026, UXI-035): the page hidden at once, and nothing
+ * else in this document — a timer, another tab, a second click — acts on the
+ * sign-in session until the server's answer loads the next page.
+ */
+function signOutOnce(): void {
+    if (!leaving) {
+        leaving = true;
+        hidePage();
+        signOut();
+    }
+}
+
+/**
+ * Another tab has started a sign-out: this tab's history key and storage are
+ * cleared and its page hidden at once, but it loads the application's address
+ * only when that tab reports the server's answer, because until then the
+ * sign-in session is still valid and that address answers with the home and
+ * the user's data (SEC-CH-04, THR-18; pull request #11's review). Without
+ * that report — the tab closed, its connection lost — it loads it after
+ * SIGN_OUT_WAIT_SECONDS, and the server's answer then is the truth: a report
+ * that comes later still reaches the page it loaded.
+ */
+function hideForOtherTab(): void {
+    if (leaving || hidden) {
+        return;
+    }
+
+    clearBrowserData();
+    hidePage();
+    window.setTimeout(followOnce, SIGN_OUT_WAIT_SECONDS * 1000);
 }
 
 function installDocumentListeners(): void {
@@ -178,11 +224,12 @@ function installDocumentListeners(): void {
         }
     });
 
-    // Another tab of this browser ended the sign-in session, or learned its
-    // deadlines. Deadlines of another user mean that this tab's user is no
-    // longer the browser's: another person has signed in, so nothing of this
-    // tab's user may stay (SEC-CH-04, THR-18; review finding R-27).
-    listenToOtherTabs(followOnce, (userId, idleAt, absoluteAt) => {
+    // Another tab of this browser started a sign-out, ended the sign-in
+    // session, or learned its deadlines. Deadlines of another user mean that
+    // this tab's user is no longer the browser's: another person has signed
+    // in, so nothing of this tab's user may stay (SEC-CH-04, THR-18; review
+    // finding R-27).
+    listenToOtherTabs(hideForOtherTab, followOnce, (userId, idleAt, absoluteAt) => {
         if (knownUserId === null) {
             return;
         }
@@ -241,7 +288,7 @@ function useSignInSession(signedIn: SignedIn): { now: number; current: Deadlines
         setDeadlines(deadlinesOf(signedIn.session, Date.now()), true);
     }, [signedIn]);
 
-    const current = useSyncExternalStore(subscribeDeadlines, () => deadlines);
+    const current = useSyncExternalStore(subscribe, () => deadlines);
     const now = useNow();
 
     useEffect(() => {
@@ -531,6 +578,26 @@ function UnhandledNotice({ unhandled }: { unhandled: Unhandled }) {
 }
 
 /**
+ * A signed-in page from the start of a sign-out in this browser until its next
+ * page loads: nothing of the user, of the page or of its dialogs, only the
+ * loading state UXS-01 (SEC-CH-04, THR-18; pull request #11's review).
+ */
+function SignOutCover({ title }: { title: string }) {
+    return (
+        <>
+            <Head title={t('ux.shell.document_title_public', { halaman: title })} />
+            <div className={'bk-app'} data-layout={'none'}>
+                <div className={'bk-col'}>
+                    <main id={'main'} className={'bk-main'} tabIndex={-1}>
+                        <Loading />
+                    </main>
+                </div>
+            </div>
+        </>
+    );
+}
+
+/**
  * The shell of a signed-in page, with the data of the sign-in session: the
  * page gives its title — the document title and the compact top bar's —
  * and, on the till, the rail layout; with its destination and area once
@@ -652,6 +719,12 @@ function SignedInShell({
         [attempt],
     );
 
+    const pageHidden = useSyncExternalStore(subscribe, () => hidden);
+
+    if (pageHidden) {
+        return <SignOutCover title={title} />;
+    }
+
     const view = times === null ? null : viewAt(now, times);
     const user = signedIn.user;
     const items: NavItem[] = navigationFor(user.roles, user.capabilities, DESTINATIONS).map(({ id, entry }) => ({
@@ -666,7 +739,7 @@ function SignedInShell({
             ? []
             : subNavigationFor(area, user.roles, user.capabilities, SUB_DESTINATIONS[area]).map(({ id, entry }) => ({ id, label: t(entry.label), href: entry.href, current: id === subCurrent }));
     const areaEntry = area === undefined ? undefined : DESTINATIONS[area];
-    const onSignOut = (): void => attempt(signOut);
+    const onSignOut = (): void => attempt(signOutOnce);
 
     const absoluteBody = t('ux.state.session_warning.absolute.body', { jam: formatTimeOfDay(signedIn.session.absoluteEndsAt) });
     const banners = (
@@ -692,7 +765,7 @@ function SignedInShell({
             >
                 {children}
             </ShellFrame>
-            <SessionWarning secondsLeft={view?.kind === 'warning' ? view.secondsLeft : null} onSignOut={signOut} />
+            <SessionWarning secondsLeft={view?.kind === 'warning' ? view.secondsLeft : null} onSignOut={signOutOnce} />
             <UnsavedDialog
                 open={leavingTo !== null}
                 body={leavingTo?.body}
