@@ -54,6 +54,9 @@ services:
             CACHE_STORE: database
             # Local runs are plain HTTP; every other environment sets true.
             SESSION_SECURE_COOKIE: "false"
+            # The host names of the local environment (SECURITY_MODEL SEC-HDR-05;
+            # TASK-007): the Owner's browser and the browser tests' alias below.
+            APP_TRUSTED_HOSTS: "localhost,bantukasir-app"
         volumes:
             - .:/var/www/html
         networks:
@@ -69,9 +72,13 @@ services:
             db-setup:
                 condition: service_completed_successfully
         healthcheck:
-            # Healthy when Nginx, PHP-FPM and Laravel answer without a server
-            # error; the application has no route of its own yet.
-            test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/ | grep -Eq '^[1-4][0-9][0-9]$$'"]
+            # Healthy when Nginx, PHP-FPM and Laravel answer: a JSON request
+            # for a path that no route serves gets Laravel's NOT_FOUND
+            # (TASK-007), which needs neither the database's tables nor the
+            # frontend build, both of which come after the start (the
+            # migration and the build steps of CI). RH-01, /up, needs the
+            # migrated database for its rate bucket, so it is not this check.
+            test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' -H 'Host: localhost' -H 'Accept: application/json' http://127.0.0.1:8080/local-start-check | grep -qx '404'"]
             interval: 5s
             timeout: 5s
             retries: 12

@@ -1,12 +1,10 @@
-import { Head } from '@inertiajs/react';
 import { ButtonLink } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { KeyValueList, type KeyValue } from '@/components/ui/Data';
-import { Committed, StateNotice } from '@/components/ui/States';
+import { Committed } from '@/components/ui/States';
+import { AppShell } from '@/layouts/AppShell';
 import { PageContainer, PageHeader } from '@/layouts/Page';
-import { AUTH_STATES } from '@/lib/authAnswer';
 import { t } from '@/lib/i18n';
-import { useOnline } from '@/lib/online';
 import type { TranslationKey } from '@/types/translation-keys';
 
 // RP-003, UXP-003 "Akun saya" (INTERACTION_INVENTORY UXI-045; COPY_DECK section
@@ -14,7 +12,9 @@ import type { TranslationKey } from '@/types/translation-keys';
 // App\DTO\Access\OwnAccountData. Staff are told that the Owner changes their
 // name and email (SEC-ACC-10); the Owner's own "Ubah nama dan email" (UXI-046)
 // comes with its page in TASK-011. Reached from the account menu, so it has no
-// back action (NAVIGATION_CONTRACTS UXP-003); TASK-007 frames it in the shell.
+// back action (NAVIGATION_CONTRACTS UXP-003). It is framed by the shell
+// (UXP-000, TASK-007), which shows the no-connection state (UXS-20); until the
+// roles' own homes exist it is every role's home (RN-01).
 
 type RoleCode = 'SUPER_ADMIN' | 'OPERATIONS_ADMIN' | 'CASHIER';
 
@@ -32,21 +32,19 @@ const ROLE_LABELS: Readonly<Record<RoleCode, TranslationKey>> = {
 };
 
 export default function Account({ account, passwordChanged }: { account: OwnAccount; passwordChanged: boolean }) {
-    const online = useOnline();
     const roles = t('access.role.list', { peran: account.roles.map((role) => t(ROLE_LABELS[role])).join(', ') });
     const items: KeyValue[] = [
         { key: 'name', label: t('access.account.name'), value: account.displayName },
         { key: 'email', label: t('access.account.email'), value: account.email },
         { key: 'roles', label: t('access.account.roles'), value: roles },
     ];
+    const title = t('access.account.title');
 
     return (
-        <main className={'bk-page'}>
-            <Head title={t('ux.shell.document_title_public', { halaman: t('access.account.title') })} />
+        <AppShell title={title}>
             <PageContainer width={'form'}>
                 <div className={'bk-stack'}>
-                    <PageHeader title={t('access.account.title')} />
-                    {!online && <StateNotice state={AUTH_STATES.offline} />}
+                    <PageHeader title={title} />
                     {passwordChanged && <Committed message={t('access.change_password.success')} />}
                     <Card>
                         <div className={'bk-stack'}>
@@ -59,6 +57,6 @@ export default function Account({ account, passwordChanged }: { account: OwnAcco
                     </Card>
                 </div>
             </PageContainer>
-        </main>
+        </AppShell>
     );
 }

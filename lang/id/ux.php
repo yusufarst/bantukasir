@@ -89,13 +89,17 @@ return [
         'search_hint' => 'Ketik untuk mencari',
     ],
     // The document title of the pages without business data (TASK-006;
-    // COPY_DECK section 4.2).
+    // COPY_DECK section 4.2) and the account menu of the shell (TASK-007;
+    // section 6.1).
     'shell' => [
         'document_title_public' => ':halaman',
+        'account_menu' => 'Menu akun :nama',
     ],
     'nav' => [
         'menu_open' => 'Buka menu',
         'menu_close' => 'Tutup menu',
+        'main' => 'Menu utama',
+        'sub' => 'Submenu :halaman',
     ],
     'announce' => [
         'added' => 'Ditambahkan: :produk, jumlah :jumlah.',

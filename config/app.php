@@ -23,7 +23,10 @@ return [
     // difference, and so do the operator procedures and the release preflight.
     'environment_name' => env('APP_ENVIRONMENT_NAME'),
 
-    'debug' => (bool) env('APP_DEBUG', false),
+    // Debug output only in local development: off in every other
+    // environment, whatever APP_DEBUG says (SECURITY_MODEL SEC-CH-10;
+    // TECHNICAL_RULES TR-ERR-02; ENVIRONMENTS section 11; TASK-007).
+    'debug' => env('APP_ENV') === 'local' && (bool) env('APP_DEBUG', false),
 
     'url' => env('APP_URL', 'http://localhost'),
 

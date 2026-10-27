@@ -3,6 +3,7 @@
 namespace App\Http\Auth;
 
 use App\Support\Time\Clock;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Session\Session;
 
 /**
@@ -63,5 +64,32 @@ final class SignInSession
     public function touch(Session $session): void
     {
         $session->put(self::ACTIVE_AT, $this->clock->now()->getTimestamp());
+    }
+
+    /**
+     * What the shell's timers mirror (SEC-SESS-02, SEC-CH-02; TASK-007): the
+     * seconds left until the idle limit and until the absolute limit, counted
+     * now, and the instant of the absolute end, which the shell shows as a
+     * time of day (UXA-21). Null for a session without its times, which is
+     * never trusted (hasEnded).
+     *
+     * @return array{idleEndsIn: int, absoluteEndsIn: int, absoluteEndsAt: CarbonImmutable}|null
+     */
+    public function remaining(Session $session): ?array
+    {
+        $signedInAt = $session->get(self::SIGNED_IN_AT);
+        $activeAt = $session->get(self::ACTIVE_AT);
+
+        if (! is_int($signedInAt) || ! is_int($activeAt)) {
+            return null;
+        }
+
+        $now = $this->clock->now()->getTimestamp();
+
+        return [
+            'idleEndsIn' => max(0, $activeAt + self::IDLE_SECONDS - $now),
+            'absoluteEndsIn' => max(0, $signedInAt + self::ABSOLUTE_SECONDS - $now),
+            'absoluteEndsAt' => CarbonImmutable::createFromTimestampUTC($signedInAt + self::ABSOLUTE_SECONDS),
+        ];
     }
 }

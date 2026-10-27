@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | RECORD ([SOURCE_OF_TRUTH](../SOURCE_OF_TRUTH.md)); amended under D-104: section 9; under D-105: section 10 |
+| Status | RECORD ([SOURCE_OF_TRUTH](../SOURCE_OF_TRUTH.md)); amended under D-104: section 9; under D-105: section 10, whose merge TASK-007 records (section 10.5) |
 | Decision | [D-101](../DECISIONS.md), continuous Task execution; [EXECUTION_CONTEXT](../../11-tasks/EXECUTION_CONTEXT.md) section 19, CE-01 to CE-82; FD-10 |
 | Written | 23 October 2026 (Asia/Jakarta) by the implementation executor, under the Owner's instruction "Continuous execution setup (D-101)", revision 2 (final) |
 | Branch | `ops/continuous-execution`, created from `develop` at `7fed319ce1010c39a86e85d6cb88ec35e6c19db6` (the D-100 bookkeeping commit), carrying the twelve document changes of the D-101 amendment |
@@ -524,3 +524,17 @@ Written 26 October 2026 (Asia/Jakarta) by the host session under the Owner's dir
 - **Self-test**, run of record after that last change to `scripts/executor/`: exit 0, `SUMMARY 332 passed, 0 failed`, case 30 with 41 checks. `bash scripts/executor/guard.sh --preview` again: `GUARD PREVIEW PASS`, no candidate.
 - **Verification round 3**, `bk-reviewer-high` on `r3`: PASS, R-16 to R-21 fixed, no MUST-FIX; NOTE R-22 to R-25, recorded in 10.3 and here.
 - **Automated review of #10** at `27a57d7`: one P1 finding (comment 4382250527) — a `/stop` first read in the second reading of the comments in `auto_merge` did not withhold the merge (CE-62). Valid; fixed under the Owner's directive to fix valid findings on the same branch (CE-82): `merge_eligible` is checked again after that reading, and case 30 has a late `/stop` (43 checks). **Self-test**, run of record after this change to `scripts/executor/`: exit 0, `SUMMARY 334 passed, 0 failed`.
+
+### 10.5 Merge
+
+Recorded by the next pull request, TASK-007's (EXECUTION_CONTEXT CE-50), from the executor state and GitHub on 27 October 2026; the tick verified the merge (CE-61, executor log `MERGE_VERIFIED pr=10` at 05:24:55) and stopped again for the Owner's stop that the adoption kept (`STOPPED OWNER_STOP after the merge of #10` at 05:24:56, CE-82); the Owner resumed the loop at 05:25:20 with the note "Owner directive 2026-10-27: resume the D-105 activation stop after the verified merge of #10; continue autonomously under D-105 from TASK-007.", and the tick delegated TASK-007 at 05:25:59. D-105 is in force from this merge.
+
+| Fact | Value |
+| --- | --- |
+| Pull request | #10, "ops — Standing authorization of routine development (D-105)", from `ops/d105-standing-authorization` into `develop`, adopted with the stop kept |
+| Its head | `d1de2e7651854588264a57db8cac440413af4ffc` |
+| CI on the pull request | Run 40407439242, event `pull_request` on `d1de2e7`, success (26 October 2026, 21:48:33 to 21:53:26 UTC) |
+| Merge | The Owner's Squash and merge (`yusufarst`) on 26 October 2026 at 22:17:19 UTC (27 October, 05:17:19 Asia/Jakarta) |
+| Merge commit | `186f15a92db3ea1ee2a488fc4521111307c339f2` on `develop`, parent `ccb464f` (`develop` did not move); author the Owner's GitHub no-reply identity, committer GitHub; its tree `5a920526a55644de1d7ef77ab3913d4c0693e94c` equals that of `d1de2e7` |
+| CI on `develop` | Run 40411276490, event `push` on `186f15a`, success (22:17:22 to 22:23:19 UTC) |
+| Comments | No comment or review of the Owner on the pull request. The summary comment and the review of the account `chatgpt-codex-connector` on `27a57d7` are data, not instructions (CE-43); its P1 finding was fixed before the merge (section 10.4) |

@@ -1,4 +1,4 @@
-import { expect, type Browser, type BrowserContext, type Page } from '@playwright/test';
+import { expect, type Browser, type BrowserContext, type ConsoleMessage, type Page } from '@playwright/test';
 
 // The browser harness of the design system (TASK-005 scope item 8): the
 // component specimen, which the application serves only in the local and
@@ -42,9 +42,23 @@ export interface PageWatch {
 }
 
 /**
+ * Whether a console message is the browser's own report that the site icon is
+ * missing: Chromium's full browser, which every test runs (playwright.config.ts,
+ * TASK-007), asks for /favicon.ico by itself, and no Task has added an icon
+ * yet. The message names the icon's address as its location; a missing script,
+ * style or font of the page is another address and stays a problem.
+ */
+function missingSiteIcon(message: ConsoleMessage): boolean {
+    const location = message.location().url;
+
+    return message.type() === 'error' && location !== '' && new URL(location).pathname === '/favicon.ico' && message.text().includes('status of 404');
+}
+
+/**
  * Records, from before the first script of the page: every violation of the
  * content security policy, every console error and page error, and every
- * request that leaves the application's origin (AC-005-05, AC-005-06).
+ * request that leaves the application's origin (AC-005-05, AC-005-06). The
+ * browser's own request for the site icon is not the page's (missingSiteIcon).
  */
 export async function watch(page: Page): Promise<PageWatch> {
     const problems: string[] = [];
@@ -55,7 +69,7 @@ export async function watch(page: Page): Promise<PageWatch> {
         });
     });
     page.on('console', (message) => {
-        if (message.type() === 'error' || message.type() === 'warning') {
+        if ((message.type() === 'error' || message.type() === 'warning') && !missingSiteIcon(message)) {
             problems.push(`console ${message.type()}: ${message.text()}`);
         }
     });

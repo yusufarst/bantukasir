@@ -20,12 +20,15 @@ export const ACCESS_TIMEOUT = 120_000;
 const expect = baseExpect.configure({ timeout: ACCESS_WAIT });
 
 /**
- * The browser options of the Access tests, which each of their files passes to
- * test.use(). The signed-in pages encrypt their browser history, which needs a
- * secure context (SECURITY_MODEL SEC-CH-04); the local environment answers
- * over plain HTTP, and Chromium treats localhost as secure but not the name
- * the CI containers use. Chromium's full browser, which honours the switch,
- * treats that one origin of the local environment as secure, never another.
+ * The browser options of every browser test (playwright.config.ts; the Access
+ * files also pass them to test.use()). The signed-in pages encrypt their
+ * browser history, which needs a secure context (SECURITY_MODEL SEC-CH-04),
+ * and every page sends Cross-Origin-Opener-Policy, which Chromium ignores
+ * with a console error outside one (SEC-HDR-02, TASK-007); the local
+ * environment answers over plain HTTP, and Chromium treats localhost as secure
+ * but not the name the CI containers use. Chromium's full browser, which
+ * honours the switch, treats that one origin of the local environment as
+ * secure, never another.
  */
 export const SECURE_LOCAL_ORIGIN = {
     channel: 'chromium',
@@ -35,10 +38,9 @@ export const SECURE_LOCAL_ORIGIN = {
 /**
  * The problems the page watch recorded, without the answers that the browser
  * logs as failed loads and that are expected here: Inertia's location answer
- * of a full page load (409); and 404 for RN-01, the home, which TASK-007
- * delivers, and for the icon that Chromium's full browser asks for, which no
- * Task has added yet. A missing script or style breaks the page, which the
- * other checks see.
+ * of a full page load (409); and 404 for the icon that Chromium's full browser
+ * asks for, which no Task has added yet. A missing script or style breaks the
+ * page, which the other checks see.
  */
 export function unexpected(problems: readonly string[]): string[] {
     return problems.filter((problem) => !/^console error: Failed to load resource: the server responded with a status of (404 \(Not Found\)|409 \(Conflict\))$/.test(problem));
@@ -113,17 +115,24 @@ export function linkAddress(link: Link): string {
     return `/set-password#u=${link.user}&t=${encodeURIComponent(link.token)}`;
 }
 
-/** Signs in on UXP-001 with the keyboard: the form, then Enter (UXA-10 exception). */
+/**
+ * The home of every role until the roles' own homes exist: Akun saya (RN-01,
+ * NC-12; TASK-007).
+ */
+export const HOME = '/account';
+
+/** Signs in on UXP-001 with the keyboard: the form, then Enter (UXA-10 exception); the full page load ends at the home. */
 export async function signIn(page: Page, account: Account): Promise<void> {
     await page.goto('/login');
     await page.getByLabel('Email').fill(account.email);
     await page.getByLabel('Kata sandi', { exact: true }).fill(account.password);
-    await Promise.all([page.waitForURL((url) => url.pathname === '/'), page.getByLabel('Kata sandi', { exact: true }).press('Enter')]);
+    await Promise.all([page.waitForURL((url) => url.pathname === HOME), page.getByLabel('Kata sandi', { exact: true }).press('Enter')]);
 }
 
 /**
- * Signs out as the account menu's "Keluar" will (UXI-026, TASK-007): RA-02 as an
- * Inertia visit, then the full page load of Inertia's location answer.
+ * Signs out without the account menu: RA-02 as an Inertia visit, then the full
+ * page load of Inertia's location answer. The shell's own "Keluar" (UXI-026)
+ * is tested in tests/Browser/shell/.
  */
 export async function signOut(page: Page): Promise<void> {
     const location = await page.evaluate(async () => {

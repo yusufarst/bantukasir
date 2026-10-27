@@ -6,59 +6,125 @@ use App\Http\Controllers\Access\OwnPasswordController;
 use App\Models\User;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
+use Tests\Harness\Http\RouteInventory;
 use Tests\TestCase;
 
 /**
- * Fortify exposes exactly the features of ADR-004 item 1 (AC-006-01; ROUTE_CONTRACTS
- * sections 2 and 4; SECURITY_MODEL SEC-AUTH-01, SEC-AUTH-07; suite LINK01;
- * THR-01): the routes of TASK-006 are exactly RP-001 to RP-004 and RA-01 to
- * RA-07, each with the middleware of RT-04; no registration, email
- * verification, two-factor, passkey, public reset or Fortify view route
- * exists; no DELETE route; and no mail transport is configured. TASK-007's
- * route-inventory test then covers every route with its gate.
+ * The route inventory (AC-007-01, AC-006-01; ROUTE_CONTRACTS RT-01, RT-04,
+ * RT-05, section 8; SECURITY_MODEL SEC-AZ-01, SEC-AUTH-01, SEC-AUTH-07;
+ * TECHNICAL_RULES TR-HTTP-02, TR-HTTP-04; suites AUTH01, SEC01, LINK01; THR-01,
+ * THR-02, THR-03; TASK-006, TASK-007). Every route is listed here with its
+ * route of ROUTE_CONTRACTS, its gate and the middleware it names; the rules of
+ * Tests\Harness\Http\RouteInventory hold for every one of them — a route of V1
+ * only, no DELETE, a gate on every signed-in route, RT-04's order — and the
+ * check finds an ungated route. Fortify exposes exactly the features of
+ * ADR-004 item 1, and no mail transport exists. Every later Task adds its
+ * routes to ROUTES.
  */
 final class RouteInventoryTest extends TestCase
 {
+    /** The middleware every signed-in route names (RT-04 to RT-06; TASK-007). */
+    private const array SIGNED_IN = ['web', 'auth', 'signin.session', 'throttle:authenticated', 'cache.headers:no_store;private', 'history.encrypt'];
+
     /**
-     * Method, path, name and the middleware of each route of TASK-006.
+     * Every route: its name, its route of ROUTE_CONTRACTS, its gate — `guest`
+     * before sign-in, `none` for the health route, otherwise the capabilities
+     * of its `capability:` middleware — and the middleware it names.
+     *
+     * @var array<string, array{string, string, string, list<string>}>
      */
     private const array ROUTES = [
-        'GET /login' => ['login', ['web', 'guest']],
-        'POST /login' => ['login.store', ['web', 'guest', 'throttle:signin']],
-        'GET /set-password' => ['password.link', ['web', 'no-referrer', 'guest']],
-        'POST /set-password' => ['password.link.store', ['web', 'no-referrer', 'guest', 'throttle:link']],
-        'POST /logout' => ['logout', ['web', 'auth', 'signin.session', 'cache.headers:no_store;private', 'signout.record']],
-        'POST /user/confirm-password' => ['password.confirm.store', ['web', 'auth', 'signin.session', 'cache.headers:no_store;private', 'throttle:confirm', 'confirm.input']],
-        'GET /user/confirmed-password-status' => ['password.confirmation', ['web', 'auth', 'signin.session', 'cache.headers:no_store;private']],
-        'PUT /user/password' => ['user-password.update', ['web', 'auth', 'signin.session', 'cache.headers:no_store;private']],
-        'POST /session/activity' => ['session.activity', ['web', 'auth', 'signin.session', 'cache.headers:no_store;private']],
-        'GET /account' => ['account.show', ['web', 'auth', 'signin.session', 'cache.headers:no_store;private']],
-        'GET /account/password' => ['account.password', ['web', 'auth', 'signin.session', 'cache.headers:no_store;private']],
+        'GET /' => ['home.redirect', 'RN-01', 'CAP-01', [...self::SIGNED_IN, 'capability:CAP-01']],
+        'GET /account' => ['account.show', 'RP-003', 'CAP-01', [...self::SIGNED_IN, 'capability:CAP-01']],
+        'GET /account/password' => ['account.password', 'RP-004', 'CAP-01', [...self::SIGNED_IN, 'capability:CAP-01']],
+        'GET /login' => ['login', 'RP-001', 'guest', ['web', 'guest', 'throttle:presignin']],
+        'GET /set-password' => ['password.link', 'RP-002', 'guest', ['web', 'no-referrer', 'guest', 'throttle:presignin']],
+        'GET /up' => ['health', 'RH-01', 'none', ['throttle:presignin']],
+        'GET /user/confirmed-password-status' => ['password.confirmation', 'RA-04', 'CAP-01', [...self::SIGNED_IN, 'capability:CAP-01']],
+        'POST /login' => ['login.store', 'RA-01', 'guest', ['web', 'guest', 'throttle:presignin', 'throttle:signin']],
+        'POST /logout' => ['logout', 'RA-02', 'CAP-01', [...self::SIGNED_IN, 'capability:CAP-01', 'input.allow', 'signout.record']],
+        'POST /session/activity' => ['session.activity', 'RA-07', 'CAP-01', [...self::SIGNED_IN, 'capability:CAP-01', 'input.allow']],
+        'POST /set-password' => ['password.link.store', 'RA-06', 'guest', ['web', 'no-referrer', 'guest', 'throttle:presignin', 'throttle:link']],
+        'POST /user/confirm-password' => ['password.confirm.store', 'RA-03', 'CAP-01', [...self::SIGNED_IN, 'capability:CAP-01', 'throttle:confirm', 'confirm.input']],
+        'PUT /user/password' => ['user-password.update', 'RA-05', 'CAP-01', [...self::SIGNED_IN, 'capability:CAP-01']],
     ];
 
-    public function test_the_routes_are_exactly_those_of_task_006_and_the_specimen(): void
+    public function test_the_routes_are_exactly_those_listed_each_with_its_gate(): void
     {
-        $routes = [];
-
-        foreach (app(Router::class)->getRoutes()->getRoutes() as $route) {
-            foreach ($route->methods() as $method) {
-                if ($method === 'HEAD') {
-                    continue;
-                }
-
-                $routes[$method.' /'.ltrim($route->uri(), '/')] = [$route->getName(), $route->gatherMiddleware()];
-            }
-        }
+        $routes = RouteInventory::routes(app(Router::class));
 
         // The test-only routes of the local and testing environments: the
-        // specimen (TASK-005) and the browser fixtures (TASK-006).
-        foreach (['GET /testing/specimen', 'POST /testing/browser/reset', 'POST /testing/browser/link'] as $testing) {
+        // specimens (TASK-005, TASK-007) and the browser fixtures (TASK-006).
+        foreach (RouteInventory::TESTING as $testing) {
             $this->assertArrayHasKey($testing, $routes);
             unset($routes[$testing]);
         }
 
-        $this->assertSame(self::ROUTES, $routes);
+        $actual = [];
+        $contracts = RouteInventory::contracts();
+
+        foreach ($routes as $key => $route) {
+            $declared = array_map(strval(...), $route->gatherMiddleware());
+            $gates = array_values(array_filter($declared, static fn (string $middleware): bool => str_starts_with($middleware, 'capability:')));
+            $expected = self::ROUTES[$key] ?? null;
+            $this->assertNotNull($expected, $key.' is not listed in the inventory.');
+            $this->assertArrayHasKey($key, $contracts, $expected[1].' is in ROUTE_CONTRACTS.');
+            $gate = $gates === [] ? (in_array('guest', $declared, true) ? 'guest' : 'none') : substr($gates[0], strlen('capability:'));
+
+            $actual[$key] = [(string) $route->getName(), $expected[1], $gate, $declared];
+        }
+
+        ksort($actual);
+        $expected = self::ROUTES;
+        ksort($expected);
+        $this->assertSame($expected, $actual);
+    }
+
+    public function test_every_route_keeps_the_rules_of_the_inventory(): void
+    {
+        $this->assertSame([], RouteInventory::violations(app(Router::class)));
+    }
+
+    public function test_the_inventory_finds_an_ungated_route_and_one_outside_v1(): void
+    {
+        // AC-007-01: a route signed in but without a gate, a route that no
+        // contract names, a DELETE route and a gate naming no capability are
+        // each found.
+        Route::middleware(['web', 'auth', 'signin.session', 'throttle:authenticated'])->get('/account/harness-ungated', static fn (): string => '');
+        Route::middleware(['web', 'auth', 'signin.session', 'throttle:authenticated', 'capability:CAP-01'])->get('/harness/outside-v1', static fn (): string => '');
+        Route::middleware(['web', 'auth', 'signin.session', 'throttle:authenticated', 'capability:CAP-01'])->delete('/account', static fn (): string => '');
+        Route::middleware(['web', 'auth', 'signin.session', 'throttle:authenticated', 'capability:CAP-99'])->post('/commands/sale.checkout', static fn (): string => '');
+        app(Router::class)->getRoutes()->refreshNameLookups();
+
+        $violations = implode("\n", RouteInventory::violations(app(Router::class)));
+
+        $this->assertStringContainsString('GET /account/harness-ungated: 0 capability gates, not one (RT-05)', $violations);
+        $this->assertStringContainsString('GET /account/harness-ungated: its history entries not encrypted (SEC-CH-04)', $violations);
+        $this->assertStringContainsString('GET /account/harness-ungated: not a route of ROUTE_CONTRACTS', $violations);
+        $this->assertStringContainsString('GET /harness/outside-v1: not a route of ROUTE_CONTRACTS', $violations);
+        $this->assertStringContainsString('GET /harness/outside-v1: its history entries not encrypted (SEC-CH-04)', $violations);
+        $this->assertStringContainsString('DELETE /account: a DELETE route (TR-HTTP-04)', $violations);
+        $this->assertStringContainsString('POST /commands/sale.checkout: the gate names CAP-99, not a capability', $violations);
+        $this->assertStringNotContainsString('GET /account/password', $violations);
+    }
+
+    public function test_the_routes_of_route_contracts_are_read_from_the_document(): void
+    {
+        $contracts = RouteInventory::contracts();
+
+        $this->assertSame('home.redirect', $contracts['GET /'] ?? null);
+        $this->assertSame('login.store', $contracts['POST /login'] ?? null);
+        $this->assertSame('health', $contracts['GET /up'] ?? null);
+        $this->assertSame('registers.edit', $contracts['GET /settings/cash-registers/{register}/edit'] ?? null);
+        $this->assertSame('data.products.search', $contracts['GET /data/products/search'] ?? null);
+        $this->assertArrayHasKey('POST /commands/sale.checkout', $contracts);
+        $this->assertArrayHasKey('POST /commands/resolve', $contracts);
+        // The 60 routable pages, RP-610 with two paths, three print views and
+        // RN-01; 7 reads; 7 authentication endpoints; 3 requests; 48 commands
+        // and the resolution (ROUTE_CONTRACTS section 8).
+        $this->assertCount(60 + 1 + 3 + 1 + 7 + 7 + 3 + 49, $contracts);
     }
 
     public function test_no_route_of_a_disabled_feature_exists(): void

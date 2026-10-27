@@ -15,11 +15,19 @@ use Symfony\Component\HttpFoundation\Response;
  * an Inertia visit by Inertia's location answer — so that no earlier page
  * stays in memory (SEC-CH-04), and the sign-in page shows the neutral note
  * that the sign-in session ended. A cash session is never touched (BR-CASH-11).
+ *
+ * The note is shown only to a browser that had a session — whose sign-in
+ * session a limit, a revocation or the framework's own lifetime ended — and
+ * not to a first visit of the application's address, which is the sign-in
+ * page's first entry, not the end of a sign-in session (NAVIGATION_CONTRACTS
+ * UXP-001; TASK-007).
  */
 final class SignedOutAnswer
 {
-    public static function for(Request $request): Response
+    public static function for(Request $request, ?bool $notice = null): Response
     {
+        $notice ??= $request->cookies->has(config()->string('session.cookie'));
+
         if ($request->expectsJson() && ! $request->header('X-Inertia')) {
             return new JsonResponse([
                 'outcome' => 'REJECTED',
@@ -31,7 +39,7 @@ final class SignedOutAnswer
             ], 401);
         }
 
-        if ($request->hasSession()) {
+        if ($notice && $request->hasSession()) {
             $request->session()->flash(SignInSession::NOTICE, SignInSession::SIGNED_OUT);
         }
 
