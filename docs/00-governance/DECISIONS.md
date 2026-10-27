@@ -4,7 +4,7 @@ The single log of decisions for BantuKasir. A decision made in conversation does
 
 ## 1. How to use this log
 
-- Identifiers are permanent and continue the original numbering. The next free identifier is **D-107**.
+- Identifiers are permanent and continue the original numbering. The next free identifier is **D-108**.
 - "Source" says who decided: **Owner**, or **Planner** (a planning agent acting on its own authority under the rules of the time).
 - "Status" says whether the decision is in force today. `REVALIDATION PENDING` means the decision still applies but the Owner has been asked to re-confirm it; the item number refers to [OPEN_ITEMS](OPEN_ITEMS.md).
 - D-001 to D-018 were recorded on 2 and 3 October 2026 in the former register, now [legacy/10-DECISIONS.md](legacy/10-DECISIONS.md). The table below summarizes them in English. For the exact meaning of D-001 to D-018 the original Indonesian wording governs; for whether a decision is in force, this log governs.
