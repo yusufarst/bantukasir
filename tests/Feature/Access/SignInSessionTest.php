@@ -237,7 +237,12 @@ final class SignInSessionTest extends DatabaseTestCase
         $rows = [];
 
         foreach ($tables as $table) {
-            $rows[$table] = $this->snapshot($table, $table === 'password_reset_tokens' ? 'email' : 'id');
+            $rows[$table] = $this->snapshot($table, match ($table) {
+                'password_reset_tokens' => 'email',
+                'command_results' => 'command_id',
+                'intent_reconciliations' => 'report_id',
+                default => 'id',
+            });
         }
 
         return $rows;

@@ -75,9 +75,9 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-005](tasks/TASK-005-design-system.md) | Design system and frontend foundation | 1 | P | L | B | TASK-002, TASK-003 | GATE-CC1 | `DONE` |
 | [TASK-006](tasks/TASK-006-authentication.md) | Authentication, one-time links, audit and security log | 2 | P | L | A | TASK-004, TASK-005 | — | `DONE` |
 | [TASK-007](tasks/TASK-007-authorization-shell.md) | Authorization framework, security baseline and application shell | 2 | P | L | A | TASK-006 | — | `DONE` |
-| [TASK-008](tasks/TASK-008-command-platform.md) | Command platform (server) | 2 | P | L | A | TASK-007 | — | `READY` |
-| [TASK-009](tasks/TASK-009-command-client.md) | Command client, recovery and unresolved requests | 2 | P | M | A | TASK-008, TASK-002 | GATE-CC1 | `TODO` |
-| [TASK-010](tasks/TASK-010-bootstrap-profile-media.md) | Installation bootstrap, BusinessProfile and media | 2 | P | L | A | TASK-008, TASK-002 | GATE-CC1 | `TODO` |
+| [TASK-008](tasks/TASK-008-command-platform.md) | Command platform (server) | 2 | P | L | A | TASK-007 | — | `DONE` |
+| [TASK-009](tasks/TASK-009-command-client.md) | Command client, recovery and unresolved requests | 2 | P | M | A | TASK-008, TASK-002 | GATE-CC1 | `READY` |
+| [TASK-010](tasks/TASK-010-bootstrap-profile-media.md) | Installation bootstrap, BusinessProfile and media | 2 | P | L | A | TASK-008, TASK-002 | GATE-CC1 | `READY` |
 | [TASK-011](tasks/TASK-011-user-management.md) | User management and Owner procedures | 2 | P | L | A | TASK-009, TASK-010 | — | `TODO` |
 | [TASK-012](tasks/TASK-012-application-image.md) | Application image and runtime configuration | 3 | O | M | B | TASK-004, TASK-007 | — | `READY` |
 | [TASK-013](tasks/TASK-013-independent-backup.md) | Independent backup | 3 | O | L | A | TASK-012, TASK-010 | — | `TODO` |
@@ -119,7 +119,7 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-049](tasks/TASK-049-release-readiness.md) | Release readiness: staging, UAT and first installation | 10 | R | L | V | TASK-045, TASK-047, TASK-048 | G1, G2, G3, G4, DEVICES, TARGET, GATE-PUBLISH | `TODO` |
 | [TASK-050](tasks/TASK-050-production-pilot.md) | Production release, cutover and pilot acceptance | 10 | R | L | V | TASK-049 | RELEASE, GATE-PUBLISH, G4 | `TODO` |
 
-Totals: `TODO` 41; `READY` 2; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 7; `SUPERSEDED` 0.
+Totals: `TODO` 39; `READY` 3; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 8; `SUPERSEDED` 0.
 
 ## 5. Implementation sequence
 

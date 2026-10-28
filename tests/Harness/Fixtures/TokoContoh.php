@@ -8,6 +8,7 @@ use App\Database\EnvironmentMarker;
 use App\Domain\Access\Accounts;
 use App\Domain\Access\OneTimeLinks;
 use App\Domain\Access\Role;
+use App\Domain\Commands\RecoveryEpoch;
 use App\Models\User;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Facades\DB;
@@ -103,6 +104,21 @@ final class TokoContoh
         app(ConsumeLink::class)($id, self::link($person)['token'], $password);
 
         return ['id' => $id, 'email' => $email, 'password' => $password];
+    }
+
+    /**
+     * The installation's recovery epoch as pages receive it (TASK-008),
+     * issued through the Commands module's service if absent; until the
+     * bootstrap of TASK-010 issues it, the fixture does.
+     *
+     * @throws DatabaseRefused
+     */
+    public static function recoveryEpoch(): string
+    {
+        self::build(DB::connection());
+        $epochs = app(RecoveryEpoch::class);
+
+        return $epochs->current() ?? DB::transaction(static fn (): string => $epochs->issue());
     }
 
     /**

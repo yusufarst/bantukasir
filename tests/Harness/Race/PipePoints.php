@@ -53,6 +53,11 @@ final class PipePoints implements CommandPoints
         $this->point('before_commit');
     }
 
+    public function afterOwnWrite(string $write): void
+    {
+        $this->point(FailurePoints::ownWritePoint($write));
+    }
+
     private function point(string $point): void
     {
         if (! in_array($point, $this->barriers, true)) {

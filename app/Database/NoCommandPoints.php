@@ -16,4 +16,6 @@ final class NoCommandPoints implements CommandPoints
     public function afterWrite(int $step): void {}
 
     public function beforeCommit(): void {}
+
+    public function afterOwnWrite(string $write): void {}
 }

@@ -68,6 +68,14 @@ final class Allowlists
      */
     public const array JSON = [
         'password.confirmation' => ['*' => ['confirmed']],
+        // RD-04 with its rows (TASK-008): the actor's own, and with scope=all,
+        // which only the Owner gets, every user's with the user.
+        'data.requests' => ['*' => ['rows', 'rows.*', 'rows.*.operation', 'rows.*.family', 'rows.*.sourceIntentId', 'rows.*.idempotencyKey', 'rows.*.epoch', 'rows.*.receivedAt', 'rows.*.outcome', 'nextCursor', 'previousCursor']],
+        'data.requests.all' => ['owner' => ['rows', 'rows.*', 'rows.*.operation', 'rows.*.family', 'rows.*.sourceIntentId', 'rows.*.idempotencyKey', 'rows.*.epoch', 'rows.*.receivedAt', 'rows.*.outcome', 'rows.*.user', 'rows.*.user.id', 'rows.*.user.displayName', 'nextCursor', 'previousCursor']],
+        // RC-50 answered COMMITTED (TASK-008), and a command's answer.
+        'commands.resolve' => ['*' => ['outcome', 'operation', 'commandId', 'result', 'result.type', 'result.id', 'result.location']],
+        'commands.committed' => ['*' => ['outcome', 'operation', 'commandId', 'repeated', 'result', 'result.type', 'result.id', 'result.location']],
+        'commands.refused' => ['*' => ['outcome', 'code', 'messageKey', 'params', 'fields', 'lines']],
     ];
 
     /**

@@ -49,6 +49,9 @@ final class RouteInventoryTest extends TestCase
         'POST /set-password' => ['password.link.store', 'RA-06', 'guest', ['web', 'no-referrer', 'guest', 'throttle:presignin', 'throttle:link']],
         'POST /user/confirm-password' => ['password.confirm.store', 'RA-03', 'CAP-01', [...self::SIGNED_IN, 'capability:CAP-01', 'throttle:confirm', 'confirm.input']],
         'PUT /user/password' => ['user-password.update', 'RA-05', 'CAP-01', [...self::SIGNED_IN, 'capability:CAP-01']],
+        // TASK-008: the status check and the unresolved request receipts.
+        'POST /commands/resolve' => ['commands.resolve', 'RC-50', 'CAP-34', [...self::SIGNED_IN, 'capability:CAP-34', 'throttle:command']],
+        'GET /data/command-requests' => ['data.requests', 'RD-04', 'CAP-34', [...self::SIGNED_IN, 'capability:CAP-34']],
     ];
 
     public function test_the_routes_are_exactly_those_listed_each_with_its_gate(): void

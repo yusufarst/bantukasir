@@ -5,6 +5,7 @@ use App\Domain\Audit\SecurityActor;
 use App\Domain\Audit\SecurityEvent;
 use App\Domain\Audit\SecurityLog;
 use App\Domain\Audit\SecurityOutcome;
+use App\Domain\Commands\CommandRefused;
 use App\Http\Auth\LinkInvalidAnswer;
 use App\Http\Auth\SignedOutAnswer;
 use App\Http\Controllers\Operations\HealthController;
@@ -164,6 +165,13 @@ return Application::configure(basePath: dirname(__DIR__))
         // object and one outside the actor's scope (TR-ERR-03; TASK-007).
         $exceptions->dontReport(NotFound::class);
         $exceptions->render(static fn (NotFound $exception, Request $request) => ErrorAnswer::for($request, 404));
+
+        // A refusal of the command platform — a status check, a read or a
+        // FormRequest of RT-07 — with its code, status and message key only
+        // (TECHNICAL_RULES section 4; TASK-008). The command routes answer
+        // their own refusals in the pipeline (CommandPipeline).
+        $exceptions->dontReport(CommandRefused::class);
+        $exceptions->render(static fn (CommandRefused $refusal) => ErrorAnswer::refusal($refusal));
 
         // Every other refusal of the framework and every server error: the
         // error body of RT-07 or the generic, translated page of its state,

@@ -2,6 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Domain\Commands\CommandRefused;
+use App\Domain\Commands\ErrorCode;
+use App\Http\Errors\ErrorAnswer;
 use Closure;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Contracts\Routing\ResponseFactory;
@@ -19,9 +22,9 @@ use Symfony\Component\HttpFoundation\Response;
  * dialog of the shell (UXS-11, UXA-05) and sends the same request again after
  * it. The framework's middleware would send every request that does not ask
  * for JSON to a confirmation page, which BantuKasir does not have, and that
- * answered 500 (TASK-006 finding F-7). The 423 body stays the framework's
- * until the command platform gives every error the body of RT-07 (TASK-008,
- * OPEN_ITEMS T-26).
+ * answered 500 (TASK-006 finding F-7). The 423 carries the error body of
+ * RT-07 with RECENT_AUTH_REQUIRED and its message key (TASK-008; TASK-007
+ * finding F-2, OPEN_ITEMS T-26).
  */
 final class RequireRecentAuthentication extends RequirePassword
 {
@@ -39,7 +42,7 @@ final class RequireRecentAuthentication extends RequirePassword
     public function handle($request, Closure $next, $redirectToRoute = null, $passwordTimeoutSeconds = null)
     {
         if ($this->shouldConfirmPassword($request, $passwordTimeoutSeconds === null ? null : (int) $passwordTimeoutSeconds)) {
-            return $this->responseFactory->json(['message' => 'Password confirmation required.'], 423);
+            return ErrorAnswer::refusal(CommandRefused::of(ErrorCode::RecentAuthRequired));
         }
 
         return $next($request);
