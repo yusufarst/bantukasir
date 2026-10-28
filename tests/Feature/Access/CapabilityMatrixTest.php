@@ -84,6 +84,14 @@ final class CapabilityMatrixTest extends DatabaseTestCase
         'RA-05' => ['method' => 'PUT', 'path' => '/user/password', 'json' => true, 'answers' => [
             'guest' => [401, null], 'owner' => [422, null], 'ops' => [422, null], 'cashier' => [422, null], 'combined' => [422, null],
         ]],
+        // TASK-008: CAP-34 for every kind of account — the Owner any intent,
+        // the others their own, which the Action checks.
+        'RC-50' => ['method' => 'POST', 'path' => '/commands/resolve', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [422, null], 'ops' => [422, null], 'cashier' => [422, null], 'combined' => [422, null],
+        ]],
+        'RD-04' => ['method' => 'GET', 'path' => '/data/command-requests', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [200, null], 'ops' => [200, null], 'cashier' => [200, null], 'combined' => [200, null],
+        ]],
     ];
 
     /** @var array<string, array{id: int, email: string, password: string}> */
@@ -242,6 +250,7 @@ final class CapabilityMatrixTest extends DatabaseTestCase
                     'RA-07' => $this->postJson('/session/activity', $injection),
                     'RA-03' => $this->postJson('/user/confirm-password', ['password' => $this->accounts[$actor]['password'], ...$injection]),
                     'RA-05' => $this->putJson('/user/password', ['current_password' => $this->accounts[$actor]['password'], 'password' => $new, 'password_confirmation' => $new, ...$injection]),
+                    'RC-50' => $this->postJson('/commands/resolve', ['operation' => 'sale.checkout', 'sourceIntentId' => '7b0c1c53-5f0e-4c4e-9a43-2f1f6a7e9b10', 'recoveryEpoch' => str_repeat('ab', 32), ...$injection]),
                 ];
 
                 foreach ($refused as $id => $response) {

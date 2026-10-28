@@ -2,6 +2,7 @@
 
 namespace App\Http\Errors;
 
+use App\Domain\Commands\CommandRefused;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -79,6 +80,24 @@ final class ErrorAnswer
             'fields' => (object) [],
             'lines' => (object) [],
         ], $status, $headers);
+    }
+
+    /**
+     * The error body of a refusal of the command platform (TASK-008): its
+     * code, the code's status, its message key and only the safe values the
+     * refusal carries (RT-07, TR-ERR-02); HELD for IDEMPOTENCY_CONFLICT and
+     * EPOCH_STALE, REJECTED for every other code.
+     */
+    public static function refusal(CommandRefused $refusal): JsonResponse
+    {
+        return new JsonResponse([
+            'outcome' => $refusal->error->bodyOutcome(),
+            'code' => $refusal->error->value,
+            'messageKey' => $refusal->messageKey,
+            'params' => (object) $refusal->params,
+            'fields' => (object) $refusal->fields,
+            'lines' => (object) $refusal->lines,
+        ], $refusal->error->status());
     }
 
     /**

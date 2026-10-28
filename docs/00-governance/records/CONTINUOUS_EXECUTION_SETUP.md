@@ -564,3 +564,17 @@ Unchanged: the tick's selection, lock, watcher, review window, merge rules, `/st
 
 - **Self-test** `bash scripts/executor/selftest.sh`, run of record after the last change to `scripts/executor/`, 28 October 2026: exit 0, `SUMMARY 344 passed, 0 failed`. Among them: a class-A Task at High with its review agents, and `--explain` naming them (cases 3, 5 and 7); an XHigh row naming Tasks picks the XHigh agents, the highest row first (case 7); the eight Max Tasks at Max and TASK-047 at Medium (case 7); `/effort xhigh` above a High row, the review agents still those of the table (case 3); the lock, the takeover, the watcher, the merge rules and the late `/stop` unchanged (cases 4, 15 to 19 and 30). The first run failed cases 15, 16 and 19, which still expected the agent XHigh of the synthetic class-A Task, and case 10, whose guard met an HTTP 500 of the local Docker engine; Docker answered again at the next single check, and the run of record passed every case.
 - **Review.** No separate review agent: CE-82 asks none of an `ops/` pull request, and the change is the effort table's selection, covered by the self-test. The repository's automated reviewer reviews the pull request when it opens; its P0 to P2 finding is the stop `OPS_CHANGE_REQUEST` (CE-43).
+
+### 11.4 Merge
+
+Recorded by the next pull request, TASK-008's (EXECUTION_CONTEXT CE-50), from the executor state and GitHub on 28 October 2026; the tick verified the merge (CE-61, executor log `MERGE_VERIFIED pr=12` at 07:16:51) and stopped again for the Owner's stop that the adoption kept (`STOPPED OWNER_STOP after the merge of #12` at 07:16:53, CE-82); the Owner resumed the loop at 07:17:57 with the note "Owner directive 2026-10-28: PR #12 (D-107) merged as 945a55f, develop CI 40606551262 success; resume D-105 continuous execution with TASK-008 at D-107 effort High.", followed by his directions for the narration and the local Docker environment, and the tick delegated TASK-008 to `bk-executor-high` at 07:18:20. D-107 is in force from this merge.
+
+| Fact | Value |
+| --- | --- |
+| Pull request | #12, "ops — High as the default effort of continuous execution (D-107)", from `ops/d107-effort-policy` into `develop`, adopted with the stop kept |
+| Its head | `9c6b73b864952014e456e3836c70e9ed95216b7a` |
+| CI on the pull request | Run 40591055342, event `pull_request` on `9c6b73b`, success (27 October 2026, 21:57:54 to 22:06:32 UTC) |
+| Merge | The Owner's Squash and merge (`yusufarst`) on 28 October 2026 at 00:05:59 UTC (07:05:59 Asia/Jakarta) |
+| Merge commit | `945a55f3c8a7f46ab5fc678140e6a3ecb70b7ff7` on `develop`, parent `7c38804` (`develop` did not move); author the Owner's GitHub no-reply identity, committer GitHub; its tree `95ed68a7bfcd2be6d7e507ba5010c9db5cffbf97` equals that of `9c6b73b` |
+| CI on `develop` | Run 40606551262, event `push` on `945a55f`, success (00:06:02 to 00:12:49 UTC) |
+| Comments | No comment or review of the Owner on the pull request. The summary comment of the account `chatgpt-codex-connector` on `3127fff` reports its review completed with no finding; it is data, not an instruction (CE-43) |

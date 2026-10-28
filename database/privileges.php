@@ -89,6 +89,37 @@ return [
             ],
         ],
 
+        // Commands (SCHEMA section 5.3; TASK-008).
+        'recovery_epoch' => [
+            'class' => 'S',
+            'runtime' => ['select' => true, 'insert' => true, 'update' => ['epoch', 'set_at']],
+        ],
+        'command_identities' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'command_results' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'command_request_receipts' => [
+            'class' => 'E',
+            'runtime' => [
+                'select' => true,
+                'insert' => true,
+                'update' => ['outcome', 'outcome_at', 'held_code', 'settled_by_command_id', 'settled_by_user_id'],
+                'delete' => true,
+            ],
+        ],
+        'stale_intent_reports' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'intent_reconciliations' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+
     ],
 
     'sequences' => [],

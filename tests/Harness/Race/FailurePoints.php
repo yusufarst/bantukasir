@@ -18,13 +18,23 @@ final class FailurePoints implements CommandPoints
      */
     public const array LOCK_STEPS = ['2.1', '2.2', '2.3', '2.4', '3', '4', '5', '6', '7'];
 
+    /**
+     * The writes of the command pipeline in transactions of their own
+     * (CommandPoints::afterOwnWrite; TASK-008).
+     */
+    public const array OWN_WRITES = ['receipt', 'marking', 'settlement', 'report'];
+
     /** @var list<string> */
     public array $passed = [];
 
-    public function __construct(private readonly ?int $failAfter = null)
+    public function __construct(private readonly ?int $failAfter = null, private readonly ?string $failAtOwnWrite = null)
     {
         if ($failAfter !== null && $failAfter < 1) {
             throw new InvalidArgumentException('Write steps are counted from 1.');
+        }
+
+        if ($failAtOwnWrite !== null) {
+            self::ownWritePoint($failAtOwnWrite);
         }
     }
 
@@ -50,6 +60,24 @@ final class FailurePoints implements CommandPoints
     public function beforeCommit(): void
     {
         $this->passed[] = 'before_commit';
+    }
+
+    public function afterOwnWrite(string $write): void
+    {
+        $this->passed[] = self::ownWritePoint($write);
+
+        if ($write === $this->failAtOwnWrite) {
+            throw InjectedFailure::afterOwnWrite($write);
+        }
+    }
+
+    public static function ownWritePoint(string $write): string
+    {
+        if (! in_array($write, self::OWN_WRITES, true)) {
+            throw new InvalidArgumentException(sprintf('%s is no write of the command pipeline.', $write));
+        }
+
+        return 'own_write:'.$write;
     }
 
     public static function lockPoint(string $step): string

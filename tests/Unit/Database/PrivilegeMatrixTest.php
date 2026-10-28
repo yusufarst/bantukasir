@@ -27,11 +27,11 @@ final class PrivilegeMatrixTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_the_committed_matrix_holds_the_tables_of_task_004_and_task_006(): void
+    public function test_the_committed_matrix_holds_the_tables_of_task_004_task_006_and_task_008(): void
     {
         $matrix = PrivilegeMatrix::load();
 
-        $this->assertSame(['audit_events', 'cache', 'cache_locks', 'migrations', 'password_reset_tokens', 'security_log_entries', 'sessions', 'users'], array_keys($matrix->tables()));
+        $this->assertSame(['audit_events', 'cache', 'cache_locks', 'command_identities', 'command_request_receipts', 'command_results', 'intent_reconciliations', 'migrations', 'password_reset_tokens', 'recovery_epoch', 'security_log_entries', 'sessions', 'stale_intent_reports', 'users'], array_keys($matrix->tables()));
         $this->assertSame(['SELECT', 'INSERT', 'UPDATE', 'DELETE'], $matrix->tablePrivileges('cache', 'runtime'));
         $this->assertSame(['SELECT', 'INSERT', 'UPDATE', 'DELETE'], $matrix->tablePrivileges('cache_locks', 'runtime'));
         $this->assertSame([], $matrix->tablePrivileges('migrations', 'runtime'));
@@ -46,6 +46,17 @@ final class PrivilegeMatrixTest extends TestCase
         $this->assertSame(['SELECT', 'INSERT', 'UPDATE', 'DELETE'], $matrix->tablePrivileges('password_reset_tokens', 'runtime'));
         $this->assertSame(['SELECT', 'INSERT'], $matrix->tablePrivileges('audit_events', 'runtime'));
         $this->assertSame(['SELECT', 'INSERT', 'DELETE'], $matrix->tablePrivileges('security_log_entries', 'runtime'));
+
+        // TASK-008 (SCHEMA section 10).
+        $this->assertSame(['SELECT', 'INSERT'], $matrix->tablePrivileges('recovery_epoch', 'runtime'));
+        $this->assertSame(['epoch', 'set_at'], $matrix->updateColumns('recovery_epoch'));
+
+        foreach (['command_identities', 'command_results', 'stale_intent_reports', 'intent_reconciliations'] as $table) {
+            $this->assertSame(['SELECT', 'INSERT'], $matrix->tablePrivileges($table, 'runtime'), $table);
+        }
+
+        $this->assertSame(['SELECT', 'INSERT', 'DELETE'], $matrix->tablePrivileges('command_request_receipts', 'runtime'));
+        $this->assertSame(['outcome', 'outcome_at', 'held_code', 'settled_by_command_id', 'settled_by_user_id'], $matrix->updateColumns('command_request_receipts'));
 
         foreach (array_keys($matrix->tables()) as $table) {
             $this->assertSame($table === 'security_log_entries', $matrix->policies($table) !== [], $table);

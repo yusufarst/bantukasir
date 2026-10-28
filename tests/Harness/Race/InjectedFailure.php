@@ -14,4 +14,9 @@ final class InjectedFailure extends RuntimeException
     {
         return new self(sprintf('Failure injected after write step %d (TS-21).', $step));
     }
+
+    public static function afterOwnWrite(string $write): self
+    {
+        return new self(sprintf('Failure injected after the pipeline write %s (TS-21).', $write));
+    }
 }

@@ -24,8 +24,11 @@ use LogicException;
  * (SCHEMA section 3.5, G-16).
  *
  * The columns command_id, product_id and cash_session_id are written once
- * their keys exist (EXECUTION_CONTEXT EXC-44): TASK-008, TASK-015 and TASK-027
- * add them to this writer with the keys.
+ * their keys exist (EXECUTION_CONTEXT EXC-44): TASK-008 added command_id with
+ * its key to command_identities — the identity of the enveloped command whose
+ * transaction writes the event, null for an authentication endpoint or an
+ * operator procedure (TR-CMD-07) — and TASK-015 and TASK-027 add the other two
+ * with their keys.
  */
 final class AuditLog
 {
@@ -51,6 +54,7 @@ final class AuditLog
         ?string $reference = null,
         ?string $reason = null,
         ?string $operatorNote = null,
+        ?int $commandId = null,
     ): int {
         if (DB::transactionLevel() === 0) {
             throw new LogicException('An audit event is written in the transaction of the change it records (BR-AUD-01).');
@@ -76,6 +80,7 @@ final class AuditLog
             'actor_process' => $actor->process,
             'actor_display_name' => $actor->displayName,
             'operator_note' => $operatorNote,
+            'command_id' => $commandId,
             'subject_type' => $subject['type'] ?? null,
             'subject_id' => $subject['id'] ?? null,
             'reference' => $reference,

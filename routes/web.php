@@ -6,6 +6,8 @@ use App\Http\Controllers\Access\OwnPasswordController;
 use App\Http\Controllers\Access\PasswordLinkController;
 use App\Http\Controllers\Access\SessionActivityController;
 use App\Http\Controllers\Access\SignInController;
+use App\Http\Controllers\Commands\RequestsDataController;
+use App\Http\Controllers\Commands\ResolveIntentController;
 use App\Http\Controllers\Testing\SpecimenController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Http\Controllers\AuthenticatedSessionController;
@@ -60,7 +62,23 @@ Route::middleware(['auth', 'signin.session', 'throttle:authenticated', 'cache.he
         Route::get('/account', [AccountController::class, 'show'])->name('account.show');
         Route::get('/account/password', [AccountController::class, 'password'])->name('account.password');
     });
+
+    // CAP-34: the status check of an uncertain intent, RC-50, in the bucket
+    // of every command (RT-09), and the unresolved request receipts, RD-04
+    // (TASK-008). Who may check which intent, and scope=all for the Owner
+    // only, are checked by the Action and the FormRequest.
+    Route::middleware('capability:CAP-34')->group(function (): void {
+        Route::post('/commands/resolve', ResolveIntentController::class)->middleware('throttle:command')->name('commands.resolve');
+        Route::get('/data/command-requests', RequestsDataController::class)->name('data.requests');
+    });
 });
+
+// The probe operation of the command platform (TASK-008 scope item 9): only
+// in the testing environment, and only where the test harness exists, which
+// the release build does not contain.
+if (app()->environment('testing') && is_file(base_path('tests/Harness/Commands/routes.php'))) {
+    require base_path('tests/Harness/Commands/routes.php');
+}
 
 // The design system's component specimen and the shell's, for the browser
 // tests (TASK-005, TASK-007): only in the local and testing environments,

@@ -8,7 +8,10 @@ use Illuminate\Container\Attributes\Bind;
  * The named points of a command's transaction (TEST_STRATEGY TS-20, TS-21;
  * TASK-004): after the insert of its identity, after each lock step of
  * TECHNICAL_RULES section 7.1, after each write step k, and before commit.
- * Every command's Action calls them in that order.
+ * Every command's Action calls them in that order. The command pipeline's
+ * writes in transactions of their own — the request receipt, its marking,
+ * the settlement of receipts and the stale-intent report (ADR-009; TASK-008)
+ * — each call afterOwnWrite() before their transaction commits.
  *
  * The application resolves NoCommandPoints, which does nothing, in every
  * environment and build. Only the test harness in tests/Harness, which the
@@ -40,4 +43,11 @@ interface CommandPoints
      * Immediately before the transaction commits.
      */
     public function beforeCommit(): void;
+
+    /**
+     * After a write of the command pipeline that runs in a transaction of its
+     * own, before that transaction commits: "receipt", "marking",
+     * "settlement" or "report".
+     */
+    public function afterOwnWrite(string $write): void;
 }

@@ -43,7 +43,9 @@ final class RecentAuthenticationTest extends DatabaseTestCase
     {
         $frozen = ['operation' => 'harness.recent_auth', 'sourceIntentId' => '00000000-0000-4000-8000-000000000001'];
 
-        $this->postJson('/testing/recent-auth', $frozen)->assertStatus(423);
+        // The error body of RT-07 (TASK-008; TASK-007 finding F-2).
+        $this->postJson('/testing/recent-auth', $frozen)->assertStatus(423)
+            ->assertExactJson(['outcome' => 'REJECTED', 'code' => 'RECENT_AUTH_REQUIRED', 'messageKey' => 'ux.state.recent_auth', 'params' => [], 'fields' => [], 'lines' => []]);
         $this->assertSame(0, $this->ran);
         $this->getJson('/user/confirmed-password-status')->assertOk()->assertExactJson(['confirmed' => false]);
 
