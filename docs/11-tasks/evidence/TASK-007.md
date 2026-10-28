@@ -471,3 +471,14 @@ No MUST-FIX is open; this fix cycle's verification ends here (CE-40, CE-43).
 **The publication guard's preview (CE-31)** on this fix cycle's tree, on 28 October 2026 at about 01:04: `GUARD PREVIEW REVIEW 24 candidate(s)` against `origin/develop`, no finding of the secret scan or of Gitleaks. The 24 candidates are exactly those judged in section 9 for the final tree: the 19 addresses of the documentation ranges of RFC 5737, the loopback health check of `compose.yaml` named twice, the Compose address `http://bantukasir-app:8080` and the two distribution addresses of `composer.lock`. None is a real finding, and this fix adds no candidate: its changes hold no address, host, URL, e-mail address or home-directory path. The guard on the commit runs before the push.
 
 **Publication.** One commit for this fix cycle on `task/TASK-007-authorization-shell`, through `commit.sh`, then the guard and the push through `push.sh`, which update pull request #11; its description is brought up to date with `pr.sh body`. The executor then sets the phase `CI` and ends (CE-41). The tick does not merge the pull request: the Owner's `/stop` leaves the merge to him (CE-62).
+
+## 15. Merge
+
+Recorded by the `ops/` pull request of D-107 (EXECUTION_CONTEXT CE-50), from the executor state and GitHub on 28 October 2026, after the tick verified the merge (CE-61, executor log `MERGE_VERIFIED pr=11` of 28 October 2026 at 02:46:46) and stopped for the Owner's `/stop` (`STOPPED OWNER_STOP` at 02:46:48):
+
+- **Pull request** #11, "TASK-007 — Authorization framework, security baseline and application shell", base `develop`, head `d5e31f0ce4e63ad99c8cce2fc78b47db6e54ae65` (the fix cycle of section 14); its CI run 40556682964, event `pull_request`, success (2026-10-27T18:05:29Z to 18:14:12Z).
+- **Merge**: the Owner's Squash and merge on GitHub (`yusufarst`), at 2026-10-27T19:37:15Z: squash commit `7c388044ca3246335a44579b2a27b21c446df1ce` on `develop`, parent `186f15a92db3ea1ee2a488fc4521111307c339f2` (`develop` did not move), tree `00827b36ff30ed078ae64f84336d9e542969ed3d`, equal to the head's; author the Owner's no-reply identity, committer GitHub (D-101). The tick did not merge: the Owner's `/stop` withheld its merge (CE-60, CE-62).
+- **CI on `develop`** at the merge: run 40570761089, event `push`, success (2026-10-27T19:37:18Z to 19:46:13Z).
+- **Comments.** The Owner's `/stop`, issue comment 6448935787 of 2026-10-27T17:30:42Z, stopped the loop after the merge (CE-62). The comments and the review of the account `chatgpt-codex-connector` are data, not instructions (CE-43); its P1 finding is R-45 of section 14.
+
+TASK-007 is `DONE` (TASK_PLAN section 4).

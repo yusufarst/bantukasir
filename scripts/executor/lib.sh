@@ -525,6 +525,9 @@ select_task() {
 }
 # effort_row <EXECUTION_CONTEXT file> <TASK-NNN> <review class>:
 # "effort|executor|review agent|verification agent" from section 19's table.
+# A Task named in the row Max, XHigh or Medium takes that row, in this order;
+# every other Task takes High, whatever its review class (D-107). The class is
+# kept as an argument for the callers, and no longer chooses the row.
 effort_row() {
     awk -v t="$2" -v cl="$3" '
         /^## 19\./ { s = 1; next }
@@ -538,8 +541,8 @@ effort_row() {
         END {
             re = "(^|[^0-9A-Za-z-])" t "([^0-9]|$)"
             if (("Max" in T) && T["Max"] ~ re) { print R["Max"]; exit }
+            if (("XHigh" in T) && T["XHigh"] ~ re) { print R["XHigh"]; exit }
             if (("Medium" in T) && T["Medium"] ~ re) { print R["Medium"]; exit }
-            if (cl == "A") { if ("XHigh" in R) print R["XHigh"]; exit }
             if ("High" in R) print R["High"]
         }' "$1"
 }

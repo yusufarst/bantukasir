@@ -538,3 +538,29 @@ Recorded by the next pull request, TASK-007's (EXECUTION_CONTEXT CE-50), from th
 | Merge commit | `186f15a92db3ea1ee2a488fc4521111307c339f2` on `develop`, parent `ccb464f` (`develop` did not move); author the Owner's GitHub no-reply identity, committer GitHub; its tree `5a920526a55644de1d7ef77ab3913d4c0693e94c` equals that of `d1de2e7` |
 | CI on `develop` | Run 40411276490, event `push` on `186f15a`, success (22:17:22 to 22:23:19 UTC) |
 | Comments | No comment or review of the Owner on the pull request. The summary comment and the review of the account `chatgpt-codex-connector` on `27a57d7` are data, not instructions (CE-43); its P1 finding was fixed before the merge (section 10.4) |
+
+## 11. D-107: High as the default effort
+
+Written 28 October 2026 (Asia/Jakarta) by the host session under the Owner's directives of 27 October 2026 on the effort of continuous execution ([D-107](../DECISIONS.md)), on the branch `ops/d107-effort-policy` from `origin/develop` at `7c38804`, in the stop `OWNER_STOP` after the Owner's merge of TASK-007's pull request #11 (CE-23, CE-82): no executor held the lock, and no other `task/` or `ops/` pull request was open.
+
+### 11.1 Files changed
+
+| File | Change |
+| --- | --- |
+| [EXECUTION_CONTEXT](../../11-tasks/EXECUTION_CONTEXT.md) | CE-11: High the default, the review class no longer chooses the effort, XHigh and Medium only by name with a reason; the table's row XHigh names its Tasks (none yet), the row High is the default; the text below the table |
+| `scripts/executor/lib.sh` | `effort_row` matches the rows Max, XHigh and Medium by Task, in this order, and gives High otherwise; the class no longer gives XHigh |
+| `scripts/executor/selftest.sh` | Cases 1 to 3 expect High for the synthetic class-A Tasks TASK-003 and TASK-004; case 3's `/effort` override now `xhigh`, above a High row, with the review agents of the table; case 5: `--explain` of a class-A Task; case 7: TASK-004 and TASK-008 of the real table at High, the eight Max Tasks at Max, TASK-047 at Medium, and an XHigh row naming Tasks in a copy of the real table |
+| `.claude/agents/bk-*.md` | One sentence each: progress narrated in Bahasa Indonesia; the repository, code, commands, commit messages and the reviewers' findings in English |
+| [DECISIONS](../DECISIONS.md), [CURRENT_HANDOFF](../../handoff/CURRENT_HANDOFF.md), [TASK-007 evidence](../../11-tasks/evidence/TASK-007.md) section 15, this record | D-107, and the record of TASK-007's merge (CE-50) |
+
+Unchanged: the tick's selection, lock, watcher, review window, merge rules, `/stop` and `/effort` handling; the isolated review of CE-40, which depends on the review class, not on the effort; `.claude/settings.json`.
+
+### 11.2 The Owner's steps
+
+- His Squash and merge of this `ops/` pull request (CE-60). It is adopted into the executor state in the stop with `bash scripts/executor/state.sh adopt` (CE-82), which keeps the `OWNER_STOP`: after the merge the tick verifies it (CE-61) and stops again.
+- Then `bash scripts/executor/state.sh resume` with his note. The next tick reads the table from `origin/develop` and starts TASK-008 at High.
+
+### 11.3 Checks
+
+- **Self-test** `bash scripts/executor/selftest.sh`, run of record after the last change to `scripts/executor/`, 28 October 2026: exit 0, `SUMMARY 344 passed, 0 failed`. Among them: a class-A Task at High with its review agents, and `--explain` naming them (cases 3, 5 and 7); an XHigh row naming Tasks picks the XHigh agents, the highest row first (case 7); the eight Max Tasks at Max and TASK-047 at Medium (case 7); `/effort xhigh` above a High row, the review agents still those of the table (case 3); the lock, the takeover, the watcher, the merge rules and the late `/stop` unchanged (cases 4, 15 to 19 and 30). The first run failed cases 15, 16 and 19, which still expected the agent XHigh of the synthetic class-A Task, and case 10, whose guard met an HTTP 500 of the local Docker engine; Docker answered again at the next single check, and the run of record passed every case.
+- **Review.** No separate review agent: CE-82 asks none of an `ops/` pull request, and the change is the effort table's selection, covered by the self-test. The repository's automated reviewer reviews the pull request when it opens; its P0 to P2 finding is the stop `OPS_CHANGE_REQUEST` (CE-43).
