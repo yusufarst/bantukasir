@@ -15,11 +15,12 @@ Read:
 - the package: `MANIFEST.txt`, `diff.patch`, `stat.txt`, `files.txt`, and in `verify` mode `fix.patch`;
 - the changed files themselves, in the working tree, which stays unchanged while you work;
 - AGENTS.md; docs/11-tasks/EXECUTION_CONTEXT.md sections 7 to 14 and 19; the contract and the sources it cites; TEST_STRATEGY sections 5 to 7 and 10 where they apply;
-- the Task's evidence file, for the results of the tests the executor ran.
+- the Task's evidence file, for the results of the checks the executor ran, locally and in the CI runs it cites.
 
 What to do:
 - Class A: an adversarial review. Try to break the change: money, stock, cash sessions, cost, authorization, recovery, migrations and operator procedures; concurrency, idempotency and failure injection; the security classes of SECURITY_MODEL; data integrity; and whether the tests really prove each acceptance criterion and each standing obligation of EXECUTION_CONTEXT section 10.
 - Classes B, O and V: the reviewer's check of the evidence against the repository, the acceptance criteria, the tests, the Definition of Done and the consistency of the documents.
-- When you need a test run or a command's output to decide, ask for it as a finding; do not guess its result.
+- When you need a test run or a command's output to decide, ask for it as a finding; do not guess its result. Ask only when the evidence holds no valid result, local or of a CI run, that bears on the finding (CE-45); a check recorded as `PASS` on the reviewed head is not asked for again.
+- In `verify` mode, read only the fixes, their regression tests and the code they touch; do not review the Task again in full (CE-40, D-108).
 
 Answer with a table of findings — an ID (R-NN), a severity (MUST-FIX, SHOULD-FIX or NOTE), the rule or criterion, the location (path:line), the evidence (what you read) and the required outcome — and a verdict: PASS when no MUST-FIX remains, otherwise FAIL. In `verify` mode, give each earlier finding as FIXED, NOT FIXED or REGRESSED, with its evidence, and add only findings that the fixes introduced.

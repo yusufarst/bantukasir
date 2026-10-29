@@ -12,8 +12,8 @@
 # cannot create the case, for processes (EXECUTOR_SELFTEST=1,
 # EXECUTOR_FIXTURES). The identity is set only in the sandbox's own repository
 # configuration. It never touches the real repository, its state, GitHub or a
-# Docker volume (the guard's cases run the project image on the sandbox,
-# mounted read-only, without network). Secret-looking and personal-looking
+# Docker volume (the guard's cases run the pinned Gitleaks natively on the
+# sandbox, D-108). Secret-looking and personal-looking
 # samples are generated at run time, never written here as literals (EXC-63).
 # It prints PASS <case> or FAIL <case> per case and a summary.
 # Exit codes: 0 every case passed; 1 a case failed; 2 usage.
@@ -155,7 +155,7 @@ run() {
     set -e
     RC="$(cat "$SB/rc" 2> /dev/null || echo 99)"
 }
-# runreal: the same with the real HOME (Docker reads its configuration there).
+# runreal: the same with the real HOME (the configuration of Git and of the tools).
 runreal() { run HOME="$REAL_HOME" USERPROFILE="$REAL_UP" "$@"; }
 libcall() { (cd "$CL" && EXECUTOR_SELFTEST=1 EXECUTOR_FIXTURES="$FIX" && . "$HERE/lib.sh" && "$@"); }
 hashstate() { { cat "$SD/state" 2> /dev/null || true; for f in token since heartbeat boot holder; do cat "$SD/lock/$f" 2> /dev/null || true; done; } | sha256sum | cut -d' ' -f1; }
@@ -844,13 +844,36 @@ run push.sh
 if [ "$(stget pr.head)" = "$(g rev-parse HEAD)" ]; then expect_first "9 push.sh pushes, checks ls-remote and updates pr.head" '^PUSHED '; else failc "9 push.sh pushes, checks ls-remote and updates pr.head" "$OUT"; fi
 
 # ---------------------------------------------------------------- 10. guard.sh
-command -v docker > /dev/null 2>&1 && docker image inspect bantukasir-app:local > /dev/null 2>&1 || failc "10 the project image bantukasir-app:local is needed for the guard's cases"
+# The guard's gitleaks (D-108): on Windows the verified binary under
+# LOCALAPPDATA, elsewhere gitleaks on PATH, of version 8.30.1.
+if [ -r "/proc/$$/winpid" ]; then
+    gl_exe="$(cygpath -u "${LOCALAPPDATA:-.}")/BantuKasir/tools/gitleaks/8.30.1/gitleaks.exe"
+    [ -n "${LOCALAPPDATA:-}" ] && [ -f "$gl_exe" ] || failc "10 the verified gitleaks 8.30.1 under LOCALAPPDATA is needed for the guard's cases (D-108)" "$gl_exe"
+else
+    gl="$(gitleaks version 2> /dev/null | head -n 1 | tr -d '\r' || true)"
+    [ "${gl#v}" = 8.30.1 ] || failc "10 gitleaks 8.30.1 on PATH is needed for the guard's cases (D-108)" "${gl:-none}"
+fi
 setup
 gbranch() { g switch -q -c "task/TASK-004-$1" develop; }
 gbranch clean
 printf 'clean text\n' > "$CL/clean.txt"
 g add clean.txt
 g commit -q -m "TASK-004: a clean change"
+if [ -r "/proc/$$/winpid" ]; then
+    mkdir -p "$SB/appdata-empty" "$SB/appdata-fake/BantuKasir/tools/gitleaks/8.30.1"
+    runreal LOCALAPPDATA="$(cygpath -w "$SB/appdata-empty")" guard.sh
+    if [ "$RC" = 1 ] && [ ! -e "$SD/guard-pass" ]; then expect_out "10 guard FAIL without the user-local gitleaks, without a stamp" '^FAIL GITLEAKS_BINARY .* is missing'; else failc "10 guard FAIL without the user-local gitleaks, without a stamp" "$OUT"; fi
+    printf '#!/bin/sh\necho 8.30.1\n' > "$SB/appdata-fake/BantuKasir/tools/gitleaks/8.30.1/gitleaks.exe"
+    chmod +x "$SB/appdata-fake/BantuKasir/tools/gitleaks/8.30.1/gitleaks.exe"
+    runreal LOCALAPPDATA="$(cygpath -w "$SB/appdata-fake")" guard.sh
+    if [ "$RC" = 1 ] && [ ! -e "$SD/guard-pass" ]; then expect_out "10 guard FAIL on a gitleaks with another SHA-256, without a stamp" '^FAIL GITLEAKS_BINARY .* another SHA-256'; else failc "10 guard FAIL on a gitleaks with another SHA-256, without a stamp" "$OUT"; fi
+else
+    mkdir -p "$SB/oldleaks"
+    printf '#!/bin/sh\necho 8.29.0\n' > "$SB/oldleaks/gitleaks"
+    chmod +x "$SB/oldleaks/gitleaks"
+    runreal PATH="$SB/oldleaks:$PATH" guard.sh
+    if [ "$RC" = 1 ] && [ ! -e "$SD/guard-pass" ]; then expect_out "10 guard FAIL with another gitleaks version, without a stamp" '^FAIL GITLEAKS_VERSION'; else failc "10 guard FAIL with another gitleaks version, without a stamp" "$OUT"; fi
+fi
 runreal guard.sh
 [ "$RC" = 0 ] && [ "$(sed -n '1p' "$SD/guard-pass")" = "$(g rev-parse HEAD)" ] && pass "10 guard PASS on a clean commit, with the stamp" || failc "10 guard PASS" "$OUT"
 gbranch secret
@@ -1260,13 +1283,14 @@ bad="$(printf '%s\n%s\n%s\n' "$allow_have" "$ask_have" "$deny_have" | grep -E '^
 bad="$(printf '%s\n' "$allow_have" | grep -E '^Bash\((docker compose \*|docker run|gh api|bash -|sh )' || true)"
 [ -z "$bad" ] && pass "14 settings: no broad allow entry for docker compose *, docker run, gh api, bash - or sh" || failc "14 settings broad allow: $bad"
 printf '%s\n' "$allow_have" | grep -qxF 'Bash(bash scripts/executor/watch.sh*)' && pass "14 settings: the allow entry of watch.sh (D-104)" || failc "14 settings: the allow entry of watch.sh is missing"
-# The executor agents of D-104: one body, the new steps, no wait for CI.
+# The executor agents of D-104 and D-108: one body, the steps, checkpoint runs
+# of CI before the pull request, no wait for the pull request's CI.
 b0="$(tail -n +7 "$REPO_ROOT/.claude/agents/bk-executor-high.md")"
 ok=1
 for lvl in medium xhigh max; do [ "$(tail -n +7 "$REPO_ROOT/.claude/agents/bk-executor-$lvl.md")" = "$b0" ] || ok=0; done
-for s in '3. Local checks (EXECUTION_CONTEXT CE-44):' '4. Review (CE-40), once:' '7. Report and end (CE-41, CE-60):' 'Do not wait for CI.' '- wait for CI or poll GitHub in a loop;' 'Never repeat the full review.' 'Mode `fix`: the delegation'"'"'s Reason names a red CI'; do printf '%s\n' "$b0" | grep -qF -- "$s" || ok=0; done
+for s in '3. Checks (EXECUTION_CONTEXT CE-44 to CE-46):' 'run in a checkpoint run of CI, never in a container on this machine' '4. Review (CE-40), once:' '7. Report and end (CE-41, CE-60):' 'Do not wait for CI.' '- wait for the pull request'"'"'s CI, which the tick follows, or poll GitHub in a loop of model turns;' '- run a container of BantuKasir on this machine (D-108);' 'Never repeat the full review.' 'Mode `fix`: the delegation'"'"'s Reason names a red CI'; do printf '%s\n' "$b0" | grep -qF -- "$s" || ok=0; done
 if printf '%s\n' "$b0" | grep -qF -e 'pr.sh wait-ci' -e '8. Green'; then ok=0; fi
-[ "$ok" = 1 ] && pass "13 the four executor agents share one body with the steps of D-104, without a wait for CI" || failc "13 the executor agents' bodies (D-104)"
+[ "$ok" = 1 ] && pass "13 the four executor agents share one body with the steps of D-104 and D-108, without a wait for the pull request's CI" || failc "13 the executor agents' bodies (D-104, D-108)"
 
 # ================================================================ D-104
 WD="$SD/watch"
