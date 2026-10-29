@@ -220,8 +220,16 @@ export function RecoveryPanel({
             title={t(entry.title)}
             actions={
                 <>
-                    {kind === 'uncertain' && onResend !== undefined && <Button label={t('ux.action.resend')} onClick={onResend} busy={busy} />}
-                    <Button label={t('ux.action.check_status')} variant={kind === 'uncertain' ? 'secondary' : 'primary'} onClick={onCheckStatus} busy={busy && kind !== 'uncertain'} />
+                    {/* Enter never activates either (UXA-10; UXI-036, UXI-037; TASK-009). */}
+                    {kind === 'uncertain' && onResend !== undefined && <Button label={t('ux.action.resend')} onClick={onResend} busy={busy} enterActivates={false} />}
+                    <Button
+                        label={t('ux.action.check_status')}
+                        variant={kind === 'uncertain' && onResend !== undefined ? 'secondary' : 'primary'}
+                        onClick={onCheckStatus}
+                        busy={busy && (kind !== 'uncertain' || onResend === undefined)}
+                        unavailable={busy}
+                        enterActivates={false}
+                    />
                 </>
             }
         >

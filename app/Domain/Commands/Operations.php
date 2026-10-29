@@ -14,13 +14,27 @@ use LogicException;
  * the block of NC-13 (`print`).
  *
  * Each operation's route, FormRequest and Action are added by its own Task.
- * The test harness may add one more operation, its probe, only in the testing
- * environment (allowForTesting); the release build has no such caller.
+ * The test harness may add one more operation, its probe, only in the local
+ * and testing environments (allowForTesting); the release build has no such
+ * caller.
  */
 final class Operations
 {
     /** The operation version of every V1 operation (INTERACTION_CONTRACTS section 1.1). */
     public const int VERSION = 1;
+
+    /** The family of print, reprint and export: no label, exempt from the block of NC-13. */
+    public const string EXEMPT_FAMILY = 'print';
+
+    /**
+     * The environments in which the test harness may add its probe: the
+     * testing environment of the PHP suites and the local environment that
+     * the browser suite runs against (TASK-009 scope item 8); never staging or
+     * production.
+     *
+     * @var list<string>
+     */
+    public const array PROBE_ENVIRONMENTS = ['local', 'testing'];
 
     /** @var array<string, string> operation => family */
     public const array FAMILIES = [
@@ -109,12 +123,12 @@ final class Operations
 
     /**
      * Adds a probe operation of the test harness (TASK-008 scope item 9); it
-     * refuses outside the testing environment.
+     * refuses outside the local and testing environments.
      */
     public static function allowForTesting(string $operation, string $family): void
     {
-        if (! app()->environment('testing')) {
-            throw new LogicException('A probe operation exists only in the testing environment.');
+        if (! app()->environment(self::PROBE_ENVIRONMENTS)) {
+            throw new LogicException('A probe operation exists only in the local and testing environments.');
         }
 
         if (array_key_exists($operation, self::FAMILIES) || preg_match('/^testing\.[a-z][a-z0-9_]{0,40}$/', $operation) !== 1) {

@@ -234,3 +234,11 @@ By `bk-reviewer-high` (Claude Opus 5.5, effort High; CE-11: a verification one l
 | R-18 | NOTE | The comment claimed that every later request waits for the fence; a receipt written after the second read is settled with the fence | Comment of `ResolveIntent` reworded; the behaviour is that of an original arriving just after the fence, which the design accepts |
 
 No MUST-FIX remains, so there is no round 3 (CE-40). After R-16 and R-18: `composer analyse` PASS, Pint clean, `composer test:race` PASS, 19 tests, 132 assertions. The fix of R-16 adds a test only and R-18 changes a comment, so no other suite is affected (CE-44).
+
+## 10. Merge
+
+Recorded by TASK-009 (EXECUTION_CONTEXT CE-50), from the executor state and GitHub on 28 October 2026, after the tick verified the merge (CE-61, executor log `MERGE_VERIFIED pr=13` of 28 October 2026 at 16:32:31):
+
+- **Pull request** #13, "TASK-008 — Command platform (server)", base `develop`, head `16250c02ab45af25f82023d4d93517ab39eb9851`; its CI run 40627708118, event `pull_request`, success (2026-10-28T03:37:04Z to 03:46:39Z).
+- **Merge**: the tick's squash merge under D-105 (CE-60, executor log `AUTO_MERGE pr=13` at 16:20:27), bound to that head, through the Owner's account (`yusufarst`), at 2026-10-28T09:20:39Z, the automated review's status DONE: squash commit `e54cbab04dc5106982cd207bad2795c09e6318e3` on `develop`, parent `945a55f3c8a7f46ab5fc678140e6a3ecb70b7ff7` (`develop` did not move), tree `62721592c5faa9bd315dbd05273c7a54017908c0`, equal to the head's; author the Owner's no-reply identity, committer GitHub (D-101).
+- **CI on `develop`** at the merge: run 40663496964, event `push`, success (2026-10-28T09:20:41Z to 09:31:08Z).

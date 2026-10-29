@@ -1,4 +1,6 @@
 import { router } from '@inertiajs/react';
+import { REFERENCES_PREFIX } from '@/lib/commands/references';
+import { stopIndicators } from '@/lib/commands/unresolved';
 
 // What the browser does to keep a signed-in user's data from the next person
 // on a shared device (SECURITY_MODEL SEC-AUTH-10, SEC-SESS-02, SEC-CH-04,
@@ -51,16 +53,38 @@ function tabs(): BroadcastChannel | null {
     return channel;
 }
 
-/** Clears the history encryption key and every entry of the application's browser storage. */
+/**
+ * Clears the history encryption key and every entry of the application's
+ * browser storage, except the unresolved command references, which stay for
+ * their user until the server reports them resolved (SEC-CH-05; TASK-009).
+ * Every path that leaves the user's sign-in session clears them, so it also
+ * stops the shell's reads of RD-03 and RD-04 (stopIndicators).
+ */
 export function clearBrowserData(): void {
+    stopIndicators();
     router.clearHistory();
 
-    for (const storage of [window.sessionStorage, window.localStorage]) {
-        try {
-            storage.clear();
-        } catch {
-            // A storage the browser refuses holds nothing of the application.
+    try {
+        window.sessionStorage.clear();
+    } catch {
+        // A storage the browser refuses holds nothing of the application.
+    }
+
+    try {
+        const local = window.localStorage;
+        const others: string[] = [];
+
+        for (let index = 0; index < local.length; index += 1) {
+            const key = local.key(index);
+
+            if (key !== null && !key.startsWith(REFERENCES_PREFIX)) {
+                others.push(key);
+            }
         }
+
+        others.forEach((key) => local.removeItem(key));
+    } catch {
+        // A storage the browser refuses holds nothing of the application.
     }
 }
 

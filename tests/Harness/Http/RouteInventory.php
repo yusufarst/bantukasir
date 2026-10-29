@@ -39,7 +39,7 @@ use InvalidArgumentException;
 final class RouteInventory
 {
     /** The test-only routes, which the local and testing environments alone hold (SpecimenController). */
-    public const array TESTING = ['GET /testing/specimen', 'GET /testing/shell-specimen', 'POST /testing/browser/reset', 'POST /testing/browser/link', 'POST /commands/testing.probe'];
+    public const array TESTING = ['GET /testing/specimen', 'GET /testing/shell-specimen', 'GET /testing/command-specimen', 'POST /testing/browser/reset', 'POST /testing/browser/link', 'POST /testing/browser/commands', 'POST /testing/browser/receipt', 'POST /commands/testing.probe'];
 
     /** The routes of SEC-AZ-01 that need no sign-in, and how each is restricted instead. */
     public const array PUBLIC = [

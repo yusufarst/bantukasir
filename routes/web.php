@@ -1,11 +1,14 @@
 <?php
 
+use App\Domain\Commands\Operations;
 use App\Http\Controllers\Access\AccountController;
 use App\Http\Controllers\Access\HomeRedirectController;
 use App\Http\Controllers\Access\OwnPasswordController;
 use App\Http\Controllers\Access\PasswordLinkController;
 use App\Http\Controllers\Access\SessionActivityController;
+use App\Http\Controllers\Access\ShellDataController;
 use App\Http\Controllers\Access\SignInController;
+use App\Http\Controllers\Commands\RequestsController;
 use App\Http\Controllers\Commands\RequestsDataController;
 use App\Http\Controllers\Commands\ResolveIntentController;
 use App\Http\Controllers\Testing\SpecimenController;
@@ -61,22 +64,30 @@ Route::middleware(['auth', 'signin.session', 'throttle:authenticated', 'cache.he
 
         Route::get('/account', [AccountController::class, 'show'])->name('account.show');
         Route::get('/account/password', [AccountController::class, 'password'])->name('account.password');
+
+        // RD-03, the shell's indicators (TASK-009): a background read that
+        // takes no parameter (RT-08, RT-10).
+        Route::get('/data/shell', ShellDataController::class)->middleware('input.allow')->name('data.shell');
     });
 
     // CAP-34: the status check of an uncertain intent, RC-50, in the bucket
     // of every command (RT-09), and the unresolved request receipts, RD-04
-    // (TASK-008). Who may check which intent, and scope=all for the Owner
-    // only, are checked by the Action and the FormRequest.
+    // (TASK-008); the page of unresolved requests, RP-006, built in the
+    // browser from the stored references and RD-04 (TASK-009). Who may check
+    // which intent, and scope=all for the Owner only, are checked by the
+    // Action and the FormRequest.
     Route::middleware('capability:CAP-34')->group(function (): void {
         Route::post('/commands/resolve', ResolveIntentController::class)->middleware('throttle:command')->name('commands.resolve');
         Route::get('/data/command-requests', RequestsDataController::class)->name('data.requests');
+        Route::get('/requests', [RequestsController::class, 'index'])->middleware('input.allow')->name('requests.index');
     });
 });
 
 // The probe operation of the command platform (TASK-008 scope item 9): only
-// in the testing environment, and only where the test harness exists, which
-// the release build does not contain.
-if (app()->environment('testing') && is_file(base_path('tests/Harness/Commands/routes.php'))) {
+// in the testing environment and, for the browser suite, the local one
+// (TASK-009), and only where the test harness exists, which the release
+// build does not contain.
+if (app()->environment(Operations::PROBE_ENVIRONMENTS) && is_file(base_path('tests/Harness/Commands/routes.php'))) {
     require base_path('tests/Harness/Commands/routes.php');
 }
 
@@ -86,6 +97,7 @@ if (app()->environment('testing') && is_file(base_path('tests/Harness/Commands/r
 if (SpecimenController::enabledIn((string) app()->environment())) {
     Route::get('/testing/specimen', SpecimenController::class)->name('testing.specimen');
     Route::get('/testing/shell-specimen', [SpecimenController::class, 'shell'])->name('testing.shell_specimen');
+    Route::get('/testing/command-specimen', [SpecimenController::class, 'command'])->middleware(['auth', 'signin.session', 'throttle:authenticated', 'cache.headers:no_store;private', 'history.encrypt', 'capability:CAP-01'])->name('testing.command_specimen');
 
     // The fixtures of the browser tests, from the test harness (TASK-006): only
     // where the harness exists, which the release build does not contain.

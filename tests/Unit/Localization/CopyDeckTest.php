@@ -58,6 +58,17 @@ final class CopyDeckTest extends TestCase
             return trim($matches[1][0]);
         }
 
+        // A cell that names the key and gives its copy after a colon, as the
+        // tables of section 14 do: "`commands.family.sale`: Penjualan"
+        // (TASK-009). Every such cell gives the key the same copy.
+        $inline = preg_match_all('/\| `'.preg_quote($key, '/').'`: ([^|]*) \|/', $deck, $cells);
+
+        if ($inline !== 0) {
+            $this->assertSame([trim($cells[1][0])], array_values(array_unique(array_map(trim(...), $cells[1]))), "COPY_DECK gives {$key} one copy.");
+
+            return trim($cells[1][0]);
+        }
+
         $copies = [];
 
         foreach (preg_split('/\R/', $deck) ?: [] as $line) {

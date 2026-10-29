@@ -41,10 +41,12 @@ final class Allowlists
         'auth.session.absoluteEndsAt',
         'auth.session.absoluteEndsIn',
         'errors',
+        // The recovery epoch of every command envelope (TASK-009).
+        'recoveryEpoch',
     ];
 
-    /** The shared props before sign-in: nobody's data. */
-    public const array SHARED_GUEST = ['auth', 'errors'];
+    /** The shared props before sign-in: nobody's data; `auth` and `recoveryEpoch` are null (TASK-009). */
+    public const array SHARED_GUEST = ['auth', 'errors', 'recoveryEpoch'];
 
     /**
      * The page props of each Inertia page, per kind of account; `*` for every
@@ -58,6 +60,9 @@ final class Allowlists
         'access/Account' => ['*' => ['account', 'account.displayName', 'account.email', 'account.roles', 'account.roles.*', 'account.owner', 'passwordChanged']],
         'access/ChangePassword' => ['*' => []],
         'shell/Error' => ['*' => ['state', 'retryAfter'], 'guest' => ['state', 'retryAfter']],
+        // UXP-006 (TASK-009): no props; the list is built in the browser from
+        // the references and RD-04.
+        'commands/Requests' => ['*' => []],
     ];
 
     /**
@@ -76,6 +81,8 @@ final class Allowlists
         'commands.resolve' => ['*' => ['outcome', 'operation', 'commandId', 'result', 'result.type', 'result.id', 'result.location']],
         'commands.committed' => ['*' => ['outcome', 'operation', 'commandId', 'repeated', 'result', 'result.type', 'result.id', 'result.location']],
         'commands.refused' => ['*' => ['outcome', 'code', 'messageKey', 'params', 'fields', 'lines']],
+        // RD-03, the shell's indicators (TASK-009).
+        'data.shell' => ['*' => ['unresolvedRequests', 'asOf']],
     ];
 
     /**

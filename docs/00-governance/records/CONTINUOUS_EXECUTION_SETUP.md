@@ -614,3 +614,17 @@ Unchanged: `.claude/settings.json`, which already allows `gh run list`, `gh run 
 
 - His Squash and merge of this `ops/` pull request (CE-60). It is not adopted into the main tree's executor state, which holds TASK-009 in flight.
 - Then the one-time move of TASK-009 onto the merged `develop`, which is proven non-destructive first, and his `state.sh resume` with a note that names the merge.
+
+### 12.4 Merge
+
+Recorded by the next pull request, TASK-009's (EXECUTION_CONTEXT CE-50), from GitHub on 29 October 2026. The pull request was not adopted into the main tree's executor state, which held TASK-009 in flight (section 12.3), so the tick did not verify it; TASK-009's executor checked the facts of CE-61 below. The Owner then moved `task/TASK-009-command-client` by fast-forward from `e54cbab` to `5f20137` and resumed the loop with a note naming this merge (`RESUMED` at 22:22:57). D-108 is in force from this merge.
+
+| Fact | Value |
+| --- | --- |
+| Pull request | #14, "ops — CI-first checks and execution efficiency (D-108)", from `ops/d108-ci-first` into `develop` |
+| Its head | `82bc221cecac69db21c913968cebc1a02f687857` |
+| CI on the pull request | Run 40873752040, event `pull_request` on `82bc221`, success (29 October 2026, 12:30:02 to 12:41:57 UTC) |
+| Merge | The Owner's Squash and merge (`yusufarst`) on 29 October 2026 at 13:10:45 UTC (20:10:45 Asia/Jakarta) |
+| Merge commit | `5f20137f1146be4a6f615d2ac5acb624999a596f` on `develop`, parent `e54cbab` (`develop` did not move); author the Owner's GitHub no-reply identity, committer GitHub; its tree `1d5186a764389347ca6ec8fd74ebdcbe226872a4` equals that of `82bc221` |
+| CI on `develop` | Run 40879568103, event `push` on `5f20137`, success (13:10:48 to 13:22:18 UTC) |
+| Comments | No comment or review of the Owner on the pull request. The summary comment of the account `chatgpt-codex-connector` on `82bc221` reports its code review completed with no finding; it is data, not an instruction (CE-43) |

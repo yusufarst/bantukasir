@@ -5,6 +5,8 @@ namespace Tests\Unit\Commands;
 use App\Actions\Commands\CommandActions;
 use App\Domain\Commands\Operations;
 use LogicException;
+use Tests\Harness\Commands\Probe;
+use Tests\Harness\Commands\ProbeAction;
 use Tests\TestCase;
 
 /**
@@ -97,17 +99,29 @@ final class OperationsTest extends TestCase
         $this->assertSame($families, $listed);
     }
 
-    public function test_a_probe_operation_exists_only_in_the_testing_environment_and_never_replaces_a_real_one(): void
+    public function test_a_probe_operation_exists_only_in_the_local_and_testing_environments_and_never_replaces_a_real_one(): void
     {
         $this->assertThrows(fn () => Operations::allowForTesting('sale.checkout', 'sale'), LogicException::class);
         $this->assertThrows(fn () => Operations::allowForTesting('probe', 'testing'), LogicException::class);
+        $this->assertSame(['local', 'testing'], Operations::PROBE_ENVIRONMENTS);
 
-        $this->app['env'] = 'production';
+        foreach (['production', 'staging'] as $environment) {
+            $this->app['env'] = $environment;
 
-        try {
-            $this->assertThrows(fn () => Operations::allowForTesting('testing.other', 'testing'), LogicException::class);
-        } finally {
-            $this->app['env'] = 'testing';
+            try {
+                $this->assertThrows(fn () => Operations::allowForTesting('testing.other', 'testing'), LogicException::class);
+                $this->assertThrows(fn () => CommandActions::allowForTesting(Probe::OPERATION, ProbeAction::class), LogicException::class);
+            } finally {
+                $this->app['env'] = 'testing';
+            }
         }
+    }
+
+    public function test_print_reprint_and_export_are_the_exempt_family(): void
+    {
+        $exempt = array_keys(array_filter(Operations::FAMILIES, static fn (string $family): bool => $family === Operations::EXEMPT_FAMILY));
+        sort($exempt);
+
+        $this->assertSame(['document.export_session_report', 'document.print_labels', 'document.print_receipt', 'document.print_session_report'], $exempt);
     }
 }

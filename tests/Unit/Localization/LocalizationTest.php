@@ -100,6 +100,44 @@ final class LocalizationTest extends TestCase
         }
     }
 
+    /**
+     * OPEN_ITEMS T-29 (TASK-009): the child of a key that is itself a text is
+     * a literal dotted key at the top of its file, which Laravel's translator
+     * reads first; the dictionary holds both by their full keys, and refuses
+     * a dotted key whose parent is no text, one given twice, and one that is
+     * not snake_case.
+     */
+    public function test_the_child_of_a_text_is_a_top_level_dotted_key_and_nothing_else_is(): void
+    {
+        $dictionary = Dictionary::forInterface();
+        $this->assertSame('Penjualan', $dictionary['commands.family.sale']);
+        $this->assertSame('Jangan minta pelanggan membayar atau mentransfer lagi. Penjualan ini mungkin sudah tersimpan.', $dictionary['commands.family.sale.must_not']);
+        $this->assertSame($dictionary['commands.family.sale.must_not'], __('commands.family.sale.must_not'));
+
+        $refused = [
+            'no parent text' => "['family' => ['sale' => 'Penjualan'], 'family.other.must_not' => 'Teks']",
+            'twice' => "['family' => ['sale' => ['must_not' => 'A']], 'family.sale.must_not' => 'B']",
+            'not snake_case' => "['family' => ['sale' => 'Penjualan'], 'family.Sale.must_not' => 'Teks']",
+            'a group' => "['family' => ['sale' => 'Penjualan'], 'family.sale.must_not' => ['x' => 'Teks']]",
+        ];
+
+        foreach ($refused as $case => $texts) {
+            $directory = sys_get_temp_dir().'/bantukasir-dictionary-'.bin2hex(random_bytes(8));
+            mkdir($directory, 0700);
+            file_put_contents($directory.'/commands.php', "<?php\n\nreturn {$texts};\n");
+
+            try {
+                Dictionary::fromDirectory($directory);
+                $this->fail("A dictionary with a dotted key ({$case}) is refused.");
+            } catch (LogicException) {
+                $this->addToAssertionCount(1);
+            } finally {
+                unlink($directory.'/commands.php');
+                rmdir($directory);
+            }
+        }
+    }
+
     public function test_a_dictionary_file_with_a_key_that_is_not_snake_case_is_refused(): void
     {
         $directory = sys_get_temp_dir().'/bantukasir-dictionary-'.bin2hex(random_bytes(8));
