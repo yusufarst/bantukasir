@@ -2,7 +2,8 @@
 
 /*
  * The route of the probe operation (TASK-008 scope item 9), only in the
- * testing environment (routes/web.php): the middleware of every signed-in
+ * local and testing environments (routes/web.php; the local one for the
+ * browser suite of TASK-009): the middleware of every signed-in
  * command route (ROUTE_CONTRACTS RT-04) with the gate of CAP-04 and the
  * bucket `command`, then the pipeline of the command platform.
  */

@@ -91,12 +91,37 @@ final class SharedPropsTest extends DatabaseTestCase
         $background = $this->withHeaders([...$inertia, 'X-Background-Request' => '1', 'X-Inertia-Partial-Component' => 'access/Account', 'X-Inertia-Partial-Data' => 'passwordChanged'])->get('/account');
         $background->assertOk();
         $this->assertSame(1500, $background->json('props.auth.session.idleEndsIn'), 'Not touched: 25 minutes left.');
-        $this->assertSame(['auth', 'errors', 'passwordChanged'], self::propNames((array) $background->json('props')));
+        $this->assertSame(['auth', 'errors', 'passwordChanged', 'recoveryEpoch'], self::propNames((array) $background->json('props')));
 
         $this->flushHeaders();
         $visit = $this->withHeaders($inertia)->get('/account');
         $this->assertSame(1800, $visit->json('props.auth.session.idleEndsIn'), 'A user-initiated visit counts from now.');
         $this->assertSame(12 * 3600 - 300, $visit->json('props.auth.session.absoluteEndsIn'));
+    }
+
+    public function test_a_signed_in_page_carries_the_current_recovery_epoch_and_a_visitor_none(): void
+    {
+        $rina = TokoContoh::person('Rina');
+        $this->browse($this->signInBrowser($rina['email'], $rina['password']));
+
+        // Before the bootstrap there is no epoch yet: the prop is null.
+        $props = (array) ($this->inertiaPage($this->get('/account')->assertOk())['props'] ?? []);
+        $this->assertArrayHasKey('recoveryEpoch', $props);
+        $this->assertNull($props['recoveryEpoch']);
+
+        // Once issued, the page carries it as lowercase hexadecimal, unchanged
+        // (TASK-008 finding F-1).
+        $epoch = TokoContoh::recoveryEpoch();
+        $props = (array) ($this->inertiaPage($this->get('/account')->assertOk())['props'] ?? []);
+        $this->assertSame($epoch, $props['recoveryEpoch']);
+        $this->assertMatchesRegularExpression('/^[0-9a-f]{64}$/', $epoch);
+
+        // A visitor gets none, also after a signed-in request of the same
+        // process, whose shared value must not stay behind.
+        $this->browse(null);
+        $guest = (array) ($this->inertiaPage($this->get('/login')->assertOk())['props'] ?? []);
+        $this->assertArrayHasKey('recoveryEpoch', $guest);
+        $this->assertNull($guest['recoveryEpoch']);
     }
 
     public function test_nobody_is_shared_before_sign_in(): void

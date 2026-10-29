@@ -342,3 +342,21 @@ test("an answer for another user clears the tab's history key and storage and lo
     expect(await page.evaluate(() => window.localStorage.getItem('bk-test'))).toBeNull();
     expect(await page.evaluate(() => window.sessionStorage.getItem('historyKey'))).not.toBe(historyKey);
 });
+
+test("a read of the shell's indicators that finds the sign-in session ended loads the sign-in page instead of showing stale data (TASK-009)", async ({ browser, context }) => {
+    const { Agus: agus } = await resetPeople(context, ['Agus']);
+    const page = await context.newPage();
+
+    await signIn(page, agus);
+    await expect(page.getByRole('button', { name: 'Menu akun Agus' })).toBeVisible();
+
+    await endOnServer(browser, 'Agus');
+
+    // The shell reads RD-03 again when the tab regains focus; its 401 is the
+    // ended sign-in session (UXS-09), never "Data belum diperbarui" (UXS-21).
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+    await page.waitForURL((url) => url.pathname === '/login');
+    await expect(page.getByRole('heading', { level: 1, name: 'Masuk' })).toBeVisible();
+    await expect(page.getByText('Data belum diperbarui')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Menu akun Agus' })).toHaveCount(0);
+});

@@ -123,7 +123,9 @@ exit(0);
 
 /**
  * A key is "<file>.<path>": the file lang/id/<file>.php returns an array, and
- * the path leads to a string in it.
+ * the path leads to a string in it — or, as Laravel's translator reads it
+ * first (Arr::get), the whole path is a literal key at the top of the file:
+ * the child of a key that is itself a text (OPEN_ITEMS T-29; TASK-009).
  *
  * @param  array<string, mixed>  $dictionaries
  */
@@ -143,6 +145,10 @@ function keyExists(string $key, string $lang, array &$dictionaries): bool
     }
 
     $value = $dictionaries[$file];
+
+    if (is_array($value) && array_key_exists(implode('.', $segments), $value)) {
+        return is_string($value[implode('.', $segments)]);
+    }
 
     foreach ($segments as $segment) {
         if (! is_array($value) || ! array_key_exists($segment, $value)) {

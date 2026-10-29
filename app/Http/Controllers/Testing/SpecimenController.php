@@ -37,4 +37,15 @@ final class SpecimenController
     {
         return Inertia::render('Testing/ShellSpecimen');
     }
+
+    /**
+     * The command client's specimen (TASK-009 scope item 8): a signed-in page
+     * in the shell whose one command is the probe operation of the test
+     * harness, so that the browser suite proves the client's states, panels
+     * and block on the real pipeline (TEST_STRATEGY TS-22, TS-23).
+     */
+    public function command(): Response
+    {
+        return Inertia::render('Testing/CommandSpecimen');
+    }
 }

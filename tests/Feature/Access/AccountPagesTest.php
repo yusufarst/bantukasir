@@ -55,7 +55,7 @@ final class AccountPagesTest extends DatabaseTestCase
             $this->assertSame('access/Account', $page['component']);
             $this->assertTrue($page['encryptHistory']);
             $props = (array) $page['props'];
-            $this->assertSame(['account', 'auth', 'errors', 'passwordChanged'], self::propNames($props));
+            $this->assertSame(['account', 'auth', 'errors', 'passwordChanged', 'recoveryEpoch'], self::propNames($props));
             $this->assertSame(['displayName' => $person, 'email' => $account['email'], 'roles' => $roles, 'owner' => $owner], $props['account']);
             $this->assertFalse($props['passwordChanged']);
             // Every field, against the allowlists of the role (TASK-007).
@@ -66,7 +66,7 @@ final class AccountPagesTest extends DatabaseTestCase
             $this->assertIsArray($form);
             $this->assertSame('access/ChangePassword', $form['component']);
             $this->assertTrue($form['encryptHistory']);
-            $this->assertSame(['auth', 'errors'], self::propNames((array) $form['props']));
+            $this->assertSame(['auth', 'errors', 'recoveryEpoch'], self::propNames((array) $form['props']));
             $this->assertPageChannel($formResponse, self::ACTORS[$person], [$account['password']]);
 
             $this->post('/logout')->assertRedirect(route('login'));

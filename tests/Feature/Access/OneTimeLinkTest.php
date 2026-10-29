@@ -348,7 +348,7 @@ final class OneTimeLinkTest extends DatabaseTestCase
         $page = $this->get('/set-password')->assertOk()->assertHeader('Referrer-Policy', 'no-referrer')->viewData('page');
         $this->assertIsArray($page);
         $props = (array) $page['props'];
-        $this->assertSame(['auth', 'errors', 'passwordSet'], self::propNames($props));
+        $this->assertSame(['auth', 'errors', 'passwordSet', 'recoveryEpoch'], self::propNames($props));
         $this->assertNull($props['auth'], 'Nobody is signed in: the shared props share nobody (SEC-CH-02; TASK-007).');
         $this->assertFalse($props['passwordSet']);
         $this->assertTrue($page['clearHistory']);

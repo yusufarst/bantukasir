@@ -92,6 +92,14 @@ final class CapabilityMatrixTest extends DatabaseTestCase
         'RD-04' => ['method' => 'GET', 'path' => '/data/command-requests', 'json' => true, 'answers' => [
             'guest' => [401, null], 'owner' => [200, null], 'ops' => [200, null], 'cashier' => [200, null], 'combined' => [200, null],
         ]],
+        // TASK-009: RD-03 for every signed-in account (CAP-01), RP-006 for
+        // every holder of CAP-34, which every role is.
+        'RD-03' => ['method' => 'GET', 'path' => '/data/shell', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [200, null], 'ops' => [200, null], 'cashier' => [200, null], 'combined' => [200, null],
+        ]],
+        'RP-006' => ['method' => 'GET', 'path' => '/requests', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [200, null], 'cashier' => [200, null], 'combined' => [200, null],
+        ]],
     ];
 
     /** @var array<string, array{id: int, email: string, password: string}> */

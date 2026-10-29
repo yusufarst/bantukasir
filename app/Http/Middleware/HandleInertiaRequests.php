@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Domain\Commands\RecoveryEpoch;
 use App\Models\User;
 use App\Queries\Access\SignedIn;
 use App\Support\Localization\Dictionary;
@@ -16,7 +17,8 @@ use Inertia\Support\Header;
 /**
  * Inertia's middleware with the shared props of SECURITY_MODEL SEC-CH-02
  * (TASK-007): `auth`, the signed-in user and the limits of the sign-in session
- * (App\Queries\Access\SignedIn), or null before sign-in; the interface
+ * (App\Queries\Access\SignedIn), or null before sign-in; for a signed-in
+ * page, the recovery epoch (TASK-009); the interface
  * dictionary as a once prop (ADR-005); and Inertia's own validation-error
  * channel, which carries only the same user's field messages (SEC-CH-03).
  * Nothing else is shared: no business data, no other user's data, no cost.
@@ -59,6 +61,13 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'auth' => Inertia::always($signedIn?->toArray()),
+            // The recovery epoch, which every command envelope sends back
+            // unchanged (ADR-007 section 6; INTERACTION_CONTRACTS section 1.1;
+            // TASK-008 finding F-1, TASK-009): lowercase hexadecimal, or null
+            // before the bootstrap; null before sign-in. The key is always
+            // set, so that a value shared for an earlier request of the same
+            // process never reaches a visitor (dropEarlierDictionary()).
+            'recoveryEpoch' => Inertia::always($signedIn === null ? null : app(RecoveryEpoch::class)->current()),
         ];
     }
 

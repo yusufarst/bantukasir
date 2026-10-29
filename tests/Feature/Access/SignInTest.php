@@ -269,7 +269,7 @@ final class SignInTest extends DatabaseTestCase
         $this->assertIsArray($page);
         $this->assertSame('access/SignIn', $page['component']);
         $this->assertIsArray($page['props']);
-        $this->assertSame(['auth', 'errors', 'notice'], self::propNames($page['props']));
+        $this->assertSame(['auth', 'errors', 'notice', 'recoveryEpoch'], self::propNames($page['props']));
         $this->assertNull($page['props']['auth'], 'Nobody is signed in: the shared props share nobody (SEC-CH-02; TASK-007).');
         $this->assertNull($page['props']['notice']);
         $this->assertTrue($page['clearHistory']);

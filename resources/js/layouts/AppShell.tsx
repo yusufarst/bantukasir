@@ -1,17 +1,19 @@
 import { Head, router, usePage } from '@inertiajs/react';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type MouseEvent, type ReactNode } from 'react';
 import { AnnouncerProvider, announcements, useAnnounce } from '@/components/ui/Announcer';
-import { Button } from '@/components/ui/Button';
+import { Button, ButtonLink } from '@/components/ui/Button';
 import { Dialog, Drawer, UnsavedDialog } from '@/components/ui/Dialog';
 import { Icon } from '@/components/ui/Icon';
 import type { IconName } from '@/components/ui/icons';
 import { Menu, type MenuEntry } from '@/components/ui/Menu';
-import { Loading, StateNotice } from '@/components/ui/States';
+import { Notice } from '@/components/ui/Notice';
+import { LoadFailed, Loading, StaleRead, StateNotice } from '@/components/ui/States';
 import type { StateId } from '@/components/ui/stateCatalogue';
 import { useWidthClass } from '@/layouts/widthClass';
 import { NO_CONNECTION, retrySeconds, stateOfStatus } from '@/lib/answers';
 import { clearBrowserData, followOtherTab, leaveSignedInSession, listenToOtherTabs, reportActivity, shareDeadlines, signOut } from '@/lib/browserSession';
-import { formatDuration, formatTimeOfDay } from '@/lib/format';
+import { countOf, refreshIndicators, useShellRefresh, useUnresolved } from '@/lib/commands/unresolved';
+import { formatCount, formatDateTime, formatDuration, formatTimeOfDay } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import { DESTINATIONS, SUB_DESTINATIONS, navigationFor, subNavigationFor, type AreaId, type DestinationId, type RoleCode, type SubDestinationId } from '@/lib/navigation';
 import { useOnline } from '@/lib/online';
@@ -31,8 +33,11 @@ import { SIGN_OUT_WAIT_SECONDS, afterActivity, deadlinesOf, laterOf, mayReportAc
 // limit and on a change of user; from the start of a sign-out in any tab of
 // the browser, every signed-in page hides until its next page loads; a page
 // restored from the back-forward cache is fetched again. The shop's name,
-// initials and accent are TASK-010's; the unresolved-requests item and banner
-// are TASK-009's.
+// initials and accent are TASK-010's. TASK-009 adds the shell's indicators
+// (RD-03): the account-menu item "Permintaan belum pasti" with its number
+// (UXI-025), the banner (UXI-029) and the sign-out warning (UXI-027,
+// UXI-028), read from the references of this browser and the user's
+// receipts, with the last data kept when a read fails (UXS-21).
 
 /** The shared props of a signed-in page (SEC-CH-02; App\DTO\Access\SignedInData). */
 export interface SignedIn {
@@ -434,9 +439,25 @@ const SUBMENU_TRIGGER = 'bk-submenu__btn';
  * accessible name "Menu akun :nama" contains every text it shows (WCAG 2.5.3),
  * which initials drawn as text would not.
  */
-function AccountMenu({ name, kind, onNavigate, onSignOut }: { name: string; kind: AccountPlace; onNavigate: (event: MouseEvent<HTMLAnchorElement>) => void; onSignOut: () => void }) {
+function AccountMenu({
+    name,
+    kind,
+    unresolved,
+    onNavigate,
+    onSignOut,
+}: {
+    name: string;
+    kind: AccountPlace;
+    unresolved: number | null;
+    onNavigate: (event: MouseEvent<HTMLAnchorElement>) => void;
+    onSignOut: () => void;
+}) {
     const items: MenuEntry[] = [
         { kind: 'link', label: t('access.account.title'), icon: 'user', href: '/account', onNavigate },
+        // UXI-025, only while the user has an unresolved request (TASK-009).
+        ...(unresolved !== null && unresolved > 0
+            ? [{ kind: 'link', label: t('commands.unresolved.menu_item', { jumlah: formatCount(unresolved) }), icon: 'warning', href: UNRESOLVED_PAGE, onNavigate } satisfies MenuEntry]
+            : []),
         { kind: 'separator' },
         { kind: 'action', label: t('access.sign_out'), icon: 'logout', danger: true, onSelect: onSignOut },
     ];
@@ -472,6 +493,7 @@ export function ShellFrame({
     items,
     subNav,
     banners,
+    unresolved = null,
     onNavigate,
     onSignOut,
     children,
@@ -482,6 +504,8 @@ export function ShellFrame({
     items: readonly NavItem[];
     subNav?: { readonly area: string; readonly items: readonly SubNavItem[] };
     banners?: ReactNode;
+    /** The number of the user's unresolved requests for the account menu (UXI-025), null while unknown. */
+    unresolved?: number | null;
     onNavigate: (event: MouseEvent<HTMLAnchorElement>) => void;
     onSignOut: () => void;
     children: ReactNode;
@@ -510,9 +534,9 @@ export function ShellFrame({
                             <span aria-hidden={true} />
                         )}
                         <p className={'bk-topbar__title'}>{title}</p>
-                        <AccountMenu name={accountName} kind={'top'} onNavigate={onNavigate} onSignOut={onSignOut} />
+                        <AccountMenu name={accountName} kind={'top'} unresolved={unresolved} onNavigate={onNavigate} onSignOut={onSignOut} />
                     </header>
-                    {banners !== undefined && <div className={'bk-banners'}>{banners}</div>}
+                    {banners !== undefined && <aside className={'bk-banners'}>{banners}</aside>}
                     {main}
                 </div>
                 {hasNav && (
@@ -534,10 +558,10 @@ export function ShellFrame({
                         <NavList items={items} kind={layout} onNavigate={onNavigate} />
                     </nav>
                 )}
-                <AccountMenu name={accountName} kind={layout} onNavigate={onNavigate} onSignOut={onSignOut} />
+                <AccountMenu name={accountName} kind={layout} unresolved={unresolved} onNavigate={onNavigate} onSignOut={onSignOut} />
             </header>
             <div className={'bk-col'}>
-                {banners !== undefined && <div className={'bk-banners'}>{banners}</div>}
+                {banners !== undefined && <aside className={'bk-banners'}>{banners}</aside>}
                 {main}
             </div>
         </div>
@@ -575,6 +599,63 @@ function UnhandledNotice({ unhandled }: { unhandled: Unhandled }) {
         default:
             return <StateNotice state={unhandled.state} />;
     }
+}
+
+/** RP-006, the page of unresolved requests (TASK-009). */
+const UNRESOLVED_PAGE = '/requests';
+
+/**
+ * The banner of UXI-029 (COPY_DECK section 6.1): while the user has an
+ * unresolved request, from the references of this browser and the receipts
+ * of the server, with "Buka Permintaan belum pasti"; not on that page itself.
+ */
+function UnresolvedBanner({ count, hidden: onPage, onNavigate }: { count: number | null; hidden: boolean; onNavigate: (event: MouseEvent<HTMLAnchorElement>) => void }) {
+    if (count === null || count === 0 || onPage) {
+        return null;
+    }
+
+    return (
+        <Notice tone={'warning'} actions={<ButtonLink href={UNRESOLVED_PAGE} label={t('ux.action.open_unresolved')} variant={'secondary'} onClick={onNavigate} />}>
+            <p>{t('commands.unresolved.banner')}</p>
+        </Notice>
+    );
+}
+
+/**
+ * A failed read of the shell's indicators (INTERACTION_CONTRACTS section 3.3):
+ * the last data stay, with their time (UXS-21); without an earlier read, the
+ * area could not be loaded (UXS-22). Never a zero.
+ */
+function IndicatorsNotice({ asOf, failed }: { asOf: string | null; failed: boolean }) {
+    if (!failed) {
+        return null;
+    }
+
+    const retry = (): void => void refreshIndicators();
+
+    return asOf === null ? <LoadFailed onRetry={retry} /> : <StaleRead at={formatDateTime(asOf)} onReload={retry} />;
+}
+
+/**
+ * The sign-out warning (IC-10; UXI-027 "Buka Permintaan belum pasti", the
+ * primary, and UXI-028 "Tetap keluar", which signs out and keeps the
+ * references; SEC-CH-05; COPY_DECK section 6.1).
+ */
+function SignOutWarning({ open, onClose, onLeave }: { open: boolean; onClose: () => void; onLeave: () => void }) {
+    return (
+        <Dialog
+            open={open}
+            onOpenChange={(next) => (next ? undefined : onClose())}
+            title={t('access.sign_out_warning.title')}
+            description={<p>{t('access.sign_out_warning.body')}</p>}
+            actions={
+                <>
+                    <Button label={t('access.sign_out_warning.leave')} variant={'secondary'} onClick={onLeave} />
+                    <ButtonLink href={UNRESOLVED_PAGE} label={t('ux.action.open_unresolved')} variant={'primary'} />
+                </>
+            }
+        />
+    );
 }
 
 /**
@@ -719,6 +800,14 @@ function SignedInShell({
         [attempt],
     );
 
+    // The shell's indicators (RD-03) and the user's unresolved requests: the
+    // account-menu item, the banner and the sign-out warning (TASK-009).
+    useShellRefresh(signedIn.user.id, leaveOnce);
+    const requests = useUnresolved();
+    const onUnresolvedPage = usePage().url.split('?')[0] === UNRESOLVED_PAGE;
+    const [warnSignOut, setWarnSignOut] = useState(false);
+    const unresolvedCount = countOf(requests.serverCount, requests.union);
+
     const pageHidden = useSyncExternalStore(subscribe, () => hidden);
 
     if (pageHidden) {
@@ -739,7 +828,9 @@ function SignedInShell({
             ? []
             : subNavigationFor(area, user.roles, user.capabilities, SUB_DESTINATIONS[area]).map(({ id, entry }) => ({ id, label: t(entry.label), href: entry.href, current: id === subCurrent }));
     const areaEntry = area === undefined ? undefined : DESTINATIONS[area];
-    const onSignOut = (): void => attempt(signOutOnce);
+    // "Keluar" (UXI-026): with an unresolved request the sign-out warning opens
+    // first (IC-10; SEC-CH-05).
+    const onSignOut = (): void => attempt(() => ((unresolvedCount ?? 0) > 0 || requests.union.length > 0 ? setWarnSignOut(true) : signOutOnce()));
 
     const absoluteBody = t('ux.state.session_warning.absolute.body', { jam: formatTimeOfDay(signedIn.session.absoluteEndsAt) });
     const banners = (
@@ -747,6 +838,8 @@ function SignedInShell({
             {!online && <StateNotice state={SHELL_STATES.offline} />}
             {unhandled !== null && <UnhandledNotice unhandled={unhandled} />}
             {view !== null && view.kind !== 'ended' && view.absoluteNotice && <StateNotice state={SHELL_STATES.absoluteLimit} body={absoluteBody} />}
+            <UnresolvedBanner count={unresolvedCount} hidden={onUnresolvedPage} onNavigate={guard.onLink} />
+            <IndicatorsNotice asOf={requests.asOf} failed={requests.failed} />
         </>
     );
 
@@ -760,12 +853,21 @@ function SignedInShell({
                 items={items}
                 subNav={areaEntry === undefined ? undefined : { area: t(areaEntry.label), items: subItems }}
                 banners={banners}
+                unresolved={unresolvedCount}
                 onNavigate={guard.onLink}
                 onSignOut={onSignOut}
             >
                 {children}
             </ShellFrame>
             <SessionWarning secondsLeft={view?.kind === 'warning' ? view.secondsLeft : null} onSignOut={signOutOnce} />
+            <SignOutWarning
+                open={warnSignOut}
+                onClose={() => setWarnSignOut(false)}
+                onLeave={() => {
+                    setWarnSignOut(false);
+                    signOutOnce();
+                }}
+            />
             <UnsavedDialog
                 open={leavingTo !== null}
                 body={leavingTo?.body}

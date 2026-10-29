@@ -55,7 +55,9 @@ final class Dictionary
                 throw new LogicException(sprintf('The dictionary file %s does not return an array.', $file));
             }
 
-            self::flatten($file, $texts, $dictionary);
+            $nested = array_filter($texts, static fn (mixed $key): bool => ! is_string($key) || ! str_contains($key, '.'), ARRAY_FILTER_USE_KEY);
+            self::flatten($file, $nested, $dictionary);
+            self::childrenOfTexts($file, array_diff_key($texts, $nested), $dictionary);
         }
 
         ksort($dictionary, SORT_STRING);
@@ -81,6 +83,41 @@ final class Dictionary
             } else {
                 throw new LogicException(sprintf('The key %s.%s holds neither a text nor a group of texts.', $prefix, $key));
             }
+        }
+    }
+
+    /**
+     * The texts of a key that is itself a text (OPEN_ITEMS T-29; TASK-009):
+     * COPY_DECK names `commands.family.<family>`, a label, and below it
+     * `commands.family.<family>.must_not`. A file's tree holds a key either
+     * as a text or as a group, so such a child is written at the top of its
+     * file as one literal dotted key, `'family.sale.must_not'` — the form
+     * that Laravel's translator looks up first (Arr::get reads the whole key
+     * before it splits it). Each segment is snake_case, the value a text, its
+     * parent a text of the same file, and no key is given twice; anything
+     * else is a defect.
+     *
+     * @param  array<mixed>  $texts
+     * @param  array<string, string>  $dictionary
+     */
+    private static function childrenOfTexts(string $file, array $texts, array &$dictionary): void
+    {
+        foreach ($texts as $key => $value) {
+            $full = $file.'.'.$key;
+
+            if (! is_string($key) || preg_match('/^[a-z0-9_]+(\.[a-z0-9_]+)+$/D', $key) !== 1 || ! is_string($value)) {
+                throw new LogicException(sprintf('The key %s is not a snake_case dotted key of a text (COPY_DECK section 1.1).', $full));
+            }
+
+            if (array_key_exists($full, $dictionary)) {
+                throw new LogicException(sprintf('The key %s is given twice.', $full));
+            }
+
+            if (! array_key_exists(substr($full, 0, (int) strrpos($full, '.')), $dictionary)) {
+                throw new LogicException(sprintf('The dotted key %s is not the child of a text; write it in the tree (OPEN_ITEMS T-29).', $full));
+            }
+
+            $dictionary[$full] = $value;
         }
     }
 }

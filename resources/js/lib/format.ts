@@ -61,6 +61,25 @@ const DATE = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/;
 /** An instant in UTC as the server serializes it, with up to six decimals of a second. */
 const INSTANT = /^([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2}):([0-9]{2})(?:\.[0-9]{1,6})?Z$/;
 
+/**
+ * The instant of a count of milliseconds since 1970-01-01T00:00:00Z, written
+ * as the server writes one, in UTC with milliseconds: the time a command
+ * reference keeps of its sending (SECURITY_MODEL SEC-CH-05; TASK-009),
+ * computed in integers without Date.
+ */
+export function instantOf(milliseconds: number): string {
+    if (!Number.isSafeInteger(milliseconds) || milliseconds < 0) {
+        throw new RangeError('An instant is a whole number of milliseconds since 1970.');
+    }
+
+    const seconds = Math.floor(milliseconds / 1000);
+    const date = civilFromDays(Math.floor(seconds / SECONDS_PER_DAY));
+    const time = seconds % SECONDS_PER_DAY;
+    const clock = `${twoDigits(Math.floor(time / 3600))}:${twoDigits(Math.floor((time % 3600) / 60))}:${twoDigits(time % 60)}`;
+
+    return `${fourDigits(date.year)}-${twoDigits(date.month)}-${twoDigits(date.day)}T${clock}.${(milliseconds % 1000).toString().padStart(3, '0')}Z`;
+}
+
 /** Money: "Rp1.234.567"; a negative amount "−Rp2.000". */
 export function formatMoney(value: string): string {
     return money(parseMoney(value));

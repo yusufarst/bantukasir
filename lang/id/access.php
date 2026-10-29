@@ -4,10 +4,16 @@
 // account, users and one-time links. Its keys are copied verbatim from
 // COPY_DECK by the first Task that uses them. TASK-006 adds those of the
 // roles (section 3) and of UXP-001 to UXP-004 (sections 6.2 to 6.5);
-// TASK-007 the account menu's "Keluar" (section 6.1).
+// TASK-007 the account menu's "Keluar" (section 6.1); TASK-009 the sign-out
+// warning (section 6.1).
 
 return [
     'sign_out' => 'Keluar',
+    'sign_out_warning' => [
+        'title' => 'Masih ada permintaan yang statusnya belum pasti',
+        'body' => 'Catatan permintaan itu tetap ada di peramban ini. Masuk lagi di perangkat dan peramban ini untuk mengecek statusnya. Sebaiknya cek dulu sebelum keluar.',
+        'leave' => 'Tetap keluar',
+    ],
     'role' => [
         'super_admin' => 'Pemilik',
         'operations_admin' => 'Admin Operasional',

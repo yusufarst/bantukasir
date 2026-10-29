@@ -52,6 +52,9 @@ final class RouteInventoryTest extends TestCase
         // TASK-008: the status check and the unresolved request receipts.
         'POST /commands/resolve' => ['commands.resolve', 'RC-50', 'CAP-34', [...self::SIGNED_IN, 'capability:CAP-34', 'throttle:command']],
         'GET /data/command-requests' => ['data.requests', 'RD-04', 'CAP-34', [...self::SIGNED_IN, 'capability:CAP-34']],
+        // TASK-009: the shell's indicators and the page of unresolved requests.
+        'GET /data/shell' => ['data.shell', 'RD-03', 'CAP-01', [...self::SIGNED_IN, 'capability:CAP-01', 'input.allow']],
+        'GET /requests' => ['requests.index', 'RP-006', 'CAP-34', [...self::SIGNED_IN, 'capability:CAP-34', 'input.allow']],
     ];
 
     public function test_the_routes_are_exactly_those_listed_each_with_its_gate(): void
