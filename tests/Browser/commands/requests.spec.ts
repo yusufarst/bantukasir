@@ -223,6 +223,21 @@ test('the shell reads RD-03 as background requests on open, every 30 seconds and
                 reads.push(request.headers()['x-background-request']);
             }
         });
+        // A focus shares the read in flight (RD-03, then RD-04 while a receipt
+        // is counted) and starts one only when none is in flight, so the focus
+        // is given again until a new read of RD-03 leaves. The poll ends long
+        // before the next 30 seconds, so the read is the focus's.
+        const readOnFocus = async (): Promise<void> => {
+            const before = reads.length;
+            await expect
+                .poll(async () => {
+                    await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+
+                    return reads.length;
+                })
+                .toBeGreaterThan(before);
+        };
+
         await page.clock.install();
         await signIn(page, agus);
 
@@ -234,15 +249,13 @@ test('the shell reads RD-03 as background requests on open, every 30 seconds and
         // Every 30 seconds while the page is visible, and when the tab regains focus.
         await page.clock.fastForward(30_000);
         await expect.poll(() => reads.length).toBeGreaterThan(opened);
-        const afterInterval = reads.length;
-        await page.evaluate(() => window.dispatchEvent(new Event('focus')));
-        await expect.poll(() => reads.length).toBeGreaterThan(afterInterval);
+        await readOnFocus();
         expect(new Set(reads)).toEqual(new Set(['1']));
 
         // A failed read after a good one: the last number stays, with UXS-21
         // and its time; never zero.
         await page.route(SHELL_DATA, (route) => route.fulfill({ status: 503, json: { code: 'SERVICE_BUSY' } }));
-        await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+        await readOnFocus();
         await expect(page.getByText('Data belum diperbarui')).toBeVisible();
         await expect(page.getByText(/^Data terakhir diperbarui .+ dan mungkin sudah berubah\.$/)).toBeVisible();
         await expect(page.getByText('Ada permintaan yang statusnya belum pasti.', { exact: true })).toBeVisible();
