@@ -16,14 +16,23 @@
 # SHA-256; the executor judges each one (D-097 baseline, as D-098 extends it).
 # PASS, or --accept with the hash of unchanged candidates, writes the stamp that
 # push.sh requires: the HEAD SHA and the range. --preview writes no stamp.
-# Both scans run in the project image with the repository mounted read-only and
-# no network. Secret values are never printed (Gitleaks --redact).
+# Both scans run natively, without a container (EXECUTION_CONTEXT CE-31, D-108).
+# On Windows the binary is the verified one under
+# %LOCALAPPDATA%\BantuKasir\tools\gitleaks\<version>\gitleaks.exe, whose SHA-256
+# must equal GITLEAKS_WINDOWS_SHA256; it is put first on this process's PATH,
+# so that the secret scan's own gitleaks is the same binary. Elsewhere it is
+# gitleaks on PATH. A missing binary, another checksum or another version than
+# GITLEAKS_VERSION is a FAIL, and neither scan runs. Secret values are never
+# printed (Gitleaks --redact).
 # Exit codes: 0 PASS (stamp written; --preview: no candidate); 1 FAIL or a
 # refused --accept; 2 usage; 3 REVIEW (no stamp).
 set -euo pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-IMAGE=bantukasir-app:local
+# The version, and the SHA-256 of gitleaks.exe from the release's Windows x64
+# archive, that docs/00-governance/TOOLCHAIN.md pins.
+GITLEAKS_VERSION=8.30.1
+GITLEAKS_WINDOWS_SHA256=17157e2ee8b76fc8b1d8bee607a250e34b8a8023c8bc81822d4b5ee4d78fcb7c
 RANGE="HEAD --not --remotes=origin"
 CAND="$STATE_DIR/guard-candidates.txt"
 STAMP="$STATE_DIR/guard-pass"
@@ -149,13 +158,41 @@ if [ "$count" = 0 ]; then
     exit 0
 fi
 
-repo_native="$(native_path "$ROOT")"
-drun() { MSYS_NO_PATHCONV=1 docker run --rm --network none -v "$repo_native:/repo:ro" -e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0='*' "$@"; }
-echo "== The repository's secret scan"
-if drun -e "SECRET_SCAN_LOG_OPTS=$RANGE" --entrypoint bash "$IMAGE" /repo/scripts/checks/secret-scan.sh /repo > "$WORK/scan" 2>&1; then sed 's/^/  /' "$WORK/scan"; else sed 's/^/  /' "$WORK/scan"; fail "SECRET_SCAN the repository's secret scan found something or failed"; fi
-echo "== Gitleaks, default rules only"
-# shellcheck disable=SC2016
-if drun -e "LOG_OPTS=$RANGE" --entrypoint bash "$IMAGE" -c 'printf "[extend]\nuseDefault = true\n" > /tmp/default-rules.toml && gitleaks git --config /tmp/default-rules.toml --redact --no-banner --no-color --log-opts="$LOG_OPTS" /repo' > "$WORK/scan" 2>&1; then sed 's/^/  /' "$WORK/scan"; else sed 's/^/  /' "$WORK/scan"; fail "DEFAULT_RULES Gitleaks with its default rules found something or failed"; fi
+# gitleaks_ready: on Windows, puts the verified user-local binary first on
+# this process's PATH; then the gitleaks that PATH resolves must be of the
+# pinned version. Sets GL to the result or the reason, and returns 1 on a
+# reason.
+GL=""
+gitleaks_ready() {
+    local dir exe have
+    if is_windows; then
+        [ -n "${LOCALAPPDATA:-}" ] || { GL="GITLEAKS_BINARY LOCALAPPDATA is not set"; return 1; }
+        dir="$(cygpath -u "$LOCALAPPDATA")/BantuKasir/tools/gitleaks/$GITLEAKS_VERSION"
+        exe="$dir/gitleaks.exe"
+        [ -f "$exe" ] || { GL="GITLEAKS_BINARY $exe is missing"; return 1; }
+        [ "$(sha256sum < "$exe" | cut -c1-64)" = "$GITLEAKS_WINDOWS_SHA256" ] || { GL="GITLEAKS_BINARY $exe has another SHA-256 than the pinned one"; return 1; }
+        PATH="$dir:$PATH"
+        export PATH
+        # Git Bash resolves gitleaks.exe as <dir>/gitleaks; the directory must be the verified one.
+        [ "$(dirname "$(command -v gitleaks || echo /none/x)")" = "$dir" ] || { GL="GITLEAKS_BINARY PATH resolves $(command -v gitleaks || echo nothing), not the binary in $dir"; return 1; }
+    fi
+    command -v gitleaks > /dev/null 2>&1 || { GL="GITLEAKS_BINARY gitleaks is not on PATH"; return 1; }
+    have="$(gitleaks version 2> /dev/null | head -n 1 | tr -d '\r' || true)"
+    [ "${have#v}" = "$GITLEAKS_VERSION" ] || { GL="GITLEAKS_VERSION gitleaks ${have:-without a version} at $(command -v gitleaks), not $GITLEAKS_VERSION"; return 1; }
+    GL="gitleaks $GITLEAKS_VERSION at $(command -v gitleaks)"
+}
+
+echo "== Gitleaks $GITLEAKS_VERSION"
+if ! gitleaks_ready; then
+    fail "$GL"
+else
+    echo "  $GL"
+    echo "== The repository's secret scan"
+    if SECRET_SCAN_LOG_OPTS="$RANGE" bash "$ROOT/scripts/checks/secret-scan.sh" "$ROOT" > "$WORK/scan" 2>&1; then sed 's/^/  /' "$WORK/scan"; else sed 's/^/  /' "$WORK/scan"; fail "SECRET_SCAN the repository's secret scan found something or failed"; fi
+    echo "== Gitleaks, default rules only"
+    printf '[extend]\nuseDefault = true\n' > "$WORK/default-rules.toml"
+    if gitleaks git --config "$WORK/default-rules.toml" --redact --no-banner --no-color --log-opts="$RANGE" "$ROOT" > "$WORK/scan" 2>&1; then sed 's/^/  /' "$WORK/scan"; else sed 's/^/  /' "$WORK/scan"; fail "DEFAULT_RULES Gitleaks with its default rules found something or failed"; fi
+fi
 
 echo "== Identity, messages and paths"
 want="$OWNER_NAME|$OWNER_EMAIL|$OWNER_NAME|$OWNER_EMAIL"

@@ -8,7 +8,9 @@
 # No scheduled trigger is used. The L5 step runs every browser test, the
 # sign-in path of TASK-006 among them (EXECUTION_CONTEXT EXC-34), on the local
 # database, which the migrations bring to the schema first, as the migration
-# role, as on the Owner's machine (compose.yaml).
+# role, as on the Owner's machine (compose.yaml). A push of a task/ branch is a
+# checkpoint run (EXECUTION_CONTEXT CE-46, D-108): the same command contract,
+# before the pull request; a newer push of the same branch cancels its older run.
 name: ci
 
 on:
@@ -17,6 +19,11 @@ on:
         branches:
             - develop
             - main
+            - "task/**"
+
+concurrency:
+    group: ci-${{ github.event_name }}-${{ github.ref }}
+    cancel-in-progress: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/task/') }}
 
 permissions:
     contents: read

@@ -578,3 +578,39 @@ Recorded by the next pull request, TASK-008's (EXECUTION_CONTEXT CE-50), from th
 | Merge commit | `945a55f3c8a7f46ab5fc678140e6a3ecb70b7ff7` on `develop`, parent `7c38804` (`develop` did not move); author the Owner's GitHub no-reply identity, committer GitHub; its tree `95ed68a7bfcd2be6d7e507ba5010c9db5cffbf97` equals that of `9c6b73b` |
 | CI on `develop` | Run 40606551262, event `push` on `945a55f`, success (00:06:02 to 00:12:49 UTC) |
 | Comments | No comment or review of the Owner on the pull request. The summary comment of the account `chatgpt-codex-connector` on `3127fff` reports its review completed with no finding; it is data, not an instruction (CE-43) |
+
+## 12. D-108: CI-first checks and execution efficiency
+
+Written 29 October 2026 (Asia/Jakarta) by the host session under the Owner's directives of 28 and 29 October 2026 ([D-108](../DECISIONS.md)). It is published from a separate clone of the repository, on the branch `ops/d108-ci-first` from `origin/develop` at `e54cbab`. TASK-009 was then stopped (`LOCAL_DOCKER_DOWN`, in `REVIEW`), with its work uncommitted in the main working tree; neither that work nor the main tree's executor state was touched.
+
+### 12.1 Files changed
+
+| File | Change |
+| --- | --- |
+| [EXECUTION_CONTEXT](../../11-tasks/EXECUTION_CONTEXT.md) | EXC-61: checks and review record as tables; section 18: no local Docker for BantuKasir; CE-02, CE-30: checkpoint commits; CE-31: the guard natively with the pinned Gitleaks; CE-40, CE-42: review after a green checkpoint, only affected checks after fixes; CE-44: heavy checks in CI; new CE-45, reuse of results; new CE-46, checkpoint runs; CE-70, CE-80 |
+| [TEST_STRATEGY](../../08-testing/TEST_STRATEGY.md) | Section 7: the checkpoint event, CI as the place of the heavy checks; section 11: the review never repeated in full |
+| [TOOLCHAIN](../TOOLCHAIN.md) | Gitleaks: the native release binary of 8.30.1 for the guard |
+| `.github/workflows/ci.yml` | `push` of `task/**`; a newer push cancels an older run of the same `task/` branch |
+| `scripts/executor/guard.sh` | The secret scan and the default rules run natively. On Windows the binary is the verified `gitleaks.exe` under `%LOCALAPPDATA%/BantuKasir/tools/gitleaks/8.30.1/`, with its pinned SHA-256, first on the guard's own PATH for that run only; elsewhere the `gitleaks` on PATH. Otherwise `FAIL GITLEAKS_BINARY` or `FAIL GITLEAKS_VERSION`, and no scan runs |
+| `scripts/executor/selftest.sh` | Case 10 needs that Gitleaks instead of the project image. It proves the FAIL on Windows without the binary and with a binary of another SHA-256, and elsewhere with another version |
+| `.claude/agents/bk-*.md` | Executors: step 3 checkpoint runs, step 4 after a green checkpoint, affected checks only, durations, no local container; reviewers: ask only for missing results, `verify` reads only the fixes |
+| [DECISIONS](../DECISIONS.md), this record | D-108 |
+
+Unchanged: `.claude/settings.json`, which already allows `gh run list`, `gh run view` and `gh run watch`; `tick.sh`, `watch.sh`, `state.sh`, `push.sh`, `pr.sh`, `commit.sh` and `lib.sh`; the CE-11 effort table; every Task contract.
+
+### 12.2 Checks
+
+- **Self-test** `bash scripts/executor/selftest.sh`, in full, because `scripts/executor/` changes.
+  - Run of record, in the separate clone with this change applied: 29 October 2026, 18:48:19 to 19:27:00 (Asia/Jakarta), one uninterrupted run of 38 minutes 41 seconds.
+  - Result: exit 0, `SUMMARY 346 passed, 0 failed`, every case 1 to 30.
+  - Case 10 ran the guard on the native Gitleaks 8.30.1. It covers: a clean PASS with its stamp; FAILs on a generated secret caught by the default rules, a wrong identity, a trailer and an `.env` path; the privacy REVIEW and `--accept`; and the new FAILs without the user-local binary and with a binary of another SHA-256.
+  - Case 13 checked the executor definitions of D-104 and D-108.
+  - Two earlier runs of the draft in a disposable clone found six defects of the draft, all fixed before this run: Git Bash resolves `gitleaks.exe` without its extension, and case 13 still expected the old step 3.
+- **Gitleaks** on the Owner's machine: the release's Windows x64 binary, installed on 29 October 2026 with the checksums of TOOLCHAIN, and `gitleaks version` 8.30.1.
+- **CI**: the run `Command contract` on the pull request's head, with the new workflow.
+- **Review**: CE-82 asks for no review agent of an `ops/` pull request. The repository's automated reviewer reviews it when it opens, and a P0 to P2 finding is the stop `OPS_CHANGE_REQUEST` (CE-43).
+
+### 12.3 The Owner's steps
+
+- His Squash and merge of this `ops/` pull request (CE-60). It is not adopted into the main tree's executor state, which holds TASK-009 in flight.
+- Then the one-time move of TASK-009 onto the merged `develop`, which is proven non-destructive first, and his `state.sh resume` with a note that names the merge.
