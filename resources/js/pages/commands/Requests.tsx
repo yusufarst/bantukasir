@@ -113,7 +113,10 @@ function RequestsPage({ title }: { title: string }) {
     }, []);
 
     const mine = requests.union.filter((request) => isLabelledFamily(request.family));
-    const othersEmpty = !owner || (others.state === 'loaded' && others.rows.length === 0);
+    // A page of RD-04 may hold only the Owner's own receipts or print requests,
+    // which this list leaves out: while a cursor remains, the list is not
+    // empty and "Muat lebih banyak" stays (pull request #15's review).
+    const othersEmpty = !owner || (others.state === 'loaded' && others.rows.length === 0 && others.next === null);
     const lostHelp = t('commands.requests.lost_help', { menit: formatCount(RECORD_CHECK_WAIT_MINUTES) });
 
     return (
@@ -145,17 +148,15 @@ function RequestsPage({ title }: { title: string }) {
                 {owner && others.state === 'loading' && <Loading />}
                 {owner && others.state === 'failed' && <LoadFailed onRetry={() => readOthers(null)} />}
                 {owner && others.state === 'loaded' && others.rows.length > 0 && (
-                    <>
-                        <ul className={'bk-stack'} role={'list'}>
-                            {others.rows.map((row) => (
-                                <li key={intentKey(row)}>
-                                    <OtherRequest row={row} epoch={props.recoveryEpoch} onConcluded={(text) => (concluded(text), removeOther(row))} />
-                                </li>
-                            ))}
-                        </ul>
-                        {others.next !== null && <LoadMore busy={others.more} onLoad={() => readOthers(others.next)} />}
-                    </>
+                    <ul className={'bk-stack'} role={'list'}>
+                        {others.rows.map((row) => (
+                            <li key={intentKey(row)}>
+                                <OtherRequest row={row} epoch={props.recoveryEpoch} onConcluded={(text) => (concluded(text), removeOther(row))} />
+                            </li>
+                        ))}
+                    </ul>
                 )}
+                {owner && others.state === 'loaded' && others.next !== null && <LoadMore busy={others.more} onLoad={() => readOthers(others.next)} />}
                 <p className={'bk-meta'}>{lostHelp}</p>
             </div>
         </PageContainer>

@@ -104,6 +104,49 @@ export async function readReceipts(scope: 'own' | 'all', after: string | null = 
 }
 
 /**
+ * The most pages of RD-04 that one read of the user's own receipts follows:
+ * 50 pages of 100, far beyond what one user leaves unresolved. A longer list
+ * is a failed read, never a partial list taken as complete.
+ */
+export const OWN_RECEIPT_PAGES_MAX = 50;
+
+/**
+ * Every page of the user's own unresolved receipts (RD-04, scope=own),
+ * following its cursor to the end: RD-04 lists the oldest first and includes
+ * print requests, so a receipt that blocks its family may be on a later page
+ * (NC-13; pull request #15's review). Null when a page could not be read, a
+ * cursor repeats or the list runs past OWN_RECEIPT_PAGES_MAX pages.
+ */
+export async function readOwnReceipts(background = false, signal?: AbortSignal): Promise<ReceiptRow[] | null> {
+    const all: ReceiptRow[] = [];
+    const cursors = new Set<string>();
+    let after: string | null = null;
+
+    for (let read = 0; read < OWN_RECEIPT_PAGES_MAX; read += 1) {
+        const page: ReceiptPage | null = await readReceipts('own', after, background, signal);
+
+        if (page === null || signal?.aborted === true) {
+            return null;
+        }
+
+        all.push(...page.rows);
+
+        if (page.nextCursor === null) {
+            return all;
+        }
+
+        if (cursors.has(page.nextCursor)) {
+            return null;
+        }
+
+        cursors.add(page.nextCursor);
+        after = page.nextCursor;
+    }
+
+    return null;
+}
+
+/**
  * The union of the references and the receipts, one entry per operation and
  * intent, without print requests, the references first in their order.
  */
@@ -208,16 +251,16 @@ export function setUser(userId: number): void {
     publish({ userId });
 }
 
-/** Reads the user's own receipts again (RD-04); a failed read keeps the last ones. */
+/** Reads the user's own receipts again (RD-04), every page; a failed read keeps the last ones. */
 export async function refreshReceipts(background = true, signal?: AbortSignal): Promise<boolean> {
-    const page = await readReceipts('own', null, background, signal);
+    const read = await readOwnReceipts(background, signal);
 
-    if (page !== null && signal?.aborted !== true) {
-        rows = page.rows;
+    if (read !== null && signal?.aborted !== true) {
+        rows = read;
         publish({});
     }
 
-    return page !== null;
+    return read !== null;
 }
 
 /**

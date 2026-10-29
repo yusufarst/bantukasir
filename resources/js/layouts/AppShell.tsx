@@ -12,6 +12,7 @@ import type { StateId } from '@/components/ui/stateCatalogue';
 import { useWidthClass } from '@/layouts/widthClass';
 import { NO_CONNECTION, retrySeconds, stateOfStatus } from '@/lib/answers';
 import { clearBrowserData, followOtherTab, leaveSignedInSession, listenToOtherTabs, reportActivity, shareDeadlines, signOut } from '@/lib/browserSession';
+import { USER_REQUEST_EVENT } from '@/lib/commands/client';
 import { countOf, refreshIndicators, useShellRefresh, useUnresolved } from '@/lib/commands/unresolved';
 import { formatCount, formatDateTime, formatDuration, formatTimeOfDay } from '@/lib/format';
 import { t } from '@/lib/i18n';
@@ -196,6 +197,20 @@ function installDocumentListeners(): void {
     router.on('start', (event) => {
         if (event.detail.visit.headers['X-Background-Request'] !== '1') {
             lastUserRequestAt = Date.now();
+        }
+    });
+
+    // A request of the command client that the user started — "Kirim ulang",
+    // "Cek status", a final action — counted as user activity on the server:
+    // the idle limit counts from its answer, as after "Tetap masuk", so that
+    // the timer never ends a page whose sign-in session the server kept
+    // (SEC-SESS-02; pull request #15's review). Background requests never
+    // send it (RT-10).
+    window.addEventListener(USER_REQUEST_EVENT, () => {
+        lastUserRequestAt = Date.now();
+
+        if (deadlines !== null && !leaving) {
+            setDeadlines(afterActivity(deadlines, Date.now(), idleLimit), true);
         }
     });
 

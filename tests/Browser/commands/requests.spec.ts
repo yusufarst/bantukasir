@@ -276,3 +276,130 @@ test('the shell reads RD-03 as background requests on open, every 30 seconds and
         await prepareCommands(context, ['Agus']);
     }
 });
+
+// Pull request #15's review: RD-04 is read to its last page, the Owner's list
+// keeps "Muat lebih banyak" while a cursor remains, and a request the user
+// starts counts as activity for the shell's idle limit. A first page of RD-04
+// is answered here with a print request and a cursor, and the cursor's page
+// is the server's own first page, which holds the fixture's receipt.
+
+const REQUESTS_DATA = '/data/command-requests';
+
+const LATER_PAGE = 'synthetic-later-page';
+
+/** A print request of RD-04, which UXP-006 and the block of NC-13 leave out, every value made at run time. */
+function printRow(owner: boolean): Record<string, unknown> {
+    return {
+        operation: 'document.print_receipt',
+        family: 'print',
+        sourceIntentId: crypto.randomUUID(),
+        idempotencyKey: crypto.randomUUID(),
+        epoch: 'current',
+        receivedAt: new Date().toISOString(),
+        outcome: 'PENDING',
+        ...(owner ? { user: { id: 2_000_000_000, displayName: 'Rina' } } : {}),
+    };
+}
+
+/** RD-04 of this scope with a print request and a cursor on its first page; the cursor's page is the server's first. */
+async function pagedReceipts(page: Page, scope: 'own' | 'all'): Promise<void> {
+    await page.route(
+        (url) => url.pathname === REQUESTS_DATA && url.searchParams.get('scope') === scope,
+        async (route) => {
+            const url = new URL(route.request().url());
+
+            if (url.searchParams.get('after') === null) {
+                await route.fulfill({ json: { rows: [printRow(scope === 'all')], nextCursor: LATER_PAGE, previousCursor: null } });
+
+                return;
+            }
+
+            expect(url.searchParams.get('after')).toBe(LATER_PAGE);
+            url.searchParams.delete('after');
+            await route.continue({ url: url.toString() });
+        },
+    );
+}
+
+test('a receipt on a later page of RD-04 is listed and counted like one on the first (pull request #15)', async ({ page }) => {
+    const { Rina: rina } = await resetPeople(page.context(), ['Rina']);
+
+    await prepareCommands(page.context(), ['Rina']);
+    await receiptOf(page.context(), 'Rina', 'sale.checkout');
+
+    try {
+        await pagedReceipts(page, 'own');
+        await signIn(page, rina);
+        await page.goto(REQUESTS_PAGE);
+        const card = main(page).getByRole('listitem').filter({ hasText: 'Penjualan · dikirim' });
+        await expect(card).toContainText('Dikirim dari perangkat lain atau sebelum data peramban dihapus.');
+        await expect(main(page).getByText('Tidak ada permintaan yang statusnya belum pasti.')).toHaveCount(0);
+    } finally {
+        await prepareCommands(page.context(), ['Rina']);
+    }
+});
+
+test("the Owner's list keeps \"Muat lebih banyak\" while a page of RD-04 holds no other user's request (pull request #15)", async ({ page }) => {
+    const { Hendra: hendra } = await resetPeople(page.context(), ['Hendra', 'Rina']);
+
+    await prepareCommands(page.context(), ['Hendra', 'Rina']);
+    await receiptOf(page.context(), 'Rina', 'sale.checkout');
+
+    try {
+        await pagedReceipts(page, 'all');
+        await signIn(page, hendra);
+        await page.goto(REQUESTS_PAGE);
+        const more = main(page).getByRole('button', { name: 'Muat lebih banyak' });
+        await expect(more).toBeVisible();
+        await expect(main(page).getByText('Tidak ada permintaan yang statusnya belum pasti.')).toHaveCount(0);
+        await expect(main(page).getByRole('listitem').filter({ hasText: 'Permintaan Rina' })).toHaveCount(0);
+
+        await more.click();
+        await expect(main(page).getByRole('listitem').filter({ hasText: 'Permintaan Rina' })).toContainText('Penjualan · dikirim');
+        await expect(more).toHaveCount(0);
+    } finally {
+        await prepareCommands(page.context(), ['Hendra', 'Rina']);
+    }
+});
+
+test('"Cek status" counts as user activity: the idle limit then counts from its answer (pull request #15)', async ({ page }) => {
+    const context = page.context();
+    const { Agus: agus } = await resetPeople(context, ['Agus']);
+
+    await prepareCommands(context, ['Agus']);
+    await receiptOf(context, 'Agus', 'receiving.confirm');
+
+    try {
+        await page.clock.install();
+        await signIn(page, agus);
+        await page.goto(REQUESTS_PAGE);
+        const card = main(page).getByRole('listitem').filter({ hasText: 'Barang masuk, barang keluar, atau penyesuaian stok · dikirim' });
+        await expect(card).toBeVisible();
+
+        // 27 minutes without activity, then "Cek status" (UXI-055), which the user starts.
+        await page.clock.fastForward('27:00');
+        await expect(page.getByRole('dialog')).toHaveCount(0);
+        const checked = page.waitForResponse((response) => new URL(response.url()).pathname === '/commands/resolve');
+        await card.getByRole('button', { name: 'Cek status' }).click();
+        expect((await checked).status()).toBe(200);
+        await expect(card).toHaveCount(0);
+
+        // Past the page's first idle limit: no warning, and the page stays.
+        await page.clock.fastForward('03:01');
+        await expect(page.getByRole('dialog')).toHaveCount(0);
+        await expect(main(page).getByRole('heading', { level: 1, name: 'Permintaan belum pasti' })).toBeVisible();
+
+        // About 90 seconds before the new limit, 30 minutes after the check's
+        // answer, the same page warns (UXS-23). Without the shell's listener the
+        // page would have left at its first limit, and a page loaded then would
+        // not warn before about 58 minutes, so this can hold only with the fix
+        // (review finding R-01 of the fix's verification).
+        await page.clock.fastForward('25:30');
+        const warning = page.getByRole('dialog', { name: 'Sesi masuk akan berakhir' });
+        await expect(warning).toBeVisible();
+        await expect(warning.getByRole('button', { name: 'Tetap masuk' })).toBeVisible();
+        await expect(page).toHaveURL(new RegExp(`${REQUESTS_PAGE}$`));
+    } finally {
+        await prepareCommands(context, ['Agus']);
+    }
+});

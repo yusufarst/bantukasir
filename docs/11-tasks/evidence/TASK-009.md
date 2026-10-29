@@ -158,7 +158,8 @@ Between the rounds the Task stopped three times with `LOCAL_DOCKER_DOWN` in `REV
 | R-08 | SHOULD-FIX | CURRENT_HANDOFF's `EXECUTION:` and `TESTS:` lines out of date | Fixed in CURRENT_HANDOFF section 8 |
 | R-11 | NOTE | Leaving paths of `useCommand` and UXP-006 did not stop the shell's reads | Fixed: `clearBrowserData()`, which every leaving path calls, calls `stopIndicators()`; the verification found no regression |
 | R-13 | NOTE | RD-04's 401 in the refresh read as a failed read | Recorded: OPEN_ITEMS T-34 (d) |
-| R-09, R-10, R-12, R-14 to R-17 | NOTE | An unmounted page drops a late answer; the client's idle deadline not fed by fetch commands; `location` with a backslash; the probe in `local`; the simulation of cleared site data; RD-04's first page only; no epoch before the bootstrap | Recorded, no change: the probe in `local` is reading 11 and the epoch before the bootstrap reading 3 of section 4; the others are limits of the harness or wait for the first command pages (TASK-010, TASK-011) |
+| R-09, R-12, R-14, R-15, R-17 | NOTE | An unmounted page drops a late answer; `location` with a backslash; the probe in `local`; the simulation of cleared site data; no epoch before the bootstrap | Recorded, no change: the probe in `local` is reading 11 and the epoch before the bootstrap reading 3 of section 4; the others are limits of the harness or wait for the first command pages (TASK-010, TASK-011) |
+| R-10, R-16 | NOTE | The client's idle deadline not fed by fetch commands; RD-04's first page only | Fixed in fix cycle 1 (section 14), on the automated reviewer's findings P2-3 and P2-1 |
 | R-18 | NOTE (round 2) | The R-02 test does not cover the read after a command | Recorded: OPEN_ITEMS T-34 (e) |
 | R-19 | NOTE (round 2) | The 30-second step counts any new read after the open | Recorded, no change: nothing else reads in that window |
 | R-20 | NOTE (round 2) | Section 9 did not yet cite the checkpoint runs | Fixed: this section and section 10 |
@@ -195,7 +196,7 @@ Under D-108 no container of BantuKasir runs on the Owner's machine: the heavy ch
 | — `npm run build` | run 40905063814 | 22:54:28 | 6 s | PASS |
 | — `npm run test:e2e` | run 40905063814 | 22:54:34 | 5 min 24 s | PASS, 208 tests: `tests/Browser/commands` whole, the R-01 and R-02 regression tests, the recovery case of EXC-34 |
 
-Run 40905063814 stays valid for the pull request's code (CE-45): the record commit after it changes documents only. The full command contract runs again in CI on the pull request's final head (CE-41).
+Run 40905063814 stays valid for the pull request's code (CE-45): the record commit after it changes documents only. Fix cycle 1 (section 14) invalidates its results for the files it changed: `npm run lint`, `npm run typecheck`, `npm run test:unit`, `npm run build` and `npm run test:e2e` run again in CI on the fix's head. The full command contract runs again in CI on the pull request's final head (CE-41).
 
 ## 11. Acceptance criteria
 
@@ -219,10 +220,50 @@ Run 40905063814 stays valid for the pull request's code (CE-45): the record comm
 | Database | N/A | No migration |
 | Security | PASS | Deny by default on both routes for every role and the combined account; references without a payload; storage cleared at sign-out and on a change of user; the guard and the static checks |
 | Data integrity | N/A | Writes no business fact |
-| Performance | PASS | RD-03 one bounded count; RD-04 its first page only; the budgets are measured at TASK-048 |
+| Performance | PASS | RD-03 one bounded count; RD-04 read page by page to its end, at most 50 pages of 100 (fix cycle 1); the budgets are measured at TASK-048 |
 | Operations | N/A | No backup, runbook or status impact |
 | Verification | PASS | The command contract green in checkpoint run 40905063814; the self-review; the class-A review and its targeted verification (section 9); the pull request's own CI follows (CE-41) |
 
 ## 13. Guard preview of the record (CE-31, CE-50)
 
 `bash scripts/executor/guard.sh --preview` on the working tree with this record, 29 October 2026 at 23:09:07, 2 s: `GUARD PREVIEW PASS`, no candidate of the privacy and client-data check, so no judgment to record. The checkpoint commits `8b706fa` and `eac393f` each passed `guard.sh` before their push (section 10), with no candidate.
+
+## 14. Fix cycle 1: the automated reviewer's findings on pull request #15 (CE-43)
+
+On head `e20e44e` the repository's automated reviewer raised three P2 findings, each a change request of CE-43; each was checked against the code and held. The fix changes production behaviour of a class-A Task, so it had the targeted verification of CE-43.
+
+| ID | Finding (review comment) | Outcome |
+| --- | --- | --- |
+| P2-1 | 4414878131: `refreshReceipts()` read only RD-04's first page; RD-04 lists the oldest first and includes print requests, so on another device a later receipt did not block its family (NC-13) nor appear on UXP-006 | Fixed: `readOwnReceipts()` of `unresolved.ts` follows `nextCursor` to the end; a failed page, a repeated cursor or more than 50 pages fail the read, which keeps the last receipts (UXS-21). Every reader uses it: the shell, `useCommand` on open and before the send, UXP-006. Regression tests: `commandClient.test.ts` "follows the cursor of RD-04 to the end…" and "never takes a partial list as complete…"; `requests.spec.ts` "a receipt on a later page of RD-04 is listed…" |
+| P2-2 | 4414878146: the Owner's list hid "Muat lebih banyak" when a page of `scope=all` held no other user's request but a cursor remained | Fixed: `Requests.tsx` renders the control on the cursor and shows the empty state only without one. Regression test: `requests.spec.ts` "the Owner's list keeps \"Muat lebih banyak\"…" |
+| P2-3 | 4414878157: "Cek status", "Kirim ulang" and the other requests the user starts restart the idle limit on the server, but not the shell's timer, which could reload the page and lose the frozen request | Fixed: `requestJson()` sends `USER_REQUEST_EVENT` for an answer of the application to a request without the background marker (`countsAsActivity`: 200 to 499 but 401, since `EnsureSignInSession` runs right after authentication); the shell then counts the idle limit from that answer, as after "Tetap masuk". Regression tests: `commandClient.test.ts` "tells the shell of every answer…"; `requests.spec.ts` "\"Cek status\" counts as user activity…" |
+
+The browser tests answer the first page of RD-04 with a print request and a cursor and send the cursor's request to the server's own first page, which holds the fixture's receipt; every value is made at run time.
+
+| Round | Agent and effort | Package | Tree | Time, duration | Verdict |
+| --- | --- | --- | --- | --- | --- |
+| 3, verification | `bk-reviewer-high`, High (CE-11) | `.git/bantukasir-executor/review/TASK-009/r3`, `--previous` r2, base `5f20137` | `0f72d74` (HEAD `e20e44e`) | 23:25:12, 6 min 10 s | FAIL: P2-1 and P2-2 FIXED; P2-3's code FIXED but its browser test could pass without the shell's listener (R-01, MUST-FIX); `--check` UNCHANGED |
+| 4, verification of R-01 alone | `bk-reviewer-high`, High | `.git/bantukasir-executor/review/TASK-009/r4`, `--previous` r3 | `9c86be8` | about 23:33, 3 min 19 s | PASS: R-01 FIXED; `--check` UNCHANGED |
+
+| ID | Severity | Finding | Outcome |
+| --- | --- | --- | --- |
+| R-01 (fix cycle) | MUST-FIX | The idle test's negative assertions held on the old document before its navigation, so it could pass without the fix | Fixed: the test now expects the sign-in-ending dialog (UXS-23) about 90 seconds before the new limit, which only the fix gives, and the URL unchanged; verified FIXED |
+| R-02 (fix cycle) | NOTE | The comment of `countsAsActivity` claimed every non-401 answer passed the session check; 400, 404 and 413 of the global checks before routing touch nothing | Fixed: the comment names them; no code change |
+| R-03 (fix cycle) | NOTE | "never after" in that comment, read literally | Fixed: reworded; no code change |
+| R-03 (round 3) | NOTE | No result yet for the new tests | Their run of record is CI on the fix's head (CE-41) |
+
+T-33 (c) of OPEN_ITEMS now reads RD-04 to its last page.
+
+Checks of the fix, 29 October 2026 (CE-44, CE-45):
+
+| Check | Where | Time | Duration | Result |
+| --- | --- | --- | --- | --- |
+| `tsc --noEmit` | Local, the fix | 23:23:03 | 7 s | PASS |
+| ESLint of the changed files | Local, the fix | 23:23:16 | 7 s | PASS |
+| Vitest | Local | 23:23:10 | 1 s | NOT_RUN: no Windows binding of rolldown (section 10); runs in CI |
+| `tsc --noEmit`, ESLint of the changed files | Local, after R-01 and R-02 | 23:32:27 | 27 s | PASS |
+| Guard preview (CE-31) | Local, the fix before the record | 23:36:57 | 2 s | PASS, no candidate |
+| Guard preview (CE-31, CE-50) | Local, the fix with this record | 23:38:12 | 2 s | PASS, no candidate, so no judgment to record |
+| The command contract, the new Vitest block and browser tests included | CI on the pull request's next head | after the push | — | NOT_RUN at this record; the tick follows it (CE-41) |
+
+PHP, PostgreSQL and race suites are not affected: no PHP file changed, and their results of run 40905063814 stay valid (CE-45).

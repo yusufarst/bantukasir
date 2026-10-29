@@ -84,10 +84,35 @@ function xsrfToken(): string {
 }
 
 /**
+ * The event that the application answered a request the user started, which
+ * counted as user activity on the server: the shell's idle limit counts from
+ * its answer, as from a user-activity request (SEC-SESS-02; pull request #15's
+ * review). A background request never sends it (RT-10).
+ */
+export const USER_REQUEST_EVENT = 'bk:user-request-answered';
+
+/**
+ * Whether an answer of a signed-in route shows that the server counted its
+ * request as user activity: the sign-in session's check, which restarts the
+ * idle limit, runs right after authentication and before every other check
+ * of RT-04, so every answer that the application routed to an existing
+ * signed-in route, but 401, passed it. The client sends only small,
+ * same-origin requests to such routes; a 400, 404 or 413 of the global
+ * checks before routing, which touch nothing, would be a programming error.
+ * A 5xx answer may come from the proxy or the maintenance page, before the
+ * application, and is not counted: not counting it can only make the shell
+ * leave earlier than counting it would, never later.
+ */
+export function countsAsActivity(status: number): boolean {
+    return status !== 401 && status >= 200 && status < 500;
+}
+
+/**
  * Sends a JSON request and reads its answer, or null when none arrived within
  * the wait: a network error, a timeout or a body that cannot be read as JSON
  * where a body was expected. A background request carries the marker of
- * RT-10, so that it never counts as user activity.
+ * RT-10, so that it never counts as user activity; any other request that the
+ * application answered tells the shell (USER_REQUEST_EVENT).
  */
 export async function requestJson(method: 'GET' | 'POST', url: string, body: unknown, options: { background?: boolean; waitMs?: number; signal?: AbortSignal } = {}): Promise<Arrived | null> {
     const controller = new AbortController();
@@ -117,6 +142,11 @@ export async function requestJson(method: 'GET' | 'POST', url: string, body: unk
             signal: controller.signal,
             ...(body === undefined ? {} : { body: JSON.stringify(body) }),
         });
+
+        if (options.background !== true && countsAsActivity(answer.status)) {
+            window.dispatchEvent(new Event(USER_REQUEST_EVENT));
+        }
+
         let parsed: unknown = null;
 
         try {

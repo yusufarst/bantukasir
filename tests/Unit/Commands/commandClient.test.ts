@@ -1,9 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { classifyCheck, classifyCommand, ERROR_CODES, type Arrived } from '@/lib/commands/answers';
-import { CLIENT_WAIT_MS, envelopeOf, recheckDelay, RECORD_CHECK_WAIT_MINUTES, type FrozenRequest } from '@/lib/commands/client';
+import { CLIENT_WAIT_MS, countsAsActivity, envelopeOf, recheckDelay, RECORD_CHECK_WAIT_MINUTES, requestJson, USER_REQUEST_EVENT, type FrozenRequest } from '@/lib/commands/client';
 import { blockingRequest, EXEMPT_FAMILY, familyOf, isLabelledFamily, OPERATION_FAMILIES } from '@/lib/commands/families';
 import { keepReference, parseReferences, readReferences, releaseReference, REFERENCES_PREFIX, serializeReferences, type Reference } from '@/lib/commands/references';
-import { countOf, indicatorsOf, unionOf, type ReceiptRow } from '@/lib/commands/unresolved';
+import { countOf, currentUnresolved, indicatorsOf, OWN_RECEIPT_PAGES_MAX, readOwnReceipts, refreshReceipts, setUser, unionOf, type ReceiptRow } from '@/lib/commands/unresolved';
 import { instantOf } from '@/lib/format';
 
 // The command client's logic (AC-009-01 to AC-009-04; INTERACTION_CONTRACTS
@@ -247,5 +247,121 @@ describe('the unresolved requests and their number', () => {
         expect(indicatorsOf(arrived(200, { unresolvedRequests: -1, asOf: '2026-10-28T03:00:00.000000Z' }))).toEqual({ kind: 'failed' });
         expect(indicatorsOf(arrived(200, { unresolvedRequests: 1 }))).toEqual({ kind: 'failed' });
         expect(indicatorsOf(null)).toEqual({ kind: 'failed' });
+    });
+});
+
+describe('the reads of RD-04 and the activity of user requests (pull request #15)', () => {
+    const own = (changes: Partial<ReceiptRow> = {}): ReceiptRow => ({
+        operation: 'sale.checkout',
+        family: 'sale',
+        sourceIntentId: crypto.randomUUID(),
+        idempotencyKey: crypto.randomUUID(),
+        epoch: 'current',
+        receivedAt: '2026-10-28T03:00:01.000000Z',
+        outcome: 'PENDING',
+        ...changes,
+    });
+    const print = (): ReceiptRow => own({ operation: 'document.print_receipt', family: EXEMPT_FAMILY });
+
+    /** The events this document dispatched, by type. */
+    let events: string[] = [];
+
+    /** The browser's globals, with a server that answers each request as `answer` says. */
+    function serve(answer: (url: URL) => Response | null) {
+        events = [];
+        const fetch = vi.fn((input: string) => {
+            const answered = answer(new URL(input, 'http://localhost'));
+
+            return answered === null ? Promise.reject(new TypeError('Failed to fetch')) : Promise.resolve(answered);
+        });
+
+        vi.stubGlobal('fetch', fetch);
+        vi.stubGlobal('document', { cookie: '' });
+        vi.stubGlobal('window', {
+            setTimeout: globalThis.setTimeout.bind(globalThis),
+            clearTimeout: globalThis.clearTimeout.bind(globalThis),
+            localStorage: new MemoryStorage(),
+            dispatchEvent: (event: Event): boolean => {
+                events.push(event.type);
+
+                return true;
+            },
+        });
+
+        return fetch;
+    }
+
+    function afterOf(fetch: ReturnType<typeof serve>, call: number): string | null {
+        const input = fetch.mock.calls[call]?.[0];
+
+        return input === undefined ? null : new URL(input, 'http://localhost').searchParams.get('after');
+    }
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it('follows the cursor of RD-04 to the end, so that a receipt on a later page blocks its family', async () => {
+        const later = own();
+        const fetch = serve((url) =>
+            url.searchParams.get('after') === null ? Response.json({ rows: Array.from({ length: 100 }, print), nextCursor: 'page-2' }) : Response.json({ rows: [later], nextCursor: null }),
+        );
+
+        setUser(9001);
+        expect(await refreshReceipts(true)).toBe(true);
+        expect(fetch).toHaveBeenCalledTimes(2);
+        expect(afterOf(fetch, 1)).toBe('page-2');
+        expect(blockingRequest(currentUnresolved().union, 'sale.checkout', 'sale')?.sourceIntentId).toBe(later.sourceIntentId);
+    });
+
+    it('never takes a partial list as complete: a failed page, a repeated cursor or too many pages fail the read, and the last receipts stay', async () => {
+        const first = own();
+
+        serve(() => Response.json({ rows: [first], nextCursor: null }));
+        setUser(9002);
+        expect(await refreshReceipts(true)).toBe(true);
+
+        // The second page fails: the read fails and the last receipts stay.
+        serve((url) => (url.searchParams.get('after') === null ? Response.json({ rows: [], nextCursor: 'page-2' }) : Response.json({ code: 'SERVICE_BUSY' }, { status: 503 })));
+        expect(await refreshReceipts(true)).toBe(false);
+        expect(currentUnresolved().union.map((entry) => entry.sourceIntentId)).toEqual([first.sourceIntentId]);
+
+        // A cursor that repeats.
+        const repeating = serve(() => Response.json({ rows: [], nextCursor: 'same' }));
+        expect(await readOwnReceipts(true)).toBeNull();
+        expect(repeating).toHaveBeenCalledTimes(2);
+
+        // A list longer than the bound.
+        let next = 0;
+        const endless = serve(() => Response.json({ rows: [], nextCursor: `page-${String((next += 1))}` }));
+        expect(await readOwnReceipts(true)).toBeNull();
+        expect(endless).toHaveBeenCalledTimes(OWN_RECEIPT_PAGES_MAX);
+    });
+
+    it('tells the shell of every answer of the application to a request the user started, never of a background request (SEC-SESS-02, RT-10)', async () => {
+        for (const status of [200, 204, 409, 419, 422, 423, 429]) {
+            serve(() => new Response(null, { status }));
+            await requestJson('POST', '/commands/resolve', {});
+            expect(events, String(status)).toEqual([USER_REQUEST_EVENT]);
+        }
+
+        serve(() => Response.json({ outcome: 'IN_PROGRESS' }));
+        await requestJson('POST', '/commands/resolve', {}, { background: true });
+        expect(events).toEqual([]);
+
+        // The sign-in session ended, the proxy answered, or nothing arrived.
+        for (const status of [401, 500, 502, 503, 504]) {
+            serve(() => new Response(null, { status }));
+            await requestJson('POST', '/commands/resolve', {});
+            expect(events, String(status)).toEqual([]);
+        }
+
+        serve(() => null);
+        expect(await requestJson('POST', '/commands/resolve', {})).toBeNull();
+        expect(events).toEqual([]);
+
+        expect(countsAsActivity(200)).toBe(true);
+        expect(countsAsActivity(401)).toBe(false);
+        expect(countsAsActivity(503)).toBe(false);
     });
 });

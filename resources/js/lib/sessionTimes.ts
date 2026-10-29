@@ -14,7 +14,9 @@
 // server counted them: so its deadlines are never before the server's, and
 // when a timer ends the session the server has already ended it. A user
 // activity request (RA-07) answered 204 restarts the idle limit from its
-// answer. The browser's own clock never decides anything else.
+// answer, and so does the application's answer to a request of the command
+// client that the user started (USER_REQUEST_EVENT; TASK-009). The browser's
+// own clock never decides anything else.
 
 /** The limits of the sign-in session, as the shared props carry them. */
 export interface SessionTimes {
