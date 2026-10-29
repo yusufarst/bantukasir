@@ -4,9 +4,9 @@
 | --- | --- |
 | Task | [TASK-009](../tasks/TASK-009-command-client.md), size M, review class A, lane P |
 | Status | `DONE` when its pull request is squash-merged and CI passes on `develop` at the merge (EXECUTION_CONTEXT CE-50, CE-61); until then `develop` shows `READY`. The status of record is [TASK_PLAN](../TASK_PLAN.md) section 4 |
-| Instruction | D-101 as amended by D-104, D-105 and D-107, continuous execution (EXECUTION_CONTEXT section 19, CE-01): the selection of CE-10 at `origin/develop` `e54cbab`, the lowest-numbered `READY` Task with its dependencies `DONE` and its gate GATE-CC1 satisfied; mode `start`, delegated by the tick to `bk-executor-high` on 28 October 2026 at 16:32:44, after it verified the merge of TASK-008 |
+| Instruction | D-101 as amended by D-104, D-105 and D-107, continuous execution (EXECUTION_CONTEXT section 19, CE-01): the selection of CE-10 at `origin/develop` `e54cbab`, the lowest-numbered `READY` Task with its dependencies `DONE` and its gate GATE-CC1 satisfied; mode `start`, delegated by the tick to `bk-executor-high` on 28 October 2026 at 16:32:44, after it verified the merge of TASK-008; resumed in `REVIEW` on 29 October 2026 at 22:23 under D-108, on the Owner's note naming the merge of pull request #14 and the move of the branch to `5f20137` |
 | Branch | `task/TASK-009-command-client`, created from `origin/develop` (CE-02) |
-| Base commit | `e54cbab04dc5106982cd207bad2795c09e6318e3`, the squash commit of pull request #13 (TASK-008) on `develop` |
+| Base commit | `e54cbab04dc5106982cd207bad2795c09e6318e3`, the squash commit of pull request #13 (TASK-008) on `develop`; since 29 October 2026 `5f20137f1146be4a6f615d2ac5acb624999a596f`, the squash commit of the `ops/` pull request #14 (D-108), to which the Owner moved the branch by fast-forward before any commit of the Task |
 | Executor | The implementation executor agent `bk-executor-high` in Claude Code Desktop on the Owner's Windows machine, in the main working tree; Claude Opus 5.5 (`claude-opus-5-5`); effort High, from the table of EXECUTION_CONTEXT section 19 (CE-11, D-107) |
 | Reviewers | `bk-reviewer-high` for the adversarial review of class A and for a verification of fixes (CE-11, CE-40); section 9 |
 | Gates | GATE-CC1, SATISFIED (D-099); EXECUTOR, checked at the start |
@@ -133,26 +133,96 @@ The resume (`OWNER_RESUME`, the Owner's note "Owner resume after OWNER_SHUTDOWN 
 | `… tests/Browser/access tests/Browser/security --workers=1` | They sign in and out through the shell's changed leaving paths | PASS, 42 tests |
 
 `tests/Browser/design-system` and `smoke.spec.ts` sign no one in, so the signed-in shell that changed does not run there; they passed in section 7's run and were not run again. The full command contract runs in CI on the pull request.
+## 9. Review (CE-40)
 
-## 9. Review (CE-40) — in progress at the stop of 28 October 2026, about 23:40
+One class-A review, never repeated (D-108), and one targeted verification of its two MUST-FIX.
 
-Round 1, the one class-A review, by `bk-reviewer-high` on package `.git/bantukasir-executor/review/TASK-009/r1` (tree `f6ecff3`, base `e54cbab`); `--check` UNCHANGED. Verdict FAIL, two MUST-FIX:
+| Round | Agent and effort | Package | Base, tree | Time, duration | Verdict |
+| --- | --- | --- | --- | --- | --- |
+| 1, review | `bk-reviewer-high`, High | `.git/bantukasir-executor/review/TASK-009/r1` | `e54cbab`, `f6ecff3` | 28 October 2026, from 23:04 | FAIL, two MUST-FIX; `--check` UNCHANGED |
+| 2, verification | `bk-reviewer-high`, High (CE-11) | `.git/bantukasir-executor/review/TASK-009/r2`, `--previous` r1 | `5f20137`, `96a9a25` (HEAD `eac393f`) | 29 October 2026, 23:00:44, 2 min 38 s | PASS: R-01 and R-02 FIXED, no new MUST-FIX; `--check` UNCHANGED |
 
-| ID | Severity | Finding | State at the stop |
+The base of round 2 is `5f20137`, the squash commit of the `ops/` pull request #14 (D-108), to which the Owner moved the branch by fast-forward from `e54cbab` with nothing else changed (his note of the resume). Its `fix.patch` holds the 15 files of D-108 that came with `develop`; they were outside the verification's scope and not judged.
+
+Between the rounds the Task stopped three times with `LOCAL_DOCKER_DOWN` in `REVIEW` (28 October 2026 about 23:40, resume 1 at 23:48, resume 2 at 00:03 on 29 October): the local Docker engine answered HTTP 500, no check ran and nothing changed but this file. Resume 3, at 22:23 on 29 October under D-108, ran the checks of section 10 without a local container.
+
+| ID | Severity | Finding | Outcome |
 | --- | --- | --- | --- |
-| R-01 | MUST-FIX | A repeat ("Kirim ulang", or the request after RA-03) of an UNCERTAIN request answered 401, 419, 423 or 429 released the reference of an intent that may have committed; 423 then "Batal" dropped to an idle draft; 429 showed no "Cek status" | Fixed on the tree, `NOT_RUN`: `useCommand.ts` remembers the intent that may have reached the server (`reached`) and releases the reference on a not-run answer only for a first attempt; 429 after it keeps UXS-14 with the 429 notice (`Panels.tsx`); "Batal" returns to UXS-14; 419 keeps the reference, the reloaded page opens on the panel. Regression tests added to `client.spec.ts`: "a repeat of an uncertain request that runs nothing keeps its reference…" and "419 on a repeat of an uncertain request keeps its reference…" |
-| R-02 | MUST-FIX | No browser test of the shell's refresh (open, 30 seconds, focus, background marker) or of UXS-21 and UXS-22 | Test added to `requests.spec.ts`, "the shell reads RD-03 as background requests on open, every 30 seconds and on focus…", `NOT_RUN`. The read after a command is not in it: the probe's commit loads the home, which reads on open |
-| R-03 | SHOULD-FIX | REJECTED answers and 401 on a first command not exercised in the browser | Open: browser time, for OPEN_ITEMS |
-| R-04 | SHOULD-FIX | A pending status-check repeat is not cleared by "Kirim ulang" | Open: needs a test of the timing, for OPEN_ITEMS |
-| R-05 | SHOULD-FIX | UXP-006 at 3 of 8 widths, no 200 % zoom, no keyboard pass of "Cek status" | Open: browser time, for OPEN_ITEMS |
-| R-06 | SHOULD-FIX | `tests/Browser/commands` not run whole on the final tree | Planned: the whole folder on the next run |
-| R-07 | SHOULD-FIX | No acceptance-criteria, Definition of Done or review section | This section started; the tables follow with the record of CE-50 |
-| R-08 | SHOULD-FIX | CURRENT_HANDOFF's `EXECUTION:` and `TESTS:` lines out of date | Open, with the record of CE-50 |
-| R-11, R-13 | NOTE | Leaving paths of `useCommand` and UXP-006 did not stop the shell's reads; RD-04's 401 in the refresh read as a failed read | R-11 fixed on the tree: `clearBrowserData()`, which every leaving path calls, calls `stopIndicators()` (the explicit calls of F-6 in `AppShell.tsx` removed as redundant). R-13 open |
-| R-09, R-10, R-12, R-14 to R-17 | NOTE | Unmounted page drops a late answer; client idle deadline not fed by fetch commands; `location` with a backslash; probe in `local`; site-data simulation; RD-04 first page only; no epoch before the bootstrap | For OPEN_ITEMS at the record |
+| R-01 | MUST-FIX | A repeat of an UNCERTAIN request answered 401, 419, 423 or 429 released the reference of an intent that may have committed; 423 then "Batal" dropped to an idle draft; 429 showed no "Cek status" | FIXED, verified: `useCommand.ts` releases on a not-run answer only for a first attempt (`reached`); "Batal" returns to UXS-14; 429 keeps UXS-14 with the UXS-12 notice (`Panels.tsx`). Regression tests in `client.spec.ts`, "a repeat of an uncertain request that runs nothing keeps its reference…" and "419 on a repeat of an uncertain request keeps its reference…", which fail without the fix (verification) and pass in run 40905063814 |
+| R-02 | MUST-FIX | No browser test of the shell's refresh or of UXS-21 and UXS-22 | FIXED, verified: `requests.spec.ts` "the shell reads RD-03 as background requests on open, every 30 seconds and on focus…". Its first CI run (40902074910) failed at the focus step, a defect of the test (F-8) |
+| R-03 | SHOULD-FIX | REJECTED answers and 401 on a first command not exercised in the browser | Open: OPEN_ITEMS T-34 (a) |
+| R-04 | SHOULD-FIX | A pending status-check repeat is not cleared by "Kirim ulang" | Open: OPEN_ITEMS T-34 (b) |
+| R-05 | SHOULD-FIX | UXP-006 at 3 of the 8 widths, no 200 % zoom, no keyboard pass of "Cek status" | Open: OPEN_ITEMS T-34 (c) |
+| R-06 | SHOULD-FIX | `tests/Browser/commands` not run whole on the final tree | Fixed: the whole browser suite, 208 tests, in run 40905063814 |
+| R-07 | SHOULD-FIX | No acceptance-criteria, Definition of Done or review section | Fixed: sections 9, 11 and 12 |
+| R-08 | SHOULD-FIX | CURRENT_HANDOFF's `EXECUTION:` and `TESTS:` lines out of date | Fixed in CURRENT_HANDOFF section 8 |
+| R-11 | NOTE | Leaving paths of `useCommand` and UXP-006 did not stop the shell's reads | Fixed: `clearBrowserData()`, which every leaving path calls, calls `stopIndicators()`; the verification found no regression |
+| R-13 | NOTE | RD-04's 401 in the refresh read as a failed read | Recorded: OPEN_ITEMS T-34 (d) |
+| R-09, R-10, R-12, R-14 to R-17 | NOTE | An unmounted page drops a late answer; the client's idle deadline not fed by fetch commands; `location` with a backslash; the probe in `local`; the simulation of cleared site data; RD-04's first page only; no epoch before the bootstrap | Recorded, no change: the probe in `local` is reading 11 and the epoch before the bootstrap reading 3 of section 4; the others are limits of the harness or wait for the first command pages (TASK-010, TASK-011) |
+| R-18 | NOTE (round 2) | The R-02 test does not cover the read after a command | Recorded: OPEN_ITEMS T-34 (e) |
+| R-19 | NOTE (round 2) | The 30-second step counts any new read after the open | Recorded, no change: nothing else reads in that window |
+| R-20 | NOTE (round 2) | Section 9 did not yet cite the checkpoint runs | Fixed: this section and section 10 |
+| R-21 | NOTE (round 2) | After a 429 on a repeat, "Kirim ulang" is available before the wait has passed, as in the existing throttled phase | Recorded: OPEN_ITEMS T-34 (b) |
 
-Not run since these changes: `npm run typecheck` and the rest of CE-44 — the local Docker engine answered HTTP 500 at the first check after the fixes (stop `LOCAL_DOCKER_DOWN`, the Owner's resource policy). Left on resume: the checks of CE-44 for these changes (typecheck, lint, Vitest, build, `tests/Browser/commands` whole, and `shell/session.spec.ts` for the moved `stopIndicators` call), the round 2 package and the targeted verification of R-01 and R-02 by `bk-reviewer-high`, then the record of CE-50 and the publication.
+The self-review of the fixes found no defect (every leaving path of `browserSession.ts` calls `clearBrowserData()`, no import cycle). One finding of this resume:
 
-Resume 1 (28 October 2026, 23:48, the Owner's note "Docker restored by the Owner; resume TASK-009"): `docker info` again answered HTTP 500 and `docker version` did not answer within 60 seconds; the host has no `node_modules`, so no check of CE-44 can run outside the containers. Nothing was run and nothing changed but this paragraph; stopped again with `LOCAL_DOCKER_DOWN`.
+| ID | Finding | Disposition |
+| --- | --- | --- |
+| F-8 | Checkpoint run 40902074910 failed the R-02 test at its focus step: `refreshIndicators()` returns the read in flight (RD-03, then RD-04 while a receipt is counted), so a focus during the interval's read sends nothing | Fixed in the test (`readOnFocus`, for the focus and the failed-read steps); no production code changed; run 40905063814 green |
 
-Resume 2 (29 October 2026, 00:03, the Owner's note "Docker Desktop restarted by the Owner; docker info answers 29.8.0; resume TASK-009"): `docker info` answered 29.8.0 at 00:03; the self-review of the R-01, R-02 and R-11 fixes found no defect (every leaving path of `browserSession.ts` calls `clearBrowserData()`, no import cycle). `APP_PORT=18080 docker compose up -d --build --wait`, started at 00:04:35, had not finished at 00:15; `docker ps` and `docker info` then answered HTTP 500 and `docker version` did not answer within 30 seconds (00:17). The compose command was stopped; no check of CE-44 ran and nothing changed but this paragraph; stopped again with `LOCAL_DOCKER_DOWN`.
+## 10. Checks (CE-44 to CE-46, D-108)
+
+Under D-108 no container of BantuKasir runs on the Owner's machine: the heavy checks ran in checkpoint runs of CI on the Task branch, the rest natively. Times are Asia/Jakarta, 29 October 2026; the checks of sections 7 and 8 ran on earlier trees and are superseded by these.
+
+| Check | Where | Time | Duration | Result |
+| --- | --- | --- | --- | --- |
+| `tsc --noEmit` | Local, tree of `8b706fa` | 22:24:37 | 11 s | PASS |
+| ESLint | Local, tree of `8b706fa` | 22:24:51 | 52 s | PASS |
+| Vitest | Local | 22:25:48 | 3 s | NOT_RUN: `node_modules` comes from the Linux container and has no Windows binding of rolldown; run in CI |
+| Guard preview (CE-31) | Local, before the checkpoint | 22:26:10 | 5 s | PASS, no candidate |
+| Guard | Local, `8b706fa` | 22:26:42 | 2 min 22 s | PASS: Gitleaks 8.30.1 native, no leak, no candidate |
+| Checkpoint 1, the command contract | CI run 40902074910, head `8b706fa` | 22:29:26 | 13 min 15 s | FAIL: every step PASS except `npm run test:e2e`, 207 passed, 1 failed (F-8) |
+| `tsc --noEmit`, ESLint of the changed test | Local, after F-8's fix | 22:44:39 | 12 s | PASS |
+| Guard | Local, `eac393f` | 22:45:08 | 1 min 46 s | PASS: no leak, no candidate |
+| Checkpoint 2, the command contract | CI run 40905063814, head `eac393f` | 22:47:14 | 12 min 46 s | PASS, every step below |
+| — start of the local environment | run 40905063814 | 22:47:17 | 43 s | PASS |
+| — `composer validate`, `composer lint`, `composer analyse` | run 40905063814 | 22:48:00 | 27 s | PASS |
+| — `composer test:unit` | run 40905063814 | 22:48:27 | 13 s | PASS, 536 tests |
+| — `composer test:postgres` | run 40905063814 | 22:48:40 | 4 min 48 s | PASS, 341 tests |
+| — `composer test:race` | run 40905063814 | 22:53:28 | 35 s | PASS, 19 tests |
+| — `npm ci`, `npm run lint`, `npm run typecheck` | run 40905063814 | 22:54:03 | 19 s | PASS |
+| — `npm run test:unit` | run 40905063814 | 22:54:22 | 6 s | PASS, 514 tests |
+| — `npm run build` | run 40905063814 | 22:54:28 | 6 s | PASS |
+| — `npm run test:e2e` | run 40905063814 | 22:54:34 | 5 min 24 s | PASS, 208 tests: `tests/Browser/commands` whole, the R-01 and R-02 regression tests, the recovery case of EXC-34 |
+
+Run 40905063814 stays valid for the pull request's code (CE-45): the record commit after it changes documents only. The full command contract runs again in CI on the pull request's final head (CE-41).
+
+## 11. Acceptance criteria
+
+| Criterion | Result | Proven by (run 40905063814) |
+| --- | --- | --- |
+| AC-009-01 | PASS | `client.spec.ts` with the faults of TS-22 and the R-01 tests; `commandClient.test.ts` |
+| AC-009-02 | PASS | `client.spec.ts`: a second press, Space or Enter while SUBMITTING; Enter on the final action |
+| AC-009-03 | PASS | `requests.spec.ts`: reload, sign-out, another user, release when resolved; `commandClient.test.ts` |
+| AC-009-04 | PASS | `devices.spec.ts` (TS-23): a second context, cleared site data, NC-13 (d), print, the Owner never blocked by another user |
+| AC-009-05 | PASS | `requests.spec.ts` for a cashier and for the Owner; `RequestsPageTest`, `ShellDataTest` |
+| AC-009-06 | PASS | `requests.spec.ts`: the sign-out warning and the R-02 test (RD-03 on open, every 30 seconds, on focus, the background marker, UXS-21, UXS-22); `ShellDataTest` |
+| AC-009-07 | PASS | `CopyDeckTest`, `LocalizationTest`, the translation-key check of `composer lint`; axe on the panels, the dialog and UXP-006 |
+
+## 12. Definition of Done (EXECUTION_CONTEXT section 13)
+
+| Dimension | Result | Reason |
+| --- | --- | --- |
+| Business | PASS | AC-009-01 to AC-009-07; WF-07 and UXT-08 |
+| UI and UX | PASS | The controls of contract section 4.2 with their routes, the states, the keys of COPY_DECK, axe; UXP-006 tested at three widths, the other widths and 200 % zoom left by R-05 to OPEN_ITEMS T-34 (c) |
+| Backend | PASS | RD-03 and RP-006 with their gates, no parameter, `no-store`, the DTO allowlists per role (`ShellDataTest`, `RequestsPageTest`, the route inventory and the capability matrix) |
+| Database | N/A | No migration |
+| Security | PASS | Deny by default on both routes for every role and the combined account; references without a payload; storage cleared at sign-out and on a change of user; the guard and the static checks |
+| Data integrity | N/A | Writes no business fact |
+| Performance | PASS | RD-03 one bounded count; RD-04 its first page only; the budgets are measured at TASK-048 |
+| Operations | N/A | No backup, runbook or status impact |
+| Verification | PASS | The command contract green in checkpoint run 40905063814; the self-review; the class-A review and its targeted verification (section 9); the pull request's own CI follows (CE-41) |
+
+## 13. Guard preview of the record (CE-31, CE-50)
+
+`bash scripts/executor/guard.sh --preview` on the working tree with this record, 29 October 2026 at 23:09:07, 2 s: `GUARD PREVIEW PASS`, no candidate of the privacy and client-data check, so no judgment to record. The checkpoint commits `8b706fa` and `eac393f` each passed `guard.sh` before their push (section 10), with no candidate.
