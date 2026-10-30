@@ -41,13 +41,21 @@ RUN composer install --no-dev --no-interaction --no-progress --no-scripts --no-a
 COPY app ./app
 RUN composer dump-autoload --no-dev --no-interaction --no-scripts --optimize --ignore-platform-reqs
 
-FROM php:8.5.11-fpm-trixie@sha256:adde18b67ea7a8cddc580f657e0d3f16e800758c6fa690b969c2925a303e8afc AS runtime
+# age for the role backup (ADR-010), built here at a pinned version with the
+# current Go: Debian's package is built with an older Go, which the vulnerability
+# scan reports. The Go module system verifies its sources against the checksum
+# database.
+FROM golang:1.27.3-trixie@sha256:c65ecfe613b539ac74c62a4c3b2c27e8f8a6076384c8f27e8a3c0f3be17cc385 AS age
+ENV CGO_ENABLED=0
+RUN go install -trimpath filippo.io/age/cmd/age@v1.3.2 filippo.io/age/cmd/age-keygen@v1.3.2
+
+FROM php:8.5.12-fpm-trixie@sha256:da5d8e27ec238adc0804fd4194f98e59477db7116690d275b76679c1b84c813f AS runtime
 
 # Nginx comes from the nginx.org stable repository, whose package history keeps
 # every published version, so the pin below stays installable. The PostgreSQL
-# client tools of the server's major version (compose.yaml) and age are for the
-# role backup (ADR-010), from the PostgreSQL Apt Repository and Debian. Both
-# repositories are verified by the fingerprint of their published signing key.
+# client tools of the server's major version (compose.yaml) are for the role
+# backup (ADR-010), from the PostgreSQL Apt Repository. Both repositories are
+# verified by the fingerprint of their published signing key.
 ARG NGINX_VERSION=1.30.6-1~trixie
 ARG NGINX_KEY_FINGERPRINT=573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62
 ARG PGDG_SIGNER_FINGERPRINT=B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8
@@ -74,14 +82,14 @@ RUN set -eux; \
     printf 'Package: *\nPin: origin nginx.org\nPin-Priority: 900\n' > /etc/apt/preferences.d/99nginx; \
     apt-get update; \
     apt-get upgrade -y; \
-    apt-get install -y --no-install-recommends "nginx=${NGINX_VERSION}" "postgresql-client-${POSTGRES_MAJOR}" age libpq-dev libpng-dev libjpeg62-turbo-dev libwebp-dev; \
+    apt-get install -y --no-install-recommends "nginx=${NGINX_VERSION}" "postgresql-client-${POSTGRES_MAJOR}" libpq-dev libpng-dev libjpeg62-turbo-dev libwebp-dev; \
     docker-php-ext-install -j"$(nproc)" pdo_pgsql; \
     # GD, the image library of the media pipeline (TASK-010; SECURITY_MODEL
     # SEC-UP-03), with PNG, JPEG and WebP only: libgd starts no other program.
     docker-php-ext-configure gd --with-jpeg --with-webp; \
     docker-php-ext-install -j"$(nproc)" gd; \
     apt-mark auto '.*' > /dev/null; \
-    apt-mark manual ca-certificates curl nginx "postgresql-client-${POSTGRES_MAJOR}" age > /dev/null; \
+    apt-mark manual ca-certificates curl nginx "postgresql-client-${POSTGRES_MAJOR}" > /dev/null; \
     find /usr/local -type f -executable -exec ldd '{}' ';' 2>/dev/null \
         | awk '/=>/ { so = $(NF-1); if (index(so, "/usr/local/") == 1) { next }; gsub("^/(usr/)?", "", so); printf "*%s\n", so }' \
         | sort -u \
@@ -91,13 +99,13 @@ RUN set -eux; \
         | sort -u \
         | xargs -r apt-mark manual > /dev/null; \
     apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
-    rm -rf /var/lib/apt/lists/* /usr/src/php.tar.xz /usr/src/php.tar.xz.asc; \
+    rm -rf /var/lib/apt/lists/* /usr/src/php.tar.xz /usr/src/php.tar.xz.asc /usr/local/include; \
     cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"; \
     php -r 'exit(extension_loaded("gd") && extension_loaded("pdo_pgsql") ? 0 : 1);'; \
     nginx -v; \
-    "/usr/lib/postgresql/${POSTGRES_MAJOR}/bin/pg_dump" --version; \
-    age --version
+    "/usr/lib/postgresql/${POSTGRES_MAJOR}/bin/pg_dump" --version
 
+COPY --from=age /go/bin/age /go/bin/age-keygen /usr/local/bin/
 COPY docker/app/nginx.conf /etc/nginx/nginx.conf
 COPY docker/app/nginx-front-controller.conf /etc/nginx/bantukasir-front-controller.conf
 COPY docker/app/nginx-security-headers.conf /etc/nginx/bantukasir-security-headers.conf
@@ -107,6 +115,10 @@ COPY --chmod=0755 docker/app/serve.sh /usr/local/bin/bantukasir-serve
 COPY --chmod=0755 docker/app/healthcheck.sh /usr/local/bin/bantukasir-healthcheck
 
 WORKDIR /var/www/html
+
+# The base image stops PHP-FPM alone with SIGQUIT; the image's first process is
+# docker/app/serve.sh or the wait of role backup, which end on SIGTERM.
+STOPSIGNAL SIGTERM
 
 # Role web: RH-01 on the listener of the health check, which needs a trusted
 # host name and no trusted hop (TASK-007 finding F-1). Role backup serves
@@ -134,8 +146,10 @@ ENTRYPOINT ["/usr/local/bin/bantukasir-entrypoint"]
 # belong to root, so that its processes can write only its runtime folders. The
 # media folder exists here with its owner, so that no process of another user
 # can create it first (TASK-010 finding F-8), and an empty volume mounted on it
-# takes this owner and mode. No port is exposed: the platform's resource of role
-# web names 8080, and role backup publishes none (ADR-010 item 6).
+# takes this owner and mode. The image declares no port of its own: the platform's
+# resource of role web names 8080, and role backup publishes none (ADR-010 item
+# 6). The base image's declaration of 9000 cannot be removed; PHP-FPM listens on
+# the loopback address only, so nothing can be reached there.
 FROM runtime AS release
 COPY artisan composer.json ./
 COPY app ./app
