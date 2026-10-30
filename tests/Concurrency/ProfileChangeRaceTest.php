@@ -15,10 +15,12 @@ use Tests\Harness\Race\Worker;
  * 10, a command; TASK-010 review finding R-01), each with two processes of
  * their own connections under barrier control:
  *
- * - RACE-01 and RACE-02: a repeat with the same key, or another key of the
- *   same intent, waits for the original on the command identity and returns
- *   it, or IDEMPOTENCY_CONFLICT when its payload differs — for a multipart
- *   request too, whose new logo stands in the fingerprint by its SHA-256;
+ * - RACE-01: a repeat with the same key waits for the original on the command
+ *   identity and returns it, or IDEMPOTENCY_CONFLICT when its payload differs
+ *   — for a multipart request too, whose new logo stands in the fingerprint by
+ *   its SHA-256;
+ * - RACE-02: another key of the same intent, without a logo, returns the
+ *   original in the same way;
  * - RACE-25, RC-32's side: two changes against the same revision; the second
  *   waits on the pointer's update lock and is refused STALE_VERSION once the
  *   first moved it. The snapshot side, a command that freezes the identity,

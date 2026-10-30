@@ -554,6 +554,7 @@
     .bk-error-summary a {
         display: inline-flex;
         align-items: center;
+        min-width: var(--touch-min);
         min-height: var(--touch-min);
         color: var(--color-danger-fg);
         font-weight: var(--weight-semibold);

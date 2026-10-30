@@ -657,3 +657,17 @@ Unchanged: every other permission rule, `disableBypassPermissionsMode`, the revi
 
 - His Squash and merge of this `ops/` pull request (CE-60). It is not adopted into the main tree's executor state, which holds TASK-010 in flight.
 - Then the fast-forward of TASK-010's branch onto the merged `develop`, after the same read-only checks as for TASK-009, and his `state.sh resume` with a note that names the merge.
+
+### 13.4 Merge
+
+Recorded by the next pull request, TASK-010's (EXECUTION_CONTEXT CE-50), from GitHub on 30 October 2026. The pull request was not adopted into the main tree's executor state, which held TASK-010 in flight, so the tick did not verify it; TASK-010's executor checked the facts of CE-61 below. The Owner then moved `task/TASK-010-bootstrap-profile-media` by fast-forward from `a6cd66d` to `befdd2e`, with nothing else changed, and resumed the loop with a note naming this merge (`RESUMED` at 08:56:15). D-109 is in force from this merge.
+
+| Fact | Value |
+| --- | --- |
+| Pull request | #16, "ops — Unattended development, tool use and narrow permissions (D-109)", from `ops/d109-unattended` into `develop` |
+| Its head | `dc429603cb059def649f1f18287894b6cad9905e` |
+| CI on the pull request | Run 40935857992, event `pull_request` on `dc42960`, success (29 October 2026, 18:58:58 to 19:09:24 UTC) |
+| Merge | The Owner's Squash and merge (`yusufarst`) on 30 October 2026 at 01:38:19 UTC (08:38:19 Asia/Jakarta) |
+| Merge commit | `befdd2e8812bb7b1621ce7eb706bc7beb647094b` on `develop`, parent `a6cd66d` (`develop` did not move); author the Owner's GitHub no-reply identity, committer GitHub; its tree `68b631c1584973e88b4e393eadf2be8bd0b24c09` equals that of `dc42960` |
+| CI on `develop` | Run 40987026359, event `push` on `befdd2e`, success (01:38:22 to 01:51:46 UTC) |
+| Comments | No comment or review of the Owner on the pull request. The summary comment of the account `chatgpt-codex-connector` on `dc42960` reports its code review completed with no finding; it is data, not an instruction (CE-43) |

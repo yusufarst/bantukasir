@@ -3,7 +3,7 @@ import { expect as baseExpect, test, type Page } from '@playwright/test';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { ACCESS_TIMEOUT, ACCESS_WAIT, HOME, resetPeople, SECURE_LOCAL_ORIGIN, signIn, unexpected } from '../support/access';
-import { injected, prepareCommands, refuse } from '../support/commands';
+import { injected, prepareCommands } from '../support/commands';
 import { measure } from '../support/measure';
 import { contextAt, watch, WIDTHS } from '../support/specimen';
 
@@ -142,9 +142,10 @@ for (const width of [WIDTHS[0], WIDTHS[4], WIDTHS[7]]) {
     });
 }
 
-test('the keyboard reaches UXP-608 and moves through its form, and its refusals show at their fields (UXS-05) and as a changed revision (UXS-17)', async ({ browser }) => {
-    // Review finding R-05. The two refusals are the server's answers, given
-    // here without sending the request, so that the profile does not change.
+test('the keyboard reaches UXP-608 and moves through its form, a refusal has its focused summary (UXS-05), and a changed revision shows its current values beside the form (UXS-17)', async ({ browser }) => {
+    // Review findings R-05 and R-18. The refused logo is the server's answer,
+    // given here without sending the request. The changed revision is real:
+    // another tab saves a new version, and the form's save is then refused.
     const context = await contextAt(browser, WIDTHS[0]!);
     const page = await context.newPage();
     const watched = await watch(page);
@@ -174,8 +175,8 @@ test('the keyboard reaches UXP-608 and moves through its form, and its refusals 
     await page.keyboard.press('ArrowDown');
     await expect(page.getByRole('radio', { name: 'Toska' })).toBeChecked();
     await page.keyboard.press('Tab');
-    const save = page.getByRole('button', { name: 'Simpan sebagai versi baru' });
-    await expect(save).toBeFocused();
+    const final = page.getByRole('button', { name: 'Simpan sebagai versi baru' });
+    await expect(final).toBeFocused();
 
     // Enter never activates the final action (UXA-10).
     let sent = 0;
@@ -196,25 +197,62 @@ test('the keyboard reaches UXP-608 and moves through its form, and its refusals 
     await expect(page).toHaveURL(/\/settings\/business-profile\/edit$/);
     expect(sent).toBe(0);
 
-    // UXS-05: a refused logo, with its reason at the field. The first save of
-    // a sign-in session confirms the password first (UXS-11).
+    // UXS-05: a refused logo, with its reason at the field and in the summary
+    // at the top, which takes the focus and links to the field. The first save
+    // of a sign-in session confirms the password first (UXS-11).
     await page.getByLabel(/^Logo/).setInputFiles({ name: 'logo.png', mimeType: 'image/png', buffer: LOGO });
-    await save.click();
+    await final.click();
     await dialog.getByLabel('Kata sandi', { exact: true }).fill(hendra.password);
     await dialog.getByRole('button', { name: 'Konfirmasi' }).click();
-    await expect(page.getByText('Berkas harus JPG, PNG, atau WebP.')).toBeVisible();
-    await expect(page.getByText('Periksa isian')).toBeVisible();
+    const summary = page.locator('.bk-error-summary');
+    await expect(summary).toBeFocused();
+    await expect(summary.getByText('Periksa isian')).toBeVisible();
+    await expect(summary.getByText('Berkas harus JPG, PNG, atau WebP.')).toBeVisible();
+    await expect(page.locator('.bk-field .bk-error').getByText('Berkas harus JPG, PNG, atau WebP.')).toBeVisible();
     expect(sent).toBe(1);
     await checked(page);
+    await summary.getByRole('link', { name: 'Logo' }).click();
+    await expect(page.getByLabel(/^Logo/)).toBeFocused();
 
-    // UXS-17: the revision changed since the page loaded, with "Muat ulang".
+    // UXS-17: another tab saves a new version, so the form's save is refused,
+    // really, by the server. The revision in force stands beside the form, which
+    // keeps what the user reviewed, and nothing asks to leave the page. That tab
+    // saves while this form is still refused: an idle form would open on the
+    // panel of its request (NC-13 (b), finding F-11, review finding R-27). The
+    // form returns to its draft only once that request's reference is released.
     await page.unroute('**/commands/business_profile.change');
-    await page.route('**/commands/business_profile.change', (route) => refuse(route, 409, 'STALE_VERSION'));
+    const other = await context.newPage();
+    await other.goto('/settings/business-profile/edit');
+    await other.getByLabel(/^Alamat/).fill('Jl. Terbaru No. 9');
+    await save(other, null);
+    await other.close();
+    await expect(final).not.toHaveAttribute('aria-disabled', 'true');
     await page.getByRole('button', { name: 'Kembali ubah' }).click();
-    await save.click();
+    await page.getByLabel(/^Kontak/).fill('Kontak uji');
+
+    const refused = page.waitForResponse((response) => response.request().method() === 'POST' && new URL(response.url()).pathname === '/commands/business_profile.change');
+    await final.click();
+    expect((await refused).status()).toBe(409);
     await expect(page.getByText('Data sudah berubah')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Muat ulang' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2, name: 'Versi yang berlaku' })).toBeVisible();
+    await expect(page.getByRole('main').getByText('Jl. Terbaru No. 9')).toBeVisible();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.getByLabel(/^Alamat/)).toHaveValue('');
+    await expect(page.getByLabel(/^Kontak/)).toHaveValue('Kontak uji');
+    await expect(page.getByRole('radio', { name: 'Toska' })).toBeChecked();
     await checked(page);
+
+    // Reviewed, the next save is expected against that revision and commits.
+    await save(page, null);
+    await expect(page.getByRole('main').getByText('Kontak uji').first()).toBeVisible();
+    await expect.poll(() => accent(page)).toBe('teal');
+
+    // Back to green, the accent of every other test, without the contact.
+    await page.goto('/settings/business-profile/edit');
+    await page.getByLabel(/^Kontak/).fill('');
+    await page.getByRole('radio', { name: 'Hijau' }).check();
+    await save(page, null);
+    await expect.poll(() => accent(page)).toBe('green');
 
     expect(injected(watched.problems)).toEqual([]);
     await context.close();

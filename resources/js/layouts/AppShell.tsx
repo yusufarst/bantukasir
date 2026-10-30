@@ -827,7 +827,9 @@ function SignedInShell({
         const offBefore = router.on('before', (event) => {
             const visit = event.detail.visit;
 
-            if (bypass.current || !dirty.current.dirty || visit.method !== 'get' || visit.prefetch) {
+            // A partial reload stays on the page, with the state of its form:
+            // it leaves nothing (UXS-17 on UXP-608).
+            if (bypass.current || !dirty.current.dirty || visit.method !== 'get' || visit.prefetch || visit.only.length > 0) {
                 return;
             }
 
