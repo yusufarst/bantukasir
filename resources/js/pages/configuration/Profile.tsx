@@ -7,6 +7,7 @@ import { PageContainer, PageHeader } from '@/layouts/Page';
 import { RevisionFields, takeSaved, type Revision } from '@/lib/configuration/profile';
 import { formatDateTime } from '@/lib/format';
 import { t } from '@/lib/i18n';
+import type { DestinationId } from '@/lib/navigation';
 
 // UXP-607 "Profil usaha" (ROUTE_CONTRACTS RP-607; COPY_DECK section 11.7;
 // INTERACTION_INVENTORY UXI-358 to UXI-360; NAVIGATION_CONTRACTS UXP-607;
@@ -19,12 +20,15 @@ const SETTINGS = '/settings';
 
 const EDIT = '/settings/business-profile/edit';
 
+/** The destination of the navigation that holds the page (UXI-008). */
+const DESTINATION: DestinationId = 'settings';
+
 export default function Profile({ current, earlier }: { current: Revision; earlier: readonly Revision[] }) {
     const title = t('config.profile.title');
     const [saved] = useState(takeSaved);
 
     return (
-        <AppShell title={title} current={'settings'}>
+        <AppShell title={title} current={DESTINATION}>
             <PageContainer width={'form'}>
                 <PageHeader
                     title={title}

@@ -3,6 +3,7 @@ import type { IconName } from '@/components/ui/icons';
 import { AppShell } from '@/layouts/AppShell';
 import { PageContainer, PageHeader } from '@/layouts/Page';
 import { t } from '@/lib/i18n';
+import type { DestinationId } from '@/lib/navigation';
 import type { TranslationKey } from '@/types/translation-keys';
 
 // UXP-601 "Pengaturan" (ROUTE_CONTRACTS RP-601; COPY_DECK section 11.1;
@@ -12,6 +13,9 @@ import type { TranslationKey } from '@/types/translation-keys';
 // entries whose page exists and whose capability the user holds, in their
 // order (App\Http\Controllers\Access\SettingsController); each later Task
 // adds its entry there and its words here.
+
+/** The destination of the navigation that is this page (UXI-008). */
+const DESTINATION: DestinationId = 'settings';
 
 interface Entry {
     readonly id: string;
@@ -28,7 +32,7 @@ export default function Settings({ entries }: { entries: readonly Entry[] }) {
     const title = t('config.settings.title');
 
     return (
-        <AppShell title={title} current={'settings'}>
+        <AppShell title={title} current={DESTINATION}>
             <PageContainer width={'form'}>
                 <PageHeader title={title} />
                 <LinkRows label={title}>

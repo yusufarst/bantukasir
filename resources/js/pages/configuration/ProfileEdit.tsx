@@ -4,6 +4,7 @@ import { Button, ButtonLink } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { CommandForm, Field, TextInput } from '@/components/ui/Field';
 import { Icon } from '@/components/ui/Icon';
+import type { StateId } from '@/components/ui/stateCatalogue';
 import { StateNotice } from '@/components/ui/States';
 import { AppShell, useLeaveGuard, useUnsavedChanges } from '@/layouts/AppShell';
 import { CommandLayout, PageHeader } from '@/layouts/Page';
@@ -12,6 +13,7 @@ import { CommandPanels } from '@/lib/commands/Panels';
 import { useCommand } from '@/lib/commands/useCommand';
 import { isAccentToken } from '@/lib/accent';
 import { t } from '@/lib/i18n';
+import type { DestinationId } from '@/lib/navigation';
 import type { TranslationKey } from '@/types/translation-keys';
 
 // UXP-608 "Ubah profil usaha" (ROUTE_CONTRACTS RP-608, RC-32; COPY_DECK
@@ -30,6 +32,15 @@ import type { TranslationKey } from '@/types/translation-keys';
 const PROFILE_COMMAND = { operation: 'business_profile.change', family: 'profile', recentAuth: true } as const;
 
 const PROFILE = '/settings/business-profile';
+
+/** The destination of the navigation that holds the page (UXI-008). */
+const DESTINATION: DestinationId = 'settings';
+
+/** A revision changed since the page loaded (UXS-17). */
+const STALE_STATE: StateId = 'UXS-17';
+
+/** The path of a payload field in a refusal's `fields`. */
+const PAYLOAD_PREFIX = 'payload.';
 
 /** The images a logo may be (BR-CFG-04); the server judges the content. */
 const LOGO_TYPES = 'image/png,image/jpeg,image/webp';
@@ -71,7 +82,7 @@ export default function ProfileEdit({ current, accents }: { current: Revision; a
     const title = t('config.profile_edit.title');
 
     return (
-        <AppShell title={title} current={'settings'}>
+        <AppShell title={title} current={DESTINATION}>
             <ProfileForm title={title} current={current} accents={accents} />
         </AppShell>
     );
@@ -133,20 +144,25 @@ function ProfileForm({ title, current, accents }: { title: string; current: Revi
     const logoLabel = `${ids}-logo-label`;
     const logoButton = `${ids}-logo-button`;
     const logoHint = `${ids}-logo-hint`;
-    const logoError = errorOf('payload.logo');
+    const logoErrorId = `${ids}-logo-error`;
+    const logoLabelledBy = `${logoLabel} ${logoButton}`;
+    const logoError = errorOf(`${PAYLOAD_PREFIX}logo`);
+    const logoDescribedBy = logoError === undefined ? logoHint : `${logoErrorId} ${logoHint}`;
+    const accentGroup = `${ids}-accent`;
 
     return (
         <CommandLayout header={<PageHeader title={title} back={{ href: PROFILE, page: t('config.profile.title'), onNavigate: guard }} />}>
             {refusal?.code === 'STALE_VERSION' && (
-                <StateNotice state={'UXS-17'} actions={<Button label={t('ux.action.reload')} variant={'secondary'} onClick={() => window.location.reload()} />} />
+                <StateNotice state={STALE_STATE} actions={<Button label={t('ux.action.reload')} variant={'secondary'} onClick={() => window.location.reload()} />} />
             )}
             <Card>
                 <CommandForm>
                     {TEXT_FIELDS.map(([field, label]) => {
                         const hint = HINTS[field];
+                        const error = errorOf(PAYLOAD_PREFIX + field);
 
                         return (
-                            <Field key={field} label={t(label)} optional={field !== 'shopName'} required={field === 'shopName'} hint={hint === undefined ? undefined : t(hint)} error={errorOf(`payload.${field}`)}>
+                            <Field key={field} label={t(label)} optional={field !== 'shopName'} required={field === 'shopName'} hint={hint === undefined ? undefined : t(hint)} error={error}>
                                 <TextInput
                                     type={field === 'email' ? 'email' : 'text'}
                                     value={texts[field]}
@@ -167,8 +183,8 @@ function ProfileForm({ title, current, accents }: { title: string; current: Revi
                             <input
                                 type={'file'}
                                 accept={LOGO_TYPES}
-                                aria-labelledby={`${logoLabel} ${logoButton}`}
-                                aria-describedby={logoError === undefined ? logoHint : `${logoHint}-error ${logoHint}`}
+                                aria-labelledby={logoLabelledBy}
+                                aria-describedby={logoDescribedBy}
                                 aria-invalid={logoError === undefined ? undefined : true}
                                 onChange={chooseLogo}
                             />
@@ -178,7 +194,7 @@ function ProfileForm({ title, current, accents }: { title: string; current: Revi
                         </span>
                         {logo !== null && <p className={'bk-meta'}>{logo.name}</p>}
                         {logoError !== undefined && (
-                            <p className={'bk-error'} id={`${logoHint}-error`}>
+                            <p className={'bk-error'} id={logoErrorId}>
                                 <Icon name={'danger'} size={'sm'} />
                                 <span>{logoError}</span>
                             </p>
@@ -191,7 +207,7 @@ function ProfileForm({ title, current, accents }: { title: string; current: Revi
                         <legend className={'bk-label'}>{t('config.profile.accent')}</legend>
                         {accents.filter(isAccentToken).map((token) => (
                             <label key={token} className={'bk-accent'} data-accent-option={token}>
-                                <input type={'radio'} name={`${ids}-accent`} value={token} checked={accent === token} onChange={() => setAccent(token)} />
+                                <input type={'radio'} name={accentGroup} value={token} checked={accent === token} onChange={() => setAccent(token)} />
                                 <span className={'bk-accent__dot'} aria-hidden={true} />
                                 <span className={'bk-accent__swatch'} data-accent={token} aria-hidden={true} />
                                 <span>{t(ACCENT_NAMES[token])}</span>
