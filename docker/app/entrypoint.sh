@@ -1,31 +1,43 @@
-#!/bin/sh
-# Start-up of the local and CI application container (TASK-001). On the first
-# start it installs the Composer dependencies into vendor/ and creates a local
-# .env with a generated application key; both are ignored by Git. It never
-# migrates, seeds or deletes anything.
-set -eu
+#!/bin/bash
+# The start of the release image (TASK-012). Given a command, it runs only that:
+# an operator procedure or the migration job of the release (ADR-011 item 7),
+# with the settings that command needs. Given none, it starts the process role
+# that APP_PROCESS_ROLE selects (ENVIRONMENTS section 11):
+#
+#   1. the settings that the role needs are checked; a missing or default one
+#      refuses the start, naming the setting and never its value (SEC-SECRET-03);
+#   2. configuration, routes and views are cached (ADR-011 item 6);
+#   3. role web serves HTTP; role backup serves nothing, and only its scheduler,
+#      which the platform runs each minute, does its work (ADR-010 item 6).
+#
+# It never migrates: a migration is a controlled job of an authorized release,
+# never a side effect of a start (PRODUCTION_DATA_SAFETY section 2).
+set -euo pipefail
 
-cd /var/www/html
-
-if [ ! -f vendor/autoload.php ]; then
-    composer install --no-interaction --no-progress
+if [ "$#" -gt 0 ]; then
+    exec "$@"
 fi
 
-if [ ! -f .env ]; then
-    cp .env.example .env
-fi
+# The cached configuration holds the role's settings: for this user only.
+umask 027
 
-# key:generate replaces an existing APP_KEY line only, so a local .env without
-# one gets an empty line first.
-if ! grep -Eq '^APP_KEY=[^[:space:]]' .env; then
-    grep -q '^APP_KEY=' .env || printf '\nAPP_KEY=\n' >> .env
-    php artisan key:generate --no-interaction --force
-fi
+php artisan settings:check
+php artisan config:cache --no-interaction
+php artisan route:cache --no-interaction
+php artisan view:cache --no-interaction
 
-# PHP-FPM runs as www-data and must write the framework's runtime folders, also
-# when the bind-mounted files belong to another user (Linux runners). A Windows
-# bind mount may not support chmod; its files are already writable there.
-chmod -R a+rwX storage bootstrap/cache 2>/dev/null || true
-
-php-fpm --daemonize
-exec nginx -g 'daemon off;'
+case "$APP_PROCESS_ROLE" in
+    web)
+        exec /usr/local/bin/bantukasir-serve
+        ;;
+    backup)
+        trap 'exit 0' TERM INT
+        while :; do
+            sleep 3600 &
+            wait "$!"
+        done
+        ;;
+    *)
+        exit 78
+        ;;
+esac

@@ -13,9 +13,13 @@ return [
     | (ADR-002 item 3). Its tables belong to TASK-004; until then local runs
     | use the file store and tests the array store.
     |
+    | In the process role backup, whose database role can only read and insert
+    | backup_runs (SCHEMA SCH-42), the scheduler's lock is a file of that one
+    | container, which holds the only scheduled command it guards (TASK-012).
+    |
     */
 
-    'default' => env('CACHE_STORE', 'database'),
+    'default' => env('APP_PROCESS_ROLE') === 'backup' ? 'file' : env('CACHE_STORE', 'database'),
 
     'stores' => [
 

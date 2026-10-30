@@ -1,5 +1,6 @@
 <?php
 
+use App\Console\ProcessSchedule;
 use App\Domain\Access\LinkInvalid;
 use App\Domain\Audit\SecurityActor;
 use App\Domain\Audit\SecurityEvent;
@@ -28,6 +29,7 @@ use App\Models\User;
 use App\Policies\NotFound;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Auth\Middleware\Authorize;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Contracts\Session\Middleware\AuthenticatesSessions;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -67,7 +69,18 @@ return Application::configure(basePath: dirname(__DIR__))
             Route::get('/up', HealthController::class)->middleware('throttle:presignin')->name('health');
         },
     )
+    // The scheduled commands of the process role (ENVIRONMENTS section 13;
+    // TASK-012).
+    ->withSchedule(static function (Schedule $schedule): void {
+        ProcessSchedule::register($schedule, config('app.process_role'));
+    })
     ->withMiddleware(function (Middleware $middleware): void {
+        // RH-01 says whether the application and its database answer, also in
+        // maintenance mode: the health check and the heartbeat read it during
+        // a release's window, and the page of that mode is for people
+        // (ROUTE_CONTRACTS RH-01; TASK-007 finding F-11).
+        $middleware->preventRequestsDuringMaintenance(except: ['up']);
+
         // The global middleware, in order (TASK-007): the security headers
         // outermost, so that every answer carries them, refusals included;
         // trusted hosts and proxies before anything reads the host or the

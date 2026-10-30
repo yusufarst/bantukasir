@@ -68,6 +68,19 @@ final class HealthRouteTest extends DatabaseTestCase
         $this->get('/up')->assertStatus(503)->assertContent('');
     }
 
+    public function test_it_answers_in_maintenance_mode_while_the_pages_do_not(): void
+    {
+        // TASK-007 finding F-11; TASK-012.
+        $this->app->maintenanceMode()->activate(['status' => 503]);
+
+        try {
+            $this->get('/up')->assertOk()->assertContent('');
+            $this->getJson('/login')->assertStatus(503);
+        } finally {
+            $this->app->maintenanceMode()->deactivate();
+        }
+    }
+
     public function test_it_is_throttled_with_the_bucket_before_sign_in(): void
     {
         for ($request = 1; $request <= 120; $request++) {
