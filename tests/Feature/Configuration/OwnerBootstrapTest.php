@@ -5,7 +5,10 @@ namespace Tests\Feature\Configuration;
 use App\Actions\Access\ConsumeLink;
 use App\Database\CommandPoints;
 use App\Domain\Access\Accounts;
+use App\Domain\Access\Role;
+use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Tests\Harness\DatabaseTestCase;
 use Tests\Harness\Fixtures\TokoContoh;
 use Tests\Harness\Race\FailurePoints;
@@ -90,7 +93,9 @@ final class OwnerBootstrapTest extends DatabaseTestCase
 
     public function test_it_refuses_when_any_account_exists_and_writes_nothing(): void
     {
-        TokoContoh::person('Rina');
+        // An account without the installation state, which only the account
+        // service can leave: every fixture account comes after the bootstrap.
+        DB::transaction(static fn (): User => app(Accounts::class)->create('Rina', 'rina@contoh.test', [Role::Cashier]));
         $before = $this->state();
 
         $exit = Artisan::call('owner:bootstrap', self::OPTIONS);

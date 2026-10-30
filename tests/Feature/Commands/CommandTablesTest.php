@@ -88,7 +88,10 @@ final class CommandTablesTest extends DatabaseTestCase
 
     public function test_an_identity_without_its_result_cannot_commit_and_a_fence_never_has_one(): void
     {
-        $this->assertFailsAtCommit(fn (Connection $c) => $this->insertIdentity($c), 'command_identities_result_presence_fk', ['command_identities', 'command_results']);
+        // The fixtures' own accounts come from RC-35, so nothing more than theirs is left.
+        $before = [$this->observer()->table('command_identities')->count(), $this->observer()->table('command_results')->count()];
+        $this->assertFailsAtCommit(fn (Connection $c) => $this->insertIdentity($c), 'command_identities_result_presence_fk', []);
+        $this->assertSame($before, [$this->observer()->table('command_identities')->count(), $this->observer()->table('command_results')->count()]);
 
         // A fence commits alone and refuses a result.
         $fence = $this->runtime()->transaction(fn (Connection $c): int => $this->insertIdentity($c, self::fence()));

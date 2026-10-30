@@ -139,7 +139,20 @@ final class TokoContoh
         }
 
         if (! DB::table('users')->exists() && app(RecoveryEpoch::class)->current() === null && app(OnboardingState::class)->current() === null) {
-            return app(BootstrapInstallation::class)(new BootstrapInput('Hendra', self::email('Hendra'), self::SHOP, 'Instalasi Toko Contoh untuk pengujian.'))->revisionId;
+            $revision = app(BootstrapInstallation::class)(new BootstrapInput('Hendra', self::email('Hendra'), self::SHOP, 'Instalasi Toko Contoh untuk pengujian.'))->revisionId;
+
+            // The fixtures hand over no link: the Owner's first one is revoked, so
+            // that an account's only link is the one its test issues.
+            DB::transaction(static function (): void {
+                $found = app(Accounts::class)->findByEmail(self::email('Hendra'));
+                $owner = $found === null ? null : app(Accounts::class)->lockForUpdate($found->id);
+
+                if ($owner instanceof User) {
+                    app(OneTimeLinks::class)->revoke($owner);
+                }
+            });
+
+            return $revision;
         }
 
         return DB::transaction(static function () use ($profiles): int {
