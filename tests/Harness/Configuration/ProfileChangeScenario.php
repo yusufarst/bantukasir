@@ -6,7 +6,9 @@ use App\Actions\Commands\CommandContext;
 use App\Actions\Configuration\ChangeBusinessProfile;
 use App\Domain\Commands\CommandRefused;
 use App\Domain\Commands\Envelope;
+use App\Domain\Media\MediaStore;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Storage;
 use SplFileInfo;
 use Tests\Harness\Fixtures\TokoContoh;
 use Tests\Harness\Race\Scenario;
@@ -26,6 +28,11 @@ final class ProfileChangeScenario implements Scenario
      */
     public function run(array $arguments): array
     {
+        // Never the real private disk: a worker that runs as another user than
+        // PHP-FPM would create its folder, which FPM could then not write in
+        // (evidence finding F-8).
+        Storage::fake(MediaStore::DISK);
+
         $path = $arguments['logo'] ?? null;
         $shop = $arguments['shop'] ?? null;
         $revision = $arguments['revision'] ?? null;

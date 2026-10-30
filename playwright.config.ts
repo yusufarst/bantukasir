@@ -17,7 +17,7 @@ import { SECURE_LOCAL_ORIGIN } from './tests/Browser/support/access';
 // of these tests at once would end each other's sessions: they run one at a
 // time, in their own project, while the other tests run beside them (TASK-007).
 // A new test that signs in a person belongs in one of these files or folders.
-const PEOPLE = ['access/**', 'security/**', 'shell/shell.spec.ts', 'shell/session.spec.ts', 'commands/**'];
+const PEOPLE = ['access/**', 'security/**', 'shell/shell.spec.ts', 'shell/session.spec.ts', 'commands/**', 'configuration/**'];
 
 export default defineConfig({
     testDir: 'tests/Browser',

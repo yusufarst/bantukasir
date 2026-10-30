@@ -187,13 +187,21 @@ test('the keyboard reaches UXP-608 and moves through its form, and its refusals 
             body: JSON.stringify({ outcome: 'REJECTED', code: 'VALIDATION_FAILED', messageKey: 'ux.state.validation', params: {}, fields: { 'payload.logo': [{ key: 'ux.validation.upload.image_type', params: {} }] }, lines: {} }),
         });
     });
+    // An activated action would ask for the password first (RA-04), before
+    // any request: neither the dialog nor a request may follow.
+    const dialog = page.getByRole('dialog', { name: 'Konfirmasi kata sandi' });
     await page.keyboard.press('Enter');
+    await page.waitForTimeout(1_000);
+    await expect(dialog).toHaveCount(0);
     await expect(page).toHaveURL(/\/settings\/business-profile\/edit$/);
     expect(sent).toBe(0);
 
-    // UXS-05: a refused logo, with its reason at the field.
+    // UXS-05: a refused logo, with its reason at the field. The first save of
+    // a sign-in session confirms the password first (UXS-11).
     await page.getByLabel(/^Logo/).setInputFiles({ name: 'logo.png', mimeType: 'image/png', buffer: LOGO });
     await save.click();
+    await dialog.getByLabel('Kata sandi', { exact: true }).fill(hendra.password);
+    await dialog.getByRole('button', { name: 'Konfirmasi' }).click();
     await expect(page.getByText('Berkas harus JPG, PNG, atau WebP.')).toBeVisible();
     await expect(page.getByText('Periksa isian')).toBeVisible();
     expect(sent).toBe(1);
