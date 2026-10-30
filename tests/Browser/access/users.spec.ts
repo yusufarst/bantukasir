@@ -147,7 +147,8 @@ for (const width of [WIDTHS[0], WIDTHS[4], WIDTHS[7]]) {
         const other = await contextAt(browser, WIDTHS[0]!);
         const theirs = await other.newPage();
         const password = newPassword();
-        await theirs.goto(url);
+        const address = new URL(url);
+        await theirs.goto(`${address.pathname}${address.hash}`);
         await expect.poll(() => new URL(theirs.url()).hash).toBe('');
         await theirs.getByLabel('Kata sandi baru', { exact: true }).fill(password);
         await theirs.getByLabel('Ulangi kata sandi baru', { exact: true }).fill(password);

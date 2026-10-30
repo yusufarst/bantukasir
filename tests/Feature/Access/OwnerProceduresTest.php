@@ -123,7 +123,7 @@ final class OwnerProceduresTest extends DatabaseTestCase
         $session = $this->signInBrowser($this->owner['email'], $this->owner['password']);
         TokoContoh::tokenFor($this->owner['id']);
 
-        $exit = Artisan::call('owner:replace', $this->options());
+        $exit = Artisan::call('owner:replace', $this->replaceOptions());
         $output = Artisan::output();
         $this->assertSame(0, $exit, $output);
 
@@ -175,17 +175,17 @@ final class OwnerProceduresTest extends DatabaseTestCase
 
     public function test_a_repeated_op_03_is_refused_and_so_is_an_account_that_is_not_the_active_owner(): void
     {
-        $this->assertSame(0, Artisan::call('owner:replace', $this->options()));
+        $this->assertSame(0, Artisan::call('owner:replace', $this->replaceOptions()));
         $users = $this->watcher()->table('users')->count();
 
-        $this->assertSame(1, Artisan::call('owner:replace', $this->options(['--email' => 'lain@contoh.test'])));
+        $this->assertSame(1, Artisan::call('owner:replace', $this->replaceOptions(['--email' => 'lain@contoh.test'])));
         $this->assertStringContainsString('not the active Owner', Artisan::output());
 
         // A staff account, or one that does not exist.
         $rina = TokoContoh::person('Rina');
         $users++;
-        $this->assertSame(1, Artisan::call('owner:replace', $this->options(['--outgoing' => (string) $rina['id'], '--email' => 'lain@contoh.test'])));
-        $this->assertSame(1, Artisan::call('owner:replace', $this->options(['--outgoing' => '999999', '--email' => 'lain@contoh.test'])));
+        $this->assertSame(1, Artisan::call('owner:replace', $this->replaceOptions(['--outgoing' => (string) $rina['id'], '--email' => 'lain@contoh.test'])));
+        $this->assertSame(1, Artisan::call('owner:replace', $this->replaceOptions(['--outgoing' => '999999', '--email' => 'lain@contoh.test'])));
 
         $this->assertSame($users, $this->watcher()->table('users')->count());
         $this->assertSame(1, $this->watcher()->table('users')->where('role_super_admin', true)->where('status', 'ACTIVE')->count());
@@ -206,10 +206,10 @@ final class OwnerProceduresTest extends DatabaseTestCase
         ];
 
         foreach ($invalid as $options) {
-            $this->assertSame(1, Artisan::call('owner:replace', $this->options($options)), (string) json_encode($options));
+            $this->assertSame(1, Artisan::call('owner:replace', $this->replaceOptions($options)), (string) json_encode($options));
         }
 
-        $this->assertSame(1, Artisan::call('owner:replace', $this->options(['--email' => $this->owner['email']])));
+        $this->assertSame(1, Artisan::call('owner:replace', $this->replaceOptions(['--email' => $this->owner['email']])));
         $this->assertStringContainsString('held by an existing account', Artisan::output());
         $this->assertSame('ACTIVE', $this->watcher()->table('users')->where('id', $this->owner['id'])->value('status'));
         $this->assertSame(1, $this->watcher()->table('users')->count());
@@ -220,7 +220,7 @@ final class OwnerProceduresTest extends DatabaseTestCase
         foreach (range(1, 9) as $step) {
             $this->app->instance(CommandPoints::class, new FailurePoints($step));
 
-            $this->assertThrows(fn () => Artisan::call('owner:replace', $this->options()), InjectedFailure::class);
+            $this->assertThrows(fn () => Artisan::call('owner:replace', $this->replaceOptions()), InjectedFailure::class);
             $this->assertStringNotContainsString('set-password', Artisan::output(), 'after write step '.$step);
             $this->assertSame(1, $this->watcher()->table('users')->count(), 'after write step '.$step);
             $this->assertSame('ACTIVE', $this->watcher()->table('users')->where('id', $this->owner['id'])->value('status'), 'after write step '.$step);
@@ -228,14 +228,14 @@ final class OwnerProceduresTest extends DatabaseTestCase
         }
 
         $this->app->instance(CommandPoints::class, new FailurePoints);
-        $this->assertSame(0, Artisan::call('owner:replace', $this->options()));
+        $this->assertSame(0, Artisan::call('owner:replace', $this->replaceOptions()));
     }
 
     /**
      * @param  array<string, string>  $changes
      * @return array<string, string|int>
      */
-    private function options(array $changes = []): array
+    private function replaceOptions(array $changes = []): array
     {
         return [
             '--environment' => 'test',

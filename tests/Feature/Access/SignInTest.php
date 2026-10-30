@@ -131,7 +131,7 @@ final class SignInTest extends DatabaseTestCase
 
         // The account an email matched is the subject; the typed email is never stored.
         $this->assertSame(
-            [$rina['id'], null, $agus['id'], $dewi['id'], $hendra->id, null, null, null, null, null],
+            [$rina['id'], null, $agus['id'], $dewi['id'], $this->observer()->table('users')->where('email', TokoContoh::email('Hendra'))->value('id'), null, null, null, null, null],
             array_column($entries, 'subject_user_id'),
         );
         $this->assertStringNotContainsString('nobody@contoh.test', json_encode($entries, JSON_THROW_ON_ERROR));

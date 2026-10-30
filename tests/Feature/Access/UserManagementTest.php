@@ -5,7 +5,6 @@ namespace Tests\Feature\Access;
 use App\Actions\Access\ConsumeLink;
 use App\Actions\Access\ReplaceOwner;
 use App\Database\CommandPoints;
-use ArrayObject;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\Cache;
@@ -33,6 +32,9 @@ final class UserManagementTest extends DatabaseTestCase
     use CommandRequests;
 
     private ?Connection $watcher = null;
+
+    /** @var list<string> the statements that lock a row of `users` during RC-37 */
+    private array $lockStatements = [];
 
     protected function setUp(): void
     {
@@ -216,16 +218,15 @@ final class UserManagementTest extends DatabaseTestCase
         $version = $this->versionOf($hendra);
 
         // The account is locked once, with the update lock (TR-LOCK-05).
-        $statements = new ArrayObject;
-        DB::listen(static function (QueryExecuted $query) use ($statements): void {
+        DB::listen(function (QueryExecuted $query): void {
             if (str_contains($query->sql, '"users"') && (str_contains($query->sql, 'for share') || str_contains($query->sql, 'for no key update'))) {
-                $statements->append($query->sql);
+                $this->lockStatements[] = $query->sql;
             }
         });
 
         $response = $this->send('owner.update_details', ['displayName' => 'Hendra Baru', 'email' => 'hendra.baru@contoh.test'], $version)->assertStatus(201)->assertJsonPath('result.location', '/account');
-        $this->assertCount(1, $statements);
-        $this->assertStringContainsString('for no key update', self::text($statements[0]));
+        $this->assertCount(1, $this->lockStatements);
+        $this->assertStringContainsString('for no key update', $this->lockStatements[0] ?? '');
 
         $row = $this->userRow($hendra);
         $this->assertSame(['Hendra Baru', 'hendra.baru@contoh.test', true, 'ACTIVE', $version + 1], [$row['display_name'], $row['email'], $row['role_super_admin'], $row['status'], $row['version']]);
@@ -289,7 +290,7 @@ final class UserManagementTest extends DatabaseTestCase
         $rina = $this->people['Rina']['id'];
         // The name that the account's first link consumption froze (G-16).
         $frozen = $this->watcher()->table('audit_events')->where('actor_user_id', $rina)->where('action', 'LINK_CONSUME')->pluck('actor_display_name')->all();
-        $this->assertSame(['Rina'], array_values(array_unique($frozen)));
+        $this->assertSame(['Rina'], $frozen);
 
         // Only after it is deactivated, and only with a reason.
         $this->send('user.anonymize', ['userId' => $rina, 'reason' => 'Permintaan orang yang bersangkutan.'], $this->versionOf($rina))->assertStatus(422);

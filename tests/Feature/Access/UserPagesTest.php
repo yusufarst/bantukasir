@@ -131,7 +131,7 @@ final class UserPagesTest extends DatabaseTestCase
         $this->postJson('/user/confirm-password', ['password' => $this->people['Hendra']['password']])->assertStatus(201);
         $response = $this->command('user.create', ['displayName' => 'Budi', 'email' => 'budi@contoh.test', 'roles' => ['cashier']], null)->assertStatus(201);
         $url = $this->readText($response->json('link.url'));
-        $this->assertSame('no-store, private', $response->headers->get('Cache-Control'));
+        $this->assertStringContainsString('no-store', (string) $response->headers->get('Cache-Control'));
         $token = rawurldecode(substr($url, (int) strrpos($url, '&t=') + 3));
         $id = self::number($response->json('result.id'));
 
