@@ -13,9 +13,9 @@ use LogicException;
  * SCHEMA section 5.1): it reads and writes `users` and the sign-in sessions
  * of `sessions`, and nothing else does. It opens no transaction of its own:
  * the Action that calls it owns the transaction and the locks (ARCHITECTURE
- * section 3, TR-TX-01). Until the bootstrap (TASK-010) and user management
- * (TASK-011) exist, the test fixtures create accounts through create()
- * (EXECUTION_CONTEXT EXC-45; TASK-006 scope item 10).
+ * section 3, TR-TX-01). Since TASK-011 the test fixtures create accounts
+ * through OP-01 and RC-35, the Actions that call create() (EXECUTION_CONTEXT
+ * EXC-45).
  */
 final class Accounts
 {
@@ -135,6 +135,23 @@ final class Accounts
             'password' => $this->hasher->make($password),
             'updated_at' => $this->clock->now(),
         ]);
+        $locked->timestamps = false;
+        $locked->save();
+    }
+
+    /**
+     * Applies a change of the display name, email, roles or status to the row
+     * the caller has locked, and increases its version, the expected version
+     * of the user-management commands (SCHEMA section 5.1). SUPER_ADMIN is
+     * never among the columns: the runtime role cannot update it.
+     *
+     * @param  array<string, mixed>  $columns
+     */
+    public function change(User $locked, array $columns): void
+    {
+        self::requireTransaction();
+
+        $locked->forceFill([...$columns, 'version' => $locked->version + 1, 'updated_at' => $this->clock->now()]);
         $locked->timestamps = false;
         $locked->save();
     }

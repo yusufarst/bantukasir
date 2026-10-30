@@ -62,6 +62,21 @@ final class RouteInventoryTest extends TestCase
         'GET /settings/business-profile/edit' => ['profile.edit', 'RP-608', 'CAP-30', [...self::SIGNED_IN, 'capability:CAP-30', 'input.allow']],
         'POST /commands/business_profile.change' => ['commands.business_profile.change', 'RC-32', 'CAP-30', [...self::SIGNED_IN, 'capability:CAP-30', 'throttle:command', 'throttle:logo', 'password.confirm']],
         'GET /media/{file}' => ['media.show', 'RD-07', 'CAP-01', ['web', 'auth', 'signin.session', 'throttle:authenticated', 'history.encrypt', 'capability:CAP-01', 'input.allow:variant']],
+        // TASK-011: the user pages and RC-35 to RC-42.
+        'GET /account/details' => ['account.details', 'RP-005', 'CAP-27', [...self::SIGNED_IN, 'capability:CAP-27', 'input.allow']],
+        'GET /settings/users' => ['users.index', 'RP-602', 'CAP-25', [...self::SIGNED_IN, 'capability:CAP-25', 'input.allow:status,role']],
+        'GET /settings/users/new' => ['users.create', 'RP-603', 'CAP-25', [...self::SIGNED_IN, 'capability:CAP-25', 'input.allow']],
+        'GET /settings/users/{user}' => ['users.show', 'RP-604', 'CAP-27,CAP-28', [...self::SIGNED_IN, 'capability:CAP-27,CAP-28', 'input.allow:from_page']],
+        'GET /settings/users/{user}/edit' => ['users.edit', 'RP-605', 'CAP-27', [...self::SIGNED_IN, 'capability:CAP-27', 'input.allow']],
+        'GET /settings/users/{user}/link' => ['users.link', 'RP-606', 'CAP-25,CAP-26', [...self::SIGNED_IN, 'capability:CAP-25,CAP-26', 'input.allow']],
+        'POST /commands/user.create' => ['commands.user.create', 'RC-35', 'CAP-25', [...self::SIGNED_IN, 'capability:CAP-25', 'throttle:command', 'throttle:link_issue', 'password.confirm']],
+        'POST /commands/user.update' => ['commands.user.update', 'RC-36', 'CAP-27', [...self::SIGNED_IN, 'capability:CAP-27', 'throttle:command', 'password.confirm']],
+        'POST /commands/owner.update_details' => ['commands.owner.update_details', 'RC-37', 'CAP-27', [...self::SIGNED_IN, 'capability:CAP-27', 'throttle:command', 'password.confirm']],
+        'POST /commands/user.deactivate' => ['commands.user.deactivate', 'RC-38', 'CAP-28', [...self::SIGNED_IN, 'capability:CAP-28', 'throttle:command', 'password.confirm']],
+        'POST /commands/user.reactivate' => ['commands.user.reactivate', 'RC-39', 'CAP-28', [...self::SIGNED_IN, 'capability:CAP-28', 'throttle:command', 'password.confirm']],
+        'POST /commands/user.anonymize' => ['commands.user.anonymize', 'RC-40', 'CAP-29', [...self::SIGNED_IN, 'capability:CAP-29', 'throttle:command', 'password.confirm']],
+        'POST /commands/user.issue_link' => ['commands.user.issue_link', 'RC-41', 'CAP-25,CAP-26', [...self::SIGNED_IN, 'capability:CAP-25,CAP-26', 'throttle:command', 'throttle:link_issue', 'password.confirm']],
+        'POST /commands/user.revoke_link' => ['commands.user.revoke_link', 'RC-42', 'CAP-26', [...self::SIGNED_IN, 'capability:CAP-26', 'throttle:command', 'password.confirm']],
     ];
 
     public function test_the_routes_are_exactly_those_listed_each_with_its_gate(): void

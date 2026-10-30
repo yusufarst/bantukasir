@@ -34,11 +34,17 @@ export interface Refusal {
 
 export type HeldCode = 'IDEMPOTENCY_CONFLICT' | 'EPOCH_STALE';
 
+/** A one-time link in the answer that committed it, and only there (SEC-ACC-05; RC-35, RC-41): held in page memory, never stored. */
+export interface HandedLink {
+    readonly url: string;
+    readonly expiresAt: string;
+}
+
 /** Nothing ran: sign in, reload, confirm the password, or wait (INTERACTION_CONTRACTS section 1.3, "Not run"). */
 export type NotRun = { readonly reason: 'signed_out' } | { readonly reason: 'reload' } | { readonly reason: 'recent_auth' } | { readonly reason: 'throttled'; readonly seconds: bigint };
 
 export type CommandAnswer =
-    | { readonly kind: 'committed'; readonly repeated: boolean; readonly result: CommandResult | null }
+    | { readonly kind: 'committed'; readonly repeated: boolean; readonly result: CommandResult | null; readonly link?: HandedLink }
     | { readonly kind: 'rejected'; readonly refusal: Refusal }
     | { readonly kind: 'uncertain' }
     | { readonly kind: 'held'; readonly code: HeldCode }
@@ -81,6 +87,11 @@ function resultOf(value: unknown): CommandResult | null {
         ...(typeof value.number === 'string' ? { number: value.number } : {}),
         ...(typeof value.location === 'string' && value.location.startsWith('/') && !value.location.startsWith('//') ? { location: value.location } : {}),
     };
+}
+
+/** The one-time link of a committed answer, when it has its two fields. */
+function linkOf(value: unknown): HandedLink | null {
+    return isRecord(value) && typeof value.url === 'string' && typeof value.expiresAt === 'string' ? { url: value.url, expiresAt: value.expiresAt } : null;
 }
 
 /** The error body of RT-07, when it names one of the 32 codes. */
@@ -129,7 +140,9 @@ export function classifyCommand(arrived: Arrived | null): CommandAnswer {
     const { status, body } = arrived;
 
     if ((status === 200 || status === 201) && isRecord(body) && body.outcome === 'COMMITTED') {
-        return { kind: 'committed', repeated: body.repeated === true, result: resultOf(body.result) };
+        const link = linkOf(body.link);
+
+        return { kind: 'committed', repeated: body.repeated === true, result: resultOf(body.result), ...(link === null ? {} : { link }) };
     }
 
     const refusal = refusalOf(body);

@@ -104,13 +104,9 @@ final class SharedPropsTest extends DatabaseTestCase
         $rina = TokoContoh::person('Rina');
         $this->browse($this->signInBrowser($rina['email'], $rina['password']));
 
-        // Before the bootstrap there is no epoch yet: the prop is null.
-        $props = (array) ($this->inertiaPage($this->get('/account')->assertOk())['props'] ?? []);
-        $this->assertArrayHasKey('recoveryEpoch', $props);
-        $this->assertNull($props['recoveryEpoch']);
-
-        // Once issued, the page carries it as lowercase hexadecimal, unchanged
-        // (TASK-008 finding F-1).
+        // The page carries the epoch that the bootstrap issued as lowercase
+        // hexadecimal, unchanged (TASK-008 finding F-1). Every account comes after
+        // the bootstrap since TASK-011, so a signed-in page never lacks it.
         $epoch = TokoContoh::recoveryEpoch();
         $props = (array) ($this->inertiaPage($this->get('/account')->assertOk())['props'] ?? []);
         $this->assertSame($epoch, $props['recoveryEpoch']);

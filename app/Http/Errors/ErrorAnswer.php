@@ -3,6 +3,7 @@
 namespace App\Http\Errors;
 
 use App\Domain\Commands\CommandRefused;
+use App\Domain\Commands\ErrorCode;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -39,6 +40,9 @@ final class ErrorAnswer
 
     /** The Inertia page of every error. */
     public const string PAGE = 'shell/Error';
+
+    /** A THROTTLED refusal of a command's own check: the broker's 60 seconds per account (RC-41). */
+    private const int THROTTLED_RETRY_SECONDS = 60;
 
     private const array CODES = [
         403 => ['FORBIDDEN', 'ux.state.forbidden', self::FORBIDDEN],
@@ -97,7 +101,7 @@ final class ErrorAnswer
             'params' => (object) $refusal->params,
             'fields' => (object) $refusal->fields,
             'lines' => (object) $refusal->lines,
-        ], $refusal->error->status());
+        ], $refusal->error->status(), $refusal->error === ErrorCode::Throttled ? ['Retry-After' => self::THROTTLED_RETRY_SECONDS] : []);
     }
 
     /**

@@ -45,11 +45,17 @@ abstract class OperatorProcedure extends Command
     /** A text option: valid UTF-8 without a control character (TR-VAL-05, THR-10). */
     public const string PLAIN_TEXT = '/\A[^\p{Cc}]*\z/u';
 
+    /** The domain of the placeholder of an anonymized account, never a person's (SEC-ACC-09). */
+    public const string RESERVED_EMAIL = '/@users\.invalid\z/i';
+
     /**
      * The rules the procedures use, whose messages are empty, so that the
      * validator looks up no translation: the refusal names the option.
      */
-    private const array RULES = ['required', 'string', 'max', 'regex', 'email'];
+    private const array RULES = ['required', 'string', 'max', 'regex', 'not_regex', 'email'];
+
+    /** The account whose sign-in sessions this run ended, for its security log entry (SEC-LOG-03). */
+    protected ?int $sessionsEndedOf = null;
 
     /**
      * The named procedure, the actor of its audit events and of its security
@@ -128,6 +134,11 @@ abstract class OperatorProcedure extends Command
         }
 
         $securityLog->recordRun(SecurityEvent::OperatorProcedureRun, SecurityActor::operatorProcedure($this->process()), SecurityOutcome::Succeeded, $run, $subject);
+
+        if ($this->sessionsEndedOf !== null) {
+            $securityLog->recordRun(SecurityEvent::SessionRevoked, SecurityActor::operatorProcedure($this->process()), SecurityOutcome::Succeeded, $run, $this->sessionsEndedOf);
+        }
+
         $this->info(sprintf('Run %s recorded in the security log.', $run));
 
         return self::SUCCESS;

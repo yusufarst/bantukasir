@@ -15,9 +15,9 @@ use Inertia\Response;
  * the Owner's settings and oversight pages, gated by any of CAP-25, CAP-30,
  * CAP-31 and CAP-32. It lists only the entries whose page exists and whose
  * capability the user holds (SEC-AZ-07; EXECUTION_CONTEXT EXC-52), in the
- * order of COPY_DECK section 11.1; each later Task adds its own: users
- * (UXI-326, TASK-011), cash registers (UXI-328), the system status, the
- * activity and the security histories (UXI-329 to UXI-331).
+ * order of COPY_DECK section 11.1; each later Task adds its own: cash registers
+ * (UXI-328), the system status, the activity and the security histories
+ * (UXI-329 to UXI-331).
  */
 final class SettingsController
 {
@@ -28,6 +28,8 @@ final class SettingsController
      * @var list<array{id: string, href: string, capability: Capability}>
      */
     public const array ENTRIES = [
+        // UXI-326 "Pengguna" (TASK-011).
+        ['id' => 'users', 'href' => '/settings/users', 'capability' => Capability::Cap25],
         // UXI-327 "Profil usaha" (TASK-010).
         ['id' => 'profile', 'href' => '/settings/business-profile', 'capability' => Capability::Cap30],
     ];

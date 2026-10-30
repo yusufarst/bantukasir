@@ -1,7 +1,7 @@
 import { usePage } from '@inertiajs/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { leaveSignedInSession } from '@/lib/browserSession';
-import type { CommandResult, HeldCode, Refusal } from '@/lib/commands/answers';
+import type { CommandResult, HandedLink, HeldCode, Refusal } from '@/lib/commands/answers';
 import { announceSettled, checkStatus, freeze, recheckDelay, requestJson, sendCommand, type CommandDefinition, type FrozenRequest } from '@/lib/commands/client';
 import { blockingRequest } from '@/lib/commands/families';
 import { keepReference, releaseReference } from '@/lib/commands/references';
@@ -23,7 +23,8 @@ export type CheckNote = 'no_answer' | 'in_progress';
 export type CommandPhase =
     | { readonly kind: 'idle' }
     | { readonly kind: 'submitting' }
-    | { readonly kind: 'committed'; readonly result: CommandResult | null }
+    /** `link`: the one-time link of RC-35 or RC-41, in the answer that committed it only; a repeat or a status check has none. */
+    | { readonly kind: 'committed'; readonly result: CommandResult | null; readonly link?: HandedLink }
     | { readonly kind: 'rejected'; readonly refusal: Refusal }
     /** `throttled`: a repeat of the request was refused by 429 (UXS-12) while the earlier attempt stays uncertain. */
     | { readonly kind: 'uncertain'; readonly checking: boolean; readonly note: CheckNote | null; readonly throttled?: bigint }
@@ -49,6 +50,12 @@ export interface CommandControl {
     readonly target: CommandTarget | null;
     /** The user's unresolved request that blocks a new command of this family (NC-13 (a)), or null. */
     readonly blockedBy: UnresolvedRequest | null;
+    /**
+     * Whether the phase is about this page's own frozen request. A page may have
+     * adopted another request of its family (NC-13 (b)), of another operation:
+     * its success text and its result page are not that request's.
+     */
+    readonly ownRequest: boolean;
     /** Whether "Kirim ulang" can send the same frozen request: only while this page holds its payload. */
     readonly canResend: boolean;
     readonly submit: (payload: Readonly<Record<string, unknown>>, expected?: Readonly<Record<string, unknown>>) => void;
@@ -107,6 +114,7 @@ export function useCommand(command: CommandDefinition & { readonly recentAuth?: 
     const live = useRef(true);
 
     const blockedBy = useMemo(() => blockingRequest(unresolved.union, command.operation, command.family), [unresolved.union, command.operation, command.family]);
+    const ownRequest = target !== null && target.frozen !== null;
 
     useEffect(() => {
         live.current = true;
@@ -130,6 +138,25 @@ export function useCommand(command: CommandDefinition & { readonly recentAuth?: 
             setPhase(adoptedPhase(blockedBy));
         }
     }, [phase.kind, target, blockedBy]);
+
+    // A request this page only adopted (NC-13 (b)), which another tab of the
+    // browser or another device then resolved: its panel has nothing left to
+    // do, so the page returns to its draft (OPEN_ITEMS T-34 (f), TASK-010
+    // finding F-11). A check of this page's own is settled by that check.
+    const adoptedGone = blockedBy === null && target !== null && target.frozen === null && (phase.kind === 'uncertain' || phase.kind === 'held') && !phase.checking;
+
+    useEffect(() => {
+        if (adoptedGone) {
+            // A repeat of a status check still waiting would bring the panel back.
+            if (rechecks.current.timer !== null) {
+                window.clearTimeout(rechecks.current.timer);
+                rechecks.current.timer = null;
+            }
+
+            setTarget(null);
+            setPhase({ kind: 'idle' });
+        }
+    }, [adoptedGone]);
 
     const settle = useCallback(
         (request: { operation: string; sourceIntentId: string }) => {
@@ -163,7 +190,7 @@ export function useCommand(command: CommandDefinition & { readonly recentAuth?: 
             switch (answer.kind) {
                 case 'committed':
                     settle(frozen);
-                    setPhase({ kind: 'committed', result: answer.result });
+                    setPhase({ kind: 'committed', result: answer.result, ...(answer.link === undefined ? {} : { link: answer.link }) });
 
                     return;
                 case 'rejected':
@@ -226,7 +253,11 @@ export function useCommand(command: CommandDefinition & { readonly recentAuth?: 
                 return;
             }
 
-            if ((phase.kind !== 'idle' && phase.kind !== 'rejected' && phase.kind !== 'not_committed') || blockedBy !== null) {
+            // A request this page only adopted that committed is not this draft, and
+            // its recovery ended the block (NC-13 (e)): the draft may send its own.
+            const draftOpen = phase.kind === 'idle' || phase.kind === 'rejected' || phase.kind === 'not_committed' || (phase.kind === 'committed' && !ownRequest);
+
+            if (!draftOpen || blockedBy !== null) {
                 return;
             }
 
@@ -263,7 +294,7 @@ export function useCommand(command: CommandDefinition & { readonly recentAuth?: 
                 await send(frozen);
             })();
         },
-        [userId, epoch, phase.kind, target, blockedBy, command, send],
+        [userId, epoch, phase.kind, target, ownRequest, blockedBy, command, send],
     );
 
     const resend = useCallback((): void => {
@@ -377,11 +408,12 @@ export function useCommand(command: CommandDefinition & { readonly recentAuth?: 
     }, [phase.kind, target]);
 
     const startAgain = useCallback((): void => {
-        if (phase.kind === 'rejected' || phase.kind === 'not_committed') {
+        // An adopted request that committed is another command's: the draft of this page goes on.
+        if (phase.kind === 'rejected' || phase.kind === 'not_committed' || (phase.kind === 'committed' && !ownRequest)) {
             setTarget(null);
             setPhase({ kind: 'idle' });
         }
-    }, [phase.kind]);
+    }, [phase.kind, ownRequest]);
 
-    return { phase, target, blockedBy, canResend: target?.frozen !== null && target !== null, submit, resend, check, confirmed, cancel, startAgain };
+    return { phase, target, blockedBy, ownRequest, canResend: ownRequest, submit, resend, check, confirmed, cancel, startAgain };
 }

@@ -85,6 +85,14 @@ final class Allowlists
             'current.documentFooter', 'current.documentIdentity', 'current.accentToken', 'current.logo', 'current.createdAt', 'current.actorDisplayName',
             'accents', 'accents.*',
         ]],
+        // The user pages, the Owner's alone (TASK-011). UXP-606 carries only whose
+        // link it is for: never the link (SEC-ACC-05).
+        'access/OwnerDetails' => ['owner' => ['account', 'account.displayName', 'account.email', 'account.version']],
+        'access/Users' => ['owner' => ['users', 'users.*', 'users.*.id', 'users.*.displayName', 'users.*.email', 'users.*.roles', 'users.*.roles.*', 'users.*.status', 'filters', 'filters.status', 'filters.role']],
+        'access/UserCreate' => ['owner' => []],
+        'access/User' => ['owner' => ['user', 'user.id', 'user.displayName', 'user.email', 'user.roles', 'user.roles.*', 'user.status', 'user.version', 'user.passwordSet', 'user.linkExpiresAt', 'user.superAdmin', 'user.self']],
+        'access/UserEdit' => ['owner' => ['user', 'user.id', 'user.displayName', 'user.email', 'user.roles', 'user.roles.*', 'user.version']],
+        'access/LinkHandover' => ['owner' => ['user', 'user.id', 'user.displayName']],
     ];
 
     /**
@@ -102,6 +110,9 @@ final class Allowlists
         // RC-50 answered COMMITTED (TASK-008), and a command's answer.
         'commands.resolve' => ['*' => ['outcome', 'operation', 'commandId', 'result', 'result.type', 'result.id', 'result.location']],
         'commands.committed' => ['*' => ['outcome', 'operation', 'commandId', 'repeated', 'result', 'result.type', 'result.id', 'result.location']],
+        // The answer that committed RC-35 or RC-41, with its link, the only channel
+        // that ever carries one (SEC-ACC-05; TASK-011).
+        'commands.committed.link' => ['owner' => ['outcome', 'operation', 'commandId', 'repeated', 'result', 'result.type', 'result.id', 'result.location', 'link', 'link.url', 'link.expiresAt']],
         'commands.refused' => ['*' => ['outcome', 'code', 'messageKey', 'params', 'fields', 'lines']],
         // RD-03, the shell's indicators (TASK-009).
         'data.shell' => ['*' => ['unresolvedRequests', 'asOf']],

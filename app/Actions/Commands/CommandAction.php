@@ -66,6 +66,11 @@ abstract class CommandAction
 
     private int $writeStep = 0;
 
+    /** @var array{url: string, expiresAt: string}|null the link this attempt hands over, never stored */
+    private ?array $handedOver = null;
+
+    private ?int $sessionsEndedOf = null;
+
     public function __construct(protected readonly CommandServices $services) {}
 
     /**
@@ -108,6 +113,45 @@ abstract class CommandAction
     protected function heavy(): bool
     {
         return false;
+    }
+
+    /**
+     * Whether the target of step 2.2 is the actor's own account: the actor
+     * guard then takes that update lock instead, once (TR-LOCK-05).
+     */
+    protected function ownAccountIsTarget(): bool
+    {
+        return false;
+    }
+
+    /**
+     * The result of the answer committed now; by default the same as a
+     * repeat's and a status check's. An issued link leads to its one-time page
+     * in this answer only (SEC-ACC-05).
+     *
+     * @return array{type: string, id: int|null, number?: string, location: string}|null
+     */
+    protected function presentNow(User $viewer, int $commandId, StoredResult $result): ?array
+    {
+        return $this->present($viewer, $commandId, $result);
+    }
+
+    /**
+     * The one-time link of this commit, for its answer only: it is never
+     * stored, so no repeat or status check can show it again (SEC-ACC-05).
+     */
+    final protected function handOver(string $url, string $expiresAt): void
+    {
+        $this->handedOver = ['url' => $url, 'expiresAt' => $expiresAt];
+    }
+
+    /**
+     * Records that this commit ended the sign-in sessions of the account, for
+     * the security log entry written after the transaction (SEC-LOG-03).
+     */
+    final protected function sessionsEnded(int $userId): void
+    {
+        $this->sessionsEndedOf = $userId;
     }
 
     /**
@@ -196,6 +240,8 @@ abstract class CommandAction
     private function attempt(CommandContext $context): CommandOutcome
     {
         $this->writeStep = 0;
+        $this->handedOver = null;
+        $this->sessionsEndedOf = null;
         $services = $this->services;
         $envelope = $context->envelope;
 
@@ -208,7 +254,7 @@ abstract class CommandAction
                 throw CommandRefused::of(ErrorCode::EpochStale);
             }
 
-            $actor = $services->actorGuard->hold($context->actorId, $this->capabilities());
+            $actor = $services->actorGuard->hold($context->actorId, $this->capabilities(), $this->ownAccountIsTarget());
             $services->points->afterLock('2.1');
 
             $result = $this->perform($context, $actor, $commandId);
@@ -220,7 +266,7 @@ abstract class CommandAction
             return [$commandId, $actor, $result];
         }, $this->heavy());
 
-        return new CommandOutcome($envelope->operation, $commandId, false, $this->presented($actor, $commandId, $result));
+        return new CommandOutcome($envelope->operation, $commandId, false, $this->presentNow($actor, $commandId, $result), $this->handedOver, $this->sessionsEndedOf);
     }
 
     /**

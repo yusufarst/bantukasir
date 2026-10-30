@@ -66,15 +66,15 @@ final class ResolveIntentTest extends DatabaseTestCase
         $this->app->instance(CommandPoints::class, new FailurePoints(1));
         $this->as('Agus');
         $this->check($envelope)->assertStatus(503)->assertJsonPath('code', 'SERVICE_BUSY');
-        $this->assertSame(0, $this->observer()->table('command_identities')->count());
+        $this->assertSame(0, $this->observer()->table('command_identities')->where('operation', '<>', 'user.create')->count());
         $this->assertSame(['PENDING', 'HELD'], $this->outcomesOf($envelope));
 
         $this->app->instance(CommandPoints::class, new FailurePoints);
         $this->check($envelope)->assertOk()->assertExactJson(['outcome' => 'NOT_COMMITTED', 'operation' => Probe::OPERATION]);
 
-        $fence = (array) $this->observer()->selectOne("select id, kind, actor_user_id, operation_version, idempotency_key, fingerprint, encode(recovery_epoch, 'hex') as epoch from command_identities");
+        $fence = (array) $this->observer()->selectOne("select id, kind, actor_user_id, operation_version, idempotency_key, fingerprint, encode(recovery_epoch, 'hex') as epoch from command_identities where kind = 'FENCE'");
         $this->assertSame(['FENCE', $this->people['Agus']['id'], null, null, null, $this->epoch], [$fence['kind'], $fence['actor_user_id'], $fence['operation_version'], $fence['idempotency_key'], $fence['fingerprint'], $fence['epoch']]);
-        $this->assertSame(0, $this->observer()->table('command_results')->count());
+        $this->assertSame(0, $this->observer()->table('command_results')->where('result_type', '<>', 'user')->count());
         $this->assertSettled($envelope, 'NOT_COMMITTED', $fence['id'], 'Agus');
 
         // An existing fence answers NOT_COMMITTED again and settles nothing more.
@@ -136,7 +136,7 @@ final class ResolveIntentTest extends DatabaseTestCase
         $this->assertSame($this->people['Agus']['id'], $this->observer()->table('stale_intent_reports')->value('actor_user_id'));
         $this->assertSame(['HELD'], $this->outcomesOf($envelope));
         $this->assertSame(['EPOCH_STALE'], array_column($this->receiptsOf($envelope), 'held_code'));
-        $this->assertSame(0, $this->observer()->table('command_identities')->count());
+        $this->assertSame(0, $this->observer()->table('command_identities')->where('operation', '<>', 'user.create')->count());
 
         // The Owner's check of it too, without settling it.
         $this->as('Hendra');
@@ -157,7 +157,7 @@ final class ResolveIntentTest extends DatabaseTestCase
 
         $this->as('Hendra');
         $this->check($envelope, $this->epoch)->assertStatus(409)->assertJsonPath('code', 'EPOCH_STALE');
-        $this->assertSame(0, $this->observer()->table('command_identities')->count());
+        $this->assertSame(0, $this->observer()->table('command_identities')->where('operation', '<>', 'user.create')->count());
         $this->assertSame(['HELD'], $this->outcomesOf($envelope));
         $this->assertSame(1, $this->observer()->table('stale_intent_reports')->count());
 
@@ -166,7 +166,7 @@ final class ResolveIntentTest extends DatabaseTestCase
         $this->as('Agus');
         $this->check($reported, str_repeat('0d', 32))->assertStatus(409);
         $this->check($reported, $this->epoch)->assertStatus(409)->assertJsonPath('code', 'EPOCH_STALE');
-        $this->assertSame(0, $this->observer()->table('command_identities')->count());
+        $this->assertSame(0, $this->observer()->table('command_identities')->where('operation', '<>', 'user.create')->count());
 
         // The reverse: an intent whose receipts carry the current epoch is
         // fenced, whatever epoch the check sends, and no report is written.
@@ -263,7 +263,7 @@ final class ResolveIntentTest extends DatabaseTestCase
                 ->assertExactJson(['outcome' => 'REJECTED', 'code' => 'VALIDATION_FAILED', 'messageKey' => 'ux.state.validation', 'params' => [], 'fields' => [], 'lines' => []]);
         }
 
-        $this->assertSame(0, $this->observer()->table('command_identities')->count());
+        $this->assertSame(0, $this->observer()->table('command_identities')->where('operation', '<>', 'user.create')->count());
     }
 
     /**

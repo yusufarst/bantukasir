@@ -34,6 +34,19 @@ final class AccountController
         return Inertia::render('access/ChangePassword');
     }
 
+    /**
+     * RP-005, UXP-005 "Ubah nama dan email" (CAP-27; TASK-011 scope item 2): the
+     * Owner's own display name and email, with the version the Owner reviews.
+     */
+    public function details(Request $request): Response
+    {
+        $user = self::signedIn($request);
+
+        return Inertia::render('access/OwnerDetails', [
+            'account' => ['displayName' => $user->display_name, 'email' => $user->email, 'version' => $user->version],
+        ]);
+    }
+
     private static function signedIn(Request $request): User
     {
         $user = $request->user();

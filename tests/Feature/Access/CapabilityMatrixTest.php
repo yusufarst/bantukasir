@@ -118,6 +118,51 @@ final class CapabilityMatrixTest extends DatabaseTestCase
         'RD-07' => ['method' => 'GET', 'path' => '/media/{file}', 'json' => true, 'answers' => [
             'guest' => [401, null], 'owner' => [404, null], 'ops' => [404, null], 'cashier' => [404, null], 'combined' => [404, null],
         ]],
+        // TASK-011: the Owner's user pages, the last three of an identifier that
+        // does not exist, and RC-35 to RC-42, which without a recent confirmation
+        // answer 423 before anything runs.
+        'RP-005' => ['method' => 'GET', 'path' => '/account/details', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RP-602' => ['method' => 'GET', 'path' => '/settings/users', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RP-603' => ['method' => 'GET', 'path' => '/settings/users/new', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RP-604' => ['method' => 'GET', 'path' => '/settings/users/{user}', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [404, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RP-605' => ['method' => 'GET', 'path' => '/settings/users/{user}/edit', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [404, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RP-606' => ['method' => 'GET', 'path' => '/settings/users/{user}/link', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [404, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RC-35' => ['method' => 'POST', 'path' => '/commands/user.create', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [423, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RC-36' => ['method' => 'POST', 'path' => '/commands/user.update', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [423, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RC-37' => ['method' => 'POST', 'path' => '/commands/owner.update_details', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [423, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RC-38' => ['method' => 'POST', 'path' => '/commands/user.deactivate', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [423, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RC-39' => ['method' => 'POST', 'path' => '/commands/user.reactivate', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [423, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RC-40' => ['method' => 'POST', 'path' => '/commands/user.anonymize', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [423, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RC-41' => ['method' => 'POST', 'path' => '/commands/user.issue_link', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [423, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RC-42' => ['method' => 'POST', 'path' => '/commands/user.revoke_link', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [423, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
     ];
 
     /** @var array<string, array{id: int, email: string, password: string}> */

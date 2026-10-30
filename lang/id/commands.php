@@ -26,6 +26,7 @@ return [
     ],
     'resolution' => [
         'committed' => 'Sudah tersimpan.',
+        'committed_link_hidden' => 'Sudah tersimpan, tetapi tautannya tidak bisa ditampilkan lagi. Jika perlu, buat tautan baru di Detail pengguna.',
         'in_progress' => 'Masih diproses. Cek lagi sebentar lagi.',
         'not_committed' => 'Tidak tersimpan, dan tidak akan pernah tersimpan. Anda dapat mulai lagi.',
         'no_answer' => 'Cek status belum mendapat jawaban. Statusnya tetap belum pasti; cek lagi sebentar lagi.',

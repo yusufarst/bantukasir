@@ -88,6 +88,10 @@ return [
         'leave' => 'Tinggalkan',
         'optional' => '(opsional)',
         'save' => 'Simpan',
+        // The user pages (TASK-011; COPY_DECK section 5).
+        'save_changes' => 'Simpan perubahan',
+        'deactivate' => 'Nonaktifkan',
+        'reactivate' => 'Aktifkan kembali',
         'more_actions' => 'Tindakan lain',
         'remove_line' => 'Hapus baris',
         // The password visibility toggle (TASK-006; COPY_DECK section 5).

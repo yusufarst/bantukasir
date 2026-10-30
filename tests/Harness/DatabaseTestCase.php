@@ -207,7 +207,9 @@ abstract class DatabaseTestCase extends TestCase
             $values = [];
 
             foreach ((array) $row as $column => $value) {
-                $values[(string) $column] = $value;
+                // A bytea column arrives as a stream, which compares by its
+                // handle: its bytes are what the row holds.
+                $values[(string) $column] = is_resource($value) ? stream_get_contents($value) : $value;
             }
 
             $rows[] = $values;

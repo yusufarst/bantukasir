@@ -24,6 +24,8 @@ interface Entry {
 
 /** The words and icon of each entry (COPY_DECK section 11.1). */
 const ENTRIES: Readonly<Record<string, { readonly title: TranslationKey; readonly description: TranslationKey; readonly icon: IconName }>> = {
+    // UXI-326 "Pengguna".
+    users: { title: 'access.users.title', description: 'config.settings.users_desc', icon: 'user' },
     // UXI-327 "Profil usaha".
     profile: { title: 'config.profile.title', description: 'config.settings.profile_desc', icon: 'image' },
 };

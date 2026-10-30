@@ -10,7 +10,9 @@ use App\Actions\Commands\Resolution;
  * (INTERACTION_CONTRACTS sections 1.2 and 2.1; SEC-CH-11): a committed
  * command, now (201) or repeated (200), and the answer of a status check. A
  * result names its type, internal key, document number when it has one, and
- * the path that shows it — nothing else.
+ * the path that shows it — nothing else. A one-time link appears only in the
+ * answer that committed it (SEC-ACC-05): its address, with the token in the
+ * fragment, and its expiry.
  */
 final class CommittedData
 {
@@ -19,13 +21,19 @@ final class CommittedData
      */
     public static function command(CommandOutcome $outcome): array
     {
-        return [
+        $answer = [
             'outcome' => 'COMMITTED',
             'operation' => $outcome->operation,
             'commandId' => $outcome->commandId,
             'repeated' => $outcome->repeated,
             'result' => $outcome->result === null ? null : self::result($outcome->result),
         ];
+
+        if ($outcome->link !== null) {
+            $answer['link'] = ['url' => $outcome->link['url'], 'expiresAt' => $outcome->link['expiresAt']];
+        }
+
+        return $answer;
     }
 
     /**

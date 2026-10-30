@@ -238,7 +238,7 @@ final class CommandRaceTest extends DatabaseTestCase
         $this->assertSame(['refused' => 'EPOCH_STALE'], $first->finish()->result);
         $this->assertSame(['refused' => 'EPOCH_STALE'], $second->finish()->result);
         $this->assertSame(1, $this->observer()->table('stale_intent_reports')->where('source_intent_id', $intent)->count());
-        $this->assertSame(0, $this->observer()->table('command_identities')->count());
+        $this->assertSame(0, $this->observer()->table('command_identities')->where('operation', '<>', 'user.create')->count());
     }
 
     /**
