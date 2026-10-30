@@ -73,8 +73,9 @@ for (const width of [WIDTHS[0], WIDTHS[7]]) {
         await expect(page).toHaveTitle('Akun saya — Toko Contoh');
         expect(await accent(page)).toBe('green');
 
-        // UXI-008 "Pengaturan", in the navigation or the drawer.
-        if (width === WIDTHS[0]) {
+        // UXI-008 "Pengaturan", in the side navigation, or in the drawer at
+        // compact width (WIDTHS[7], 320 px).
+        if (width === WIDTHS[7]) {
             await page.getByRole('button', { name: 'Buka menu' }).click();
             await expect(page.getByRole('dialog', { name: 'Menu utama' }).getByText('Toko Contoh')).toBeVisible();
         } else {

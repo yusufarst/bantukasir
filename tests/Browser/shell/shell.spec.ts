@@ -57,7 +57,7 @@ for (const persona of Object.keys(PEOPLE) as (keyof typeof PEOPLE)[]) {
             // The one destination that exists is the Owner's "Pengaturan"
             // (TASK-010; EXC-52): in the side navigation, or the drawer at
             // compact width; the other roles have none yet.
-            if (persona === 'owner' && width === WIDTHS[0]) {
+            if (persona === 'owner' && width === WIDTHS[7]) {
                 await expect(page.getByRole('button', { name: 'Buka menu' })).toHaveCount(1);
             } else if (persona === 'owner') {
                 await expect(page.getByRole('navigation', { name: 'Menu utama' }).getByRole('link')).toHaveText(['Pengaturan']);
