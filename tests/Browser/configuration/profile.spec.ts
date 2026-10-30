@@ -1,6 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect as baseExpect, test, type Page } from '@playwright/test';
-import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { ACCESS_TIMEOUT, ACCESS_WAIT, HOME, resetPeople, SECURE_LOCAL_ORIGIN, signIn, unexpected } from '../support/access';
@@ -18,7 +17,7 @@ const expect = baseExpect.configure({ timeout: ACCESS_WAIT });
 // accent "Toska" — a multipart command after the recent-authentication
 // dialog — and lands on UXP-607 with the new version in force; the accent then
 // applies to every page and the document title names the shop. The test puts
-// the profile back to green at its end. The built assets hold no client name.
+// the profile back to green at its end. The built assets hold no denied name.
 // These tests sign in the people of Toko Contoh, so they run one at a time.
 
 test.describe.configure({ timeout: ACCESS_TIMEOUT });
@@ -26,10 +25,8 @@ test.use(SECURE_LOCAL_ORIGIN);
 
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'];
 
-/** The SHA-256 of the known client's name in lowercase, and its length (REQ-SCOPE-03). */
-const CLIENT_SHA256 = 'e5e0c87adf9baf3927697c9ab4d254b833096ae4f7f5a93766360c3180c2caf0';
-
-const CLIENT_LENGTH = 7;
+/** A synthetic word that no business uses: it proves the scan on every run (D-110). */
+const SYNTHETIC_DENIED = 'zzdeniedshopprobe';
 
 /** A PNG of one pixel: a synthetic logo. */
 const LOGO = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
@@ -227,14 +224,16 @@ test('every other role has no settings in its navigation and is refused the page
     await expect(page.getByRole('heading', { level: 1, name: 'Anda tidak memiliki akses' })).toBeVisible();
 });
 
-test('the built assets hold no client name and no bundled picture (AC-010-07)', () => {
+test('the built assets hold no denied name and no bundled picture (AC-010-07)', () => {
     const build = resolve('public/build');
     const files: string[] = [];
-    // The client's name is never written in the repository (D-076, review
-    // finding R-04): each word of its length is compared with the SHA-256 of
-    // its lowercase form (tests/Unit/Configuration/ClientNeutralTest.php).
-    const holdsClientName = (content: string): boolean =>
-        [...new Set(content.toLowerCase().match(/[a-z]+/g) ?? [])].some((word) => word.length === CLIENT_LENGTH && createHash('sha256').update(word).digest('hex') === CLIENT_SHA256);
+    // No client's identity, in any form, is written in the repository (D-110):
+    // the denied words are the synthetic one and, where CLIENT_DENYLIST_FILE
+    // names it, a private list outside the repository, one lowercase word per
+    // line (tests/Unit/Configuration/ClientNeutralTest.php).
+    const list = process.env.CLIENT_DENYLIST_FILE;
+    const denied = new Set([SYNTHETIC_DENIED, ...(list ? readFileSync(list, 'utf8').split(/\r?\n/).filter(Boolean) : [])]);
+    const holdsDeniedWord = (content: string): boolean => content.toLowerCase().match(/[a-z]+/g)?.some((word) => denied.has(word)) ?? false;
     const walk = (directory: string): void => {
         for (const name of readdirSync(directory)) {
             const path = join(directory, name);
@@ -249,6 +248,7 @@ test('the built assets hold no client name and no bundled picture (AC-010-07)', 
 
     walk(build);
     expect(files.length).toBeGreaterThan(0);
-    expect(files.filter((file) => holdsClientName(readFileSync(file, 'latin1')))).toEqual([]);
+    expect(holdsDeniedWord(`Toko ${SYNTHETIC_DENIED.toUpperCase()}`)).toBe(true);
+    expect(files.filter((file) => holdsDeniedWord(readFileSync(file, 'latin1')))).toEqual([]);
     expect(files.filter((file) => /\.(png|jpe?g|webp|gif|svg|ico|avif)$/i.test(file))).toEqual([]);
 });

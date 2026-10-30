@@ -165,13 +165,7 @@ final class OwnerBootstrapTest extends DatabaseTestCase
         foreach (range(1, 8) as $step) {
             $this->app->instance(CommandPoints::class, new FailurePoints($step));
 
-            try {
-                Artisan::call('owner:bootstrap', self::OPTIONS);
-                $this->fail('The injected failure is reported after write step '.$step.'.');
-            } catch (InjectedFailure) {
-                // Expected.
-            }
-
+            $this->assertThrows(static fn () => Artisan::call('owner:bootstrap', self::OPTIONS), InjectedFailure::class);
             $this->assertStringNotContainsString('set-password', Artisan::output(), 'after write step '.$step);
             $this->assertSame(['users' => 0, 'recovery_epoch' => 0, 'onboarding_state' => 0, 'business_profile_revisions' => 0, 'audit_events' => 0], $this->state(), 'after write step '.$step);
             $this->assertSame(0, $this->observer()->table('business_profile_current')->count());

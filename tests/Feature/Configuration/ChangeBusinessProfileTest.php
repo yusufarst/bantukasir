@@ -314,7 +314,7 @@ final class ChangeBusinessProfileTest extends DatabaseTestCase
             $second = $this->postLogo(UploadedFile::fake()->createWithContent('logo.jpg', $jpeg), self::idOf($first))->assertStatus(201);
             $this->assertSame(['image/jpeg', 4000, 4000], $this->dimensionsOf($this->logoOf(self::idOf($second))));
         } finally {
-            ini_set('memory_limit', $original === false ? '-1' : $original);
+            ini_set('memory_limit', $original);
         }
     }
 
