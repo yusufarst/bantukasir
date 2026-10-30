@@ -448,10 +448,14 @@ final class ChangeBusinessProfileTest extends DatabaseTestCase
      */
     private function facts(): array
     {
+        // One session for all of them: a test that compares the facts many
+        // times must stay within the server's connections (each observer() is
+        // a new session until the test ends).
+        $observer = $this->observer();
         $counts = [];
 
         foreach (self::FACTS as $table) {
-            $counts[$table] = $this->observer()->table($table)->count();
+            $counts[$table] = $observer->table($table)->count();
         }
 
         return $counts;
