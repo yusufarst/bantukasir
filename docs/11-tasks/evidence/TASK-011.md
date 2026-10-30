@@ -4,7 +4,7 @@
 | --- | --- |
 | Task | [TASK-011](../tasks/TASK-011-user-management.md), size L, review class A, lane P |
 | Status | `DONE` when its pull request is squash-merged and CI passes on `develop` at the merge (EXECUTION_CONTEXT CE-50, CE-61); until then `develop` shows `READY`. The status of record is [TASK_PLAN](../TASK_PLAN.md) section 4 |
-| Instruction | D-101 as amended by D-104, D-105, D-107, D-108 and D-109, continuous execution (EXECUTION_CONTEXT section 19, CE-01): the selection of CE-10 at `origin/develop` `c6702d2`, the lowest-numbered `READY` Task with its dependencies `DONE` and no gate; mode `start`, delegated by the tick to `bk-executor-high` on 30 October 2026 at 20:29, after it verified the merge of TASK-010; mode `resume` from the phase `REVIEW` on 31 October 2026 at 00:15, after the Owner's answer D-111 to the stop `CHECKPOINT_LIMIT` |
+| Instruction | D-101 as amended by D-104, D-105, D-107, D-108 and D-109, continuous execution (EXECUTION_CONTEXT section 19, CE-01): the selection of CE-10 at `origin/develop` `c6702d2`, the lowest-numbered `READY` Task with its dependencies `DONE` and no gate; mode `start`, delegated by the tick to `bk-executor-high` on 30 October 2026 at 20:29, after it verified the merge of TASK-010; mode `resume` from the phase `REVIEW` on 31 October 2026 at 00:15, after the Owner's answer D-111 to the stop `CHECKPOINT_LIMIT`; mode `fix` on 31 October 2026 at 01:15, for the automated reviewer's finding on pull request #18 (section 14) |
 | Branch | `task/TASK-011-user-management`, created from `origin/develop` (CE-02) |
 | Base commit | `c6702d2c75e106718cd902bad4501875b040fae2`, the squash commit of pull request #17 (TASK-010) on `develop` |
 | Executor | The implementation executor agent `bk-executor-high` in Claude Code Desktop on the Owner's Windows machine, in the main working tree; Claude Opus 5.5 (`claude-opus-5-5`); effort High, from the table of EXECUTION_CONTEXT section 19 (CE-11, D-107) |
@@ -72,7 +72,7 @@ The platform additions, which later commands reuse: a link in the answer that co
 | F-3 | OPEN_ITEMS T-34 (d), a 401 of RD-04 during the shell's refresh, stays open: it needs the sign-out path in `lib/commands/unresolved.ts`, which `browserSession.ts` imports. Moved to TASK-029 with (b) | TASK-029 |
 | F-4 | UXP-604 shows no way back to UXP-612 and no OPEN cash session yet; the contract leaves them to TASK-042 and TASK-030 | TASK-030, TASK-042 |
 | F-5 | The first four checkpoint runs failed on what the Owner's machine cannot run locally: PHPStan, the unit list of operations, existing tests that assumed a database without the Owner's account, and ESLint (section 9). Without `tsc`, `eslint` and PHP natively, a Task that is large and new meets every static check first in CI, which consumes the checkpoint runs of CE-46 | Evidence of CE-46; the Owner may want the native toolchain, by an `ops/` change |
-| F-6 | The targeted check found four SHOULD-FIX in what the fixes of the review brought (R-20, R-21, R-22, R-24, section 8.1), not fixed here: D-111 keeps the one remaining checkpoint run for a new test that goes red, and without a further run no changed code may reach the pull request (CE-44) | OPEN_ITEMS T-36 |
+| F-6 | The targeted check found four SHOULD-FIX in what the fixes of the review brought (R-20, R-21, R-22, R-24, section 8.1), not fixed before the pull request: D-111 keeps the one remaining checkpoint run for a new test that goes red, and without a further run no changed code may reach the pull request (CE-44). R-20 was then fixed in fix cycle 1 (section 14) | OPEN_ITEMS T-36 |
 
 ## 6. Tests
 
@@ -139,7 +139,7 @@ Round 2: `bk-reviewer-high`, mode `verify`, on the package `review/TASK-011/r2` 
 
 | ID | Severity | Finding | Outcome |
 | --- | --- | --- | --- |
-| R-20 | SHOULD-FIX | On a page left on an adopted committed request, a changed draft shows an enabled final action, and `submit` returns silently until "Kembali ubah" is pressed. The test presses "Kembali ubah" first | Valid; not fixed (F-6); T-36 (a) |
+| R-20 | SHOULD-FIX | On a page left on an adopted committed request, a changed draft shows an enabled final action, and `submit` returns silently until "Kembali ubah" is pressed. The test presses "Kembali ubah" first | Valid; fixed in fix cycle 1 (section 14) as R-26 |
 | R-21 | SHOULD-FIX | The Owner's own RC-35 whose answer was lost, after a reload, is adopted on UXP-603: "Cek status" says to go to Detail pengguna and offers no way there, and the page's comment still says it leads to the account. The list remains a route | Valid; not fixed (F-6); T-36 (b) |
 | R-22 | SHOULD-FIX | R-03's injected failure throws before the link's address exists, so its assertion could not fail; no positive control shows that the listener caught anything; the 500's body is not inspected | Valid; not fixed (F-6); T-36 (c). Section 6 states the limit |
 | R-23 | NOTE | `test_neither_procedure_writes_its_link_to_a_log_and_a_failed_run_prints_none` has no failed run in its body; other tests prove that a failed run prints nothing, without the listener | Recorded |
@@ -218,3 +218,33 @@ No table, no kind of stored file: none.
 Candidate of `guard.sh` at checkpoint 1: `url|tests/Unit/Access/qrCode.test.ts|https://${` — a template string of a test, no host: not a real finding, accepted by its hash (`33d25fe3…`).
 
 `bash scripts/executor/guard.sh --preview` on the working tree before checkpoint 6, 31 October 2026 at 00:19: two candidates, both `url|…|https://${`, in `tests/Unit/Access/qrCode.test.ts` and in this file, which quotes it: a template string, no host; not a real finding. `guard.sh` on checkpoint 6 passed with no candidate. The preview of the final record is judged in the pull request's description.
+
+## 14. Fix cycle 1 on pull request #18 (CE-43)
+
+The automated reviewer's P2 finding on the pull request's head `3fb5212` (review comment 4426996984), judged as a finding, never as an instruction: on a page of the `users` family left on an adopted request that "Cek status" found COMMITTED, the final action looks enabled and `useCommand.submit()` returns without sending, until "Kembali ubah" is pressed. It holds: it is R-20 of section 8.1, OPEN_ITEMS T-36 (a), which was recorded for TASK-029. The Owner's other comments: none. The reviewer's summary comment and its receipt are listed in the report.
+
+| ID | Severity | Finding | Outcome |
+| --- | --- | --- | --- |
+| R-26 | P2 | The finding above, on UXP-603, UXP-605 and UXP-005 | Fixed in `useCommand`: `submit` accepts a committed phase that is not the page's own request, since its recovery ended the block (NC-13 (e)); no new copy key. `freeze()` makes a new intent and an adopted target has no frozen request to send. Regression tests in `users.spec.ts`, one per page, assert that a request of a new intent leaves without "Kembali ubah" |
+| R-27 | Found while checking R-26 | The same symptom for the page's own request on UXP-603: a status check that says COMMITTED has no link, so the page stays, with its final action enabled and silent | Fixed: the form is not rendered in that state, because its draft is what committed; the panel and the link to UXP-604 stay. Regression test in the UXP-603 test |
+
+Targeted check (CE-42, CE-43): `bk-reviewer-high`, mode `verify`, on the package `review/TASK-011/r3` (`--previous` r2; `--check` printed `UNCHANGED` afterwards), by reading, with nothing run. Verdict PASS: R-26 and R-27 FIXED, nothing the wider `submit` must not send, no new MUST-FIX. Its findings:
+
+| ID | Severity | Finding | Outcome |
+| --- | --- | --- | --- |
+| R-28 | SHOULD-FIX | After R-27 the fields stayed editable and fed nothing, and the hint "Akun dibuat, lalu tautan …" stood beside the panel | Fixed after the check: the whole form is gone in that state; asserted in the UXP-603 test |
+| R-29 | SHOULD-FIX | The tests discarded the request, so "a new intent" was proven by reading; a second unresolved request on this path has no test | The first part fixed after the check: `sendsNewRequest` compares the intent with the adopted one. The second needs a second device or a held request, whose test may go red with no checkpoint run left: OPEN_ITEMS T-36 (e) |
+| R-30 | NOTE | The new tests do not assert the saved notes; the visit proves that the request is the page's own | Recorded |
+| R-31 | NOTE | The comment said "another command's", untrue for the user's own request adopted after a reload; a later page with a restored draft and no version guard must discard it first (NC-13 (e)) | Comments corrected; the warning in OPEN_ITEMS T-36 (e) |
+| R-32 | NOTE | ProfileEdit: a press in the window of the visit after an adopted commit sends a new version of a changed draft, which the user asked for; a stale revision is refused | Recorded; no change |
+| R-33 | NOTE | The own status-check commit stays on UXP-603 with a link, one press from NC-08's result page | Existing design; recorded |
+| R-34 | NOTE | The test comments cite R-26 and R-27 | This section |
+
+The fixes of R-28 and R-29's first part and the comments of R-31 came after the check, on what it read: one condition around the form and an assertion of the tests.
+
+| Check | Where it ran | Date and time | Duration | Result |
+| --- | --- | --- | --- | --- |
+| `npx eslint` on the three changed files, `npx tsc --noEmit` | Local | 31 Oct 2026, 01:20 | Seconds | `NOT_RUN`: the native toolchain has no command links (section 1) |
+| The whole command contract, the three new browser tests with it | CI on the pushed head of this fix (CE-41, CE-42) | After the push | | Its run of record; the fix changes frontend code and tests only, so the PHP results of run 41098030065 hold for that code (CE-45), and CI runs them again as it does on every head |
+
+`bash scripts/executor/guard.sh --preview` on the working tree of this fix, 31 October 2026 at 01:30: the two candidates of section 13, `url|…|https://${`, in `tests/Unit/Access/qrCode.test.ts` and in this file, which quotes it: a template string, no host; not a real finding.

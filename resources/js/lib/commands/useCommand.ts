@@ -114,6 +114,7 @@ export function useCommand(command: CommandDefinition & { readonly recentAuth?: 
     const live = useRef(true);
 
     const blockedBy = useMemo(() => blockingRequest(unresolved.union, command.operation, command.family), [unresolved.union, command.operation, command.family]);
+    const ownRequest = target !== null && target.frozen !== null;
 
     useEffect(() => {
         live.current = true;
@@ -252,7 +253,11 @@ export function useCommand(command: CommandDefinition & { readonly recentAuth?: 
                 return;
             }
 
-            if ((phase.kind !== 'idle' && phase.kind !== 'rejected' && phase.kind !== 'not_committed') || blockedBy !== null) {
+            // A request this page only adopted that committed is not this draft, and
+            // its recovery ended the block (NC-13 (e)): the draft may send its own.
+            const draftOpen = phase.kind === 'idle' || phase.kind === 'rejected' || phase.kind === 'not_committed' || (phase.kind === 'committed' && !ownRequest);
+
+            if (!draftOpen || blockedBy !== null) {
                 return;
             }
 
@@ -289,7 +294,7 @@ export function useCommand(command: CommandDefinition & { readonly recentAuth?: 
                 await send(frozen);
             })();
         },
-        [userId, epoch, phase.kind, target, blockedBy, command, send],
+        [userId, epoch, phase.kind, target, ownRequest, blockedBy, command, send],
     );
 
     const resend = useCallback((): void => {
@@ -401,8 +406,6 @@ export function useCommand(command: CommandDefinition & { readonly recentAuth?: 
             setPhase({ kind: 'idle' });
         }
     }, [phase.kind, target]);
-
-    const ownRequest = target !== null && target.frozen !== null;
 
     const startAgain = useCallback((): void => {
         // An adopted request that committed is another command's: the draft of this page goes on.

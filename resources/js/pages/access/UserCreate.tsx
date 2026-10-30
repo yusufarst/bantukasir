@@ -20,7 +20,9 @@ import type { DestinationId } from '@/lib/navigation';
 // by a valid form, never by Enter, and needs recent authentication. The answer carries
 // the link once: it is held in page memory and shown by UXP-606. A request whose answer
 // was lost and that committed has no link any more: the page says so and leads to the
-// account, where a new link can be issued.
+// account, where a new link can be issued, and the form is gone, since its draft is what
+// committed. An adopted request that committed is not this draft: the draft goes on and
+// the final action sends it as a new request.
 
 const DESTINATION: DestinationId = 'settings';
 
@@ -98,30 +100,32 @@ function CreateForm({ title }: { title: string }) {
     return (
         <CommandLayout header={<PageHeader title={title} back={{ href: listPage, page: t('access.users.title'), onNavigate: guard }} />}>
             {invalid && <ErrorSummary errors={summary} />}
-            <Card>
-                <CommandForm>
-                    <Field id={nameId} label={t('access.user_form.name')} required={true} error={nameError}>
-                        <TextInput value={name} maxLength={100} autoComplete={'off'} onChange={(event) => setName(event.target.value)} />
-                    </Field>
-                    <Field id={emailId} label={t('access.user_form.email')} required={true} hint={t('access.email_help')} error={emailError}>
-                        <TextInput type={'email'} value={email} maxLength={254} autoComplete={'off'} onChange={(event) => setEmail(event.target.value)} />
-                    </Field>
-                    <RoleChoices id={rolesId} roles={roles} error={rolesError} onChange={setRoles} />
-                    <p className={'bk-hint'}>{t('access.user_create.submit_help')}</p>
-                    <div className={'bk-actions'}>
-                        <Button
-                            label={t('access.user_create.submit')}
-                            size={'lg'}
-                            enterActivates={false}
-                            busy={busy}
-                            disabledReason={reason}
-                            onClick={() => control.submit({ displayName: name, email, roles }, {})}
-                        />
-                        <ButtonLink href={listPage} label={t('ux.action.cancel')} variant={'secondary'} onClick={guard} />
-                        {(phase.kind === 'rejected' || phase.kind === 'not_committed' || adoptedDone) && <Button label={t('ux.action.edit_again')} variant={'quiet'} onClick={control.startAgain} />}
-                    </div>
-                </CommandForm>
-            </Card>
+            {!committed && (
+                <Card>
+                    <CommandForm>
+                        <Field id={nameId} label={t('access.user_form.name')} required={true} error={nameError}>
+                            <TextInput value={name} maxLength={100} autoComplete={'off'} onChange={(event) => setName(event.target.value)} />
+                        </Field>
+                        <Field id={emailId} label={t('access.user_form.email')} required={true} hint={t('access.email_help')} error={emailError}>
+                            <TextInput type={'email'} value={email} maxLength={254} autoComplete={'off'} onChange={(event) => setEmail(event.target.value)} />
+                        </Field>
+                        <RoleChoices id={rolesId} roles={roles} error={rolesError} onChange={setRoles} />
+                        <p className={'bk-hint'}>{t('access.user_create.submit_help')}</p>
+                        <div className={'bk-actions'}>
+                            <Button
+                                label={t('access.user_create.submit')}
+                                size={'lg'}
+                                enterActivates={false}
+                                busy={busy}
+                                disabledReason={reason}
+                                onClick={() => control.submit({ displayName: name, email, roles }, {})}
+                            />
+                            <ButtonLink href={listPage} label={t('ux.action.cancel')} variant={'secondary'} onClick={guard} />
+                            {(phase.kind === 'rejected' || phase.kind === 'not_committed' || adoptedDone) && <Button label={t('ux.action.edit_again')} variant={'quiet'} onClick={control.startAgain} />}
+                        </div>
+                    </CommandForm>
+                </Card>
+            )}
             {!invalid && link === undefined && <CommandPanels control={control} />}
             {committed && link === undefined && result?.location !== undefined && <ButtonLink href={result.location} label={t('access.user_detail.title')} variant={'secondary'} />}
         </CommandLayout>

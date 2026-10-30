@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect as baseExpect, test, type BrowserContext, type Page } from '@playwright/test';
+import { expect as baseExpect, test, type BrowserContext, type Locator, type Page } from '@playwright/test';
 import { ACCESS_TIMEOUT, ACCESS_WAIT, HOME, newPassword, resetPeople, SECURE_LOCAL_ORIGIN, signIn, unexpected, type Account } from '../support/access';
-import { injected, prepareCommands, refuse } from '../support/commands';
+import { envelopeOf, injected, prepareCommands, refuse } from '../support/commands';
 import { measure } from '../support/measure';
 import { contextAt, watch, WIDTHS } from '../support/specimen';
 
@@ -407,6 +407,122 @@ test('a page that adopted a committed request of another operation says what is 
     await page.getByLabel('Nama tampilan').fill('Hendra Lain');
     await expect(page.getByRole('button', { name: 'Simpan perubahan' })).not.toHaveAttribute('aria-disabled', 'true');
     await page.getByLabel('Nama tampilan').fill('Hendra');
+
+    expect(injected(watched.problems)).toEqual([]);
+    await context.close();
+});
+
+/** RC-35 commits and its answer never arrives: the page stays on the uncertain panel. Gives the request's intent. */
+async function loseCreateAnswer(page: Page, who: { name: string; email: string }, password: string | null): Promise<string> {
+    const intents: string[] = [];
+
+    await page.route('**/commands/user.create', async (route) => {
+        intents.push(envelopeOf(route.request()).sourceIntentId);
+        await route.fetch();
+        await route.abort();
+    });
+    await createAccount(page, who, password);
+    await expect(page.getByText('Status belum pasti')).toBeVisible();
+    await page.unroute('**/commands/user.create');
+
+    return intents[0] ?? '';
+}
+
+/** The status check of the panel, which answers COMMITTED without the link. */
+async function checkCommitted(page: Page): Promise<void> {
+    await page.getByRole('button', { name: 'Cek status' }).click();
+    await expect(page.getByText('Sudah tersimpan, tetapi tautannya tidak bisa ditampilkan lagi.', { exact: false })).toBeVisible();
+}
+
+/** Sends the final action without "Kembali ubah"; a request of a new intent has to leave. */
+async function sendsNewRequest(page: Page, final: Locator, operation: string, adopted: string): Promise<void> {
+    await expect(final).not.toHaveAttribute('aria-disabled', 'true');
+    const sent = page.waitForRequest((request) => request.method() === 'POST' && new URL(request.url()).pathname === `/commands/${operation}`);
+    await final.click();
+    const intent = envelopeOf(await sent).sourceIntentId;
+
+    expect(adopted).not.toBe('');
+    expect(intent).not.toBe(adopted);
+}
+
+// Review finding R-26: after the status check of an adopted request says COMMITTED,
+// the block has ended (NC-13 (e)) and the final action of each form of the family
+// sends a new request, with no "Kembali ubah" first.
+test('UXP-603: a final action sends after an adopted request committed, and is gone after the own request committed', async ({ browser }) => {
+    const context = await contextAt(browser, WIDTHS[0]!);
+    const page = await context.newPage();
+    const watched = await watch(page);
+    const hendra = await owner(context, page);
+    const final = page.getByRole('button', { name: 'Simpan dan buat tautan' });
+
+    // R-27, R-28: the page's own request committed: this draft is what was saved.
+    await loseCreateAnswer(page, person('Lina'), hendra.password);
+    await checkCommitted(page);
+    await expect(page.getByRole('link', { name: 'Detail pengguna' })).toBeVisible();
+    await expect(final).toHaveCount(0);
+    await expect(page.getByLabel('Nama tampilan')).toHaveCount(0);
+
+    const adopted = await loseCreateAnswer(page, person('Mira'), null);
+    await page.goto(`${USERS}/new`);
+    await expect(page.getByText('Status belum pasti')).toBeVisible();
+    await checkCommitted(page);
+
+    const who = person('Nina');
+    await page.getByLabel('Nama tampilan').fill(who.name);
+    await page.getByLabel(/^Email/).fill(who.email);
+    await page.getByRole('checkbox', { name: /Kasir/ }).check();
+    await sendsNewRequest(page, final, 'user.create', adopted);
+    await page.waitForURL((url) => /\/link$/.test(url.pathname));
+    await expect(page.getByText(`Tautan kata sandi pertama untuk ${who.name}`)).toBeVisible();
+
+    expect(injected(watched.problems)).toEqual([]);
+    await context.close();
+});
+
+test('UXP-605: a final action sends after an adopted request committed', async ({ browser }) => {
+    const context = await contextAt(browser, WIDTHS[0]!);
+    const page = await context.newPage();
+    const watched = await watch(page);
+    const hendra = await owner(context, page);
+    const who = person('Oki');
+    const renamed = person('Oka').name;
+
+    const adopted = await loseCreateAnswer(page, who, hendra.password);
+    await openFromList(page, who.name);
+    const detail = new URL(page.url()).pathname;
+    await page.goto(`${detail}/edit`);
+    await expect(page.getByText('Status belum pasti')).toBeVisible();
+    await checkCommitted(page);
+
+    await page.getByLabel('Nama tampilan').fill(renamed);
+    await sendsNewRequest(page, page.getByRole('button', { name: 'Simpan perubahan' }), 'user.update', adopted);
+    await page.waitForURL((url) => url.pathname === detail);
+    await expect(page.getByRole('main').getByText(renamed)).toBeVisible();
+
+    expect(injected(watched.problems)).toEqual([]);
+    await context.close();
+});
+
+test('UXP-005: a final action sends after an adopted request committed', async ({ browser }) => {
+    const context = await contextAt(browser, WIDTHS[0]!);
+    const page = await context.newPage();
+    const watched = await watch(page);
+    const hendra = await owner(context, page);
+    const save = page.getByRole('button', { name: 'Simpan perubahan' });
+
+    const adopted = await loseCreateAnswer(page, person('Rani'), hendra.password);
+    await page.goto('/account/details');
+    await expect(page.getByText('Status belum pasti')).toBeVisible();
+    await checkCommitted(page);
+
+    await page.getByLabel('Nama tampilan').fill('Hendra Lain');
+    await sendsNewRequest(page, save, 'owner.update_details', adopted);
+    await page.waitForURL((url) => url.pathname === HOME);
+
+    // Back to the name of every other test.
+    await page.goto('/account/details');
+    await page.getByLabel('Nama tampilan').fill('Hendra');
+    await Promise.all([page.waitForURL((url) => url.pathname === HOME), save.click()]);
 
     expect(injected(watched.problems)).toEqual([]);
     await context.close();
