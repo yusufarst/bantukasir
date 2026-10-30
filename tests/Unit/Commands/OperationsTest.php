@@ -2,6 +2,14 @@
 
 namespace Tests\Unit\Commands;
 
+use App\Actions\Access\AnonymizeAccount;
+use App\Actions\Access\CreateStaffAccount;
+use App\Actions\Access\DeactivateAccount;
+use App\Actions\Access\IssuePasswordLink;
+use App\Actions\Access\ReactivateAccount;
+use App\Actions\Access\RevokePasswordLink;
+use App\Actions\Access\UpdateOwnerDetails;
+use App\Actions\Access\UpdateStaffAccount;
 use App\Actions\Commands\CommandActions;
 use App\Actions\Configuration\ChangeBusinessProfile;
 use App\Domain\Commands\Operations;
@@ -70,8 +78,19 @@ final class OperationsTest extends TestCase
         $this->assertFalse(Operations::exists('sale.refund'));
         $this->assertSame(['posting_block.block'], array_values(array_filter($listed, static fn (string $operation): bool => ! Operations::submittedByUsers($operation))));
         $this->assertThrows(fn () => Operations::familyOf('sale.refund'), LogicException::class);
-        // The commands built so far, each a known operation (TASK-010: RC-32).
-        $this->assertSame(['business_profile.change' => ChangeBusinessProfile::class], CommandActions::built());
+        // The commands built so far, each a known operation (TASK-010: RC-32;
+        // TASK-011: RC-35 to RC-42).
+        $this->assertSame([
+            'business_profile.change' => ChangeBusinessProfile::class,
+            'user.create' => CreateStaffAccount::class,
+            'user.update' => UpdateStaffAccount::class,
+            'owner.update_details' => UpdateOwnerDetails::class,
+            'user.deactivate' => DeactivateAccount::class,
+            'user.reactivate' => ReactivateAccount::class,
+            'user.anonymize' => AnonymizeAccount::class,
+            'user.issue_link' => IssuePasswordLink::class,
+            'user.revoke_link' => RevokePasswordLink::class,
+        ], CommandActions::built());
     }
 
     public function test_each_operation_is_in_its_family_of_interaction_contracts_section_1_4(): void
