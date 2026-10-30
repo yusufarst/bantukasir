@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-6 under D-088, 18 October 2026 (Asia/Jakarta); corrected under D-089, 18 October 2026: decryption and the restore-drill target off the VPS (ENV-01, sections 2, 3, 6 and 16; finding B-1 of the RF-6 review); the names of the settings of trusted hosts, trusted proxies and HSTS added to section 11 by TASK-007, 27 October 2026 |
+| Status | CURRENT — written in RF-6 under D-088, 18 October 2026 (Asia/Jakarta); corrected under D-089, 18 October 2026: decryption and the restore-drill target off the VPS (ENV-01, sections 2, 3, 6 and 16; finding B-1 of the RF-6 review); the names of the settings of trusted hosts, trusted proxies and HSTS added to section 11 by TASK-007, 27 October 2026; the exact names and the start-up check added to section 11, and the image's health check to section 6, by TASK-012, 31 October 2026 |
 | Phase | P9 — environments, access, configuration, network, certificates, scheduled tasks, logs, monitoring and the free-tier record |
 | Replaces | The runtime, configuration and TLS paragraphs of `docs/09-operations/legacy/09-DEPLOYMENT-OPS.md` and `docs/09-operations/legacy/P9-OPERATIONS.md`; `docs/04-architecture/legacy/P4-ARCHITECTURE.md` §Deployment, operasi dan maintenance (all LEGACY — SUPERSEDED, [LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 15) |
 | Decisions | D-005, D-053, D-076, D-088, D-089; [ADR-002](../adr/ADR-002-minimum-runtime-infrastructure.md), [ADR-003](../adr/ADR-003-hosting-topology.md), [ADR-010](../adr/ADR-010-independent-backup-and-recovery-key-custody.md), [ADR-011](../adr/ADR-011-release-pipeline-environments-and-production-operation.md) |
@@ -70,6 +70,8 @@ One Coolify project per installation, with the environments `production` and `st
 | Backup | The same image; process role `backup`; its main process serves nothing | The private network only; no published port | The file volume, read only; a private temporary area for the run, emptied at the end of every run | None | `php artisan schedule:run` every minute; in role `backup` the scheduler registers only SC-03 | ADR-010 item 6 |
 | PostgreSQL | The official image of the version the foundation Task pins | The private network only; never published | Its persistent volume | None | — | The platform's own scheduled database backup stays off: ADR-010 replaces it |
 
+The image declares its health check (TASK-012): in role web RH-01, on a listener of the loopback address that needs no trusted hop; in role backup, success while the container runs. Role web answers on port 8080, which the resource names. The file volume is mounted on `storage/app/private/media`, which belongs to the image's user `www-data` (mode 0750); an empty volume takes that owner, and a host folder must be given it by the operator.
+
 ## 7. Cloudflare
 
 | Setting | Value | Source |
@@ -136,6 +138,16 @@ Rules are set in the provider's network firewall. A host firewall such as ufw is
 | Log level | `info` | `info` | Section 14 |
 
 At start-up each process checks that every setting its role needs is present and not a default, without printing a value, and refuses to start otherwise (SEC-SECRET-03).
+
+The exact names and the check are `App\Domain\Operations\RequiredSettings` and `php artisan settings:check`, which the release image runs at each start (TASK-012); the role is `APP_PROCESS_ROLE`, `web` or `backup`:
+
+| Role | Required | Refused if held |
+| --- | --- | --- |
+| Both | `APP_ENV`, `APP_ENVIRONMENT_NAME` (`drill`, `staging` or `production`), `DB_HOST`, `DB_DATABASE` | `DB_MIGRATION_USERNAME`, `DB_MIGRATION_PASSWORD` |
+| `web` | `APP_URL` (HTTPS), `APP_TRUSTED_PROXIES` (addresses or CIDR ranges, never every address), `APP_KEY`, `DB_USERNAME`, `DB_PASSWORD`, `HEARTBEAT_WEB_URL`, `HEARTBEAT_RECONCILIATION_URL` | `BACKUP_DB_USERNAME`, `BACKUP_DB_PASSWORD`, `BACKUP_STORE_KEY_ID`, `BACKUP_STORE_KEY`, `BACKUP_RECIPIENT`, `HEARTBEAT_BACKUP_URL` |
+| `backup` | `BACKUP_DB_USERNAME`, `BACKUP_DB_PASSWORD`, `BACKUP_STORE_ENDPOINT` (HTTPS), `BACKUP_STORE_BUCKET`, `BACKUP_STORE_KEY_ID`, `BACKUP_STORE_KEY`, `BACKUP_RECIPIENT`, `HEARTBEAT_BACKUP_URL` | `APP_KEY`, `APP_PREVIOUS_KEYS`, `DB_USERNAME`, `DB_PASSWORD`, `HEARTBEAT_WEB_URL`, `HEARTBEAT_RECONCILIATION_URL` |
+
+A default is a placeholder, a fallback of `config/` or a value of the local environment: `DB_DATABASE` must not be `bantukasir`, and `DB_USERNAME` and `BACKUP_DB_USERNAME` must not be the local roles' names. When set, `APP_DEBUG` must be off and, in role `web`, `DB_CONNECTION` must be `pgsql`, `SESSION_DRIVER` and `CACHE_STORE` `database` and `SESSION_SECURE_COOKIE` on. In role `backup` the default database connection is the backup role's and the scheduler's lock a file of the container, because that role can only read and insert `backup_runs` (SCH-42). `LOG_CHANNEL` and `LOG_LEVEL` are set in the release image (standard error, `info`). The migration job runs a command in the image, which skips this check, with its own settings (ADR-011 item 7).
 
 ## 12. Database setup
 

@@ -443,8 +443,8 @@ elapsed=$(($(date +%s) - started))
 expect 'a request running past the limit is ended by a 502 of Nginx' '502' "$terminated"
 expect 'that 502 names no server' '' "$(body_of "$stub")"
 expect 'that 502 carries a header of SEC-HDR-02' 'x-frame-options: deny' "$(header_of "$stub" x-frame-options | tr '[:upper:]' '[:lower:]')"
-# PHP-FPM looks at its workers 20 seconds apart at this limit (php-fpm.conf).
-if [ "$elapsed" -ge 58 ] && [ "$elapsed" -le 82 ]; then pass "the request ended by the limit of 60 seconds, after $elapsed"; else fail "the request ended by the limit of 60 seconds: $elapsed"; fi
+# Below the client's wait of 65 seconds (TECHNICAL_RULES section 9; php-fpm.conf).
+if [ "$elapsed" -ge 58 ] && [ "$elapsed" -le 64 ]; then pass "the request ended by the limit of 60 seconds, after $elapsed"; else fail "the request ended by the limit of 60 seconds: $elapsed"; fi
 expect 'the next request is answered' '200' "$(request "$stub" /login)"
 docker rm -f "$stub" >/dev/null 2>&1
 
