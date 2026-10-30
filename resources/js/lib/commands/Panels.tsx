@@ -8,7 +8,7 @@ import type { StateId } from '@/components/ui/stateCatalogue';
 import { retrySeconds } from '@/lib/answers';
 import { throttledBody } from '@/lib/authAnswer';
 import { requestJson, STILL_AFTER_MS } from '@/lib/commands/client';
-import { familyMustNot, isLabelledFamily } from '@/lib/commands/families';
+import { committedText, familyMustNot, isLabelledFamily } from '@/lib/commands/families';
 import type { CheckNote, CommandControl } from '@/lib/commands/useCommand';
 import { t } from '@/lib/i18n';
 
@@ -84,7 +84,7 @@ export function CommandPanels({ control, committed }: { control: CommandControl;
             );
         }
         case 'committed':
-            return <Committed message={committed ?? t('commands.resolution.committed')} />;
+            return <Committed message={committed ?? committedText(target?.operation ?? '')} />;
         case 'not_committed':
             return (
                 <Notice tone={'neutral'} urgency={'status'}>

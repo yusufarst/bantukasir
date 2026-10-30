@@ -107,6 +107,7 @@ final class CommandPipeline
 
             $outcome = $action->execute(new CommandContext($user->id, $form->envelope(), $receivedAt));
             $this->mark($receipt, RequestReceipts::COMMITTED);
+            $this->recordEndedSessions($request, $user, $outcome->sessionsEndedOf);
             $answer = new JsonResponse(CommittedData::command($outcome), $outcome->repeated ? 200 : 201);
         } catch (CommandRefused $refusal) {
             $this->markRefusal($receipt, $refusal->error);
@@ -147,6 +148,24 @@ final class CommandPipeline
         }
 
         return ['sourceIntentId' => strtolower($intent), 'idempotencyKey' => strtolower($key), 'recoveryEpoch' => $epoch];
+    }
+
+    /**
+     * The security log entry of a commit that ended another account's sign-in
+     * sessions, after every transaction (SEC-LOG-03). The command has
+     * committed, so a failure here is reported and never changes its answer.
+     */
+    private function recordEndedSessions(Request $request, User $actor, ?int $account): void
+    {
+        if ($account === null) {
+            return;
+        }
+
+        try {
+            $this->securityLog->record(SecurityEvent::SessionRevoked, SecurityActor::user($actor->id), SecurityOutcome::Succeeded, $request, $account);
+        } catch (Throwable $failure) {
+            report($failure);
+        }
     }
 
     private function markRefusal(int $receipt, ErrorCode $code): void

@@ -10,6 +10,7 @@
 return [
     'settings' => [
         'title' => 'Pengaturan',
+        'users_desc' => 'Akun staf, peran, dan tautan kata sandi.',
         'profile_desc' => 'Nama toko, logo, dan teks pada struk dan dokumen.',
     ],
     'profile' => [

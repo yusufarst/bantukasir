@@ -9,7 +9,7 @@ import { EmptyState, LoadFailed, Loading, RecoveryPanel, StillSubmitting } from 
 import { AppShell } from '@/layouts/AppShell';
 import { PageContainer, PageHeader } from '@/layouts/Page';
 import { announceSettled, checkStatus, recheckDelay, RECORD_CHECK_WAIT_MINUTES } from '@/lib/commands/client';
-import { familyLabel, familyMustNot, isLabelledFamily } from '@/lib/commands/families';
+import { committedText, familyLabel, familyMustNot, isLabelledFamily } from '@/lib/commands/families';
 import { releaseReference } from '@/lib/commands/references';
 import { forgetReceipt, readReceipts, refreshReceipts, useUnresolved, type ReceiptRow, type UnresolvedRequest } from '@/lib/commands/unresolved';
 import { leaveSignedInSession } from '@/lib/browserSession';
@@ -207,7 +207,7 @@ function useRowCheck(request: { operation: string; sourceIntentId: string; recov
             switch (answer.kind) {
                 case 'committed':
                     onResolved();
-                    onConcluded(t('commands.resolution.committed'));
+                    onConcluded(committedText(request.operation));
 
                     return;
                 case 'not_committed':

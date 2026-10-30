@@ -2,6 +2,14 @@
 
 namespace App\Actions\Commands;
 
+use App\Actions\Access\AnonymizeAccount;
+use App\Actions\Access\CreateStaffAccount;
+use App\Actions\Access\DeactivateAccount;
+use App\Actions\Access\IssuePasswordLink;
+use App\Actions\Access\ReactivateAccount;
+use App\Actions\Access\RevokePasswordLink;
+use App\Actions\Access\UpdateOwnerDetails;
+use App\Actions\Access\UpdateStaffAccount;
 use App\Actions\Configuration\ChangeBusinessProfile;
 use App\Domain\Commands\Operations;
 use LogicException;
@@ -24,6 +32,15 @@ final class CommandActions
     private const array ACTIONS = [
         // RC-32 (TASK-010).
         ChangeBusinessProfile::OPERATION => ChangeBusinessProfile::class,
+        // RC-35 to RC-42 (TASK-011).
+        CreateStaffAccount::OPERATION => CreateStaffAccount::class,
+        UpdateStaffAccount::OPERATION => UpdateStaffAccount::class,
+        UpdateOwnerDetails::OPERATION => UpdateOwnerDetails::class,
+        DeactivateAccount::OPERATION => DeactivateAccount::class,
+        ReactivateAccount::OPERATION => ReactivateAccount::class,
+        AnonymizeAccount::OPERATION => AnonymizeAccount::class,
+        IssuePasswordLink::OPERATION => IssuePasswordLink::class,
+        RevokePasswordLink::OPERATION => RevokePasswordLink::class,
     ];
 
     /**

@@ -5,18 +5,25 @@ namespace Tests\Harness\Fixtures;
 use App\Actions\Access\BootstrapInput;
 use App\Actions\Access\BootstrapInstallation;
 use App\Actions\Access\ConsumeLink;
+use App\Actions\Access\CreateStaffAccount;
+use App\Actions\Commands\CommandContext;
 use App\Database\DatabaseRefused;
 use App\Database\EnvironmentMarker;
 use App\Domain\Access\Accounts;
 use App\Domain\Access\OneTimeLinks;
 use App\Domain\Access\Role;
+use App\Domain\Access\StaffRoles;
+use App\Domain\Commands\Envelope;
+use App\Domain\Commands\Operations;
 use App\Domain\Commands\RecoveryEpoch;
 use App\Domain\Configuration\BusinessProfiles;
 use App\Domain\Configuration\ProfileFields;
 use App\Domain\Inventory\OnboardingState;
 use App\Models\User;
+use App\Support\Time\Clock;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 use LogicException;
 
@@ -30,10 +37,9 @@ use LogicException;
  * Its people and shop are those of the previews, all invented. Fixtures are
  * created through the Actions and services, never by inserting rows
  * (TEST_STRATEGY section 3; EXC-45), so each Task that delivers an Action
- * extends this builder with the records it creates. TASK-006 adds the
- * people's accounts: until the bootstrap (TASK-010) and user management
- * (TASK-011) exist, an account is created through the Access module's account
- * service, and its password is set the one way a password is set, through a
+ * extends this builder with the records it creates. Since TASK-011 the people's
+ * accounts come from OP-01 (Hendra, the Owner) and RC-35 (the staff, created by
+ * the Owner), and a password is set the one way a password is set, through a
  * one-time link issued by the broker and consumed by ConsumeLink. A password
  * is generated at run time and never committed (EXECUTION_CONTEXT EXC-63).
  */
@@ -91,20 +97,18 @@ final class TokoContoh
     {
         self::build(DB::connection());
 
-        $roles = self::roles($person);
         $email = self::email($person);
-        $accounts = app(Accounts::class);
 
-        $id = DB::transaction(static function () use ($accounts, $person, $email, $roles): int {
-            $account = $accounts->findByEmail($email) ?? $accounts->create($person, $email, $roles);
+        // The installation first: its Owner, Hendra, comes from OP-01's Action.
+        self::shop();
 
-            if (! $account->isActive()) {
-                throw new LogicException(sprintf('The fixture account of %s is not ACTIVE.', $person));
-            }
+        $account = app(Accounts::class)->findByEmail($email);
 
-            return $account->id;
-        });
+        if ($account !== null && ! $account->isActive()) {
+            throw new LogicException(sprintf('The fixture account of %s is not ACTIVE.', $person));
+        }
 
+        $id = $account === null ? self::createStaff($person, $email, StaffRoles::namesOf(self::roles($person))) : $account->id;
         $password = self::newPassword();
         app(ConsumeLink::class)($id, self::link($person)['token'], $password);
 
@@ -166,6 +170,7 @@ final class TokoContoh
     public static function recoveryEpoch(): string
     {
         self::build(DB::connection());
+        self::shop();
         $epochs = app(RecoveryEpoch::class);
 
         return $epochs->current() ?? DB::transaction(static fn (): string => $epochs->issue());
@@ -198,6 +203,51 @@ final class TokoContoh
     }
 
     /**
+     * Another staff account of the shop, beside the people of KEY_SCREENS section
+     * 5, for a test that changes it (TASK-011): created by RC-35's Action, with
+     * these roles and, unless asked not to, a password set through a link.
+     *
+     * @param  list<string>  $roles  the names of RC-35's payload
+     * @return array{id: int, email: string, password: string|null}
+     *
+     * @throws DatabaseRefused
+     */
+    public static function staff(string $name, array $roles = ['cashier'], bool $withPassword = true): array
+    {
+        self::build(DB::connection());
+        self::shop();
+
+        $email = strtolower($name).'@contoh.test';
+        $id = self::createStaff($name, $email, $roles);
+
+        if (! $withPassword) {
+            return ['id' => $id, 'email' => $email, 'password' => null];
+        }
+
+        $password = self::newPassword();
+        app(ConsumeLink::class)($id, self::tokenFor($id), $password);
+
+        return ['id' => $id, 'email' => $email, 'password' => $password];
+    }
+
+    /**
+     * A new one-time link for an existing account, replacing any earlier one,
+     * issued by the broker under the account's lock: its token.
+     *
+     * @throws DatabaseRefused
+     */
+    public static function tokenFor(int $id): string
+    {
+        self::build(DB::connection());
+
+        return DB::transaction(static function () use ($id): string {
+            $account = app(Accounts::class)->lockForUpdate($id);
+
+            return $account instanceof User ? app(OneTimeLinks::class)->issue($account) : throw new LogicException('The fixture account exists.');
+        });
+    }
+
+    /**
      * A random password of 24 characters that meets AICWDF-COMPAT-8: an
      * uppercase and a lowercase letter, a number and a symbol, then random
      * hexadecimal digits.
@@ -205,6 +255,30 @@ final class TokoContoh
     public static function newPassword(): string
     {
         return 'Kc7#'.bin2hex(random_bytes(10));
+    }
+
+    /**
+     * The staff account of a person, created by the Owner through RC-35's
+     * Action (EXECUTION_CONTEXT EXC-45), as the page would, without its link.
+     *
+     * @param  list<string>  $roles  the names of RC-35's payload
+     */
+    private static function createStaff(string $person, string $email, array $roles): int
+    {
+        $owner = User::query()->where('role_super_admin', true)->where('status', 'ACTIVE')->firstOrFail();
+        $envelope = new Envelope(
+            CreateStaffAccount::OPERATION,
+            Operations::VERSION,
+            (string) Str::uuid(),
+            (string) Str::uuid(),
+            self::recoveryEpoch(),
+            [],
+            ['displayName' => $person, 'email' => $email, 'roles' => $roles],
+        );
+        $outcome = app(CreateStaffAccount::class)->execute(new CommandContext($owner->id, $envelope, app(Clock::class)->now()));
+        $id = $outcome->result['id'] ?? null;
+
+        return is_int($id) ? $id : throw new LogicException(sprintf('The fixture account of %s was not created.', $person));
     }
 
     /**

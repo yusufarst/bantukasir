@@ -2,13 +2,22 @@
 
 use App\Domain\Commands\Operations;
 use App\Http\Controllers\Access\AccountController;
+use App\Http\Controllers\Access\AnonymizeAccountController;
+use App\Http\Controllers\Access\CreateStaffAccountController;
+use App\Http\Controllers\Access\DeactivateAccountController;
 use App\Http\Controllers\Access\HomeRedirectController;
+use App\Http\Controllers\Access\IssuePasswordLinkController;
 use App\Http\Controllers\Access\OwnPasswordController;
 use App\Http\Controllers\Access\PasswordLinkController;
+use App\Http\Controllers\Access\ReactivateAccountController;
+use App\Http\Controllers\Access\RevokePasswordLinkController;
 use App\Http\Controllers\Access\SessionActivityController;
 use App\Http\Controllers\Access\SettingsController;
 use App\Http\Controllers\Access\ShellDataController;
 use App\Http\Controllers\Access\SignInController;
+use App\Http\Controllers\Access\UpdateOwnerDetailsController;
+use App\Http\Controllers\Access\UpdateStaffAccountController;
+use App\Http\Controllers\Access\UsersController;
 use App\Http\Controllers\Commands\RequestsController;
 use App\Http\Controllers\Commands\RequestsDataController;
 use App\Http\Controllers\Commands\ResolveIntentController;
@@ -99,6 +108,26 @@ Route::middleware(['auth', 'signin.session', 'throttle:authenticated', 'cache.he
             ->middleware(['throttle:command', 'throttle:logo', 'password.confirm'])
             ->name('commands.business_profile.change');
     });
+
+    // User management (TASK-011): RP-005 and RP-602 to RP-606, and RC-35 to
+    // RC-42, each with its capabilities of ROUTE_CONTRACTS, in the bucket of
+    // every command, with recent authentication; RC-35 and RC-41 also in the
+    // bucket `link_issue`. No route reaches CAP-33.
+    Route::get('/account/details', [AccountController::class, 'details'])->middleware(['capability:CAP-27', 'input.allow'])->name('account.details');
+    Route::get('/settings/users', [UsersController::class, 'index'])->middleware(['capability:CAP-25', 'input.allow:status,role'])->name('users.index');
+    Route::get('/settings/users/new', [UsersController::class, 'create'])->middleware(['capability:CAP-25', 'input.allow'])->name('users.create');
+    Route::get('/settings/users/{user}', [UsersController::class, 'show'])->middleware(['capability:CAP-27,CAP-28', 'input.allow:from_page'])->name('users.show');
+    Route::get('/settings/users/{user}/edit', [UsersController::class, 'edit'])->middleware(['capability:CAP-27', 'input.allow'])->name('users.edit');
+    Route::get('/settings/users/{user}/link', [UsersController::class, 'link'])->middleware(['capability:CAP-25,CAP-26', 'input.allow'])->name('users.link');
+
+    Route::post('/commands/user.create', CreateStaffAccountController::class)->middleware(['capability:CAP-25', 'throttle:command', 'throttle:link_issue', 'password.confirm'])->name('commands.user.create');
+    Route::post('/commands/user.update', UpdateStaffAccountController::class)->middleware(['capability:CAP-27', 'throttle:command', 'password.confirm'])->name('commands.user.update');
+    Route::post('/commands/owner.update_details', UpdateOwnerDetailsController::class)->middleware(['capability:CAP-27', 'throttle:command', 'password.confirm'])->name('commands.owner.update_details');
+    Route::post('/commands/user.deactivate', DeactivateAccountController::class)->middleware(['capability:CAP-28', 'throttle:command', 'password.confirm'])->name('commands.user.deactivate');
+    Route::post('/commands/user.reactivate', ReactivateAccountController::class)->middleware(['capability:CAP-28', 'throttle:command', 'password.confirm'])->name('commands.user.reactivate');
+    Route::post('/commands/user.anonymize', AnonymizeAccountController::class)->middleware(['capability:CAP-29', 'throttle:command', 'password.confirm'])->name('commands.user.anonymize');
+    Route::post('/commands/user.issue_link', IssuePasswordLinkController::class)->middleware(['capability:CAP-25,CAP-26', 'throttle:command', 'throttle:link_issue', 'password.confirm'])->name('commands.user.issue_link');
+    Route::post('/commands/user.revoke_link', RevokePasswordLinkController::class)->middleware(['capability:CAP-26', 'throttle:command', 'password.confirm'])->name('commands.user.revoke_link');
 });
 
 // RD-07, a stored image (TASK-010): signed in, with the middleware of every

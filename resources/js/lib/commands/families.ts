@@ -1,6 +1,14 @@
 import { t } from '@/lib/i18n';
 import type { TranslationKey } from '@/types/translation-keys';
 
+/** The operations whose answer carries a one-time link once (RC-35, RC-41): a repeat or a status check has none. */
+const LINK_OPERATIONS: readonly string[] = ['user.create', 'user.issue_link'];
+
+/** What a request resolved as committed says: a link it issued is never shown later (COPY_DECK section 14.2; SEC-ACC-05). */
+export function committedText(operation: string): string {
+    return t(LINK_OPERATIONS.includes(operation) ? 'commands.resolution.committed_link_hidden' : 'commands.resolution.committed');
+}
+
 // The command families of the client (INTERACTION_CONTRACTS section 1.4;
 // NAVIGATION_CONTRACTS NC-13; COPY_DECK section 14.1; TASK-009): the family of
 // each operation of ROUTE_CONTRACTS section 6 — the same table as the server's

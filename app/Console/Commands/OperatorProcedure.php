@@ -51,6 +51,9 @@ abstract class OperatorProcedure extends Command
      */
     private const array RULES = ['required', 'string', 'max', 'regex', 'email'];
 
+    /** The account whose sign-in sessions this run ended, for its security log entry (SEC-LOG-03). */
+    protected ?int $sessionsEndedOf = null;
+
     /**
      * The named procedure, the actor of its audit events and of its security
      * log entry (SCHEMA section 3.4).
@@ -128,6 +131,11 @@ abstract class OperatorProcedure extends Command
         }
 
         $securityLog->recordRun(SecurityEvent::OperatorProcedureRun, SecurityActor::operatorProcedure($this->process()), SecurityOutcome::Succeeded, $run, $subject);
+
+        if ($this->sessionsEndedOf !== null) {
+            $securityLog->recordRun(SecurityEvent::SessionRevoked, SecurityActor::operatorProcedure($this->process()), SecurityOutcome::Succeeded, $run, $this->sessionsEndedOf);
+        }
+
         $this->info(sprintf('Run %s recorded in the security log.', $run));
 
         return self::SUCCESS;

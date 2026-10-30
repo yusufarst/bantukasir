@@ -1,7 +1,7 @@
 import { usePage } from '@inertiajs/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { leaveSignedInSession } from '@/lib/browserSession';
-import type { CommandResult, HeldCode, Refusal } from '@/lib/commands/answers';
+import type { CommandResult, HandedLink, HeldCode, Refusal } from '@/lib/commands/answers';
 import { announceSettled, checkStatus, freeze, recheckDelay, requestJson, sendCommand, type CommandDefinition, type FrozenRequest } from '@/lib/commands/client';
 import { blockingRequest } from '@/lib/commands/families';
 import { keepReference, releaseReference } from '@/lib/commands/references';
@@ -23,7 +23,8 @@ export type CheckNote = 'no_answer' | 'in_progress';
 export type CommandPhase =
     | { readonly kind: 'idle' }
     | { readonly kind: 'submitting' }
-    | { readonly kind: 'committed'; readonly result: CommandResult | null }
+    /** `link`: the one-time link of RC-35 or RC-41, in the answer that committed it only; a repeat or a status check has none. */
+    | { readonly kind: 'committed'; readonly result: CommandResult | null; readonly link?: HandedLink }
     | { readonly kind: 'rejected'; readonly refusal: Refusal }
     /** `throttled`: a repeat of the request was refused by 429 (UXS-12) while the earlier attempt stays uncertain. */
     | { readonly kind: 'uncertain'; readonly checking: boolean; readonly note: CheckNote | null; readonly throttled?: bigint }
@@ -131,6 +132,19 @@ export function useCommand(command: CommandDefinition & { readonly recentAuth?: 
         }
     }, [phase.kind, target, blockedBy]);
 
+    // A request this page only adopted (NC-13 (b)), which another tab of the
+    // browser or another device then resolved: its panel has nothing left to
+    // do, so the page returns to its draft (OPEN_ITEMS T-34 (f), TASK-010
+    // finding F-11). A check of this page's own is settled by that check.
+    const adoptedGone = blockedBy === null && target !== null && target.frozen === null && (phase.kind === 'uncertain' || phase.kind === 'held') && !phase.checking;
+
+    useEffect(() => {
+        if (adoptedGone) {
+            setTarget(null);
+            setPhase({ kind: 'idle' });
+        }
+    }, [adoptedGone]);
+
     const settle = useCallback(
         (request: { operation: string; sourceIntentId: string }) => {
             if (userId !== null) {
@@ -163,7 +177,7 @@ export function useCommand(command: CommandDefinition & { readonly recentAuth?: 
             switch (answer.kind) {
                 case 'committed':
                     settle(frozen);
-                    setPhase({ kind: 'committed', result: answer.result });
+                    setPhase({ kind: 'committed', result: answer.result, ...(answer.link === undefined ? {} : { link: answer.link }) });
 
                     return;
                 case 'rejected':

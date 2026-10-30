@@ -98,7 +98,7 @@ final class CommandPipelineTest extends DatabaseTestCase
         $this->probe($this->envelope(), [ReceivedAt::PARAMETER => self::secondsAgo(31)])->assertStatus(503)->assertJsonPath('code', 'SERVICE_BUSY');
 
         $this->assertSame(0, $this->observer()->table('command_request_receipts')->count());
-        $this->assertSame(0, $this->observer()->table('command_identities')->count());
+        $this->assertSame(0, $this->observer()->table('command_identities')->where('operation', '<>', 'user.create')->count());
     }
 
     public function test_a_receipt_that_cannot_be_written_answers_service_busy_with_nothing_run(): void
@@ -140,7 +140,7 @@ final class CommandPipelineTest extends DatabaseTestCase
         $this->probe($envelope)->assertStatus(201)->assertJsonPath('outcome', 'COMMITTED');
 
         $this->assertSame(['PENDING'], $this->outcomesOf($envelope));
-        $this->assertSame(1, $this->observer()->table('command_identities')->count());
+        $this->assertSame(1, $this->observer()->table('command_identities')->where('operation', '<>', 'user.create')->count());
     }
 
     public function test_the_envelope_is_refused_after_its_receipt_for_any_field_out_of_its_allowlist_or_format(): void
@@ -172,7 +172,7 @@ final class CommandPipelineTest extends DatabaseTestCase
         $this->probe($this->envelope([]))->assertStatus(422)
             ->assertJsonPath('fields', ['payload.note' => [['key' => 'ux.validation.required', 'params' => []]]]);
 
-        $this->assertSame(0, $this->observer()->table('command_identities')->count());
+        $this->assertSame(0, $this->observer()->table('command_identities')->where('operation', '<>', 'user.create')->count());
     }
 
     public function test_a_repeated_identity_returns_the_original_result_and_a_different_payload_is_held(): void
@@ -251,7 +251,7 @@ final class CommandPipelineTest extends DatabaseTestCase
 
         $this->assertSame(0, $this->observer()->table('stale_intent_reports')->count());
         $this->assertSame(['PENDING'], $this->outcomesOf($envelope));
-        $this->assertSame(0, $this->observer()->table('command_identities')->count());
+        $this->assertSame(0, $this->observer()->table('command_identities')->where('operation', '<>', 'user.create')->count());
     }
 
     public function test_a_committed_command_whose_result_the_viewer_may_not_see_is_still_answered_committed(): void
@@ -282,7 +282,7 @@ final class CommandPipelineTest extends DatabaseTestCase
         $response = $this->sendWithCount($float, '3.0');
         $this->assertSame([422, 'VALIDATION_FAILED'], [$response->getStatusCode(), $response->json('code')]);
         $this->assertSame(['REJECTED'], $this->outcomesOf($float));
-        $this->assertSame(1, $this->observer()->table('command_identities')->count());
+        $this->assertSame(1, $this->observer()->table('command_identities')->where('operation', '<>', 'user.create')->count());
     }
 
     public function test_a_late_original_of_a_fenced_intent_is_refused_intent_abandoned(): void

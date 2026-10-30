@@ -3,6 +3,7 @@
 namespace App\Domain\Access;
 
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Auth\Passwords\PasswordBroker;
 use Illuminate\Auth\Passwords\PasswordBrokerManager;
 use Illuminate\Auth\Passwords\TokenRepositoryInterface;
@@ -64,6 +65,31 @@ final class OneTimeLinks
     public function recentlyIssued(User $account): bool
     {
         return $this->tokens->recentlyCreatedToken($account);
+    }
+
+    /**
+     * When the account's current link expires, or null when it has none in
+     * force: an expired row is no link (UXP-604; RC-42).
+     */
+    public function activeUntil(User $account): ?CarbonImmutable
+    {
+        $created = DB::table('password_reset_tokens')->where('email', $account->getEmailForPasswordReset())->value('created_at');
+
+        if (! is_string($created)) {
+            return null;
+        }
+
+        $until = CarbonImmutable::parse($created)->addMinutes(self::minutes());
+
+        return $until->isFuture() ? $until : null;
+    }
+
+    /**
+     * How long a link stays valid after it is created (config auth.passwords.users).
+     */
+    public static function minutes(): int
+    {
+        return config()->integer('auth.passwords.users.expire');
     }
 
     /**

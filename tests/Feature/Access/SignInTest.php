@@ -3,7 +3,6 @@
 namespace Tests\Feature\Access;
 
 use App\Domain\Access\Accounts;
-use App\Domain\Access\Role;
 use App\Models\User;
 use Illuminate\Hashing\Argon2IdHasher;
 use Illuminate\Support\Facades\DB;
@@ -89,14 +88,14 @@ final class SignInTest extends DatabaseTestCase
 
         DB::table('users')->where('id', $agus['id'])->update(['status' => 'DEACTIVATED', 'deactivated_at' => $at]);
         DB::table('users')->where('id', $dewi['id'])->update(['status' => 'ANONYMIZED', 'deactivated_at' => $at, 'anonymized_at' => $at, 'password' => null]);
-        $hendra = DB::transaction(fn (): User => app(Accounts::class)->create('Hendra', 'hendra@contoh.test', [Role::SuperAdmin]));
 
         $attempts = [
             'wrong password' => ['email' => $rina['email'], 'password' => 'Salah#'.$rina['password']],
             'unknown email' => ['email' => 'nobody@contoh.test', 'password' => $rina['password']],
             'deactivated account' => ['email' => $agus['email'], 'password' => $agus['password']],
             'anonymized account' => ['email' => $dewi['email'], 'password' => $dewi['password']],
-            'account without a password' => ['email' => $hendra->email, 'password' => $rina['password']],
+            // The Owner of the installation, whose first-password link was never used.
+            'account without a password' => ['email' => TokoContoh::email('Hendra'), 'password' => $rina['password']],
             'missing password' => ['email' => $rina['email']],
             'missing email' => ['password' => $rina['password']],
             'remember me' => ['email' => $rina['email'], 'password' => $rina['password'], 'remember' => '1'],
@@ -154,7 +153,6 @@ final class SignInTest extends DatabaseTestCase
 
         DB::table('users')->where('id', $agus['id'])->update(['status' => 'DEACTIVATED', 'deactivated_at' => $at]);
         DB::table('users')->where('id', $dewi['id'])->update(['status' => 'ANONYMIZED', 'deactivated_at' => $at, 'anonymized_at' => $at, 'password' => null]);
-        $hendra = DB::transaction(fn (): User => app(Accounts::class)->create('Hendra', 'hendra@contoh.test', [Role::SuperAdmin]));
         $stored = DB::table('users')->where('id', $rina['id'])->value('password');
         $this->assertIsString($stored);
 
@@ -164,7 +162,7 @@ final class SignInTest extends DatabaseTestCase
             'unknown email' => ['nobody@contoh.test', $rina['password'], Accounts::DECOY_HASH],
             'deactivated account' => [$agus['email'], $agus['password'], Accounts::DECOY_HASH],
             'anonymized account' => [$dewi['email'], $dewi['password'], Accounts::DECOY_HASH],
-            'account without a password' => [$hendra->email, $rina['password'], Accounts::DECOY_HASH],
+            'account without a password' => [TokoContoh::email('Hendra'), $rina['password'], Accounts::DECOY_HASH],
         ];
         $address = 0;
 

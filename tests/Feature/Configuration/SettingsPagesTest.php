@@ -48,7 +48,7 @@ final class SettingsPagesTest extends DatabaseTestCase
 
         $settings = $this->get('/settings')->assertOk();
         $this->assertSame('access/Settings', $this->inertiaPage($settings)['component'] ?? null);
-        $this->assertSame([['id' => 'profile', 'href' => '/settings/business-profile']], $this->propsOf($settings)['entries'] ?? null);
+        $this->assertSame([['id' => 'users', 'href' => '/settings/users'], ['id' => 'profile', 'href' => '/settings/business-profile']], $this->propsOf($settings)['entries'] ?? null);
         $this->assertPageChannel($settings, 'owner', $secrets);
 
         $profile = $this->get('/settings/business-profile')->assertOk();
