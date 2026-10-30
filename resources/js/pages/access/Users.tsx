@@ -1,11 +1,12 @@
 import { router } from '@inertiajs/react';
+import { useEffect } from 'react';
 import { ButtonLink } from '@/components/ui/Button';
 import { FilterChip, FilterChips } from '@/components/ui/Choices';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { EmptyState, NoResults } from '@/components/ui/States';
 import { AppShell } from '@/layouts/AppShell';
 import { ListLayout, PageHeader } from '@/layouts/Page';
-import { rolesText, statusText, userPage, USERS_PAGE, type RoleCode, type StatusCode } from '@/lib/access/users';
+import { rememberUsersFilters, rolesText, statusText, userPage, USERS_PAGE, type RoleCode, type StatusCode } from '@/lib/access/users';
 import { t } from '@/lib/i18n';
 import type { DestinationId } from '@/lib/navigation';
 import type { TranslationKey } from '@/types/translation-keys';
@@ -13,8 +14,8 @@ import type { TranslationKey } from '@/types/translation-keys';
 // UXP-602 "Pengguna" (ROUTE_CONTRACTS RP-602; COPY_DECK section 11.2;
 // INTERACTION_INVENTORY UXI-332 to UXI-335; NAVIGATION_CONTRACTS UXP-602; TASK-011
 // scope item 4): every account with its roles and status, its row leading to UXP-604;
-// the filters are the page's address (`status`, `role`), so they stay when the Owner
-// comes back; "Tambah pengguna" leads to UXP-603. TASK-027 adds the mark of an OPEN
+// the filters are the page's address (`status`, `role`), which its child pages' way back
+// returns to (NC-10); "Tambah pengguna" leads to UXP-603. TASK-027 adds the mark of an OPEN
 // cash session. An account's row becomes a card on a phone (DataTable).
 
 const DESTINATION: DestinationId = 'settings';
@@ -72,6 +73,11 @@ export default function Users({ users, filters }: { users: readonly Row[]; filte
         { id: 'status', header: t('access.users.col_status'), cell: (row) => statusText(row.status) },
     ];
     const noStaff = !filtered && users.every((row) => row.roles.includes('SUPER_ADMIN'));
+
+    // The way back of its child pages returns to these filters (NC-10).
+    useEffect(() => {
+        rememberUsersFilters(window.location.search);
+    }, [filters.status, filters.role]);
 
     return (
         <AppShell title={title} current={DESTINATION}>

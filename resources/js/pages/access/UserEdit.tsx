@@ -68,8 +68,10 @@ function EditForm({ title, user }: { title: string; user: EditedUser }) {
     const current = roleNames(user.roles);
     const rolesChanged = roles.length !== current.length || roles.some((role) => !current.includes(role));
     const changed = name !== user.displayName || email !== user.email || rolesChanged;
-    const committed = phase.kind === 'committed';
-    const location = committed ? phase.result?.location : undefined;
+    // A request of the family that this page only adopted is another command's.
+    const committed = phase.kind === 'committed' && control.ownRequest;
+    const adoptedDone = phase.kind === 'committed' && !control.ownRequest;
+    const location = phase.kind === 'committed' && control.ownRequest ? phase.result?.location : undefined;
 
     useUnsavedChanges(changed && !committed);
 
@@ -157,11 +159,11 @@ function EditForm({ title, user }: { title: string; user: EditedUser }) {
                         />
                         <ButtonLink href={detail} label={t('ux.action.cancel')} variant={'secondary'} onClick={guard} />
                         {/* After UXS-17 the current values stay above the form until the next save. */}
-                        {((phase.kind === 'rejected' && !stale) || phase.kind === 'not_committed') && <Button label={t('ux.action.edit_again')} variant={'quiet'} onClick={control.startAgain} />}
+                        {((phase.kind === 'rejected' && !stale) || phase.kind === 'not_committed' || adoptedDone) && <Button label={t('ux.action.edit_again')} variant={'quiet'} onClick={control.startAgain} />}
                     </div>
                 </CommandForm>
             </Card>
-            {!invalid && <CommandPanels control={control} committed={t('access.user_edit.success')} />}
+            {!invalid && <CommandPanels control={control} {...(committed ? { committed: t('access.user_edit.success') } : {})} />}
         </CommandLayout>
     );
 }

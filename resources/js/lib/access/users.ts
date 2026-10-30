@@ -32,6 +32,32 @@ export function userPage(id: number): string {
     return `${USERS_PAGE}/${String(id)}`;
 }
 
+/** Where UXP-602 keeps its filters for its child pages (NC-10): a harmless interface preference, cleared at sign-out (SEC-CH-05). */
+const FILTERS_KEY = 'bk.users.filters';
+
+/** What the filters of UXP-602 may be: the two allowlisted parameters of RP-602, nothing else. */
+const FILTERS_QUERY = /^\?(?:(?:status|role)=[a-z_]+)(?:&(?:status|role)=[a-z_]+)?$/;
+
+/** UXP-602 remembers the filters it shows, as they stand in its address. */
+export function rememberUsersFilters(search: string): void {
+    try {
+        window.sessionStorage.setItem(FILTERS_KEY, FILTERS_QUERY.test(search) ? search : '');
+    } catch {
+        // Without the storage, the way back simply shows the whole list.
+    }
+}
+
+/** The address of UXP-602 with the filters it last showed, for the way back of its child pages (NC-01, NC-10). */
+export function usersListAddress(): string {
+    try {
+        const search = window.sessionStorage.getItem(FILTERS_KEY) ?? '';
+
+        return FILTERS_QUERY.test(search) ? `${USERS_PAGE}${search}` : USERS_PAGE;
+    } catch {
+        return USERS_PAGE;
+    }
+}
+
 const ROLE_LABELS: Readonly<Record<RoleCode, TranslationKey>> = {
     SUPER_ADMIN: 'access.role.super_admin',
     OPERATIONS_ADMIN: 'access.role.operations_admin',

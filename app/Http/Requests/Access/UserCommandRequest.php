@@ -4,6 +4,7 @@ namespace App\Http\Requests\Access;
 
 use App\Domain\Access\StaffRoles;
 use App\Http\Requests\Commands\CommandRequest;
+use Illuminate\Contracts\Validation\Validator;
 
 /**
  * The FormRequest base of RC-35 to RC-42 (INTERACTION_CONTRACTS "RC-35 to
@@ -55,6 +56,26 @@ abstract class UserCommandRequest extends CommandRequest
     protected function expectedRules(): array
     {
         return ['userVersion' => ['required', 'integer', 'min:1']];
+    }
+
+    /**
+     * An identifier and a version are JSON whole numbers, never a text that
+     * looks like one: the `integer` rule alone accepts "5", which the Action
+     * would never read as this account (TR-VAL-06).
+     *
+     * @return list<callable(Validator): void>
+     */
+    public function after(): array
+    {
+        return [...parent::after(), function (Validator $validator): void {
+            foreach (['payload.userId', 'expected.userVersion'] as $path) {
+                $value = $this->input($path);
+
+                if ($value !== null && ! is_int($value)) {
+                    $validator->errors()->add('', '');
+                }
+            }
+        }];
     }
 
     /**

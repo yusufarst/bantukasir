@@ -36,7 +36,7 @@ final class OwnerReplace extends OperatorProcedure
         return [
             'outgoing' => ['required', 'string', 'regex:/\A[1-9][0-9]{0,17}\z/'],
             'name' => ['required', 'string', 'max:100', 'regex:'.self::PLAIN_TEXT],
-            'email' => ['required', 'string', 'max:254', 'email:rfc', 'regex:'.self::PLAIN_TEXT],
+            'email' => ['required', 'string', 'max:254', 'email:rfc', 'regex:'.self::PLAIN_TEXT, 'not_regex:'.self::RESERVED_EMAIL],
         ];
     }
 

@@ -111,6 +111,7 @@ final class CommandPipeline
             $answer = new JsonResponse(CommittedData::command($outcome), $outcome->repeated ? 200 : 201);
         } catch (CommandRefused $refusal) {
             $this->markRefusal($receipt, $refusal->error);
+            $this->recordThrottled($request, $user, $refusal->error);
             $answer = ErrorAnswer::refusal($refusal);
         } catch (NotFound) {
             $this->markRefusal($receipt, ErrorCode::NotFound);
@@ -163,6 +164,24 @@ final class CommandPipeline
 
         try {
             $this->securityLog->record(SecurityEvent::SessionRevoked, SecurityActor::user($actor->id), SecurityOutcome::Succeeded, $request, $account);
+        } catch (Throwable $failure) {
+            report($failure);
+        }
+    }
+
+    /**
+     * A refusal THROTTLED by a command's own check is in the security log, as a
+     * throttled route is (SECURITY_MODEL section 11, SEC-LOG-03); it never
+     * changes the answer.
+     */
+    private function recordThrottled(Request $request, User $actor, ErrorCode $code): void
+    {
+        if ($code !== ErrorCode::Throttled) {
+            return;
+        }
+
+        try {
+            $this->securityLog->record(SecurityEvent::Throttled, SecurityActor::user($actor->id), SecurityOutcome::Refused, $request);
         } catch (Throwable $failure) {
             report($failure);
         }

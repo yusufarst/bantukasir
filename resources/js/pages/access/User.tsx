@@ -5,12 +5,14 @@ import { Card } from '@/components/ui/Card';
 import { KeyValueList, type KeyValue } from '@/components/ui/Data';
 import { Dialog } from '@/components/ui/Dialog';
 import { Field, TextInput } from '@/components/ui/Field';
+import { Menu, type MenuEntry } from '@/components/ui/Menu';
 import type { StateId } from '@/components/ui/stateCatalogue';
 import { Committed, StateNotice } from '@/components/ui/States';
 import { AppShell } from '@/layouts/AppShell';
 import { PageContainer, PageHeader } from '@/layouts/Page';
-import { holdLink, rolesText, statusText, takeSavedNote, USER_COMMANDS, USERS_PAGE, userPage, type RoleCode, type StatusCode } from '@/lib/access/users';
-import { blockingRequest } from '@/lib/commands/families';
+import { useWidthClass } from '@/layouts/widthClass';
+import { holdLink, rolesText, statusText, takeSavedNote, USER_COMMANDS, userPage, usersListAddress, type RoleCode, type StatusCode } from '@/lib/access/users';
+import { blockingRequest, committedText } from '@/lib/commands/families';
 import { CommandPanels } from '@/lib/commands/Panels';
 import { useUnresolved } from '@/lib/commands/unresolved';
 import { useCommand } from '@/lib/commands/useCommand';
@@ -89,6 +91,7 @@ function UserPage({ title, user }: { title: string; user: Account }) {
     const [action, setAction] = useState<ActionId | null>(null);
     // A new key for each opening: its command starts again with a new intent.
     const [opening, setOpening] = useState(0);
+    const [listPage] = useState(usersListAddress);
     const unresolved = useUnresolved();
     const active = user.status === 'ACTIVE';
     const deactivated = user.status === 'DEACTIVATED';
@@ -123,11 +126,46 @@ function UserPage({ title, user }: { title: string; user: Account }) {
     const passwordNotSet = !user.passwordSet && user.status !== 'ANONYMIZED';
     const editPage = `${userPage(user.id)}/edit`;
 
+    // What this account allows, in the order of COPY_DECK section 11.4.
+    const available: { readonly id: ActionId; readonly label: string; readonly danger: boolean }[] = [];
+
+    if (staff && active && user.passwordSet) {
+        available.push({ id: ISSUE_RESET, label: t('access.link.issue_reset'), danger: false });
+    }
+
+    if (staff && active && !user.passwordSet) {
+        available.push({ id: ISSUE_FIRST, label: t('access.link.reissue_first'), danger: false });
+    }
+
+    if (staff && user.linkExpiresAt !== null) {
+        available.push({ id: REVOKE, label: t('access.link.revoke'), danger: false });
+    }
+
+    if (staff && active) {
+        available.push({ id: DEACTIVATE, label: t('ux.action.deactivate'), danger: true });
+    }
+
+    if (staff && deactivated) {
+        available.push({ id: REACTIVATE, label: t('ux.action.reactivate'), danger: false });
+    }
+
+    if (deactivated) {
+        available.push({ id: ANONYMIZE, label: t('access.user.anonymize'), danger: true });
+    }
+
+    // On a phone every action is in one menu (NAVIGATION_CONTRACTS UXP-604), and
+    // otherwise "Cabut tautan" is the overflow (UXI-344). A menu item cannot show
+    // why it waits (UXS-13), so an action that a request blocks stays a button.
+    const compact = useWidthClass() === 'compact';
+    const inMenu = available.filter((entry) => reasonOf(entry.id) === undefined && (compact || entry.id === REVOKE));
+    const asButtons = available.filter((entry) => !inMenu.includes(entry));
+    const menuItems: MenuEntry[] = inMenu.map((entry) => ({ kind: 'action', label: entry.label, danger: entry.danger, onSelect: () => open(entry.id) }));
+
     return (
         <PageContainer width={'form'}>
             <PageHeader
                 title={title}
-                back={{ href: USERS_PAGE, page: t('access.users.title') }}
+                back={{ href: listPage, page: t('access.users.title') }}
                 actions={staff && user.status !== 'ANONYMIZED' ? <ButtonLink href={editPage} label={t('access.user_edit.title')} variant={'primary'} /> : undefined}
             />
             <div className={'bk-stack'}>
@@ -139,12 +177,10 @@ function UserPage({ title, user }: { title: string; user: Account }) {
                         {passwordNotSet && <p className={'bk-meta'}>{t('access.user_detail.password_not_set')}</p>}
                         {user.self && <p className={'bk-meta'}>{t('access.user_detail.owner_note')}</p>}
                         <div className={'bk-actions'}>
-                            {staff && active && user.passwordSet && <Button label={t('access.link.issue_reset')} variant={'secondary'} enterActivates={false} disabledReason={reasonOf(ISSUE_RESET)} onClick={() => open(ISSUE_RESET)} />}
-                            {staff && active && !user.passwordSet && <Button label={t('access.link.reissue_first')} variant={'secondary'} enterActivates={false} disabledReason={reasonOf(ISSUE_FIRST)} onClick={() => open(ISSUE_FIRST)} />}
-                            {staff && user.linkExpiresAt !== null && <Button label={t('access.link.revoke')} variant={'secondary'} enterActivates={false} disabledReason={reasonOf(REVOKE)} onClick={() => open(REVOKE)} />}
-                            {staff && active && <Button label={t('ux.action.deactivate')} variant={'danger'} enterActivates={false} disabledReason={reasonOf(DEACTIVATE)} onClick={() => open(DEACTIVATE)} />}
-                            {staff && deactivated && <Button label={t('ux.action.reactivate')} variant={'secondary'} enterActivates={false} disabledReason={reasonOf(REACTIVATE)} onClick={() => open(REACTIVATE)} />}
-                            {deactivated && <Button label={t('access.user.anonymize')} variant={'danger'} enterActivates={false} disabledReason={reasonOf(ANONYMIZE)} onClick={() => open(ANONYMIZE)} />}
+                            {asButtons.map((entry) => (
+                                <Button key={entry.id} label={entry.label} variant={entry.danger ? 'danger' : 'secondary'} enterActivates={false} disabledReason={reasonOf(entry.id)} onClick={() => open(entry.id)} />
+                            ))}
+                            {menuItems.length > 0 && <Menu label={t('ux.action.more_actions')} items={menuItems} />}
                         </div>
                     </div>
                 </Card>
@@ -227,7 +263,9 @@ function ActionRun({ action, user, onClose, onDone, onStale }: { action: ActionI
             return;
         }
 
-        onDone(words.done);
+        // A request of the family that this run only adopted is another command's:
+        // the page says what is true of it, never this action's success (R-01).
+        onDone(control.ownRequest ? words.done : committedText(control.target?.operation ?? ''));
     }, [committed, link, location]);
 
     const confirm = (): void => {

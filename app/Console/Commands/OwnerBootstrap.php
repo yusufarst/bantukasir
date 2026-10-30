@@ -37,7 +37,7 @@ final class OwnerBootstrap extends OperatorProcedure
     {
         return [
             'name' => ['required', 'string', 'max:100', 'regex:'.self::PLAIN_TEXT],
-            'email' => ['required', 'string', 'max:254', 'email:rfc', 'regex:'.self::PLAIN_TEXT],
+            'email' => ['required', 'string', 'max:254', 'email:rfc', 'regex:'.self::PLAIN_TEXT, 'not_regex:'.self::RESERVED_EMAIL],
             'shop' => ['required', 'string', 'max:100', 'regex:'.self::PLAIN_TEXT],
         ];
     }

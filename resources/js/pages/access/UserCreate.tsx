@@ -7,7 +7,7 @@ import { ErrorSummary, type FieldError } from '@/components/ui/States';
 import { AppShell, useLeaveGuard, useUnsavedChanges } from '@/layouts/AppShell';
 import { CommandLayout, PageHeader } from '@/layouts/Page';
 import { RoleChoices } from '@/lib/access/RoleChoices';
-import { fieldMessage, holdLink, leaveSavedNote, USER_COMMANDS, USERS_PAGE, type StaffRoleName } from '@/lib/access/users';
+import { fieldMessage, holdLink, leaveSavedNote, USER_COMMANDS, usersListAddress, type StaffRoleName } from '@/lib/access/users';
 import { CommandPanels } from '@/lib/commands/Panels';
 import { useCommand } from '@/lib/commands/useCommand';
 import { t } from '@/lib/i18n';
@@ -46,9 +46,11 @@ function CreateForm({ title }: { title: string }) {
     const ids = useId();
 
     const dirty = name !== '' || email !== '' || roles.length > 0;
-    const committed = phase.kind === 'committed';
-    const link = committed ? phase.link : undefined;
-    const result = committed ? phase.result : null;
+    // A request of the family that this page only adopted is another command's.
+    const committed = phase.kind === 'committed' && control.ownRequest;
+    const adoptedDone = phase.kind === 'committed' && !control.ownRequest;
+    const link = phase.kind === 'committed' ? phase.link : undefined;
+    const result = phase.kind === 'committed' && control.ownRequest ? phase.result : null;
 
     useUnsavedChanges(dirty && !committed);
 
@@ -72,6 +74,7 @@ function CreateForm({ title }: { title: string }) {
         </>
     ) : undefined;
 
+    const listPage = usersListAddress();
     const nameId = `${ids}-name`;
     const emailId = `${ids}-email`;
     const rolesId = `${ids}-roles`;
@@ -93,7 +96,7 @@ function CreateForm({ title }: { title: string }) {
     }
 
     return (
-        <CommandLayout header={<PageHeader title={title} back={{ href: USERS_PAGE, page: t('access.users.title'), onNavigate: guard }} />}>
+        <CommandLayout header={<PageHeader title={title} back={{ href: listPage, page: t('access.users.title'), onNavigate: guard }} />}>
             {invalid && <ErrorSummary errors={summary} />}
             <Card>
                 <CommandForm>
@@ -114,8 +117,8 @@ function CreateForm({ title }: { title: string }) {
                             disabledReason={reason}
                             onClick={() => control.submit({ displayName: name, email, roles }, {})}
                         />
-                        <ButtonLink href={USERS_PAGE} label={t('ux.action.cancel')} variant={'secondary'} onClick={guard} />
-                        {(phase.kind === 'rejected' || phase.kind === 'not_committed') && <Button label={t('ux.action.edit_again')} variant={'quiet'} onClick={control.startAgain} />}
+                        <ButtonLink href={listPage} label={t('ux.action.cancel')} variant={'secondary'} onClick={guard} />
+                        {(phase.kind === 'rejected' || phase.kind === 'not_committed' || adoptedDone) && <Button label={t('ux.action.edit_again')} variant={'quiet'} onClick={control.startAgain} />}
                     </div>
                 </CommandForm>
             </Card>

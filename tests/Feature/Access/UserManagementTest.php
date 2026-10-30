@@ -348,7 +348,9 @@ final class UserManagementTest extends DatabaseTestCase
         // and with the bucket emptied the broker's own check refuses.
         $this->send('user.issue_link', ['userId' => $rina['id'], 'kind' => 'RESET'], $this->versionOf($rina['id']))->assertStatus(429)->assertHeader('Retry-After');
         Cache::store()->flush();
+        $throttled = $this->watcher()->table('security_log_entries')->where('event_type', 'THROTTLED')->count();
         $this->send('user.issue_link', ['userId' => $rina['id'], 'kind' => 'RESET'], $this->versionOf($rina['id']))->assertStatus(429)->assertJsonPath('code', 'THROTTLED')->assertHeader('Retry-After', '60');
+        $this->assertSame($throttled + 1, $this->watcher()->table('security_log_entries')->where('event_type', 'THROTTLED')->count(), 'A refusal of the check itself is in the security log (review finding R-06).');
 
         // The earlier link no longer works; the new one does.
         $password = TokoContoh::newPassword();
@@ -366,6 +368,20 @@ final class UserManagementTest extends DatabaseTestCase
         $this->send('user.issue_link', ['userId' => $budi['id'], 'kind' => 'RESET'], 1)->assertStatus(409);
         Cache::store()->flush();
         $this->send('user.issue_link', ['userId' => $budi['id'], 'kind' => 'FIRST_PASSWORD'], 1)->assertStatus(201);
+    }
+
+    public function test_an_identifier_or_a_version_that_is_a_text_is_refused_definitely(): void
+    {
+        // Review finding R-07: never a server error that leaves the receipt
+        // PENDING and the family blocked.
+        $this->asOwner();
+        $rina = $this->people['Rina']['id'];
+        $version = $this->versionOf($rina);
+
+        $this->postJson('/commands/user.deactivate', $this->envelopeOf('user.deactivate', ['userId' => (string) $rina], ['userVersion' => $version]))->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
+        $this->postJson('/commands/user.deactivate', $this->envelopeOf('user.deactivate', ['userId' => $rina], ['userVersion' => (string) $version]))->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
+        $this->assertSame(['REJECTED', 'REJECTED'], $this->watcher()->table('command_request_receipts')->where('operation', 'user.deactivate')->orderBy('id')->pluck('outcome')->all());
+        $this->assertSame('ACTIVE', $this->userRow($rina)['status']);
     }
 
     public function test_rc_42_revokes_a_link_and_finds_none_as_stale(): void

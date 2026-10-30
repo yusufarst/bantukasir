@@ -192,6 +192,51 @@ describe('the QR code of a one-time link', () => {
         }
     });
 
+    it('writes the version information of the standard, and two equal copies of the format bits', () => {
+        // Review finding R-13: known answers the reader above does not derive
+        // from the encoder. An address of a link is about 110 bytes, version 7.
+        for (const [length, version, bits] of [[110, 7, 0x07c94], [200, 10, 0x0a4d3]] as const) {
+            const matrix = qrMatrix('a'.repeat(length));
+
+            if (matrix === null) {
+                throw new Error('The text fits.');
+            }
+
+            const size = matrix.length;
+            expect(size).toBe(version * 4 + 17);
+            let upper = 0;
+            let lower = 0;
+
+            for (let bit = 17; bit >= 0; bit -= 1) {
+                const near = Math.floor(bit / 3);
+                const far = size - 11 + (bit % 3);
+
+                upper = (upper << 1) | (matrix[near]?.[far] === true ? 1 : 0);
+                lower = (lower << 1) | (matrix[far]?.[near] === true ? 1 : 0);
+            }
+
+            expect(upper).toBe(bits);
+            expect(lower).toBe(bits);
+
+            let first = 0;
+            let second = 0;
+
+            for (const [row, column] of [[8, 0], [8, 1], [8, 2], [8, 3], [8, 4], [8, 5], [8, 7], [8, 8], [7, 8], [5, 8], [4, 8], [3, 8], [2, 8], [1, 8], [0, 8]] as const) {
+                first = (first << 1) | (matrix[row]?.[column] === true ? 1 : 0);
+            }
+
+            for (let bit = 14; bit >= 8; bit -= 1) {
+                second = (second << 1) | (matrix[size - 15 + bit]?.[8] === true ? 1 : 0);
+            }
+
+            for (let bit = 7; bit >= 0; bit -= 1) {
+                second = (second << 1) | (matrix[8]?.[size - 1 - bit] === true ? 1 : 0);
+            }
+
+            expect(second).toBe(first);
+        }
+    });
+
     it('holds nothing longer than version 10 of level M', () => {
         expect(qrMatrix('a'.repeat(213))).not.toBeNull();
         expect(qrMatrix('a'.repeat(214))).toBeNull();

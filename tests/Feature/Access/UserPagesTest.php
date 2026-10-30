@@ -2,6 +2,10 @@
 
 namespace Tests\Feature\Access;
 
+use App\Database\CommandPoints;
+use Illuminate\Log\Events\MessageLogged;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Testing\TestResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -9,6 +13,7 @@ use Tests\Harness\Channels\ChannelInspector;
 use Tests\Harness\Commands\CommandRequests;
 use Tests\Harness\DatabaseTestCase;
 use Tests\Harness\Fixtures\TokoContoh;
+use Tests\Harness\Race\FailurePoints;
 
 /**
  * RP-005 and RP-602 to RP-606 (AC-011-01, AC-011-05; ROUTE_CONTRACTS section 2;
@@ -23,10 +28,16 @@ final class UserPagesTest extends DatabaseTestCase
     use ChannelInspector;
     use CommandRequests;
 
+    /** @var list<string> everything the application logged during the test */
+    private array $logged = [];
+
     protected function setUp(): void
     {
         parent::setUp();
 
+        Log::listen(function (MessageLogged $message): void {
+            $this->logged[] = $message->message.' '.json_encode($message->context);
+        });
         $this->setUpCommands();
     }
 
@@ -146,6 +157,50 @@ final class UserPagesTest extends DatabaseTestCase
         $this->assertSame(0, $this->observer()->table('command_results')->whereRaw('result_detail::text like ?', ['%'.$token.'%'])->count());
         $this->assertSame(0, $this->observer()->table('password_reset_tokens')->where('token', $token)->count());
         $this->assertSame(0, $this->observer()->table('sessions')->where('payload', 'like', '%'.$token.'%')->count());
+        $this->assertStringNotContainsString($token, implode("\n", $this->logged));
+        $this->assertStringNotContainsString('set-password', implode("\n", $this->logged));
+    }
+
+    public function test_the_link_of_rc_41_appears_only_in_its_issuing_body_never_in_a_repeat_a_status_check_or_a_log(): void
+    {
+        // Review finding R-03: the channels of RC-41, and the log of each path.
+        $this->as('Hendra');
+        $this->postJson('/user/confirm-password', ['password' => $this->people['Hendra']['password']])->assertStatus(201);
+        $rina = $this->people['Rina']['id'];
+        $version = self::number($this->observer()->table('users')->where('id', $rina)->value('version'));
+        $envelope = $this->envelope(['userId' => $rina, 'kind' => 'RESET'], ['operation' => 'user.issue_link', 'expected' => ['userVersion' => $version]]);
+
+        $response = $this->postJson('/commands/user.issue_link', $envelope)->assertStatus(201);
+        $this->assertJsonChannel($response, 'commands.committed.link', 'owner');
+        $url = $this->readText($response->json('link.url'));
+        $token = rawurldecode(substr($url, (int) strrpos($url, '&t=') + 3));
+
+        // A repeat of the frozen request, after the bucket's minute, and a status
+        // check: the original result, leading to the account, without the link.
+        Cache::store()->flush();
+        $repeat = $this->postJson('/commands/user.issue_link', $envelope)->assertStatus(200)->assertJsonPath('repeated', true)->assertJsonPath('result.location', '/settings/users/'.$rina);
+        $this->assertJsonChannel($repeat, 'commands.committed', 'owner', [$token, $url]);
+        $check = $this->check($envelope)->assertOk()->assertJsonPath('outcome', 'COMMITTED')->assertJsonPath('result.location', '/settings/users/'.$rina);
+        $this->assertJsonChannel($check, 'commands.resolve', 'owner', [$token, $url]);
+
+        foreach (['/settings/users/'.$rina.'/link', '/settings/users/'.$rina, '/settings/users'] as $path) {
+            $this->assertNoSecret($this->get($path)->assertOk(), [$token, $url]);
+            $this->assertStringNotContainsString($token, (string) json_encode(Session::all()), $path);
+        }
+
+        $this->assertSame(0, $this->observer()->table('command_results')->whereRaw('result_detail::text like ?', ['%'.$token.'%'])->count());
+        $this->assertSame(0, $this->observer()->table('audit_events')->whereRaw('change_data::text like ?', ['%'.$token.'%'])->count());
+        $this->assertSame(0, $this->observer()->table('sessions')->where('payload', 'like', '%'.$token.'%')->count());
+
+        $this->assertStringNotContainsString($token, implode("\n", $this->logged));
+        $this->assertStringNotContainsString('set-password', implode("\n", $this->logged));
+
+        // A failure after the link's write step logs no link either.
+        Cache::store()->flush();
+        $this->migration()->table('password_reset_tokens')->where('email', 'rina@contoh.test')->update(['created_at' => now()->subMinutes(5)]);
+        $this->app->instance(CommandPoints::class, new FailurePoints(1));
+        $this->postJson('/commands/user.issue_link', $this->envelope(['userId' => $rina, 'kind' => 'RESET'], ['operation' => 'user.issue_link', 'expected' => ['userVersion' => $version]]))->assertStatus(500);
+        $this->assertStringNotContainsString('set-password', implode("\n", $this->logged));
     }
 
     /**

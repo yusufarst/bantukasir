@@ -181,7 +181,8 @@ test('the Owner changes an account, issues and revokes its links, deactivates, r
 
     // UXI-344: the dialog asks, Enter on its final action sends nothing, and the
     // command updates the page in place with its message.
-    await page.getByRole('button', { name: 'Cabut tautan' }).click();
+    await page.getByRole('button', { name: 'Tindakan lain' }).click();
+    await page.getByRole('menuitem', { name: 'Cabut tautan' }).click();
     const revoke = page.getByRole('dialog', { name: `Cabut tautan kata sandi ${who.name}?` });
     await expect(revoke).toBeVisible();
     await checked(page);
@@ -192,7 +193,7 @@ test('the Owner changes an account, issues and revokes its links, deactivates, r
     await revoke.getByRole('button', { name: 'Cabut tautan' }).click();
     await expect(page.getByText('Tautan dicabut.')).toBeVisible();
     await expect(page.getByText('Tidak ada tautan aktif')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Cabut tautan' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Tindakan lain' })).toHaveCount(0);
 
     // UXI-343: a new first link goes to UXP-606, shown once.
     await page.getByRole('button', { name: 'Buat ulang tautan kata sandi pertama' }).click();
@@ -322,7 +323,9 @@ test('a real refusal shows at its field with its focused summary, and a 401 on a
     await context.close();
 });
 
-test('an idle form returns to its draft when the request that another tab sent is resolved (OPEN_ITEMS T-34 (f))', async ({ browser }) => {
+test('an idle form adopts the request of another tab, and returns to its draft when that request is resolved (OPEN_ITEMS T-34 (f))', async ({ browser }) => {
+    // Review finding R-09: the other tab's request is held, so the page really
+    // adopts it, and released; the form then sends its own request.
     const context = await contextAt(browser, WIDTHS[0]!);
     const page = await context.newPage();
     const watched = await watch(page);
@@ -332,25 +335,237 @@ test('an idle form returns to its draft when the request that another tab sent i
     await createAccount(page, who, hendra.password);
     await page.waitForURL((url) => /\/link$/.test(url.pathname));
 
-    // The form lies idle, with a change, while another tab sends and is answered.
+    // The form lies idle, with a change, while another tab sends.
     await page.goto('/account/details');
     await page.getByLabel('Nama tampilan').fill('Hendra Lain');
     const save = page.getByRole('button', { name: 'Simpan perubahan' });
     await expect(save).not.toHaveAttribute('aria-disabled', 'true');
 
     const other = await context.newPage();
+    const releases: (() => void)[] = [];
+    const held = new Promise<void>((resolve) => {
+        releases.push(resolve);
+    });
+    await other.route('**/commands/user.create', async (route) => {
+        await held;
+        await route.continue();
+    });
     await createAccount(other, person('Yani'), null);
+
+    // While it is out, the page shows its panel and blocks its own action.
+    await expect(page.getByText('Status belum pasti')).toBeVisible();
+    await expect(save).toHaveAttribute('aria-disabled', 'true');
+
+    releases[0]?.();
     await other.waitForURL((url) => /\/link$/.test(url.pathname));
     await other.close();
 
-    // Its panel, if it adopted that request for a moment, is gone, and the final
-    // action sends this form's own request.
+    // Resolved elsewhere: the panel is gone and the draft is as it was.
     await expect(page.getByText('Status belum pasti')).toHaveCount(0);
+    await expect(page.getByLabel('Nama tampilan')).toHaveValue('Hendra Lain');
     await expect(save).not.toHaveAttribute('aria-disabled', 'true');
+
+    const sent = page.waitForRequest((request) => request.method() === 'POST' && new URL(request.url()).pathname === '/commands/owner.update_details');
+    await Promise.all([page.waitForURL((url) => url.pathname === HOME), save.click()]);
+    await sent;
+
+    // Back to the name of every other test.
+    await page.goto('/account/details');
     await page.getByLabel('Nama tampilan').fill('Hendra');
-    await expect(save).toHaveAttribute('aria-disabled', 'true');
+    await Promise.all([page.waitForURL((url) => url.pathname === HOME), save.click()]);
 
     expect(unexpected(watched.problems).filter((problem) => !problem.includes('status of 423'))).toEqual([]);
+    await context.close();
+});
+
+test('a page that adopted a committed request of another operation says what is true of it, and keeps its draft', async ({ browser }) => {
+    // Review finding R-01: RC-35's answer is lost; on UXP-005 its status check
+    // answers COMMITTED, which is not "Nama dan email disimpan." and not a
+    // reason to leave the form.
+    const context = await contextAt(browser, WIDTHS[0]!);
+    const page = await context.newPage();
+    const watched = await watch(page);
+    const hendra = await owner(context, page);
+
+    await page.route('**/commands/user.create', async (route) => {
+        await route.fetch();
+        await route.abort();
+    });
+    await createAccount(page, person('Lina'), hendra.password);
+    await expect(page.getByText('Status belum pasti')).toBeVisible();
+    await page.unroute('**/commands/user.create');
+
+    await page.goto('/account/details');
+    await expect(page.getByText('Status belum pasti')).toBeVisible();
+    await page.getByRole('button', { name: 'Cek status' }).click();
+    await expect(page.getByText('Sudah tersimpan, tetapi tautannya tidak bisa ditampilkan lagi.', { exact: false })).toBeVisible();
+    await expect(page.getByText('Nama dan email disimpan.')).toHaveCount(0);
+    expect(new URL(page.url()).pathname).toBe('/account/details');
+
+    // The draft goes on with a request of its own.
+    await page.getByRole('button', { name: 'Kembali ubah' }).click();
+    await page.getByLabel('Nama tampilan').fill('Hendra Lain');
+    await expect(page.getByRole('button', { name: 'Simpan perubahan' })).not.toHaveAttribute('aria-disabled', 'true');
+    await page.getByLabel('Nama tampilan').fill('Hendra');
+
+    expect(injected(watched.problems)).toEqual([]);
+    await context.close();
+});
+
+// R-02: the rules of EXC-53 on UXP-604, in its states and dialogs, UXP-605 and UXP-005,
+// at the widths of the pages above. R-05: on a phone the actions are in one menu.
+for (const width of [WIDTHS[0], WIDTHS[4], WIDTHS[7]]) {
+    test(`the account's pages meet the rules in each state at ${width?.name ?? ''}`, async ({ browser }) => {
+        const context = await contextAt(browser, width ?? WIDTHS[0]!);
+        const page = await context.newPage();
+        const watched = await watch(page);
+        const hendra = await owner(context, page);
+        const who = person('Dian');
+        const phone = width === WIDTHS[7];
+
+        /** Opens the dialog of an action: from the page's button, or from the one menu on a phone. */
+        const open = async (name: string): Promise<void> => {
+            if (phone) {
+                await page.getByRole('button', { name: 'Tindakan lain' }).click();
+                await expect(page.getByRole('button', { name, exact: true })).toHaveCount(0);
+                await checked(page);
+                await page.getByRole('menuitem', { name }).click();
+            } else {
+                await page.getByRole('button', { name, exact: true }).click();
+            }
+
+            await expect(page.getByRole('dialog')).toBeVisible();
+        };
+
+        await createAccount(page, who, hendra.password);
+        await page.waitForURL((url) => /\/link$/.test(url.pathname));
+        await Promise.all([page.waitForURL((url) => /\/settings\/users\/\d+$/.test(url.pathname)), page.getByRole('link', { name: 'Selesai' }).click()]);
+        const detail = new URL(page.url()).pathname;
+
+        // An active account with a link.
+        await expect(page.getByRole('heading', { level: 1, name: 'Detail pengguna' })).toBeVisible();
+        await checked(page);
+        await open('Nonaktifkan');
+        await checked(page);
+        await page.getByRole('dialog').getByRole('button', { name: 'Batal' }).click();
+
+        // UXP-605 and UXP-005.
+        await page.goto(`${detail}/edit`);
+        await expect(page.getByRole('heading', { level: 1, name: 'Ubah pengguna' })).toBeVisible();
+        await checked(page);
+        await page.goto('/account/details');
+        await expect(page.getByRole('heading', { level: 1, name: 'Ubah nama dan email' })).toBeVisible();
+        await checked(page);
+
+        // A deactivated account.
+        await page.goto(detail);
+        await open('Nonaktifkan');
+        await page.getByRole('dialog').getByRole('button', { name: 'Nonaktifkan' }).click();
+        await expect(page.getByText('Akun dinonaktifkan.')).toBeVisible();
+        await checked(page);
+        await open('Anonimkan akun');
+        await checked(page);
+        await page.getByRole('dialog').getByLabel('Alasan').fill('Permintaan orang yang bersangkutan.');
+        await page.getByRole('dialog').getByRole('button', { name: 'Anonimkan akun' }).click();
+        await expect(page.getByText('Akun dianonimkan.')).toBeVisible();
+        await checked(page);
+
+        expect(unexpected(watched.problems).filter((problem) => !problem.includes('status of 423'))).toEqual([]);
+        await context.close();
+    });
+}
+
+test('the way back of a child page returns to the filters of the list (NC-10)', async ({ browser }) => {
+    // Review finding R-04.
+    const context = await contextAt(browser, WIDTHS[0]!);
+    const page = await context.newPage();
+    await owner(context, page);
+
+    await page.goto(USERS);
+    await Promise.all([page.waitForURL((url) => url.search === '?role=owner'), page.getByRole('button', { name: 'Pemilik' }).click()]);
+    await expect(page.getByRole('button', { name: 'Pemilik' })).toHaveAttribute('aria-pressed', 'true');
+    await Promise.all([page.waitForURL((url) => /\/settings\/users\/\d+$/.test(url.pathname)), page.getByRole('link', { name: 'Hendra' }).click()]);
+
+    const back = page.getByRole('link', { name: 'Kembali ke Pengguna' });
+    await expect(back).toHaveAttribute('href', `${USERS}?role=owner`);
+    await Promise.all([page.waitForURL((url) => url.pathname === USERS && url.search === '?role=owner'), back.click()]);
+    await expect(page.getByRole('button', { name: 'Pemilik' })).toHaveAttribute('aria-pressed', 'true');
+
+    await context.close();
+});
+
+test('Enter never sends a final action, leaving a changed form asks first, a changed account shows its current values, and a second link in a minute waits', async ({ browser }) => {
+    // Review finding R-10: UXA-10, UXS-45, UXS-17 and UXS-12 on these pages.
+    const context = await contextAt(browser, WIDTHS[0]!);
+    const page = await context.newPage();
+    const watched = await watch(page);
+    const hendra = await owner(context, page);
+    const who = person('Rudi');
+
+    // UXA-10: an activated action would ask for the password first.
+    let sent = 0;
+    await page.route('**/commands/**', async (route) => {
+        sent += 1;
+        await route.continue();
+    });
+    const confirmation = page.getByRole('dialog', { name: 'Konfirmasi kata sandi' });
+
+    await page.goto(`${USERS}/new`);
+    await page.getByLabel('Nama tampilan').fill(who.name);
+    await page.getByLabel(/^Email/).fill(who.email);
+    await page.getByRole('checkbox', { name: /Kasir/ }).check();
+    await page.getByRole('button', { name: 'Simpan dan buat tautan' }).focus();
+    await page.keyboard.press('Enter');
+    await page.getByLabel('Nama tampilan').press('Enter');
+    await page.waitForTimeout(500);
+    await expect(confirmation).toHaveCount(0);
+    expect(sent).toBe(0);
+
+    await page.goto('/account/details');
+    await page.getByLabel('Nama tampilan').fill('Hendra Lain');
+    await page.getByRole('button', { name: 'Simpan perubahan' }).focus();
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(500);
+    await expect(confirmation).toHaveCount(0);
+    expect(sent).toBe(0);
+
+    // UXS-45: leaving a changed form asks, and "Tetap di halaman ini" stays.
+    await page.getByRole('link', { name: 'Batal' }).click();
+    await page.getByRole('button', { name: 'Tetap di halaman ini' }).click();
+    expect(new URL(page.url()).pathname).toBe('/account/details');
+    await expect(page.getByLabel('Nama tampilan')).toHaveValue('Hendra Lain');
+    await page.unroute('**/commands/**');
+
+    // The account, and UXS-12: a second link within the minute.
+    await createAccount(page, who, hendra.password);
+    await page.waitForURL((url) => /\/link$/.test(url.pathname));
+    await Promise.all([page.waitForURL((url) => /\/settings\/users\/\d+$/.test(url.pathname)), page.getByRole('link', { name: 'Selesai' }).click()]);
+    const detail = new URL(page.url()).pathname;
+    await page.getByRole('button', { name: 'Buat ulang tautan kata sandi pertama' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Buat tautan' }).click();
+    await expect(page.getByText('Terlalu banyak percobaan', { exact: false })).toBeVisible();
+    await expect(page.locator('.bk-link-text')).toHaveCount(0);
+
+    // UXS-17: another tab changes the account while the form is open.
+    await page.goto(`${detail}/edit`);
+    await page.getByLabel('Nama tampilan').fill(`${who.name} Dua`);
+    const other = await context.newPage();
+    await other.goto(`${detail}/edit`);
+    await other.getByLabel('Nama tampilan').fill(`${who.name} Tiga`);
+    await Promise.all([other.waitForURL((url) => url.pathname === detail), other.getByRole('button', { name: 'Simpan perubahan' }).click()]);
+    await other.close();
+
+    await page.getByRole('button', { name: 'Simpan perubahan' }).click();
+    await expect(page.getByText('Data sudah berubah')).toBeVisible();
+    await expect(page.getByRole('main').getByText(`${who.name} Tiga`)).toBeVisible();
+    await expect(page.getByLabel('Nama tampilan')).toHaveValue(`${who.name} Dua`);
+    await checked(page);
+
+    // Reviewed, the next save is expected against the current version.
+    await Promise.all([page.waitForURL((url) => url.pathname === detail), page.getByRole('button', { name: 'Simpan perubahan' }).click()]);
+    await expect(page.getByText('Perubahan pengguna disimpan.')).toBeVisible();
+
+    expect(injected(watched.problems)).toEqual([]);
     await context.close();
 });
 

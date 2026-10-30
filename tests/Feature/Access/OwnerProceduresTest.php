@@ -5,8 +5,10 @@ namespace Tests\Feature\Access;
 use App\Actions\Access\ConsumeLink;
 use App\Database\CommandPoints;
 use Illuminate\Database\Connection;
+use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Tests\Harness\DatabaseTestCase;
 use Tests\Harness\Fixtures\TokoContoh;
 use Tests\Harness\Http\Browsers;
@@ -32,6 +34,9 @@ final class OwnerProceduresTest extends DatabaseTestCase
 
     private ?Connection $watcher = null;
 
+    /** @var list<string> everything the application logged during the test */
+    private array $logged = [];
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -45,6 +50,27 @@ final class OwnerProceduresTest extends DatabaseTestCase
     private function watcher(): Connection
     {
         return $this->watcher ??= $this->observer();
+    }
+
+    public function test_neither_procedure_writes_its_link_to_a_log_and_a_failed_run_prints_none(): void
+    {
+        // AC-011-05, SEC-ACC-05 and section 14: the terminal only (review finding R-03).
+        Log::listen(function (MessageLogged $message): void {
+            $this->logged[] = $message->message.' '.json_encode($message->context);
+        });
+
+        $this->assertSame(0, Artisan::call('owner:recover', ['--environment' => 'test', '--note' => 'Pemilik lupa kata sandi.']));
+        $recovery = $this->tokenIn(Artisan::output(), $this->owner['id']);
+
+        $this->assertSame(0, Artisan::call('owner:replace', $this->replaceOptions()));
+        $new = $this->watcher()->table('users')->where('email', 'pemilik.baru@contoh.test')->value('id');
+        $this->assertIsInt($new);
+        $replacement = $this->tokenIn(Artisan::output(), $new);
+
+        $text = implode("\n", $this->logged);
+        $this->assertStringNotContainsString($recovery, $text);
+        $this->assertStringNotContainsString($replacement, $text);
+        $this->assertStringNotContainsString('set-password', $text);
     }
 
     public function test_op_02_issues_a_reset_link_replacing_any_earlier_one_and_revokes_the_owners_sessions(): void
@@ -201,6 +227,7 @@ final class OwnerProceduresTest extends DatabaseTestCase
             ['--name' => str_repeat('n', 101)],
             ['--name' => "Pemilik\nBaru"],
             ['--email' => 'bukan-email'],
+            ['--email' => 'anonymized-7@users.invalid'],
             ['--note' => ''],
             ['--environment' => 'production'],
         ];

@@ -140,6 +140,7 @@ final class OwnerBootstrapTest extends DatabaseTestCase
             ['--name' => "Hen\ndra"],
             ['--email' => 'bukan-email'],
             ['--email' => str_repeat('e', 250).'@contoh.test'],
+            ['--email' => 'anonymized-1@users.invalid'],
             ['--shop' => ''],
             ['--shop' => str_repeat('t', 101)],
             ['--shop' => "Toko\x07Contoh"],
