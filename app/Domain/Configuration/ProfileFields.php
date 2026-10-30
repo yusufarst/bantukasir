@@ -24,6 +24,9 @@ final readonly class ProfileFields
         'documentIdentity' => 100,
     ];
 
+    /** A text field: valid UTF-8 without a control character (TR-VAL-05). */
+    public const string PLAIN_TEXT = '/\A[^\p{Cc}]*\z/u';
+
     public function __construct(
         public string $shopName,
         public ?string $address = null,
@@ -35,7 +38,7 @@ final readonly class ProfileFields
         public ?string $accentToken = null,
     ) {
         foreach ($this->texts() as $name => $value) {
-            if ($value !== null && ($value === '' || mb_strlen($value) > self::LENGTHS[$name])) {
+            if ($value !== null && ($value === '' || mb_strlen($value) > self::LENGTHS[$name] || preg_match(self::PLAIN_TEXT, $value) !== 1)) {
                 throw new InvalidArgumentException(sprintf('The BusinessProfile field %s is empty or too long (TECHNICAL_RULES section 11.3).', $name));
             }
         }
@@ -65,7 +68,8 @@ final readonly class ProfileFields
 
     /**
      * The names of the fields whose values differ from the other's, the
-     * accent included.
+     * accent included as it renders: a revision without one renders green,
+     * so green over none is no change (review finding R-07).
      *
      * @return list<string>
      */
@@ -73,8 +77,8 @@ final readonly class ProfileFields
     {
         $changed = [];
 
-        foreach ([...$this->texts(), 'accentToken' => $this->accentToken] as $name => $value) {
-            $before = [...$other->texts(), 'accentToken' => $other->accentToken][$name];
+        foreach ([...$this->texts(), 'accentToken' => Accents::rendered($this->accentToken)] as $name => $value) {
+            $before = [...$other->texts(), 'accentToken' => Accents::rendered($other->accentToken)][$name];
 
             if ($value !== $before) {
                 $changed[] = $name;

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Configuration;
 
+use App\Database\CommandPoints;
 use App\Domain\Media\MediaStore;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -13,6 +14,7 @@ use Tests\Harness\Commands\CommandRequests;
 use Tests\Harness\DatabaseTestCase;
 use Tests\Harness\Fixtures\TokoContoh;
 use Tests\Harness\Media\TestImages;
+use Tests\Harness\Race\FailurePoints;
 
 /**
  * RC-32 `business_profile.change`, the logo uploads and RD-07 (AC-010-02,
@@ -233,6 +235,89 @@ final class ChangeBusinessProfileTest extends DatabaseTestCase
         $this->assertSame($before, $this->facts());
     }
 
+    public function test_a_failure_after_every_write_step_leaves_no_fact_and_the_receipt_pending(): void
+    {
+        // TS-21 (review finding R-01): without a logo the revision, the
+        // pointer, the audit event and the result; with one, the logo's record
+        // first. A server error, nothing committed, the receipt PENDING.
+        $this->asOwner();
+
+        foreach ([[false, [1, 2, 3, 4]], [true, [1, 2, 3, 4, 5]]] as [$withLogo, $steps]) {
+            foreach ($steps as $step) {
+                $this->app->instance(CommandPoints::class, new FailurePoints($step));
+                $before = $this->facts();
+
+                $response = $withLogo
+                    ? $this->postLogo(UploadedFile::fake()->createWithContent('logo.png', TestImages::png()))
+                    : $this->postJson(self::PATH, $this->change(['shopName' => 'Toko Gagal']));
+
+                $response->assertStatus(500);
+                $this->assertSame($before, $this->facts(), sprintf('after write step %d, %s', $step, $withLogo ? 'with a logo' : 'without a logo'));
+                $this->assertSame('PENDING', $this->observer()->table('command_request_receipts')->where('operation', 'business_profile.change')->orderByDesc('id')->value('outcome'));
+            }
+        }
+
+        $this->app->instance(CommandPoints::class, new FailurePoints);
+        $this->postJson(self::PATH, $this->change(['shopName' => 'Toko Berhasil']))->assertStatus(201);
+    }
+
+    public function test_a_text_with_a_control_character_or_a_line_break_is_refused_before_any_fact(): void
+    {
+        // TR-VAL-05 (review finding R-02): a NUL, other C0 controls and a
+        // line break, in any field.
+        $this->asOwner();
+        $before = $this->facts();
+
+        foreach ([['shopName' => "Toko\u{0000}Contoh"], ['address' => "Jl. Contoh\u{0007} 1"], ['documentFooter' => "Terima kasih\nSampai jumpa"], ['contact' => "0812\u{001B}"]] as $payload) {
+            $response = $this->postJson(self::PATH, $this->change($payload))->assertStatus(422);
+            $this->assertSame('VALIDATION_FAILED', $response->json('code'), (string) json_encode($payload));
+        }
+
+        $this->assertSame($before, $this->facts());
+    }
+
+    public function test_a_change_of_the_name_alone_on_a_revision_without_an_accent_audits_the_name_alone(): void
+    {
+        // Review finding R-07: the first revision has no accent, which renders
+        // green; the form sends green back, which is no change. RC-32 takes
+        // one of the five accents, never none.
+        $this->asOwner();
+        $response = $this->postJson(self::PATH, $this->change(['shopName' => 'Toko Contoh Jaya']))->assertStatus(201);
+
+        $change = json_decode($this->readText($this->observer()->table('audit_events')->where('command_id', $response->json('commandId'))->value('change_data')), true);
+        $this->assertIsArray($change);
+        $this->assertSame(['shopName'], $change['changed'] ?? null);
+
+        $refused = $this->postJson(self::PATH, $this->change(['accentToken' => null], revision: self::idOf($response)))->assertStatus(422);
+        $this->assertSame('ux.validation.required', self::firstKey($refused, 'payload.accentToken'));
+    }
+
+    public function test_a_logo_at_the_limits_of_its_purpose_is_accepted_within_the_memory_of_a_request(): void
+    {
+        // Review finding R-03: 16 megapixels, a transparent PNG and a JPEG
+        // turned by its orientation, under the default limit of 128 MiB that
+        // a request starts with; the normalization reserves what it needs.
+        $this->asOwner();
+        $original = ini_get('memory_limit');
+
+        try {
+            $png = TestImages::flatPng(4000, 4000);
+            ini_set('memory_limit', '128M');
+            $first = $this->postLogo(UploadedFile::fake()->createWithContent('logo.png', $png))->assertStatus(201);
+            $this->assertSame(['image/png', 4000, 4000], $this->dimensionsOf($this->logoOf(self::idOf($first))));
+
+            // The test makes its JPEG with more memory, then gives it back.
+            ini_set('memory_limit', '1G');
+            $jpeg = TestImages::jpegWithMetadata(4000, 4000, 6, 'Lokasi rahasia');
+            gc_collect_cycles();
+            ini_set('memory_limit', '128M');
+            $second = $this->postLogo(UploadedFile::fake()->createWithContent('logo.jpg', $jpeg), self::idOf($first))->assertStatus(201);
+            $this->assertSame(['image/jpeg', 4000, 4000], $this->dimensionsOf($this->logoOf(self::idOf($second))));
+        } finally {
+            ini_set('memory_limit', $original === false ? '-1' : $original);
+        }
+    }
+
     public function test_rd_07_serves_a_logo_to_every_signed_in_role_privately_and_never_by_a_path(): void
     {
         $this->asOwner();
@@ -307,7 +392,7 @@ final class ChangeBusinessProfileTest extends DatabaseTestCase
                 'documentHeader' => null,
                 'documentFooter' => null,
                 'documentIdentity' => null,
-                'accentToken' => null,
+                'accentToken' => 'green',
                 'logoAction' => 'keep',
                 ...$payload,
             ],
@@ -330,7 +415,7 @@ final class ChangeBusinessProfileTest extends DatabaseTestCase
             'idempotencyKey' => $envelope['idempotencyKey'],
             'recoveryEpoch' => $this->epoch,
             'expected' => ['revisionId' => (string) ($revision ?? $this->first)],
-            'payload' => ['shopName' => TokoContoh::SHOP, 'address' => '', 'contact' => '', 'email' => '', 'documentHeader' => '', 'documentFooter' => '', 'documentIdentity' => '', 'accentToken' => '', 'logoAction' => $action, 'logo' => $logo],
+            'payload' => ['shopName' => TokoContoh::SHOP, 'address' => '', 'contact' => '', 'email' => '', 'documentHeader' => '', 'documentFooter' => '', 'documentIdentity' => '', 'accentToken' => 'green', 'logoAction' => $action, 'logo' => $logo],
         ];
 
         return $this->post(self::PATH, $form, ['Accept' => 'application/json']);
@@ -341,6 +426,16 @@ final class ChangeBusinessProfileTest extends DatabaseTestCase
         $logo = $this->observer()->table('business_profile_revisions')->where('id', $revision)->value('logo_file_id');
 
         return is_int($logo) ? $logo : null;
+    }
+
+    /**
+     * The media type, width and height of a stored file's record.
+     *
+     * @return list<mixed>
+     */
+    private function dimensionsOf(?int $file): array
+    {
+        return array_values((array) $this->observer()->table('stored_files')->where('id', $file)->first(['media_type', 'width', 'height']));
     }
 
     private function keyOf(?int $file): string

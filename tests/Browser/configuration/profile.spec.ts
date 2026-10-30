@@ -1,9 +1,10 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect as baseExpect, test, type Page } from '@playwright/test';
+import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { ACCESS_TIMEOUT, ACCESS_WAIT, HOME, resetPeople, SECURE_LOCAL_ORIGIN, signIn, unexpected } from '../support/access';
-import { prepareCommands } from '../support/commands';
+import { injected, prepareCommands, refuse } from '../support/commands';
 import { measure } from '../support/measure';
 import { contextAt, watch, WIDTHS } from '../support/specimen';
 
@@ -24,6 +25,11 @@ test.describe.configure({ timeout: ACCESS_TIMEOUT });
 test.use(SECURE_LOCAL_ORIGIN);
 
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'];
+
+/** The SHA-256 of the known client's name in lowercase, and its length (REQ-SCOPE-03). */
+const CLIENT_SHA256 = 'e5e0c87adf9baf3927697c9ab4d254b833096ae4f7f5a93766360c3180c2caf0';
+
+const CLIENT_LENGTH = 7;
 
 /** A PNG of one pixel: a synthetic logo. */
 const LOGO = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
@@ -60,7 +66,8 @@ async function save(page: Page, password: string | null): Promise<void> {
     await Promise.all([page.waitForURL((url) => url.pathname === '/settings/business-profile'), dialog.getByRole('button', { name: 'Konfirmasi' }).click()]);
 }
 
-for (const width of [WIDTHS[0], WIDTHS[7]]) {
+// 1440 × 900, the 200 % zoom of 1280 × 800 (640 × 400) and 320 × 640 (review finding R-05).
+for (const width of [WIDTHS[0], WIDTHS[4], WIDTHS[7]]) {
     test(`the Owner changes the business profile with a logo and the accent at ${width?.name ?? ''}`, async ({ browser }) => {
         const context = await contextAt(browser, width ?? WIDTHS[0]!);
         const page = await context.newPage();
@@ -138,6 +145,76 @@ for (const width of [WIDTHS[0], WIDTHS[7]]) {
     });
 }
 
+test('the keyboard reaches UXP-608 and moves through its form, and its refusals show at their fields (UXS-05) and as a changed revision (UXS-17)', async ({ browser }) => {
+    // Review finding R-05. The two refusals are the server's answers, given
+    // here without sending the request, so that the profile does not change.
+    const context = await contextAt(browser, WIDTHS[0]!);
+    const page = await context.newPage();
+    const watched = await watch(page);
+    const { Hendra: hendra } = await resetPeople(context, ['Hendra']);
+    await prepareCommands(context, ['Hendra']);
+    await signIn(page, hendra);
+
+    // UXP-601 and UXP-607 by the keyboard: each link takes the focus and Enter.
+    await page.goto('/settings');
+    await page.getByRole('link', { name: /Profil usaha/ }).focus();
+    await Promise.all([page.waitForURL((url) => url.pathname === '/settings/business-profile'), page.keyboard.press('Enter')]);
+    await page.getByRole('link', { name: 'Ubah profil usaha' }).focus();
+    await Promise.all([page.waitForURL((url) => url.pathname === '/settings/business-profile/edit'), page.keyboard.press('Enter')]);
+
+    // UXP-608: Tab moves through the fields in their order, the logo and the
+    // accent group, whose arrow keys choose; then the final action.
+    await page.getByLabel('Nama toko').focus();
+    const order = [/^Alamat/, /^Kontak/, /^Email/, /^Teks atas dokumen/, /^Teks bawah dokumen/, /^Label dokumen/, /^Logo/];
+
+    for (const label of order) {
+        await page.keyboard.press('Tab');
+        await expect(page.getByLabel(label)).toBeFocused();
+    }
+
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('radio', { name: 'Hijau' })).toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await expect(page.getByRole('radio', { name: 'Toska' })).toBeChecked();
+    await page.keyboard.press('Tab');
+    const save = page.getByRole('button', { name: 'Simpan sebagai versi baru' });
+    await expect(save).toBeFocused();
+
+    // Enter never activates the final action (UXA-10).
+    let sent = 0;
+    await page.route('**/commands/business_profile.change', async (route) => {
+        sent += 1;
+        await route.fulfill({
+            status: 422,
+            contentType: 'application/json',
+            body: JSON.stringify({ outcome: 'REJECTED', code: 'VALIDATION_FAILED', messageKey: 'ux.state.validation', params: {}, fields: { 'payload.logo': [{ key: 'ux.validation.upload.image_type', params: {} }] }, lines: {} }),
+        });
+    });
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(/\/settings\/business-profile\/edit$/);
+    expect(sent).toBe(0);
+
+    // UXS-05: a refused logo, with its reason at the field.
+    await page.getByLabel(/^Logo/).setInputFiles({ name: 'logo.png', mimeType: 'image/png', buffer: LOGO });
+    await save.click();
+    await expect(page.getByText('Berkas harus JPG, PNG, atau WebP.')).toBeVisible();
+    await expect(page.getByText('Periksa isian')).toBeVisible();
+    expect(sent).toBe(1);
+    await checked(page);
+
+    // UXS-17: the revision changed since the page loaded, with "Muat ulang".
+    await page.unroute('**/commands/business_profile.change');
+    await page.route('**/commands/business_profile.change', (route) => refuse(route, 409, 'STALE_VERSION'));
+    await page.getByRole('button', { name: 'Kembali ubah' }).click();
+    await save.click();
+    await expect(page.getByText('Data sudah berubah')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Muat ulang' })).toBeVisible();
+    await checked(page);
+
+    expect(injected(watched.problems)).toEqual([]);
+    await context.close();
+});
+
 test('every other role has no settings in its navigation and is refused the pages', async ({ page, context }) => {
     const { Rina: rina } = await resetPeople(context, ['Rina']);
 
@@ -152,8 +229,12 @@ test('every other role has no settings in its navigation and is refused the page
 
 test('the built assets hold no client name and no bundled picture (AC-010-07)', () => {
     const build = resolve('public/build');
-    const client = 'ASNATAL'.split('').reverse().join('');
     const files: string[] = [];
+    // The client's name is never written in the repository (D-076, review
+    // finding R-04): each word of its length is compared with the SHA-256 of
+    // its lowercase form (tests/Unit/Configuration/ClientNeutralTest.php).
+    const holdsClientName = (content: string): boolean =>
+        [...new Set(content.toLowerCase().match(/[a-z]+/g) ?? [])].some((word) => word.length === CLIENT_LENGTH && createHash('sha256').update(word).digest('hex') === CLIENT_SHA256);
     const walk = (directory: string): void => {
         for (const name of readdirSync(directory)) {
             const path = join(directory, name);
@@ -168,6 +249,6 @@ test('the built assets hold no client name and no bundled picture (AC-010-07)', 
 
     walk(build);
     expect(files.length).toBeGreaterThan(0);
-    expect(files.filter((file) => readFileSync(file, 'latin1').toLowerCase().includes(client.toLowerCase()))).toEqual([]);
+    expect(files.filter((file) => holdsClientName(readFileSync(file, 'latin1')))).toEqual([]);
     expect(files.filter((file) => /\.(png|jpe?g|webp|gif|svg|ico|avif)$/i.test(file))).toEqual([]);
 });

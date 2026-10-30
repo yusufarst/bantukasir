@@ -3,10 +3,13 @@
 namespace Tests\Feature\Configuration;
 
 use App\Actions\Access\ConsumeLink;
+use App\Database\CommandPoints;
 use App\Domain\Access\Accounts;
 use Illuminate\Support\Facades\Artisan;
 use Tests\Harness\DatabaseTestCase;
 use Tests\Harness\Fixtures\TokoContoh;
+use Tests\Harness\Race\FailurePoints;
+use Tests\Harness\Race\InjectedFailure;
 
 /**
  * OP-01 `owner:bootstrap` and the framework of the operator procedures
@@ -152,6 +155,32 @@ final class OwnerBootstrapTest extends DatabaseTestCase
         $this->assertSame('Hendra', $this->observer()->table('users')->value('display_name'));
         $this->assertSame('Toko Contoh', $this->observer()->table('business_profile_revisions')->value('shop_name'));
         $this->assertTrue(app(Accounts::class)->findByEmail('hendra@contoh.test')?->isActive());
+    }
+
+    public function test_a_failure_after_every_write_step_leaves_nothing_prints_no_link_and_is_recorded(): void
+    {
+        // TS-21 on the bootstrap's eight write steps (review findings R-08 and
+        // R-09): the one transaction rolls back, no link reaches the terminal,
+        // and the run is recorded as refused before the failure is reported.
+        foreach (range(1, 8) as $step) {
+            $this->app->instance(CommandPoints::class, new FailurePoints($step));
+
+            try {
+                Artisan::call('owner:bootstrap', self::OPTIONS);
+                $this->fail('The injected failure is reported after write step '.$step.'.');
+            } catch (InjectedFailure) {
+                // Expected.
+            }
+
+            $this->assertStringNotContainsString('set-password', Artisan::output(), 'after write step '.$step);
+            $this->assertSame(['users' => 0, 'recovery_epoch' => 0, 'onboarding_state' => 0, 'business_profile_revisions' => 0, 'audit_events' => 0], $this->state(), 'after write step '.$step);
+            $this->assertSame(0, $this->observer()->table('business_profile_current')->count());
+            $this->assertSame(0, $this->observer()->table('password_reset_tokens')->count());
+            $this->assertSame($step, $this->observer()->table('security_log_entries')->where('event_type', 'OPERATOR_PROCEDURE_RUN')->where('outcome_code', 'REFUSED')->count());
+        }
+
+        $this->app->instance(CommandPoints::class, new FailurePoints);
+        $this->assertSame(0, Artisan::call('owner:bootstrap', self::OPTIONS));
     }
 
     public function test_a_failure_inside_the_transaction_leaves_nothing(): void

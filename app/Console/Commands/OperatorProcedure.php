@@ -12,6 +12,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Throwable;
 
 /**
  * The framework of the operator procedures (SECURITY_MODEL section 14, common
@@ -28,9 +29,9 @@ use Illuminate\Support\Str;
  *    no option is ever passed to a shell or a path. The operator's note is
  *    required (1 to 1,000 characters), recorded with the audit events.
  * 3. The procedure, in its own transaction (perform()).
- * 4. After the transaction, committed or refused, the security log entry
- *    OPERATOR_PROCEDURE_RUN with the procedure as actor (SEC-LOG-03), naming
- *    the run by a random identifier.
+ * 4. After the transaction, committed, refused or failed, the security log
+ *    entry OPERATOR_PROCEDURE_RUN with the procedure as actor (SEC-LOG-03),
+ *    naming the run by a random identifier; a failure is then reported.
  *
  * Its text is for the operator, in English like the runbooks. A one-time link
  * that a procedure creates is printed to the operator's terminal only, never
@@ -117,6 +118,13 @@ abstract class OperatorProcedure extends Command
             $securityLog->recordRun(SecurityEvent::OperatorProcedureRun, SecurityActor::operatorProcedure($this->process()), SecurityOutcome::Refused, $run);
 
             return self::FAILURE;
+        } catch (Throwable $failure) {
+            // Any other failure after the identification is a run that did
+            // not succeed: it is recorded too, then reported as it is
+            // (SEC-LOG-03; review finding R-09).
+            $securityLog->recordRun(SecurityEvent::OperatorProcedureRun, SecurityActor::operatorProcedure($this->process()), SecurityOutcome::Refused, $run);
+
+            throw $failure;
         }
 
         $securityLog->recordRun(SecurityEvent::OperatorProcedureRun, SecurityActor::operatorProcedure($this->process()), SecurityOutcome::Succeeded, $run, $subject);

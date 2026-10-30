@@ -23,10 +23,20 @@ use Throwable;
  */
 final class ImageNormalizer
 {
-    /** The quality of a re-encoded JPEG or WebP, and the compression of a PNG. */
+    /** The quality of a re-encoded JPEG or WebP, and the compression of a PNG (zlib's default, review note R-16). */
     private const int QUALITY = 90;
 
-    private const int PNG_COMPRESSION = 9;
+    private const int PNG_COMPRESSION = 6;
+
+    /**
+     * The memory a pixel may take at once while it is processed: the decoded
+     * image, the decoder's buffer of a PNG and the turned copy of an image
+     * with an orientation, 4 bytes each, rounded up (review finding R-03).
+     */
+    private const int BYTES_PER_PIXEL = 13;
+
+    /** The memory reserved besides the pixels and three copies of the upload. */
+    private const int MARGIN_BYTES = 64 * 1024 * 1024;
 
     /**
      * @throws ImageRefused
@@ -34,6 +44,7 @@ final class ImageNormalizer
     public function normalize(string $bytes, InspectedImage $inspected): NormalizedImage
     {
         self::requireSupport($inspected->mediaType);
+        self::reserveMemory($inspected, strlen($bytes));
 
         try {
             $image = @imagecreatefromstring($bytes);
@@ -77,6 +88,46 @@ final class ImageNormalizer
         };
 
         return $flag !== 0 && (imagetypes() & $flag) === $flag;
+    }
+
+    /**
+     * Raises PHP's memory limit, for this request only, to what an image
+     * within its purpose's limits needs: GD counts its pixels against the
+     * limit, and a 16-megapixel logo with an orientation needs about 200 MiB,
+     * more than the default 128 MiB (review finding R-03). The header was
+     * checked before, so the reservation is bounded by the purpose's limits.
+     * An unlimited or higher limit stays as it is.
+     */
+    private static function reserveMemory(InspectedImage $inspected, int $inputBytes): void
+    {
+        $needed = memory_get_usage() + $inspected->width * $inspected->height * self::BYTES_PER_PIXEL + 3 * $inputBytes + self::MARGIN_BYTES;
+        $limit = self::bytesOf(ini_get('memory_limit'));
+
+        if ($limit !== null && $limit < $needed && ini_set('memory_limit', (string) $needed) === false) {
+            throw new LogicException('The memory for an image within the limits cannot be reserved.');
+        }
+    }
+
+    /**
+     * A memory size of php.ini in bytes (`128M`, `1G`, `512K`, `1048576`), or
+     * null for no limit.
+     */
+    private static function bytesOf(string|false $value): ?int
+    {
+        $value = $value === false ? '' : strtolower(trim($value));
+
+        if ($value === '' || $value === '-1') {
+            return null;
+        }
+
+        $number = (int) $value;
+
+        return match (substr($value, -1)) {
+            'g' => $number * 1024 * 1024 * 1024,
+            'm' => $number * 1024 * 1024,
+            'k' => $number * 1024,
+            default => $number,
+        };
     }
 
     private static function requireSupport(string $mediaType): void

@@ -47,6 +47,37 @@ final class TestImages
         return substr($jpeg, 0, 2).$app1.$comment.substr($jpeg, 2);
     }
 
+    /**
+     * A transparent RGBA PNG of $width × $height pixels, written chunk by
+     * chunk with an incremental deflate, so that even 16 megapixels take only
+     * a few kilobytes of the test's memory (review finding R-03).
+     */
+    public static function flatPng(int $width, int $height): string
+    {
+        $deflate = deflate_init(ZLIB_ENCODING_DEFLATE, ['level' => 9]);
+
+        if ($deflate === false) {
+            throw new LogicException('zlib compresses the test image.');
+        }
+
+        // Each row: its filter byte (none) and four zero bytes per pixel.
+        $row = str_repeat("\x00", 1 + 4 * $width);
+        $data = '';
+
+        for ($y = 0; $y < $height; $y++) {
+            $data .= (string) deflate_add($deflate, $row, ZLIB_NO_FLUSH);
+        }
+
+        $data .= (string) deflate_add($deflate, '', ZLIB_FINISH);
+        $chunk = static fn (string $type, string $body): string => pack('N', strlen($body)).$type.$body.pack('N', crc32($type.$body));
+
+        // IHDR: the size, 8 bits per sample, colour type 6 (RGBA).
+        return "\x89PNG\r\n\x1a\n"
+            .$chunk('IHDR', pack('N', $width).pack('N', $height)."\x08\x06\x00\x00\x00")
+            .$chunk('IDAT', $data)
+            .$chunk('IEND', '');
+    }
+
     /** A PNG with an `acTL` chunk: an animated PNG. */
     public static function animatedPng(): string
     {

@@ -22,24 +22,46 @@ final class ClientNeutralTest extends TestCase
     /** The places the application is made of. */
     private const array SOURCES = ['app', 'bootstrap/app.php', 'config', 'database', 'docker', 'lang', 'public', 'resources', 'routes'];
 
+    /** The SHA-256 of the known client's name in lowercase, and its length (REQUIREMENTS REQ-SCOPE-03). */
+    public const string CLIENT_SHA256 = 'e5e0c87adf9baf3927697c9ab4d254b833096ae4f7f5a93766360c3180c2caf0';
+
+    public const int CLIENT_LENGTH = 7;
+
     /** The pictures a bundled logo could be. */
     private const array PICTURES = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg', 'ico', 'bmp', 'avif'];
 
     public function test_no_client_name_is_in_the_code_the_configuration_or_the_assets(): void
     {
-        // The name is written reversed here, so that this test is not a match.
-        $client = strrev('ASNATAL');
         $found = [];
 
         foreach (self::files() as $file) {
             $content = file_get_contents($file->getPathname());
 
-            if (is_string($content) && stripos($content, $client) !== false) {
+            if (is_string($content) && self::holdsClientName($content)) {
                 $found[] = $file->getPathname();
             }
         }
 
         $this->assertSame([], $found, 'A client name is in the application (REQ-SCOPE-03).');
+    }
+
+    /**
+     * Whether a text holds the known client's name as a word, in any letter
+     * case. The name itself is never written in the repository (D-076,
+     * review finding R-04): only the SHA-256 of its lowercase form, compared
+     * with each word of its length.
+     */
+    public static function holdsClientName(string $content): bool
+    {
+        preg_match_all('/[a-z]+/', strtolower($content), $words);
+
+        foreach (array_unique($words[0]) as $word) {
+            if (strlen($word) === self::CLIENT_LENGTH && hash_equals(self::CLIENT_SHA256, hash('sha256', $word))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function test_no_picture_is_bundled_and_the_codename_is_never_a_text_of_the_interface(): void

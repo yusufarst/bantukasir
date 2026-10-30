@@ -131,7 +131,7 @@ final class SettingsPagesTest extends DatabaseTestCase
             'expected' => ['revisionId' => $current],
             'payload' => [
                 'shopName' => TokoContoh::SHOP, 'address' => null, 'contact' => null, 'email' => null, 'documentHeader' => null,
-                'documentFooter' => null, 'documentIdentity' => null, 'accentToken' => null, 'logoAction' => 'keep', ...$payload,
+                'documentFooter' => null, 'documentIdentity' => null, 'accentToken' => 'green', 'logoAction' => 'keep', ...$payload,
             ],
         ])->assertStatus(201);
 

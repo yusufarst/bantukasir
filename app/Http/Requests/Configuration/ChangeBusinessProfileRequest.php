@@ -13,8 +13,8 @@ use App\Http\Requests\Commands\CommandRequest;
  * of every command with the payload `shopName` (1 to 100), `address` (up to
  * 500), `contact` (up to 200), `email` (up to 254), `documentHeader` and
  * `documentFooter` (up to 500 each), `documentIdentity` (up to 100) — every
- * one but the shop name optional, null when absent — `accentToken`, one of
- * DESIGN_SYSTEM section 3.3 or null, `logoAction` (`keep`, `replace` or
+ * one but the shop name optional, null when absent, and none with a control
+ * character — `accentToken`, one of DESIGN_SYSTEM section 3.3, `logoAction` (`keep`, `replace` or
  * `remove`) and `logo`, a file exactly when the action is `replace`; and the
  * expected `revisionId`, the revision in force as the Owner reviewed it.
  *
@@ -60,17 +60,22 @@ final class ChangeBusinessProfileRequest extends CommandRequest
     {
         $rules = [];
 
+        // Valid UTF-8 without a control character, a line break included: no
+        // field of the BusinessProfile is a multi-line note (TR-VAL-05;
+        // review finding R-02).
         foreach (ProfileFields::LENGTHS as $field => $max) {
             $rules[$field] = $field === 'shopName'
-                ? ['required', 'string', 'max:'.$max]
-                : ['present', 'nullable', 'string', 'max:'.$max];
+                ? ['required', 'string', 'max:'.$max, 'regex:'.ProfileFields::PLAIN_TEXT]
+                : ['present', 'nullable', 'string', 'max:'.$max, 'regex:'.ProfileFields::PLAIN_TEXT];
         }
 
         $rules['email'][] = 'email:rfc';
 
         return [
             ...$rules,
-            'accentToken' => ['present', 'nullable', 'string', 'in:'.implode(',', Accents::TOKENS)],
+            // One of the five accents, always (INTERACTION_CONTRACTS RC-32;
+            // review finding R-07).
+            'accentToken' => ['required', 'string', 'in:'.implode(',', Accents::TOKENS)],
             'logoAction' => ['required', 'string', 'in:'.implode(',', ChangeBusinessProfile::LOGO_ACTIONS)],
             'logo' => ['required_if:payload.logoAction,replace', 'prohibited_if:payload.logoAction,keep,remove', 'file', 'max:'.self::LOGO_KIB],
         ];
