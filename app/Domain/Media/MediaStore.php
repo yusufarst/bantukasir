@@ -94,14 +94,11 @@ final class MediaStore
         return self::disk()->path($key);
     }
 
+    /**
+     * The local disk of config/filesystems.php.
+     */
     private static function disk(): FilesystemAdapter
     {
-        $disk = Storage::disk(self::DISK);
-
-        if (! $disk instanceof FilesystemAdapter) {
-            throw new LogicException('The media disk is a local disk (config/filesystems.php).');
-        }
-
-        return $disk;
+        return Storage::disk(self::DISK);
     }
 }

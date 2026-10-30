@@ -160,13 +160,33 @@ final class ConfigurationTablesTest extends DatabaseTestCase
 
     public function test_a_change_only_adds_revisions_and_stored_files_and_moves_the_one_pointer(): void
     {
-        $this->assertRetained(['business_profile_revisions', 'stored_files', 'onboarding_state'], function (): void {
+        $this->insertFile($this->runtime());
+        $files = $this->storedFiles();
+
+        $this->assertRetained(['business_profile_revisions', 'onboarding_state'], function (): void {
             $this->postJson('/commands/business_profile.change', $this->change($this->revision, ['shopName' => 'Toko Lain']))->assertStatus(201);
             $this->postJson('/commands/business_profile.change', $this->change($this->currentRevision(), ['logoAction' => 'remove']))->assertStatus(201);
         });
 
+        // The stored files, their checksums read as text.
+        $this->assertSame($files, array_slice($this->storedFiles(), 0, count($files)));
         $this->assertSame(1, $this->observer()->table('business_profile_current')->count());
         $this->assertSame($this->observer()->table('business_profile_revisions')->max('id'), $this->currentRevision());
+    }
+
+    /**
+     * Every stored file's record, the checksum as text, in key order.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function storedFiles(): array
+    {
+        return array_values(array_map(
+            static fn (object $row): array => (array) $row,
+            $this->observer()->table('stored_files')->orderBy('id')
+                ->selectRaw("id, storage_key, purpose, media_type, byte_size, width, height, encode(sha256, 'hex') as sha256, derived_from_file_id, created_at, actor_user_id, command_id")
+                ->get()->all(),
+        ));
     }
 
     private function currentRevision(): int

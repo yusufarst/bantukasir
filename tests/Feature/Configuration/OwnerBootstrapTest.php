@@ -68,7 +68,10 @@ final class OwnerBootstrapTest extends DatabaseTestCase
 
         // The link, printed to the terminal only: it sets the Owner's password
         // once, and appears in no log, audit event or security log entry.
-        $this->assertSame(1, preg_match('~/set-password#u=(\d+)&t=([^\s]+)~', $output, $link), $output);
+        if (preg_match('~/set-password#u=(\d+)&t=([^\s]+)~', $output, $link) !== 1) {
+            $this->fail('The link is printed to the terminal: '.$output);
+        }
+
         $token = rawurldecode($link[2]);
         $ownerId = $owner['id'];
         $this->assertIsInt($ownerId);

@@ -42,7 +42,7 @@ final class OwnerBootstrap extends OperatorProcedure
         ];
     }
 
-    protected function perform(array $options, string $note): ?int
+    protected function perform(array $options, string $note): int
     {
         try {
             $result = app(BootstrapInstallation::class)(new BootstrapInput($options['name'] ?? '', $options['email'] ?? '', $options['shop'] ?? '', $note));

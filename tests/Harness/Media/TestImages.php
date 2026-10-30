@@ -97,6 +97,10 @@ final class TestImages
      */
     private static function encode(int $width, int $height, callable $write): string
     {
+        if ($width < 1 || $height < 1) {
+            throw new LogicException('A test image has at least one pixel each way.');
+        }
+
         $image = imagecreatetruecolor($width, $height);
 
         if (! $image instanceof GdImage) {

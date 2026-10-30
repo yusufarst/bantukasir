@@ -108,19 +108,20 @@ for (const width of [WIDTHS[0], WIDTHS[7]]) {
         await save(page, hendra.password);
         await sent;
 
-        // UXP-607 with the new version in force, and the accent everywhere.
+        // UXP-607 with the new version in force — the first of the page, before
+        // the earlier versions — and the accent everywhere.
         await expect(page.getByText('Profil usaha disimpan sebagai versi baru.')).toBeVisible();
-        await expect(page.getByRole('main').getByText('Jl. Contoh No. 1')).toBeVisible();
-        await expect(page.getByRole('main').getByText('Toska')).toBeVisible();
-        const logo = page.getByRole('main').getByRole('img', { name: 'Logo' });
+        await expect(page.getByRole('main').getByText('Jl. Contoh No. 1').first()).toBeVisible();
+        await expect(page.getByRole('main').getByText('Toska').first()).toBeVisible();
+        const logo = page.getByRole('main').getByRole('img', { name: 'Logo' }).first();
         await expect(logo).toBeVisible();
-        expect(await logo.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth)).toBe(1);
-        expect(await accent(page)).toBe('teal');
+        await expect.poll(() => logo.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth)).toBe(1);
+        await expect.poll(() => accent(page)).toBe('teal');
         await expect(page.getByRole('heading', { level: 2, name: 'Versi sebelumnya' })).toBeVisible();
         await checked(page);
 
         await page.goto(HOME);
-        expect(await accent(page)).toBe('teal');
+        await expect.poll(() => accent(page)).toBe('teal');
         await expect(page).toHaveTitle('Akun saya — Toko Contoh');
 
         // Back to green, the accent of every other test.
@@ -128,9 +129,10 @@ for (const width of [WIDTHS[0], WIDTHS[7]]) {
         await page.getByLabel(/Alamat/).fill('');
         await page.getByRole('radio', { name: 'Hijau' }).check();
         await save(page, null);
-        expect(await accent(page)).toBe('green');
+        await expect.poll(() => accent(page)).toBe('green');
 
-        expect(unexpected(watched.problems)).toEqual([]);
+        // The 423 of the first save, before the password was confirmed, is expected.
+        expect(unexpected(watched.problems).filter((problem) => !problem.includes('status of 423'))).toEqual([]);
         await context.close();
     });
 }
