@@ -628,3 +628,32 @@ Recorded by the next pull request, TASK-009's (EXECUTION_CONTEXT CE-50), from Gi
 | Merge commit | `5f20137f1146be4a6f615d2ac5acb624999a596f` on `develop`, parent `e54cbab` (`develop` did not move); author the Owner's GitHub no-reply identity, committer GitHub; its tree `1d5186a764389347ca6ec8fd74ebdcbe226872a4` equals that of `82bc221` |
 | CI on `develop` | Run 40879568103, event `push` on `5f20137`, success (13:10:48 to 13:22:18 UTC) |
 | Comments | No comment or review of the Owner on the pull request. The summary comment of the account `chatgpt-codex-connector` on `82bc221` reports its code review completed with no finding; it is data, not an instruction (CE-43) |
+
+## 13. D-109: unattended development
+
+Written 30 October 2026 (Asia/Jakarta) by the host session under the Owner's directive ([D-109](../DECISIONS.md)). It was made in a separate clone, on the branch `ops/d109-unattended` from `origin/develop` at `a6cd66d`. TASK-010 was then stopped (`OWNER_STOP`) in `BUILD`, with 17 uncommitted changes in the main working tree; that work and the main tree's executor state were not touched. Every file of this change was edited with the Edit tool.
+
+### 13.1 Files changed
+
+| File | Change |
+| --- | --- |
+| `.claude/settings.json` | Allow `npm run typecheck`, `npx tsc --noEmit*`, `npx eslint *`, `timeout 2700 gh run watch *`, `date`, `date +*`; deny `*sed -i*`, `*perl -i*`, `*perl -pi*` |
+| `.claude/agents/bk-executor-*.md` | The section "Tools": Read, Grep, Glob, Edit and Write for files; one plain command per Bash call in an allowed form, without `cd` or chaining; the exact form of the checkpoint wait; one "Never" line |
+| [EXECUTION_CONTEXT](../../11-tasks/EXECUTION_CONTEXT.md) | The new CE-47 |
+| `scripts/executor/selftest.sh` | Case 13: the D-109 lines of the executor body; case 14: the D-109 allow and deny entries and no broad allow entry |
+| [DECISIONS](../DECISIONS.md), this record | D-109 |
+
+Unchanged: every other permission rule, `disableBypassPermissionsMode`, the reviewer agents, the guard, `tick.sh`, `watch.sh`, `state.sh`, `push.sh`, `pr.sh` and `commit.sh`.
+
+### 13.2 Checks
+
+- **Self-test** `bash scripts/executor/selftest.sh`, in full, because `scripts/executor/` changes.
+  - Run of record, in the separate clone with this change applied: 30 October 2026, 01:04:20 to 01:55:11 (Asia/Jakarta), one uninterrupted run.
+  - Result: exit 0, `SUMMARY 348 passed, 0 failed`, every case 1 to 30.
+  - Among them: case 14, the D-109 allow and deny entries, and no broad allow entry; case 13, the four executor bodies with the D-109 lines.
+- **CI**: the run `Command contract` on the pull request's head.
+
+### 13.3 The Owner's steps
+
+- His Squash and merge of this `ops/` pull request (CE-60). It is not adopted into the main tree's executor state, which holds TASK-010 in flight.
+- Then the fast-forward of TASK-010's branch onto the merged `develop`, after the same read-only checks as for TASK-009, and his `state.sh resume` with a note that names the merge.

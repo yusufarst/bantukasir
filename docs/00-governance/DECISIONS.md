@@ -4,7 +4,7 @@ The single log of decisions for BantuKasir. A decision made in conversation does
 
 ## 1. How to use this log
 
-- Identifiers are permanent and continue the original numbering. The next free identifier is **D-109**.
+- Identifiers are permanent and continue the original numbering. The next free identifier is **D-110**.
 - "Source" says who decided: **Owner**, or **Planner** (a planning agent acting on its own authority under the rules of the time).
 - "Status" says whether the decision is in force today. `REVALIDATION PENDING` means the decision still applies but the Owner has been asked to re-confirm it; the item number refers to [OPEN_ITEMS](OPEN_ITEMS.md).
 - D-001 to D-018 were recorded on 2 and 3 October 2026 in the former register, now [legacy/10-DECISIONS.md](legacy/10-DECISIONS.md). The table below summarizes them in English. For the exact meaning of D-001 to D-018 the original Indonesian wording governs; for whether a decision is in force, this log governs.
@@ -129,6 +129,7 @@ All by the Owner (Asia/Jakarta). D-019 to D-025 answer the questions of the [re-
 | D-106 | TASK-007, the advisory against PHPUnit (finding F-8): `phpunit/phpunit` is updated within TASK-007 from 13.4.3 to 13.4.4, the smallest patched release of GHSA-9vw2-f4vp-x7gf (`>=13.4.0,<13.4.4`), with `sebastian/git-state` from 1.0.0 to 1.1.0, which 13.4.4 requires; `composer.json` and `composer.lock` consistent; no advisory ignored; no other package changed; no separate `ops/` pull request. | Governance and toolchain; within TASK-007. TOOLCHAIN section 1.1 updated. `composer audit --locked` passes again; a development dependency only, nothing of production changes. No other Task, scope, acceptance criterion, approved artifact or business rule changes; EXECUTION_CONTEXT section 19 and its scripts unchanged. Terms in section 6. |
 | D-107 | The effort of continuous execution, 27 October 2026: High is the default for the executor, the review and the verification of every Task; the review class no longer chooses the effort, and a Task of review class A gets its independent adversarial review at the effort of its row; XHigh is an exception for a Task named in the table with a technical reason (none yet); Max stays for TASK-021, TASK-025, TASK-028, TASK-030, TASK-033, TASK-034, TASK-035 and TASK-037; Medium stays for TASK-047, and is only for simple, low-risk, well-defined Tasks, never for security, authorization, stock, money, transactions or concurrency; the Owner's `/effort` comment keeps its precedence; the agents narrate in Bahasa Indonesia. | Governance. IN FORCE from the Owner's squash merge of its `ops/` pull request. Amends D-101: EXECUTION_CONTEXT CE-11, its table and the text below it; `scripts/executor/lib.sh` (`effort_row`) and `selftest.sh` (cases 1 to 3, 5 and 7); `.claude/agents/bk-*.md`, one sentence each. The selection stays deterministic, from the table at `origin/develop`. The isolated review of CE-40, the tests, the security checks, CI, the guard, the lock, the watcher, the merge rules and `/stop` are unchanged. No Task, dependency, gate, scope, acceptance criterion or business rule changes. Terms in section 6. |
 | D-108 | CI-first execution, 29 October 2026, for TASK-009 and every later Task: the heavy checks — PostgreSQL, concurrency, the browser suite and the whole command contract — run on GitHub's hosted runner, before the pull request in checkpoint runs on every push of a `task/` branch and on its final head as before; the Owner's machine needs no local Docker for BantuKasir; the publication guard runs its secret scans natively with the pinned Gitleaks, failing on any other version; checkpoint commits are guarded and pushed by the same scripts, open no pull request, record no `DONE` and make nothing eligible for a merge; one full independent review per Task after a green checkpoint, then only the targeted verification of MUST-FIX fixes; passing results are reused until a change invalidates them; evidence as tables. | Governance. IN FORCE from the Owner's squash merge of its `ops/` pull request. Amends D-101, D-104 and D-076's guard: EXECUTION_CONTEXT EXC-61, section 18, CE-02, CE-30, CE-31, CE-40, CE-42, CE-44, the new CE-45 and CE-46, CE-70 and CE-80; TEST_STRATEGY sections 7 and 11; TOOLCHAIN (Gitleaks); `.github/workflows/ci.yml` (push of `task/**`, concurrency); `scripts/executor/guard.sh` and `selftest.sh` (case 10); `.claude/agents/bk-*.md`. The acceptance criteria and the regression, security, transaction, concurrency and data-integrity coverage, the independent review of class A, the required job on the final head, the guard's checks, the lock, the watcher, the merge rules (D-105), the efforts (D-107) and `/stop` are unchanged; `.claude/settings.json` is unchanged. No Task, dependency, gate, scope or business rule changes. Terms in section 6. |
+| D-109 | Unattended development, 30 October 2026: routine coding, checks, commits, pushes, pull requests, reviews and merges of eligible Tasks run without recurring approval prompts. Files change only through the Edit and Write tools, never through `sed -i`, `perl`, `python`, `mv` or temporary scripts. Bash calls are single commands in allowed forms, without a `cd` prefix or chaining. The settings add only narrow allow entries — `npm run typecheck`, `npx tsc --noEmit`, `npx eslint`, `timeout 2700 gh run watch`, `date` — and deny `sed -i` and `perl -i`. | Governance. IN FORCE from the Owner's squash merge of its `ops/` pull request. Amends D-105 and D-108: EXECUTION_CONTEXT, the new CE-47; `.claude/settings.json` (six allow and three deny entries); `.claude/agents/bk-executor-*.md` (the Tools section and one "Never" line); `scripts/executor/selftest.sh` (cases 13 and 14). Every other denial, every `ask` rule (resume, unlock, adopt, `rm`, `mv`, the protected paths), `disableBypassPermissionsMode`, the guard, the independent review, CI, the merge rules and `/stop` are unchanged; no `Bash(*)` or other broad entry. No Task, dependency, gate, scope or business rule changes. Terms in section 6. |
 
 ## 4. Facts supplied by the Owner
 
@@ -151,7 +152,7 @@ All by the Owner (Asia/Jakarta). D-019 to D-025 answer the questions of the [re-
 | Whoever holds a staff member's one-time link, including the Owner who issued it, can set that person's password and act under their identity until the staff member notices. Controls: single use, 60-minute expiry, shown once and only to its issuer, revocable, issuance and use audited, staff handover guidance and reporting of a password they did not set. | Owner | D-056 |
 | A request that is still on its way to the server when the same user starts the same business action on another device, in another browser or after clearing the browser's data is not blocked, because no receipt of it exists yet; if both commit, the duplicate is a real record. It is handled by an audited correction — a refund or return of the duplicate Sale, or a reversal of a duplicate receiving or manual issue — and the history keeps both. Controls: the request receipts that block a family on every device for every request that reached the server (ADR-009), the status check, the record-check wait of 10 minutes, the refusal of a close while a checkout is unresolved (G-27) and the shop's guidance UG-04 and UG-08. | Owner | D-088 (N-07, D-074) |
 
-## 6. Terms of D-031 to D-104 and D-106 to D-108
+## 6. Terms of D-031 to D-104 and D-106 to D-109
 
 The Owner gave these decisions with detailed limits. The limits below are part of each decision.
 
@@ -1818,3 +1819,29 @@ The Owner gave this decision on 29 October 2026 to the host session, in his dire
 - **Economy and evidence** (CE-80, EXC-61). Nothing is repeated without new input. Checks and review records are tables with where each check ran, its duration and its result.
 - **Final gate unchanged.** The pull request's final head needs its own green `Command contract` run, the automated reviewer's window and the merge rules of CE-60. The tick, the watcher and the lock are unchanged.
 - **Transition.** TASK-009 was stopped in `REVIEW` with its fixes uncommitted when this decision was made, and continues under it. The one-time steps are recorded in CONTINUOUS_EXECUTION_SETUP section 12: the publication of this change from a separate clone with the same scripts and a native guard, and the move of TASK-009's branch onto the merged `develop`, proven non-destructive first. Its completed review is kept and not repeated.
+
+### D-109 — Continuous execution: unattended development
+
+The Owner gave this decision on 30 October 2026 to the host session, in his directive "OWNER DIRECTIVE — D-109 UNATTENDED DEVELOPMENT". The full wording is held in the Owner's Claude Project; these terms are its record in the repository. They are recorded in [CONTINUOUS_EXECUTION_SETUP](records/CONTINUOUS_EXECUTION_SETUP.md) section 13.
+
+- **The cause.** The executors' transcripts of TASK-009 show which commands needed approval:
+  - commands prefixed with `cd …`, matching no allow entry;
+  - timing wrappers (`date …; s=$(…); timeout …`) and `sleep … ; gh …`;
+  - files read through `sed -n`, `head` and `grep`;
+  - files changed through `sed -i` or a `python` heredoc;
+  - the native checks of D-108 (`npm run typecheck`, `npx eslint`), which no entry allowed.
+- **The correction** (CE-47).
+  - Files are read with Read, Grep and Glob, and changed only with Edit and Write.
+  - Each Bash call is one plain command in an allowed form, from the repository root, without a prefix or chaining.
+  - The settings allow only `npm run typecheck`, `npx tsc --noEmit*`, `npx eslint *`, `timeout 2700 gh run watch *`, `date` and `date +*`.
+  - The settings deny `*sed -i*`, `*perl -i*` and `*perl -pi*`.
+  - A needed command outside these forms is a stop, never a prompt.
+- **Unchanged:**
+  - every other denial;
+  - the `ask` rules of resume, unlock, adopt, `rm`, `mv` and the protected paths `.claude/` and `scripts/executor/`;
+  - `disableBypassPermissionsMode`, and no `Bash(*)` or other broad entry;
+  - the guard, the independent review, CI on the final head, the merge rules of D-105, the efforts of D-107, CI-first of D-108, and `/stop`;
+  - the Owner's gates: an `ops/` merge, class O, TASK-049 and TASK-050, production, staging and destructive operations.
+- **Transition.** TASK-010 was stopped (`OWNER_STOP`) in `BUILD` with 17 uncommitted changes when this decision was made.
+  - After the merge, its branch moves onto the merged `develop` by a fast-forward. This is possible only while it has no commit and no file in common with this change; otherwise it stops.
+  - It then resumes from `BUILD` on the Owner's `state.sh resume`, keeping every change.

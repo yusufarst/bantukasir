@@ -1283,14 +1283,26 @@ bad="$(printf '%s\n%s\n%s\n' "$allow_have" "$ask_have" "$deny_have" | grep -E '^
 bad="$(printf '%s\n' "$allow_have" | grep -E '^Bash\((docker compose \*|docker run|gh api|bash -|sh )' || true)"
 [ -z "$bad" ] && pass "14 settings: no broad allow entry for docker compose *, docker run, gh api, bash - or sh" || failc "14 settings broad allow: $bad"
 printf '%s\n' "$allow_have" | grep -qxF 'Bash(bash scripts/executor/watch.sh*)' && pass "14 settings: the allow entry of watch.sh (D-104)" || failc "14 settings: the allow entry of watch.sh is missing"
+# D-109: the narrow allow entries of unattended work, the denials of in-place
+# edits through the shell, and no broad entry.
+miss=""
+for e in "Bash(npm run typecheck)" "Bash(npx tsc --noEmit*)" "Bash(npx eslint *)" "Bash(timeout 2700 gh run watch *)" "Bash(date)" "Bash(date +*)"; do
+    printf '%s\n' "$allow_have" | grep -qxF -- "$e" || miss="$miss [allow] $e"
+done
+for e in "Bash(*sed -i*)" "Bash(*perl -i*)" "Bash(*perl -pi*)"; do
+    printf '%s\n' "$deny_have" | grep -qxF -- "$e" || miss="$miss [deny] $e"
+done
+[ -z "$miss" ] && pass "14 settings: the allow and deny entries of D-109" || failc "14 settings D-109:$miss"
+bad="$(printf '%s\n' "$allow_have" | grep -E '^Bash\((\*|npm \*|npx \*|node |timeout \*|sed|perl|python|awk|cd |bash \*|sh\)|cat |sleep)' || true)"
+[ -z "$bad" ] && pass "14 settings: no broad allow entry for Bash(*), npm *, npx *, node, timeout *, sed, perl, python, awk, cd, bash *, cat or sleep (D-109)" || failc "14 settings broad allow (D-109): $bad"
 # The executor agents of D-104 and D-108: one body, the steps, checkpoint runs
 # of CI before the pull request, no wait for the pull request's CI.
 b0="$(tail -n +7 "$REPO_ROOT/.claude/agents/bk-executor-high.md")"
 ok=1
 for lvl in medium xhigh max; do [ "$(tail -n +7 "$REPO_ROOT/.claude/agents/bk-executor-$lvl.md")" = "$b0" ] || ok=0; done
-for s in '3. Checks (EXECUTION_CONTEXT CE-44 to CE-46):' 'run in a checkpoint run of CI, never in a container on this machine' '4. Review (CE-40), once:' '7. Report and end (CE-41, CE-60):' 'Do not wait for CI.' '- wait for the pull request'"'"'s CI, which the tick follows, or poll GitHub in a loop of model turns;' '- run a container of BantuKasir on this machine (D-108);' 'Never repeat the full review.' 'Mode `fix`: the delegation'"'"'s Reason names a red CI'; do printf '%s\n' "$b0" | grep -qF -- "$s" || ok=0; done
+for s in '3. Checks (EXECUTION_CONTEXT CE-44 to CE-46):' 'run in a checkpoint run of CI, never in a container on this machine' '4. Review (CE-40), once:' '7. Report and end (CE-41, CE-60):' 'Do not wait for CI.' '- wait for the pull request'"'"'s CI, which the tick follows, or poll GitHub in a loop of model turns;' '- run a container of BantuKasir on this machine (D-108);' 'Tools (EXECUTION_CONTEXT CE-47, D-109)' '- prefix or chain commands, or change a file other than with Edit or Write (D-109);' 'timeout 2700 gh run watch <run> --exit-status' 'Never repeat the full review.' 'Mode `fix`: the delegation'"'"'s Reason names a red CI'; do printf '%s\n' "$b0" | grep -qF -- "$s" || ok=0; done
 if printf '%s\n' "$b0" | grep -qF -e 'pr.sh wait-ci' -e '8. Green'; then ok=0; fi
-[ "$ok" = 1 ] && pass "13 the four executor agents share one body with the steps of D-104 and D-108, without a wait for the pull request's CI" || failc "13 the executor agents' bodies (D-104, D-108)"
+[ "$ok" = 1 ] && pass "13 the four executor agents share one body with the steps of D-104, D-108 and D-109, without a wait for the pull request's CI" || failc "13 the executor agents' bodies (D-104, D-108, D-109)"
 
 # ================================================================ D-104
 WD="$SD/watch"
