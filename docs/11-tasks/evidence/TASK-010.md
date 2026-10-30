@@ -281,3 +281,16 @@ The PHP suites of run 41035407222 on `ecbe6d5` stay valid for the production PHP
 ## 13. Guard preview of the record (CE-31, CE-50)
 
 `bash scripts/executor/guard.sh --preview` on the working tree with this record, 30 October 2026 at 19:52: `GUARD PREVIEW PASS`, no candidate of the privacy and client-data check, so no judgment to record. Each of the eight checkpoint commits passed `guard.sh` before its push, with no candidate (section 9).
+
+## 14. Merge
+
+Recorded by the next Task, TASK-011 (EXECUTION_CONTEXT CE-50), from GitHub and the executor state on 31 October 2026. The tick verified the merge (CE-61) on 30 October 2026 at 20:28:48 (`MERGE_VERIFIED pr=17`).
+
+| Fact | Value |
+| --- | --- |
+| Pull request | #17, "TASK-010 — Installation bootstrap, BusinessProfile and media", from `task/TASK-010-bootstrap-profile-media` into `develop` |
+| Its head | `0511fe32901487c803c2522b76533f5c64a828e9` |
+| CI on the pull request | Run 41059296140, event `pull_request` on `0511fe3`, success (30 October 2026, 12:57:29 to 13:10:02 UTC) |
+| Merge | The tick's squash merge under D-105 (CE-60), by the Owner's account `yusufarst`, on 30 October 2026 at 13:11:19 UTC (20:11:19 Asia/Jakarta); the automated review's status then DONE |
+| Merge commit | `c6702d2c75e106718cd902bad4501875b040fae2` on `develop`; author the Owner's GitHub no-reply identity, committer GitHub; its tree `c798e7aa194fb311327b89259ad3e83c59f25583` equals that of `0511fe3` |
+| CI on `develop` | Run 41061161055, event `push` on `c6702d2`, success (13:11:23 to 13:27:06 UTC) |
