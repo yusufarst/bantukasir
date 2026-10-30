@@ -75,6 +75,49 @@ export function envelopeOf(frozen: FrozenRequest): Record<string, unknown> {
     };
 }
 
+/**
+ * The frozen request as a multipart form, when its payload holds a file — RC-25
+ * and RC-32, whose envelope travels as form fields beside the file
+ * (INTERACTION_CONTRACTS section 1.1) — otherwise null, and the body is JSON.
+ * Each field is named by its path (`expected[revisionId]`, `payload[logo]`);
+ * an absent value (null) is an empty field, which the server reads as null;
+ * the same frozen request gives the same form, file included, on every repeat.
+ */
+export function formOf(frozen: FrozenRequest): FormData | null {
+    if (!Object.values(frozen.payload).some((value) => value instanceof Blob)) {
+        return null;
+    }
+
+    const form = new FormData();
+    const add = (name: string, value: unknown): void => {
+        if (value instanceof Blob) {
+            form.append(name, value);
+        } else if (typeof value === 'string' || typeof value === 'number' || typeof value === 'bigint' || typeof value === 'boolean') {
+            form.append(name, String(value));
+        } else if (value === null || value === undefined) {
+            form.append(name, '');
+        } else {
+            throw new Error('A multipart command carries only texts, whole numbers, booleans and files.');
+        }
+    };
+
+    add('operation', frozen.operation);
+    add('version', 1);
+    add('sourceIntentId', frozen.sourceIntentId);
+    add('idempotencyKey', frozen.idempotencyKey);
+    add('recoveryEpoch', frozen.recoveryEpoch);
+
+    for (const [name, value] of Object.entries(frozen.expected)) {
+        add(`expected[${name}]`, value);
+    }
+
+    for (const [name, value] of Object.entries(frozen.payload)) {
+        add(`payload[${name}]`, value);
+    }
+
+    return form;
+}
+
 /** The CSRF token of the session, from the cookie that the framework sets for scripts. */
 function xsrfToken(): string {
     const prefix = 'XSRF-TOKEN=';
@@ -125,8 +168,10 @@ export async function requestJson(method: 'GET' | 'POST', url: string, body: unk
         options.signal?.addEventListener('abort', () => controller.abort(), { once: true });
     }
     const headers: Record<string, string> = { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrfToken() };
+    const form = body instanceof FormData;
 
-    if (body !== undefined) {
+    // A form sets its own multipart type with its boundary.
+    if (body !== undefined && !form) {
         headers['Content-Type'] = 'application/json';
     }
 
@@ -140,7 +185,7 @@ export async function requestJson(method: 'GET' | 'POST', url: string, body: unk
             credentials: 'same-origin',
             headers,
             signal: controller.signal,
-            ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+            ...(body === undefined ? {} : { body: form ? body : JSON.stringify(body) }),
         });
 
         if (options.background !== true && countsAsActivity(answer.status)) {
@@ -165,7 +210,7 @@ export async function requestJson(method: 'GET' | 'POST', url: string, body: unk
 
 /** Sends the frozen request to its RC route and reads the client state of its answer. */
 export async function sendCommand(frozen: FrozenRequest): Promise<CommandAnswer> {
-    return classifyCommand(await requestJson('POST', `/commands/${frozen.operation}`, envelopeOf(frozen)));
+    return classifyCommand(await requestJson('POST', `/commands/${frozen.operation}`, formOf(frozen) ?? envelopeOf(frozen)));
 }
 
 /**

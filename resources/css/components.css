@@ -1970,6 +1970,164 @@
         gap: 4px;
     }
 
+    /* The shop's initials and name at the top of the side navigation and the drawer (DESIGN_SYSTEM 7.2; TASK-010). */
+    .bk-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 20px 24px 4px;
+        min-width: 0;
+    }
+
+    .bk-brand__mark {
+        flex: none;
+        width: 36px;
+        height: 36px;
+        display: grid;
+        place-items: center;
+        border-radius: var(--radius-lg);
+        background: var(--brand-primary);
+        color: var(--color-text-on-primary);
+        font-size: 14px;
+        font-weight: var(--weight-semibold);
+    }
+
+    /* A shop's logo on UXP-607 (TASK-010), never stretched. */
+    .bk-logo {
+        display: block;
+        max-width: 160px;
+        max-height: 80px;
+        object-fit: contain;
+    }
+
+    /* The logo of UXP-608 (UXI-362): a native file input over its button, which shows its focus. */
+    .bk-file {
+        position: relative;
+        display: inline-flex;
+        align-self: flex-start;
+    }
+
+    .bk-file input {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .bk-file:focus-within .bk-btn {
+        outline: 2px solid var(--brand-accent);
+        outline-offset: 2px;
+    }
+
+    /* The accent set of UXP-608 (UXI-363): each option named, with its colour beside the name (UXA-18). */
+    .bk-accents {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    /* The whole row is the radio's target: the native input lies over it. */
+    .bk-accent {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-height: var(--touch-min);
+        padding: 0 8px;
+        border-radius: var(--radius-lg);
+        cursor: pointer;
+    }
+
+    .bk-accent:hover {
+        background: var(--color-row-hover);
+    }
+
+    .bk-accent:focus-within {
+        outline: 2px solid var(--brand-accent);
+        outline-offset: 2px;
+    }
+
+    .bk-accent input {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .bk-accent__dot {
+        flex: none;
+        width: 20px;
+        height: 20px;
+        display: grid;
+        place-items: center;
+        border: 2px solid var(--color-border-input);
+        border-radius: var(--radius-full);
+    }
+
+    .bk-accent input:checked + .bk-accent__dot {
+        border-color: var(--brand-primary);
+    }
+
+    .bk-accent input:checked + .bk-accent__dot::after {
+        content: '';
+        width: 10px;
+        height: 10px;
+        border-radius: var(--radius-full);
+        background: var(--brand-primary);
+    }
+
+    .bk-accent__swatch {
+        flex: none;
+        width: 20px;
+        height: 20px;
+        border-radius: var(--radius-full);
+        background: var(--brand-primary);
+    }
+
+    /* The earlier BusinessProfile versions of UXP-607, each opened on demand (UXI-359). */
+    .bk-versions {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .bk-version > summary {
+        min-height: var(--touch-min);
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        border-radius: var(--radius-lg);
+        cursor: pointer;
+        color: var(--color-text-primary);
+    }
+
+    .bk-version > summary:hover {
+        background: var(--color-row-hover);
+    }
+
+    .bk-version[open] > summary {
+        margin-bottom: 8px;
+    }
+
+    .bk-brand__name {
+        min-width: 0;
+        color: var(--color-text-primary);
+        font-size: var(--text-nav-size);
+        line-height: var(--text-nav-lh);
+        font-weight: var(--weight-semibold);
+        overflow-wrap: anywhere;
+    }
+
     .bk-nav__link {
         position: relative;
         display: flex;

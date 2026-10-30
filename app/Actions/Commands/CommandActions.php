@@ -2,6 +2,7 @@
 
 namespace App\Actions\Commands;
 
+use App\Actions\Configuration\ChangeBusinessProfile;
 use App\Domain\Commands\Operations;
 use LogicException;
 
@@ -20,7 +21,10 @@ final class CommandActions
      *
      * @var array<string, class-string<CommandAction>>
      */
-    private const array ACTIONS = [];
+    private const array ACTIONS = [
+        // RC-32 (TASK-010).
+        ChangeBusinessProfile::OPERATION => ChangeBusinessProfile::class,
+    ];
 
     /**
      * @return array<string, class-string<CommandAction>>

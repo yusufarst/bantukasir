@@ -55,6 +55,13 @@ final class RouteInventoryTest extends TestCase
         // TASK-009: the shell's indicators and the page of unresolved requests.
         'GET /data/shell' => ['data.shell', 'RD-03', 'CAP-01', [...self::SIGNED_IN, 'capability:CAP-01', 'input.allow']],
         'GET /requests' => ['requests.index', 'RP-006', 'CAP-34', [...self::SIGNED_IN, 'capability:CAP-34', 'input.allow']],
+        // TASK-010: the settings index, the BusinessProfile pages and RC-32,
+        // and RD-07, which chooses its own caching.
+        'GET /settings' => ['settings.index', 'RP-601', 'CAP-25,CAP-30,CAP-31,CAP-32', [...self::SIGNED_IN, 'capability:CAP-25,CAP-30,CAP-31,CAP-32', 'input.allow']],
+        'GET /settings/business-profile' => ['profile.show', 'RP-607', 'CAP-30', [...self::SIGNED_IN, 'capability:CAP-30', 'input.allow']],
+        'GET /settings/business-profile/edit' => ['profile.edit', 'RP-608', 'CAP-30', [...self::SIGNED_IN, 'capability:CAP-30', 'input.allow']],
+        'POST /commands/business_profile.change' => ['commands.business_profile.change', 'RC-32', 'CAP-30', [...self::SIGNED_IN, 'capability:CAP-30', 'throttle:command', 'throttle:logo', 'password.confirm']],
+        'GET /media/{file}' => ['media.show', 'RD-07', 'CAP-01', ['web', 'auth', 'signin.session', 'throttle:authenticated', 'history.encrypt', 'capability:CAP-01', 'input.allow:variant']],
     ];
 
     public function test_the_routes_are_exactly_those_listed_each_with_its_gate(): void

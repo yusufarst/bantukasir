@@ -120,6 +120,29 @@ return [
             'runtime' => ['select' => true, 'insert' => true],
         ],
 
+        // Configuration, Media and the installation's onboarding state
+        // (SCHEMA sections 5.2, 5.5 and 5.7; TASK-010).
+        'business_profile_revisions' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'business_profile_current' => [
+            'class' => 'S',
+            'runtime' => ['select' => true, 'insert' => true, 'update' => ['revision_id', 'changed_at']],
+        ],
+        'stored_files' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'onboarding_state' => [
+            'class' => 'S',
+            'runtime' => ['select' => true, 'insert' => true, 'update' => ['state', 'version', 'changed_at', 'changed_by_user_id']],
+        ],
+        'onboarding_releases' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+
     ],
 
     'sequences' => [],

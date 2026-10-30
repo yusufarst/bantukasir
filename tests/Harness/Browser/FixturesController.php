@@ -50,6 +50,10 @@ final class FixturesController
         Cache::store()->flush();
         $accounts = [];
 
+        // The shop is installed before its people: its name, initials and
+        // accent in the shell and the title (TASK-010).
+        TokoContoh::shop();
+
         foreach ($people as $person) {
             /** @var string $person */
             $accounts[$person] = TokoContoh::person($person);

@@ -2,6 +2,8 @@
 
 namespace Tests\Harness\Fixtures;
 
+use App\Actions\Access\BootstrapInput;
+use App\Actions\Access\BootstrapInstallation;
 use App\Actions\Access\ConsumeLink;
 use App\Database\DatabaseRefused;
 use App\Database\EnvironmentMarker;
@@ -9,6 +11,9 @@ use App\Domain\Access\Accounts;
 use App\Domain\Access\OneTimeLinks;
 use App\Domain\Access\Role;
 use App\Domain\Commands\RecoveryEpoch;
+use App\Domain\Configuration\BusinessProfiles;
+use App\Domain\Configuration\ProfileFields;
+use App\Domain\Inventory\OnboardingState;
 use App\Models\User;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Facades\DB;
@@ -107,9 +112,54 @@ final class TokoContoh
     }
 
     /**
+     * The installation of Toko Contoh (TASK-010; EXECUTION_CONTEXT EXC-45):
+     * the recovery epoch, the onboarding state NOT_STARTED and the first
+     * BusinessProfile revision "Toko Contoh" with its pointer, whose actor is
+     * the Owner Hendra. On a database without any account, epoch or
+     * onboarding state it is OP-01's own Action that installs it, with Hendra
+     * as the Owner, as the operator would; where the fixtures of earlier
+     * Tasks already created accounts or the epoch, the same services write
+     * only what is missing. Returns the internal key of the revision in force.
+     *
+     * @throws DatabaseRefused
+     */
+    public static function shop(): int
+    {
+        self::build(DB::connection());
+
+        $profiles = app(BusinessProfiles::class);
+        $current = $profiles->current();
+
+        if ($current !== null) {
+            return $current->id;
+        }
+
+        if (! DB::table('users')->exists() && app(RecoveryEpoch::class)->current() === null && app(OnboardingState::class)->current() === null) {
+            return app(BootstrapInstallation::class)(new BootstrapInput('Hendra', self::email('Hendra'), self::SHOP, 'Instalasi Toko Contoh untuk pengujian.'))->revisionId;
+        }
+
+        return DB::transaction(static function () use ($profiles): int {
+            $accounts = app(Accounts::class);
+            $owner = $accounts->findByEmail(self::email('Hendra')) ?? $accounts->create('Hendra', self::email('Hendra'), self::roles('Hendra'));
+            $epochs = app(RecoveryEpoch::class);
+            $onboarding = app(OnboardingState::class);
+
+            if ($epochs->current() === null) {
+                $epochs->issue();
+            }
+
+            if ($onboarding->current() === null) {
+                $onboarding->insertInitial();
+            }
+
+            return $profiles->insertFirst(new ProfileFields(self::SHOP), $owner->id, $owner->display_name);
+        });
+    }
+
+    /**
      * The installation's recovery epoch as pages receive it (TASK-008),
-     * issued through the Commands module's service if absent; until the
-     * bootstrap of TASK-010 issues it, the fixture does.
+     * issued through the Commands module's service if absent; the bootstrap
+     * of TASK-010 issues it, and shop() installs it with the rest.
      *
      * @throws DatabaseRefused
      */

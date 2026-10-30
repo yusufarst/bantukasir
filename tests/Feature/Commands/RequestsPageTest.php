@@ -43,7 +43,7 @@ final class RequestsPageTest extends DatabaseTestCase
             $page = $this->inertiaPage($response);
             $this->assertSame('commands/Requests', $page['component']);
             $this->assertTrue($page['encryptHistory']);
-            $this->assertSame(['auth', 'errors', 'recoveryEpoch'], self::propNames((array) $page['props']));
+            $this->assertSame(['auth', 'errors', 'recoveryEpoch', 'shop'], self::propNames((array) $page['props']));
             $this->assertPageChannel($response, $actor, [$account['password']]);
 
             // RT-08: the page takes no parameter.

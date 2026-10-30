@@ -57,7 +57,7 @@ test('a cashier sees a request of another device in the banner, the account menu
     await signIn(page, rina);
     await page.getByRole('link', { name: 'Buka Permintaan belum pasti' }).click();
     await expect(page).toHaveURL(new RegExp(`${REQUESTS_PAGE}$`));
-    await expect(page).toHaveTitle('Permintaan belum pasti');
+    await expect(page).toHaveTitle('Permintaan belum pasti — Toko Contoh');
     await expect(main(page).getByRole('heading', { level: 1, name: 'Permintaan belum pasti' })).toBeVisible();
     await expect(main(page).getByText('Hasil permintaan berikut belum diketahui.')).toBeVisible();
     await expect(main(page).getByText('Jika permintaan tidak ada di daftar ini dan tidak ada di riwayat, tunggu 10 menit sejak dikirim.')).toBeVisible();

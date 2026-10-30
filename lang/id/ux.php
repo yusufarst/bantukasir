@@ -55,6 +55,17 @@ return [
         'password' => 'Kata sandi belum memenuhi syarat: minimal 8 karakter, dengan huruf besar, huruf kecil, angka, dan simbol.',
         'password_max' => 'Paling banyak 128 karakter.',
         'password_repeat' => 'Kata sandi yang diulang tidak sama.',
+        // The text lengths, the email and the uploads (TASK-010; COPY_DECK
+        // sections 16.1 and 16.2).
+        'text_max' => 'Paling banyak :maks karakter.',
+        'email' => 'Format email belum benar.',
+        'upload' => [
+            'image_type' => 'Berkas harus JPG, PNG, atau WebP.',
+            'too_large' => 'Berkas paling besar :ukuran.',
+            'too_many_pixels' => 'Gambar paling besar :jumlah megapiksel.',
+            'animated' => 'Gambar bergerak tidak bisa dipakai.',
+            'unreadable' => 'Berkas tidak dapat dibaca. Pilih berkas lain.',
+        ],
     ],
     // The shared actions, lists, navigation, announcements and disabled
     // reasons that the design system's components use (TASK-005; COPY_DECK
@@ -89,9 +100,11 @@ return [
         'search_hint' => 'Ketik untuk mencari',
     ],
     // The document title of the pages without business data (TASK-006;
-    // COPY_DECK section 4.2) and the account menu of the shell (TASK-007;
-    // section 6.1).
+    // COPY_DECK section 4.2), that of the protected pages with the shop's
+    // name (TASK-010) and the account menu of the shell (TASK-007; section
+    // 6.1).
     'shell' => [
+        'document_title' => ':halaman — :toko',
         'document_title_public' => ':halaman',
         'account_menu' => 'Menu akun :nama',
     ],

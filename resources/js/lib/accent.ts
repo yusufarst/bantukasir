@@ -22,3 +22,31 @@ export function applyAccent(doc: Document, token: unknown): AccentToken {
 
     return accent;
 }
+
+/**
+ * The shop's accent of a page's shared props (SEC-CH-02 as TASK-010 amends
+ * it), or null when the page carries no shop — before sign-in, whose pages
+ * keep the default green of a fresh document (DESIGN_SYSTEM section 3.3).
+ */
+export function accentOfPage(props: unknown): unknown {
+    if (typeof props !== 'object' || props === null || !('shop' in props)) {
+        return null;
+    }
+
+    const shop: unknown = props.shop;
+
+    return typeof shop === 'object' && shop !== null && 'accent' in shop ? shop.accent : null;
+}
+
+/**
+ * Applies the accent of the BusinessProfile in force to every signed-in page,
+ * before it renders (AC-010-05): the first page of a full load and each page
+ * Inertia visits after it. A page without a shop leaves the document as it is.
+ */
+export function followPageAccent(doc: Document, props: unknown): void {
+    const accent = accentOfPage(props);
+
+    if (accent !== null) {
+        applyAccent(doc, accent);
+    }
+}

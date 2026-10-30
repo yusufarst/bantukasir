@@ -73,10 +73,13 @@ export const SUB_ORDER: Readonly<Record<AreaId, Readonly<Partial<Record<Persona,
 };
 
 /**
- * The registered destinations: none yet. A page Task adds its destination
- * here with its route when it delivers the page (TRACEABILITY section 9.2).
+ * The registered destinations. A page Task adds its destination here with its
+ * route when it delivers the page (TRACEABILITY section 9.2): UXI-008
+ * "Pengaturan", the Owner's (CAP-25, CAP-32), from TASK-010.
  */
-export const DESTINATIONS: Readonly<Partial<Record<DestinationId, DestinationEntry>>> = {};
+export const DESTINATIONS: Readonly<Partial<Record<DestinationId, DestinationEntry>>> = {
+    settings: { label: 'config.settings.title', href: '/settings', icon: 'sliders', capabilities: ['CAP-25', 'CAP-32'] },
+};
 
 /** The registered items of each sub-navigation: none yet. */
 export const SUB_DESTINATIONS: Readonly<Record<AreaId, Readonly<Partial<Record<SubDestinationId, SubDestinationEntry>>>>> = {
