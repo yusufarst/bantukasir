@@ -2,7 +2,7 @@ import { router } from '@inertiajs/react';
 import { useEffect, useId, useState } from 'react';
 import { Button, ButtonLink } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { KeyValueList } from '@/components/ui/Data';
+import { KeyValueList, type KeyValue } from '@/components/ui/Data';
 import { CommandForm, Field, TextInput } from '@/components/ui/Field';
 import type { StateId } from '@/components/ui/stateCatalogue';
 import { ErrorSummary, StateNotice, type FieldError } from '@/components/ui/States';
@@ -105,18 +105,18 @@ function DetailsForm({ title, account }: { title: string; account: Details }) {
         control.submit({ displayName: name, email }, { userVersion: account.version });
     };
 
+    const currentValues: KeyValue[] = [
+        { key: 'name', label: t('access.owner_details.name'), value: account.displayName },
+        { key: 'email', label: t('access.owner_details.email'), value: account.email },
+    ];
+
     return (
         <CommandLayout header={<PageHeader title={title} back={{ href: ACCOUNT, page: t('access.account.title'), onNavigate: guard }} />}>
             {invalid && <ErrorSummary errors={summary} />}
             {stale && (
                 <>
                     <StateNotice state={STALE_STATE} />
-                    <KeyValueList
-                        items={[
-                            { key: 'name', label: t('access.owner_details.name'), value: account.displayName },
-                            { key: 'email', label: t('access.owner_details.email'), value: account.email },
-                        ]}
-                    />
+                    <KeyValueList items={currentValues} />
                 </>
             )}
             <Card>

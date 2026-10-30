@@ -2,7 +2,7 @@ import { router } from '@inertiajs/react';
 import { useEffect, useId, useState } from 'react';
 import { Button, ButtonLink } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { KeyValueList } from '@/components/ui/Data';
+import { KeyValueList, type KeyValue } from '@/components/ui/Data';
 import { CommandForm, Field, TextInput } from '@/components/ui/Field';
 import type { StateId } from '@/components/ui/stateCatalogue';
 import { ErrorSummary, StateNotice, type FieldError } from '@/components/ui/States';
@@ -121,19 +121,19 @@ function EditForm({ title, user }: { title: string; user: EditedUser }) {
         summary.push({ fieldId: rolesId, label: t('access.user_form.roles'), message: rolesError });
     }
 
+    const currentValues: KeyValue[] = [
+        { key: 'name', label: t('access.user_form.name'), value: user.displayName },
+        { key: 'email', label: t('access.user_form.email'), value: user.email },
+        { key: 'roles', label: t('access.user_form.roles'), value: rolesText(user.roles) },
+    ];
+
     return (
         <CommandLayout header={<PageHeader title={title} back={{ href: detail, page: t('access.user_detail.title'), onNavigate: guard }} />}>
             {invalid && <ErrorSummary errors={summary} />}
             {stale && (
                 <>
                     <StateNotice state={STALE_STATE} />
-                    <KeyValueList
-                        items={[
-                            { key: 'name', label: t('access.user_form.name'), value: user.displayName },
-                            { key: 'email', label: t('access.user_form.email'), value: user.email },
-                            { key: 'roles', label: t('access.user_form.roles'), value: rolesText(user.roles) },
-                        ]}
-                    />
+                    <KeyValueList items={currentValues} />
                 </>
             )}
             <Card>

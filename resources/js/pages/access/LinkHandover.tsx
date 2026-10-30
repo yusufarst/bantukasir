@@ -61,7 +61,8 @@ function Handover({ link, name, note, done }: { link: HeldLink; name: string; no
     const announce = useAnnounce();
     const matrix = useMemo(() => qrMatrix(link.url), [link.url]);
     const purpose = link.kind === 'FIRST_PASSWORD' ? t('access.link.purpose_first') : t('access.link.purpose_reset');
-    const size = (matrix?.length ?? 0) + QUIET_ZONE * 2;
+    const size = String((matrix?.length ?? 0) + QUIET_ZONE * 2);
+    const viewBox = `0 0 ${size} ${size}`;
 
     const copy = (): void => {
         void navigator.clipboard.writeText(link.url).then(() => announce(t('access.link_handover.copied'), false));
@@ -78,7 +79,7 @@ function Handover({ link, name, note, done }: { link: HeldLink; name: string; no
                     <p className={'bk-meta'}>{t('access.link_handover.expires', { waktu: formatDateTime(link.expiresAt) })}</p>
                     <p className={'bk-meta'}>{t('access.link_handover.once')}</p>
                     {matrix !== null && (
-                        <svg className={'bk-qr'} role={'img'} aria-label={t('access.link_handover.qr_alt', { nama: name })} viewBox={`0 0 ${String(size)} ${String(size)}`}>
+                        <svg className={'bk-qr'} role={'img'} aria-label={t('access.link_handover.qr_alt', { nama: name })} viewBox={viewBox}>
                             <path d={qrPath(matrix)} />
                         </svg>
                     )}

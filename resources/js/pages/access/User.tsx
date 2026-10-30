@@ -121,13 +121,14 @@ function UserPage({ title, user }: { title: string; user: Account }) {
     ];
 
     const passwordNotSet = !user.passwordSet && user.status !== 'ANONYMIZED';
+    const editPage = `${userPage(user.id)}/edit`;
 
     return (
         <PageContainer width={'form'}>
             <PageHeader
                 title={title}
                 back={{ href: USERS_PAGE, page: t('access.users.title') }}
-                actions={staff && user.status !== 'ANONYMIZED' ? <ButtonLink href={`${userPage(user.id)}/edit`} label={t('access.user_edit.title')} variant={'primary'} /> : undefined}
+                actions={staff && user.status !== 'ANONYMIZED' ? <ButtonLink href={editPage} label={t('access.user_edit.title')} variant={'primary'} /> : undefined}
             />
             <div className={'bk-stack'}>
                 {note !== null && <Committed message={note} />}
