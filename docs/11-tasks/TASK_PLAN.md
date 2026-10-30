@@ -77,8 +77,8 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-007](tasks/TASK-007-authorization-shell.md) | Authorization framework, security baseline and application shell | 2 | P | L | A | TASK-006 | — | `DONE` |
 | [TASK-008](tasks/TASK-008-command-platform.md) | Command platform (server) | 2 | P | L | A | TASK-007 | — | `DONE` |
 | [TASK-009](tasks/TASK-009-command-client.md) | Command client, recovery and unresolved requests | 2 | P | M | A | TASK-008, TASK-002 | GATE-CC1 | `DONE` |
-| [TASK-010](tasks/TASK-010-bootstrap-profile-media.md) | Installation bootstrap, BusinessProfile and media | 2 | P | L | A | TASK-008, TASK-002 | GATE-CC1 | `READY` |
-| [TASK-011](tasks/TASK-011-user-management.md) | User management and Owner procedures | 2 | P | L | A | TASK-009, TASK-010 | — | `TODO` |
+| [TASK-010](tasks/TASK-010-bootstrap-profile-media.md) | Installation bootstrap, BusinessProfile and media | 2 | P | L | A | TASK-008, TASK-002 | GATE-CC1 | `DONE` |
+| [TASK-011](tasks/TASK-011-user-management.md) | User management and Owner procedures | 2 | P | L | A | TASK-009, TASK-010 | — | `READY` |
 | [TASK-012](tasks/TASK-012-application-image.md) | Application image and runtime configuration | 3 | O | M | B | TASK-004, TASK-007 | — | `READY` |
 | [TASK-013](tasks/TASK-013-independent-backup.md) | Independent backup | 3 | O | L | A | TASK-012, TASK-010 | — | `TODO` |
 | [TASK-014](tasks/TASK-014-release-pipeline.md) | Release workflow, preflight and migration job | 3 | O | M | A | TASK-013 | — | `TODO` |
@@ -119,7 +119,7 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-049](tasks/TASK-049-release-readiness.md) | Release readiness: staging, UAT and first installation | 10 | R | L | V | TASK-045, TASK-047, TASK-048 | G1, G2, G3, G4, DEVICES, TARGET, GATE-PUBLISH | `TODO` |
 | [TASK-050](tasks/TASK-050-production-pilot.md) | Production release, cutover and pilot acceptance | 10 | R | L | V | TASK-049 | RELEASE, GATE-PUBLISH, G4 | `TODO` |
 
-Totals: `TODO` 39; `READY` 2; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 9; `SUPERSEDED` 0.
+Totals: `TODO` 38; `READY` 2; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 10; `SUPERSEDED` 0.
 
 ## 5. Implementation sequence
 
@@ -193,7 +193,7 @@ With more than one executor the Owner may run Tasks of different lanes at the sa
 | Gates G1, G2, G3, G4, DEVICES, TARGET, RELEASE, TESTS, EXECUTOR | Section 3 | |
 | Reading: the `labels` and `stock` contexts of RD-01 | TASK-015 | INTERACTION_CONTRACTS section 3.1 lists them; ROUTE_CONTRACTS RD-01 does not; no control of section 9 uses them |
 | Reading: the backup store's usage on the system status | TASK-002 (the Owner's answer), TASK-039 | ADR-010 item 11 and OPERATIONS_RUNBOOK section 5 differ |
-| Reading: the shop's name and accent in the shell | TASK-010 | SECURITY_MODEL SEC-CH-02 does not name them; DESIGN_SYSTEM section 7.2 shows them |
+| Reading: the shop's name and accent in the shell | TASK-010 — settled: SEC-CH-02 amended for the shop's name, initials and accent, for a signed-in user only ([TASK-010 evidence](evidence/TASK-010.md) section 4) | SECURITY_MODEL SEC-CH-02 did not name them; DESIGN_SYSTEM section 7.2 shows them |
 | Reading: the mechanism of T-23 | TASK-006 — settled: a row security policy, which SCH-06 now names as a privilege | SCHEMA SCH-06 excludes triggers, rules, stored procedures and `SECURITY DEFINER` functions |
 
 ## 8. Change control of the baseline

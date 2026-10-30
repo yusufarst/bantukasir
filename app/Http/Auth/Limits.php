@@ -63,7 +63,12 @@ final class Limits
         RateLimiter::for('search', static fn (Request $request): Limit => self::perMinute(300, 'search:user:'.self::userKey($request)));
         RateLimiter::for('command', static fn (Request $request): Limit => self::perMinute(60, 'command:user:'.self::userKey($request)));
         RateLimiter::for('photo', static fn (Request $request): Limit => self::perHour(200, 'photo:user:'.self::userKey($request)));
-        RateLimiter::for('logo', static fn (Request $request): Limit => self::perHour(20, 'logo:user:'.self::userKey($request)));
+        // A command counts in the bucket of its upload only when it carries
+        // one: RC-32 without a new logo is in the bucket `command` alone
+        // (ROUTE_CONTRACTS section 6, "bucket `logo` with a logo"; TASK-010).
+        RateLimiter::for('logo', static fn (Request $request): Limit => $request->is('commands/*') && ! $request->hasFile('payload.logo')
+            ? Limit::none()
+            : self::perHour(20, 'logo:user:'.self::userKey($request)));
         RateLimiter::for('csv', static fn (Request $request): Limit => self::perHour(30, 'csv:user:'.self::userKey($request)));
         RateLimiter::for('print', static fn (Request $request): Limit => self::perMinute(60, 'print:user:'.self::userKey($request)));
 

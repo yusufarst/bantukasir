@@ -135,11 +135,13 @@ export function ErrorSummary({ errors }: { errors: readonly FieldError[] }) {
         <div className={'bk-error-summary'} ref={ref} tabIndex={-1}>
             <Notice tone={'danger'} urgency={'alert'} title={t('ux.state.validation.title')}>
                 <p>{t('ux.state.validation.body')}</p>
-                <ul>
-                    {errors.map((error) => (
-                        <ErrorLink key={error.fieldId} error={error} />
-                    ))}
-                </ul>
+                {errors.length > 0 && (
+                    <ul>
+                        {errors.map((error) => (
+                            <ErrorLink key={error.fieldId} error={error} />
+                        ))}
+                    </ul>
+                )}
             </Notice>
         </div>
     );

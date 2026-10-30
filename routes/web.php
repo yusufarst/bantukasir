@@ -6,11 +6,15 @@ use App\Http\Controllers\Access\HomeRedirectController;
 use App\Http\Controllers\Access\OwnPasswordController;
 use App\Http\Controllers\Access\PasswordLinkController;
 use App\Http\Controllers\Access\SessionActivityController;
+use App\Http\Controllers\Access\SettingsController;
 use App\Http\Controllers\Access\ShellDataController;
 use App\Http\Controllers\Access\SignInController;
 use App\Http\Controllers\Commands\RequestsController;
 use App\Http\Controllers\Commands\RequestsDataController;
 use App\Http\Controllers\Commands\ResolveIntentController;
+use App\Http\Controllers\Configuration\ChangeBusinessProfileController;
+use App\Http\Controllers\Configuration\ProfileController;
+use App\Http\Controllers\Media\MediaController;
 use App\Http\Controllers\Testing\SpecimenController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Http\Controllers\AuthenticatedSessionController;
@@ -81,7 +85,30 @@ Route::middleware(['auth', 'signin.session', 'throttle:authenticated', 'cache.he
         Route::get('/data/command-requests', RequestsDataController::class)->name('data.requests');
         Route::get('/requests', [RequestsController::class, 'index'])->middleware('input.allow')->name('requests.index');
     });
+
+    // The Owner's settings (TASK-010): RP-601, the index, for any of the
+    // capabilities of its entries; RP-607 and RP-608, the BusinessProfile, and
+    // RC-32, its change, with recent authentication, in the bucket of every
+    // command and, with a logo, the bucket `logo` (App\Http\Auth\Limits).
+    Route::get('/settings', [SettingsController::class, 'index'])->middleware(['capability:CAP-25,CAP-30,CAP-31,CAP-32', 'input.allow'])->name('settings.index');
+
+    Route::middleware('capability:CAP-30')->group(function (): void {
+        Route::get('/settings/business-profile', [ProfileController::class, 'show'])->middleware('input.allow')->name('profile.show');
+        Route::get('/settings/business-profile/edit', [ProfileController::class, 'edit'])->middleware('input.allow')->name('profile.edit');
+        Route::post('/commands/business_profile.change', ChangeBusinessProfileController::class)
+            ->middleware(['throttle:command', 'throttle:logo', 'password.confirm'])
+            ->name('commands.business_profile.change');
+    });
 });
+
+// RD-07, a stored image (TASK-010): signed in, with the middleware of every
+// signed-in route but the answer's caching, which it chooses itself — private,
+// for a day, immutable (INTERACTION_CONTRACTS section 3.7; SEC-CH-06). Every
+// role may see a logo (CAP-01); a product photo needs CAP-03, which the
+// controller checks.
+Route::middleware(['auth', 'signin.session', 'throttle:authenticated', 'history.encrypt', 'capability:CAP-01', 'input.allow:variant'])
+    ->get('/media/{file}', MediaController::class)
+    ->name('media.show');
 
 // The probe operation of the command platform (TASK-008 scope item 9): only
 // in the testing environment and, for the browser suite, the local one

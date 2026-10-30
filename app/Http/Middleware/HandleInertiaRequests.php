@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Domain\Commands\RecoveryEpoch;
 use App\Models\User;
 use App\Queries\Access\SignedIn;
+use App\Queries\Configuration\Shop;
 use App\Support\Localization\Dictionary;
 use Closure;
 use Illuminate\Http\Request;
@@ -18,7 +19,8 @@ use Inertia\Support\Header;
  * Inertia's middleware with the shared props of SECURITY_MODEL SEC-CH-02
  * (TASK-007): `auth`, the signed-in user and the limits of the sign-in session
  * (App\Queries\Access\SignedIn), or null before sign-in; for a signed-in
- * page, the recovery epoch (TASK-009); the interface
+ * page, the recovery epoch (TASK-009) and the shop's name, initials and
+ * accent (TASK-010); the interface
  * dictionary as a once prop (ADR-005); and Inertia's own validation-error
  * channel, which carries only the same user's field messages (SEC-CH-03).
  * Nothing else is shared: no business data, no other user's data, no cost.
@@ -68,6 +70,13 @@ class HandleInertiaRequests extends Middleware
             // set, so that a value shared for an earlier request of the same
             // process never reaches a visitor (dropEarlierDictionary()).
             'recoveryEpoch' => Inertia::always($signedIn === null ? null : app(RecoveryEpoch::class)->current()),
+            // The shop's name, initials and accent for the shell and the
+            // document title (DESIGN_SYSTEM section 7.2; SEC-CH-02 as TASK-010
+            // amends it): configuration that every role sees, never before
+            // sign-in, whose pages show no business data and the default
+            // accent. Read on a full visit and on a partial reload that names
+            // it; the key is always set, as the epoch's is.
+            'shop' => $signedIn === null ? null : static fn (): array => app(Shop::class)()->toArray(),
         ];
     }
 

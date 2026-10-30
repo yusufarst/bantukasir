@@ -111,6 +111,17 @@ abstract class CommandAction
     }
 
     /**
+     * The command's work before its transaction, once per request and outside
+     * it: an upload is validated by decoding and written under a new random
+     * key before the transaction, which then records the reference
+     * (TECHNICAL_RULES TR-TX-05; ARCHITECTURE ARC-41). Nothing by default. A
+     * refusal here writes no fact.
+     *
+     * @throws CommandRefused
+     */
+    protected function beforeTransaction(CommandContext $context): void {}
+
+    /**
      * Runs the command.
      *
      * @throws CommandRefused a definite refusal, or SERVICE_BUSY
@@ -124,6 +135,7 @@ abstract class CommandAction
 
         $first = $this->services->clock->now();
         self::refuseAfterHardEnd($context->receivedAt, $first);
+        $this->beforeTransaction($context);
         $attempt = 0;
 
         while (true) {

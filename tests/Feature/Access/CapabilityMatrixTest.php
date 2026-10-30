@@ -100,6 +100,24 @@ final class CapabilityMatrixTest extends DatabaseTestCase
         'RP-006' => ['method' => 'GET', 'path' => '/requests', 'json' => false, 'answers' => [
             'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [200, null], 'cashier' => [200, null], 'combined' => [200, null],
         ]],
+        // TASK-010: the Owner's settings pages, RC-32 — which without a
+        // recent confirmation answers 423 before anything runs — and RD-07,
+        // which every role passes to NOT_FOUND for a file that does not exist.
+        'RP-601' => ['method' => 'GET', 'path' => '/settings', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RP-607' => ['method' => 'GET', 'path' => '/settings/business-profile', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RP-608' => ['method' => 'GET', 'path' => '/settings/business-profile/edit', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RC-32' => ['method' => 'POST', 'path' => '/commands/business_profile.change', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [423, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RD-07' => ['method' => 'GET', 'path' => '/media/{file}', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [404, null], 'ops' => [404, null], 'cashier' => [404, null], 'combined' => [404, null],
+        ]],
     ];
 
     /** @var array<string, array{id: int, email: string, password: string}> */
@@ -115,6 +133,10 @@ final class CapabilityMatrixTest extends DatabaseTestCase
         // read (Tests\TestCase).
         $this->withoutVite();
         $this->useDatabaseSessions();
+
+        // The installation, so that the BusinessProfile pages have a revision
+        // to show (TASK-010).
+        TokoContoh::shop();
 
         foreach (self::PEOPLE as $actor => $person) {
             $this->accounts[$actor] = TokoContoh::person($person);

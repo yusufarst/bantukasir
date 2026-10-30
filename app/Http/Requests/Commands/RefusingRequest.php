@@ -34,7 +34,7 @@ abstract class RefusingRequest extends FormRequest
         'required', 'present', 'array', 'list', 'string', 'integer', 'boolean', 'uuid', 'in', 'not_in',
         'regex', 'not_regex', 'max', 'min', 'between', 'size', 'digits', 'digits_between', 'distinct',
         'prohibited', 'same', 'different', 'filled', 'nullable', 'sometimes', 'required_with', 'required_without',
-        'required_if', 'prohibited_if', 'gt', 'gte', 'lt', 'lte', 'file', 'mimes', 'mimetypes', 'date',
+        'required_if', 'prohibited_if', 'gt', 'gte', 'lt', 'lte', 'file', 'mimes', 'mimetypes', 'date', 'email',
     ];
 
     public function authorize(): bool

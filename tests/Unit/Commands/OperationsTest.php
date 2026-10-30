@@ -3,6 +3,7 @@
 namespace Tests\Unit\Commands;
 
 use App\Actions\Commands\CommandActions;
+use App\Actions\Configuration\ChangeBusinessProfile;
 use App\Domain\Commands\Operations;
 use LogicException;
 use Tests\Harness\Commands\Probe;
@@ -69,7 +70,8 @@ final class OperationsTest extends TestCase
         $this->assertFalse(Operations::exists('sale.refund'));
         $this->assertSame(['posting_block.block'], array_values(array_filter($listed, static fn (string $operation): bool => ! Operations::submittedByUsers($operation))));
         $this->assertThrows(fn () => Operations::familyOf('sale.refund'), LogicException::class);
-        $this->assertSame([], CommandActions::built());
+        // The commands built so far, each a known operation (TASK-010: RC-32).
+        $this->assertSame(['business_profile.change' => ChangeBusinessProfile::class], CommandActions::built());
     }
 
     public function test_each_operation_is_in_its_family_of_interaction_contracts_section_1_4(): void

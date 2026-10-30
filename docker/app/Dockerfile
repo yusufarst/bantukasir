@@ -17,7 +17,7 @@ ARG NGINX_KEY_FINGERPRINT=573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62
 RUN set -eux; \
     export DEBIAN_FRONTEND=noninteractive; \
     apt-get update; \
-    apt-get install -y --no-install-recommends ca-certificates curl gnupg git unzip libpq-dev; \
+    apt-get install -y --no-install-recommends ca-certificates curl gnupg git unzip libpq-dev libpng-dev libjpeg62-turbo-dev libwebp-dev; \
     export GNUPGHOME="$(mktemp -d)"; \
     curl -fsSL https://nginx.org/keys/nginx_signing.key | gpg --dearmor -o /usr/share/keyrings/nginx-archive-keyring.gpg; \
     gpg --dry-run --quiet --no-keyring --import --import-options import-show /usr/share/keyrings/nginx-archive-keyring.gpg \
@@ -29,9 +29,17 @@ RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends "nginx=${NGINX_VERSION}"; \
     docker-php-ext-install -j"$(nproc)" pdo_pgsql; \
+    # GD, the image library of the media pipeline (TASK-010; SECURITY_MODEL
+    # SEC-UP-03), with PNG, JPEG and WebP only: libgd starts no other program.
+    docker-php-ext-configure gd --with-jpeg --with-webp; \
+    docker-php-ext-install -j"$(nproc)" gd; \
     apt-get purge -y --auto-remove gnupg; \
     rm -rf /var/lib/apt/lists/*; \
     cp "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"; \
+    # The upload limits just above the application's largest, the logo's
+    # 5 MiB (ROUTE_CONTRACTS RT-12; SECURITY_MODEL SEC-UP-02): the
+    # application gives the clear refusal. TASK-018 raises them for photos.
+    printf 'upload_max_filesize = 6M\npost_max_size = 7M\n' > "$PHP_INI_DIR/conf.d/bantukasir-uploads.ini"; \
     git config --system --add safe.directory /var/www/html
 
 COPY --from=composer /usr/bin/composer /usr/local/bin/composer

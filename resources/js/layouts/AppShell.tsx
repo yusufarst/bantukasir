@@ -33,8 +33,10 @@ import { SIGN_OUT_WAIT_SECONDS, afterActivity, deadlinesOf, laterOf, mayReportAc
 // and clears the history key and the browser's data at sign-out, at either
 // limit and on a change of user; from the start of a sign-out in any tab of
 // the browser, every signed-in page hides until its next page loads; a page
-// restored from the back-forward cache is fetched again. The shop's name,
-// initials and accent are TASK-010's. TASK-009 adds the shell's indicators
+// restored from the back-forward cache is fetched again. TASK-010 adds the
+// shop's initials and name at the top of the side navigation and the drawer,
+// the shop's name in the document title, and its accent (app.tsx). TASK-009
+// adds the shell's indicators
 // (RD-03): the account-menu item "Permintaan belum pasti" with its number
 // (UXI-025), the banner (UXI-029) and the sign-out warning (UXI-027,
 // UXI-028), read from the references of this browser and the user's
@@ -44,6 +46,34 @@ import { SIGN_OUT_WAIT_SECONDS, afterActivity, deadlinesOf, laterOf, mayReportAc
 export interface SignedIn {
     readonly user: { readonly id: number; readonly displayName: string; readonly roles: readonly RoleCode[]; readonly capabilities: readonly string[] };
     readonly session: SessionTimes;
+}
+
+/**
+ * The shop of a signed-in page (SEC-CH-02 as TASK-010 amends it;
+ * App\DTO\Configuration\ShopData): the name and initials of the
+ * BusinessProfile in force, null before the bootstrap, and its accent, which
+ * app.tsx applies before the page renders.
+ */
+export interface Shop {
+    readonly name: string | null;
+    readonly initials: string | null;
+    readonly accent: string;
+}
+
+/** The shop as the shell shows it: its initials and name (DESIGN_SYSTEM 7.2). */
+export interface ShopBrand {
+    readonly name: string;
+    readonly initials: string;
+}
+
+/** The shop's brand of the shell, or null before the bootstrap. */
+export function brandOf(shop: Shop | null | undefined): ShopBrand | null {
+    return shop === null || shop === undefined || shop.name === null || shop.initials === null ? null : { name: shop.name, initials: shop.initials };
+}
+
+/** The document title: ":halaman — :toko" with the shop's name, the page label alone without it (UXA-13). */
+export function documentTitle(title: string, brand: ShopBrand | null): string {
+    return brand === null ? t('ux.shell.document_title_public', { halaman: title }) : t('ux.shell.document_title', { halaman: title, toko: brand.name });
 }
 
 /** A primary destination as the frame shows it. */
@@ -498,6 +528,22 @@ function AccountMenu({
 }
 
 /**
+ * The shop's initials and name at the top of the side navigation and of the
+ * drawer (DESIGN_SYSTEM 7.2; TASK-010): the initials are decoration beside the
+ * name, which is read.
+ */
+function Brand({ brand }: { brand: ShopBrand }) {
+    return (
+        <div className={'bk-brand'}>
+            <span className={'bk-brand__mark'} aria-hidden={true}>
+                {brand.initials}
+            </span>
+            <span className={'bk-brand__name'}>{brand.name}</span>
+        </div>
+    );
+}
+
+/**
  * The frame of the shell, without its data: the specimen gives it synthetic
  * destinations (TASK-007), the application its registered ones (AppShell).
  */
@@ -505,6 +551,7 @@ export function ShellFrame({
     title,
     layout = 'side',
     accountName,
+    brand = null,
     items,
     subNav,
     banners,
@@ -516,6 +563,8 @@ export function ShellFrame({
     title: string;
     layout?: ShellLayout;
     accountName: string;
+    /** The shop's initials and name (TASK-010), null before the bootstrap. */
+    brand?: ShopBrand | null;
     items: readonly NavItem[];
     subNav?: { readonly area: string; readonly items: readonly SubNavItem[] };
     banners?: ReactNode;
@@ -556,6 +605,7 @@ export function ShellFrame({
                 </div>
                 {hasNav && (
                     <Drawer open={drawer} onOpenChange={setDrawer} title={navLabel}>
+                        {brand !== null && <Brand brand={brand} />}
                         <nav className={'bk-nav'} aria-label={navLabel}>
                             <NavList items={items} kind={'side'} onNavigate={onNavigate} />
                         </nav>
@@ -568,6 +618,7 @@ export function ShellFrame({
     return (
         <div className={'bk-app'} data-layout={layout}>
             <header className={layout === 'rail' ? 'bk-rail' : 'bk-sidenav'}>
+                {layout === 'side' && brand !== null && <Brand brand={brand} />}
                 {hasNav && (
                     <nav className={'bk-nav'} aria-label={navLabel}>
                         <NavList items={items} kind={layout} onNavigate={onNavigate} />
@@ -714,7 +765,8 @@ export function AppShell({
     subCurrent?: SubDestinationId;
     children: ReactNode;
 }) {
-    const signedIn = usePage<{ auth: SignedIn | null }>().props.auth;
+    const props = usePage<{ auth: SignedIn | null; shop?: Shop | null }>().props;
+    const signedIn = props.auth;
 
     if (signedIn === null) {
         throw new Error('A page of the shell needs a sign-in session (SEC-CH-02).');
@@ -722,7 +774,7 @@ export function AppShell({
 
     return (
         <AnnouncerProvider>
-            <SignedInShell signedIn={signedIn} title={title} layout={layout} current={current} area={area} subCurrent={subCurrent}>
+            <SignedInShell signedIn={signedIn} brand={brandOf(props.shop)} title={title} layout={layout} current={current} area={area} subCurrent={subCurrent}>
                 {children}
             </SignedInShell>
         </AnnouncerProvider>
@@ -731,6 +783,7 @@ export function AppShell({
 
 function SignedInShell({
     signedIn,
+    brand,
     title,
     layout,
     current,
@@ -739,6 +792,7 @@ function SignedInShell({
     children,
 }: {
     signedIn: SignedIn;
+    brand: ShopBrand | null;
     title: string;
     layout: ShellLayout;
     current?: DestinationId;
@@ -773,7 +827,9 @@ function SignedInShell({
         const offBefore = router.on('before', (event) => {
             const visit = event.detail.visit;
 
-            if (bypass.current || !dirty.current.dirty || visit.method !== 'get' || visit.prefetch) {
+            // A partial reload stays on the page, with the state of its form:
+            // it leaves nothing (UXS-17 on UXP-608).
+            if (bypass.current || !dirty.current.dirty || visit.method !== 'get' || visit.prefetch || visit.only.length > 0) {
                 return;
             }
 
@@ -860,11 +916,12 @@ function SignedInShell({
 
     return (
         <LeaveGuardContext.Provider value={guard}>
-            <Head title={t('ux.shell.document_title_public', { halaman: title })} />
+            <Head title={documentTitle(title, brand)} />
             <ShellFrame
                 title={title}
                 layout={layout}
                 accountName={user.displayName}
+                brand={brand}
                 items={items}
                 subNav={areaEntry === undefined ? undefined : { area: t(areaEntry.label), items: subItems }}
                 banners={banners}

@@ -31,7 +31,7 @@ final class PrivilegeMatrixTest extends TestCase
     {
         $matrix = PrivilegeMatrix::load();
 
-        $this->assertSame(['audit_events', 'cache', 'cache_locks', 'command_identities', 'command_request_receipts', 'command_results', 'intent_reconciliations', 'migrations', 'password_reset_tokens', 'recovery_epoch', 'security_log_entries', 'sessions', 'stale_intent_reports', 'users'], array_keys($matrix->tables()));
+        $this->assertSame(['audit_events', 'business_profile_current', 'business_profile_revisions', 'cache', 'cache_locks', 'command_identities', 'command_request_receipts', 'command_results', 'intent_reconciliations', 'migrations', 'onboarding_releases', 'onboarding_state', 'password_reset_tokens', 'recovery_epoch', 'security_log_entries', 'sessions', 'stale_intent_reports', 'stored_files', 'users'], array_keys($matrix->tables()));
         $this->assertSame(['SELECT', 'INSERT', 'UPDATE', 'DELETE'], $matrix->tablePrivileges('cache', 'runtime'));
         $this->assertSame(['SELECT', 'INSERT', 'UPDATE', 'DELETE'], $matrix->tablePrivileges('cache_locks', 'runtime'));
         $this->assertSame([], $matrix->tablePrivileges('migrations', 'runtime'));
@@ -57,6 +57,15 @@ final class PrivilegeMatrixTest extends TestCase
 
         $this->assertSame(['SELECT', 'INSERT', 'DELETE'], $matrix->tablePrivileges('command_request_receipts', 'runtime'));
         $this->assertSame(['outcome', 'outcome_at', 'held_code', 'settled_by_command_id', 'settled_by_user_id'], $matrix->updateColumns('command_request_receipts'));
+
+        // TASK-010 (SCHEMA section 10).
+        foreach (['business_profile_revisions', 'stored_files', 'onboarding_releases'] as $table) {
+            $this->assertSame(['SELECT', 'INSERT'], $matrix->tablePrivileges($table, 'runtime'), $table);
+            $this->assertSame([], $matrix->updateColumns($table), $table);
+        }
+
+        $this->assertSame(['revision_id', 'changed_at'], $matrix->updateColumns('business_profile_current'));
+        $this->assertSame(['state', 'version', 'changed_at', 'changed_by_user_id'], $matrix->updateColumns('onboarding_state'));
 
         foreach (array_keys($matrix->tables()) as $table) {
             $this->assertSame($table === 'security_log_entries', $matrix->policies($table) !== [], $table);

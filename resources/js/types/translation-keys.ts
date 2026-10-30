@@ -87,6 +87,37 @@ export interface TranslationPlaceholders {
     'commands.unresolved.menu_item': 'jumlah';
     'commands.unresolved.row': 'jenis' | 'waktu';
     'commands.unresolved.title': never;
+    'config.profile.accent': never;
+    'config.profile.accent_option.blue': never;
+    'config.profile.accent_option.graphite': never;
+    'config.profile.accent_option.green': never;
+    'config.profile.accent_option.purple': never;
+    'config.profile.accent_option.teal': never;
+    'config.profile.address': never;
+    'config.profile.choose_logo': never;
+    'config.profile.contact': never;
+    'config.profile.current_version': never;
+    'config.profile.document_label': never;
+    'config.profile.document_label_help': never;
+    'config.profile.email': never;
+    'config.profile.footer_text': never;
+    'config.profile.footer_text_help': never;
+    'config.profile.header_text': never;
+    'config.profile.header_text_help': never;
+    'config.profile.logo': never;
+    'config.profile.logo_rules': never;
+    'config.profile.replace_logo': never;
+    'config.profile.shop_name': never;
+    'config.profile.title': never;
+    'config.profile.version_expand': 'nomor';
+    'config.profile.version_row': 'nama' | 'nomor' | 'waktu';
+    'config.profile.versions': never;
+    'config.profile_edit.submit': never;
+    'config.profile_edit.success': never;
+    'config.profile_edit.title': never;
+    'config.profile_edit.version_help': never;
+    'config.settings.profile_desc': never;
+    'config.settings.title': never;
     'ux.action.back_home': never;
     'ux.action.back_to': 'halaman';
     'ux.action.cancel': never;
@@ -151,6 +182,7 @@ export interface TranslationPlaceholders {
     'ux.nav.menu_open': never;
     'ux.nav.sub': 'halaman';
     'ux.shell.account_menu': 'nama';
+    'ux.shell.document_title': 'halaman' | 'toko';
     'ux.shell.document_title_public': 'halaman';
     'ux.state.abandoned.body': never;
     'ux.state.abandoned.title': never;
@@ -282,6 +314,7 @@ export interface TranslationPlaceholders {
     'ux.state.unverified.label': never;
     'ux.state.validation.body': never;
     'ux.state.validation.title': never;
+    'ux.validation.email': never;
     'ux.validation.money': never;
     'ux.validation.money_max': never;
     'ux.validation.money_min': never;
@@ -293,6 +326,12 @@ export interface TranslationPlaceholders {
     'ux.validation.quantity_positive': never;
     'ux.validation.quantity_whole': never;
     'ux.validation.required': never;
+    'ux.validation.text_max': 'maks';
+    'ux.validation.upload.animated': never;
+    'ux.validation.upload.image_type': never;
+    'ux.validation.upload.too_large': 'ukuran';
+    'ux.validation.upload.too_many_pixels': 'jumlah';
+    'ux.validation.upload.unreadable': never;
 }
 
 export type TranslationKey = keyof TranslationPlaceholders;

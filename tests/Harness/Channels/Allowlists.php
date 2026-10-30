@@ -43,10 +43,16 @@ final class Allowlists
         'errors',
         // The recovery epoch of every command envelope (TASK-009).
         'recoveryEpoch',
+        // The shop's name, initials and accent for the shell (TASK-010;
+        // SEC-CH-02 as amended).
+        'shop',
+        'shop.name',
+        'shop.initials',
+        'shop.accent',
     ];
 
-    /** The shared props before sign-in: nobody's data; `auth` and `recoveryEpoch` are null (TASK-009). */
-    public const array SHARED_GUEST = ['auth', 'errors', 'recoveryEpoch'];
+    /** The shared props before sign-in: nobody's data; `auth`, `recoveryEpoch` and `shop` are null (TASK-009, TASK-010). */
+    public const array SHARED_GUEST = ['auth', 'errors', 'recoveryEpoch', 'shop'];
 
     /**
      * The page props of each Inertia page, per kind of account; `*` for every
@@ -63,6 +69,22 @@ final class Allowlists
         // UXP-006 (TASK-009): no props; the list is built in the browser from
         // the references and RD-04.
         'commands/Requests' => ['*' => []],
+        // UXP-601, UXP-607 and UXP-608, the Owner's alone (TASK-010): the
+        // entries of the index, and the revisions, the earlier ones with at
+        // least one.
+        'access/Settings' => ['owner' => ['entries', 'entries.*', 'entries.*.id', 'entries.*.href']],
+        'configuration/Profile' => ['owner' => [
+            'current', 'current.id', 'current.number', 'current.shopName', 'current.address', 'current.contact', 'current.email', 'current.documentHeader',
+            'current.documentFooter', 'current.documentIdentity', 'current.accentToken', 'current.logo', 'current.createdAt', 'current.actorDisplayName',
+            'earlier', 'earlier.*', 'earlier.*.id', 'earlier.*.number', 'earlier.*.shopName', 'earlier.*.address', 'earlier.*.contact', 'earlier.*.email',
+            'earlier.*.documentHeader', 'earlier.*.documentFooter', 'earlier.*.documentIdentity', 'earlier.*.accentToken', 'earlier.*.logo', 'earlier.*.createdAt',
+            'earlier.*.actorDisplayName',
+        ]],
+        'configuration/ProfileEdit' => ['owner' => [
+            'current', 'current.id', 'current.number', 'current.shopName', 'current.address', 'current.contact', 'current.email', 'current.documentHeader',
+            'current.documentFooter', 'current.documentIdentity', 'current.accentToken', 'current.logo', 'current.createdAt', 'current.actorDisplayName',
+            'accents', 'accents.*',
+        ]],
     ];
 
     /**

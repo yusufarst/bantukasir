@@ -267,3 +267,16 @@ Checks of the fix, 29 October 2026 (CE-44, CE-45):
 | The command contract, the new Vitest block and browser tests included | CI on the pull request's next head | after the push | — | NOT_RUN at this record; the tick follows it (CE-41) |
 
 PHP, PostgreSQL and race suites are not affected: no PHP file changed, and their results of run 40905063814 stay valid (CE-45).
+
+## 15. Merge
+
+Recorded by the next Task, TASK-010 (EXECUTION_CONTEXT CE-50), from GitHub and the executor state on 30 October 2026. The tick verified the merge (CE-61) on 30 October 2026 at 00:11:06 (`MERGE_VERIFIED pr=15`).
+
+| Fact | Value |
+| --- | --- |
+| Pull request | #15, "TASK-009 — Command client, recovery and unresolved requests", from `task/TASK-009-command-client` into `develop` |
+| Its head | `a44701b86a02f3f51bd40ffa2f46461d8c618abc` |
+| CI on the pull request | Run 40914067036, event `pull_request` on `a44701b`, success (29 October 2026, 16:41:34 to 16:55:15 UTC) |
+| Merge | The tick's squash merge under D-105 (CE-60), by the Owner's account `yusufarst`, on 29 October 2026 at 16:56:18 UTC (23:56:18 Asia/Jakarta); the automated review's status then DONE |
+| Merge commit | `a6cd66d609e7f928f46f31ae6b02a6be9d3260d9` on `develop`, parent `5f20137` (`develop` did not move); author the Owner's GitHub no-reply identity, committer GitHub; its tree `3f6d9af83623ac8ae1c2fcbb70986937f798cb71` equals that of `a44701b` |
+| CI on `develop` | Run 40916453973, event `push` on `a6cd66d`, success (16:56:21 to 17:09:13 UTC) |

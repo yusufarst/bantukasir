@@ -67,9 +67,12 @@ describe('the primary navigation of each role', () => {
     });
 
     it('registers no destination before the Task that delivers its page (EXC-52)', () => {
-        expect(ALL.filter((id) => DESTINATIONS[id] !== undefined)).toEqual([]);
+        // UXI-008 "Pengaturan" is TASK-010's, with the capabilities of its row.
+        expect(ALL.filter((id) => DESTINATIONS[id] !== undefined)).toEqual(['settings']);
+        expect(DESTINATIONS.settings).toEqual({ label: 'config.settings.title', href: '/settings', icon: 'sliders', capabilities: ['CAP-25', 'CAP-32'] });
         expect(Object.values(SUB_DESTINATIONS).every((area) => Object.keys(area).length === 0)).toBe(true);
-        expect(navigationFor(['SUPER_ADMIN'], FLAGS.owner, DESTINATIONS)).toEqual([]);
+        expect(navigationFor(['SUPER_ADMIN'], FLAGS.owner, DESTINATIONS).map((item) => item.id)).toEqual(['settings']);
+        expect(navigationFor(['CASHIER', 'OPERATIONS_ADMIN'], FLAGS.combined, DESTINATIONS)).toEqual([]);
     });
 });
 

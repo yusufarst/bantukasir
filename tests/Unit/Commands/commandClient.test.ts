@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { classifyCheck, classifyCommand, ERROR_CODES, type Arrived } from '@/lib/commands/answers';
-import { CLIENT_WAIT_MS, countsAsActivity, envelopeOf, recheckDelay, RECORD_CHECK_WAIT_MINUTES, requestJson, USER_REQUEST_EVENT, type FrozenRequest } from '@/lib/commands/client';
+import { CLIENT_WAIT_MS, countsAsActivity, envelopeOf, formOf, recheckDelay, RECORD_CHECK_WAIT_MINUTES, requestJson, USER_REQUEST_EVENT, type FrozenRequest } from '@/lib/commands/client';
 import { blockingRequest, EXEMPT_FAMILY, familyOf, isLabelledFamily, OPERATION_FAMILIES } from '@/lib/commands/families';
 import { keepReference, parseReferences, readReferences, releaseReference, REFERENCES_PREFIX, serializeReferences, type Reference } from '@/lib/commands/references';
 import { countOf, currentUnresolved, indicatorsOf, OWN_RECEIPT_PAGES_MAX, readOwnReceipts, refreshReceipts, setUser, unionOf, type ReceiptRow } from '@/lib/commands/unresolved';
@@ -134,6 +134,25 @@ describe('the wait, the repeats and the envelope', () => {
 
         expect(envelopeOf(frozen)).toEqual({ operation: 'testing.probe', version: 1, sourceIntentId: INTENT, idempotencyKey: KEY, recoveryEpoch: EPOCH, expected: {}, payload: { note: 'x' } });
         expect(envelopeOf(frozen)).toEqual(envelopeOf(frozen));
+    });
+
+    it('sends a payload with a file as a multipart form whose fields are the envelope, and every other one as JSON (TASK-010)', () => {
+        const logo = new Blob([new Uint8Array([137, 80, 78, 71])], { type: 'image/png' });
+        const frozen: FrozenRequest = {
+            ...reference({ operation: 'business_profile.change', family: 'profile' }),
+            payload: { shopName: 'Toko Contoh', address: null, logoAction: 'replace', logo },
+            expected: { revisionId: 7 },
+        };
+        const form = formOf(frozen);
+
+        expect(form).not.toBeNull();
+        expect([...(form?.keys() ?? [])]).toEqual(['operation', 'version', 'sourceIntentId', 'idempotencyKey', 'recoveryEpoch', 'expected[revisionId]', 'payload[shopName]', 'payload[address]', 'payload[logoAction]', 'payload[logo]']);
+        expect([form?.get('operation'), form?.get('version'), form?.get('sourceIntentId'), form?.get('idempotencyKey'), form?.get('recoveryEpoch')]).toEqual(['business_profile.change', '1', INTENT, KEY, EPOCH]);
+        expect([form?.get('expected[revisionId]'), form?.get('payload[shopName]'), form?.get('payload[address]'), form?.get('payload[logoAction]')]).toEqual(['7', 'Toko Contoh', '', 'replace']);
+        expect(form?.get('payload[logo]')).toBeInstanceOf(Blob);
+
+        // Without a file, the request stays JSON.
+        expect(formOf({ ...frozen, payload: { shopName: 'Toko Contoh', logoAction: 'keep' } })).toBeNull();
     });
 
     it('writes the time of a reference as the server writes an instant', () => {
