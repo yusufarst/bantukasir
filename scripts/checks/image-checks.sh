@@ -569,24 +569,18 @@ if [ "$scan_status" -eq 0 ]; then pass 'the secret scan finds nothing'; else fai
 rm -rf "$work/rootfs" 2>/dev/null
 
 section 'The vulnerability scan of the packages (Grype)'
+expect_ok 'the gate of the scan refuses what it must' bash scripts/checks/image-scan-gate-test.sh
 docker save -o "$work/image.tar" "$image"
 chmod 644 "$work/image.tar"
 docker run --rm -v "$work/image.tar:/image.tar:ro" "$grype_image" version 2>&1
 if docker run --rm -v "$work/image.tar:/image.tar:ro" "$grype_image" -q -o json docker-archive:/image.tar >"$work/grype.json"; then
     jq -r '"Database: \(.descriptor.db.status.built // .descriptor.db.built // "unknown")"' "$work/grype.json"
     jq -r '.matches | group_by(.vulnerability.severity) | map("\(.[0].vulnerability.severity): \(length)") | .[]' "$work/grype.json"
-    # A high or critical finding needs an accepted reason (contract section 10),
-    # in scripts/checks/image-scan-accepted.json: its identifier, its package and
-    # the reason.
-    jq -r --slurpfile accepted scripts/checks/image-scan-accepted.json '
-        ($accepted[0] | map("\(.id) \(.package)")) as $known
-        | .matches[]
-        | select(.vulnerability.severity == "High" or .vulnerability.severity == "Critical")
-        | "\(.vulnerability.severity) \(.vulnerability.id) \(.artifact.name) \(.artifact.version) \(.artifact.type) fix=\(.vulnerability.fix.state):\((.vulnerability.fix.versions // []) | join(",")) accepted=\("\(.vulnerability.id) \(.artifact.name)" as $key | $known | index($key) != null)"' \
-        "$work/grype.json" | sort -u >"$work/high-findings"
-    cat "$work/high-findings"
-    open_findings="$(grep -c 'accepted=false' "$work/high-findings")"
-    expect 'no high or critical finding is without an accepted reason' '0' "$open_findings"
+    # A high or critical finding needs an accepted reason (contract section 10):
+    # the gate prints every finding and refuses what D-112 does not cover
+    # (scripts/checks/image-scan-gate.sh, scripts/checks/image-scan-accepted.json).
+    expect_ok 'no high or critical finding is fixable, known to be exploited or without an accepted reason' \
+        bash scripts/checks/image-scan-gate.sh "$work/grype.json" scripts/checks/image-scan-accepted.json
 else
     fail 'the vulnerability scan ran'
 fi
