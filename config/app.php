@@ -23,6 +23,12 @@ return [
     // difference, and so do the operator procedures and the release preflight.
     'environment_name' => env('APP_ENVIRONMENT_NAME'),
 
+    // The process role of this container, web or backup (ENVIRONMENTS section
+    // 11; TASK-012): it selects the scheduled commands (App\Console\
+    // ProcessSchedule), the settings checked at start-up, the default database
+    // connection and the cache store.
+    'process_role' => env('APP_PROCESS_ROLE'),
+
     // Debug output only in local development: off in every other
     // environment, whatever APP_DEBUG says (SECURITY_MODEL SEC-CH-10;
     // TECHNICAL_RULES TR-ERR-02; ENVIRONMENTS section 11; TASK-007).

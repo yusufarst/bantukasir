@@ -1,0 +1,14 @@
+# The secret scan of the image's file system (TASK-012;
+# scripts/checks/image-checks.sh): the default rules of Gitleaks 8.30.1. An
+# allowlist entry names third-party files of the image only, its reason in its
+# description below; the application's own files never have one.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Third-party files with text that the rule takes for a key: the table of MIME types of symfony/mime (zz-application/zz-winassoc-mdb), and a C header of Debian's perl package"
+targetRules = ["generic-api-key"]
+paths = [
+    '''var/www/html/vendor/symfony/mime/MimeTypes\.php$''',
+    '''usr/lib/x86_64-linux-gnu/perl/[^/]+/CORE/cop\.h$''',
+]

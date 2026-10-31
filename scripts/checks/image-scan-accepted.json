@@ -1,0 +1,735 @@
+{
+  "decision": "D-112",
+  "limits": "Conditional and temporary, for development only: the Debian findings of the assessed image, at these exact versions. It authorizes no staging or production deployment. A critical finding enters this list only by its own decision of the Owner. TASK-013 reassesses curl and libcurl before its HTTP or S3 integration; gate RELEASE reviews every remaining vulnerability independently.",
+  "assessed": {
+    "ciRun": 41129923061,
+    "head": "ef64c1a864bcfbe9437665f8a25c7a1dde335aa1",
+    "scanner": "Grype 0.121.0, with Syft 1.55.0",
+    "database": "2026-10-30T06:23:28Z",
+    "image": "the release stage of docker/app/Dockerfile: php:8.5.12-fpm-trixie with Debian 13's current packages; identifier sha256:60f08d3557e6e6b3d01cbad903b8fdf11a8e13ca7a4bd9f2b9fded719e4e5b4e in that run. An image of a later build is this assessed image while its packages keep these exact versions, which the gate compares",
+    "statusRead": "2026-10-31, security-tracker.debian.org, curl.se, cisagov/vulnrichment and NVD's API"
+  },
+  "commonReviewTrigger": "Every entry is reviewed again when the gate refuses it (a fix available, known exploitation, another version or severity), and at gate RELEASE.",
+  "accepted": [
+    {
+      "id": "CVE-2026-10536",
+      "severity": "Critical",
+      "decision": "D-112",
+      "sourcePackage": "curl",
+      "packages": [
+        {"name": "curl", "version": "8.14.1-2+deb13u7", "type": "deb"},
+        {"name": "libcurl4t64", "version": "8.14.1-2+deb13u7", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa> (Minor issue); fixed upstream in 8.14.2 and 8.21.0",
+      "critical": {
+        "scanSeverityFrom": "CISA-ADP CVSS 3.1 9.8; the curl project publishes no CVSS",
+        "upstreamSeverity": "curl.se: Low; libcurl only, not the command-line tool",
+        "knownExploited": "No KEV entry; CISA SSVC exploitation poc, automatable yes (record of 2026-07-06)",
+        "needs": "CURLOPT_STREAM_DEPENDS or CURLOPT_STREAM_DEPENDS_E, then curl_easy_reset and curl_easy_cleanup",
+        "exposure": "Not reachable: nothing in the image sets HTTP/2 stream dependencies, and the application makes no libcurl request at this revision"
+      },
+      "rationale": "A use-after-free at a handle's cleanup, needing HTTP/2 stream dependencies that the curl project calls extremely rarely used.",
+      "mitigation": "The application calls neither libcurl nor its HTTP client; the only curl in use is the health check's fixed loopback request.",
+      "reviewTrigger": "TASK-013 before its HTTP or S3 integration: check that its client sets no stream dependency."
+    },
+    {
+      "id": "CVE-2026-11856",
+      "severity": "Critical",
+      "decision": "D-112",
+      "sourcePackage": "curl",
+      "packages": [
+        {"name": "curl", "version": "8.14.1-2+deb13u7", "type": "deb"},
+        {"name": "libcurl4t64", "version": "8.14.1-2+deb13u7", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa> (Minor issue); fixed upstream in 8.14.2 and 8.21.0",
+      "critical": {
+        "scanSeverityFrom": "CISA-ADP CVSS 3.1 9.8; the curl project publishes no CVSS",
+        "upstreamSeverity": "curl.se: Medium; libcurl only, not the command-line tool",
+        "knownExploited": "No KEV entry; CISA SSVC exploitation poc, automatable yes (record of 2026-07-06)",
+        "needs": "One libcurl handle reused from a Digest-authenticated transfer to a second origin",
+        "exposure": "Not reachable: no Digest authentication is configured anywhere, and the application makes no libcurl request at this revision"
+      },
+      "rationale": "Sends one Digest Authorization header to a second origin when a handle is reused; a malicious second host could repeat that single request.",
+      "mitigation": "No Digest authentication and no outbound request from the application at this revision.",
+      "reviewTrigger": "TASK-013 before its HTTP or S3 integration: its store uses signed requests, and its pings use no Digest authentication."
+    },
+    {
+      "id": "CVE-2026-18924",
+      "severity": "Critical",
+      "decision": "D-112",
+      "sourcePackage": "curl",
+      "packages": [
+        {"name": "curl", "version": "8.14.1-2+deb13u7", "type": "deb"},
+        {"name": "libcurl4t64", "version": "8.14.1-2+deb13u7", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa> (Minor issue); fixed upstream in 8.14.x, 8.22.0",
+      "critical": {
+        "scanSeverityFrom": "CISA-ADP CVSS 3.1 9.1; the curl project publishes no CVSS",
+        "upstreamSeverity": "curl.se: Low; libcurl only, not the command-line tool",
+        "knownExploited": "No KEV entry; CISA SSVC exploitation poc, automatable yes (record of 2026-09-08)",
+        "needs": "CURLMOPT_PUSHFUNCTION, CURL_LOCK_DATA_CONNECT, HTTPS over HTTP/2 and a pushed stream that the application accepts, all at once",
+        "exposure": "Not reachable: nothing in the image enables HTTP/2 Server Push, and the application makes no libcurl request at this revision"
+      },
+      "rationale": "A use-after-free at cleanup, needing five named conditions, among them a push callback that accepts the stream.",
+      "mitigation": "No push callback and no shared connections; no outbound request from the application at this revision.",
+      "reviewTrigger": "TASK-013 before its HTTP or S3 integration: check that its client enables no push callback."
+    },
+    {
+      "id": "CVE-2026-19931",
+      "severity": "Critical",
+      "decision": "D-112",
+      "sourcePackage": "curl",
+      "packages": [
+        {"name": "curl", "version": "8.14.1-2+deb13u7", "type": "deb"},
+        {"name": "libcurl4t64", "version": "8.14.1-2+deb13u7", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa> (Minor issue); fixed upstream in 8.14.x, 8.22.0",
+      "critical": {
+        "scanSeverityFrom": "CISA-ADP CVSS 3.1 9.8; the curl project publishes no CVSS",
+        "upstreamSeverity": "curl.se: Medium; libcurl and the command-line tool",
+        "knownExploited": "No KEV entry; CISA SSVC exploitation poc, automatable yes (record of 2026-09-08)",
+        "needs": "Negotiate authentication with blank credentials, and a second request reusing that connection",
+        "exposure": "Not reachable: no Negotiate authentication is configured; the health check's one request sends no credentials and no second user exists"
+      },
+      "rationale": "A request of a second user may travel over a connection another user authenticated with Negotiate.",
+      "mitigation": "No Negotiate authentication and no Kerberos identity in the image; no outbound request from the application at this revision.",
+      "reviewTrigger": "TASK-013 before its HTTP or S3 integration: check that its client uses no Negotiate authentication."
+    },
+    {
+      "id": "CVE-2026-6653",
+      "severity": "Critical",
+      "decision": "D-112",
+      "sourcePackage": "libxml2",
+      "packages": [
+        {"name": "libxml2", "version": "2.12.7+dfsg+really2.9.14-2.1+deb13u3", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa> (Minor issue); fixed in unstable 2.14.5; no trixie-backports package",
+      "critical": {
+        "scanSeverityFrom": "NVD's primary CVSS 3.1 9.8, Critical; the CNA (Canonical) gives CVSS 4.0 7.0, High",
+        "upstreamSeverity": "Canonical, as CNA: High, attack complexity High",
+        "knownExploited": "No KEV entry; CISA SSVC exploitation none, automatable no (record of 2026-06-22); the CNA's vector states E:P, a proof of concept",
+        "needs": "PHP parsing attacker-supplied XML with faulty entity resolution in its internal subset, through the XML parser",
+        "exposure": "Not reachable: no route accepts XML; images go through GD, which does not use libxml2. The one call that parses is Termwind's DOMDocument::loadHTML of the framework's console components, at each container start, in schedule:run, in the migration job and in the framework's operator commands, on fixed framework text with its content escaped: the HTML parser, whose doctype code does not call xmlParseInternalSubset (HTMLparser.c of 2.9.14). Other vendor parsers run on no input from a request"
+      },
+      "rationale": "A use-after-free in xmlParseInternalSubset; the remote denial of service needs the XML parser run on crafted XML.",
+      "mitigation": "No XML input exists in any route, command or upload; SVG and other XML formats are refused by the media pipeline. Console components print fixed framework text and the schedule's identifiers, and the application's own commands print through $this->info, $this->error and $this->line, which do not use Termwind.",
+      "reviewTrigger": "Any Task that accepts or parses XML, an XML-based file format or an import through libxml2, or prints request-derived or stored text through a console component."
+    },
+    {
+      "id": "CVE-2026-8926",
+      "severity": "Critical",
+      "decision": "D-112",
+      "sourcePackage": "curl",
+      "packages": [
+        {"name": "curl", "version": "8.14.1-2+deb13u7", "type": "deb"},
+        {"name": "libcurl4t64", "version": "8.14.1-2+deb13u7", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa> (Minor issue); fixed upstream in 8.14.2 and 8.21.0",
+      "critical": {
+        "scanSeverityFrom": "CISA-ADP CVSS 3.1 9.1; the curl project publishes no CVSS",
+        "upstreamSeverity": "curl.se: Low; libcurl and the command-line tool",
+        "knownExploited": "No KEV entry; CISA SSVC exploitation poc, automatable no (record of 2026-07-06)",
+        "needs": "A .netrc file with another user's entry for that host, and a URL with a user name and no password",
+        "exposure": "Not reachable: the image holds no .netrc, nothing tells curl or libcurl to read one, and the health check's address has no user name"
+      },
+      "rationale": "A .netrc lookup may use the password of another user for that host.",
+      "mitigation": "No .netrc in the image and none is configured.",
+      "reviewTrigger": "TASK-013 before its HTTP or S3 integration: its credentials come from the role's settings, never from a .netrc."
+    },
+    {
+      "id": "CVE-2026-9079",
+      "severity": "Critical",
+      "decision": "D-112",
+      "sourcePackage": "curl",
+      "packages": [
+        {"name": "curl", "version": "8.14.1-2+deb13u7", "type": "deb"},
+        {"name": "libcurl4t64", "version": "8.14.1-2+deb13u7", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa> (Minor issue); fixed upstream in 8.14.2 and 8.21.0",
+      "critical": {
+        "scanSeverityFrom": "CISA-ADP CVSS 3.1 9.8; the curl project publishes no CVSS",
+        "upstreamSeverity": "curl.se: Medium; libcurl only, not the command-line tool",
+        "knownExploited": "No KEV entry; CISA SSVC exploitation poc, automatable yes (record of 2026-07-06)",
+        "needs": "A libcurl handle told to clear its proxy credentials, then used for a later transfer",
+        "exposure": "Not reachable: no proxy credentials exist in the image or its settings, and the application makes no libcurl request at this revision"
+      },
+      "rationale": "Proxy credentials that should have been cleared stay on the reused handle.",
+      "mitigation": "No outbound proxy is configured, and the request's Proxy header never becomes HTTP_PROXY (nginx-front-controller.conf).",
+      "reviewTrigger": "TASK-013 before its HTTP or S3 integration; any environment that needs an outbound proxy."
+    },
+    {
+      "id": "CVE-2026-12064",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "curl",
+      "packages": [
+        {"name": "curl", "version": "8.14.1-2+deb13u7", "type": "deb"},
+        {"name": "libcurl4t64", "version": "8.14.1-2+deb13u7", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa>",
+      "rationale": "A schemeless URL combined with --proto in the command-line tool.",
+      "mitigation": "The health check's address has its scheme and uses no --proto; the application makes no libcurl request at this revision.",
+      "reviewTrigger": "TASK-013 before its HTTP or S3 integration."
+    },
+    {
+      "id": "CVE-2026-13608",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "curl",
+      "packages": [
+        {"name": "curl", "version": "8.14.1-2+deb13u7", "type": "deb"},
+        {"name": "libcurl4t64", "version": "8.14.1-2+deb13u7", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa>",
+      "rationale": "SASL negotiation for LDAP authentication.",
+      "mitigation": "No LDAP is used anywhere in the application; no libcurl request at this revision.",
+      "reviewTrigger": "TASK-013 before its HTTP or S3 integration."
+    },
+    {
+      "id": "CVE-2026-80229",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "curl",
+      "packages": [
+        {"name": "curl", "version": "8.14.1-2+deb13u7", "type": "deb"},
+        {"name": "libcurl4t64", "version": "8.14.1-2+deb13u7", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa>",
+      "rationale": "Pooled transfers of the multi interface.",
+      "mitigation": "No libcurl request at this revision. The health check's one request uses no pool.",
+      "reviewTrigger": "TASK-013 before its HTTP or S3 integration: its uploads may use the multi interface."
+    },
+    {
+      "id": "CVE-2026-80230",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "curl",
+      "packages": [
+        {"name": "curl", "version": "8.14.1-2+deb13u7", "type": "deb"},
+        {"name": "libcurl4t64", "version": "8.14.1-2+deb13u7", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa>",
+      "rationale": "CURLOPT_PINNEDPUBLICKEY combined with other options.",
+      "mitigation": "No key pinning is configured; no libcurl request at this revision.",
+      "reviewTrigger": "TASK-013 before its HTTP or S3 integration."
+    },
+    {
+      "id": "CVE-2026-80255",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "curl",
+      "packages": [
+        {"name": "curl", "version": "8.14.1-2+deb13u7", "type": "deb"},
+        {"name": "libcurl4t64", "version": "8.14.1-2+deb13u7", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa>",
+      "rationale": "A Set-Cookie header with a tab character, in the cookie engine.",
+      "mitigation": "The health check enables no cookie engine; no libcurl request at this revision.",
+      "reviewTrigger": "TASK-013 before its HTTP or S3 integration."
+    },
+    {
+      "id": "CVE-2026-82209",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "curl",
+      "packages": [
+        {"name": "curl", "version": "8.14.1-2+deb13u7", "type": "deb"},
+        {"name": "libcurl4t64", "version": "8.14.1-2+deb13u7", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa>",
+      "rationale": "Public Suffix enforcement through libpsl, for cookies.",
+      "mitigation": "The health check enables no cookie engine; no libcurl request at this revision.",
+      "reviewTrigger": "TASK-013 before its HTTP or S3 integration."
+    },
+    {
+      "id": "CVE-2026-86409",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "curl",
+      "packages": [
+        {"name": "curl", "version": "8.14.1-2+deb13u7", "type": "deb"},
+        {"name": "libcurl4t64", "version": "8.14.1-2+deb13u7", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa>",
+      "rationale": "CURLOPT_AWS_SIGV4 set to NULL does not disable SigV4 signing.",
+      "mitigation": "No SigV4 use at this revision.",
+      "reviewTrigger": "TASK-013 before its S3 integration, which this one bears on most directly."
+    },
+    {
+      "id": "CVE-2026-86410",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "curl",
+      "packages": [
+        {"name": "curl", "version": "8.14.1-2+deb13u7", "type": "deb"},
+        {"name": "libcurl4t64", "version": "8.14.1-2+deb13u7", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa>",
+      "rationale": "SSH host key handling in the command-line tool.",
+      "mitigation": "No SSH or SFTP transfer exists in the image's use of curl.",
+      "reviewTrigger": "TASK-013 before its HTTP or S3 integration."
+    },
+    {
+      "id": "CVE-2026-8932",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "curl",
+      "packages": [
+        {"name": "curl", "version": "8.14.1-2+deb13u7", "type": "deb"},
+        {"name": "libcurl4t64", "version": "8.14.1-2+deb13u7", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa>",
+      "rationale": "A connection is reused despite differing mutual TLS settings.",
+      "mitigation": "No mutual TLS is configured; no libcurl request at this revision.",
+      "reviewTrigger": "TASK-013 before its HTTP or S3 integration."
+    },
+    {
+      "id": "CVE-2026-9080",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "curl",
+      "packages": [
+        {"name": "curl", "version": "8.14.1-2+deb13u7", "type": "deb"},
+        {"name": "libcurl4t64", "version": "8.14.1-2+deb13u7", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa>",
+      "rationale": "curl_easy_pause called from a socket callback.",
+      "mitigation": "No such callback exists; no libcurl request at this revision.",
+      "reviewTrigger": "TASK-013 before its HTTP or S3 integration."
+    },
+    {
+      "id": "CVE-2026-92386",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "curl",
+      "packages": [
+        {"name": "curl", "version": "8.14.1-2+deb13u7", "type": "deb"},
+        {"name": "libcurl4t64", "version": "8.14.1-2+deb13u7", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa>",
+      "rationale": "A long cookie name or value in a Netscape cookie jar.",
+      "mitigation": "No cookie jar is used; no libcurl request at this revision.",
+      "reviewTrigger": "TASK-013 before its HTTP or S3 integration."
+    },
+    {
+      "id": "CVE-2026-92387",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "curl",
+      "packages": [
+        {"name": "curl", "version": "8.14.1-2+deb13u7", "type": "deb"},
+        {"name": "libcurl4t64", "version": "8.14.1-2+deb13u7", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa>",
+      "rationale": "A malicious FTP server that omits control responses.",
+      "mitigation": "No FTP transfer exists; no libcurl request at this revision.",
+      "reviewTrigger": "TASK-013 before its HTTP or S3 integration."
+    },
+    {
+      "id": "CVE-2026-9545",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "curl",
+      "packages": [
+        {"name": "curl", "version": "8.14.1-2+deb13u7", "type": "deb"},
+        {"name": "libcurl4t64", "version": "8.14.1-2+deb13u7", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa>",
+      "rationale": "An HTTP/3 server used during transfers.",
+      "mitigation": "HTTP/3 is not requested anywhere; no libcurl request at this revision.",
+      "reviewTrigger": "TASK-013 before its HTTP or S3 integration."
+    },
+    {
+      "id": "CVE-2026-74860",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "libxml2",
+      "packages": [
+        {"name": "libxml2", "version": "2.12.7+dfsg+really2.9.14-2.1+deb13u3", "type": "deb"}
+      ],
+      "fixState": "not-fixed",
+      "debianStatus": "trixie vulnerable, no note for trixie; fixed in unstable 2.15.3",
+      "rationale": "A double free in the SAX attributeDecl callback, which crashes Python programs using the SAX bindings.",
+      "mitigation": "No Python exists in the image, and no route accepts XML; the one parse that runs is Termwind's loadHTML of fixed console text.",
+      "reviewTrigger": "Any Task that accepts or parses XML, or prints request-derived or stored text through a console component."
+    },
+    {
+      "id": "CVE-2026-86138",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "libxml2",
+      "packages": [
+        {"name": "libxml2", "version": "2.12.7+dfsg+really2.9.14-2.1+deb13u3", "type": "deb"}
+      ],
+      "fixState": "not-fixed",
+      "debianStatus": "trixie vulnerable, no note for trixie; fixed in unstable 2.15.4",
+      "rationale": "An integer overflow in xmlDictAddQString, leading to a heap overflow during parsing.",
+      "mitigation": "No route accepts XML; the one parse that runs is Termwind's loadHTML of fixed console text, whose short names cannot reach an integer overflow.",
+      "reviewTrigger": "Any Task that accepts or parses XML, or prints request-derived or stored text through a console component."
+    },
+    {
+      "id": "CVE-2026-86139",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "libxml2",
+      "packages": [
+        {"name": "libxml2", "version": "2.12.7+dfsg+really2.9.14-2.1+deb13u3", "type": "deb"}
+      ],
+      "fixState": "not-fixed",
+      "debianStatus": "trixie vulnerable, no note for trixie",
+      "rationale": "An integer overflow in xmlURIEscapeStr.",
+      "mitigation": "No code of the application escapes a URI through libxml2, and no route accepts XML; the one parse that runs is Termwind's loadHTML of fixed console text.",
+      "reviewTrigger": "Any Task that accepts or parses XML, or prints request-derived or stored text through a console component."
+    },
+    {
+      "id": "CVE-2026-86140",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "libxml2",
+      "packages": [
+        {"name": "libxml2", "version": "2.12.7+dfsg+really2.9.14-2.1+deb13u3", "type": "deb"}
+      ],
+      "fixState": "not-fixed",
+      "debianStatus": "trixie vulnerable, no note for trixie",
+      "rationale": "A string concatenation in xmlSnprintfElements, during DTD validation.",
+      "mitigation": "No route accepts XML and nothing validates against a DTD; the one parse that runs is Termwind's loadHTML of fixed console text.",
+      "reviewTrigger": "Any Task that accepts or parses XML, or prints request-derived or stored text through a console component."
+    },
+    {
+      "id": "CVE-2026-86142",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "libxml2",
+      "packages": [
+        {"name": "libxml2", "version": "2.12.7+dfsg+really2.9.14-2.1+deb13u3", "type": "deb"}
+      ],
+      "fixState": "not-fixed",
+      "debianStatus": "trixie vulnerable, no note for trixie; fixed in unstable 2.15.4",
+      "rationale": "A heap overflow in xmlXPtrEvalXPtrPart, evaluating an XPointer.",
+      "mitigation": "Nothing evaluates an XPointer and no route accepts XML; the one parse that runs is Termwind's loadHTML of fixed console text.",
+      "reviewTrigger": "Any Task that accepts or parses XML, or prints request-derived or stored text through a console component."
+    },
+    {
+      "id": "CVE-2026-86143",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "libxml2",
+      "packages": [
+        {"name": "libxml2", "version": "2.12.7+dfsg+really2.9.14-2.1+deb13u3", "type": "deb"}
+      ],
+      "fixState": "not-fixed",
+      "debianStatus": "trixie vulnerable, no note for trixie; fixed in unstable 2.15.4",
+      "rationale": "Negative lengths reach write callbacks in the xmlIO output path.",
+      "mitigation": "The application writes no XML through libxml2 output callbacks.",
+      "reviewTrigger": "Any Task that accepts, parses or writes XML through libxml2."
+    },
+    {
+      "id": "CVE-2026-86144",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "libxml2",
+      "packages": [
+        {"name": "libxml2", "version": "2.12.7+dfsg+really2.9.14-2.1+deb13u3", "type": "deb"}
+      ],
+      "fixState": "not-fixed",
+      "debianStatus": "trixie vulnerable, no note for trixie; fixed in unstable 2.15.4",
+      "rationale": "XInclude drops parse flags such as XML_PARSE_NONET, which may enable XXE or SSRF with a custom resource loader.",
+      "mitigation": "Nothing processes XInclude and no route accepts XML; the one parse that runs is Termwind's loadHTML of fixed console text.",
+      "reviewTrigger": "Any Task that accepts or parses XML, or prints request-derived or stored text through a console component."
+    },
+    {
+      "id": "CVE-2026-76642",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "util-linux",
+      "packages": [
+        {"name": "bsdutils", "version": "1:2.41.5-0+deb13u1", "type": "deb"},
+        {"name": "libblkid1", "version": "2.41.5-0+deb13u1", "type": "deb"},
+        {"name": "liblastlog2-2", "version": "2.41.5-0+deb13u1", "type": "deb"},
+        {"name": "libmount1", "version": "2.41.5-0+deb13u1", "type": "deb"},
+        {"name": "libsmartcols1", "version": "2.41.5-0+deb13u1", "type": "deb"},
+        {"name": "libuuid1", "version": "2.41.5-0+deb13u1", "type": "deb"},
+        {"name": "login", "version": "1:4.16.0-2+really2.41.5-0+deb13u1", "type": "deb"},
+        {"name": "mount", "version": "2.41.5-0+deb13u1", "type": "deb"},
+        {"name": "util-linux", "version": "2.41.5-0+deb13u1", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa> (Minor issue); fixed in unstable 2.42.3",
+      "rationale": "mount runs post-mount hooks without checking its helper's result: a local privilege escalation, so an attacker needs code execution in the container first.",
+      "mitigation": "No route reaches a shell or an external program, so nothing gives that first step; nothing in the image starts mount. The container's capabilities are not established here and are for gate TARGET.",
+      "reviewTrigger": "Gate TARGET's hardening of the container; any Task that starts an external mount or gives the container mount rights."
+    },
+    {
+      "id": "CVE-2026-78408",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "util-linux",
+      "packages": [
+        {"name": "bsdutils", "version": "1:2.41.5-0+deb13u1", "type": "deb"},
+        {"name": "libblkid1", "version": "2.41.5-0+deb13u1", "type": "deb"},
+        {"name": "liblastlog2-2", "version": "2.41.5-0+deb13u1", "type": "deb"},
+        {"name": "libmount1", "version": "2.41.5-0+deb13u1", "type": "deb"},
+        {"name": "libsmartcols1", "version": "2.41.5-0+deb13u1", "type": "deb"},
+        {"name": "libuuid1", "version": "2.41.5-0+deb13u1", "type": "deb"},
+        {"name": "login", "version": "1:4.16.0-2+really2.41.5-0+deb13u1", "type": "deb"},
+        {"name": "mount", "version": "2.41.5-0+deb13u1", "type": "deb"},
+        {"name": "util-linux", "version": "2.41.5-0+deb13u1", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa> (Minor issue); fixed in unstable 2.42.4",
+      "rationale": "nsenter --join-cgroup keeps a root-opened descriptor across namespace changes; needs root running nsenter against an attacker's target.",
+      "mitigation": "Nothing in the image runs nsenter, and its processes are not root.",
+      "reviewTrigger": "Gate TARGET's hardening of the container; any Task that runs nsenter."
+    },
+    {
+      "id": "CVE-2026-78409",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "util-linux",
+      "packages": [
+        {"name": "bsdutils", "version": "1:2.41.5-0+deb13u1", "type": "deb"},
+        {"name": "libblkid1", "version": "2.41.5-0+deb13u1", "type": "deb"},
+        {"name": "liblastlog2-2", "version": "2.41.5-0+deb13u1", "type": "deb"},
+        {"name": "libmount1", "version": "2.41.5-0+deb13u1", "type": "deb"},
+        {"name": "libsmartcols1", "version": "2.41.5-0+deb13u1", "type": "deb"},
+        {"name": "libuuid1", "version": "2.41.5-0+deb13u1", "type": "deb"},
+        {"name": "login", "version": "1:4.16.0-2+really2.41.5-0+deb13u1", "type": "deb"},
+        {"name": "mount", "version": "2.41.5-0+deb13u1", "type": "deb"},
+        {"name": "util-linux", "version": "2.41.5-0+deb13u1", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa> (Minor issue)",
+      "rationale": "The mount option X-mount.subdir on a recent kernel.",
+      "mitigation": "Nothing in the image starts mount, and no route reaches a shell or an external program. The container's capabilities are not established here and are for gate TARGET.",
+      "reviewTrigger": "Gate TARGET's hardening of the container; any Task that starts an external mount."
+    },
+    {
+      "id": "CVE-2026-78410",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "util-linux",
+      "packages": [
+        {"name": "bsdutils", "version": "1:2.41.5-0+deb13u1", "type": "deb"},
+        {"name": "libblkid1", "version": "2.41.5-0+deb13u1", "type": "deb"},
+        {"name": "liblastlog2-2", "version": "2.41.5-0+deb13u1", "type": "deb"},
+        {"name": "libmount1", "version": "2.41.5-0+deb13u1", "type": "deb"},
+        {"name": "libsmartcols1", "version": "2.41.5-0+deb13u1", "type": "deb"},
+        {"name": "libuuid1", "version": "2.41.5-0+deb13u1", "type": "deb"},
+        {"name": "login", "version": "1:4.16.0-2+really2.41.5-0+deb13u1", "type": "deb"},
+        {"name": "mount", "version": "2.41.5-0+deb13u1", "type": "deb"},
+        {"name": "util-linux", "version": "2.41.5-0+deb13u1", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa> (Minor issue)",
+      "rationale": "Restricted bind mounts and how they handle their source.",
+      "mitigation": "Nothing in the image starts mount, and no route reaches a shell or an external program. The container's capabilities are not established here and are for gate TARGET.",
+      "reviewTrigger": "Gate TARGET's hardening of the container; any Task that starts an external mount."
+    },
+    {
+      "id": "CVE-2026-19499",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "glibc",
+      "packages": [
+        {"name": "libc-bin", "version": "2.41-12+deb13u4", "type": "deb"},
+        {"name": "libc6", "version": "2.41-12+deb13u4", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa> (Minor issue); fixed in unstable 2.43",
+      "rationale": "strfmon and strfmon_l can write past the caller's buffer with right-justified padding.",
+      "mitigation": "PHP removed its only call of strfmon, money_format, in 8.0; the application's money format is its own code.",
+      "reviewTrigger": "A Debian point release; any C dependency added to the image."
+    },
+    {
+      "id": "CVE-2026-5435",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "glibc",
+      "packages": [
+        {"name": "libc-bin", "version": "2.41-12+deb13u4", "type": "deb"},
+        {"name": "libc6", "version": "2.41-12+deb13u4", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa>",
+      "rationale": "The deprecated resolver functions ns_printrrf, ns_printrr and fp_nquery.",
+      "mitigation": "The application prints no DNS record through those functions.",
+      "reviewTrigger": "A Debian point release; any C dependency added to the image."
+    },
+    {
+      "id": "CVE-2026-102010",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "gcc-14",
+      "packages": [
+        {"name": "gcc-14-base", "version": "14.2.0-19", "type": "deb"},
+        {"name": "libgcc-s1", "version": "14.2.0-19", "type": "deb"},
+        {"name": "libstdc++6", "version": "14.2.0-19", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa> (Minor issue); fixed in unstable 14.4.0",
+      "rationale": "erase_if on a binary-heap priority queue leaves a stale pointer in libstdc++.",
+      "mitigation": "The project has no C++ code; a program must itself call that function, which no route drives.",
+      "reviewTrigger": "A Debian point release; any C++ dependency added to the image."
+    },
+    {
+      "id": "CVE-2026-95619",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "gcc-14",
+      "packages": [
+        {"name": "gcc-14-base", "version": "14.2.0-19", "type": "deb"},
+        {"name": "libgcc-s1", "version": "14.2.0-19", "type": "deb"},
+        {"name": "libstdc++6", "version": "14.2.0-19", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa> (Minor issue); fixed in unstable 14.4.0",
+      "rationale": "An integer overflow in libstdc++'s aligned operator new.",
+      "mitigation": "The project has no C++ code; it needs a C++ program allocating an attacker-sized aligned object, which no route drives.",
+      "reviewTrigger": "A Debian point release; any C++ dependency added to the image."
+    },
+    {
+      "id": "CVE-2026-82560",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "perl",
+      "packages": [
+        {"name": "libperl5.40", "version": "5.40.1-6+deb13u1", "type": "deb"},
+        {"name": "perl", "version": "5.40.1-6+deb13u1", "type": "deb"},
+        {"name": "perl-base", "version": "5.40.1-6+deb13u1", "type": "deb"},
+        {"name": "perl-modules-5.40", "version": "5.40.1-6+deb13u1", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa>",
+      "rationale": "Pod::Text exhausts CPU and memory on crafted input.",
+      "mitigation": "Perl runs only the PostgreSQL client's wrapper scripts, with no input from a request and no Pod.",
+      "reviewTrigger": "A Debian point release; any Task that runs Perl on supplied files."
+    },
+    {
+      "id": "CVE-2026-9538",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "perl",
+      "packages": [
+        {"name": "libperl5.40", "version": "5.40.1-6+deb13u1", "type": "deb"},
+        {"name": "perl", "version": "5.40.1-6+deb13u1", "type": "deb"},
+        {"name": "perl-base", "version": "5.40.1-6+deb13u1", "type": "deb"},
+        {"name": "perl-modules-5.40", "version": "5.40.1-6+deb13u1", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa>, postponed",
+      "rationale": "Archive::Tar exhausts memory on a crafted archive.",
+      "mitigation": "Perl runs only the PostgreSQL client's wrapper scripts; no archive is read through Archive::Tar.",
+      "reviewTrigger": "A Debian point release; any Task that runs Perl on supplied files."
+    },
+    {
+      "id": "CVE-2026-54369",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "acl",
+      "packages": [
+        {"name": "libacl1", "version": "2.3.2-2+b1", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa>",
+      "rationale": "A symlink traversal in the acl tools, which the package acl holds.",
+      "mitigation": "The package acl is not installed, only its library libacl1, and no process changes an ACL.",
+      "reviewTrigger": "A Debian point release; any Task that installs the acl tools."
+    },
+    {
+      "id": "CVE-2026-54370",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "acl",
+      "packages": [
+        {"name": "libacl1", "version": "2.3.2-2+b1", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa>",
+      "rationale": "A time-of-check to time-of-use race in the acl tools, which the package acl holds.",
+      "mitigation": "The package acl is not installed, only its library libacl1, and no process changes an ACL.",
+      "reviewTrigger": "A Debian point release; any Task that installs the acl tools."
+    },
+    {
+      "id": "CVE-2026-107778",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "krb5",
+      "packages": [
+        {"name": "libgssapi-krb5-2", "version": "1.21.3-5+deb13u1", "type": "deb"},
+        {"name": "libk5crypto3", "version": "1.21.3-5+deb13u1", "type": "deb"},
+        {"name": "libkrb5-3", "version": "1.21.3-5+deb13u1", "type": "deb"},
+        {"name": "libkrb5support0", "version": "1.21.3-5+deb13u1", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa> (Minor issue); unfixed in unstable",
+      "rationale": "A NULL dereference that lets an authenticated Kerberos client crash a GSS-API acceptor.",
+      "mitigation": "The image holds no GSS-API acceptor and uses no Kerberos; these libraries are present only as dependencies of libpq and libcurl.",
+      "reviewTrigger": "A Debian point release; any Task that uses Kerberos."
+    },
+    {
+      "id": "CVE-2026-107161",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "cyrus-sasl2",
+      "packages": [
+        {"name": "libsasl2-2", "version": "2.1.28+dfsg1-9", "type": "deb"},
+        {"name": "libsasl2-modules-db", "version": "2.1.28+dfsg1-9", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa> (Will be fixed via point release); fixed in unstable 2.1.28+dfsg1-12",
+      "rationale": "A heap overflow in the DIGEST-MD5 plugin, by a malicious server to a connecting client.",
+      "mitigation": "The package libsasl2-modules, which holds that plugin, is not installed, and no SASL connection is made.",
+      "reviewTrigger": "Debian's point release, which removes this finding; any Task that uses SASL."
+    },
+    {
+      "id": "CVE-2025-69720",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "ncurses",
+      "packages": [
+        {"name": "libtinfo6", "version": "6.5+20250216-2", "type": "deb"},
+        {"name": "ncurses-base", "version": "6.5+20250216-2", "type": "deb"},
+        {"name": "ncurses-bin", "version": "6.5+20250216-2", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa> (Minor issue); fixed in unstable 6.6+20251231-1",
+      "rationale": "A stack overflow in the infocmp tool on a crafted terminal description.",
+      "mitigation": "Nothing in the image runs infocmp, and it reads no supplied terminal description.",
+      "reviewTrigger": "A Debian point release."
+    },
+    {
+      "id": "CVE-2026-85091",
+      "severity": "High",
+      "decision": "D-112",
+      "sourcePackage": "zlib",
+      "packages": [
+        {"name": "zlib1g", "version": "1:1.3.dfsg+really1.3.1-1+b1", "type": "deb"}
+      ],
+      "fixState": "not-fixed",
+      "debianStatus": "trixie vulnerable, no note for trixie; fixed in unstable 1.3.2-4; the description names 1.3.1.2 to 1.3.2, this package is 1.3.1",
+      "rationale": "A heap overflow in gz_vacate, through gzprintf after a non-blocking gzwrite stall.",
+      "mitigation": "No process in the image writes through gzprintf to a non-blocking device; no route drives it.",
+      "reviewTrigger": "TASK-013, whose pg_dump compresses to a regular file; a Debian point release."
+    }
+  ]
+}

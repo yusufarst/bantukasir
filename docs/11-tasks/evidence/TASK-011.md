@@ -248,3 +248,17 @@ The fixes of R-28 and R-29's first part and the comments of R-31 came after the 
 | The whole command contract, the three new browser tests with it | CI on the pushed head of this fix (CE-41, CE-42) | After the push | | Its run of record; the fix changes frontend code and tests only, so the PHP results of run 41098030065 hold for that code (CE-45), and CI runs them again as it does on every head |
 
 `bash scripts/executor/guard.sh --preview` on the working tree of this fix, 31 October 2026 at 01:30: the two candidates of section 13, `url|…|https://${`, in `tests/Unit/Access/qrCode.test.ts` and in this file, which quotes it: a template string, no host; not a real finding.
+
+## 15. Merge
+
+Recorded by the next Task, TASK-012 (EXECUTION_CONTEXT CE-50), from GitHub and the executor state on 31 October 2026. The tick verified the merge (CE-61) on 31 October 2026 at 03:13:22 (`MERGE_VERIFIED pr=18`), after the stop below.
+
+| Fact | Value |
+| --- | --- |
+| Pull request | #18, "TASK-011 — User management and Owner procedures", from `task/TASK-011-user-management` into `develop` |
+| Its head | `c3c17c50d08f6b552bbe709612acdc8f210139d4` |
+| CI on the pull request | Run 41108058043, event `pull_request` on `c3c17c5`, success (30 October 2026, 18:34:14 to 18:55:50 UTC) |
+| Merge | The tick's squash merge under D-105 (CE-60), by the Owner's account `yusufarst`, on 30 October 2026 at 18:57:07 UTC (31 October 2026, 01:57:07 Asia/Jakarta); the automated review's status then DONE |
+| Merge commit | `d2ec7a67d021b2f4db09beb5ba9605bd6e6f7297` on `develop`; author the Owner's GitHub no-reply identity, committer GitHub; its tree `bbfbff60e7e95a64652fa549b31f0816aa619d3c` equals that of `c3c17c5` |
+| CI on `develop` | Run 41111214183, event `push` on `d2ec7a6`: attempt 1 failed (18:57:09 to 19:07:33 UTC), which stopped the loop with `DEVELOP_CI_RED`; attempt 2, a retry of the failed job that the Owner ran with no code changed, succeeded (finished 20:12:21 UTC) |
+| The failure of attempt 1 | `HomeRedirectTest::test_a_sign_in_session_that_a_limit_ended_gets_the_note_at_the_home_too`, 1 of 395 tests: OPEN_ITEMS T-37, by the Owner's authorization "RECOVER TASK-011 POST-MERGE CI". The earlier stop `TICK_ERROR start` came from a mistaken `tick.sh --explain` call by the host, not from CI or the code |

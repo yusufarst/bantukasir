@@ -54,9 +54,12 @@ return [
     | Migrations run with "php artisan migrate --database=pgsql_migration";
     | App\Providers\DatabaseServiceProvider refuses any other role.
     |
+    | In the process role backup the default is the backup role's connection,
+    | because that container holds no other credential (ADR-010 item 6; TASK-012).
+    |
     */
 
-    'default' => env('DB_CONNECTION', 'pgsql'),
+    'default' => env('APP_PROCESS_ROLE') === 'backup' ? 'pgsql_backup' : env('DB_CONNECTION', 'pgsql'),
 
     'connections' => [
 

@@ -1,0 +1,35 @@
+# What the build of the image never sees (TASK-012): the release stage copies an
+# explicit list of folders, and this file keeps secrets, history, dependencies
+# and build output of the working tree out of the build's context.
+.git
+.github
+.claude
+.local
+.agents
+.env
+.env.*
+**/*.log
+*.patch
+auth.json
+secrets
+backups
+Claude outputs
+
+node_modules
+vendor
+public/build
+public/hot
+bootstrap/cache
+storage
+
+docs
+scripts
+tests
+database/setup/local.sh
+database/setup/selftest.sh
+database/setup/state.sql
+coverage
+playwright-report
+test-results
+blob-report
+.phpunit.cache

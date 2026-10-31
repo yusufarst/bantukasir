@@ -108,3 +108,20 @@ jobs:
             - name: Stop the local environment
               if: always()
               run: docker compose down
+
+    # The image checks of RELEASE_PROCESS section 4 items 1 to 4 (TASK-012), on the
+    # release stage of the image's definition, which this job builds and never
+    # publishes; TASK-014's release workflow publishes it. The tick and a merge
+    # need every check run of a head to pass (scripts/executor/lib.sh).
+    image-checks:
+        name: Image checks
+        runs-on: ubuntu-24.04
+        timeout-minutes: 45
+        steps:
+            - name: Check out the repository
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            - name: Build the release image and check it
+              run: bash scripts/checks/image-checks.sh

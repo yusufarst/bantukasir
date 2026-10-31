@@ -59,7 +59,7 @@ Gates that a Task waits for, besides its dependencies. GATE-P11 to GATE-CC2 are 
 | G2 | The number of products and the product list; base units and precision; the opening stock volume (OPEN_ITEMS section 3; T-09). | TASK-048 (final dataset), TASK-049 | OPEN |
 | G3 | The drawers, the opening-float practice, shared devices (OPEN_ITEMS section 3). | TASK-049 | OPEN |
 | G4 | The store account, buckets and keys; the sealed copy; the first production backup and drill; the measured recovery point and time accepted (BACKUP_RECOVERY section 12). | TASK-045 (store), TASK-049 (sealed copy), TASK-050 (acceptance) | OPEN — destination class, cost and custody decided (D-088) |
-| RELEASE | The Owner's authorization of the exact target, revision and operation; the operator named; the runbooks approved (RELEASE_PROCESS section 12). | TASK-050 | OPEN |
+| RELEASE | The Owner's authorization of the exact target, revision and operation; the operator named; the runbooks approved; the independent review of every vulnerability remaining in the image, D-112, with curl and libcurl reassessed again, D-113 (RELEASE_PROCESS section 12). | TASK-050 | OPEN |
 | TESTS | Every acceptance suite on the release candidate (OPEN_ITEMS section 3; TEST_STRATEGY section 9). | TASK-044 to TASK-050 | OPEN — nothing built |
 
 ## 4. Task register
@@ -79,8 +79,8 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-009](tasks/TASK-009-command-client.md) | Command client, recovery and unresolved requests | 2 | P | M | A | TASK-008, TASK-002 | GATE-CC1 | `DONE` |
 | [TASK-010](tasks/TASK-010-bootstrap-profile-media.md) | Installation bootstrap, BusinessProfile and media | 2 | P | L | A | TASK-008, TASK-002 | GATE-CC1 | `DONE` |
 | [TASK-011](tasks/TASK-011-user-management.md) | User management and Owner procedures | 2 | P | L | A | TASK-009, TASK-010 | — | `DONE` |
-| [TASK-012](tasks/TASK-012-application-image.md) | Application image and runtime configuration | 3 | O | M | B | TASK-004, TASK-007 | — | `READY` |
-| [TASK-013](tasks/TASK-013-independent-backup.md) | Independent backup | 3 | O | L | A | TASK-012, TASK-010 | — | `TODO` |
+| [TASK-012](tasks/TASK-012-application-image.md) | Application image and runtime configuration | 3 | O | M | B | TASK-004, TASK-007 | — | `DONE` |
+| [TASK-013](tasks/TASK-013-independent-backup.md) | Independent backup | 3 | O | L | A | TASK-012, TASK-010 | — | `READY` |
 | [TASK-014](tasks/TASK-014-release-pipeline.md) | Release workflow, preflight and migration job | 3 | O | M | A | TASK-013 | — | `TODO` |
 | [TASK-015](tasks/TASK-015-catalog-core.md) | Categories, products, prices and Product Search (server) | 4 | C | L | A | TASK-011 | — | `READY` |
 | [TASK-016](tasks/TASK-016-barcodes.md) | Barcodes and exact lookup (server) | 4 | C | M | A | TASK-015 | — | `TODO` |
@@ -119,7 +119,7 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-049](tasks/TASK-049-release-readiness.md) | Release readiness: staging, UAT and first installation | 10 | R | L | V | TASK-045, TASK-047, TASK-048 | G1, G2, G3, G4, DEVICES, TARGET, GATE-PUBLISH | `TODO` |
 | [TASK-050](tasks/TASK-050-production-pilot.md) | Production release, cutover and pilot acceptance | 10 | R | L | V | TASK-049 | RELEASE, GATE-PUBLISH, G4 | `TODO` |
 
-Totals: `TODO` 37; `READY` 2; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 11; `SUPERSEDED` 0.
+Totals: `TODO` 36; `READY` 2; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 12; `SUPERSEDED` 0.
 
 ## 5. Implementation sequence
 
@@ -181,8 +181,9 @@ With more than one executor the Owner may run Tasks of different lanes at the sa
 | OPEN_ITEMS T-25 | A change control before TASK-039; TASK-047 or an earlier P7 change control | COPY_DECK section 22.2: statements that later decisions overtook, among them four system-status items instead of five in RELEASE_PROCESS and the contract of TASK-039 |
 | OPEN_ITEMS T-26 | TASK-008 | The error body of RT-07 never carries Laravel's English validation summary (AC-008-08) |
 | OPEN_ITEMS T-27 | TASK-008, with TASK-006 and TASK-015 | The trimming of input against the database's `[[:space:]]` (SCH-14; TASK-004 finding F-2) |
-| OPEN_ITEMS T-28 | TASK-012 (worker pool); gate TARGET (proxy settings) | The two duties of TR-TIME-03 named for the foundation Task (TASK-004 review finding R-22) |
+| OPEN_ITEMS T-28 | TASK-012 (worker pool, RESOLVED); gate TARGET (proxy settings) | The two duties of TR-TIME-03 named for the foundation Task (TASK-004 review finding R-22) |
 | OPEN_ITEMS T-29 | A change control of COPY_DECK before TASK-009 and TASK-011 | A key that is both a text and the parent of other keys: the role descriptions and the command families (TASK-006 finding F-3) |
+| OPEN_ITEMS T-38 | TASK-013 (curl and libcurl); gate RELEASE (every remaining finding, curl and libcurl again) | The temporary acceptance of the image's unfixable Debian findings, D-112, D-113 |
 | OPEN_ITEMS N-12 | Gate GATE-BRANCH | RESOLVED as to the model (D-092): `develop` for implementation, `main` for releases; the creation of `develop` needs the Owner's own authorization, before TASK-001 |
 | OPEN_ITEMS N-09, N-10 | Gate GATE-PUBLISH | Before the first push of implementation work, and so before TASK-001 is `DONE` |
 | OPEN_ITEMS N-04 | Gate GATE-P11 | RESOLVED (D-092): the complete AICWDF-4.3 text is not added to the repository; the binding subset stays in `docs/00-governance` |
