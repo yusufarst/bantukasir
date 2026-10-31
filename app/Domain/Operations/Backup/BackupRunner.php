@@ -47,6 +47,9 @@ final class BackupRunner
     /** How many files of a rotation pass between two writes of its progress. */
     private const int ROTATION_CHECKPOINT = 100;
 
+    /** A pass stops this far from the time limit, so that it never costs a run its success. */
+    private const int ROTATION_RESERVE_SECONDS = 300;
+
     public const string RECIPIENT_METADATA = 'bk-recipient';
 
     /** The classes of table whose counts the restore compares (BACKUP_RECOVERY section 5). */
@@ -112,6 +115,13 @@ final class BackupRunner
             // Step 4: the files, read after the dump, so a superset of its rows.
             $rows = $this->storedFiles($database);
             $present = $store->sizes('files/');
+
+            // A new bucket: every file goes to this recipient from the first, and a
+            // first run cut short leaves nothing for a rotation to do again.
+            if ($present === [] && $store->getText(self::RECIPIENT_MARKER) === null) {
+                $store->putText(self::RECIPIENT_MARKER, $settings->recipient);
+            }
+
             [$uploadedKeys, $filesBytes] = $this->uploadMissingFiles($store, $tools, $settings, $rows, $present, $work, $deadline);
 
             // Step 5: the dump in each tier.
@@ -142,9 +152,10 @@ final class BackupRunner
 
             // Step 7: the Sunday run re-verifies the previous weekly copy.
             $reverified = in_array(TierPlan::WEEKLY, $tiers, true) ? $this->reverify($database, $store, $settings, $work) : null;
+            $stored['reverified'] = $reverified;
 
             // A rotation moves on by a bounded number of files, with the backup safe.
-            [$rotated, $rotatedBytes] = $this->rotate($store, $tools, $settings, $rows, $present === [], $uploadedKeys, $work, $deadline);
+            [$rotated, $rotatedBytes] = $this->rotate($store, $tools, $settings, $rows, $uploadedKeys, $work, $deadline);
 
             // Step 8: the record, then the ping.
             $filesUploaded = count($uploadedKeys) + $rotated;
@@ -157,7 +168,6 @@ final class BackupRunner
                 'uploaded_bytes' => $uploadedBytes,
                 'store_bytes' => $storeBytes,
                 ...$stored,
-                'reverified' => $reverified,
             ]);
 
             return new BackupOutcome($backupId, null, $filesUploaded, $this->heartbeat->ping(Heartbeat::BACKUP), $storeBytes >= $settings->usageThresholdBytes);
@@ -424,17 +434,11 @@ final class BackupRunner
      *
      * @throws BackupFailed
      */
-    private function rotate(BackupStore $store, BackupTools $tools, BackupSettings $settings, array $rows, bool $bucketWasEmpty, array $justUploaded, string $work, Deadline $deadline): array
+    private function rotate(BackupStore $store, BackupTools $tools, BackupSettings $settings, array $rows, array $justUploaded, string $work, Deadline $deadline): array
     {
         $marker = $store->getText(self::RECIPIENT_MARKER);
 
         if ($marker === $settings->recipient) {
-            return [0, 0];
-        }
-
-        if ($marker === null && $bucketWasEmpty) {
-            $store->putText(self::RECIPIENT_MARKER, $settings->recipient);
-
             return [0, 0];
         }
 
@@ -448,7 +452,7 @@ final class BackupRunner
                 continue;
             }
 
-            if (count($uploaded) >= $settings->rotationFilesPerRun) {
+            if (count($uploaded) >= $settings->rotationFilesPerRun || $deadline->remaining() < self::ROTATION_RESERVE_SECONDS) {
                 $finished = false;
 
                 break;

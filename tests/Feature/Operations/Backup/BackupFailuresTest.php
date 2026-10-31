@@ -4,6 +4,7 @@ namespace Tests\Feature\Operations\Backup;
 
 use App\Domain\Operations\Backup\BackupFailure;
 use App\Domain\Operations\Backup\BackupOutcome;
+use App\Domain\Operations\Backup\BackupRunner;
 use App\Domain\Operations\Backup\DiskSpace;
 use App\Domain\Operations\Backup\ObjectStoreFactory;
 use App\Domain\Operations\Heartbeat;
@@ -123,6 +124,49 @@ final class BackupFailuresTest extends BackupTestCase
         // The dump is there and no manifest: not a backup (BKP-02).
         $this->assertNotNull(TestStore::open()->head('db/6h/'.$outcome->backupId.'.dump.age'));
         $this->assertNull(TestStore::open()->head('db/6h/'.$outcome->backupId.'.manifest.age'));
+    }
+
+    public function test_a_first_run_cut_short_leaves_nothing_to_encrypt_again(): void
+    {
+        $this->storeLogo();
+        $this->app->instance(ObjectStoreFactory::class, new RecordingStoreFactory('.manifest.age'));
+        $this->assertFailedWith(BackupFailure::STORE_REFUSED, $this->runBackup());
+
+        // The file went to this recipient; no rotation is under way, and without one no
+        // rule would ever remove a second version of it (BACKUP_RECOVERY section 6).
+        $this->app->instance(ObjectStoreFactory::class, new ObjectStoreFactory);
+        $next = $this->runBackup();
+
+        $this->assertNull($next->failure, $next->diagnostic);
+        $this->assertSame(0, $next->filesUploaded);
+        $this->assertSame($this->recipient, TestStore::open()->getText(BackupRunner::RECIPIENT_MARKER));
+    }
+
+    public function test_a_failure_of_a_rotation_keeps_the_stored_copy_and_the_next_run_goes_on(): void
+    {
+        $this->storeLogo();
+        $this->atJakarta('2030-01-06 00:00:10');
+        $first = $this->runBackup();
+        $this->assertNull($first->failure, $first->diagnostic);
+        $this->pings = [];
+
+        $newRecipient = TestStore::newRecoveryKey($this->area.'/new-identity');
+        config(['backup.recipient' => $newRecipient]);
+        $this->app->instance(ObjectStoreFactory::class, new RecordingStoreFactory('files/'));
+
+        $this->atJakarta('2030-01-13 00:00:10');
+        $failed = $this->runBackup();
+
+        $this->assertFailedWith(BackupFailure::STORE_REFUSED, $failed, backupStored: true);
+        $this->assertNotNull(TestStore::open()->head('db/6h/'.$failed->backupId.'.manifest.age'), 'The backup does not wait for the rotation.');
+        $this->assertSame($first->backupId, $this->rowOf($failed->backupId)['reverified_backup_id'], 'The re-verification passed before the rotation failed.');
+
+        $this->app->instance(ObjectStoreFactory::class, new ObjectStoreFactory);
+        $next = $this->runBackup();
+
+        $this->assertNull($next->failure, $next->diagnostic);
+        $this->assertSame(1, $next->filesUploaded);
+        $this->assertSame($newRecipient, TestStore::open()->getText(BackupRunner::RECIPIENT_MARKER));
     }
 
     public function test_a_weekly_copy_that_differs_is_remote_mismatch_and_the_next_sunday_recovers(): void
@@ -291,7 +335,6 @@ final class BackupFailuresTest extends BackupTestCase
         $this->assertSame(['FAILED', $failure->value, null, null, null, null], [
             $row['outcome'], $row['failure_code'], $row['dump_bytes'], $row['files_uploaded'], $row['uploaded_bytes'], $row['store_bytes'],
         ]);
-        $this->assertNull($row['reverified_backup_id']);
         $this->assertSame($backupStored, $row['dump'] !== null, 'The hashes are those of a stored copy only.');
         $this->assertSame($backupStored, $row['manifest'] !== null);
 

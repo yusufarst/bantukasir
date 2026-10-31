@@ -80,8 +80,8 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-010](tasks/TASK-010-bootstrap-profile-media.md) | Installation bootstrap, BusinessProfile and media | 2 | P | L | A | TASK-008, TASK-002 | GATE-CC1 | `DONE` |
 | [TASK-011](tasks/TASK-011-user-management.md) | User management and Owner procedures | 2 | P | L | A | TASK-009, TASK-010 | — | `DONE` |
 | [TASK-012](tasks/TASK-012-application-image.md) | Application image and runtime configuration | 3 | O | M | B | TASK-004, TASK-007 | — | `DONE` |
-| [TASK-013](tasks/TASK-013-independent-backup.md) | Independent backup | 3 | O | L | A | TASK-012, TASK-010 | — | `READY` |
-| [TASK-014](tasks/TASK-014-release-pipeline.md) | Release workflow, preflight and migration job | 3 | O | M | A | TASK-013 | — | `TODO` |
+| [TASK-013](tasks/TASK-013-independent-backup.md) | Independent backup | 3 | O | L | A | TASK-012, TASK-010 | — | `DONE` |
+| [TASK-014](tasks/TASK-014-release-pipeline.md) | Release workflow, preflight and migration job | 3 | O | M | A | TASK-013 | — | `READY` |
 | [TASK-015](tasks/TASK-015-catalog-core.md) | Categories, products, prices and Product Search (server) | 4 | C | L | A | TASK-011 | — | `READY` |
 | [TASK-016](tasks/TASK-016-barcodes.md) | Barcodes and exact lookup (server) | 4 | C | M | A | TASK-015 | — | `TODO` |
 | [TASK-017](tasks/TASK-017-catalog-pages.md) | Catalogue pages | 4 | C | L | B | TASK-016 | — | `TODO` |
@@ -119,7 +119,7 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-049](tasks/TASK-049-release-readiness.md) | Release readiness: staging, UAT and first installation | 10 | R | L | V | TASK-045, TASK-047, TASK-048 | G1, G2, G3, G4, DEVICES, TARGET, GATE-PUBLISH | `TODO` |
 | [TASK-050](tasks/TASK-050-production-pilot.md) | Production release, cutover and pilot acceptance | 10 | R | L | V | TASK-049 | RELEASE, GATE-PUBLISH, G4 | `TODO` |
 
-Totals: `TODO` 36; `READY` 2; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 12; `SUPERSEDED` 0.
+Totals: `TODO` 35; `READY` 2; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 13; `SUPERSEDED` 0.
 
 ## 5. Implementation sequence
 

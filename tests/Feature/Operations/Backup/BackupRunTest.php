@@ -269,6 +269,28 @@ final class BackupRunTest extends BackupTestCase
         $this->assertSame($newRecipient, $store->getText(BackupRunner::RECIPIENT_MARKER));
     }
 
+    public function test_a_rotation_stops_short_of_the_time_limit_and_the_run_succeeds(): void
+    {
+        $this->storeLogo();
+        $initial = $this->runBackup();
+        $this->assertNull($initial->failure, $initial->diagnostic);
+
+        $newRecipient = TestStore::newRecoveryKey($this->area.'/new-identity');
+        config(['backup.recipient' => $newRecipient, 'backup.time_limit_seconds' => 200]);
+
+        $short = $this->runBackup();
+
+        $this->assertNull($short->failure, $short->diagnostic);
+        $this->assertSame(0, $short->filesUploaded);
+        $this->assertStringStartsWith(BackupRunner::ROTATING.' '.$newRecipient.' 0 ', (string) TestStore::open()->getText(BackupRunner::RECIPIENT_MARKER));
+
+        config(['backup.time_limit_seconds' => 1800]);
+        $next = $this->runBackup();
+
+        $this->assertSame(1, $next->filesUploaded);
+        $this->assertSame($newRecipient, TestStore::open()->getText(BackupRunner::RECIPIENT_MARKER));
+    }
+
     public function test_the_dump_and_the_counts_share_one_snapshot(): void
     {
         $user = $this->readText(config('database.connections.pgsql_backup.username'));
