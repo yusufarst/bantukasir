@@ -124,8 +124,9 @@ final class BackupRunTest extends BackupTestCase
         $data = (string) file_get_contents($sql);
 
         $this->assertSame(1, preg_match('/^COPY public\.security_log_entries .*? FROM stdin;\n(.*?)^\\\\\.$/ms', $data, $copy));
-        $this->assertSame($this->observer()->table('security_log_entries')->count(), substr_count($copy[1], "\n"));
-        $this->assertStringContainsString('request-of-the-test', $copy[1]);
+        $rows = $copy[1] ?? '';
+        $this->assertSame($this->observer()->table('security_log_entries')->count(), substr_count($rows, "\n"));
+        $this->assertStringContainsString('request-of-the-test', $rows);
     }
 
     public function test_the_manifest_is_written_last_in_every_tier(): void
@@ -229,7 +230,8 @@ final class BackupRunTest extends BackupTestCase
 
         // A pass cut short is walked again: nothing is uploaded twice.
         $store->putText(BackupRunner::RECIPIENT_MARKER, BackupRunner::ROTATING);
-        $this->assertSame(0, $this->runBackup()->filesUploaded);
+        $walked = $this->runBackup();
+        $this->assertSame(0, $walked->filesUploaded);
         $this->assertSame($newRecipient, $store->getText(BackupRunner::RECIPIENT_MARKER));
     }
 
