@@ -29,18 +29,30 @@ final class BackupFailuresTest extends BackupTestCase
         $this->assertNull($first->failure, $first->diagnostic);
         $this->pings = [];
 
-        $this->app->instance(DiskSpace::class, new class implements DiskSpace
-        {
-            public function freeBytes(string $path): int
-            {
-                return 1;
-            }
-        });
+        $last = $this->rowOf($first->backupId)['dump_bytes'];
+        $this->assertIsInt($last);
 
+        // One byte less than twice the last dump is too little.
+        $this->freeSpace(2 * $last - 1);
         $outcome = $this->runBackup();
-
         $this->assertFailedWith(BackupFailure::NO_SPACE, $outcome);
         $this->assertNull($this->rowOf($outcome->backupId)['snapshot_at'], 'No dump was made.');
+
+        // Exactly twice is enough.
+        $this->freeSpace(2 * $last);
+        $enough = $this->runBackup();
+        $this->assertNull($enough->failure, $enough->diagnostic);
+    }
+
+    public function test_a_stored_size_that_differs_is_store_refused(): void
+    {
+        foreach (['.dump.age', '.manifest.age', 'files/'] as $shrink) {
+            $this->pings = [];
+            $this->storeLogo();
+            $this->app->instance(ObjectStoreFactory::class, new RecordingStoreFactory(shrink: $shrink));
+
+            $this->assertFailedWith(BackupFailure::STORE_REFUSED, $this->runBackup());
+        }
     }
 
     public function test_a_dump_that_fails_or_cannot_be_read_is_dump_invalid(): void
@@ -113,7 +125,7 @@ final class BackupFailuresTest extends BackupTestCase
         $this->assertNull(TestStore::open()->head('db/6h/'.$outcome->backupId.'.manifest.age'));
     }
 
-    public function test_a_weekly_copy_that_differs_or_is_gone_is_remote_mismatch(): void
+    public function test_a_weekly_copy_that_differs_is_remote_mismatch_and_the_next_sunday_recovers(): void
     {
         $this->atJakarta('2030-01-06 00:00:10');
         $first = $this->runBackup();
@@ -125,13 +137,53 @@ final class BackupFailuresTest extends BackupTestCase
 
         $this->atJakarta('2030-01-13 00:00:10');
         $mismatch = $this->runBackup();
-        $this->assertFailedWith(BackupFailure::REMOTE_MISMATCH, $mismatch);
+        $this->assertFailedWith(BackupFailure::REMOTE_MISMATCH, $mismatch, backupStored: true);
         $this->assertSame('6h,weekly', $this->rowOf($mismatch->backupId)['tiers']);
+        $this->assertNotNull(TestStore::open()->head('db/weekly/'.$mismatch->backupId.'.manifest.age'), 'Its own copy was stored.');
 
-        // The next Sunday judges the last copy of a successful run, the first: it
-        // still differs, so the failure repeats until the operator acts (RB-09).
+        // The next Sunday judges the failed Sunday's own copy: the failure does not last.
         $this->atJakarta('2030-01-20 00:00:10');
-        $this->assertFailedWith(BackupFailure::REMOTE_MISMATCH, $this->runBackup());
+        $recovered = $this->runBackup();
+        $this->assertNull($recovered->failure, $recovered->diagnostic);
+        $this->assertSame($mismatch->backupId, $this->rowOf($recovered->backupId)['reverified_backup_id']);
+    }
+
+    public function test_a_weekly_copy_that_is_gone_is_remote_mismatch_and_the_next_sunday_recovers(): void
+    {
+        $this->atJakarta('2030-01-06 00:00:10');
+        $first = $this->runBackup();
+        $this->assertNull($first->failure, $first->diagnostic);
+        $this->pings = [];
+
+        // A new bucket, the exit path of ENVIRONMENTS section 15: the copy is not in it.
+        config(['backup.store.bucket' => TestStore::newBucket()]);
+
+        $this->atJakarta('2030-01-13 00:00:10');
+        $gone = $this->runBackup();
+        $this->assertFailedWith(BackupFailure::REMOTE_MISMATCH, $gone, backupStored: true);
+
+        $this->atJakarta('2030-01-20 00:00:10');
+        $recovered = $this->runBackup();
+        $this->assertNull($recovered->failure, $recovered->diagnostic);
+        $this->assertSame($gone->backupId, $this->rowOf($recovered->backupId)['reverified_backup_id']);
+    }
+
+    public function test_a_weekly_copy_past_its_retention_is_not_judged(): void
+    {
+        $this->atJakarta('2030-01-06 00:00:10');
+        $first = $this->runBackup();
+        $this->assertNull($first->failure, $first->diagnostic);
+
+        // Eight weeks without a run: the store has rightly removed the copy of 35 days.
+        $this->atJakarta('2030-03-03 00:00:10');
+        $late = $this->runBackup();
+        $this->assertNull($late->failure, $late->diagnostic);
+        $this->assertNull($this->rowOf($late->backupId)['reverified_backup_id']);
+
+        $this->atJakarta('2030-03-10 00:00:10');
+        $next = $this->runBackup();
+        $this->assertNull($next->failure, $next->diagnostic);
+        $this->assertSame($late->backupId, $this->rowOf($next->backupId)['reverified_backup_id']);
     }
 
     public function test_the_time_limit_is_timeout_before_a_step_and_during_a_program(): void
@@ -215,7 +267,20 @@ final class BackupFailuresTest extends BackupTestCase
         $this->assertNothingIn(['backup_runs']);
     }
 
-    private function assertFailedWith(BackupFailure $failure, BackupOutcome $outcome): void
+    private function freeSpace(int $bytes): void
+    {
+        $this->app->instance(DiskSpace::class, new class($bytes) implements DiskSpace
+        {
+            public function __construct(private readonly int $bytes) {}
+
+            public function freeBytes(string $path): int
+            {
+                return $this->bytes;
+            }
+        });
+    }
+
+    private function assertFailedWith(BackupFailure $failure, BackupOutcome $outcome, bool $backupStored = false): void
     {
         $this->assertSame($failure, $outcome->failure, $outcome->diagnostic);
         $this->assertSame([], $this->pings, 'A failed run pings nothing.');
@@ -223,10 +288,12 @@ final class BackupFailuresTest extends BackupTestCase
 
         $row = $this->rowOf($outcome->backupId);
 
-        $this->assertSame(['FAILED', $failure->value, null, null, null, null, null, null], [
-            $row['outcome'], $row['failure_code'], $row['dump_bytes'], $row['files_uploaded'], $row['uploaded_bytes'], $row['store_bytes'], $row['dump'], $row['manifest'],
+        $this->assertSame(['FAILED', $failure->value, null, null, null, null], [
+            $row['outcome'], $row['failure_code'], $row['dump_bytes'], $row['files_uploaded'], $row['uploaded_bytes'], $row['store_bytes'],
         ]);
         $this->assertNull($row['reverified_backup_id']);
+        $this->assertSame($backupStored, $row['dump'] !== null, 'The hashes are those of a stored copy only.');
+        $this->assertSame($backupStored, $row['manifest'] !== null);
 
         // Every text of the row is one of its allowed words: no path, key or message.
         foreach (['reason', 'outcome', 'failure_code', 'tiers'] as $column) {

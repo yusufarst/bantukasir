@@ -16,10 +16,14 @@
 |               BACKUP_RETENTION says; production uses "full" until the operator
 |               applies "reduced".
 | usage_threshold_bytes
-|               What the production bucket holds when the operator applies the
-|               reduced retention: 6 GB of the free 10 GB, because the staging
-|               bucket counts against the same allowance and a copy stays until
-|               its lock ends (BACKUP_RECOVERY section 6, OPEN_ITEMS T-22).
+|               What a bucket holds when the run says so in its log: in production
+|               the operator applies the reduced retention at 6 GB of the free
+|               10 GB, because the staging bucket counts against the same allowance
+|               and a copy stays until its lock ends; staging's share is 1 GB
+|               (BACKUP_RECOVERY section 6, OPEN_ITEMS T-22).
+| rotation_files_per_run
+|               How many existing files one run encrypts again during a key
+|               rotation, after its backup is stored (BACKUP_RECOVERY BKP-22).
 |
 */
 
@@ -58,7 +62,12 @@ return [
         'staging' => ['6h' => 3, 'weekly' => 14, 'monthly' => 31],
     ],
 
-    'usage_threshold_bytes' => 6_000_000_000,
+    'usage_threshold_bytes' => [
+        'production' => 6_000_000_000,
+        'staging' => 1_000_000_000,
+    ],
+
+    'rotation_files_per_run' => 1000,
 
     // What the manifest names as the release that wrote the data; the image of
     // a release sets them (TASK-014), and they are null elsewhere.

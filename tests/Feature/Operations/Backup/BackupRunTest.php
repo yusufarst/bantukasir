@@ -199,40 +199,109 @@ final class BackupRunTest extends BackupTestCase
         $this->assertSame($first->backupId, $this->rowOf($second->backupId)['reverified_backup_id']);
     }
 
-    public function test_a_later_run_uploads_only_what_is_missing_and_a_rotation_uploads_every_file_again(): void
+    public function test_a_later_run_uploads_only_what_is_missing_and_reads_no_object(): void
+    {
+        $this->storeLogo();
+        $factory = new RecordingStoreFactory;
+        $this->app->instance(ObjectStoreFactory::class, $factory);
+
+        $first = $this->runBackup();
+        $this->assertNull($first->failure, $first->diagnostic);
+        $this->assertSame(1, $first->filesUploaded);
+
+        $second = $this->runBackup();
+        $this->assertSame(0, $second->filesUploaded);
+        $this->assertSame(0, $factory->store?->heads);
+
+        $this->storeLogo();
+        $third = $this->runBackup();
+        $this->assertSame(1, $third->filesUploaded);
+    }
+
+    public function test_a_rotation_goes_by_a_bounded_number_of_files_per_run_with_a_backup_in_each(): void
     {
         $first = $this->storeLogo();
-        $this->assertSame(1, $this->runBackup()->filesUploaded);
-        $this->assertSame(0, $this->runBackup()->filesUploaded);
-
         $second = $this->storeLogo();
-        $this->assertSame(1, $this->runBackup()->filesUploaded);
+        $initial = $this->runBackup();
+        $this->assertNull($initial->failure, $initial->diagnostic);
+        $this->assertSame(2, $initial->filesUploaded);
 
-        // BKP-22: the new recipient; both files go again, and only once.
+        // BKP-22: the new recipient, at one file per run.
         $newIdentity = $this->area.'/new-identity';
         $newRecipient = TestStore::newRecoveryKey($newIdentity);
-        config(['backup.recipient' => $newRecipient]);
+        config(['backup.recipient' => $newRecipient, 'backup.rotation_files_per_run' => 1]);
 
-        $rotated = $this->runBackup();
-        $this->assertNull($rotated->failure, $rotated->diagnostic);
-        $this->assertSame(2, $rotated->filesUploaded);
-
+        $factory = new RecordingStoreFactory;
+        $this->app->instance(ObjectStoreFactory::class, $factory);
         $store = TestStore::open();
 
-        foreach ([$first, $second] as $key) {
+        $one = $this->runBackup();
+        $this->assertNull($one->failure, $one->diagnostic);
+        $this->assertSame(1, $one->filesUploaded);
+        $this->assertSame($newRecipient, $store->head('files/'.$first.'.age')?->recipient);
+        $this->assertSame($this->recipient, $store->head('files/'.$second.'.age')?->recipient, 'The second file waits for the next run.');
+        $this->assertNotNull($store->head('db/6h/'.$one->backupId.'.manifest.age'), 'The backup does not wait for the rotation.');
+        $this->assertStringStartsWith(BackupRunner::ROTATING.' '.$newRecipient.' ', (string) $store->getText(BackupRunner::RECIPIENT_MARKER));
+
+        // A file added meanwhile goes to the new recipient by step 4, and only once.
+        $third = $this->storeLogo();
+        $two = $this->runBackup();
+        $this->assertNull($two->failure, $two->diagnostic);
+        $this->assertSame(2, $two->filesUploaded);
+        $this->assertSame($newRecipient, $store->getText(BackupRunner::RECIPIENT_MARKER), 'The pass is finished.');
+
+        foreach ([$first, $second, $third] as $key) {
             $this->assertSame($newRecipient, $store->head('files/'.$key.'.age')?->recipient);
             $this->assertTrue($store->download('files/'.$key.'.age', $this->area.'/rotated.age'));
             $this->assertSame(Storage::disk('media')->get($key), TestStore::decrypt($newIdentity, $this->area.'/rotated.age', $this->area.'/rotated-'.$key));
         }
 
-        $this->assertSame($newRecipient, $store->getText(BackupRunner::RECIPIENT_MARKER));
-        $this->assertSame(0, $this->runBackup()->filesUploaded);
+        // Finished, it reads no object and uploads nothing; a pass cut short by a bad
+        // marker starts again rather than leaving an old recipient behind.
+        $done = $this->runBackup();
+        $this->assertSame(0, $done->filesUploaded);
+        $this->assertSame(0, $factory->store?->heads);
 
-        // A pass cut short is walked again: nothing is uploaded twice.
+        config(['backup.rotation_files_per_run' => 1000]);
         $store->putText(BackupRunner::RECIPIENT_MARKER, BackupRunner::ROTATING);
-        $walked = $this->runBackup();
-        $this->assertSame(0, $walked->filesUploaded);
+        $restarted = $this->runBackup();
+        $this->assertSame(3, $restarted->filesUploaded);
         $this->assertSame($newRecipient, $store->getText(BackupRunner::RECIPIENT_MARKER));
+    }
+
+    public function test_the_dump_and_the_counts_share_one_snapshot(): void
+    {
+        $user = $this->readText(config('database.connections.pgsql_backup.username'));
+        $host = $this->readText(config('database.connections.pgsql_backup.host'));
+        $database = $this->readText(config('database.connections.pgsql_backup.database'));
+
+        // A row committed after the snapshot was exported and before pg_dump starts.
+        config(['backup.tools.pg_dump' => $this->toolStub('pg-dump-after-a-commit', <<<BASH
+            /usr/lib/postgresql/18/bin/psql -X -q -h '{$host}' -U '{$user}' -d '{$database}' -c "insert into backup_runs (backup_id, reason, started_at, finished_at, outcome, failure_code, tiers) values ('20261031T000000Z-SNAPSHOT', 'SCHEDULED', now(), now(), 'FAILED', 'NO_SPACE', '6h')" || exit 9
+            exec /usr/lib/postgresql/18/bin/pg_dump "\$@"
+            BASH)]);
+
+        $outcome = $this->runBackup();
+        $this->assertNull($outcome->failure, $outcome->diagnostic);
+        $this->assertSame(1, $this->observer()->table('backup_runs')->where('backup_id', '20261031T000000Z-SNAPSHOT')->count(), 'The row was committed.');
+
+        $manifest = json_decode($this->decrypted('db/6h/'.$outcome->backupId.'.manifest.age'), true, 16, JSON_THROW_ON_ERROR);
+        $this->assertSame(0, data_get($manifest, 'counts.backup_runs'));
+
+        $encrypted = $this->area.'/dump.age';
+        $this->assertTrue(TestStore::open()->download('db/6h/'.$outcome->backupId.'.dump.age', $encrypted));
+        TestStore::decrypt($this->identity, $encrypted, $this->area.'/dump.plain');
+        $sql = $this->area.'/runs.sql';
+        Process::run([self::PG_RESTORE, '--data-only', '--table=backup_runs', '--file='.$sql, $this->area.'/dump.plain'])->throw();
+        $this->assertStringNotContainsString('SNAPSHOT', (string) file_get_contents($sql));
+    }
+
+    public function test_the_run_says_when_the_store_passes_its_threshold(): void
+    {
+        config(['backup.usage_threshold_bytes.production' => 1]);
+
+        $this->assertSame(0, Artisan::call('backup:run'));
+        $this->assertStringContainsString('BACKUP_STORE_ABOVE_THRESHOLD', Artisan::output());
     }
 
     public function test_a_program_gets_no_stored_name_and_the_plaintext_is_gone_before_the_next_step(): void

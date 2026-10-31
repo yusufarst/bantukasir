@@ -8,6 +8,7 @@ use App\Domain\Operations\Backup\BackupSettings;
 use App\Domain\Operations\Backup\SigV4;
 use App\Domain\Operations\Backup\TierPlan;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\File;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
@@ -104,6 +105,20 @@ final class BackupRulesTest extends TestCase
         $settings = BackupSettings::fromConfig();
         $this->assertSame('us-east-1', $settings->region);
         $this->assertSame([3, 14, 31], [$settings->retentionOf('6h'), $settings->retentionOf('weekly'), $settings->retentionOf('monthly')]);
+        $this->assertSame(1_000_000_000, $settings->usageThresholdBytes);
+
+        config(['app.environment_name' => 'production']);
+        $this->assertSame(6_000_000_000, BackupSettings::fromConfig()->usageThresholdBytes);
+
+        // Staging's values are staging's.
+        config(['backup.retention_profile' => 'staging']);
+
+        try {
+            BackupSettings::fromConfig();
+            $this->fail('Staging\'s retention was accepted in production.');
+        } catch (BackupRefused) {
+            config(['backup.retention_profile' => 'full']);
+        }
 
         config(['backup.recipient' => '--help']);
         $this->expectException(BackupRefused::class);
@@ -122,8 +137,18 @@ final class BackupRulesTest extends TestCase
     {
         $this->assertStringContainsString("'handler' => HandlerStack::create(new StreamHandler)", (string) file_get_contents(app_path('Domain/Operations/OutboundHttp.php')));
 
+        // No outbound request of the application reaches libcurl (OPEN_ITEMS T-38 (a)).
+        foreach (File::allFiles(app_path()) as $file) {
+            $path = $file->getPathname();
+            $source = (string) file_get_contents($path);
+            $source = str_ends_with($path, 'OutboundHttp.php') ? str_replace('new Client([', '', $source) : $source;
+
+            $this->assertDoesNotMatchRegularExpression('/\bcurl_[a-z]|CurlHandler|CurlMultiHandler|Utils::chooseHandler|new Client\(|\bHttp::|Facades\\\\Http\b/', $source, $path);
+        }
+
+        // Nothing the store answers reaches libxml2 (OPEN_ITEMS T-38 (c)).
         foreach ($this->sources() as $path => $source) {
-            $this->assertDoesNotMatchRegularExpression('/\bcurl_[a-z]|CurlHandler|CurlMultiHandler|Utils::chooseHandler|new Client\(|\bHttp::|simplexml_|SimpleXMLElement|DOMDocument|XMLReader|xml_parser_create/', str_replace('new Client([', '', $source), $path);
+            $this->assertDoesNotMatchRegularExpression('/simplexml_|SimpleXMLElement|DOMDocument|XMLReader|xml_parser_create/', $source, $path);
         }
     }
 

@@ -479,6 +479,18 @@ expect_ok 'pg_dump of role backup reaches the server, with row security' \
 expect_ok 'age of role backup encrypts to the recipient' docker exec "$backup" bash -c 'echo probe | age -r "$BACKUP_RECIPIENT" -o /tmp/check-age'
 expect_refused 'role backup holds no key of the application' docker exec "$backup" bash -c '[ -n "${APP_KEY:-}" ]'
 
+# backup:run itself as www-data, with its real programs, temporary area and file lock
+# (TASK-013, review finding R-12): the store of these settings cannot be reached, so
+# the run gets as far as the store and fails with its code, leaving nothing behind.
+docker exec "$backup" php artisan backup:run --no-ansi --reason=ON_DEMAND >"$work/backup-run" 2>&1
+expect 'backup:run in the image exits with an error when the store is out of reach' '1' "$?"
+cat "$work/backup-run"
+expect_ok 'backup:run says only its code' grep -Eqx 'BACKUP_FAILED [0-9]{8}T[0-9]{6}Z-[A-Za-z0-9]{8} STORE_REFUSED' "$work/backup-run"
+expect_ok 'the output of backup:run holds no secret' no_secret_in "$work/backup-run"
+expect 'backup:run leaves nothing in its temporary area' '' "$(docker exec "$backup" find storage/app/backup-tmp -mindepth 1)"
+expect 'backup:run records its failure with the code only' 'FAILED|STORE_REFUSED|' \
+    "$(docker exec "$database" psql -U postgres -d "$database_name" -Atc 'select outcome, failure_code, dump_object_sha256 from backup_runs')"
+
 # ------------------------------------------------- 7. The refusal of each setting
 
 section 'Each role refuses a missing or default setting and prints no value'

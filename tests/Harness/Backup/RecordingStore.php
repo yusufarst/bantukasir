@@ -9,18 +9,22 @@ use App\Domain\Operations\Backup\StoredObject;
 use Carbon\CarbonInterface;
 
 /**
- * The store between a run and the test server: it records each upload in order,
- * and refuses the first upload whose key holds a given text, for the failure
- * injection after a step (TS-21).
+ * The store between a run and the test server: it records each upload in order and
+ * counts the reads of one object, refuses the first upload whose key holds a given
+ * text, for the failure injection after a step (TS-21), and can report the size of
+ * such a key one byte short.
  */
 final class RecordingStore implements BackupStore
 {
     /** @var list<string> */
     public array $puts = [];
 
+    public int $heads = 0;
+
     public function __construct(
         private readonly BackupStore $store,
         private readonly ?string $refuse = null,
+        private readonly ?string $shrink = null,
     ) {}
 
     /**
@@ -48,15 +52,25 @@ final class RecordingStore implements BackupStore
 
     public function head(string $key): ?StoredObject
     {
+        $this->heads++;
+
         return $this->store->head($key);
     }
 
     /**
-     * @return array<string, true>
+     * @return array<string, int>
      */
-    public function keys(string $prefix): array
+    public function sizes(string $prefix): array
     {
-        return $this->store->keys($prefix);
+        $sizes = $this->store->sizes($prefix);
+
+        foreach ($sizes as $key => $size) {
+            if ($this->shrink !== null && str_contains($key, $this->shrink)) {
+                $sizes[$key] = $size - 1;
+            }
+        }
+
+        return $sizes;
     }
 
     public function usageBytes(): int

@@ -119,3 +119,66 @@ The tests of contract section 7 are the classes below; every failure code is ind
 **Gaps.** The store's own lifecycle rules, its cap and its response to `cap_exceeded` are the operator's at gate G4 (TASK-045); `cap_exceeded` is proven only from its text. A real restore is TASK-037's. The heartbeat's real monitor is the operator's.
 
 **The decryption test outside the application's configuration (contract section 8).** `TestStore::newRecoveryKey` runs `age-keygen` into a temporary file of the harness at run time, and only `TestStore::decrypt` reads it; the application's configuration receives the recipient alone, and `BackupRulesTest::test_the_server_holds_no_recovery_key_setting` refuses any such setting in `config/backup.php`. No key is committed (EXC-63).
+
+## 8. Checks (CE-44 to CE-46, D-108)
+
+Every run is on the branch `task/TASK-013-independent-backup`, with synthetic data on CI's Linux runner, 3 of the 5 checkpoint runs of CE-46.
+
+| Check | Where it ran | Date and time | Duration | Result |
+| --- | --- | --- | --- | --- |
+| Command contract | CI 41164338460, `538abf4` | 31 Oct 10:25 | 6 s | FAIL at the start: the repository `minio/minio` no longer exists on Docker Hub, so the test server is now built from its source |
+| Image checks | CI 41164338460, `538abf4` | 31 Oct 10:25 | 6 min 30 s | PASS |
+| Command contract | CI 41165163575, `e4b69cc` | 31 Oct 10:37 | 3 min 38 s | FAIL at `composer analyse`: three findings in `BackupRunTest`, in the test only. Pint passed |
+| Image checks | CI 41165163575, `e4b69cc` | 31 Oct 10:37 | 6 min 39 s | PASS |
+| Command contract: `composer validate`, lint, analyse, `test:unit` 614, `test:postgres` 426 (10 min 21 s), `test:race` 29, `npm run lint`, typecheck, `test:unit` 524, build, browser 234 (7.1 min), on `compose.yaml` with `backup-store` | CI 41165797711, `c9337e1` | 31 Oct 10:46 | 25 min 42 s | PASS |
+| Image checks: `Scan gate tests: 49 passed, 0 failed`, `Scan gate: 112 accepted, 0 refused, 192 of lower severity reported`, `Image checks: 268 passed, 0 failed` | CI 41165797711, `c9337e1` | 31 Oct 10:46 | 5 min 5 s | PASS |
+| Publication guard | Local, each push | 31 Oct | About a minute | PASS; candidates judged in section 12 |
+| Native typecheck and ESLint | — | — | — | N/A: no TypeScript changed |
+
+## 10. Acceptance criteria
+
+| Criterion | Status | Evidence |
+| --- | --- | --- |
+| AC-013-01 | PASS | `BackupRunTest`, `BackupFailuresTest`, `ObjectStoreAnswersTest`; run 41165797711 |
+| AC-013-02 | PASS | `TestStore`; `BackupRunTest::test_a_run_stores_the_dump_the_files_and_the_manifest_records_its_row_and_pings`; `test_the_server_holds_no_recovery_key_setting` |
+| AC-013-03 | PASS | The same; `test_the_manifest_is_written_last_in_every_tier`; `test_a_failure_at_the_manifest_leaves_no_backup` |
+| AC-013-04 | PASS | `test_the_dump_holds_every_security_log_row_and_none_of_the_excluded_data` |
+| AC-013-05 | PASS | `test_a_program_gets_no_stored_name_and_the_plaintext_is_gone_before_the_next_step`; `test_a_setting_or_a_reason_of_another_form_refuses_the_run`; `test_every_program_starts_from_an_argument_list_in_one_class`; PHPStan's `ForbiddenProcessFunctionRule`. The check `stored_files_storage_key_format` refuses a key with a metacharacter (`ConfigurationTablesTest`), and no key reaches a process in any case |
+| AC-013-06 | PASS | `BackupRunsTableTest`; `assertFailedWith` of `BackupFailuresTest` |
+| AC-013-07 | PASS | BACKUP_RECOVERY sections 6 and 9, BKP-22; OPEN_ITEMS T-21 and T-22 `RESOLVED` |
+| AC-013-08 | PASS | `assertFailedWith`; `test_a_ping_that_fails_prints_no_address_and_does_not_fail_the_backup`; `test_the_command_prints_no_address_key_or_path` |
+| AC-013-09 | PASS, with the limit of section 6 | Section 6, recorded before the first checkpoint's integration ran in the image; `test_the_outbound_client_is_php_s_wrapper_and_no_code_reaches_libcurl_or_an_xml_parser`; the scan gate of run 41165797711 |
+
+## 11. Definition of Done (EXECUTION_CONTEXT section 13)
+
+| Dimension | Status | Reason |
+| --- | --- | --- |
+| Business | PASS | Section 10; REQ-OPS-01 up to its final point at TASK-045 |
+| UI and UX | N/A | No page or control; TASK-039 shows the status |
+| Backend | N/A | No route or Action of the application; the command's one option is a typed code |
+| Database | PASS | The migration reviewed (`migration-review.php`), with class, duration, lock impact and verification in its header; the constraint, privilege and retention families; no deferred key |
+| Security | PASS | THR-10 and THR-17's part; the server holds only the recipient; no secret printed or stored; section 6 |
+| Data integrity | PASS | One row per run, written once; the manifest last; the dump and its counts from one snapshot; `backup_runs` retained and never changed |
+| Performance | N/A for its budgets | Paged reads of `stored_files` and of the store's lists, one part in memory at a time; TASK-048 measures budgets, and a real dump's duration is the operator's at gate G4 |
+| Operations | PASS | EXC-47: `backup_runs` is class F, so the manifest counts it; `BACKUP_RECOVERY`, `ENVIRONMENTS`, `TOOLCHAIN`, `.env.example` |
+| Verification | PASS | The command contract in run 41165797711; the self-review and the adversarial review, section 9 |
+
+## 12. Guard (CE-31, CE-50)
+
+| Where | Candidates | Judgment |
+| --- | --- | --- |
+| The guard on `538abf4`, 4 candidates | `http://backup-store:1` and `:9000` with paths, in the tests and the harness | The compose service of the test server, a name on CI's internal network, and a closed port; none a real address. Accepted by its hash |
+| The guard on `e4b69cc`, 1 candidate | `http://127.0.0.1:9000/minio/health/live` in `compose.yaml` | The test server's health check on its own loopback address. Accepted by its hash |
+| The guard on `c9337e1` | None | PASS |
+
+## 13. Findings
+
+- **F-1 (for TASK-014).** The manifest's `release` reads `APP_RELEASE_VERSION`, `APP_RELEASE_COMMIT` and `APP_RELEASE_IMAGE_DIGEST`, null until the release workflow sets them in the image. BACKUP_RECOVERY section 5 asks for them, so a production backup needs them. TASK-014's preflight also reads `backup_runs`.
+- **F-2 (for TASK-037).** A custom-format archive ignores `--no-owner` and `--no-privileges` at the dump: `pg_restore --no-owner --no-privileges` is what takes effect. The restore also finds `state/files-recipient` beside the objects, and the manifest's `dump.objectKeys`.
+- **F-3 (for TASK-039).** The status reads `backup_runs` as OPERATIONS_RUNBOOK section 5 says; a `SUCCEEDED` row's `reverified_backup_id` shows the Sunday re-verification.
+- **F-4 (for the operator, gate G4).** The lifecycle rules of BACKUP_RECOVERY section 6, the new rule for superseded versions included, and the behaviour of the real store under Object Lock, its multipart uploads and `ListObjectVersions` are unproven until TASK-045.
+- **F-5.** The test server's build from source is part of the first step of the job `Command contract`, which took about 3.5 minutes in run 41165797711; its share of them was not measured.
+
+## 14. Backup impact (EXC-47)
+
+`backup_runs` holds retained data: it is in the dump and in the manifest's counts as class F. No new kind of stored file.

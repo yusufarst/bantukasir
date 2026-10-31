@@ -63,6 +63,7 @@ final class ObjectStoreServerTest extends TestCase
         $this->assertSame('the-recipient', $object->recipient);
         $this->assertSame('GOVERNANCE', $object->lockMode);
         $this->assertSame($until->copy()->utc()->format('Y-m-d'), substr($object->retainUntil, 0, 10));
+        $this->assertSame(['db/6h/large.age' => strlen($bytes)], $store->sizes('db/6h/large.age'));
 
         $this->assertTrue($store->download('db/6h/large.age', $this->area.'/back'));
         $this->assertSame(hash('sha256', $bytes), hash_file('sha256', $this->area.'/back'));
@@ -71,7 +72,7 @@ final class ObjectStoreServerTest extends TestCase
     public function test_lists_usage_text_and_absent_objects(): void
     {
         $store = TestStore::open();
-        $this->assertSame([], $store->keys('files/'));
+        $this->assertSame([], $store->sizes('files/'));
         $this->assertSame(0, $store->usageBytes());
         $this->assertNull($store->getText('state/absent'));
         $this->assertNull($store->head('state/absent'));
@@ -82,7 +83,7 @@ final class ObjectStoreServerTest extends TestCase
         $store->putText('files/b.age', 'other');
         $store->putText('db/6h/c.age', 'dump');
 
-        $this->assertSame(['files/a.age' => true, 'files/b.age' => true], $store->keys('files/'));
+        $this->assertSame(['files/a.age' => strlen('second!'), 'files/b.age' => strlen('other')], $store->sizes('files/'));
         $this->assertSame('second!', $store->getText('files/a.age'));
 
         // The usage counts the superseded version too.
@@ -94,7 +95,7 @@ final class ObjectStoreServerTest extends TestCase
         config(['backup.store.key' => 'not-the-key-of-the-store']);
 
         try {
-            TestStore::open()->keys('files/');
+            TestStore::open()->sizes('files/');
             $this->fail('The store accepted a wrong signature.');
         } catch (BackupFailed $failed) {
             $this->assertSame(BackupFailure::STORE_AUTH, $failed->failure);

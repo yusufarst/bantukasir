@@ -1151,10 +1151,10 @@ Added in RF-6 (D-088): the evidence behind the Owner's system status (REQ-OPS-04
 | `started_at`, `finished_at` | `timestamptz` | `finished_at >= started_at` |
 | `outcome` | `text` | `SUCCEEDED` or `FAILED` |
 | `failure_code` | `text` null | `NO_SPACE`, `DUMP_INVALID`, `FILE_MISSING`, `FILE_CORRUPT`, `STORE_REFUSED`, `STORE_AUTH`, `REMOTE_MISMATCH`, `TIMEOUT`; set exactly when `outcome = 'FAILED'` |
-| `snapshot_at` | `timestamptz` null | The moment of the dump's snapshot; set when the dump succeeded |
-| `tiers` | `text` | The tiers written: `6h`, `6h,weekly`, `6h,monthly` or `6h,weekly,monthly` |
+| `snapshot_at` | `timestamptz` null | The moment of the dump's snapshot; set when the dump was made, even if its archive then failed the check |
+| `tiers` | `text` | The tiers the run was to write: `6h`, `6h,weekly`, `6h,monthly` or `6h,weekly,monthly`; a failed run may have written fewer |
 | `dump_bytes`, `files_uploaded`, `uploaded_bytes`, `store_bytes` | `bigint` null | `>= 0`; set on success; `store_bytes` is the store's usage read after the upload |
-| `dump_object_sha256`, `manifest_object_sha256` | `bytea` null | 32 bytes each; the hashes of the encrypted objects, for the weekly re-verification; set on success |
+| `dump_object_sha256`, `manifest_object_sha256` | `bytea` null | 32 bytes each; the hashes of the encrypted objects, for the weekly re-verification; set on success, and on a failure after the manifest was stored, as of `REMOTE_MISMATCH` |
 | `reverified_backup_id` | `text` null | The weekly copy re-verified by this run, on a Sunday run |
 
 `CHECK ((outcome = 'FAILED') = (failure_code IS NOT NULL))`, and `backup_runs_success_complete`: a `SUCCEEDED` row holds `snapshot_at`, the four sizes and the two hashes. `dump_bytes` is the encrypted dump's size. Runtime privileges: `SELECT`.

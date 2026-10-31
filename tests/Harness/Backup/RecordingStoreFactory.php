@@ -14,13 +14,15 @@ final class RecordingStoreFactory extends ObjectStoreFactory
 {
     public ?RecordingStore $store = null;
 
-    public function __construct(private readonly ?string $refuse = null)
-    {
+    public function __construct(
+        private readonly ?string $refuse = null,
+        private readonly ?string $shrink = null,
+    ) {
         parent::__construct();
     }
 
     public function make(BackupSettings $settings, Deadline $deadline): BackupStore
     {
-        return $this->store = new RecordingStore(parent::make($settings, $deadline), $this->refuse);
+        return $this->store = new RecordingStore(parent::make($settings, $deadline), $this->refuse, $this->shrink);
     }
 }

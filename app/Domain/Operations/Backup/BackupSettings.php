@@ -40,6 +40,7 @@ final readonly class BackupSettings
         public string $age,
         public array $retentionDays,
         public int $usageThresholdBytes,
+        public int $rotationFilesPerRun,
         public array $release,
     ) {}
 
@@ -71,7 +72,8 @@ final readonly class BackupSettings
             self::text('backup.tools.pg_restore'),
             self::text('backup.tools.age'),
             self::retention(),
-            self::number('backup.usage_threshold_bytes'),
+            self::number('backup.usage_threshold_bytes.'.(config('app.environment_name') === 'staging' ? 'staging' : 'production')),
+            self::number('backup.rotation_files_per_run'),
             [
                 'version' => self::optional('backup.release.version'),
                 'commit' => self::optional('backup.release.commit'),
@@ -104,7 +106,11 @@ final readonly class BackupSettings
     {
         $profile = config('app.environment_name') === 'staging' ? 'staging' : self::text('backup.retention_profile');
 
-        if (! in_array($profile, ['full', 'reduced', 'staging'], true)) {
+        if ($profile !== 'staging' && ! in_array($profile, ['full', 'reduced'], true)) {
+            throw new BackupRefused('settings');
+        }
+
+        if ($profile === 'staging' && config('app.environment_name') !== 'staging') {
             throw new BackupRefused('settings');
         }
 

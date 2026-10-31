@@ -65,6 +65,7 @@ SC-01 to SC-04 are ENVIRONMENTS section 13. The operator does not run them by ha
 | Backup check missed | No successful backup for more than 7 hours | Read the latest `backup_runs` rows and the backup container's log | RB-09 |
 | Reconciliation check missed | The daily reconciliation did not complete | Run it again by hand and read its log | RB-04 |
 | Store cap alert at 75 % or 100 % | The backup store is near or at its free allowance | Apply the reduced retention | BACKUP_RECOVERY section 6 |
+| `store_bytes` at each restore drill, or `BACKUP_STORE_ABOVE_THRESHOLD` in `storage/logs/backup-run.log` of the backup container | A bucket has passed its threshold: 6 GB in production, 1 GB in staging | Read the newest `backup_runs` row of each environment; apply the reduced retention in production, reduce staging's data or tiers | BACKUP_RECOVERY section 6 |
 | The Owner reports "Status sistem perlu dicek" | A status item failed or is "Belum Terverifikasi" | Open the item of section 5 | Section 5 |
 | Certificate expiry within 60 days | From the operator's calendar | Renew | RB-07 |
 
@@ -151,11 +152,11 @@ Steps for every incident:
 | Failure code | Action |
 | --- | --- |
 | `NO_SPACE` | RB-08, then run the backup again |
-| `DUMP_INVALID`, `TIMEOUT` | Read the log, check the database, run again; repeated failure is S2 |
-| `STORE_REFUSED` | Usually the cap: apply the reduced retention (BACKUP_RECOVERY section 6); otherwise check the store's status |
+| `DUMP_INVALID`, `TIMEOUT` | Read the log (`storage/logs/backup-run.log` of the backup container), check the database, run again; repeated failure is S2 |
+| `STORE_REFUSED` | Usually the cap, also of a key rotation (BACKUP_RECOVERY section 4 step 7a): apply the reduced retention, which frees space only as older locks end, so the Owner decides if a backup must be stored sooner (BACKUP_RECOVERY section 6); otherwise check the store's status. A transient failure was already tried again |
 | `STORE_AUTH` | The server's key was revoked or rotated: set the right key (ENVIRONMENTS section 16) |
 | `FILE_MISSING`, `FILE_CORRUPT` | S1. Find the newest backup that holds the file with its recorded SHA-256. **Owner:** authorize putting that file back under its own storage key; the operator restores the exact bytes, which must match `stored_files.sha256`. A file that no backup holds is recorded as lost |
-| `REMOTE_MISMATCH` | S1. Take a new backup at once; check the other copies; contact the store's support |
+| `REMOTE_MISMATCH` | S1. Take a new backup at once; check the other copies; contact the store's support. That Sunday's own copy was stored, and the next Sunday judges it, so the code clears when the store is sound; the row's `reverified_backup_id` then shows it. **Not an incident** on the first Sunday after the operator moved the store to a new bucket (ENVIRONMENTS section 15), whose earlier copy is rightly not there: record the move and take no further action |
 
 A backup that keeps failing for more than a day is reported to the Owner.
 

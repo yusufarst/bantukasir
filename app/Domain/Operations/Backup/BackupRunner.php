@@ -29,18 +29,23 @@ use Throwable;
  * holds its transaction until pg_dump has finished, which the snapshot needs only
  * until pg_dump has started; nothing tells this process when that is.
  *
- * @phpstan-type FileRow array{storageKey: string, purpose: string, size: int, sha256: string}
+ * @phpstan-type FileRow array{id: int, storageKey: string, purpose: string, size: int, sha256: string}
  * @phpstan-type Snapshot array{at: string, postgres: string, migration: string|null, counts: array<string, int>}
  */
 final class BackupRunner
 {
     public const string CONNECTION = 'pgsql_backup';
 
-    /** The object that says which recipient every current file is encrypted to. */
+    /**
+     * The object that says which recipient every current file is encrypted to, or,
+     * during a rotation, "ROTATING <recipient> <last id done> <last id to do>".
+     */
     public const string RECIPIENT_MARKER = 'state/files-recipient';
 
-    /** The marker's text while a rotation is uploading files again. */
     public const string ROTATING = 'ROTATING';
+
+    /** How many files of a rotation pass between two writes of its progress. */
+    private const int ROTATION_CHECKPOINT = 100;
 
     public const string RECIPIENT_METADATA = 'bk-recipient';
 
@@ -74,6 +79,7 @@ final class BackupRunner
         $deadline = Deadline::after($settings->timeLimitSeconds);
         $work = rtrim($settings->temporaryPath, '/').'/run-'.$backupId;
         $snapshotAt = null;
+        $stored = [];
 
         try {
             $this->prepare($settings->temporaryPath, $work);
@@ -95,13 +101,18 @@ final class BackupRunner
             $tools->checkArchive($plain);
             $plainHash = self::hashOf($plain);
             $tools->encryptFile($plain, $encrypted);
-            File::delete($plain);
+
+            if (! File::delete($plain)) {
+                throw new BackupFailed(BackupFailure::DUMP_INVALID, 'The plaintext could not be removed.');
+            }
+
             $encryptedHash = self::hashOf($encrypted);
             $encryptedSize = self::sizeOf($encrypted);
 
             // Step 4: the files, read after the dump, so a superset of its rows.
             $rows = $this->storedFiles($database);
-            [$filesUploaded, $filesBytes] = $this->uploadFiles($store, $tools, $settings, $rows, $work, $deadline);
+            $present = $store->sizes('files/');
+            [$uploadedKeys, $filesBytes] = $this->uploadMissingFiles($store, $tools, $settings, $rows, $present, $work, $deadline);
 
             // Step 5: the dump in each tier.
             $dumpKeys = [];
@@ -109,6 +120,7 @@ final class BackupRunner
             foreach ($tiers as $tier) {
                 $key = self::objectKey($tier, $backupId, 'dump');
                 $store->put($key, $encrypted, [], $this->retainUntil($settings, $tier));
+                $this->confirmSizes($store, $key, [$key => $encryptedSize]);
                 $dumpKeys[] = $key;
             }
 
@@ -116,17 +128,27 @@ final class BackupRunner
             $manifest = $work.'/manifest.age';
             $tools->encryptBytes($this->manifest($settings, $backupId, $environment, $startedAt, $snapshot, $dumpKeys, $encryptedSize, $encryptedHash, $plainHash, $rows), $manifest);
             $manifestHash = self::hashOf($manifest);
+            $manifestSize = self::sizeOf($manifest);
 
             foreach ($tiers as $tier) {
-                $store->put(self::objectKey($tier, $backupId, 'manifest'), $manifest, [], $this->retainUntil($settings, $tier));
+                $key = self::objectKey($tier, $backupId, 'manifest');
+                $store->put($key, $manifest, [], $this->retainUntil($settings, $tier));
+                $this->confirmSizes($store, $key, [$key => $manifestSize]);
             }
 
+            // A later failure leaves this copy stored, so its row keeps its hashes for
+            // the next Sunday's re-verification.
+            $stored = ['dump' => $encryptedHash, 'manifest' => $manifestHash];
+
             // Step 7: the Sunday run re-verifies the previous weekly copy.
-            $reverified = in_array(TierPlan::WEEKLY, $tiers, true) ? $this->reverify($database, $store, $work) : null;
+            $reverified = in_array(TierPlan::WEEKLY, $tiers, true) ? $this->reverify($database, $store, $settings, $work) : null;
+
+            // A rotation moves on by a bounded number of files, with the backup safe.
+            [$rotated, $rotatedBytes] = $this->rotate($store, $tools, $settings, $rows, $present === [], $uploadedKeys, $work, $deadline);
 
             // Step 8: the record, then the ping.
-            $tierCount = count($tiers);
-            $uploadedBytes = $filesBytes + $tierCount * ($encryptedSize + self::sizeOf($manifest));
+            $filesUploaded = count($uploadedKeys) + $rotated;
+            $uploadedBytes = $filesBytes + $rotatedBytes + count($tiers) * ($encryptedSize + $manifestSize);
             $storeBytes = $store->usageBytes();
 
             $this->record($database, $backupId, $reason, $startedAt, 'SUCCEEDED', null, $snapshotAt, $tiers, [
@@ -134,8 +156,7 @@ final class BackupRunner
                 'files_uploaded' => $filesUploaded,
                 'uploaded_bytes' => $uploadedBytes,
                 'store_bytes' => $storeBytes,
-                'dump' => $encryptedHash,
-                'manifest' => $manifestHash,
+                ...$stored,
                 'reverified' => $reverified,
             ]);
 
@@ -143,8 +164,8 @@ final class BackupRunner
         } catch (Throwable $thrown) {
             [$failure, $diagnostic] = self::classify($thrown, $deadline);
 
-            // Step 9: one row, with the code only.
-            $this->record($this->database(), $backupId, $reason, $startedAt, 'FAILED', $failure, $snapshotAt, $tiers, []);
+            // Step 9: one row, with the code, and the hashes of a copy that was stored.
+            $this->record($this->database(), $backupId, $reason, $startedAt, 'FAILED', $failure, $snapshotAt, $tiers, $stored);
 
             return new BackupOutcome($backupId, $failure, diagnostic: $diagnostic);
         } finally {
@@ -338,6 +359,7 @@ final class BackupRunner
                 $file = (array) $row;
                 $after = self::integer($file['id'] ?? null);
                 $files[] = [
+                    'id' => $after,
                     'storageKey' => self::textOf($file['storage_key'] ?? null),
                     'purpose' => self::textOf($file['purpose'] ?? null),
                     'size' => self::integer($file['byte_size'] ?? null),
@@ -350,53 +372,159 @@ final class BackupRunner
     }
 
     /**
-     * Step 4: each file whose object is missing, or whose metadata names another
-     * recipient, is checked, encrypted and uploaded once.
-     *
-     * Reading each object's metadata costs one capped transaction per file per run,
-     * which the store's free allowance could not bear, so the marker object says
-     * that every current file is encrypted to this recipient, and the metadata is
-     * read only when it says otherwise: at the first run and after a rotation. The
-     * marker reads ROTATING until such a pass has finished, so that a pass cut
-     * short, or a recipient set back in between, is walked again (BACKUP_RECOVERY
-     * sections 4 and 9).
+     * Step 4: each file whose object is missing is checked, encrypted and uploaded,
+     * then every size is confirmed from one listing, which costs one capped
+     * transaction per thousand objects where reading each object would cost one each
+     * (BACKUP_RECOVERY section 4).
      *
      * @param  list<FileRow>  $rows
-     * @return array{int, int}
+     * @param  array<string, int>  $present
+     * @return array{array<string, int>, int} the sizes of what was uploaded, by key, and their total
      *
      * @throws BackupFailed
      */
-    private function uploadFiles(BackupStore $store, BackupTools $tools, BackupSettings $settings, array $rows, string $work, Deadline $deadline): array
+    private function uploadMissingFiles(BackupStore $store, BackupTools $tools, BackupSettings $settings, array $rows, array $present, string $work, Deadline $deadline): array
     {
-        $existing = $store->keys('files/');
-        $current = $store->getText(self::RECIPIENT_MARKER) === $settings->recipient;
-
-        if (! $current) {
-            $store->putText(self::RECIPIENT_MARKER, self::ROTATING);
-        }
-
-        $uploaded = 0;
+        $uploaded = [];
         $bytes = 0;
 
         foreach ($rows as $row) {
-            $deadline->check();
-
             $key = self::fileKey($row['storageKey']);
-            $present = array_key_exists($key, $existing);
 
-            if ($present && ($current || $store->head($key)?->recipient === $settings->recipient)) {
+            if (array_key_exists($key, $present)) {
                 continue;
             }
 
-            $bytes += $this->uploadFile($store, $tools, $settings, $row, $key, $work.'/file.age');
-            $uploaded++;
+            $deadline->check();
+
+            $size = $this->uploadFile($store, $tools, $settings, $row, $key, $work.'/file.age');
+            $uploaded[$key] = $size;
+            $bytes += $size;
         }
 
-        if (! $current) {
-            $store->putText(self::RECIPIENT_MARKER, $settings->recipient);
+        if ($uploaded !== []) {
+            $this->confirmSizes($store, 'files/', $uploaded);
         }
 
         return [$uploaded, $bytes];
+    }
+
+    /**
+     * BKP-22: after a change of recipient, the existing files are encrypted again,
+     * by a bounded number per run and after the backup is stored, so that a rotation
+     * never holds up a backup. The marker keeps the pass's place by the key of
+     * stored_files, so no file is read twice and no metadata is read at all; a file
+     * that is added later is uploaded by step 4, to the new recipient already. Until
+     * a pass finishes a backup holds files of both recipients, and the old key stays
+     * in custody (BKP-22); each object's metadata names its own.
+     *
+     * @param  list<FileRow>  $rows
+     * @param  array<string, int>  $justUploaded
+     * @return array{int, int} the files uploaded again and their bytes
+     *
+     * @throws BackupFailed
+     */
+    private function rotate(BackupStore $store, BackupTools $tools, BackupSettings $settings, array $rows, bool $bucketWasEmpty, array $justUploaded, string $work, Deadline $deadline): array
+    {
+        $marker = $store->getText(self::RECIPIENT_MARKER);
+
+        if ($marker === $settings->recipient) {
+            return [0, 0];
+        }
+
+        if ($marker === null && $bucketWasEmpty) {
+            $store->putText(self::RECIPIENT_MARKER, $settings->recipient);
+
+            return [0, 0];
+        }
+
+        [$cursor, $end] = self::rotationPlace($marker, $settings->recipient, $rows);
+        $uploaded = [];
+        $bytes = 0;
+        $finished = true;
+
+        foreach ($rows as $row) {
+            if ($row['id'] <= $cursor || $row['id'] > $end) {
+                continue;
+            }
+
+            if (count($uploaded) >= $settings->rotationFilesPerRun) {
+                $finished = false;
+
+                break;
+            }
+
+            $deadline->check();
+
+            $key = self::fileKey($row['storageKey']);
+
+            if (! array_key_exists($key, $justUploaded)) {
+                $size = $this->uploadFile($store, $tools, $settings, $row, $key, $work.'/file.age');
+                $uploaded[$key] = $size;
+                $bytes += $size;
+            }
+
+            $cursor = $row['id'];
+
+            if ($uploaded !== [] && count($uploaded) % self::ROTATION_CHECKPOINT === 0) {
+                $store->putText(self::RECIPIENT_MARKER, self::rotationMarker($settings->recipient, $cursor, $end));
+            }
+        }
+
+        if ($uploaded !== []) {
+            $this->confirmSizes($store, 'files/', $uploaded);
+        }
+
+        $store->putText(self::RECIPIENT_MARKER, $finished ? $settings->recipient : self::rotationMarker($settings->recipient, $cursor, $end));
+
+        return [count($uploaded), $bytes];
+    }
+
+    /**
+     * The place of a pass: where the marker left it for this recipient, or the whole
+     * of the files that exist now.
+     *
+     * @param  list<FileRow>  $rows
+     * @return array{int, int} the last id done and the last id to do
+     */
+    private static function rotationPlace(?string $marker, string $recipient, array $rows): array
+    {
+        $pattern = '/\A'.self::ROTATING.' (\S+) (\d+) (\d+)\z/';
+
+        if ($marker !== null && preg_match($pattern, $marker, $match) === 1 && $match[1] === $recipient) {
+            return [(int) $match[2], (int) $match[3]];
+        }
+
+        $end = 0;
+
+        foreach ($rows as $row) {
+            $end = $row['id'];
+        }
+
+        return [0, $end];
+    }
+
+    private static function rotationMarker(string $recipient, int $cursor, int $end): string
+    {
+        return self::ROTATING.' '.$recipient.' '.$cursor.' '.$end;
+    }
+
+    /**
+     * Each object's stored size, from the listing of the prefix.
+     *
+     * @param  array<string, int>  $expected
+     *
+     * @throws BackupFailed
+     */
+    private function confirmSizes(BackupStore $store, string $prefix, array $expected): void
+    {
+        $stored = $store->sizes($prefix);
+
+        foreach ($expected as $key => $size) {
+            if (($stored[$key] ?? null) !== $size) {
+                throw new BackupFailed(BackupFailure::STORE_REFUSED, 'A stored size differs.');
+            }
+        }
     }
 
     /**
@@ -492,25 +620,29 @@ final class BackupRunner
     }
 
     /**
-     * Step 7: the previous weekly copy still returns the bytes it was given, as
-     * they were recorded at its upload, without decrypting them. A copy that is
-     * gone or differs is REMOTE_MISMATCH, an S1 incident (RB-09).
+     * Step 7: the newest weekly copy that this store should still hold returns the
+     * bytes it was given, as they were recorded at its upload, without decrypting
+     * them. A copy that is gone or differs is REMOTE_MISMATCH, an S1 incident (RB-09).
      *
-     * @return string|null the copy re-verified; null when none exists yet
+     * That failure does not last: the failed Sunday's own copy was stored and its row
+     * holds its hashes, so the next Sunday judges that copy. A copy older than its
+     * tier has reached the end of its retention, which proves nothing about the store.
+     *
+     * @return string|null the copy re-verified; null when none is due
      *
      * @throws BackupFailed
      */
-    private function reverify(Connection $database, BackupStore $store, string $work): ?string
+    private function reverify(Connection $database, BackupStore $store, BackupSettings $settings, string $work): ?string
     {
         $row = $database->selectOne(<<<'SQL'
             select backup_id,
                    pg_catalog.encode(dump_object_sha256, 'hex') as dump,
                    pg_catalog.encode(manifest_object_sha256, 'hex') as manifest
             from backup_runs
-            where outcome = 'SUCCEEDED' and tiers like '%weekly%'
+            where tiers like '%weekly%' and manifest_object_sha256 is not null and finished_at > ?
             order by finished_at desc, id desc
             limit 1
-            SQL);
+            SQL, [Date::now()->subDays($settings->retentionOf(TierPlan::WEEKLY))->format('Y-m-d H:i:s.uP')]);
 
         if ($row === null) {
             return null;
@@ -535,7 +667,7 @@ final class BackupRunner
      * Steps 8 and 9: the one row of the run (SCHEMA section 5.12).
      *
      * @param  list<string>  $tiers
-     * @param  array{dump_bytes?: int, files_uploaded?: int, uploaded_bytes?: int, store_bytes?: int, dump?: string, manifest?: string, reverified?: string|null}  $success
+     * @param  array{dump_bytes?: int, files_uploaded?: int, uploaded_bytes?: int, store_bytes?: int, dump?: string, manifest?: string, reverified?: string|null}  $details
      */
     private function record(
         Connection $database,
@@ -546,7 +678,7 @@ final class BackupRunner
         ?BackupFailure $failure,
         ?string $snapshotAt,
         array $tiers,
-        array $success,
+        array $details,
     ): void {
         $database->insert(
             "insert into backup_runs (backup_id, reason, started_at, finished_at, outcome, failure_code, snapshot_at, tiers, dump_bytes, files_uploaded, uploaded_bytes, store_bytes, dump_object_sha256, manifest_object_sha256, reverified_backup_id) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, pg_catalog.decode(?, 'hex'), pg_catalog.decode(?, 'hex'), ?)",
@@ -559,13 +691,13 @@ final class BackupRunner
                 $failure?->value,
                 $snapshotAt,
                 implode(',', $tiers),
-                $success['dump_bytes'] ?? null,
-                $success['files_uploaded'] ?? null,
-                $success['uploaded_bytes'] ?? null,
-                $success['store_bytes'] ?? null,
-                $success['dump'] ?? null,
-                $success['manifest'] ?? null,
-                $success['reverified'] ?? null,
+                $details['dump_bytes'] ?? null,
+                $details['files_uploaded'] ?? null,
+                $details['uploaded_bytes'] ?? null,
+                $details['store_bytes'] ?? null,
+                $details['dump'] ?? null,
+                $details['manifest'] ?? null,
+                $details['reverified'] ?? null,
             ],
         );
     }
