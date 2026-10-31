@@ -38,7 +38,7 @@ match() {
 }
 
 report_of() { # the matches, one JSON object per argument
-    printf '%s\n' "$@" | jq -s '{matches: .}' >"$work/report.json"
+    printf '%s\n' "$@" | jq -s '{matches: ., source: {type: "image"}, distro: {name: "debian", version: "13"}}' >"$work/report.json"
 }
 
 # ---------------------------------------------------------- The fixture of the list
@@ -121,7 +121,39 @@ check 'an entry the scan no longer reports is printed, and refuses nothing' 0 'A
 # ------------------------------------------------------------ What cannot be trusted
 
 echo '{}' >"$work/report.json"
-check 'a report without findings cannot pass' 2 'SCAN_GATE_UNUSABLE'
+check 'a report without a list of findings cannot pass' 2 'SCAN_GATE_UNUSABLE'
+
+echo '{"matches": [], "source": {"type": "image"}, "distro": {"name": "debian"}}' >"$work/report.json"
+check 'a scan that found nothing to look at cannot pass' 2 'SCAN_GATE_UNUSABLE the report has no finding'
+
+report_of "$critical"
+jq '.source.type = "directory"' "$work/report.json" >"$work/variant-report.json"
+mv "$work/variant-report.json" "$work/report.json"
+check 'a report of something else than an image cannot pass' 2 'SCAN_GATE_UNUSABLE the report is not of an image'
+
+report_of "$critical"
+jq 'del(.source)' "$work/report.json" >"$work/variant-report.json"
+mv "$work/variant-report.json" "$work/report.json"
+check 'a report without its source cannot pass' 2 'SCAN_GATE_UNUSABLE the report is not of an image'
+
+report_of "$critical"
+jq 'del(.distro)' "$work/report.json" >"$work/variant-report.json"
+mv "$work/variant-report.json" "$work/report.json"
+check 'a report that found no distribution cannot pass' 2 'SCAN_GATE_UNUSABLE the report did not find Debian'
+
+report_of "$critical"
+jq '.distro.name = "alpine"' "$work/report.json" >"$work/variant-report.json"
+mv "$work/variant-report.json" "$work/report.json"
+check 'a report of another distribution cannot pass' 2 'SCAN_GATE_UNUSABLE the report did not find Debian'
+
+report_of "$(jq -cn --argjson m "$(match CVE-2000-0013 Low gamma 2.0 not-fixed)" '$m | .artifact.type = "binary"')"
+check 'a report that catalogued no Debian package cannot pass' 2 'SCAN_GATE_UNUSABLE the report found no Debian package'
+
+report_of "$(jq -cn --argjson m "$(match CVE-2000-0011 High gamma 2.0 fixed '["2.1"]')" '$m | del(.vulnerability.severity)')"
+check 'a finding without a severity cannot pass' 2 'SCAN_GATE_UNUSABLE a finding has no known severity'
+
+report_of "$(match CVE-2000-0012 Severe gamma 2.0 fixed '["2.1"]')"
+check 'a finding with an unknown severity word cannot pass' 2 'SCAN_GATE_UNUSABLE a finding has no known severity'
 
 echo 'not JSON' >"$work/report.json"
 check 'an unreadable report cannot pass' 2 'SCAN_GATE_UNUSABLE'
@@ -161,9 +193,9 @@ record() { # <description> <expected> <actual>
     fi
 }
 
-echo '{"matches": []}' >"$work/report.json"
+report_of "$(match CVE-2026-6653 Critical libxml2 2.12.7+dfsg+really2.9.14-2.1+deb13u3 wont-fix)"
 accepted_file="$list"
-check 'the accepted list of D-112 is complete and exact' 0 ''
+check 'the accepted list of D-112 is complete and exact, and accepts one of its findings' 0 'Scan gate: 1 accepted, 0 refused'
 unset accepted_file
 
 record 'the list names the 43 assessed CVEs' 43 "$(jq '.accepted | length' "$list")"

@@ -36,6 +36,7 @@ After AGENTS.md, CURRENT_HANDOFF, EXECUTION_CONTEXT and TASK_PLAN sections 1 to 
 - ADR-011 item 11
 - OPEN_ITEMS T-21 and T-22
 - The evidence of TASK-006 on T-23
+- D-112, D-113, OPEN_ITEMS T-38, `scripts/checks/image-scan-accepted.json` and the evidence of TASK-012 section 5.3
 
 ## 4. Scope
 
@@ -49,6 +50,7 @@ After AGENTS.md, CURRENT_HANDOFF, EXECUTION_CONTEXT and TASK_PLAN sections 1 to 
 6. Resolve T-22: the capacity estimate counts staging and production in the one free allowance; staging's tiers are reduced to stated values; the threshold for the reduced retention takes the lock periods into account, so that usage stays under the allowance while older copies age out; amend BACKUP_RECOVERY section 6.
 7. Test locally and in CI against an open-source S3-compatible test server whose licence is recorded, as far as it supports Object Lock; the real store is verified by the operator at gate G4 (TASK-045).
 8. Add the backup role's settings of ENVIRONMENTS section 11 to `.env.example` as placeholders.
+9. Reassess the exposure of curl and libcurl before its HTTP or S3 integration (D-112 item 5, D-113; gate RELEASE reassesses them again, and neither is a production risk acceptance): for every curl and libcurl finding of `scripts/checks/image-scan-accepted.json` and any new one, read Debian's and the curl project's status again and judge whether the chosen S3 client and the heartbeat ping client reach it — among them signed requests (CVE-2026-86409), HTTP/2 and the multi interface, connection reuse, cookies and credentials — then record the result per finding in the evidence and in T-38, and reconsider a safer curl, such as the one of `trixie-backports` that the evidence of TASK-012 records, before this client depends on libcurl.
 
 ### 4.2 Owned by this Task
 
@@ -95,6 +97,7 @@ Controls are those of [TRACEABILITY](../TRACEABILITY.md) section 9.2, each built
 - **AC-013-06** Only the backup role inserts into `backup_runs` (privilege family); a failure writes a row with its code and never a path, a key or a store message.
 - **AC-013-07** BACKUP_RECOVERY section 6 and BKP-22 state the resolutions of T-21 and T-22; OPEN_ITEMS marks both RESOLVED.
 - **AC-013-08** The heartbeat is pinged only after a successful run, and its address is never printed.
+- **AC-013-09** The reassessment of scope item 9 is recorded per finding before the HTTP or S3 integration runs in the image; no critical finding is materially reachable, known to be exploited or insufficiently assessed.
 
 ## 7. Tests
 
@@ -131,12 +134,13 @@ Each dimension is recorded `PASS`, `FAIL`, `BLOCKED` or `N/A` with its reason (E
 ## 10. Stop conditions
 
 - T-21 or T-22 needs a deletion beyond superseded copies of unchanged content, or a cost (COST_POLICY).
+- The reassessment of scope item 9 finds a critical curl or libcurl finding materially reachable, known to be exploited or insufficiently assessed; or the accepted list would have to gain a critical finding, which only the Owner's own decision adds (D-112).
 - Every stop condition of EXECUTION_CONTEXT section 14.
 
 ## 11. Documents this Task updates
 
 - BACKUP_RECOVERY sections 6 and 9 (T-21, T-22)
-- OPEN_ITEMS T-21 and T-22 (RESOLVED)
+- OPEN_ITEMS T-21 and T-22 (RESOLVED); T-38, its part (a)
 - TOOLCHAIN (backup tools: `age`, the client tools, the S3 client)
 - Its row in TASK_PLAN section 4, its evidence file, and CURRENT_HANDOFF last (EXECUTION_CONTEXT section 15)
 

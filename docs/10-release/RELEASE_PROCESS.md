@@ -51,6 +51,8 @@ The release workflow (ADR-011 item 5) builds the image and runs, on it:
 3. a scan of the image's file system for secrets and of its packages for known vulnerabilities, with open-source tools chosen by the operations Task;
 4. a check that no development dependency and no test fixture is in the image.
 
+The scan of item 3 reports every finding and fails on a high or critical finding that has a fix, has an unknown fix state, is known to be exploited, or is outside the accepted list, and on a report it cannot trust (`scripts/checks/image-scan-gate.sh`, `scripts/checks/image-scan-accepted.json`; D-112). That list is a temporary acceptance for development: passing it authorizes no deployment to staging or production, and it does not replace the review of section 12.
+
 The **release integrity report**, attached to the release record, states: the version, commit, tag and image digest; the base image digests; the lockfile hashes; the CI run and its results; the suites and their status on this revision (TEST_STRATEGY section 8); the migrations, each with its class and rehearsal evidence; the scan results; the publication guard's result; the compatibility of the previous image with the new schema; known issues; and the cost inventory unchanged or its approved exceptions (COST_POLICY).
 
 ## 5. Migration safety
@@ -144,7 +146,7 @@ Onboarding is started and released **once** for a shop's business data; after it
 
 ## 12. Gate RELEASE for V1
 
-V1 is released for a shop only when PRODUCT_BLUEPRINT section 12 holds: every requirement accepted on the release revision (every suite of ACCEPTANCE_SUITES at FINAL_PASS on it, TEST_STRATEGY section 9); gates P7-G1 to P7-G3 approved (D-082, D-086, D-087); gates G1 to G4, DEVICES and TARGET satisfied with real evidence; the Owner's authorization of the exact target, revision and operation; and the pilot accepted by the Owner (UAT_PILOT section 3, suite RELEASE01). The Owner's acceptance is recorded in DECISIONS.
+V1 is released for a shop only when PRODUCT_BLUEPRINT section 12 holds: every requirement accepted on the release revision (every suite of ACCEPTANCE_SUITES at FINAL_PASS on it, TEST_STRATEGY section 9); gates P7-G1 to P7-G3 approved (D-082, D-086, D-087); gates G1 to G4, DEVICES and TARGET satisfied with real evidence; the independent review of every vulnerability that remains in the image, which the temporary acceptance of D-112 does not settle, with curl and libcurl reassessed again, the update of `trixie-backports` included (D-113, OPEN_ITEMS T-38); the Owner's authorization of the exact target, revision and operation; and the pilot accepted by the Owner (UAT_PILOT section 3, suite RELEASE01). The Owner's acceptance is recorded in DECISIONS.
 
 ## 13. Open items
 

@@ -1,7 +1,7 @@
 # The secret scan of the image's file system (TASK-012;
 # scripts/checks/image-checks.sh): the default rules of Gitleaks 8.30.1. An
-# allowlist entry names third-party files of the image only, each with its reason
-# in the evidence; the application's own files never have one.
+# allowlist entry names third-party files of the image only, its reason in its
+# description below; the application's own files never have one.
 [extend]
 useDefault = true
 

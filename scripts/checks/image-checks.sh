@@ -172,7 +172,7 @@ docker rmi "$rebuild" >/dev/null 2>&1
 section 'What the image holds'
 contents="$(docker run --rm "$image" bash -c '
     cd /var/www/html
-    for path in tests node_modules .env .env.example .git .github docs scripts phpunit.xml phpstan.neon package.json resources/js resources/css public/hot database/factories database/seeders compose.yaml docker; do
+    for path in tests node_modules .env .env.example .git .github docs scripts phpunit.xml phpstan.neon package.json resources/js resources/css public/hot database/factories database/seeders database/setup/local.sh database/setup/selftest.sh database/setup/state.sql compose.yaml docker; do
         [ ! -e "$path" ] || echo "present $path"
     done
     for program in composer gitleaks node npm gcc cc make git; do
@@ -556,21 +556,35 @@ docker run --rm "$image" dpkg-query -W -f='${Package} ${Version}\n'
 docker run --rm "$image" php -r 'foreach (json_decode(file_get_contents("vendor/composer/installed.json"), true)["packages"] as $package) { echo $package["name"], " ", $package["version"], "\n"; }'
 
 section 'The secret scan of the file system (Gitleaks)'
-docker create --name "$rootfs_container" "$image" >/dev/null
-docker export -o "$work/rootfs.tar" "$rootfs_container"
+# A scan of a file system that did not arrive whole would find nothing, so that a
+# failed export or extraction fails here and is never scanned.
+rootfs_complete=yes
+docker create --name "$rootfs_container" "$image" >/dev/null || rootfs_complete=no
+docker export -o "$work/rootfs.tar" "$rootfs_container" || rootfs_complete=no
 docker rm -f "$rootfs_container" >/dev/null 2>&1
 mkdir "$work/rootfs" "$work/report"
-tar -xf "$work/rootfs.tar" -C "$work/rootfs" --no-same-owner --exclude='dev/*' --exclude='proc/*' --exclude='sys/*' 2>/dev/null
-rm -f "$work/rootfs.tar"
-chmod -R a+rX "$work/rootfs" 2>/dev/null
-chmod 777 "$work/report"
-docker run --rm -v "$work/rootfs:/scan:ro" -v "$work/report:/report" -v "$root/scripts/checks/image-gitleaks.toml:/config.toml:ro" "$gitleaks_image" \
-    dir --config /config.toml --no-banner --no-color --redact --report-format json --report-path /report/gitleaks.json /scan
-scan_status=$?
-if [ -f "$work/report/gitleaks.json" ]; then
-    jq -r '.[] | "\(.RuleID) \(.File):\(.StartLine)"' "$work/report/gitleaks.json"
+if ! tar -xf "$work/rootfs.tar" -C "$work/rootfs" --no-same-owner --anchored --exclude='dev/*' --exclude='proc/*' --exclude='sys/*' 2>"$work/rootfs-errors"; then
+    rootfs_complete=no
+    tail -n 5 "$work/rootfs-errors"
 fi
-if [ "$scan_status" -eq 0 ]; then pass 'the secret scan finds nothing'; else fail "the secret scan: status $scan_status"; fi
+for known_file in var/www/html/artisan var/www/html/public/index.php usr/bin/dpkg usr/local/bin/php; do
+    [ -f "$work/rootfs/$known_file" ] || rootfs_complete=no
+done
+rm -f "$work/rootfs.tar"
+expect 'the file system of the image arrives whole for the secret scan' 'yes' "$rootfs_complete"
+if [ "$rootfs_complete" = yes ]; then
+    chmod -R a+rX "$work/rootfs" 2>/dev/null
+    chmod 777 "$work/report"
+    docker run --rm -v "$work/rootfs:/scan:ro" -v "$work/report:/report" -v "$root/scripts/checks/image-gitleaks.toml:/config.toml:ro" "$gitleaks_image" \
+        dir --config /config.toml --no-banner --no-color --redact --report-format json --report-path /report/gitleaks.json /scan
+    scan_status=$?
+    if [ -f "$work/report/gitleaks.json" ]; then
+        jq -r '.[] | "\(.RuleID) \(.File):\(.StartLine)"' "$work/report/gitleaks.json"
+    fi
+    if [ "$scan_status" -eq 0 ]; then pass 'the secret scan finds nothing'; else fail "the secret scan: status $scan_status"; fi
+else
+    fail 'the secret scan ran'
+fi
 rm -rf "$work/rootfs" 2>/dev/null
 
 section 'The vulnerability scan of the packages (Grype)'

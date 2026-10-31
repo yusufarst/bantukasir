@@ -12,7 +12,10 @@
 # exploited. There is no suppression by pattern, and the scan itself is never
 # skipped. The status is 0 when nothing is refused, 1 when something is, and 2 when
 # the report or the list cannot be trusted. A result is never assumed from a file
-# that was not read: an unusable input ends here.
+# that was not read: an unusable input ends here. So does a report with no finding,
+# not of an image or without Debian, because a scan that found nothing to look at
+# would otherwise pass (a Debian image with no finding at all does not exist today),
+# and a finding without a known severity, which could not be judged.
 set -uo pipefail
 
 report="${1:-}"
@@ -23,8 +26,20 @@ if [ ! -f "$report" ] || [ ! -f "$accepted" ]; then
     exit 2
 fi
 
-if ! jq -e '(.matches | type) == "array"' "$report" >/dev/null 2>&1; then
-    echo "SCAN_GATE_UNUSABLE the report has no list of findings"
+usable="$(jq -r '
+    if (.matches | type) != "array" then "the report has no list of findings"
+    elif (.matches | length) == 0 then "the report has no finding"
+    elif .source.type != "image" then "the report is not of an image"
+    elif ((.distro.name // "") | ascii_downcase) != "debian" then "the report did not find Debian"
+    elif (any(.matches[]; .artifact.type == "deb") | not) then "the report found no Debian package"
+    elif any(.matches[];
+        (.vulnerability.severity | type) != "string"
+        or ((.vulnerability.severity | ascii_downcase) as $severity
+            | ["critical", "high", "medium", "low", "negligible", "unknown"] | index($severity) == null))
+    then "a finding has no known severity"
+    else "usable" end' "$report" 2>/dev/null)"
+if [ "$usable" != usable ]; then
+    echo "SCAN_GATE_UNUSABLE ${usable:-the report cannot be read}"
     exit 2
 fi
 

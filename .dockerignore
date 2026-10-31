@@ -25,6 +25,9 @@ storage
 docs
 scripts
 tests
+database/setup/local.sh
+database/setup/selftest.sh
+database/setup/state.sql
 coverage
 playwright-report
 test-results
