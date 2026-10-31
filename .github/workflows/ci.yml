@@ -64,9 +64,6 @@ jobs:
             - name: Start the local environment (one command)
               run: docker compose up -d --build --wait
 
-            - name: Print the digests of the images in use
-              run: docker images --digests
-
             - name: composer validate
               run: docker compose exec -T app composer validate --strict --no-check-all
 

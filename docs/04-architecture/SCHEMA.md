@@ -1157,7 +1157,7 @@ Added in RF-6 (D-088): the evidence behind the Owner's system status (REQ-OPS-04
 | `dump_object_sha256`, `manifest_object_sha256` | `bytea` null | 32 bytes each; the hashes of the encrypted objects, for the weekly re-verification; set on success |
 | `reverified_backup_id` | `text` null | The weekly copy re-verified by this run, on a Sunday run |
 
-`CHECK ((outcome = 'FAILED') = (failure_code IS NOT NULL))`. Runtime privileges: `SELECT`.
+`CHECK ((outcome = 'FAILED') = (failure_code IS NOT NULL))`, and `backup_runs_success_complete`: a `SUCCEEDED` row holds `snapshot_at`, the four sizes and the two hashes. `dump_bytes` is the encrypted dump's size. Runtime privileges: `SELECT`.
 
 **`restore_drills`** — class F. One row per production restore drill, written by the operator procedure SEC-OP-08 ([BACKUP_RECOVERY](../09-operations/BACKUP_RECOVERY.md) RB-02).
 
