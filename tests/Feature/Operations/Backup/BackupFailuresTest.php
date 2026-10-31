@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Operations\Backup;
 
+use App\Database\Identifier;
 use App\Domain\Operations\Backup\BackupFailure;
 use App\Domain\Operations\Backup\BackupOutcome;
 use App\Domain\Operations\Backup\BackupRunner;
@@ -9,12 +10,15 @@ use App\Domain\Operations\Backup\DiskSpace;
 use App\Domain\Operations\Backup\ObjectStoreFactory;
 use App\Domain\Operations\Heartbeat;
 use App\Domain\Operations\OutboundHttp;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Tests\Harness\Backup\BackupTestCase;
 use Tests\Harness\Backup\RecordingStoreFactory;
 use Tests\Harness\Backup\TestStore;
+use Tests\Harness\TestDatabase;
 
 /**
  * Each failure code of BACKUP_RECOVERY section 4, induced (AC-013-01, AC-013-03,
@@ -24,6 +28,9 @@ use Tests\Harness\Backup\TestStore;
  */
 final class BackupFailuresTest extends BackupTestCase
 {
+    /** @var list<array{string, mixed}> */
+    private array $statements = [];
+
     public function test_no_space_fails_before_the_dump(): void
     {
         $first = $this->runBackup();
@@ -240,6 +247,74 @@ final class BackupFailuresTest extends BackupTestCase
         $this->assertFailedWith(BackupFailure::TIMEOUT, $this->runBackup());
     }
 
+    public function test_a_read_behind_a_lock_ends_with_timeout_at_the_time_limit(): void
+    {
+        config(['backup.time_limit_seconds' => 5]);
+        $this->holdTable('stored_files', 30);
+
+        $started = microtime(true);
+        $outcome = $this->runBackup();
+        $elapsed = microtime(true) - $started;
+        $this->migration()->rollBack();
+
+        $this->assertFailedWith(BackupFailure::TIMEOUT, $outcome);
+        $this->assertStringContainsString('57014', $outcome->diagnostic, 'PostgreSQL ended the statement, not a check after it.');
+        $this->assertLessThan(20, $elapsed);
+    }
+
+    public function test_the_row_of_a_failed_run_may_wait_past_the_time_limit(): void
+    {
+        config(['backup.time_limit_seconds' => 1]);
+        $this->holdTable('backup_runs', 5);
+
+        $outcome = $this->runBackup();
+
+        // The holder's session has ended by itself, which let the row through.
+        DB::purge(TestDatabase::MIGRATION);
+
+        $this->assertFailedWith(BackupFailure::TIMEOUT, $outcome);
+        $this->assertStringContainsString('57014', $outcome->diagnostic);
+    }
+
+    public function test_every_statement_of_a_run_is_limited_to_what_remains(): void
+    {
+        $this->storeLogo();
+        $this->atJakarta('2030-01-06 00:00:10');
+        $first = $this->runBackup();
+        $this->assertNull($first->failure, $first->diagnostic);
+
+        config(['backup.time_limit_seconds' => 1200]);
+        DB::listen(function (QueryExecuted $query): void {
+            if ($query->connectionName === TestDatabase::BACKUP) {
+                $this->statements[] = [$query->sql, $query->bindings[0] ?? null];
+            }
+        });
+
+        // A Sunday, so that the re-verification's read is among them.
+        $this->atJakarta('2030-01-13 00:00:10');
+        $outcome = $this->runBackup();
+        $this->assertNull($outcome->failure, $outcome->diagnostic);
+        $this->assertNotNull($this->rowOf($outcome->backupId)['reverified_backup_id']);
+
+        $armed = false;
+        $limited = 0;
+
+        foreach ($this->statements as [$sql, $binding]) {
+            if ($sql === 'select pg_catalog.set_config(\'statement_timeout\', ?, false)') {
+                $this->assertIsString($binding);
+                $this->assertGreaterThan(0, (int) $binding);
+                $this->assertLessThanOrEqual(1200000, (int) $binding);
+                $armed = true;
+            } elseif (! str_starts_with($sql, 'set ') && $sql !== 'select current_user') {
+                $this->assertTrue($armed, $sql);
+                $armed = false;
+                $limited++;
+            }
+        }
+
+        $this->assertGreaterThan(5, $limited);
+    }
+
     public function test_a_ping_that_fails_prints_no_address_and_does_not_fail_the_backup(): void
     {
         $address = 'http://backup-store:1/the-secret-ping-address';
@@ -309,6 +384,19 @@ final class BackupFailuresTest extends BackupTestCase
         $this->assertSame(1, Artisan::call('backup:run', ['--reason' => 'rm -rf']));
         $this->assertStringContainsString('BACKUP_REFUSED reason', Artisan::output());
         $this->assertNothingIn(['backup_runs']);
+    }
+
+    /**
+     * Another session holds the table against every read, as a migration would, and
+     * that session ends by itself after these seconds.
+     */
+    private function holdTable(string $table, int $seconds): void
+    {
+        $holder = $this->migration();
+
+        $holder->beginTransaction();
+        $holder->statement('select pg_catalog.set_config(\'idle_in_transaction_session_timeout\', ?, true)', [(string) ($seconds * 1000)]);
+        $holder->statement('lock table '.Identifier::quote($table).' in access exclusive mode');
     }
 
     private function freeSpace(int $bytes): void

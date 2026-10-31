@@ -50,6 +50,12 @@ final class BackupRunner
     /** A pass stops this far from the time limit, so that it never costs a run its success. */
     private const int ROTATION_RESERVE_SECONDS = 300;
 
+    /**
+     * What the row of a failed run may take, the limit having passed; with the limit
+     * it stays within the no-overlap lock of backup:run.
+     */
+    private const int FAILURE_ROW_SECONDS = 60;
+
     public const string RECIPIENT_METADATA = 'bk-recipient';
 
     /** The classes of table whose counts the restore compares (BACKUP_RECOVERY section 5). */
@@ -74,19 +80,19 @@ final class BackupRunner
     {
         $settings = BackupSettings::fromConfig();
         $database = $this->database();
-        $environment = $this->identify($database);
+        $deadline = Deadline::after($settings->timeLimitSeconds);
+        $environment = $this->identify($database, $deadline);
 
         $startedAt = Date::now();
         $backupId = $startedAt->copy()->utc()->format('Ymd\THis\Z').'-'.Str::random(8);
         $tiers = TierPlan::for($reason, $startedAt);
-        $deadline = Deadline::after($settings->timeLimitSeconds);
         $work = rtrim($settings->temporaryPath, '/').'/run-'.$backupId;
         $snapshotAt = null;
         $stored = [];
 
         try {
             $this->prepare($settings->temporaryPath, $work);
-            $this->requireSpace($database, $settings->temporaryPath);
+            $this->requireSpace($database, $settings->temporaryPath, $deadline);
 
             $store = $this->stores->make($settings, $deadline);
             $tools = new BackupTools($settings, $deadline);
@@ -94,7 +100,7 @@ final class BackupRunner
             // Step 2: the dump and its check; step 3: its encryption.
             $plain = $work.'/dump.plain';
             $encrypted = $work.'/dump.age';
-            $snapshot = $this->dump($database, $tools, $plain);
+            $snapshot = $this->dump($database, $tools, $plain, $deadline);
             $snapshotAt = $snapshot['at'];
 
             if (filesize($plain) === 0) {
@@ -113,7 +119,7 @@ final class BackupRunner
             $encryptedSize = self::sizeOf($encrypted);
 
             // Step 4: the files, read after the dump, so a superset of its rows.
-            $rows = $this->storedFiles($database);
+            $rows = $this->storedFiles($database, $deadline);
             $present = $store->sizes('files/');
 
             // A new bucket: every file goes to this recipient from the first, and a
@@ -151,7 +157,7 @@ final class BackupRunner
             $stored = ['dump' => $encryptedHash, 'manifest' => $manifestHash];
 
             // Step 7: the Sunday run re-verifies the previous weekly copy.
-            $reverified = in_array(TierPlan::WEEKLY, $tiers, true) ? $this->reverify($database, $store, $settings, $work) : null;
+            $reverified = in_array(TierPlan::WEEKLY, $tiers, true) ? $this->reverify($database, $store, $settings, $work, $deadline) : null;
             $stored['reverified'] = $reverified;
 
             // A rotation moves on by a bounded number of files, with the backup safe.
@@ -162,7 +168,7 @@ final class BackupRunner
             $uploadedBytes = $filesBytes + $rotatedBytes + count($tiers) * ($encryptedSize + $manifestSize);
             $storeBytes = $store->usageBytes();
 
-            $this->record($database, $backupId, $reason, $startedAt, 'SUCCEEDED', null, $snapshotAt, $tiers, [
+            $this->record(self::limited($database, $deadline), $backupId, $reason, $startedAt, 'SUCCEEDED', null, $snapshotAt, $tiers, [
                 'dump_bytes' => $encryptedSize,
                 'files_uploaded' => $filesUploaded,
                 'uploaded_bytes' => $uploadedBytes,
@@ -175,12 +181,27 @@ final class BackupRunner
             [$failure, $diagnostic] = self::classify($thrown, $deadline);
 
             // Step 9: one row, with the code, and the hashes of a copy that was stored.
-            $this->record($this->database(), $backupId, $reason, $startedAt, 'FAILED', $failure, $snapshotAt, $tiers, $stored);
+            $this->record(self::limited($this->database(), Deadline::after(self::FAILURE_ROW_SECONDS)), $backupId, $reason, $startedAt, 'FAILED', $failure, $snapshotAt, $tiers, $stored);
 
             return new BackupOutcome($backupId, $failure, diagnostic: $diagnostic);
         } finally {
             File::deleteDirectory($work);
         }
+    }
+
+    /**
+     * The next statement may take what remains of the run. The backup role has no
+     * limit of its own (ENVIRONMENTS ENV-31) and a Deadline cannot stop a query that
+     * PDO is waiting for, so a read behind another session's lock would outlast the
+     * limit and the no-overlap lock of backup:run. PostgreSQL's limit counts the wait
+     * for a lock too, and in whole seconds it never ends a statement before the
+     * Deadline has passed, so classify() gives TIMEOUT.
+     */
+    private static function limited(Connection $database, Deadline $deadline): Connection
+    {
+        $database->statement('select pg_catalog.set_config(\'statement_timeout\', ?, false)', [(string) ($deadline->remaining() * 1000)]);
+
+        return $database;
     }
 
     /**
@@ -258,16 +279,16 @@ final class BackupRunner
     /**
      * Step 1: the environment's name equals the database's marker (ENV-04), and the
      * connection is the backup role. Neither failure can write a row: the database
-     * may not be this environment's.
+     * may not be this environment's. The role's read of its own name waits for nothing.
      *
      * @throws BackupRefused
      */
-    private function identify(Connection $database): string
+    private function identify(Connection $database, Deadline $deadline): string
     {
         try {
-            DatabaseRoles::requireCurrent($database, 'backup');
+            DatabaseRoles::requireCurrent(self::limited($database, $deadline), 'backup');
 
-            return EnvironmentMarker::require($database, self::ENVIRONMENTS);
+            return EnvironmentMarker::require(self::limited($database, $deadline), self::ENVIRONMENTS);
         } catch (DatabaseRefused) {
             throw new BackupRefused('environment');
         }
@@ -295,9 +316,9 @@ final class BackupRunner
      *
      * @throws BackupFailed
      */
-    private function requireSpace(Connection $database, string $base): void
+    private function requireSpace(Connection $database, string $base, Deadline $deadline): void
     {
-        $last = self::integer($database->table('backup_runs')->where('outcome', 'SUCCEEDED')->orderByDesc('finished_at')->orderByDesc('id')->value('dump_bytes'));
+        $last = self::integer(self::limited($database, $deadline)->table('backup_runs')->where('outcome', 'SUCCEEDED')->orderByDesc('finished_at')->orderByDesc('id')->value('dump_bytes'));
         $free = $this->disk->freeBytes($base);
 
         if ($free <= 0 || $free < 2 * $last) {
@@ -312,9 +333,11 @@ final class BackupRunner
      *
      * @throws BackupFailed
      */
-    private function dump(Connection $database, BackupTools $tools, string $file): array
+    private function dump(Connection $database, BackupTools $tools, string $file, Deadline $deadline): array
     {
-        $database->beginTransaction();
+        // The limit before the transaction, so that its first query is the one that
+        // takes the snapshot and reads its time.
+        self::limited($database, $deadline)->beginTransaction();
 
         try {
             $database->statement('set transaction isolation level repeatable read read only');
@@ -325,11 +348,11 @@ final class BackupRunner
 
             foreach (PrivilegeMatrix::load()->tables() as $table => $entry) {
                 if (in_array($entry['class'], self::COUNTED_CLASSES, true)) {
-                    $counts[$table] = self::integer($database->scalar('select count(*) from '.Identifier::quote($table)));
+                    $counts[$table] = self::integer(self::limited($database, $deadline)->scalar('select count(*) from '.Identifier::quote($table)));
                 }
             }
 
-            $migration = $database->table('migrations')->orderByDesc('id')->value('migration');
+            $migration = self::limited($database, $deadline)->table('migrations')->orderByDesc('id')->value('migration');
 
             $tools->dump(self::textOf($row['snapshot'] ?? null), $file);
 
@@ -354,13 +377,13 @@ final class BackupRunner
      *
      * @return list<FileRow>
      */
-    private function storedFiles(Connection $database): array
+    private function storedFiles(Connection $database, Deadline $deadline): array
     {
         $files = [];
         $after = 0;
 
         do {
-            $page = $database->select(
+            $page = self::limited($database, $deadline)->select(
                 "select id, storage_key, purpose, byte_size, pg_catalog.encode(sha256, 'hex') as sha256 from stored_files where id > ? order by id limit 1000",
                 [$after],
             );
@@ -636,9 +659,9 @@ final class BackupRunner
      *
      * @throws BackupFailed
      */
-    private function reverify(Connection $database, BackupStore $store, BackupSettings $settings, string $work): ?string
+    private function reverify(Connection $database, BackupStore $store, BackupSettings $settings, string $work, Deadline $deadline): ?string
     {
-        $row = $database->selectOne(<<<'SQL'
+        $row = self::limited($database, $deadline)->selectOne(<<<'SQL'
             select backup_id,
                    pg_catalog.encode(dump_object_sha256, 'hex') as dump,
                    pg_catalog.encode(manifest_object_sha256, 'hex') as manifest

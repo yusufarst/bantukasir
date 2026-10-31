@@ -4,8 +4,8 @@ namespace App\Domain\Operations\Backup;
 
 /**
  * The bound of one run: it stops with TIMEOUT after 30 minutes (BACKUP_RECOVERY
- * section 4; ENVIRONMENTS ENV-31). Every program and every request of the run is
- * limited to what remains.
+ * section 4; ENVIRONMENTS ENV-31). Every program, every request and every database
+ * statement of the run is limited to what remains.
  */
 final class Deadline
 {
