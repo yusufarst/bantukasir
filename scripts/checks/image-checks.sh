@@ -201,6 +201,11 @@ expect 'the memory limit may be raised for one image (TASK-010 F-5)' '384M' \
 expect 'the client tools are of the pinned server major version' '18' \
     "$(docker run --rm "$image" pg_dump --version | sed -E 's/.* ([0-9]+)\.[0-9]+.*/\1/')"
 expect_ok 'age is present' docker run --rm "$image" age --version
+# The local environment runs the same configuration as root (compose.yaml), and a
+# pool without a user ends such a master at once: it must still be running when
+# this stops it, with the status of timeout.
+expect 'PHP-FPM also starts as root, as in the local environment' '124' \
+    "$(docker run --rm --user root --entrypoint timeout "$image" 5 php-fpm --nodaemonize >/dev/null 2>&1; echo "$?")"
 
 # ------------------------------------------------------------------- The environment
 
