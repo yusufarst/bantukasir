@@ -58,7 +58,7 @@ final class ObjectStoreAnswersTest extends TestCase
 
     public function test_a_connection_that_fails_is_store_refused(): void
     {
-        $failure = $this->failureOf(fn (ObjectStore $store) => $store->keys('files/'), new ConnectException('at the address of the store', new Request('GET', 'http://store.test')));
+        $failure = $this->failureOf(fn (ObjectStore $store) => $store->sizes('files/'), new ConnectException('at the address of the store', new Request('GET', 'http://store.test')));
 
         $this->assertSame(BackupFailure::STORE_REFUSED, $failure->failure);
         $this->assertStringNotContainsString('address of the store', $failure->diagnostic);
