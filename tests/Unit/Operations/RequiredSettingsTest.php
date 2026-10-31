@@ -157,6 +157,12 @@ final class RequiredSettingsTest extends TestCase
         $this->assertSame(['BACKUP_RECIPIENT' => RequiredSettings::INVALID], RequiredSettings::problems(['BACKUP_RECIPIENT' => 'age1short'] + self::backup()));
     }
 
+    public function test_the_retention_of_role_backup_is_a_named_profile_when_set(): void
+    {
+        $this->assertSame([], RequiredSettings::problems(['BACKUP_RETENTION' => 'reduced'] + self::backup()));
+        $this->assertSame(['BACKUP_RETENTION' => RequiredSettings::INVALID], RequiredSettings::problems(['BACKUP_RETENTION' => 'none'] + self::backup()));
+    }
+
     /**
      * @param  array<string, string>  $environment
      */

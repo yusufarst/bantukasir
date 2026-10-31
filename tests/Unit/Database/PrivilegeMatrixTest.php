@@ -31,7 +31,7 @@ final class PrivilegeMatrixTest extends TestCase
     {
         $matrix = PrivilegeMatrix::load();
 
-        $this->assertSame(['audit_events', 'business_profile_current', 'business_profile_revisions', 'cache', 'cache_locks', 'command_identities', 'command_request_receipts', 'command_results', 'intent_reconciliations', 'migrations', 'onboarding_releases', 'onboarding_state', 'password_reset_tokens', 'recovery_epoch', 'security_log_entries', 'sessions', 'stale_intent_reports', 'stored_files', 'users'], array_keys($matrix->tables()));
+        $this->assertSame(['audit_events', 'backup_runs', 'business_profile_current', 'business_profile_revisions', 'cache', 'cache_locks', 'command_identities', 'command_request_receipts', 'command_results', 'intent_reconciliations', 'migrations', 'onboarding_releases', 'onboarding_state', 'password_reset_tokens', 'recovery_epoch', 'security_log_entries', 'sessions', 'stale_intent_reports', 'stored_files', 'users'], array_keys($matrix->tables()));
         $this->assertSame(['SELECT', 'INSERT', 'UPDATE', 'DELETE'], $matrix->tablePrivileges('cache', 'runtime'));
         $this->assertSame(['SELECT', 'INSERT', 'UPDATE', 'DELETE'], $matrix->tablePrivileges('cache_locks', 'runtime'));
         $this->assertSame([], $matrix->tablePrivileges('migrations', 'runtime'));
@@ -66,6 +66,10 @@ final class PrivilegeMatrixTest extends TestCase
 
         $this->assertSame(['revision_id', 'changed_at'], $matrix->updateColumns('business_profile_current'));
         $this->assertSame(['state', 'version', 'changed_at', 'changed_by_user_id'], $matrix->updateColumns('onboarding_state'));
+
+        // TASK-013 (SCHEMA section 10, SCH-42).
+        $this->assertSame(['SELECT'], $matrix->tablePrivileges('backup_runs', 'runtime'));
+        $this->assertSame(['SELECT', 'INSERT'], $matrix->tablePrivileges('backup_runs', 'backup'));
 
         foreach (array_keys($matrix->tables()) as $table) {
             $this->assertSame($table === 'security_log_entries', $matrix->policies($table) !== [], $table);

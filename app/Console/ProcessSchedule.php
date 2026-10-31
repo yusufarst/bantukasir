@@ -17,9 +17,14 @@ use Illuminate\Support\Facades\Artisan;
  * The commands are added by their Tasks — TASK-036 SC-01, TASK-038 SC-02, TASK-013
  * SC-03 and TASK-039 SC-04 — so an entry whose command does not exist yet is
  * registered and skipped when due, rather than failing each time.
+ *
+ * The scheduler discards a command's output, so SC-03's lines, which RB-09 reads,
+ * go to a file of the backup container. They hold no secret (BackupRun).
  */
 final class ProcessSchedule
 {
+    public const string BACKUP_LOG = 'logs/backup-run.log';
+
     private const int LOCK_MINUTES = 60;
 
     /** Role, command and cron expression, by the identifier of ENVIRONMENTS section 13. */
@@ -37,11 +42,15 @@ final class ProcessSchedule
                 continue;
             }
 
-            $schedule->command($command)
+            $event = $schedule->command($command)
                 ->cron($cron)
                 ->description($identifier)
                 ->withoutOverlapping(self::LOCK_MINUTES)
                 ->when(static fn (): bool => array_key_exists($command, Artisan::all()));
+
+            if ($identifier === 'SC-03') {
+                $event->appendOutputTo(storage_path(self::BACKUP_LOG));
+            }
         }
     }
 }

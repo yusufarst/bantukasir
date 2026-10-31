@@ -119,6 +119,28 @@ services:
                 condition: service_healthy
         restart: "no"
 
+    backup-store:
+        # The S3-compatible test server of the backup's tests (TASK-013 scope item
+        # 7), on the internal network only, with no port on the host. MinIO
+        # (AGPL-3.0), built by docker/backup-store/Dockerfile, with its default test
+        # credentials, which only this service accepts and which guard nothing: it
+        # holds what the tests write, encrypted to a key the harness made, in an
+        # anonymous volume. MINIO_CI_CD leaves out the checks of a production drive.
+        # The real store is the operator's, at gate G4 (TASK-045).
+        build:
+            context: docker/backup-store
+        image: bantukasir-backup-store:local
+        environment:
+            MINIO_CI_CD: "1"
+            MINIO_BROWSER: "off"
+        volumes:
+            - /data
+        healthcheck:
+            test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:9000/minio/health/live"]
+            interval: 2s
+            timeout: 5s
+            retries: 30
+
     node:
         image: node:24.22.0-trixie-slim@sha256:7f486cabe892bff8fef04c0f7da8dba84a560be3e4e2740b7a86afc57ebec315
         profiles: ["tools"]
