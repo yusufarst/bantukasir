@@ -98,6 +98,7 @@ final class RequiredSettings
         ],
         self::BACKUP => [
             'APP_DEBUG' => ['false', '0', 'off', 'no'],
+            'BACKUP_RETENTION' => ['full', 'reduced'],
         ],
     ];
 

@@ -143,6 +143,14 @@ return [
             'runtime' => ['select' => true, 'insert' => true],
         ],
 
+        // Operations (SCHEMA section 5.12; TASK-013): written by the backup role
+        // (SCH-42), read by the runtime role.
+        'backup_runs' => [
+            'class' => 'F',
+            'runtime' => ['select' => true],
+            'backup' => ['insert' => true],
+        ],
+
     ],
 
     'sequences' => [],

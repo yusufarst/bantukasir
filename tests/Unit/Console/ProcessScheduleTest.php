@@ -70,16 +70,27 @@ final class ProcessScheduleTest extends TestCase
 
     public function test_an_entry_runs_only_once_its_command_exists(): void
     {
-        [$event] = $this->eventsOf('backup');
+        [$event] = $this->eventsOf('web');
 
-        $this->assertArrayNotHasKey('backup:run', Artisan::all());
+        $this->assertStringEndsWith('reconciliation:run', (string) $event->command);
+        $this->assertArrayNotHasKey('reconciliation:run', Artisan::all());
         $this->assertFalse($event->filtersPass($this->app));
 
-        Artisan::registerCommand(new ClosureCommand('backup:run', function (): int {
+        Artisan::registerCommand(new ClosureCommand('reconciliation:run', function (): int {
             return 0;
         }));
 
         $this->assertTrue($event->filtersPass($this->app));
+    }
+
+    public function test_sc_03_exists_and_keeps_its_lines_in_the_log_that_rb_09_reads(): void
+    {
+        [$event] = $this->eventsOf('backup');
+
+        $this->assertArrayHasKey('backup:run', Artisan::all());
+        $this->assertTrue($event->filtersPass($this->app));
+        $this->assertSame(storage_path(ProcessSchedule::BACKUP_LOG), $event->output);
+        $this->assertTrue($event->shouldAppendOutput);
     }
 
     public function test_the_application_registers_the_schedule_of_its_configured_role(): void
