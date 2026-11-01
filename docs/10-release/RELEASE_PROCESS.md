@@ -88,7 +88,7 @@ The **release integrity report** (template `docs/10-release/templates/RELEASE_IN
 **In the window (production)**
 
 5. Tell the shop when the window starts; the window lies outside opening hours unless the Owner authorized otherwise.
-6. Pause the backup container's schedule; run `backup:run --reason=pre-release`; the run must succeed.
+6. Pause the backup container's schedule; run `backup:run --reason=PRE_RELEASE`; the run must succeed.
 7. If the release has migrations: switch on maintenance mode (`php artisan down`), with a bypass only for the operator: a request for the path that the application's `APP_MAINTENANCE_BYPASS_SECRET` holds gives that browser the way past the maintenance page, and nothing more (ENVIRONMENTS section 11).
 8. Run the migration job, `bantukasir-migration-job` in a one-off container of the release image (its usage is at the top of `docker/app/migration-job.sh`): preflight (REL-23), then the migrations, then the verification queries of REL-20.
 9. Deploy the new digest to the application and backup resources, with `APP_RELEASE_IMAGE_DIGEST` set to it: an image cannot hold its own digest, and the manifest of a backup names it (BACKUP_RECOVERY section 5).
