@@ -82,8 +82,8 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-012](tasks/TASK-012-application-image.md) | Application image and runtime configuration | 3 | O | M | B | TASK-004, TASK-007 | — | `DONE` |
 | [TASK-013](tasks/TASK-013-independent-backup.md) | Independent backup | 3 | O | L | A | TASK-012, TASK-010 | — | `DONE` |
 | [TASK-014](tasks/TASK-014-release-pipeline.md) | Release workflow, preflight and migration job | 3 | O | M | A | TASK-013 | — | `DONE` |
-| [TASK-015](tasks/TASK-015-catalog-core.md) | Categories, products, prices and Product Search (server) | 4 | C | L | A | TASK-011 | — | `READY` |
-| [TASK-016](tasks/TASK-016-barcodes.md) | Barcodes and exact lookup (server) | 4 | C | M | A | TASK-015 | — | `TODO` |
+| [TASK-015](tasks/TASK-015-catalog-core.md) | Categories, products, prices and Product Search (server) | 4 | C | L | A | TASK-011 | — | `DONE` |
+| [TASK-016](tasks/TASK-016-barcodes.md) | Barcodes and exact lookup (server) | 4 | C | M | A | TASK-015 | — | `READY` |
 | [TASK-017](tasks/TASK-017-catalog-pages.md) | Catalogue pages | 4 | C | L | B | TASK-016 | — | `TODO` |
 | [TASK-018](tasks/TASK-018-photos-labels.md) | Product photos and barcode labels | 4 | C | M | A | TASK-017 | — | `TODO` |
 | [TASK-019](tasks/TASK-019-csv-import.md) | CSV product import | 4 | C | M | A | TASK-017 | — | `TODO` |
@@ -119,7 +119,7 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-049](tasks/TASK-049-release-readiness.md) | Release readiness: staging, UAT and first installation | 10 | R | L | V | TASK-045, TASK-047, TASK-048 | G1, G2, G3, G4, DEVICES, TARGET, GATE-PUBLISH | `TODO` |
 | [TASK-050](tasks/TASK-050-production-pilot.md) | Production release, cutover and pilot acceptance | 10 | R | L | V | TASK-049 | RELEASE, GATE-PUBLISH, G4 | `TODO` |
 
-Totals: `TODO` 35; `READY` 1; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 14; `SUPERSEDED` 0.
+Totals: `TODO` 34; `READY` 1; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 15; `SUPERSEDED` 0.
 
 ## 5. Implementation sequence
 
@@ -180,7 +180,7 @@ With more than one executor the Owner may run Tasks of different lanes at the sa
 | OPEN_ITEMS T-24 | RESOLVED in RF-7 (D-090) | The deadline of N-12 now reads: before TASK-001 |
 | OPEN_ITEMS T-25 | A change control before TASK-039; TASK-047 or an earlier P7 change control | COPY_DECK section 22.2: statements that later decisions overtook, among them four system-status items instead of five in RELEASE_PROCESS and the contract of TASK-039 |
 | OPEN_ITEMS T-26 | TASK-008 | The error body of RT-07 never carries Laravel's English validation summary (AC-008-08) |
-| OPEN_ITEMS T-27 | TASK-008, with TASK-006 and TASK-015 | The trimming of input against the database's `[[:space:]]` (SCH-14; TASK-004 finding F-2) |
+| OPEN_ITEMS T-27 | TASK-015 — RESOLVED: SCH-14 records the framework's set | The trimming of input against the database's `[[:space:]]` (SCH-14; TASK-004 finding F-2) |
 | OPEN_ITEMS T-28 | TASK-012 (worker pool, RESOLVED); gate TARGET (proxy settings) | The two duties of TR-TIME-03 named for the foundation Task (TASK-004 review finding R-22) |
 | OPEN_ITEMS T-29 | A change control of COPY_DECK before TASK-009 and TASK-011 | A key that is both a text and the parent of other keys: the role descriptions and the command families (TASK-006 finding F-3) |
 | OPEN_ITEMS T-38 | TASK-013 (curl and libcurl); gate RELEASE (every remaining finding, curl and libcurl again) | The temporary acceptance of the image's unfixable Debian findings, D-112, D-113, D-115 |
@@ -193,7 +193,7 @@ With more than one executor the Owner may run Tasks of different lanes at the sa
 | OPEN_ITEMS T-01, T-02 | TASK-001 | Line endings; `.env.example` and `.gitignore` |
 | OPEN_ITEMS T-09 | TASK-043 (provisional dataset), TASK-048 (final dataset when G2 is known) | |
 | Gates G1, G2, G3, G4, DEVICES, TARGET, RELEASE, TESTS, EXECUTOR | Section 3 | |
-| Reading: the `labels` and `stock` contexts of RD-01 | TASK-015 | INTERACTION_CONTRACTS section 3.1 lists them; ROUTE_CONTRACTS RD-01 does not; no control of section 9 uses them |
+| Reading: the `labels` and `stock` contexts of RD-01 | TASK-015 — settled: `labels` removed from INTERACTION_CONTRACTS section 3.1, `stock` kept in both for TASK-022 ([TASK-015 evidence](evidence/TASK-015.md) section 3) | INTERACTION_CONTRACTS section 3.1 listed both; ROUTE_CONTRACTS RD-01 listed `stock` alone; no control of section 9 uses them |
 | Reading: the backup store's usage on the system status | TASK-002 (the Owner's answer), TASK-039 | ADR-010 item 11 and OPERATIONS_RUNBOOK section 5 differ |
 | Reading: the shop's name and accent in the shell | TASK-010 — settled: SEC-CH-02 amended for the shop's name, initials and accent, for a signed-in user only ([TASK-010 evidence](evidence/TASK-010.md) section 4) | SECURITY_MODEL SEC-CH-02 did not name them; DESIGN_SYSTEM section 7.2 shows them |
 | Reading: the mechanism of T-23 | TASK-006 — settled: a row security policy, which SCH-06 now names as a privilege | SCHEMA SCH-06 excludes triggers, rules, stored procedures and `SECURITY DEFINER` functions |

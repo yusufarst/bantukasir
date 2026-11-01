@@ -10,6 +10,14 @@ use App\Actions\Access\ReactivateAccount;
 use App\Actions\Access\RevokePasswordLink;
 use App\Actions\Access\UpdateOwnerDetails;
 use App\Actions\Access\UpdateStaffAccount;
+use App\Actions\Catalog\CreateCategory;
+use App\Actions\Catalog\CreateProduct;
+use App\Actions\Catalog\DeactivateCategory;
+use App\Actions\Catalog\DeactivateProduct;
+use App\Actions\Catalog\ReactivateCategory;
+use App\Actions\Catalog\ReactivateProduct;
+use App\Actions\Catalog\RenameCategory;
+use App\Actions\Catalog\UpdateProduct;
 use App\Actions\Configuration\ChangeBusinessProfile;
 use App\Domain\Commands\Operations;
 use LogicException;
@@ -41,6 +49,15 @@ final class CommandActions
         AnonymizeAccount::OPERATION => AnonymizeAccount::class,
         IssuePasswordLink::OPERATION => IssuePasswordLink::class,
         RevokePasswordLink::OPERATION => RevokePasswordLink::class,
+        // RC-17 to RC-24 (TASK-015).
+        CreateProduct::OPERATION => CreateProduct::class,
+        UpdateProduct::OPERATION => UpdateProduct::class,
+        DeactivateProduct::OPERATION => DeactivateProduct::class,
+        ReactivateProduct::OPERATION => ReactivateProduct::class,
+        CreateCategory::OPERATION => CreateCategory::class,
+        RenameCategory::OPERATION => RenameCategory::class,
+        DeactivateCategory::OPERATION => DeactivateCategory::class,
+        ReactivateCategory::OPERATION => ReactivateCategory::class,
     ];
 
     /**

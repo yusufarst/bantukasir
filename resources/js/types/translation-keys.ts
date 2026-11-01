@@ -391,7 +391,9 @@ export interface TranslationPlaceholders {
     'ux.state.unverified.label': never;
     'ux.state.validation.body': never;
     'ux.state.validation.title': never;
+    'ux.validation.choose_one': never;
     'ux.validation.email': never;
+    'ux.validation.min_stock': never;
     'ux.validation.money': never;
     'ux.validation.money_max': never;
     'ux.validation.money_min': never;
@@ -403,6 +405,7 @@ export interface TranslationPlaceholders {
     'ux.validation.quantity_positive': never;
     'ux.validation.quantity_whole': never;
     'ux.validation.required': never;
+    'ux.validation.sku': never;
     'ux.validation.text_max': 'maks';
     'ux.validation.upload.animated': never;
     'ux.validation.upload.image_type': never;

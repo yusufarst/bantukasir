@@ -116,6 +116,33 @@ final class Allowlists
         'commands.refused' => ['*' => ['outcome', 'code', 'messageKey', 'params', 'fields', 'lines']],
         // RD-03, the shell's indicators (TASK-009).
         'data.shell' => ['*' => ['unresolvedRequests', 'asOf']],
+        // RD-01 in the catalog context and RD-06 (TASK-015): the Owner's, the
+        // Operations admin's and the combined account's, never a cost, a
+        // valuation or a margin (BR-CAT-26). TASK-021 adds the stock per role.
+        'data.products.search' => [
+            'owner' => self::SEARCH_RESULT,
+            'ops' => self::SEARCH_RESULT,
+            'combined' => self::SEARCH_RESULT,
+        ],
+        'data.products.check' => [
+            'owner' => self::CHECK_RESULT,
+            'ops' => self::CHECK_RESULT,
+            'combined' => self::CHECK_RESULT,
+        ],
+    ];
+
+    /** One page of RD-01. */
+    private const array SEARCH_RESULT = [
+        'rows', 'rows.*', 'rows.*.id', 'rows.*.name', 'rows.*.sku', 'rows.*.baseUnit', 'rows.*.quantityPrecision',
+        'rows.*.price', 'rows.*.price.amount', 'rows.*.price.revisionId', 'rows.*.active', 'rows.*.thumbnail',
+        'page', 'perPage', 'hasMore',
+    ];
+
+    /** RD-06 with an exact SKU and a similar name. */
+    private const array CHECK_RESULT = [
+        'sku', 'sku.id', 'sku.name', 'sku.sku', 'sku.baseUnit', 'sku.quantityPrecision', 'sku.price', 'sku.price.amount', 'sku.price.revisionId', 'sku.active', 'sku.thumbnail',
+        'similarNames', 'similarNames.*', 'similarNames.*.id', 'similarNames.*.name', 'similarNames.*.sku', 'similarNames.*.baseUnit', 'similarNames.*.quantityPrecision',
+        'similarNames.*.price', 'similarNames.*.price.amount', 'similarNames.*.price.revisionId', 'similarNames.*.active', 'similarNames.*.thumbnail',
     ];
 
     /**

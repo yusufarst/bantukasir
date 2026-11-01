@@ -77,6 +77,17 @@ final class RouteInventoryTest extends TestCase
         'POST /commands/user.anonymize' => ['commands.user.anonymize', 'RC-40', 'CAP-29', [...self::SIGNED_IN, 'capability:CAP-29', 'throttle:command', 'password.confirm']],
         'POST /commands/user.issue_link' => ['commands.user.issue_link', 'RC-41', 'CAP-25,CAP-26', [...self::SIGNED_IN, 'capability:CAP-25,CAP-26', 'throttle:command', 'throttle:link_issue', 'password.confirm']],
         'POST /commands/user.revoke_link' => ['commands.user.revoke_link', 'RC-42', 'CAP-26', [...self::SIGNED_IN, 'capability:CAP-26', 'throttle:command', 'password.confirm']],
+        // TASK-015: Product Search, the search-first check and RC-17 to RC-24.
+        'GET /data/products/search' => ['data.products.search', 'RD-01', 'CAP-02', [...self::SIGNED_IN, 'capability:CAP-02', 'throttle:search']],
+        'GET /data/products/check' => ['data.products.check', 'RD-06', 'CAP-04', [...self::SIGNED_IN, 'capability:CAP-04', 'throttle:search']],
+        'POST /commands/product.create' => ['commands.product.create', 'RC-17', 'CAP-04', [...self::SIGNED_IN, 'capability:CAP-04', 'throttle:command']],
+        'POST /commands/product.update' => ['commands.product.update', 'RC-18', 'CAP-04', [...self::SIGNED_IN, 'capability:CAP-04', 'throttle:command']],
+        'POST /commands/product.deactivate' => ['commands.product.deactivate', 'RC-19', 'CAP-04', [...self::SIGNED_IN, 'capability:CAP-04', 'throttle:command']],
+        'POST /commands/product.reactivate' => ['commands.product.reactivate', 'RC-20', 'CAP-04', [...self::SIGNED_IN, 'capability:CAP-04', 'throttle:command']],
+        'POST /commands/category.create' => ['commands.category.create', 'RC-21', 'CAP-04', [...self::SIGNED_IN, 'capability:CAP-04', 'throttle:command']],
+        'POST /commands/category.rename' => ['commands.category.rename', 'RC-22', 'CAP-04', [...self::SIGNED_IN, 'capability:CAP-04', 'throttle:command']],
+        'POST /commands/category.deactivate' => ['commands.category.deactivate', 'RC-23', 'CAP-04', [...self::SIGNED_IN, 'capability:CAP-04', 'throttle:command']],
+        'POST /commands/category.reactivate' => ['commands.category.reactivate', 'RC-24', 'CAP-04', [...self::SIGNED_IN, 'capability:CAP-04', 'throttle:command']],
     ];
 
     public function test_the_routes_are_exactly_those_listed_each_with_its_gate(): void

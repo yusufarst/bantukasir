@@ -143,6 +143,24 @@ return [
             'runtime' => ['select' => true, 'insert' => true],
         ],
 
+        // Catalog (SCHEMA section 5.6; TASK-015).
+        'categories' => [
+            'class' => 'M',
+            'runtime' => ['select' => true, 'insert' => true, 'update' => ['name', 'active', 'version', 'updated_at']],
+        ],
+        'products' => [
+            'class' => 'M',
+            'runtime' => [
+                'select' => true,
+                'insert' => true,
+                'update' => ['sku', 'name', 'category_id', 'brand', 'base_unit', 'quantity_precision', 'current_price_revision_id', 'minimum_stock', 'active', 'photo_file_id', 'version', 'updated_at'],
+            ],
+        ],
+        'selling_price_revisions' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+
         // Operations (SCHEMA section 5.12; TASK-013): written by the backup role
         // (SCH-42), read by the runtime role.
         'backup_runs' => [
