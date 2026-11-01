@@ -738,7 +738,7 @@ final class CsvImportTest extends DatabaseTestCase
      */
     private function temporaryFiles(): array
     {
-        return Storage::disk(CsvImportFiles::DISK)->allFiles();
+        return array_values(Storage::disk(CsvImportFiles::DISK)->allFiles());
     }
 
     /**
