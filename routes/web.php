@@ -18,6 +18,16 @@ use App\Http\Controllers\Access\SignInController;
 use App\Http\Controllers\Access\UpdateOwnerDetailsController;
 use App\Http\Controllers\Access\UpdateStaffAccountController;
 use App\Http\Controllers\Access\UsersController;
+use App\Http\Controllers\Catalog\CreateCategoryController;
+use App\Http\Controllers\Catalog\CreateProductController;
+use App\Http\Controllers\Catalog\DeactivateCategoryController;
+use App\Http\Controllers\Catalog\DeactivateProductController;
+use App\Http\Controllers\Catalog\ReactivateCategoryController;
+use App\Http\Controllers\Catalog\ReactivateProductController;
+use App\Http\Controllers\Catalog\RenameCategoryController;
+use App\Http\Controllers\Catalog\SearchController;
+use App\Http\Controllers\Catalog\SearchFirstController;
+use App\Http\Controllers\Catalog\UpdateProductController;
 use App\Http\Controllers\Commands\RequestsController;
 use App\Http\Controllers\Commands\RequestsDataController;
 use App\Http\Controllers\Commands\ResolveIntentController;
@@ -128,6 +138,26 @@ Route::middleware(['auth', 'signin.session', 'throttle:authenticated', 'cache.he
     Route::post('/commands/user.anonymize', AnonymizeAccountController::class)->middleware(['capability:CAP-29', 'throttle:command', 'password.confirm'])->name('commands.user.anonymize');
     Route::post('/commands/user.issue_link', IssuePasswordLinkController::class)->middleware(['capability:CAP-25,CAP-26', 'throttle:command', 'throttle:link_issue', 'password.confirm'])->name('commands.user.issue_link');
     Route::post('/commands/user.revoke_link', RevokePasswordLinkController::class)->middleware(['capability:CAP-26', 'throttle:command', 'password.confirm'])->name('commands.user.revoke_link');
+
+    // The catalogue (TASK-015): RD-01, the shared Product Search, for CAP-02 and
+    // then the capability of its context, which its FormRequest checks; RD-06,
+    // the search-first check; and RC-17 to RC-24, in the bucket of every command.
+    // A price change needs CAP-05 too, which its Action checks. CAP-02 is
+    // restricted for a cashier, which opens no gate: TASK-028 adds what the till
+    // needs to this route.
+    Route::get('/data/products/search', SearchController::class)->middleware(['capability:CAP-02', 'throttle:search'])->name('data.products.search');
+
+    Route::middleware('capability:CAP-04')->group(function (): void {
+        Route::get('/data/products/check', SearchFirstController::class)->middleware('throttle:search')->name('data.products.check');
+        Route::post('/commands/product.create', CreateProductController::class)->middleware('throttle:command')->name('commands.product.create');
+        Route::post('/commands/product.update', UpdateProductController::class)->middleware('throttle:command')->name('commands.product.update');
+        Route::post('/commands/product.deactivate', DeactivateProductController::class)->middleware('throttle:command')->name('commands.product.deactivate');
+        Route::post('/commands/product.reactivate', ReactivateProductController::class)->middleware('throttle:command')->name('commands.product.reactivate');
+        Route::post('/commands/category.create', CreateCategoryController::class)->middleware('throttle:command')->name('commands.category.create');
+        Route::post('/commands/category.rename', RenameCategoryController::class)->middleware('throttle:command')->name('commands.category.rename');
+        Route::post('/commands/category.deactivate', DeactivateCategoryController::class)->middleware('throttle:command')->name('commands.category.deactivate');
+        Route::post('/commands/category.reactivate', ReactivateCategoryController::class)->middleware('throttle:command')->name('commands.category.reactivate');
+    });
 });
 
 // RD-07, a stored image (TASK-010): signed in, with the middleware of every

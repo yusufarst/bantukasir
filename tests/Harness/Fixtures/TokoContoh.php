@@ -6,6 +6,9 @@ use App\Actions\Access\BootstrapInput;
 use App\Actions\Access\BootstrapInstallation;
 use App\Actions\Access\ConsumeLink;
 use App\Actions\Access\CreateStaffAccount;
+use App\Actions\Catalog\CreateCategory;
+use App\Actions\Catalog\CreateProduct;
+use App\Actions\Commands\CommandAction;
 use App\Actions\Commands\CommandContext;
 use App\Database\DatabaseRefused;
 use App\Database\EnvironmentMarker;
@@ -268,6 +271,59 @@ final class TokoContoh
     public static function newPassword(): string
     {
         return 'Kc7#'.bin2hex(random_bytes(10));
+    }
+
+    /**
+     * A category of the shop, created by the Owner through RC-21's Action
+     * (TASK-015; EXECUTION_CONTEXT EXC-45): its internal key.
+     *
+     * @throws DatabaseRefused
+     */
+    public static function category(string $name = 'Alat Tulis'): int
+    {
+        return self::asOwner(CreateCategory::class, CreateCategory::OPERATION, ['name' => $name]);
+    }
+
+    /**
+     * A product of the shop, created by the Owner through RC-17's Action
+     * (TASK-015; EXECUTION_CONTEXT EXC-45), in its own new category unless one
+     * is given: its internal key.
+     *
+     * @param  array<string, mixed>  $fields  those of RC-17's payload that the test names
+     *
+     * @throws DatabaseRefused
+     */
+    public static function product(string $sku, array $fields = []): int
+    {
+        return self::asOwner(CreateProduct::class, CreateProduct::OPERATION, [
+            'sku' => $sku,
+            'name' => 'Pulpen Hitam',
+            'categoryId' => $fields['categoryId'] ?? self::category(),
+            'brand' => null,
+            'baseUnit' => 'pcs',
+            'quantityPrecision' => 0,
+            'sellingPrice' => '7500',
+            'minimumStock' => '0',
+            ...$fields,
+        ]);
+    }
+
+    /**
+     * The result's key of a command that the Owner runs through its Action.
+     *
+     * @param  class-string<CommandAction>  $action
+     * @param  array<string, mixed>  $payload
+     */
+    private static function asOwner(string $action, string $operation, array $payload): int
+    {
+        self::build(DB::connection());
+        self::shop();
+
+        $owner = User::query()->where('role_super_admin', true)->where('status', 'ACTIVE')->firstOrFail();
+        $envelope = new Envelope($operation, Operations::VERSION, (string) Str::uuid(), (string) Str::uuid(), self::recoveryEpoch(), [], $payload);
+        $id = app($action)->execute(new CommandContext($owner->id, $envelope, app(Clock::class)->now()))->result['id'] ?? null;
+
+        return is_int($id) ? $id : throw new LogicException(sprintf('The fixture of %s was not created.', $operation));
     }
 
     /**

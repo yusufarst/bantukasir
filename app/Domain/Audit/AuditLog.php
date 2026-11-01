@@ -27,8 +27,8 @@ use LogicException;
  * their keys exist (EXECUTION_CONTEXT EXC-44): TASK-008 added command_id with
  * its key to command_identities — the identity of the enveloped command whose
  * transaction writes the event, null for an authentication endpoint or an
- * operator procedure (TR-CMD-07) — and TASK-015 and TASK-027 add the other two
- * with their keys.
+ * operator procedure (TR-CMD-07) — TASK-015 added product_id with its key to
+ * products, the filter of BR-AUD-04, and TASK-027 adds the last with its key.
  */
 final class AuditLog
 {
@@ -55,6 +55,7 @@ final class AuditLog
         ?string $reason = null,
         ?string $operatorNote = null,
         ?int $commandId = null,
+        ?int $productId = null,
     ): int {
         if (DB::transactionLevel() === 0) {
             throw new LogicException('An audit event is written in the transaction of the change it records (BR-AUD-01).');
@@ -83,6 +84,7 @@ final class AuditLog
             'command_id' => $commandId,
             'subject_type' => $subject['type'] ?? null,
             'subject_id' => $subject['id'] ?? null,
+            'product_id' => $productId,
             'reference' => $reference,
             'reason' => $reason,
             'change_data' => json_encode((object) $changeData, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),

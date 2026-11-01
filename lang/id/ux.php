@@ -51,6 +51,10 @@ return [
         'quantity_whole' => 'Produk ini dihitung utuh. Isi tanpa koma.',
         'quantity_max' => 'Jumlah terlalu besar. Paling banyak 99.999.999,999.',
         'required' => 'Wajib diisi.',
+        // The catalogue's fields (TASK-015; COPY_DECK section 16.1).
+        'choose_one' => 'Pilih salah satu.',
+        'min_stock' => 'Stok minimum tidak boleh kurang dari 0.',
+        'sku' => 'SKU berisi 1 sampai 64 karakter, tanpa karakter kontrol.',
         // The password fields (TASK-006; COPY_DECK section 16.1).
         'password' => 'Kata sandi belum memenuhi syarat: minimal 8 karakter, dengan huruf besar, huruf kecil, angka, dan simbol.',
         'password_max' => 'Paling banyak 128 karakter.',

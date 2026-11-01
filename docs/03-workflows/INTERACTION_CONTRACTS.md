@@ -158,15 +158,15 @@ No cash leaves the drawer before the refund is COMMITTED; an uncertain refund is
 | --- | --- |
 | `q` | 0 to 128 characters after trimming; a scanned token keeps its case and punctuation (BR-CAT-17) |
 | `mode` | `exact` for a scanned or typed code (exact barcode, then exact SKU, at most one product); `search` otherwise (BR-CAT-24) |
-| `context` | `till`, `catalog`, `receiving`, `issue`, `adjustment`, `opening`, `stock`, `correction` or `labels`; it sets which products are selectable and which fields are returned. A context is open only to the capability of the pages that use it — `till` CAP-21, `catalog` CAP-04, `receiving` CAP-11, `issue` CAP-13, `adjustment` CAP-16, `opening` CAP-15, `stock` CAP-14 (stock pages), `correction` CAP-07, `labels` CAP-08 — and any other answers `FORBIDDEN` |
+| `context` | `till`, `catalog`, `receiving`, `issue`, `adjustment`, `opening`, `stock` or `correction`; it sets which products are selectable and which fields are returned. A context is open only to the capability of the pages that use it — `till` CAP-21, `catalog` CAP-04, `receiving` CAP-11, `issue` CAP-13, `adjustment` CAP-16, `opening` CAP-15, `stock` CAP-14 (stock pages), `correction` CAP-07 — and any other answers `FORBIDDEN`, as does a context until its Task adds it (TRACEABILITY section 8). Labels take no context: UXP-306 opens from a product already found, and lists that product's active tokens (TASK-015) |
 | `category`, `brand`, `status`, `page`, `perPage` | Filters and paging; `status` only for `catalog`; `perPage` at most 100 |
 
 - **Order and paging.** Exact barcode, then SKU exact and prefix, then name without regard to letter case; within each, by name, then internal identifier; 25 per page by default (BR-CAT-24, BR-CAT-25).
-- **Superseding.** Each request carries a client sequence number in a header; the page applies only the answer to its newest request, and scans are applied in the order they were made (BR-CAT-30, TR-PAGE-04).
+- **Superseding.** Each request carries a client sequence number in the header `X-Search-Sequence`, up to 16 digits, which the answer repeats; the page applies only the answer to its newest request, and scans are applied in the order they were made (BR-CAT-30, TR-PAGE-04).
 - **The till.** `context=till` needs the actor's own OPEN session, else `NO_OPEN_SESSION` (BR-CAT-33). An exact match of an active product adds one base unit to the cart, combined with that product's line (BR-CAT-29, D-067); no match keeps the code in the field (UXS-33).
 - **Fields.** Every role: identity, name, SKU, base unit and precision, current price with its revision, active flag, thumbnail. Cashier: on-hand stock for checkout. Owner and OPERATIONS_ADMIN: on-hand stock, minimum stock and attention state. Never a cost, a valuation or a margin (BR-CAT-26).
 - **Opening context** (D-087) adds each product's eligibility: `ELIGIBLE` (no movement and no effective entry), `ZERO_COUNTED` (an effective zero count, with its identifier), `COUNTED` (an effective OPENING), `REPLACEABLE` (every OPENING of the product is reversed and it has no effective entry, with the latest reversed opening line it would replace) or `HAS_MOVEMENT` (another movement exists; not eligible, BR-INV-26).
-- **Correction and labels contexts** return active products only.
+- **Correction context** returns active products only.
 
 ### 3.2 Lists, filters and paging (IC-03)
 

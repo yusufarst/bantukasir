@@ -10,6 +10,14 @@ use App\Actions\Access\ReactivateAccount;
 use App\Actions\Access\RevokePasswordLink;
 use App\Actions\Access\UpdateOwnerDetails;
 use App\Actions\Access\UpdateStaffAccount;
+use App\Actions\Catalog\CreateCategory;
+use App\Actions\Catalog\CreateProduct;
+use App\Actions\Catalog\DeactivateCategory;
+use App\Actions\Catalog\DeactivateProduct;
+use App\Actions\Catalog\ReactivateCategory;
+use App\Actions\Catalog\ReactivateProduct;
+use App\Actions\Catalog\RenameCategory;
+use App\Actions\Catalog\UpdateProduct;
 use App\Actions\Commands\CommandActions;
 use App\Actions\Configuration\ChangeBusinessProfile;
 use App\Domain\Commands\Operations;
@@ -79,7 +87,7 @@ final class OperationsTest extends TestCase
         $this->assertSame(['posting_block.block'], array_values(array_filter($listed, static fn (string $operation): bool => ! Operations::submittedByUsers($operation))));
         $this->assertThrows(fn () => Operations::familyOf('sale.refund'), LogicException::class);
         // The commands built so far, each a known operation (TASK-010: RC-32;
-        // TASK-011: RC-35 to RC-42).
+        // TASK-011: RC-35 to RC-42; TASK-015: RC-17 to RC-24).
         $this->assertSame([
             'business_profile.change' => ChangeBusinessProfile::class,
             'user.create' => CreateStaffAccount::class,
@@ -90,6 +98,14 @@ final class OperationsTest extends TestCase
             'user.anonymize' => AnonymizeAccount::class,
             'user.issue_link' => IssuePasswordLink::class,
             'user.revoke_link' => RevokePasswordLink::class,
+            'product.create' => CreateProduct::class,
+            'product.update' => UpdateProduct::class,
+            'product.deactivate' => DeactivateProduct::class,
+            'product.reactivate' => ReactivateProduct::class,
+            'category.create' => CreateCategory::class,
+            'category.rename' => RenameCategory::class,
+            'category.deactivate' => DeactivateCategory::class,
+            'category.reactivate' => ReactivateCategory::class,
         ], CommandActions::built());
     }
 

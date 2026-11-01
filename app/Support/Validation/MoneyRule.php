@@ -19,14 +19,32 @@ final class MoneyRule implements ValidationRule
 {
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
+        match (self::problem($value, $attribute)) {
+            'money' => $fail(__('ux.validation.money')),
+            'money_min' => $fail(__('ux.validation.money_min')),
+            'money_max' => $fail(__('ux.validation.money_max')),
+            null => null,
+        };
+    }
+
+    /**
+     * The leaf of the key under `ux.validation` that the value fails with, or
+     * null when it is valid, for the error body of ROUTE_CONTRACTS RT-07.
+     *
+     * @return 'money'|'money_min'|'money_max'|null
+     */
+    public static function problem(mixed $value, string $attribute): ?string
+    {
         $parts = is_string($value) ? CanonicalNumber::split($value) : null;
 
         if (! is_string($value) || $parts === null || $parts['fraction'] !== '' || TrimmedInput::wasTrimmed($attribute)) {
-            $fail(__('ux.validation.money'));
-        } elseif ($parts['negative']) {
-            $fail(__('ux.validation.money_min'));
-        } elseif (CanonicalNumber::exceeds($value, Limits::MONEY_MAX)) {
-            $fail(__('ux.validation.money_max'));
+            return 'money';
         }
+
+        if ($parts['negative']) {
+            return 'money_min';
+        }
+
+        return CanonicalNumber::exceeds($value, Limits::MONEY_MAX) ? 'money_max' : null;
     }
 }

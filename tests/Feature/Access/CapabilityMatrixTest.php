@@ -163,6 +163,41 @@ final class CapabilityMatrixTest extends DatabaseTestCase
         'RC-42' => ['method' => 'POST', 'path' => '/commands/user.revoke_link', 'json' => true, 'answers' => [
             'guest' => [401, null], 'owner' => [423, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
         ]],
+        // TASK-015: Product Search for CAP-02, which a cashier holds only in the
+        // till's restricted form, and the search-first check and RC-17 to RC-24
+        // for CAP-04; each sent without its parameters or fields, the Owner, the
+        // Operations admin and the combined account pass the gate to the refusal
+        // of what is missing.
+        'RD-01' => ['method' => 'GET', 'path' => '/data/products/search', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [422, null], 'ops' => [422, null], 'cashier' => [403, null], 'combined' => [422, null],
+        ]],
+        'RD-06' => ['method' => 'GET', 'path' => '/data/products/check', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [422, null], 'ops' => [422, null], 'cashier' => [403, null], 'combined' => [422, null],
+        ]],
+        'RC-17' => ['method' => 'POST', 'path' => '/commands/product.create', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [422, null], 'ops' => [422, null], 'cashier' => [403, null], 'combined' => [422, null],
+        ]],
+        'RC-18' => ['method' => 'POST', 'path' => '/commands/product.update', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [422, null], 'ops' => [422, null], 'cashier' => [403, null], 'combined' => [422, null],
+        ]],
+        'RC-19' => ['method' => 'POST', 'path' => '/commands/product.deactivate', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [422, null], 'ops' => [422, null], 'cashier' => [403, null], 'combined' => [422, null],
+        ]],
+        'RC-20' => ['method' => 'POST', 'path' => '/commands/product.reactivate', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [422, null], 'ops' => [422, null], 'cashier' => [403, null], 'combined' => [422, null],
+        ]],
+        'RC-21' => ['method' => 'POST', 'path' => '/commands/category.create', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [422, null], 'ops' => [422, null], 'cashier' => [403, null], 'combined' => [422, null],
+        ]],
+        'RC-22' => ['method' => 'POST', 'path' => '/commands/category.rename', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [422, null], 'ops' => [422, null], 'cashier' => [403, null], 'combined' => [422, null],
+        ]],
+        'RC-23' => ['method' => 'POST', 'path' => '/commands/category.deactivate', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [422, null], 'ops' => [422, null], 'cashier' => [403, null], 'combined' => [422, null],
+        ]],
+        'RC-24' => ['method' => 'POST', 'path' => '/commands/category.reactivate', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [422, null], 'ops' => [422, null], 'cashier' => [403, null], 'combined' => [422, null],
+        ]],
     ];
 
     /** @var array<string, array{id: int, email: string, password: string}> */
