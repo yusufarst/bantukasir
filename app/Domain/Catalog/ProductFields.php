@@ -42,6 +42,25 @@ final readonly class ProductFields
         );
     }
 
+    /**
+     * The values of the named fields as entered, for the audit (BR-AUD-02). The
+     * selling price is PRICE_CHANGE's.
+     *
+     * @param  list<string>  $names
+     * @return array<string, string|int|null>
+     */
+    public function auditValues(array $names): array
+    {
+        return array_intersect_key([
+            'name' => $this->name,
+            'categoryId' => $this->categoryId,
+            'brand' => $this->brand,
+            'baseUnit' => $this->baseUnit,
+            'quantityPrecision' => $this->quantityPrecision,
+            'minimumStock' => $this->minimumStock->toCanonical(),
+        ], array_flip($names));
+    }
+
     private static function text(mixed $value): string
     {
         return is_string($value) ? $value : throw new LogicException('A text of the payload was validated before the Action.');

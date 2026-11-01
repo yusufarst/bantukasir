@@ -114,8 +114,9 @@ final class CatalogRaceTest extends DatabaseTestCase
         // The deactivation holds the category first: the creation waits and is
         // refused, and nothing is written.
         $category = TokoContoh::category('Satu');
+        $refused = $this->command('product.create', $this->productPayload('DULU-01', $category), []);
         $deactivation = $this->start($this->command('category.deactivate', ['categoryId' => $category], ['categoryVersion' => 1]), ['after_lock:6']);
-        $creation = $this->start($this->command('product.create', $this->productPayload('DULU-01', $category), []));
+        $creation = $this->start($refused);
         Worker::ready($deactivation, $creation);
 
         $deactivation->run()->awaitBarrier('after_lock:6');
@@ -125,6 +126,7 @@ final class CatalogRaceTest extends DatabaseTestCase
         $this->assertSame('COMMITTED', ($deactivation->finish()->result ?? [])['outcome'] ?? null);
         $this->assertSame(['refused' => 'CATEGORY_INACTIVE'], $creation->finish()->result);
         $this->assertSame(0, $this->watcher()->table('products')->where('sku', 'DULU-01')->count());
+        $this->assertLeftNothing($refused);
 
         // The creation holds the category first: it commits, then the deactivation,
         // which changes no product.
@@ -149,8 +151,9 @@ final class CatalogRaceTest extends DatabaseTestCase
         // stays as it was.
         $product = TokoContoh::product('EDIT-01', ['categoryId' => $this->category]);
         $category = TokoContoh::category('Tiga');
+        $refused = $this->command('product.update', $this->editPayload($product, ['categoryId' => $category]), ['productVersion' => 1]);
         $deactivation = $this->start($this->command('category.deactivate', ['categoryId' => $category], ['categoryVersion' => 1]), ['after_lock:6']);
-        $edit = $this->start($this->command('product.update', $this->editPayload($product, ['categoryId' => $category]), ['productVersion' => 1]));
+        $edit = $this->start($refused);
         Worker::ready($deactivation, $edit);
 
         $deactivation->run()->awaitBarrier('after_lock:6');
@@ -160,6 +163,7 @@ final class CatalogRaceTest extends DatabaseTestCase
         $this->assertSame('COMMITTED', ($deactivation->finish()->result ?? [])['outcome'] ?? null);
         $this->assertSame(['refused' => 'CATEGORY_INACTIVE'], $edit->finish()->result);
         $this->assertSame([$this->category, 1], array_values((array) $this->watcher()->table('products')->where('id', $product)->first(['category_id', 'version'])));
+        $this->assertLeftNothing($refused);
 
         // The edit first: it commits, and the deactivation changes no product.
         $category = TokoContoh::category('Empat');
@@ -212,13 +216,14 @@ final class CatalogRaceTest extends DatabaseTestCase
         // in force. The second reads the row before the first commits, chooses its
         // locks on it, and is refused under the lock.
         foreach ([
-            'two prices' => [['sellingPrice' => '8000'], ['sellingPrice' => '9000']],
-            'a unit and a price' => [['baseUnit' => 'kg'], ['sellingPrice' => '9000']],
-            'a price and a unit' => [['sellingPrice' => '8000'], ['baseUnit' => 'kg', 'quantityPrecision' => 2]],
-        ] as $case => [$firstFields, $secondFields]) {
+            'two prices' => [['sellingPrice' => '8000'], ['sellingPrice' => '9000'], [7500, 8000]],
+            'a unit and a price' => [['baseUnit' => 'kg'], ['sellingPrice' => '9000'], [7500]],
+            'a price and a unit' => [['sellingPrice' => '8000'], ['baseUnit' => 'kg', 'quantityPrecision' => 2], [7500, 8000]],
+        ] as $case => [$firstFields, $secondFields, $prices]) {
             $product = TokoContoh::product('V-'.Str::random(8), ['categoryId' => $this->category]);
+            $refused = $this->command('product.update', $this->editPayload($product, $secondFields), ['productVersion' => 1]);
             $first = $this->start($this->command('product.update', $this->editPayload($product, $firstFields), ['productVersion' => 1]), ['after_lock:6']);
-            $second = $this->start($this->command('product.update', $this->editPayload($product, $secondFields), ['productVersion' => 1]));
+            $second = $this->start($refused);
             Worker::ready($first, $second);
 
             $first->run()->awaitBarrier('after_lock:6');
@@ -228,6 +233,12 @@ final class CatalogRaceTest extends DatabaseTestCase
             $this->assertSame('COMMITTED', ($first->finish()->result ?? [])['outcome'] ?? null, $case);
             $this->assertSame(['refused' => 'STALE_VERSION'], $second->finish()->result, $case);
             $this->assertSame(2, $this->watcher()->table('products')->where('id', $product)->value('version'), $case);
+            $this->assertLeftNothing($refused);
+
+            // The winner's price, the only new one, is in force, and the unit its own.
+            $this->assertSame($prices, $this->watcher()->table('selling_price_revisions')->where('product_id', $product)->orderBy('id')->pluck('amount')->all(), $case);
+            $this->assertSame(end($prices), $this->priceInForce($product), $case);
+            $this->assertSame($firstFields['baseUnit'] ?? 'pcs', $this->watcher()->table('products')->where('id', $product)->value('base_unit'), $case);
         }
     }
 
@@ -252,7 +263,31 @@ final class CatalogRaceTest extends DatabaseTestCase
 
             $this->assertSame('COMMITTED', ($first->finish()->result ?? [])['outcome'] ?? null);
             $this->assertSame(['refused' => 'STALE_VERSION'], $second->finish()->result);
+            $this->assertLeftNothing($arguments[$secondOperation]);
+
+            // The first alone is in force: the flag and the price.
+            $priceChangedFirst = $firstOperation === 'product.update';
+            $this->assertSame($priceChangedFirst, $this->watcher()->table('products')->where('id', $product)->value('active'));
+            $this->assertSame($priceChangedFirst ? 8000 : 7500, $this->priceInForce($product));
         }
+    }
+
+    /**
+     * A refused command left no identity, and so no fact of its own, audit event or
+     * result, each of which names its identity (AC-015-01, TS-20).
+     *
+     * @param  array<string, mixed>  $arguments
+     */
+    private function assertLeftNothing(array $arguments): void
+    {
+        $this->assertSame(0, $this->watcher()->table('command_identities')->where('source_intent_id', $arguments['intent'])->count());
+    }
+
+    private function priceInForce(int $product): mixed
+    {
+        return $this->watcher()->table('selling_price_revisions')
+            ->where('id', $this->watcher()->table('products')->where('id', $product)->value('current_price_revision_id'))
+            ->value('amount');
     }
 
     /**

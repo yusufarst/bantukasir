@@ -25,7 +25,9 @@ use App\Models\User;
  * be active; a category the product already has stays assignable to it even when
  * it is inactive (BR-CAT-09, "cannot be chosen"). A changed price appends a revision
  * and moves the pointer (BR-CAT-13); no other route changes a price. A request
- * that changes nothing is refused.
+ * that changes nothing is refused. PRODUCT_EDIT records each changed field's value
+ * before and after it, because `products` keeps only the last (BR-AUD-02); the
+ * price's are in PRICE_CHANGE.
  *
  * TASK-021 adds the check of the first movement here (BR-CAT-07); its key is the
  * database's guarantee of it (TASK-015 section 4.3).
@@ -88,7 +90,15 @@ final class UpdateProduct extends CatalogAction
 
         $subject = ['type' => self::PRODUCT, 'id' => $id];
 
-        $this->services->audit->record(AuditCategory::Business, 'PRODUCT_EDIT', self::actorOf($actor), ['changed' => $changed], subject: $subject, commandId: $commandId, productId: $id);
+        $this->services->audit->record(
+            AuditCategory::Business,
+            'PRODUCT_EDIT',
+            self::actorOf($actor),
+            ['changed' => $changed, 'from' => (object) $product->auditValues($changed), 'to' => (object) $fields->auditValues($changed)],
+            subject: $subject,
+            commandId: $commandId,
+            productId: $id,
+        );
         $this->written();
 
         if ($priceChanges) {

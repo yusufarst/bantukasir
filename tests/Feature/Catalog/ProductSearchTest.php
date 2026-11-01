@@ -310,6 +310,31 @@ final class ProductSearchTest extends DatabaseTestCase
         $this->json('GET', self::CHECK.'?sku=PEN-01', ['name' => 'x'])->assertStatus(422);
     }
 
+    public function test_a_read_that_answers_writes_nothing(): void
+    {
+        // EXECUTION_CONTEXT section 10, no GET that writes; TR-HTTP-02.
+        $this->product('PEN-01', 'Pulpen Hitam');
+        $this->as('Agus');
+        $observer = $this->observer();
+        $state = static function () use ($observer): array {
+            $state = [];
+
+            foreach (['categories', 'products', 'selling_price_revisions', 'command_identities', 'command_results', 'command_request_receipts', 'audit_events', 'security_log_entries'] as $table) {
+                $state[$table] = $observer->table($table)->count();
+            }
+
+            $state['rows'] = $observer->table('products')->orderBy('id')->get()->map(static fn (object $row): array => (array) $row)->all();
+
+            return $state;
+        };
+        $before = $state();
+
+        $this->search(['q' => 'pulpen'])->assertOk()->assertJsonPath('rows.0.sku', 'PEN-01');
+        $this->getJson(self::CHECK.'?sku=PEN-01&name=pulpen')->assertOk()->assertJsonPath('sku.sku', 'PEN-01');
+
+        $this->assertSame($before, $state());
+    }
+
     public function test_the_two_documents_agree_on_the_contexts(): void
     {
         // AC-015-05: INTERACTION_CONTRACTS section 3.1, ROUTE_CONTRACTS RD-01 and

@@ -36,7 +36,8 @@ final class ProductSearchRequest extends RefusingRequest
 
     /**
      * The contexts already provided, each with its capability; every later Task
-     * adds its own here (TRACEABILITY section 7).
+     * adds its own here (TRACEABILITY section 7), and refuses `status` for it, which
+     * is the catalog's alone (INTERACTION_CONTRACTS section 3.1).
      *
      * @var array<string, Capability>
      */

@@ -36,9 +36,11 @@ use Illuminate\Support\Facades\DB;
  * this Task. Written from now on (App\Domain\Audit\AuditLog).
  *
  * Class: additive (RELEASE_PROCESS section 5). Expected duration: well under a
- * second. Lock impact: none on an existing table but audit_events, on which
- * the new key takes a SHARE ROW EXCLUSIVE lock while it checks its column, which
- * every row holds null. Verification (REL-20): db:check-privileges passes;
+ * second. Lock impact: the keys to users, stored_files and command_identities
+ * and the key added to audit_events, which checks its column, null on every row,
+ * take a SHARE ROW EXCLUSIVE lock on those four tables, held to the end of the
+ * migration's transaction: writes to them, every command's first write among
+ * them, wait that long. Verification (REL-20): db:check-privileges passes;
  * tests/Feature/Catalog/CatalogTablesTest.php proves the constraint, deferred,
  * privilege and retention families as the runtime role.
  */

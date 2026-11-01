@@ -54,6 +54,25 @@ final readonly class ProductRecord
     }
 
     /**
+     * The values of the named fields as they stand, for the audit (BR-AUD-02),
+     * since an edit leaves no other record of them.
+     *
+     * @param  list<string>  $names
+     * @return array<string, string|int|null>
+     */
+    public function auditValues(array $names): array
+    {
+        return array_intersect_key([
+            'name' => $this->name,
+            'categoryId' => $this->categoryId,
+            'brand' => $this->brand,
+            'baseUnit' => $this->baseUnit,
+            'quantityPrecision' => $this->quantityPrecision,
+            'minimumStock' => $this->minimumStock->toCanonical(),
+        ], array_flip($names));
+    }
+
+    /**
      * Whether the fields would change a column that the stock movements'
      * composite key references (BR-CAT-07; SCHEMA section 7).
      */

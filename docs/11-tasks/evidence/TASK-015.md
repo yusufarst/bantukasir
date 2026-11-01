@@ -64,3 +64,22 @@ INTERACTION_CONTRACTS section 3.1 listed nine contexts and ROUTE_CONTRACTS RD-01
 | F-1 | RD-01's gate must open for a cashier's till: CAP-02 is restricted, so `capability:CAP-02` alone refuses that account (reading 10) | TASK-028, its `till` context |
 | F-2 | `ux.validation.quantity_max` names 99.999.999,999, the largest quantity of a line, while a minimum stock may reach 9.999.999.999,999 (SCHEMA section 3.2). COPY_DECK section 16.1 has no key of its own, and approved copy changes only by change control, so a value above the range reads a smaller limit than the real one | the next change control of COPY_DECK |
 | F-3 | BR-CAT-07's refusal at the field after the first movement waits for `stock_movements` | TASK-021, contract section 4.3 |
+
+## 6. Checks (CE-44 to CE-46, D-108, D-117)
+
+Fast runs of CI, the workflow `fast-checks`: `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit`; each PostgreSQL or concurrency test file that the branch changes. Six of the ten allowed.
+
+| Check | Where it ran | Time (Asia/Jakarta) | Duration | Result |
+| --- | --- | --- | --- | --- |
+| Fast run | CI run 41291673504 on `94225bf` | 1 Nov 16:06 | 3 min 43 s | FAIL; a style issue of Pint in `CreateProduct` |
+| Fast run | CI run 41292188320 on `fc80339` | 1 Nov 16:13 | 4 min 5 s | FAIL; PHPStan: a redundant `array_values`, an offset in a test |
+| Fast run | CI run 41292797907 on `ea468bf` | 1 Nov 16:21 | 4 min 13 s | FAIL; `PrivilegeMatrixTest` lacked the three tables, and a rule that the validator skips on an empty text |
+| Fast run | CI run 41293375253 on `3dbd928` | 1 Nov 16:29 | 9 min 19 s | FAIL; the test updated an identity column, which PostgreSQL refuses before the privilege |
+| Fast run | CI run 41294244553 on `124b50f` | 1 Nov 16:41 | 7 min 24 s | FAIL; the test expected a refusal of an outer NUL, which the framework's trimming removes |
+| **Fast run**: static checks, unit tests, `CatalogRaceTest`, `CapabilityMatrixTest`, `RouteInventoryTest`, `CatalogCommandsTest`, `CatalogTablesTest`, `ProductSearchTest` | CI run 41295048013 on `eb426ec` | 1 Nov 16:53 | 9 min 20 s | **PASS** |
+| Guard's preview and guard | Local, on each head | 1 Nov | under 3 min each | PASS, no candidate to judge |
+| The whole of `composer test:postgres`, `composer test:race`, the browser suite, `npm run build`, the image checks with the vulnerability gate | CI on the pull request's final head (CE-44, D-117) | — | — | `NOT_RUN` at this writing |
+
+`npx tsc` and `npx eslint` have no local toolchain on this machine (TASK-014 evidence section 1); the one TypeScript file changed, `translation-keys.ts`, is read by `npm run typecheck`, `npm run lint` and `translation-types.php` in the fast run.
+
+**The heavy suites that this change can affect**: `BackupRunTest` and the release tests read the privilege matrix, so they meet the new tables, and the browser suite meets the new routes only through the shell's inventory. All run on the final head.

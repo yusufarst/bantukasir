@@ -91,9 +91,11 @@ final class CatalogCommandsTest extends DatabaseTestCase
         $before = $this->facts();
 
         foreach (['AB-01', 'ab-01', "\u{00A0}aB-01 ", 'éclair', 'Éclair'] as $taken) {
-            $response = $this->post17($this->productEnvelope(['sku' => $taken]))->assertStatus(422);
+            $envelope = $this->productEnvelope(['sku' => $taken]);
+            $response = $this->post17($envelope)->assertStatus(422);
             $response->assertJsonPath('code', 'DUPLICATE_SKU')->assertJsonPath('messageKey', 'ux.state.duplicate_code.sku');
             $this->assertSame('ux.state.duplicate_code.sku', self::firstKey($response, 'payload.sku'), $taken);
+            $this->assertSame(['REJECTED'], $this->outcomesOf($envelope), 'The receipt says so (G-25).');
         }
 
         $this->assertSame($before, $this->facts());
@@ -217,7 +219,11 @@ final class CatalogCommandsTest extends DatabaseTestCase
         $row = (array) $this->watcher()->table('products')->where('id', $product)->sole();
         $this->assertSame(['PEN-01', 'Pulpen Biru', $other, 'Merek', '3.000', 2, $first], [$row['sku'], $row['name'], $row['category_id'], $row['brand'], $row['minimum_stock'], $row['version'], $row['current_price_revision_id']]);
         $this->assertSame(1, $this->watcher()->table('selling_price_revisions')->where('product_id', $product)->count());
-        $this->assertSame([['PRODUCT_EDIT', ['changed' => ['name', 'categoryId', 'brand', 'minimumStock']]]], $this->eventsOf($response));
+        $this->assertSame([['PRODUCT_EDIT', [
+            'changed' => ['name', 'categoryId', 'brand', 'minimumStock'],
+            'from' => ['brand' => null, 'categoryId' => $this->category, 'minimumStock' => '0', 'name' => 'Pulpen Hitam'],
+            'to' => ['brand' => 'Merek', 'categoryId' => $other, 'minimumStock' => '3', 'name' => 'Pulpen Biru'],
+        ]]], $this->eventsOf($response));
 
         // The price: a new revision in force, the old one kept, both events.
         $kept = $this->snapshot('selling_price_revisions');
@@ -227,7 +233,7 @@ final class CatalogCommandsTest extends DatabaseTestCase
         $this->assertSame($current['id'], $this->watcher()->table('products')->where('id', $product)->value('current_price_revision_id'));
         $this->assertSame($kept, array_slice($this->snapshot('selling_price_revisions'), 0, count($kept)));
         $this->assertSame([
-            ['PRODUCT_EDIT', ['changed' => ['sellingPrice']]],
+            ['PRODUCT_EDIT', ['changed' => ['sellingPrice'], 'from' => [], 'to' => []]],
             ['PRICE_CHANGE', ['from' => '7500', 'previousRevisionId' => $first, 'revisionId' => $current['id'], 'to' => '8000']],
         ], $this->eventsOf($response));
 
@@ -428,6 +434,9 @@ final class CatalogCommandsTest extends DatabaseTestCase
         unset($this->browsers['Tono']);
         $this->as('Tono');
         $this->postJson('/commands/category.create', $envelope)->assertStatus(403)->assertJsonPath('code', 'FORBIDDEN');
+
+        // Its status check still concludes, without a result it may no longer see.
+        $this->check($envelope)->assertOk()->assertJsonPath('outcome', 'COMMITTED')->assertJsonPath('result', null);
     }
 
     public function test_a_failure_after_every_write_step_leaves_no_fact_and_the_receipt_pending(): void
@@ -502,11 +511,15 @@ final class CatalogCommandsTest extends DatabaseTestCase
         $this->postJson('/commands/category.create', $envelope)->assertStatus(201);
         $this->postJson('/commands/category.create', [...$envelope, 'payload' => ['name' => 'Lain']])->assertStatus(409)->assertJsonPath('code', 'IDEMPOTENCY_CONFLICT');
 
+        // The five refusals of the shape, the commit and the conflict.
+        $this->assertSame(['REJECTED', 'REJECTED', 'REJECTED', 'REJECTED', 'REJECTED', 'COMMITTED', 'HELD'], $this->outcomesOf($envelope));
+
         // An earlier epoch is refused before any fact.
         $stale = $this->commandEnvelope('category.create', ['name' => 'Lama'], []);
         $stale['recoveryEpoch'] = str_repeat('ab', 32);
         $this->postJson('/commands/category.create', $stale)->assertStatus(409)->assertJsonPath('code', 'EPOCH_STALE');
         $this->assertSame(0, $this->watcher()->table('categories')->where('name', 'Lama')->count());
+        $this->assertSame(['HELD'], $this->outcomesOf($stale));
     }
 
     /**
@@ -624,9 +637,19 @@ final class CatalogCommandsTest extends DatabaseTestCase
     {
         $data = json_decode(is_string($json) ? $json : '', true);
         self::assertIsArray($data);
+
+        return self::sortedKeys($data);
+    }
+
+    /**
+     * @param  array<array-key, mixed>  $data
+     * @return array<array-key, mixed>
+     */
+    private static function sortedKeys(array $data): array
+    {
         ksort($data);
 
-        return $data;
+        return array_map(static fn (mixed $value): mixed => is_array($value) ? self::sortedKeys($value) : $value, $data);
     }
 
     private function userVersion(int $id): int
