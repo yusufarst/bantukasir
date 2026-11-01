@@ -7,8 +7,9 @@
 #   1. the settings that the role needs are checked; a missing or default one
 #      refuses the start, naming the setting and never its value (SEC-SECRET-03);
 #   2. configuration, routes and views are cached (ADR-011 item 6);
-#   3. role web serves HTTP; role backup serves nothing, and only its scheduler,
-#      which the platform runs each minute, does its work (ADR-010 item 6).
+#   3. role web serves HTTP, in maintenance mode when APP_START_IN_MAINTENANCE says
+#      so; role backup serves nothing, and only its scheduler, which the platform
+#      runs each minute, does its work (ADR-010 item 6).
 #
 # It never migrates: a migration is a controlled job of an authorized release,
 # never a side effect of a start (PRODUCTION_DATA_SAFETY section 2).
@@ -25,6 +26,14 @@ php artisan settings:check
 php artisan config:cache --no-interaction
 php artisan route:cache --no-interaction
 php artisan view:cache --no-interaction
+
+# `php artisan down` writes a file of its container, so a new digest would end
+# maintenance mode without a word: RB-20 step 9 starts the new container in the mode,
+# before it serves, and step 10 ends it (TASK-014). The settings check has judged the
+# value after trimming it, so any value at all switches the mode on: it fails closed.
+if [ "$APP_PROCESS_ROLE" = web ] && [ -n "${APP_START_IN_MAINTENANCE:-}" ]; then
+    php artisan down --no-interaction
+fi
 
 case "$APP_PROCESS_ROLE" in
     web)

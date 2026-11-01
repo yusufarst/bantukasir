@@ -69,6 +69,9 @@ return [
     'maintenance' => [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
+        // The operator's way past the maintenance page (RB-20 step 7; TASK-014):
+        // App\Http\Middleware\MaintenanceWindow. Unset, nobody passes.
+        'bypass_secret' => env('APP_MAINTENANCE_BYPASS_SECRET'),
     ],
 
 ];

@@ -1,0 +1,68 @@
+# The dry run of the release workflow (TASK-014 scope item 1): when a file of the
+# release path changes, it does what release.yml does before publishing — the tag's
+# check, the build with a release's labels, the image checks and the integrity report —
+# on the commit in question, under a candidate version that names no release. It holds
+# no credential that could publish, and has no step that does.
+name: release dry run
+
+on:
+    pull_request:
+        paths:
+            - ".github/workflows/release.yml"
+            - ".github/workflows/release-dry-run.yml"
+            - "docker/app/**"
+            - "docs/10-release/templates/**"
+            - "scripts/checks/image-*"
+            - "scripts/checks/release-workflow.php"
+            - "scripts/release/**"
+    push:
+        branches:
+            - "task/**"
+        paths:
+            - ".github/workflows/release.yml"
+            - ".github/workflows/release-dry-run.yml"
+            - "docker/app/**"
+            - "docs/10-release/templates/**"
+            - "scripts/checks/image-*"
+            - "scripts/checks/release-workflow.php"
+            - "scripts/release/**"
+
+permissions:
+    contents: read
+
+concurrency:
+    group: release-dry-run-${{ github.event_name }}-${{ github.ref }}
+    cancel-in-progress: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/task/') }}
+
+jobs:
+    dry-run:
+        name: Release dry run
+        runs-on: ubuntu-24.04
+        timeout-minutes: 60
+        env:
+            RELEASE_TAG: v0.0.0-rc.1
+            RELEASE_VERSION: v0.0.0-rc.1
+            RELEASE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+            RELEASE_SOURCE: ${{ github.server_url }}/${{ github.repository }}
+            RELEASE_RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            RELEASE_DIGEST: "not published: a dry run"
+        steps:
+            - name: Check out the repository
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            - name: Refuse anything but a release or candidate tag
+              run: bash scripts/release/check-tag.sh "$RELEASE_TAG"
+
+            - name: Build the image and run the image checks on it
+              shell: bash
+              run: bash scripts/checks/image-checks.sh 2>&1 | tee "$RUNNER_TEMP/image-checks.log"
+
+            - name: Fill the release integrity report
+              run: bash scripts/release/integrity-report.sh "$RUNNER_TEMP/image-checks.log" "$RUNNER_TEMP/integrity-report.md"
+
+            - name: Show the report
+              run: |
+                  cat "$RUNNER_TEMP/integrity-report.md"
+                  cat "$RUNNER_TEMP/integrity-report.md" >> "$GITHUB_STEP_SUMMARY"

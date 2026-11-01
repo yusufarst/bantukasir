@@ -43,6 +43,25 @@ final class BrowserFixturesTest extends DatabaseTestCase
         $this->assertSame(0, $this->observer()->table('users')->count());
     }
 
+    public function test_the_maintenance_fixture_works_on_the_test_database_only_and_stays_reachable_in_the_mode(): void
+    {
+        try {
+            config(['app.environment_name' => 'staging']);
+            $this->postJson('/testing/browser/maintenance', ['on' => true])->assertStatus(500);
+            $this->assertFalse($this->app->maintenanceMode()->active());
+            config(['app.environment_name' => 'test']);
+
+            $this->postJson('/testing/browser/maintenance', ['on' => true])->assertOk()->assertExactJson(['on' => true]);
+            $this->assertTrue($this->app->maintenanceMode()->active());
+            $this->getJson('/login')->assertStatus(503);
+
+            $this->postJson('/testing/browser/maintenance', ['on' => false])->assertOk()->assertExactJson(['on' => false]);
+            $this->assertFalse($this->app->maintenanceMode()->active());
+        } finally {
+            $this->app->maintenanceMode()->deactivate();
+        }
+    }
+
     public function test_the_command_fixtures_prepare_the_probe_and_the_epoch_and_resolve_earlier_requests_through_the_owners_check(): void
     {
         foreach (Probe::TABLES as $table) {

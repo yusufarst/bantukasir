@@ -157,6 +157,26 @@ final class RequiredSettingsTest extends TestCase
         $this->assertSame(['BACKUP_RECIPIENT' => RequiredSettings::INVALID], RequiredSettings::problems(['BACKUP_RECIPIENT' => 'age1short'] + self::backup()));
     }
 
+    public function test_the_maintenance_bypass_of_role_web_is_long_and_url_safe_when_set(): void
+    {
+        $this->assertSame([], RequiredSettings::problems(['APP_MAINTENANCE_BYPASS_SECRET' => str_repeat('aZ0_-', 8)] + self::web()));
+
+        foreach (['changeme', str_repeat('a', 31), str_repeat('a', 129), str_repeat('a', 31).'/b'] as $value) {
+            $this->assertSame(['APP_MAINTENANCE_BYPASS_SECRET' => RequiredSettings::INVALID], RequiredSettings::problems(['APP_MAINTENANCE_BYPASS_SECRET' => $value] + self::web()));
+        }
+    }
+
+    public function test_the_start_in_maintenance_mode_is_of_role_web_and_says_1_when_set(): void
+    {
+        $this->assertSame([], RequiredSettings::problems(['APP_START_IN_MAINTENANCE' => '1'] + self::web()));
+
+        foreach (['true', '0', 'on'] as $value) {
+            $this->assertSame(['APP_START_IN_MAINTENANCE' => RequiredSettings::INVALID], RequiredSettings::problems(['APP_START_IN_MAINTENANCE' => $value] + self::web()));
+        }
+
+        $this->assertSame(['APP_START_IN_MAINTENANCE' => RequiredSettings::FORBIDDEN], RequiredSettings::problems(['APP_START_IN_MAINTENANCE' => '1'] + self::backup()));
+    }
+
     public function test_the_retention_of_role_backup_is_a_named_profile_when_set(): void
     {
         $this->assertSame([], RequiredSettings::problems(['BACKUP_RETENTION' => 'reduced'] + self::backup()));

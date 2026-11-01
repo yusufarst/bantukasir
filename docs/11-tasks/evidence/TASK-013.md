@@ -277,7 +277,7 @@ The final head is now that of section 16, so `test:postgres` must show 438, thes
 
 ## 17. Merge, the failure on `develop` and its recovery (CE-50, CE-61, D-115)
 
-Written on the `ops/` branch of D-115. TASK-013 is treated as operationally verified only when the last row below is filled by green runs; until then it is not.
+Written on the `ops/` branch of D-115, and its last row by TASK-014. TASK-013 is treated as operationally verified only because that row is filled by green runs, under D-115's one-time exception to CE-61.
 
 | Fact | Value | Result |
 | --- | --- | --- |
@@ -286,7 +286,7 @@ Written on the `ops/` branch of D-115. TASK-013 is treated as operationally veri
 | Merge commit | `0735bff`; tree `8f1ad66`, equal to the head's; author the Owner's no-reply identity | PASS, read on 1 November 2026 |
 | **CI on `develop` at the merge** | **Run 41179831914: `Command contract` passed, `Image checks` 272 passed and 1 failed** | **FAIL; it stays red and on record** |
 | The tick's other checks of CE-61 | Base, content, author and fast-forward come before its CI check in `verify_merge`, which reached `DEVELOP_CI_RED` | PASS, by that order; nothing was recorded in the state for this merge |
-| The recovery (D-115) | CI on the `ops/` pull request and on its squash merge; the next Task's record states them (CE-50) | `NOT_RUN` at this writing |
+| The recovery (D-115) | Pull request #21 into `develop`, head `e3b2570`, CI run 41268234958; squash commit `8f166e6`, tree `4b3e1e6`, equal to the head's, author the Owner's no-reply identity, the Owner's merge (CE-82); CI on `develop` run 41271265390, both jobs passed. Recorded by TASK-014 (CE-50). Run 41179831914 above stays a FAIL | PASS, read on 1 November 2026; TASK-013 is operationally verified under D-115's one-time exception, and only so |
 
 **The failure.** The gate gave 112 accepted, 26 refused, all `REFUSED_NOT_ACCEPTED`, on Grype's database of 2026-10-31T06:18:17Z; the gate's own tests passed. No code of TASK-013 caused it: the 13 CVEs are new database entries for packages unchanged since D-112 (OPEN_ITEMS T-38 (d)).
 

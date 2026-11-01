@@ -15,6 +15,7 @@ use App\Http\Middleware\AllowInput;
 use App\Http\Middleware\ConfirmationInput;
 use App\Http\Middleware\EnsureSignInSession;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\MaintenanceWindow;
 use App\Http\Middleware\NoReferrer;
 use App\Http\Middleware\RecordSignOut;
 use App\Http\Middleware\RequireCapability;
@@ -41,7 +42,6 @@ use Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull;
 use Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests;
 use Illuminate\Foundation\Http\Middleware\InvokeDeferredCallbacks;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
-use Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Middleware\HandleCors;
 use Illuminate\Http\Middleware\ValidatePathEncoding;
@@ -98,7 +98,7 @@ return Application::configure(basePath: dirname(__DIR__))
             TrustProxies::class,
             RequireHttps::class,
             HandleCors::class,
-            PreventRequestsDuringMaintenance::class,
+            MaintenanceWindow::class,
             ValidatePostSize::class,
             TrimStrings::class,
             ConvertEmptyStringsToNull::class,

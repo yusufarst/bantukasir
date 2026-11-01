@@ -88,7 +88,8 @@ How BantuKasir is proven. Rules are numbered `TS-nn`; identifiers are permanent.
 | Floats in exact values | A floating-point type or operation in the money, quantity and cost code of the shared kernel and the domain modules | ADR-006 |
 | ESLint, TypeScript typecheck | Any error; `react/jsx-no-literals` on interface code | ADR-005 |
 | Translation keys | A key used in code is missing from `lang/id`, or a literal user-facing string exists | REQ-NFR-01 |
-| Migration review | A migration contains `DROP`, `TRUNCATE`, `DELETE` or `UPDATE` of retained data without the approval reference of REL-06 | PDS §1, REL-06 |
+| Migration review | A migration contains `DROP`, `TRUNCATE`, `DELETE` or `UPDATE` of retained data, or is marked `Class: destructive`, without the approval line `// REL-06 approval: D-NNN` naming a decision of DECISIONS; or its comment lacks the metadata of REL-20: `Class:` one of RELEASE_PROCESS section 5, `Expected duration:`, `Lock impact:` and `Verification (REL-20):` (`scripts/checks/migration-review.php`, TASK-014) | PDS §1, REL-06, REL-20 |
+| Release workflows | The release workflow can run for anything but a release or candidate tag, names a secret other than the workflow's own token or an environment, has no check against a fork, or its dry run could publish (`scripts/checks/release-workflow.php`, TASK-014) | ADR-011 items 4 and 5 |
 | Secret scan | A secret-looking value is in the tree or the history being pushed | SEC-SECRET-01, D-076 |
 | Dependency audit | `composer audit` or `npm audit` reports a high or critical advisory that is not recorded as accepted for a stated reason | THR-14 |
 

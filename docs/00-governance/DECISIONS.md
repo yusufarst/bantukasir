@@ -1938,9 +1938,19 @@ The Owner gave this decision on 1 November 2026, as his answer to the stop `DEVE
 - **Limitations.** Exposure was judged by reading the code, not by an exploit test. Known exploitation rests on Grype's database of 31 October 2026, since CISA's KEV feed was read only in part, and SSVC was read for the two critical findings only. A search of the whole of `vendor/` for libcurl calls timed out: `app/`, the framework's source and `composer.lock` were read, in which Guzzle is the only HTTP client. Debian gives CVE-2026-84243 no assessment yet. The severities conflict: CISA-ADP's 9.1 against the curl project's Low.
 - **Unchanged:** CE-61 for every other merge, the guard, the merge rules of D-105 and D-109, gate RELEASE's independent review (T-38), and every safeguard of production data, security, cost and destructive operations. No deployment to staging or production is authorized.
 
+### D-116 — TASK-014: the review's fixes proven by CI on the pull request's head, and `--first-installation` only on a truly empty database
+
+The Owner gave this decision on 1 November 2026, as his note to the resume of TASK-014 after the stop `RECOVERY_UNCLEAR` (CE-72). That stop was the host session's own error, a `git switch` in the main working tree; the tree was returned to the Task's branch at `26472df`, and no work was lost. His words, in Bahasa Indonesia:
+
+> OWNER DECISION — TASK-014. Resume TASK-014. Uji seluruh perbaikan review melalui CI pada head PR final, tanpa checkpoint tambahan. Gunakan hasil CI hijau 26472df sebagai evidence yang masih valid. Selesaikan review, perbaikan wajib, dokumentasi CE-50, dan buka PR secepatnya. Jangan mengulang full review atau tes yang tidak terpengaruh perubahan. Maksimal 3 fix cycle. Opsi --first-installation hanya boleh untuk database yang benar-benar kosong, dengan verifikasi otomatis dan tanpa melewati perlindungan data. Tidak ada izin operasi production. FAST BUILD tetap di clone terpisah. Jangan lagi mengubah branch atau working tree TASK-014 dari sesi OPS. Prioritaskan penyelesaian TASK-014 dan PR. Laporan singkat saja.
+
+- **The exception.** For TASK-014 only, to CE-44 and CE-46: its five checkpoint runs are spent, and no further one runs. Run 41278925232 on `26472df` stays the evidence for what no later change touches (CE-45), and every later change is `NOT_RUN` until CI on the pull request's final head. At most three fix cycles (CE-42), as for any Task. What holds a red run from a merge is `ci_result` of `scripts/executor/lib.sh`, as for D-113 and D-114.
+- **`--first-installation`.** It may be used only on a truly empty database, verified automatically, and bypasses no protection of data. `App\Domain\Operations\Release\EmptyDatabase` reads the catalog and accepts nothing beyond what the setup of ENV-30 leaves; the option then waives the backup condition of REL-23 and no other ([RELEASE_PROCESS](../10-release/RELEASE_PROCESS.md) REL-23; [TASK-014 evidence](../11-tasks/evidence/TASK-014.md) section 4 item 6).
+- **Unchanged:** the limits of CE-44 and CE-46 for every other Task, the independent review of CE-40, the guard, the merge rules of D-105 and D-109, and every safeguard of production data, security, cost and destructive operations. No production operation is authorized.
+
 ### D-117 — FAST BUILD: fast runs on a Task's pushes, the whole verification on the pull request and on `develop`
 
-The Owner gave this instruction on 1 November 2026, while TASK-014 was in flight. The identifier skips D-116, left for TASK-014's own answer of the same day. His words:
+The Owner gave this instruction on 1 November 2026, while TASK-014 was in flight. His words:
 
 > OWNER AUTHORIZATION — OPS FAST BUILD
 > TASK: Replace the slow checkpoint workflow with a streamlined FAST BUILD workflow.
@@ -1966,4 +1976,5 @@ The Owner gave this instruction on 1 November 2026, while TASK-014 was in flight
 - **A separate clone, deliberately.** The settings deny `git worktree add`, and a linked worktree shares the executor state, the guard's stamp and the lock of the Task in flight.
 - **What this costs.** A heavy failure now first appears on the pull request and uses one of the three fix cycles of CE-42, each about 25 minutes; a changed application file with no changed test file gets no PostgreSQL test before the pull request. `targeted-tests.sh` is chosen by changed test file only.
 - **What it does not change.** No check of the command contract is removed from the pull request or `develop`. CE-40's reviews, CE-42's limit, CE-60's merge rules and CE-61 stand; the vulnerability gate of D-112 and D-115 runs on every pull request's head and on `develop`; no staging or production operation is authorized.
+- **Proof of the fast run**, on the branch `task/TASK-000-fast-build-proof`, never merged: run 41284594952 passed in 6 minutes 12 seconds, with `Targeted tests: 1 passed, 0 failed` and no run of the workflow `ci`; run 41285199443, with a deliberately failing assertion in that test, failed at the targeted step in 4 minutes 11 seconds.
 - **Limits of the speed target.** 48 hours is the Owner's goal, not a measured result of this change, and a Task's own build and review time is untouched.

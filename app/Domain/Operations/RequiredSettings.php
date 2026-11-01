@@ -84,7 +84,21 @@ final class RequiredSettings
             'DB_PASSWORD',
             'HEARTBEAT_WEB_URL',
             'HEARTBEAT_RECONCILIATION_URL',
+            'APP_MAINTENANCE_BYPASS_SECRET',
+            'APP_START_IN_MAINTENANCE',
         ],
+    ];
+
+    /**
+     * Optional settings that, when set, must have this form: the way past the
+     * maintenance page is a path, so it is long and of URL-safe characters only,
+     * which no placeholder is (TASK-014).
+     */
+    private const array OPTIONAL_FORMS = [
+        self::WEB => [
+            'APP_MAINTENANCE_BYPASS_SECRET' => '/\A[A-Za-z0-9_-]{32,128}\z/',
+        ],
+        self::BACKUP => [],
     ];
 
     /** Optional settings that, when set, must hold one of these values. */
@@ -95,6 +109,7 @@ final class RequiredSettings
             'SESSION_DRIVER' => ['database'],
             'CACHE_STORE' => ['database'],
             'SESSION_SECURE_COOKIE' => ['true', '1', 'on', 'yes'],
+            'APP_START_IN_MAINTENANCE' => ['1'],
         ],
         self::BACKUP => [
             'APP_DEBUG' => ['false', '0', 'off', 'no'],
@@ -211,6 +226,14 @@ final class RequiredSettings
             $value = strtolower(self::value($environment, $name));
 
             if ($value !== '' && ! in_array($value, $allowed, true)) {
+                $problems[$name] = self::INVALID;
+            }
+        }
+
+        foreach (self::OPTIONAL_FORMS[$role] as $name => $form) {
+            $value = self::value($environment, $name);
+
+            if ($value !== '' && preg_match($form, $value) !== 1) {
                 $problems[$name] = self::INVALID;
             }
         }
