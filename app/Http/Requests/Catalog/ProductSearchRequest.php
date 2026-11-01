@@ -36,7 +36,7 @@ final class ProductSearchRequest extends RefusingRequest
 
     /**
      * The contexts already provided, each with its capability; every later Task
-     * adds its own here (TRACEABILITY section 8).
+     * adds its own here (TRACEABILITY section 7).
      *
      * @var array<string, Capability>
      */

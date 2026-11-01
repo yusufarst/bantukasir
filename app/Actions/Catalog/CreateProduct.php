@@ -46,7 +46,7 @@ final class CreateProduct extends CatalogAction
         $this->services->points->afterLock('6');
         self::requireActive($category);
 
-        $product =$this->products->insert($sku, $fields, $commandId);
+        $product = $this->products->insert($sku, $fields, $commandId);
         $this->written();
 
         $revision = $this->products->insertRevision($product, $fields->sellingPrice, $actor->id, $actor->display_name, $commandId);

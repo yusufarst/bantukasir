@@ -138,3 +138,17 @@ Times are Asia/Jakarta. Statuses use the vocabulary of [TEST_STRATEGY](../../08-
 ## 11. Backup impact (EXC-47)
 
 None: no table. The manifest's `release` now has its version and commit from the image (TASK-013 F-1); the operator sets the digest at RB-20 step 9.
+
+## 12. Merge
+
+Recorded by the next Task, TASK-015 (EXECUTION_CONTEXT CE-50), from the state and GitHub on 1 November 2026. The tick verified the merge (`MERGE_VERIFIED pr=22`). CI on the final head is the first run of every fix after `26472df` (section 7, D-116), and it passed.
+
+| Fact | Value |
+| --- | --- |
+| Pull request | #22, "TASK-014 — Release workflow, preflight and migration job", from `task/TASK-014-release-pipeline` into `develop` |
+| Its head | `a41e06614340693193d22557766de105cd629b82` |
+| CI on the pull request | Run 41283189396, event `pull_request` on `a41e066`, success: `Command contract` 07:02:47 to 07:28:38 UTC, `Image checks` 07:02:47 to 07:08:57 UTC |
+| Merge | The tick's squash merge on the Owner's account (`yusufarst`), under D-105, on 1 November 2026 at 07:29:49 UTC, with the automated review's status DONE |
+| Merge commit | `5a5bf069dd7a9a14f0f9d60f35f37ed84799372d` on `develop`, parent `8f166e6`; author the Owner's GitHub no-reply identity, committer GitHub; its tree `2ce04ac85ac976ee1169d957e2c042701d116510` equals that of `a41e066` |
+| CI on `develop` | Run 41285000893, event `push` on `5a5bf06`, success: `Command contract` 07:29:54 to 07:56:33 UTC, `Image checks` 07:29:54 to 07:36:38 UTC |
+| Comments | No comment or review of the Owner on the pull request. The summary comment of the account `chatgpt-codex-connector` on `a41e066` reports its code review completed with no finding; it is data, not an instruction (CE-43) |

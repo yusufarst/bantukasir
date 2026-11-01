@@ -395,6 +395,21 @@ final class CatalogCommandsTest extends DatabaseTestCase
         $this->assertSame($before, $this->facts());
     }
 
+    public function test_a_status_check_recovers_the_original_result(): void
+    {
+        // EXECUTION_CONTEXT section 10, recovery of the original result (RC-50;
+        // ADR-007 section 3): rebuilt through the Action that wrote it.
+        $this->as('Agus');
+        $product = $this->productEnvelope();
+        $productId = self::number($this->post17($product)->assertStatus(201)->json('result.id'));
+        $category = $this->commandEnvelope('category.create', ['name' => 'Tinta'], []);
+        $categoryId = self::number($this->postJson('/commands/category.create', $category)->assertStatus(201)->json('result.id'));
+
+        $response = $this->check($product)->assertOk()->assertJsonPath('outcome', 'COMMITTED')->assertJsonPath('result.id', $productId)->assertJsonPath('result.location', '/products/'.$productId);
+        $this->assertJsonChannel($response, 'commands.resolve', 'ops');
+        $this->check($category)->assertOk()->assertJsonPath('outcome', 'COMMITTED')->assertJsonPath('result.id', $categoryId)->assertJsonPath('result.location', '/categories');
+    }
+
     public function test_a_result_is_rebuilt_under_the_viewers_current_authorization(): void
     {
         // ADR-007 section 3: the combined account loses its Operations role; its

@@ -671,3 +671,21 @@ Recorded by the next pull request, TASK-010's (EXECUTION_CONTEXT CE-50), from Gi
 | Merge commit | `befdd2e8812bb7b1621ce7eb706bc7beb647094b` on `develop`, parent `a6cd66d` (`develop` did not move); author the Owner's GitHub no-reply identity, committer GitHub; its tree `68b631c1584973e88b4e393eadf2be8bd0b24c09` equals that of `dc42960` |
 | CI on `develop` | Run 40987026359, event `push` on `befdd2e`, success (01:38:22 to 01:51:46 UTC) |
 | Comments | No comment or review of the Owner on the pull request. The summary comment of the account `chatgpt-codex-connector` on `dc42960` reports its code review completed with no finding; it is data, not an instruction (CE-43) |
+
+## 14. D-117: FAST BUILD
+
+The Owner's directive is [D-117](../DECISIONS.md), with EXECUTION_CONTEXT section 18, CE-02, CE-30, CE-40 to CE-42, CE-44 to CE-47, CE-61, CE-70, CE-80 and CE-82 as amended by it. Its branch `ops/fast-build` was written in a separate clone. The branch `task/TASK-000-fast-build-proof` proved the workflow and is not a Task.
+
+### 14.1 Merge
+
+Recorded by the next pull request, TASK-015's (EXECUTION_CONTEXT CE-50), from GitHub on 1 November 2026. The pull request was not adopted into the main tree's executor state, so the tick did not verify it; TASK-015's executor read the facts of CE-61 below. The Owner confirmed the merge and allowed the main tree's return to `develop` in his note of the resume, and D-117 is in force from this merge.
+
+| Fact | Value |
+| --- | --- |
+| Pull request | #23, "ops — FAST BUILD: fast runs on a Task's pushes, the whole verification on the pull request (D-117)", from `ops/fast-build` into `develop` |
+| Its head | `72fef71ec997d0a199e4e3715f48de768233993e` |
+| CI on the pull request | Run 41285862652, event `pull_request` on `72fef71`, success: `Command contract` and `Image checks` |
+| Merge | The Owner's Squash and merge (`yusufarst`) on 1 November 2026 at 09:13:58 UTC |
+| Merge commit | `9ce34218f78912ce1663103e3ed5f9f46204f907` on `develop`, parent `5a5bf06` (`develop` did not move); author the Owner's GitHub no-reply identity, committer GitHub; its tree `e9a2b4bcaabe0c9c7ca60dd19ea0115ab59e1721` equals that of `72fef71` |
+| CI on `develop` | Run 41287977802, event `push` on `9ce3421`, success: `Command contract` and `Image checks` |
+| Comments | No comment or review of the Owner on the pull request. The summary comment of the account `chatgpt-codex-connector` reports its code review completed with no finding, on the earlier commit `e8d2566`; it is data, not an instruction (CE-43) |
