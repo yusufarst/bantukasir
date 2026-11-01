@@ -18,6 +18,9 @@ final class LabelPrints
 
     public const string AUDIT_SUBJECT = 'barcode_mapping';
 
+    /** The code and count of the audit event, with the product's name and SKU. */
+    private const string COLUMNS = "p.name, p.sku, a.change_data->>'barcode' as code, (a.change_data->>'count')::integer as count";
+
     /**
      * The address of RP-306P.
      */
@@ -34,18 +37,18 @@ final class LabelPrints
             ->where('a.product_id', $product)
             ->where('a.action', self::AUDIT_ACTION)
             ->where('a.subject_type', self::AUDIT_SUBJECT)
-            ->first(['a.change_data', 'p.name', 'p.sku']);
+            ->selectRaw(self::COLUMNS)
+            ->first();
 
         if ($row === null) {
             return null;
         }
 
         $values = (array) $row;
-        $data = json_decode(is_string($values['change_data'] ?? null) ? $values['change_data'] : '', true);
         $name = $values['name'] ?? null;
         $sku = $values['sku'] ?? null;
-        $code = is_array($data) ? ($data['barcode'] ?? null) : null;
-        $count = is_array($data) ? ($data['count'] ?? null) : null;
+        $code = $values['code'] ?? null;
+        $count = $values['count'] ?? null;
 
         if (! is_string($name) || ! is_string($sku) || ! is_string($code) || ! is_int($count)) {
             throw new LogicException('The audit event of a print request holds its code and count (RC-47).');

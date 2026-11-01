@@ -145,9 +145,7 @@ final class ImageNormalizer
 
         self::keepAlpha($reduced);
 
-        if (! imagecopyresampled($reduced, $image, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height)) {
-            throw new ImageRefused(ImageProblem::Unreadable);
-        }
+        imagecopyresampled($reduced, $image, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
 
         return $reduced;
     }
