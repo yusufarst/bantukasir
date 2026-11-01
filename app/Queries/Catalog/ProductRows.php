@@ -27,11 +27,15 @@ final class ProductRows
      */
     public const string TOKEN_PRODUCT = '(select am.product_id from barcode_tokens t join barcode_active_mappings am on am.token_id = t.id where t.token = ?)';
 
+    /** Whether the product holds a barcode to print (UXI-163), by the index of its active mappings. */
+    private const string ACTIVE_BARCODE = 'exists (select 1 from barcode_active_mappings active_barcode where active_barcode.product_id = p.id) as active_barcode';
+
     public static function query(): Builder
     {
         return DB::table('products', 'p')
             ->join('selling_price_revisions as r', 'r.id', '=', 'p.current_price_revision_id')
-            ->select(['p.id', 'p.name', 'p.sku', 'p.base_unit', 'p.quantity_precision', 'p.active', 'p.photo_file_id', 'r.id as revision_id', 'r.amount']);
+            ->select(['p.id', 'p.name', 'p.sku', 'p.base_unit', 'p.quantity_precision', 'p.active', 'p.photo_file_id', 'r.id as revision_id', 'r.amount'])
+            ->selectRaw(self::ACTIVE_BARCODE);
     }
 
     /**
@@ -54,8 +58,9 @@ final class ProductRows
         $photo = $values['photo_file_id'] ?? null;
         $revision = $values['revision_id'] ?? null;
         $amount = $values['amount'] ?? null;
+        $activeBarcode = $values['active_barcode'] ?? null;
 
-        if (! is_int($id) || ! is_string($name) || ! is_string($sku) || ! is_string($unit) || ! is_int($precision) || ! is_bool($active) || ! is_int($revision) || (! is_int($amount) && ! is_string($amount))) {
+        if (! is_int($id) || ! is_string($name) || ! is_string($sku) || ! is_string($unit) || ! is_int($precision) || ! is_bool($active) || ! is_int($revision) || (! is_int($amount) && ! is_string($amount)) || ! is_bool($activeBarcode)) {
             throw new LogicException('A product row holds its columns (SCHEMA section 5.6).');
         }
 
@@ -69,8 +74,9 @@ final class ProductRows
             $revision,
             $active,
             // RD-07's thumbnail, by the file's internal key and never a storage
-            // path (SEC-CH-06). TASK-018 sets the photo and serves its variant.
+            // path (SEC-CH-06).
             is_int($photo) ? '/media/'.(string) $photo.'?variant=thumb' : null,
+            $activeBarcode,
         );
     }
 }

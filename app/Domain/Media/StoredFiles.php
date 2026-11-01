@@ -43,14 +43,31 @@ final class StoredFiles
         }
 
         if (! in_array($purpose, [self::LOGO, self::PRODUCT_PHOTO], true)) {
-            throw new LogicException('A thumbnail is recorded with the photo it derives from (TASK-018).');
+            throw new LogicException('A thumbnail is recorded with the photo it derives from: insertThumbnail().');
         }
 
+        return $this->record($blob, $purpose, null, $actorUserId, $commandId);
+    }
+
+    /**
+     * Records the thumbnail of a photo recorded in the same transaction.
+     */
+    public function insertThumbnail(StoredBlob $blob, int $photoId, int $actorUserId, int $commandId): int
+    {
+        if (DB::transactionLevel() === 0) {
+            throw new LogicException('A stored file is recorded in the transaction of the command that references it (TR-TX-05).');
+        }
+
+        return $this->record($blob, self::PRODUCT_THUMBNAIL, $photoId, $actorUserId, $commandId);
+    }
+
+    private function record(StoredBlob $blob, string $purpose, ?int $derivedFrom, int $actorUserId, int $commandId): int
+    {
         $id = DB::scalar(
             "insert into stored_files (storage_key, purpose, media_type, byte_size, width, height, sha256, derived_from_file_id, created_at, actor_user_id, command_id)
-             values (?, ?, ?, ?, ?, ?, decode(?, 'hex'), null, ?, ?, ?) returning id",
+             values (?, ?, ?, ?, ?, ?, decode(?, 'hex'), ?, ?, ?, ?) returning id",
             [
-                $blob->storageKey, $purpose, $blob->mediaType, $blob->byteSize, $blob->width, $blob->height, bin2hex($blob->sha256),
+                $blob->storageKey, $purpose, $blob->mediaType, $blob->byteSize, $blob->width, $blob->height, bin2hex($blob->sha256), $derivedFrom,
                 $this->clock->now()->format('Y-m-d H:i:s.uP'), $actorUserId, $commandId,
             ],
         );
@@ -60,6 +77,16 @@ final class StoredFiles
         }
 
         return $id;
+    }
+
+    /**
+     * The thumbnail of a photo for delivery, or null (RD-07, `variant` thumb).
+     */
+    public function thumbnailOf(int $photoId): ?StoredFile
+    {
+        $thumbnail = DB::table('stored_files')->where('derived_from_file_id', $photoId)->where('purpose', self::PRODUCT_THUMBNAIL)->orderBy('id')->value('id');
+
+        return is_int($thumbnail) ? $this->find($thumbnail) : null;
     }
 
     /**

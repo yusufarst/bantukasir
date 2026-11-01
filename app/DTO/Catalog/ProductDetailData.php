@@ -7,8 +7,9 @@ use App\DTO\PageData;
 /**
  * A product as UXP-302 and UXP-304 show it (ROUTE_CONTRACTS RP-302, RP-304): its fields
  * with the name and state of its category, the price in force with its revision, the
- * version that RC-18 to RC-20 expect, and whether its unit and precision are locked
- * (BR-CAT-07). Never a cost, a valuation or a margin (BR-CAT-26).
+ * version that RC-18 to RC-20, RC-25 and RC-26 expect, whether its unit and precision are
+ * locked (BR-CAT-07), and its photo's path of RD-07, never a storage key. Never a cost, a
+ * valuation or a margin (BR-CAT-26).
  */
 final readonly class ProductDetailData implements PageData
 {
@@ -28,6 +29,7 @@ final readonly class ProductDetailData implements PageData
         public bool $active,
         public int $version,
         public bool $unitLocked,
+        public ?string $photo,
     ) {}
 
     /**
@@ -50,6 +52,7 @@ final readonly class ProductDetailData implements PageData
             'active' => $this->active,
             'version' => $this->version,
             'unitLocked' => $this->unitLocked,
+            'photo' => $this->photo,
         ];
     }
 }

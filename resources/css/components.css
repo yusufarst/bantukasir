@@ -2194,6 +2194,59 @@
         object-fit: cover;
     }
 
+    /* A product's photo on UXP-302 (UXI-169), whatever its proportions. */
+    .bk-photo {
+        display: block;
+        max-width: min(100%, 240px);
+        max-height: 240px;
+        height: auto;
+        border-radius: var(--radius-md);
+    }
+
+    /* The labels of RP-306P (DC-05, DESIGN_SYSTEM section 12): their real size in millimetres, black on white whatever the theme. */
+    .bk-labels {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 16px;
+    }
+
+    .bk-label {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-sizing: border-box;
+        width: 50mm;
+        height: 30mm;
+        padding: 1mm 0;
+        overflow: hidden;
+        background: #ffffff;
+        color: #000000;
+        font-size: 7pt;
+        line-height: 1.2;
+        text-align: center;
+    }
+
+    .bk-label__name,
+    .bk-label__text {
+        margin: 0;
+        padding: 0 2mm;
+    }
+
+    .bk-label__text {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .bk-label__bars {
+        display: block;
+        flex: none;
+        width: 50mm;
+        height: 12mm;
+        shape-rendering: crispEdges;
+    }
+
     /* The one-time link of UXP-606 (UXI-354): dark modules on white, large enough to scan, whatever the theme. */
     .bk-qr {
         display: block;

@@ -25,19 +25,24 @@ use App\Http\Controllers\Catalog\CreateProductController;
 use App\Http\Controllers\Catalog\DeactivateCategoryController;
 use App\Http\Controllers\Catalog\DeactivateProductController;
 use App\Http\Controllers\Catalog\GenerateBarcodeController;
+use App\Http\Controllers\Catalog\LabelsController;
 use App\Http\Controllers\Catalog\ProductsController;
 use App\Http\Controllers\Catalog\ReactivateCategoryController;
 use App\Http\Controllers\Catalog\ReactivateProductController;
+use App\Http\Controllers\Catalog\RemoveProductPhotoController;
 use App\Http\Controllers\Catalog\RenameCategoryController;
 use App\Http\Controllers\Catalog\RetireBarcodeController;
 use App\Http\Controllers\Catalog\SearchController;
 use App\Http\Controllers\Catalog\SearchFirstController;
+use App\Http\Controllers\Catalog\SetProductPhotoController;
 use App\Http\Controllers\Catalog\UpdateProductController;
 use App\Http\Controllers\Commands\RequestsController;
 use App\Http\Controllers\Commands\RequestsDataController;
 use App\Http\Controllers\Commands\ResolveIntentController;
 use App\Http\Controllers\Configuration\ChangeBusinessProfileController;
 use App\Http\Controllers\Configuration\ProfileController;
+use App\Http\Controllers\Documents\LabelPrintController;
+use App\Http\Controllers\Documents\RecordLabelPrintController;
 use App\Http\Controllers\Media\MediaController;
 use App\Http\Controllers\Testing\SpecimenController;
 use Illuminate\Support\Facades\Route;
@@ -178,6 +183,21 @@ Route::middleware(['auth', 'signin.session', 'throttle:authenticated', 'cache.he
         Route::post('/commands/barcode.add', AddBarcodeController::class)->middleware('throttle:command')->name('commands.barcode.add');
         Route::post('/commands/barcode.generate', GenerateBarcodeController::class)->middleware('throttle:command')->name('commands.barcode.generate');
         Route::post('/commands/barcode.retire', RetireBarcodeController::class)->middleware('throttle:command')->name('commands.barcode.retire');
+    });
+
+    // The product photo (TASK-018): RC-25, with its upload in the bucket `photo`, and
+    // RC-26, in the bucket of every command.
+    Route::middleware('capability:CAP-09')->group(function (): void {
+        Route::post('/commands/product_photo.set', SetProductPhotoController::class)->middleware(['throttle:command', 'throttle:photo'])->name('commands.product_photo.set');
+        Route::post('/commands/product_photo.remove', RemoveProductPhotoController::class)->middleware('throttle:command')->name('commands.product_photo.remove');
+    });
+
+    // The barcode labels (TASK-018): RP-306, RC-47 in the bucket `print`, and the print
+    // view RP-306P, a read that takes only its path (TR-HTTP-02).
+    Route::middleware('capability:CAP-08')->group(function (): void {
+        Route::get('/products/{product}/labels', [LabelsController::class, 'create'])->middleware('input.allow')->name('products.labels');
+        Route::get('/products/{product}/labels/print/{printRequest}', [LabelPrintController::class, 'show'])->middleware('input.allow')->name('products.labels.print');
+        Route::post('/commands/document.print_labels', RecordLabelPrintController::class)->middleware(['throttle:command', 'throttle:print'])->name('commands.document.print_labels');
     });
 });
 

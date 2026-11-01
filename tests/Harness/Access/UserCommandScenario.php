@@ -7,14 +7,18 @@ use App\Actions\Commands\CommandContext;
 use App\Domain\Access\ActorNotAllowed;
 use App\Domain\Commands\CommandRefused;
 use App\Domain\Commands\Envelope;
+use App\Domain\Media\MediaStore;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Storage;
 use LogicException;
+use SplFileInfo;
 use Tests\Harness\Race\Scenario;
 
 /**
  * One command of RC-35 to RC-42 in a race worker (RACE-01, RACE-02, RACE-04,
  * RACE-16, RACE-20; TASK-011), or of RC-17 to RC-24 (RACE-01, RACE-02, RACE-04,
- * RACE-05, RACE-23, RACE-29; TASK-015): the operation's Action, for an actor,
+ * RACE-05, RACE-23, RACE-29; TASK-015), or RC-25, RC-26 and RC-47 (RACE-01, RACE-02;
+ * TASK-018): the operation's Action, for an actor,
  * with the given intent, key, epoch, expected versions and payload, received
  * now. It answers its outcome, or the code of its refusal.
  */
@@ -31,6 +35,14 @@ final class UserCommandScenario implements Scenario
         $expected = $arguments['expected'] ?? [];
         $payload = $arguments['payload'] ?? [];
         $actor = $arguments['actor'] ?? null;
+
+        // RC-25's photo, a path as a worker's arguments carry it, read as an upload is;
+        // never the real private disk (TASK-010 finding F-8).
+        if (is_array($payload) && is_string($payload['photo'] ?? null)) {
+            Storage::fake(MediaStore::DISK);
+            $payload['photo'] = new SplFileInfo($payload['photo']);
+        }
+
         $envelope = new Envelope(
             $operation,
             1,

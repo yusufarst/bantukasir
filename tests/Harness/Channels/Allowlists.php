@@ -94,15 +94,20 @@ final class Allowlists
         'access/UserEdit' => ['owner' => ['user', 'user.id', 'user.displayName', 'user.email', 'user.roles', 'user.roles.*', 'user.version']],
         'access/LinkHandover' => ['owner' => ['user', 'user.id', 'user.displayName']],
         // The catalogue pages (TASK-017), for every kind of account that CAP-04 opens
-        // them to: never a cost, a valuation or a margin (BR-CAT-26). TASK-018,
-        // TASK-020, TASK-022 and TASK-025 add their sections to UXP-302.
-        'catalog/Products' => ['*' => ['filters', 'filters.q', 'filters.category', 'filters.brand', 'filters.status', 'filters.page', ...self::CATEGORIES]],
+        // them to: never a cost, a valuation or a margin (BR-CAT-26). TASK-020, TASK-022
+        // and TASK-025 add their sections to UXP-302.
+        'catalog/Products' => ['*' => ['filters', 'filters.q', 'filters.category', 'filters.brand', 'filters.status', 'filters.page', ...self::CATEGORIES, 'canPrintLabels']],
         'catalog/ProductCreate' => ['*' => [...self::CATEGORIES, 'code']],
         'catalog/Product' => ['*' => [
             ...self::PRODUCT,
             'priceHistory', 'priceHistory.*', 'priceHistory.*.amount', 'priceHistory.*.startedAt', 'priceHistory.*.actorDisplayName',
             'barcodes', 'barcodes.*', 'barcodes.*.mappingId', 'barcodes.*.token', 'barcodes.*.kind', 'barcodes.*.active', 'barcodes.*.reasonClass',
+            'canChangePhoto', 'canPrintLabels',
         ]],
+        // UXP-306 and its print view (TASK-018): a label is the code, the name and the
+        // SKU, never a cost or a price (BR-CAT-35).
+        'catalog/Labels' => ['*' => ['product', 'product.id', 'product.name', 'barcodes', 'barcodes.*', 'barcodes.*.mappingId', 'barcodes.*.token']],
+        'documents/LabelPrint' => ['*' => ['label', 'label.name', 'label.sku', 'label.code', 'label.count']],
         'catalog/ProductEdit' => ['*' => [...self::PRODUCT, ...self::CATEGORIES]],
         'catalog/Categories' => ['*' => ['filters', 'filters.status', ...self::CATEGORIES]],
     ];
@@ -113,7 +118,7 @@ final class Allowlists
     /** A product of UXP-302 and UXP-304. */
     private const array PRODUCT = [
         'product', 'product.id', 'product.sku', 'product.name', 'product.categoryId', 'product.categoryName', 'product.categoryActive', 'product.brand', 'product.baseUnit',
-        'product.quantityPrecision', 'product.price', 'product.price.amount', 'product.price.revisionId', 'product.minimumStock', 'product.active', 'product.version', 'product.unitLocked',
+        'product.quantityPrecision', 'product.price', 'product.price.amount', 'product.price.revisionId', 'product.minimumStock', 'product.active', 'product.version', 'product.unitLocked', 'product.photo',
     ];
 
     /**
@@ -158,16 +163,16 @@ final class Allowlists
     /** One page of RD-01. */
     private const array SEARCH_RESULT = [
         'rows', 'rows.*', 'rows.*.id', 'rows.*.name', 'rows.*.sku', 'rows.*.baseUnit', 'rows.*.quantityPrecision',
-        'rows.*.price', 'rows.*.price.amount', 'rows.*.price.revisionId', 'rows.*.active', 'rows.*.thumbnail',
+        'rows.*.price', 'rows.*.price.amount', 'rows.*.price.revisionId', 'rows.*.active', 'rows.*.thumbnail', 'rows.*.activeBarcode',
         'page', 'perPage', 'hasMore',
     ];
 
     /** RD-06 with an exact barcode, an exact SKU and a similar name. */
     private const array CHECK_RESULT = [
-        'barcode', 'barcode.id', 'barcode.name', 'barcode.sku', 'barcode.baseUnit', 'barcode.quantityPrecision', 'barcode.price', 'barcode.price.amount', 'barcode.price.revisionId', 'barcode.active', 'barcode.thumbnail',
-        'sku', 'sku.id', 'sku.name', 'sku.sku', 'sku.baseUnit', 'sku.quantityPrecision', 'sku.price', 'sku.price.amount', 'sku.price.revisionId', 'sku.active', 'sku.thumbnail',
+        'barcode', 'barcode.id', 'barcode.name', 'barcode.sku', 'barcode.baseUnit', 'barcode.quantityPrecision', 'barcode.price', 'barcode.price.amount', 'barcode.price.revisionId', 'barcode.active', 'barcode.thumbnail', 'barcode.activeBarcode',
+        'sku', 'sku.id', 'sku.name', 'sku.sku', 'sku.baseUnit', 'sku.quantityPrecision', 'sku.price', 'sku.price.amount', 'sku.price.revisionId', 'sku.active', 'sku.thumbnail', 'sku.activeBarcode',
         'similarNames', 'similarNames.*', 'similarNames.*.id', 'similarNames.*.name', 'similarNames.*.sku', 'similarNames.*.baseUnit', 'similarNames.*.quantityPrecision',
-        'similarNames.*.price', 'similarNames.*.price.amount', 'similarNames.*.price.revisionId', 'similarNames.*.active', 'similarNames.*.thumbnail',
+        'similarNames.*.price', 'similarNames.*.price.amount', 'similarNames.*.price.revisionId', 'similarNames.*.active', 'similarNames.*.thumbnail', 'similarNames.*.activeBarcode',
     ];
 
     /**

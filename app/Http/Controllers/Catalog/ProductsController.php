@@ -18,8 +18,8 @@ use Inertia\Response;
  * RP-301 to RP-304, the product pages (ROUTE_CONTRACTS section 2; COPY_DECK sections 8.2
  * to 8.5; TASK-017 scope item 1). RP-301 gives its filters and the categories to filter
  * by; its results come from RD-01. RP-302's sections go by capability: the price history
- * (CAP-04, the page's gate) and the barcodes (CAP-06). TASK-018, TASK-020, TASK-022 and
- * TASK-025 add theirs.
+ * (CAP-04, the page's gate), the photo (CAP-09), the barcodes (CAP-06) and the labels
+ * (CAP-08). TASK-020, TASK-022 and TASK-025 add theirs.
  */
 final class ProductsController
 {
@@ -28,6 +28,7 @@ final class ProductsController
         return Inertia::render('catalog/Products', [
             'filters' => $request->filters(),
             'categories' => self::arrays($categories->list()),
+            'canPrintLabels' => self::allows($request->user(), Capability::Cap08),
         ]);
     }
 
@@ -47,7 +48,10 @@ final class ProductsController
         return Inertia::render('catalog/Product', [
             'product' => $detail->toArray(),
             'priceHistory' => $pages->priceHistory($detail->id),
-            'barcodes' => $viewer instanceof User && Capabilities::allows($viewer, Capability::Cap06) ? $pages->barcodes($detail->id) : null,
+            'barcodes' => self::allows($viewer, Capability::Cap06) ? $pages->barcodes($detail->id) : null,
+            'canChangePhoto' => self::allows($viewer, Capability::Cap09),
+            // UXI-175: a product with an active barcode (INTERACTION_INVENTORY).
+            'canPrintLabels' => self::allows($viewer, Capability::Cap08) && $pages->activeBarcodes($detail->id) !== [],
         ]);
     }
 
@@ -59,6 +63,11 @@ final class ProductsController
             'product' => $detail->toArray(),
             'categories' => self::arrays($categories->choices($detail->categoryId)),
         ]);
+    }
+
+    private static function allows(mixed $viewer, Capability $capability): bool
+    {
+        return $viewer instanceof User && Capabilities::allows($viewer, $capability);
     }
 
     /**

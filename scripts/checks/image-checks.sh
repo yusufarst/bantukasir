@@ -513,6 +513,10 @@ expect 'the refusal of Nginx carries a header of SEC-HDR-02' 'x-content-type-opt
 expect_body_limit /commands/business_profile.change 6500000 'reaches the application' '' '*'
 expect_body_limit /commands/business_profile.change 7800000 'is refused by PHP'\''s limit, through the application' 413 '{}'
 expect_body_limit /commands/business_profile.change 8500000 'is refused by Nginx' 413 ''
+# RC-25: the application 8 MiB, PHP 10M, Nginx 11m.
+expect_body_limit /commands/product_photo.set 9500000 'reaches the application' '' '*'
+expect_body_limit /commands/product_photo.set 11000000 'is refused by PHP'\''s limit, through the application' 413 '{}'
+expect_body_limit /commands/product_photo.set 12000000 'is refused by Nginx' 413 ''
 
 section 'The 60-second termination, the limits per location and the received time'
 cat >"$work/stub.php" <<'EOF'
@@ -539,6 +543,8 @@ for _ in 1 2 3; do
         "$(request "$stub" /login -H 'Proxy: http://proxy.invalid') $(body_of "$stub")"
     expect 'RC-32 has its limits in PHP, whichever worker answers' '200 7M 6M received no-proxy' \
         "$(request "$stub" /commands/business_profile.change) $(body_of "$stub")"
+    expect 'RC-25 has its limits in PHP, whichever worker answers' '200 10M 9M received no-proxy' \
+        "$(request "$stub" /commands/product_photo.set) $(body_of "$stub")"
 done
 started="$(date +%s)"
 terminated="$(request "$stub" /slow)"

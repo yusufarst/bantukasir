@@ -5,14 +5,16 @@ import { FilterChip, FilterChips } from '@/components/ui/Choices';
 import { LoadMore } from '@/components/ui/Data';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Field, SelectInput, TextInput } from '@/components/ui/Field';
+import { Menu } from '@/components/ui/Menu';
 import { EmptyState, LoadFailed, Loading, NoResults, StateMark, StateNotice, UnknownCode } from '@/components/ui/States';
 import { StatusWord } from '@/components/ui/Status';
 import type { StateId } from '@/components/ui/stateCatalogue';
 import { AppShell } from '@/layouts/AppShell';
 import { ListLayout, PageHeader } from '@/layouts/Page';
-import { categoryOption, CodeField, ProductThumb } from '@/lib/catalog/Parts';
+import { categoryOption, CodeField, ProductThumb, visitInDocument } from '@/lib/catalog/Parts';
 import {
     catalogFieldMessage,
+    labelsPage,
     NEW_PRODUCT_PAGE,
     productPage,
     PRODUCTS_SHELL,
@@ -37,8 +39,9 @@ import type { TranslationKey } from '@/types/translation-keys';
 // text, which an unknown code stays in (UXS-33, BR-CAT-31). A newer read supersedes an
 // older one (TR-PAGE-04). The filters and page stand in the page's props and address, so
 // that the browser's Back and the way back of a child page return to them (NC-10). No
-// cost is ever shown (BR-CAT-26), and an inactive product is marked (UXS-32). TASK-018
-// adds "Cetak label barcode" (UXI-163), and TASK-022 the stock state of a row.
+// cost is ever shown (BR-CAT-26), and an inactive product is marked (UXS-32). A product
+// with an active barcode has "Cetak label barcode" in its row's overflow (UXI-163), for
+// CAP-08. TASK-022 adds the stock state of a row.
 
 /** The wait after the last key before a typed search runs. */
 const TYPING_MS = 300;
@@ -60,17 +63,17 @@ type ListState =
     | { readonly kind: 'failed' }
     | { readonly kind: 'rows'; readonly rows: readonly ProductRow[]; readonly hasMore: boolean; readonly unknownCode: string | null; readonly filters: ProductFilters };
 
-export default function Products({ filters, categories }: { filters: ProductFilters; categories: readonly Category[] }) {
+export default function Products({ filters, categories, canPrintLabels }: { filters: ProductFilters; categories: readonly Category[]; canPrintLabels: boolean }) {
     const title = t('catalog.products.title');
 
     return (
         <AppShell title={title} {...PRODUCTS_SHELL}>
-            <ProductsList title={title} filters={filters} categories={categories} />
+            <ProductsList title={title} filters={filters} categories={categories} canPrintLabels={canPrintLabels} />
         </AppShell>
     );
 }
 
-function ProductsList({ title, filters, categories }: { title: string; filters: ProductFilters; categories: readonly Category[] }) {
+function ProductsList({ title, filters, categories, canPrintLabels }: { title: string; filters: ProductFilters; categories: readonly Category[]; canPrintLabels: boolean }) {
     const [applied, setApplied] = useState(filters);
     const [q, setQ] = useState(filters.q);
     const [brand, setBrand] = useState(filters.brand);
@@ -241,6 +244,19 @@ function ProductsList({ title, filters, categories }: { title: string; filters: 
         { id: 'sku', header: t('catalog.field.sku'), cell: (row) => row.sku },
         { id: 'price', header: t('catalog.field.selling_price'), numeric: true, cell: (row) => formatMoney(row.price.amount) },
         { id: 'status', header: t('catalog.field.status'), cell: (row) => (row.active ? <StatusWord tone={'success'} label={t('catalog.status.active')} /> : <StateMark kind={'inactive'} />) },
+        ...(canPrintLabels
+            ? [
+                  {
+                      id: 'actions',
+                      header: t('ux.action.more_actions'),
+                      isAction: true,
+                      cell: (row: ProductRow) =>
+                          row.activeBarcode ? (
+                              <Menu label={t('ux.action.more_actions')} rowName={row.name} items={[{ kind: 'link', label: t('catalog.labels.title'), href: labelsPage(row.id), onNavigate: (event) => visitInDocument(event, labelsPage(row.id)) }]} />
+                          ) : null,
+                  },
+              ]
+            : []),
     ];
 
     const filtered = applied.q !== '' || applied.category !== null || applied.brand !== '' || applied.status !== null;

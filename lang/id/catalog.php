@@ -3,7 +3,8 @@
 // Interface dictionary, file catalog (ADR-005; COPY_DECK section 1.1):
 // products, categories, barcodes, labels, CSV import. Its keys are copied
 // verbatim from COPY_DECK by the first Task that uses them. TASK-017 adds those
-// of its pages (COPY_DECK sections 8.1 to 8.5 and 8.8).
+// of its pages (COPY_DECK sections 8.1 to 8.5 and 8.8), and TASK-018 those of the
+// photo and the labels (COPY_DECK sections 8.3 and 8.7).
 
 return [
     'field' => [
@@ -30,6 +31,23 @@ return [
     'photo' => [
         'thumbnail_alt' => 'Foto :produk',
         'placeholder_alt' => 'Belum ada foto',
+        'upload' => 'Unggah foto',
+        'replace' => 'Ganti foto',
+        'rules' => 'JPG, PNG, atau WebP, paling besar 8 MB.',
+        'saved' => 'Foto disimpan.',
+        'remove' => 'Lepas foto',
+        'remove_confirm' => [
+            'title' => 'Lepas foto produk?',
+            'body' => 'Foto tidak ditampilkan lagi. Berkasnya tetap disimpan.',
+        ],
+        'removed' => 'Foto dilepas.',
+    ],
+    'labels' => [
+        'title' => 'Cetak label barcode',
+        'barcode' => 'Barcode',
+        'quantity' => 'Jumlah label',
+        'size_help' => 'Ukuran label 50 × 30 mm.',
+        'print' => 'Cetak',
     ],
     'products' => [
         'title' => 'Produk',
@@ -43,6 +61,7 @@ return [
         'subtitle' => ':produk',
         'section_data' => 'Data produk',
         'section_price' => 'Harga jual',
+        'section_photo' => 'Foto produk',
         'section_barcodes' => 'Barcode',
         'price_history' => 'Riwayat harga jual',
         'price_entry' => ':uang · mulai :waktu · oleh :nama',

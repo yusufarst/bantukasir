@@ -98,6 +98,12 @@ final class RouteInventoryTest extends TestCase
         'GET /products/{product}' => ['products.show', 'RP-302', 'CAP-04', [...self::SIGNED_IN, 'capability:CAP-04', 'input.allow']],
         'GET /products/{product}/edit' => ['products.edit', 'RP-304', 'CAP-04', [...self::SIGNED_IN, 'capability:CAP-04', 'input.allow']],
         'GET /categories' => ['categories.index', 'RP-307', 'CAP-04', [...self::SIGNED_IN, 'capability:CAP-04', 'input.allow:status']],
+        // TASK-018: RC-25, RC-26, RC-47, RP-306 and RP-306P.
+        'POST /commands/product_photo.set' => ['commands.product_photo.set', 'RC-25', 'CAP-09', [...self::SIGNED_IN, 'capability:CAP-09', 'throttle:command', 'throttle:photo']],
+        'POST /commands/product_photo.remove' => ['commands.product_photo.remove', 'RC-26', 'CAP-09', [...self::SIGNED_IN, 'capability:CAP-09', 'throttle:command']],
+        'POST /commands/document.print_labels' => ['commands.document.print_labels', 'RC-47', 'CAP-08', [...self::SIGNED_IN, 'capability:CAP-08', 'throttle:command', 'throttle:print']],
+        'GET /products/{product}/labels' => ['products.labels', 'RP-306', 'CAP-08', [...self::SIGNED_IN, 'capability:CAP-08', 'input.allow']],
+        'GET /products/{product}/labels/print/{printRequest}' => ['products.labels.print', 'RP-306P', 'CAP-08', [...self::SIGNED_IN, 'capability:CAP-08', 'input.allow']],
     ];
 
     public function test_the_routes_are_exactly_those_listed_each_with_its_gate(): void

@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 use Tests\Harness\Access\UserCommandScenario;
 use Tests\Harness\DatabaseTestCase;
 use Tests\Harness\Fixtures\TokoContoh;
+use Tests\Harness\Media\TestImages;
 use Tests\Harness\Race\Worker;
 
 /**
@@ -15,8 +16,8 @@ use Tests\Harness\Race\Worker;
  * EXECUTION_CONTEXT section 10, a command; TASK-015 section 7), each with
  * processes of their own connections under barrier control:
  *
- * - RACE-01 and RACE-02 for each operation: the same key, or another key of the
- *   same intent, runs once;
+ * - RACE-01 and RACE-02 for each operation, those of TASK-018 too: the same key, or
+ *   another key of the same intent, runs once;
  * - two creations with one SKU, also in another letter case: one commits, the
  *   other waits on the unique index and is refused DUPLICATE_SKU;
  * - RACE-29: a category's deactivation against a product's creation and against a
@@ -31,6 +32,9 @@ final class CatalogRaceTest extends DatabaseTestCase
 {
     /** @var list<Worker> */
     private array $workers = [];
+
+    /** @var list<string> */
+    private array $photos = [];
 
     private int $owner = 0;
 
@@ -61,6 +65,10 @@ final class CatalogRaceTest extends DatabaseTestCase
             $worker->stop();
         }
 
+        foreach ($this->photos as $photo) {
+            @unlink($photo);
+        }
+
         parent::tearDown();
     }
 
@@ -85,6 +93,25 @@ final class CatalogRaceTest extends DatabaseTestCase
                 $this->assertSame(1, $this->watcher()->table('command_identities')->where('source_intent_id', $intent)->count(), $operation.' '.$case);
             }
         }
+    }
+
+    public function test_two_photos_against_one_version_give_one_change_and_the_other_is_stale(): void
+    {
+        // TASK-018: the first holds the product's lock, and the second waits and finds a
+        // new version. Its file stays unreferenced (TR-TX-05).
+        $product = TokoContoh::product('R-'.Str::random(8), ['categoryId' => $this->category]);
+        $first = $this->start($this->command('product_photo.set', ['productId' => $product, 'photo' => $this->photoFile()], ['productVersion' => 1]), ['after_write:1']);
+        $second = $this->start($this->command('product_photo.set', ['productId' => $product, 'photo' => $this->photoFile()], ['productVersion' => 1]));
+        Worker::ready($first, $second);
+
+        $first->run()->awaitBarrier('after_write:1');
+        $second->run()->awaitBlocked($this->watcher());
+        $first->release();
+
+        $this->assertSame('COMMITTED', ($first->finish()->result ?? [])['outcome'] ?? null);
+        $this->assertSame(['refused' => 'STALE_VERSION'], $second->finish()->result);
+        $this->assertSame(2, $this->watcher()->table('products')->where('id', $product)->value('version'));
+        $this->assertSame(1, $this->watcher()->table('stored_files')->where('purpose', 'PRODUCT_PHOTO')->count());
     }
 
     public function test_two_creations_with_one_sku_give_one_success_also_in_another_letter_case(): void
@@ -322,7 +349,36 @@ final class CatalogRaceTest extends DatabaseTestCase
 
                 return [['categoryId' => $category], ['categoryVersion' => 2]];
             },
+            // TASK-018.
+            'product_photo.set' => fn (): array => [['productId' => TokoContoh::product('R-'.Str::random(8), ['categoryId' => $this->category]), 'photo' => $this->photoFile()], ['productVersion' => 1]],
+            'product_photo.remove' => function (): array {
+                $product = TokoContoh::product('R-'.Str::random(8), ['categoryId' => $this->category]);
+                $this->commit($this->command('product_photo.set', ['productId' => $product, 'photo' => $this->photoFile()], ['productVersion' => 1]));
+
+                return [['productId' => $product], ['productVersion' => 2]];
+            },
+            'document.print_labels' => function (): array {
+                $product = TokoContoh::product('R-'.Str::random(8), ['categoryId' => $this->category]);
+
+                return [['productId' => $product, 'mappingId' => TokoContoh::barcode($product, 'R-'.Str::random(12)), 'count' => 3], []];
+            },
         ];
+    }
+
+    /**
+     * A photo in a file of the test, which the workers read as an upload.
+     */
+    private function photoFile(): string
+    {
+        $path = tempnam(sys_get_temp_dir(), 'bk-photo-');
+
+        if ($path === false || file_put_contents($path, TestImages::png()) === false) {
+            $this->fail('The photo of the test cannot be written.');
+        }
+
+        $this->photos[] = $path;
+
+        return $path;
     }
 
     /**

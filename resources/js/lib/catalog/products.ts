@@ -23,6 +23,11 @@ export function productPage(id: number): string {
     return `${PRODUCTS_PAGE}/${String(id)}`;
 }
 
+/** UXP-306 of a product (ROUTE_CONTRACTS RP-306). */
+export function labelsPage(id: number): string {
+    return `${productPage(id)}/labels`;
+}
+
 /** Where the catalogue's pages stand in the shell. */
 export const PRODUCTS_SHELL = { current: 'products', area: 'products', subCurrent: 'products' } as const satisfies { current: DestinationId; area: AreaId; subCurrent: SubDestinationId };
 
@@ -41,6 +46,9 @@ export const CATALOG_COMMANDS = {
     addBarcode: { operation: 'barcode.add', family: 'barcode' },
     generateBarcode: { operation: 'barcode.generate', family: 'barcode' },
     retireBarcode: { operation: 'barcode.retire', family: 'barcode' },
+    setPhoto: { operation: 'product_photo.set', family: 'photo' },
+    removePhoto: { operation: 'product_photo.remove', family: 'photo' },
+    printLabels: { operation: 'document.print_labels', family: 'print' },
 } as const;
 
 /** A result of RD-01 or RD-06 (App\DTO\Catalog\ProductRowData). */
@@ -53,6 +61,7 @@ export interface ProductRow {
     readonly price: { readonly amount: string; readonly revisionId: number };
     readonly active: boolean;
     readonly thumbnail: string | null;
+    readonly activeBarcode: boolean;
 }
 
 /** A category of the pages (App\DTO\Catalog\CategoryRowData). */
@@ -79,6 +88,7 @@ export interface ProductDetail {
     readonly active: boolean;
     readonly version: number;
     readonly unitLocked: boolean;
+    readonly photo: string | null;
 }
 
 /** The filters and page of UXP-301 (ROUTE_CONTRACTS RP-301). */
@@ -373,6 +383,18 @@ export function catalogFieldMessage(entries: unknown, categoryName = ''): string
             return t('ux.state.barcode_ineligible.check_digit');
         case 'ux.state.inactive.category':
             return t('ux.state.inactive.category.body', { kategori: categoryName });
+        case 'ux.validation.quantity_positive':
+            return t('ux.validation.quantity_positive');
+        case 'ux.validation.upload.image_type':
+            return t('ux.validation.upload.image_type');
+        case 'ux.validation.upload.too_large':
+            return t('ux.validation.upload.too_large', { ukuran: textOf(entry.params.ukuran) });
+        case 'ux.validation.upload.too_many_pixels':
+            return t('ux.validation.upload.too_many_pixels', { jumlah: textOf(entry.params.jumlah) });
+        case 'ux.validation.upload.animated':
+            return t('ux.validation.upload.animated');
+        case 'ux.validation.upload.unreadable':
+            return t('ux.validation.upload.unreadable');
         default:
             return undefined;
     }
