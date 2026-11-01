@@ -55,6 +55,11 @@ const RELOADED: string[] = ['product', 'priceHistory', 'barcodes', 'canPrintLabe
 /** The images a photo may be (BR-CAT-47); the server judges the content. */
 const PHOTO_TYPES = 'image/png,image/jpeg,image/webp';
 
+/** The largest photo (SECURITY_MODEL section 13), and how the refusal names it (COPY_DECK section 16.2). */
+const PHOTO_MAX_BYTES = 8 * 1024 * 1024;
+
+const PHOTO_SIZE_LABEL = '8 MB';
+
 const MANUFACTURER = 'MANUFACTURER';
 
 const MISASSIGNMENT = 'MISASSIGNMENT';
@@ -292,7 +297,7 @@ function PhotoSection({ product, onDone, onStale, onOpen }: { product: ProductDe
             <div className={'bk-stack'}>
                 {product.photo === null ? <ProductThumb name={product.name} src={null} /> : <img className={'bk-photo'} src={product.photo} alt={t('catalog.photo.thumbnail_alt', { produk: product.name })} />}
                 <div className={'bk-actions'}>
-                    <PhotoUploadRun key={uploadKey} product={product} onDone={finished} onStale={staleNow} onOpen={onOpen} />
+                    <PhotoUploadRun key={uploadKey} product={product} onDone={finished} onStale={staleNow} onOpen={onOpen} onAgain={() => setOpening((current) => current + 1)} />
                     {product.photo !== null && reason === undefined && <Menu label={t('ux.action.more_actions')} rowName={t('catalog.product_detail.section_photo')} items={entries} />}
                 </div>
                 {removing && <PhotoRemoveRun key={removeKey} product={product} onClose={() => setRemoving(false)} onDone={finished} onStale={staleNow} />}
@@ -301,17 +306,27 @@ function PhotoSection({ product, onDone, onStale, onOpen }: { product: ProductDe
     );
 }
 
-/** "Unggah foto" or "Ganti foto" (UXI-169): the file chosen is sent at once, as multipart; a refusal stays at the field, with its reason. */
-function PhotoUploadRun({ product, onDone, onStale, onOpen }: { product: ProductDetail; onDone: (text: string) => void; onStale: () => void; onOpen: () => void }) {
+/**
+ * "Unggah foto" or "Ganti foto" (UXI-169): the file chosen is sent at once, as multipart; a
+ * refusal stays at the field, with its reason. A file above the limit is refused here and no
+ * request leaves: the limits of PHP and Nginx above the application's answer without a code,
+ * which the command client could only read as uncertain (SEC-UP-02). The field is safe from
+ * Enter inside its command form (UXA-10), and after a 429 (UXS-12) a new file is a new
+ * request, never the frozen one sent again.
+ */
+function PhotoUploadRun({ product, onDone, onStale, onOpen, onAgain }: { product: ProductDetail; onDone: (text: string) => void; onStale: () => void; onOpen: () => void; onAgain: () => void }) {
     const control = useCommand(CATALOG_COMMANDS.setPhoto);
     const { phase, blockedBy } = control;
+    const [tooLarge, setTooLarge] = useState(false);
     const ids = useId();
     const refusal = phase.kind === 'rejected' ? phase.refusal : null;
     const stale = refusal?.code === STALE_VERSION;
     const committed = phase.kind === 'committed';
     const busy = phase.kind === 'submitting';
     const blocked = blockedBy !== null && !busy;
-    const error = refusal === null ? undefined : catalogFieldMessage(refusal.fields['payload.photo']);
+    const throttled = phase.kind === 'throttled';
+    const refused = refusal === null ? undefined : catalogFieldMessage(refusal.fields['payload.photo']);
+    const error = tooLarge ? t('ux.validation.upload.too_large', { ukuran: PHOTO_SIZE_LABEL }) : refused;
     const label = product.photo === null ? t('catalog.photo.upload') : t('catalog.photo.replace');
     const labelId = `${ids}-label`;
     const hintId = `${ids}-hint`;
@@ -335,8 +350,14 @@ function PhotoUploadRun({ product, onDone, onStale, onOpen }: { product: Product
         // The same file may be chosen again after a refusal.
         event.target.value = '';
 
-        if (file !== null) {
-            onOpen();
+        if (file === null) {
+            return;
+        }
+
+        onOpen();
+        setTooLarge(file.size > PHOTO_MAX_BYTES);
+
+        if (file.size <= PHOTO_MAX_BYTES) {
             control.submit({ productId: product.id, photo: file }, { productVersion: product.version });
         }
     };
@@ -346,25 +367,28 @@ function PhotoUploadRun({ product, onDone, onStale, onOpen }: { product: Product
             {blocked ? (
                 <Button label={label} variant={'secondary'} enterActivates={false} disabledReason={blockedReason([blockedBy], CATALOG_COMMANDS.setPhoto)} />
             ) : (
-                <div className={'bk-field'} data-invalid={error !== undefined}>
-                    <span className={'bk-file'}>
-                        <input type={'file'} accept={PHOTO_TYPES} disabled={busy} aria-labelledby={labelId} aria-describedby={error === undefined ? hintId : `${errorId} ${hintId}`} aria-invalid={error === undefined ? undefined : true} onChange={choose} />
-                        <span className={'bk-btn bk-btn--secondary'} id={labelId} aria-hidden={true}>
-                            {label}
+                <CommandForm>
+                    <div className={'bk-field'} data-invalid={error !== undefined}>
+                        <span className={'bk-file'}>
+                            <input type={'file'} accept={PHOTO_TYPES} disabled={busy || throttled} aria-labelledby={labelId} aria-describedby={error === undefined ? hintId : `${errorId} ${hintId}`} aria-invalid={error === undefined ? undefined : true} onChange={choose} />
+                            <span className={'bk-btn bk-btn--secondary'} id={labelId} aria-hidden={true}>
+                                {label}
+                            </span>
                         </span>
-                    </span>
-                    {error !== undefined && (
-                        <p className={'bk-error'} id={errorId}>
-                            <Icon name={'danger'} size={'sm'} />
-                            <span>{error}</span>
+                        {error !== undefined && (
+                            <p className={'bk-error'} id={errorId}>
+                                <Icon name={'danger'} size={'sm'} />
+                                <span>{error}</span>
+                            </p>
+                        )}
+                        <p className={'bk-hint'} id={hintId}>
+                            {t('catalog.photo.rules')}
                         </p>
-                    )}
-                    <p className={'bk-hint'} id={hintId}>
-                        {t('catalog.photo.rules')}
-                    </p>
-                </div>
+                    </div>
+                </CommandForm>
             )}
             {!committed && !stale && refusal?.code !== VALIDATION_FAILED && !busy && <CommandPanels control={control} />}
+            {throttled && <Button label={t('ux.action.edit_again')} variant={'quiet'} onClick={onAgain} />}
         </div>
     );
 }

@@ -108,6 +108,30 @@ async function countPrints(context: BrowserContext): Promise<void> {
     });
 }
 
+/**
+ * What the print view's own tab reports, from before its first script (SEC-HDR-03; review
+ * finding R-03): `watch` of one page never sees another page of the context.
+ */
+async function watchTabs(context: BrowserContext): Promise<string[]> {
+    const problems: string[] = [];
+
+    await context.addInitScript(() => {
+        document.addEventListener('securitypolicyviolation', (event) => {
+            console.error(`CSP violation: ${event.violatedDirective} ${event.blockedURI}`);
+        });
+    });
+    context.on('page', (tab) => {
+        tab.on('console', (message) => {
+            if (message.type() === 'error' || message.type() === 'warning') {
+                problems.push(`console ${message.type()}: ${message.text()}`);
+            }
+        });
+        tab.on('pageerror', (error) => problems.push(`page error: ${error.message}`));
+    });
+
+    return problems;
+}
+
 // 1440 × 900, the 200 % zoom of 1280 × 800 and 320 × 640.
 for (const width of [WIDTHS[0], WIDTHS[4], WIDTHS[7]]) {
     test(`an Operations admin sets, replaces and removes a photo, at ${width?.name ?? ''}`, async ({ browser }) => {
@@ -132,11 +156,32 @@ for (const width of [WIDTHS[0], WIDTHS[4], WIDTHS[7]]) {
         await expect(page.getByRole('img', { name: 'Belum ada foto' })).toBeVisible();
         await checked(page);
 
+        // A file above the limit, also above every outer limit, is refused at the field,
+        // and no request leaves (review finding R-02). Enter opens no chooser (UXA-10).
+        let posted = 0;
+        let chooserOpened = 0;
+        page.on('request', (request) => {
+            if (request.method() === 'POST' && request.url().includes('/commands/product_photo.set')) {
+                posted += 1;
+            }
+        });
+        page.on('filechooser', () => {
+            chooserOpened += 1;
+        });
+        await upload.setInputFiles({ name: 'foto.png', mimeType: 'image/png', buffer: Buffer.alloc(12 * 1024 * 1024) });
+        await expect(page.getByText('Berkas paling besar 8 MB.')).toBeVisible();
+        expect(posted).toBe(0);
+        await upload.focus();
+        await page.keyboard.press('Enter');
+        await page.waitForTimeout(200);
+        expect(chooserOpened).toBe(0);
+
         // Accepted: the page shows it through RD-07.
         const file = await pngFile(page);
 
         await upload.setInputFiles(file);
         await expect(page.getByText('Foto disimpan.')).toBeVisible();
+        expect(posted).toBe(1);
         const photo = page.getByRole('img', { name: `Foto ${product.name}` });
 
         await expect(photo).toBeVisible();
@@ -178,6 +223,7 @@ for (const width of [WIDTHS[0], WIDTHS[4], WIDTHS[7]]) {
     test(`an Operations admin prints labels with code, name and SKU and never a price, at ${width?.name ?? ''}`, async ({ browser }) => {
         const context = await contextAt(browser, width ?? WIDTHS[0]!);
         await countPrints(context);
+        const problems = await watchTabs(context);
         const page = await context.newPage();
         const watched = await watch(page);
 
@@ -195,6 +241,12 @@ for (const width of [WIDTHS[0], WIDTHS[4], WIDTHS[7]]) {
         await expect(page.getByLabel('Barcode', { exact: true })).toHaveCount(0);
         await expect(page.getByText(product.barcode)).toBeVisible();
         await checked(page);
+
+        // A field's label is a field's label, not the size of a printed one (review finding R-01).
+        const fieldLabel = await page.locator('.bk-label').first().boundingBox();
+
+        expect(fieldLabel?.height ?? 0).toBeLessThan(40);
+        await expect(page.locator('.bk-barcode-label')).toHaveCount(0);
 
         // The field keeps to its limits, and Enter never prints (UXA-10).
         const quantity = page.getByLabel(/^Jumlah label/);
@@ -222,7 +274,7 @@ for (const width of [WIDTHS[0], WIDTHS[4], WIDTHS[7]]) {
 
         await tab.waitForURL((url) => new RegExp(`^/products/${product.id}/labels/print/\\d+$`).test(url.pathname));
         expect(sent).toBe(1);
-        const labels = tab.locator('.bk-label');
+        const labels = tab.locator('.bk-barcode-label');
 
         await expect(labels).toHaveCount(3);
         await expect(tab.getByRole('heading', { level: 1, name: 'Cetak label barcode' })).toBeAttached();
@@ -244,6 +296,7 @@ for (const width of [WIDTHS[0], WIDTHS[4], WIDTHS[7]]) {
                 bars: group?.getAttribute('fill'),
                 transform: group?.getAttribute('transform'),
                 count: group?.querySelectorAll('rect').length ?? 0,
+                styled: svg.matches('[style]') || svg.querySelector('[style]') !== null,
                 width: svg.getBoundingClientRect().width,
                 labelWidth: svg.parentElement?.getBoundingClientRect().width,
                 labelHeight: svg.parentElement?.getBoundingClientRect().height,
@@ -254,6 +307,7 @@ for (const width of [WIDTHS[0], WIDTHS[4], WIDTHS[7]]) {
         expect(symbol.background).toBe('#ffffff');
         expect(symbol.bars).toBe('#000000');
         expect(symbol.transform).toBe('translate(10, 0)');
+        expect(symbol.styled, 'the content security policy refuses a style attribute').toBe(false);
         expect(symbol.count).toBeGreaterThan(10);
         expect(symbol.modules).toBeGreaterThan(40);
         // 96 CSS pixels to the inch, 25.4 mm to the inch.
@@ -288,9 +342,53 @@ for (const width of [WIDTHS[0], WIDTHS[4], WIDTHS[7]]) {
         await page.waitForURL((url) => url.pathname === `/products/${product.id}/labels`);
 
         expect(injected(watched.problems)).toEqual([]);
+        expect(injected(problems)).toEqual([]);
         await context.close();
     });
 }
+
+test('the barcode chosen is the one printed, and the page works from the keyboard', async ({ browser }) => {
+    // UXI-199 with two active barcodes (review finding R-07).
+    const context = await contextAt(browser, WIDTHS[0]!);
+    await countPrints(context);
+    const page = await context.newPage();
+
+    await signedIn(context, page, 'Agus');
+    const product = await newProduct(page);
+
+    await page.getByRole('button', { name: 'Buat barcode internal' }).click();
+    await expect(page.getByText(/^Barcode internal BK-P-[0-9A-Z]{16} dibuat\.$/)).toBeVisible();
+    const generated = /BK-P-[0-9A-Z]{16}/.exec((await page.getByText(/^Barcode internal BK-P-/).textContent()) ?? '')?.[0] ?? '';
+
+    await page.goto(`/products/${product.id}/labels`);
+    const barcode = page.getByLabel(/^Barcode/);
+
+    await expect(barcode.locator('option')).toHaveText([product.barcode, generated]);
+    await expect(barcode).toHaveValue(await barcode.locator('option').first().getAttribute('value') ?? '');
+    await barcode.selectOption({ label: generated });
+
+    // The keyboard path: the fields in order, Enter sends nothing, Space prints.
+    await barcode.focus();
+    await page.keyboard.press('Tab');
+    await expect(page.getByLabel(/^Jumlah label/)).toBeFocused();
+    await page.keyboard.press('Tab');
+    const print = page.getByRole('button', { name: 'Cetak', exact: true });
+
+    await expect(print).toBeFocused();
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(200);
+    expect(context.pages()).toHaveLength(1);
+    const [tab] = await Promise.all([context.waitForEvent('page'), page.keyboard.press('Space')]);
+
+    await tab.waitForURL((url) => /\/labels\/print\/\d+$/.test(url.pathname));
+    await expect(tab.locator('.bk-barcode-label')).toHaveCount(1);
+    await expect(tab.locator('.bk-barcode-label').getByText(generated, { exact: true })).toBeVisible();
+    await tab.close();
+
+    // The page keeps its choice for another print.
+    await expect(barcode.locator('option:checked')).toHaveText(generated);
+    await context.close();
+});
 
 test('a request no longer active is stale, a failed print is asked again, and a cashier reaches nothing', async ({ browser }) => {
     const context = await contextAt(browser, WIDTHS[0]!);
@@ -308,12 +406,30 @@ test('a request no longer active is stale, a failed print is asked again, and a 
     await print.click();
     await expect(page.getByText('Cetak atau unduh gagal')).toBeVisible({ timeout: 90_000 });
     await expect.poll(() => context.pages().length).toBe(1);
+
+    // What is frozen stays read-only (review finding R-05), and the same request goes again.
+    const quantity = page.getByLabel(/^Jumlah label/);
+
+    await expect(quantity).toBeDisabled();
     await page.unroute('**/commands/document.print_labels');
     const [tab] = await Promise.all([context.waitForEvent('page'), page.getByRole('button', { name: 'Coba lagi' }).click()]);
 
     await tab.waitForURL((url) => /\/labels\/print\/\d+$/.test(url.pathname));
     await tab.close();
     await expect(page.getByText('Cetak atau unduh gagal')).toHaveCount(0);
+    await expect(quantity).toBeEnabled();
+
+    // A page to reload (UXS-09): the tab closes and "Cetak" opens no other (review finding R-06).
+    await page.route('**/commands/document.print_labels', (route) => route.fulfill({ status: 419, contentType: 'application/json', body: '{}' }));
+    await print.click();
+    await expect(print).toHaveAttribute('aria-disabled', 'true');
+    await expect.poll(() => context.pages().length).toBe(1);
+    await print.click({ force: true });
+    await page.waitForTimeout(200);
+    expect(context.pages()).toHaveLength(1);
+    await page.unroute('**/commands/document.print_labels');
+    await page.reload();
+    await expect(print).not.toHaveAttribute('aria-disabled', 'true');
 
     // UXS-17: the barcode was retired in another tab; the page reads its barcodes again.
     const other = await context.newPage();
@@ -327,6 +443,7 @@ test('a request no longer active is stale, a failed print is asked again, and a 
     await other.close();
 
     await print.click();
+    await expect(page.getByText('Data sudah berubah')).toBeVisible();
     await expect(page.getByText(product.barcode)).toHaveCount(0);
     await expect(print).toHaveAttribute('aria-disabled', 'true');
     await expect.poll(() => context.pages().length).toBe(1);

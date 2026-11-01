@@ -89,48 +89,48 @@ function LabelsForm({ title, product, barcodes }: { title: string; product: Prod
             {stale && <StateNotice state={STALE_STATE} />}
             <Card>
                 <CommandForm>
-                    {barcodes.length > 1 ? (
-                        <Field label={t('catalog.labels.barcode')} required={true}>
-                            <SelectInput value={barcode === null ? '' : String(barcode.mappingId)} onChange={(event) => setChosen(barcodes.find((candidate) => String(candidate.mappingId) === event.target.value)?.mappingId ?? null)}>
-                                {barcodes.map((candidate) => (
-                                    <option key={candidate.mappingId} value={String(candidate.mappingId)}>
-                                        {candidate.token}
-                                    </option>
-                                ))}
-                            </SelectInput>
-                        </Field>
-                    ) : (
-                        barcode !== null && <p className={'bk-token'}>{barcode.token}</p>
-                    )}
-                    <PrintRun key={opening} productId={product.id} mappingId={barcode?.mappingId ?? null} count={count} quantity={quantity} onQuantity={setQuantity} onPrinted={again} onStale={onStale} />
+                    <PrintRun key={opening} productId={product.id} barcodes={barcodes} barcode={barcode} onBarcode={setChosen} count={count} quantity={quantity} onQuantity={setQuantity} onStart={() => setStale(false)} onPrinted={again} onStale={onStale} />
                 </CommandForm>
             </Card>
         </CommandLayout>
     );
 }
 
-/** "Jumlah label" with "Cetak" (UXI-199, UXI-200), whose request starts again for each print. */
+/**
+ * The fields (UXI-199) with "Cetak" (UXI-200), whose request starts again for each print.
+ * The fields are read-only while a frozen request is out or may be sent again, so that what
+ * they show is what is recorded (INTERACTION_CONTRACTS section 1.3).
+ */
 function PrintRun({
     productId,
-    mappingId,
+    barcodes,
+    barcode,
+    onBarcode,
     count,
     quantity,
     onQuantity,
+    onStart,
     onPrinted,
     onStale,
 }: {
     productId: number;
-    mappingId: number | null;
+    barcodes: readonly LabelBarcode[];
+    barcode: LabelBarcode | null;
+    onBarcode: (mappingId: number | null) => void;
     count: number | null;
     quantity: string;
     onQuantity: (text: string) => void;
+    onStart: () => void;
     onPrinted: () => void;
     onStale: () => void;
 }) {
     const control = useCommand(CATALOG_COMMANDS.printLabels);
     const { phase } = control;
     const tab = useRef<Window | null>(null);
+    const mappingId = barcode?.mappingId ?? null;
     const busy = phase.kind === 'submitting';
+    const frozen = busy || phase.kind === 'uncertain' || phase.kind === 'held' || phase.kind === 'throttled';
+    const canSend = phase.kind === 'idle' || phase.kind === 'rejected' || phase.kind === 'not_committed' || phase.kind === 'throttled';
     const refusal = phase.kind === 'rejected' ? phase.refusal : null;
     const stale = refusal?.code === STALE_VERSION;
     const invalid = refusal?.code === VALIDATION_FAILED;
@@ -173,8 +173,10 @@ function PrintRun({
         tab.current = window.open('', '_blank');
     };
 
+    // A tab only for a request that really starts: the page's other phases send nothing.
     const print = (): void => {
-        if (mappingId !== null && count !== null) {
+        if (canSend && mappingId !== null && count !== null) {
+            onStart();
             open();
             control.submit({ productId, mappingId, count });
         }
@@ -196,13 +198,26 @@ function PrintRun({
 
     return (
         <>
+            {barcodes.length > 1 ? (
+                <Field label={t('catalog.labels.barcode')} required={true}>
+                    <SelectInput disabled={frozen} value={barcode === null ? '' : String(barcode.mappingId)} onChange={(event) => onBarcode(barcodes.find((candidate) => String(candidate.mappingId) === event.target.value)?.mappingId ?? null)}>
+                        {barcodes.map((candidate) => (
+                            <option key={candidate.mappingId} value={String(candidate.mappingId)}>
+                                {candidate.token}
+                            </option>
+                        ))}
+                    </SelectInput>
+                </Field>
+            ) : (
+                barcode !== null && <p className={'bk-token'}>{barcode.token}</p>
+            )}
             <Field label={t('catalog.labels.quantity')} required={true} hint={t('catalog.labels.size_help')} error={refusal === null ? undefined : catalogFieldMessage(refusal.fields['payload.count'])}>
-                <TextInput type={'text'} inputMode={'numeric'} autoComplete={'off'} maxLength={3} value={quantity} onChange={(event) => onQuantity(event.target.value)} />
+                <TextInput type={'text'} inputMode={'numeric'} autoComplete={'off'} maxLength={3} disabled={frozen} value={quantity} onChange={(event) => onQuantity(event.target.value)} />
             </Field>
             {failed && <StateNotice state={FAILED_STATE} actions={<Button label={t('ux.action.retry')} variant={'secondary'} enterActivates={false} onClick={retry} />} />}
             {!failed && !stale && !invalid && !committed && phase.kind !== 'submitting' && phase.kind !== 'idle' && <CommandPanels control={control} />}
             <div className={'bk-actions'}>
-                <Button label={t('catalog.labels.print')} size={'lg'} enterActivates={false} busy={busy} disabledReason={mappingId === null || count === null ? t('ux.disabled.form_incomplete') : undefined} onClick={failed ? retry : print} />
+                <Button label={t('catalog.labels.print')} size={'lg'} enterActivates={false} busy={busy} unavailable={phase.kind === 'reload'} disabledReason={mappingId === null || count === null ? t('ux.disabled.form_incomplete') : undefined} onClick={failed ? retry : print} />
             </div>
         </>
     );

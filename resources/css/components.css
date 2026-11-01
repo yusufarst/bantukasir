@@ -2204,14 +2204,14 @@
     }
 
     /* The labels of RP-306P (DC-05, DESIGN_SYSTEM section 12): their real size in millimetres, black on white whatever the theme. */
-    .bk-labels {
+    .bk-barcode-labels {
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
         padding: 16px;
     }
 
-    .bk-label {
+    .bk-barcode-label {
         display: flex;
         flex-direction: column;
         justify-content: space-between;
@@ -2227,19 +2227,19 @@
         text-align: center;
     }
 
-    .bk-label__name,
-    .bk-label__text {
+    .bk-barcode-label__name,
+    .bk-barcode-label__text {
         margin: 0;
         padding: 0 2mm;
     }
 
-    .bk-label__text {
+    .bk-barcode-label__text {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
 
-    .bk-label__bars {
+    .bk-barcode-label__bars {
         display: block;
         flex: none;
         width: 50mm;

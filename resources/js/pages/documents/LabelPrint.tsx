@@ -27,27 +27,34 @@ export default function LabelPrint({ label }: { label: Label }) {
     const { shop } = usePage<{ shop?: Shop | null }>().props;
     const title = t('catalog.labels.title');
     const [failed, setFailed] = useState(false);
+    const drawingFailed = useRef(false);
     const printed = useRef(false);
 
-    // Once, after the first drawing and once the font is there to measure the text.
+    const onFailed = (): void => {
+        drawingFailed.current = true;
+        setFailed(true);
+    };
+
+    // Once, after the first drawing and once the font is there to measure the text; never
+    // for an empty sheet. A drawing's layout effect runs before this.
     useEffect(() => {
-        if (printed.current || failed) {
+        if (printed.current || drawingFailed.current) {
             return;
         }
 
         printed.current = true;
         void document.fonts.ready.then(() => window.print());
-    }, [failed]);
+    }, []);
 
     return (
         <>
             <Head title={documentTitle(title, brandOf(shop))} />
-            <main className={'bk-labels'}>
+            <main className={'bk-barcode-labels'}>
                 <h1 className={'bk-sr-only'}>{title}</h1>
                 {failed ? (
                     <StateNotice state={FAILED_STATE} />
                 ) : (
-                    [...Array(label.count).keys()].map((index) => <LabelCard key={index} label={label} onFailed={() => setFailed(true)} />)
+                    [...Array(label.count).keys()].map((index) => <LabelCard key={index} label={label} onFailed={onFailed} />)
                 )}
             </main>
         </>
@@ -70,11 +77,11 @@ function LabelCard({ label, onFailed }: { label: Label; onFailed: () => void }) 
     }, [label.code]);
 
     return (
-        <article className={'bk-label'}>
-            <p className={'bk-label__name bk-clamp-2'}>{label.name}</p>
-            <svg ref={bars} className={'bk-label__bars'} role={'img'} aria-label={label.code} />
-            <p className={'bk-label__text'}>{label.code}</p>
-            <p className={'bk-label__text'}>{t('documents.label.sku', { sku: label.sku })}</p>
+        <article className={'bk-barcode-label'}>
+            <p className={'bk-barcode-label__name bk-clamp-2'}>{label.name}</p>
+            <svg ref={bars} className={'bk-barcode-label__bars'} role={'img'} aria-label={label.code} />
+            <p className={'bk-barcode-label__text'}>{label.code}</p>
+            <p className={'bk-barcode-label__text'}>{t('documents.label.sku', { sku: label.sku })}</p>
         </article>
     );
 }

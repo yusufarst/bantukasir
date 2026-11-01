@@ -191,6 +191,42 @@ final class ProductPhotoTest extends DatabaseTestCase
         $this->assertSame(1, $this->versionOf($this->product));
     }
 
+    public function test_the_fields_of_a_multipart_envelope_are_read_only_as_canonical_whole_numbers(): void
+    {
+        // TR-VAL-06, review finding R-08: a form field stands for a whole number only in
+        // its canonical form.
+        $this->as('Agus');
+        $before = $this->facts();
+
+        foreach (['+1', '01', '1.0', '0x1', '1e0', str_repeat('9', 19), 'satu'] as $text) {
+            $this->post(self::SET, $this->multipart(UploadedFile::fake()->createWithContent('a.png', TestImages::png()), ['payload' => ['productId' => $text]]), ['Accept' => 'application/json'])
+                ->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
+            $this->post(self::SET, $this->multipart(UploadedFile::fake()->createWithContent('a.png', TestImages::png()), ['expected' => ['productVersion' => $text]]), ['Accept' => 'application/json'])
+                ->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
+        }
+
+        $this->assertSame($before, $this->facts());
+    }
+
+    public function test_the_checksum_of_the_file_stands_for_it_in_the_fingerprint(): void
+    {
+        // RC-25; INTERACTION_CONTRACTS section 1.1, review finding R-08.
+        $this->as('Agus');
+        $intent = (string) Str::uuid();
+        $key = (string) Str::uuid();
+        $bytes = TestImages::png();
+        $first = $this->postPhoto(UploadedFile::fake()->createWithContent('a.png', $bytes), $this->product, 1, $intent, $key)->assertStatus(201);
+        $before = $this->facts();
+
+        // The same bytes under another name are the same request.
+        $this->postPhoto(UploadedFile::fake()->createWithContent('lain.webp', $bytes), $this->product, 1, $intent, $key)->assertStatus(200)->assertJsonPath('repeated', true)->assertJsonPath('commandId', $first->json('commandId'));
+
+        // Other bytes under the same key are held, never run.
+        $this->postPhoto(UploadedFile::fake()->createWithContent('a.png', TestImages::png(41, 21)), $this->product, 1, $intent, $key)->assertStatus(409)->assertJsonPath('code', 'IDEMPOTENCY_CONFLICT');
+
+        $this->assertSame($before, $this->facts());
+    }
+
     public function test_a_replaced_or_removed_photo_is_kept_and_no_page_shows_it(): void
     {
         // AC-018-02, D-042.
@@ -212,6 +248,11 @@ final class ProductPhotoTest extends DatabaseTestCase
         $this->assertSame($firstBytes, Storage::disk(MediaStore::DISK)->get($firstKey));
         $this->assertSame('/media/'.$second, $this->detailOf()['photo']);
         $this->assertSame('/media/'.$second.'?variant=thumb', $this->rowOf()['thumbnail']);
+
+        // No page names the replaced photo, and RD-07 still answers its identifier: its
+        // file is kept and every role may see product photos (INTERACTION_CONTRACTS
+        // section 3.7; evidence, reading 1).
+        $this->get('/media/'.$first)->assertOk();
 
         // Removed: the placeholder, by no path at all; both files and records stay.
         $envelope = $this->commandEnvelope('product_photo.remove', ['productId' => $this->product], ['productVersion' => 3]);
@@ -393,15 +434,26 @@ final class ProductPhotoTest extends DatabaseTestCase
      */
     private function postPhoto(UploadedFile|string $photo, ?int $product = null, int $version = 1, ?string $intent = null, ?string $key = null): TestResponse
     {
-        return $this->post(self::SET, [
+        return $this->post(self::SET, $this->multipart($photo, ['expected' => ['productVersion' => (string) $version], 'payload' => ['productId' => (string) ($product ?? $this->product)]], $intent, $key), ['Accept' => 'application/json']);
+    }
+
+    /**
+     * The form fields of RC-25, with the expected version or the product of $texts.
+     *
+     * @param  array{expected?: array{productVersion: string}, payload?: array{productId: string}}  $texts
+     * @return array<string, mixed>
+     */
+    private function multipart(UploadedFile|string $photo, array $texts, ?string $intent = null, ?string $key = null): array
+    {
+        return [
             'operation' => 'product_photo.set',
             'version' => '1',
             'sourceIntentId' => $intent ?? (string) Str::uuid(),
             'idempotencyKey' => $key ?? (string) Str::uuid(),
             'recoveryEpoch' => $this->epoch,
-            'expected' => ['productVersion' => (string) $version],
-            'payload' => ['productId' => (string) ($product ?? $this->product), 'photo' => $photo],
-        ], ['Accept' => 'application/json']);
+            'expected' => $texts['expected'] ?? ['productVersion' => '1'],
+            'payload' => [...($texts['payload'] ?? ['productId' => (string) $this->product]), 'photo' => $photo],
+        ];
     }
 
     /**
