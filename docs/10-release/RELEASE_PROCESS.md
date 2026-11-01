@@ -41,6 +41,7 @@ How a revision of BantuKasir reaches staging and production, how its migrations 
 
 - Versions are `vMAJOR.MINOR.PATCH`; `v1.0.0` is the first production release of V1. PATCH: fixes without a schema change; MINOR: features or additive and expand migrations; MAJOR: a release that removes a capability or contracts the schema in a way an older image cannot use.
 - A release candidate is one commit on `develop` (ADR-011 item 3) whose CI checks pass and whose release notes list every change, every migration with its class and every Task it closes.
+- **The candidate tag** is `vMAJOR.MINOR.PATCH-rc.N`, N from 1, for example `v1.0.0-rc.1`: the version it would become, for staging (TASK-044). Its commit is on `develop` or `main`; a release tag's commit is on `main`. The release workflow refuses every other tag or commit (`scripts/release/check-tag.sh`; TASK-014).
 
 ## 4. Release candidate checks and the integrity report
 
@@ -53,7 +54,9 @@ The release workflow (ADR-011 item 5) builds the image and runs, on it:
 
 The scan of item 3 reports every finding and fails on a high or critical finding that has a fix, has an unknown fix state, is known to be exploited, or is outside the accepted list, and on a report it cannot trust (`scripts/checks/image-scan-gate.sh`, `scripts/checks/image-scan-accepted.json`; D-112, D-115). That list is a temporary acceptance for development: passing it authorizes no deployment to staging or production, and it does not replace the review of section 12.
 
-The **release integrity report**, attached to the release record, states: the version, commit, tag and image digest; the base image digests; the lockfile hashes; the CI run and its results; the suites and their status on this revision (TEST_STRATEGY section 8); the migrations, each with its class and rehearsal evidence; the scan results; the publication guard's result; the compatibility of the previous image with the new schema; known issues; and the cost inventory unchanged or its approved exceptions (COST_POLICY).
+The workflow publishes the image these checks passed, under its version only, never a floating tag, and refuses a version already published; its result is the digest. `.github/workflows/release-dry-run.yml` runs the same path without publishing when a file of the path changes (TASK-014).
+
+The **release integrity report** (template `docs/10-release/templates/RELEASE_INTEGRITY_REPORT.md`, which the workflow fills with what it knows), attached to the release record, states: the version, commit, tag and image digest; the base image digests; the lockfile hashes; the CI run and its results; the suites and their status on this revision (TEST_STRATEGY section 8); the migrations, each with its class and rehearsal evidence; the scan results; the publication guard's result; the compatibility of the previous image with the new schema; known issues; and the cost inventory unchanged or its approved exceptions (COST_POLICY).
 
 ## 5. Migration safety
 
@@ -70,7 +73,7 @@ The **release integrity report**, attached to the release record, states: the ve
 | REL-20 | Every migration is reviewed as SQL (SCH-51) and carries its class, its expected duration and lock impact, and its verification queries: row counts, constraints valid, privileges equal to SCHEMA section 10, and a clean `reconciliation:run`. A production rollback never relies on a down migration. | SCH-51, PDS §2 |
 | REL-21 | Rehearsal on a populated isolated target: with the provisional benchmark dataset in CI or locally for every migration; and, for every migration that changes or moves existing data, on a restore-drill target holding the latest production backup (BACKUP_RECOVERY section 8). An empty database is never enough. | PDS §2, TECHNICAL_RULES section 13.2 |
 | REL-22 | DDL waits at most the migration role's `lock_timeout` of 5 seconds (ENVIRONMENTS ENV-31); an index on a large table is built concurrently, in its own migration step outside a transaction. | ENV-31 |
-| REL-23 | **Preflight** (`release:preflight`, run by the migration job before it migrates): the operator's typed environment name equals the configuration and the database marker (ENV-04); in production a successful backup less than one hour old exists; the pending migrations are exactly the release record's list; no migration is marked destructive without the approval reference; `synchronous_commit` is on; the backup container's schedule is paused. Any failure stops the job before the first statement. | ADR-011 item 7 |
+| REL-23 | **Preflight** (`release:preflight`, run by the migration job before it migrates): the operator's typed environment name equals the configuration and the database marker (ENV-04); in production a successful backup less than one hour old exists; the pending migrations are exactly the release record's list; no migration is marked destructive without the approval reference; `synchronous_commit` is on; the backup container's schedule is paused, as the operator confirms. Any failure stops the job before the first statement. The first installation has no backup yet and no table to hold one (RB-23 step 9 takes the first after the migrations), so the operator may type `--first-installation`. It is accepted only when the catalog shows the database truly empty, with nothing beyond what the setup of ENV-30 leaves: the schema `public`, plpgsql and pg_trgm with its members. Any other schema, relation in any schema, function, operator, type, extension, large object, collation, text search object, publication or other object made after the server's initialization refuses it. It waives the backup and nothing else (TASK-014, D-116). | ADR-011 item 7, D-116 |
 | REL-24 | A migration that needs no write stop still runs in the authorized window; one that does runs in maintenance mode. | PDS §2 |
 
 ## 6. RB-20 — Deploying a release
@@ -85,11 +88,11 @@ The **release integrity report**, attached to the release record, states: the ve
 **In the window (production)**
 
 5. Tell the shop when the window starts; the window lies outside opening hours unless the Owner authorized otherwise.
-6. Pause the backup container's schedule; run `backup:run --reason=pre-release`; the run must succeed.
-7. If the release has migrations: switch on maintenance mode, with a bypass only for the operator.
-8. Run the migration job: preflight (REL-23), then the migrations, then the verification queries of REL-20.
-9. Deploy the new digest to the application and backup resources.
-10. Run the checks of section 7; switch off maintenance mode.
+6. Pause the backup container's schedule; run `backup:run --reason=PRE_RELEASE`; the run must succeed. A first installation has no table for it yet: RB-23 step 7.
+7. If the release has migrations: switch on maintenance mode (`php artisan down`), with a bypass only for the operator: a request for the path that the application's `APP_MAINTENANCE_BYPASS_SECRET` holds gives that browser the way past the maintenance page, and nothing more (ENVIRONMENTS section 11).
+8. Run the migration job, `bantukasir-migration-job` in a one-off container of the release image (its usage is at the top of `docker/app/migration-job.sh`): preflight (REL-23), then the migrations, then the verification queries of REL-20.
+9. Deploy the new digest to the application and backup resources, with `APP_RELEASE_IMAGE_DIGEST` set to it: an image cannot hold its own digest, and the manifest of a backup names it (BACKUP_RECOVERY section 5). If step 7 switched on maintenance mode, the application resource also gets `APP_START_IN_MAINTENANCE=1`: the mode is a file of the old container, and the new container, without this setting, would serve the shop at once. With it, the container switches the mode on before it serves.
+10. Run the checks of section 7; switch off maintenance mode (`php artisan up`, in the new container), and remove `APP_START_IN_MAINTENANCE` from the resource. Until its next start the setting does nothing more; a restart before it is removed only switches the mode on again.
 11. Resume the backup schedule and run a backup at once.
 12. Report the result to the Owner and for the release record (section 9).
 
@@ -108,13 +111,13 @@ Read-only checks (REL-07), by the operator, and by the Owner or a staff member w
 
 ## 8. RB-22 — Rolling back
 
-1. A failure found before the shop resumes: if the release record states that the previous image works with the new schema (additive and expand migrations), deploy the previous digest; otherwise prepare a forward fix as a new release. A migration that failed part-way on PostgreSQL rolled back in its own transaction; the database stays at the previous migration and the previous digest is deployed.
+1. A failure found before the shop resumes: if the release record states that the previous image works with the new schema (additive and expand migrations), deploy the previous digest; otherwise prepare a forward fix as a new release. A migration that failed part-way on PostgreSQL rolled back in its own transaction; the database stays at the previous migration and the previous digest is deployed. Either digest keeps `APP_START_IN_MAINTENANCE=1` until RB-20 step 10, so that the shop does not resume before the checks.
 2. A failure that damaged data is an S1 incident (OPERATIONS_RUNBOOK RB-03): repair by RB-04, or restore by BACKUP_RECOVERY RB-01 with the Owner's authorization — never by restoring over live data.
 3. Record the rollback in the release record.
 
 ## 9. The release record
 
-Written into `docs/10-release/records/` from the operator's report, one file per release (`RELEASE-<version>.md`), without real identities: the version, commit, tag and digest; the Owner's authorization (date and reference); the window; the pre-release backup's identifier; the migrations applied and their verification results; the checks of section 7; the operator's role (never a name in the public repository); incidents and rollbacks; the integrity report. The folder is created with the first record.
+Written into `docs/10-release/records/` from the operator's report, one file per release (`RELEASE-<version>.md`, from the template `docs/10-release/templates/RELEASE_RECORD.md`), without real identities: the version, commit, tag and digest; the Owner's authorization (date and reference); the window; the pre-release backup's identifier; the migrations applied and their verification results; the checks of section 7; the operator's role (never a name in the public repository); incidents and rollbacks; the integrity report. The folder is created with the first record.
 
 ## 10. RB-23 — First installation
 
@@ -126,7 +129,7 @@ For each new shop, before its pilot. Steps 1 to 5 are also the server rebuild of
 4. The backup store, its buckets and keys, and both key pairs generated on the operator's machine; the production sealed copy tested and handed to the Owner (BACKUP_RECOVERY BKP-20).
 5. The heartbeat checks, each alert tested once.
 6. Staging: deploy the release (RB-20); rehearse every operator procedure (suite OPPROC01); run UAT (UAT_PILOT section 2); rehearse the cutover of RB-24 with synthetic data.
-7. Production, with the Owner's authorization: deploy the release; run OP-01 `owner:bootstrap` with the shop's name and the Owner's email; hand the link to the Owner directly (OPERATIONS_RUNBOOK OPR-06); record the Owner recovery facts (OPERATIONS_RUNBOOK section 8).
+7. Production, with the Owner's authorization: deploy the release, by RB-20 without its step 6's backup, whose table does not exist yet, and with `--first-installation` on the migration job (REL-23); the first backup is step 9. If its migrations stop part-way, the database is no longer empty and has no table of backups, so the job refuses it with the option and without it. Stop there and report to the Owner: the way on is to recreate that database by ENV-30, a destructive operation that needs his approval of that exact operation (PRODUCTION_DATA_SAFETY section 1). Then run OP-01 `owner:bootstrap` with the shop's name and the Owner's email; hand the link to the Owner directly (OPERATIONS_RUNBOOK OPR-06); record the Owner recovery facts (OPERATIONS_RUNBOOK section 8).
 8. **Owner:** set the password; complete the BusinessProfile; create the cash registers; create the staff accounts and hand over their links, telling each person to report a password they did not set (D-056).
 9. The first production backup and the first production drill; the measured objectives go to the Owner for gate G4 (BACKUP_RECOVERY section 12).
 10. Gate DEVICES on staging with the shop's real devices (DEVICE_VERIFICATION).
@@ -140,7 +143,7 @@ Onboarding is started and released **once** for a shop's business data; after it
 2. **Owner:** start onboarding ("Mulai masa input stok awal", RC-12). Ordinary postings and Sales are refused while it is active (G-10).
 3. Count the stock. Enter it as opening stock, at most 100 rows per command, with zero counts on the checklist (RC-11); correct mistakes before the release only by withdrawing a zero count or reversing an OPENING and entering its one replacement (D-087).
 4. **Owner:** review the checklist until every product is counted or zero, and the stock list matches the count. No database lock is held while people count (TR-TX-03).
-5. Run `backup:run --reason=pre-release-onboarding`.
+5. Run `backup:run --reason=ON_DEMAND`.
 6. **Owner:** release onboarding ("Akhiri masa input stok awal", RC-13). It is final.
 7. Cashiers open their sessions with an explicit opening amount (Rp0 is valid); selling starts and the pilot begins.
 

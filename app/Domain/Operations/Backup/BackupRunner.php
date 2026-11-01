@@ -59,7 +59,7 @@ final class BackupRunner
     public const string RECIPIENT_METADATA = 'bk-recipient';
 
     /** The classes of table whose counts the restore compares (BACKUP_RECOVERY section 5). */
-    private const array COUNTED_CLASSES = ['F', 'FS', 'M', 'S'];
+    public const array COUNTED_CLASSES = ['F', 'FS', 'M', 'S'];
 
     /** The names of ENV-04, the local and test ones included for the rehearsal. */
     private const array ENVIRONMENTS = ['local', 'test', 'drill', 'staging', 'production'];

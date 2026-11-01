@@ -16,6 +16,8 @@
 #   8. a secret scan of the image's file system and a vulnerability scan of its
 #      packages; the package lists for the evidence (AC-012-01).
 #
+# Step 3 runs the migrations by the migration job of the release (TASK-014).
+#
 # Every check runs even after a failure, so that one run reports them all. The
 # secrets are generated here and live for this run only (EXECUTION_CONTEXT EXC-63).
 set -uo pipefail
@@ -34,6 +36,7 @@ network=bk-image-network
 database=bk-image-database
 web=bk-image-web
 untrusted=bk-image-untrusted
+window=bk-image-window
 stub=bk-image-stub
 backup=bk-image-backup
 refusal=bk-image-refusal
@@ -48,7 +51,7 @@ passes=0
 failures=0
 
 cleanup() {
-    docker rm -f "$web" "$untrusted" "$stub" "$backup" "$database" "$refusal" "$rootfs_container" >/dev/null 2>&1
+    docker rm -f "$web" "$untrusted" "$window" "$stub" "$backup" "$database" "$refusal" "$rootfs_container" >/dev/null 2>&1
     docker network rm "$network" >/dev/null 2>&1
     rm -rf "$work"
 }
@@ -136,11 +139,31 @@ expect_refused 'the start of the release never migrates or seeds' grep -Eq 'arti
 expect_refused 'the local start never migrates or seeds' grep -Eq 'artisan +(migrate|db:)' docker/app/entrypoint-local.sh
 
 section 'The build'
-if ! docker build --target release -f docker/app/Dockerfile -t "$image" .; then
+# The release workflows give the version, the commit and the source of a release
+# (.github/workflows/release.yml, release-dry-run.yml; TASK-014): they name the image
+# by its labels and the manifest of a backup. The image these checks pass is the one
+# the release workflow publishes.
+release_build=()
+if [ -n "${RELEASE_VERSION:-}" ]; then
+    release_build=(
+        --build-arg "APP_RELEASE_VERSION=$RELEASE_VERSION"
+        --build-arg "APP_RELEASE_COMMIT=${RELEASE_COMMIT:-}"
+        --label "org.opencontainers.image.version=$RELEASE_VERSION"
+        --label "org.opencontainers.image.revision=${RELEASE_COMMIT:-}"
+        --label "org.opencontainers.image.source=${RELEASE_SOURCE:-}"
+    )
+fi
+if ! docker build "${release_build[@]}" --target release -f docker/app/Dockerfile -t "$image" .; then
     fail 'the release image builds'
     exit 1
 fi
 pass 'the release image builds'
+if [ -n "${RELEASE_VERSION:-}" ]; then
+    expect 'the image is labelled with its version' "$RELEASE_VERSION" "$(docker inspect --format '{{index .Config.Labels "org.opencontainers.image.version"}}' "$image")"
+    expect 'the image is labelled with its commit' "$RELEASE_COMMIT" "$(docker inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$image")"
+    expect 'the image holds its version and commit for the manifest of a backup' "$RELEASE_VERSION $RELEASE_COMMIT" \
+        "$(docker run --rm "$image" bash -c 'echo "$APP_RELEASE_VERSION $APP_RELEASE_COMMIT"')"
+fi
 echo "Image identifier: $(docker inspect --format '{{.Id}}' "$image")"
 echo "Image size in bytes: $(docker inspect --format '{{.Size}}' "$image")"
 grep -E '^FROM ' docker/app/Dockerfile | grep '@sha256:'
@@ -152,7 +175,7 @@ section 'A rebuild without a cache'
 manifest_of() {
     docker run --rm "$1" bash -c 'dpkg-query -W -f="\${Package} \${Version} \${Architecture}\n"; cd /var/www/html && find . -type f -not -path "./storage/*" -print0 | sort -z | xargs -0 sha256sum'
 }
-if docker build --no-cache --target release -f docker/app/Dockerfile -t "$rebuild" . >"$work/rebuild.log" 2>&1; then
+if docker build "${release_build[@]}" --no-cache --target release -f docker/app/Dockerfile -t "$rebuild" . >"$work/rebuild.log" 2>&1; then
     manifest_of "$image" >"$work/manifest-first"
     manifest_of "$rebuild" >"$work/manifest-second"
     if diff "$work/manifest-first" "$work/manifest-second" >"$work/manifest-diff"; then
@@ -316,10 +339,71 @@ expect 'before the migrations /up answers an error and says nothing' '503' "$(re
 expect 'before the migrations /up has an empty body' '' "$(body_of "$web")"
 expect_refused 'role web cannot run the migrations: it holds no such credential' docker exec "$web" php artisan migrate --force
 
-expect_ok 'the migration job applies the migrations, as the migration role, by an explicit command' \
-    docker run --rm --network "$network" --env-file "$migration_env" "$image" php artisan migrate --database=pgsql_migration --force
-expect_ok 'the migrations table now exists' test -n \
-    "$(docker exec "$database" psql -U postgres -d "$database_name" -Atc "SELECT to_regclass('public.migrations')")"
+section 'The migration job (ADR-011 item 7; AC-014-02, AC-014-03)'
+# job <arguments...>: the job as the operator runs it, in a one-off container.
+job() {
+    docker run --rm --network "$network" --env-file "$migration_env" "$image" bantukasir-migration-job "$@"
+}
+migrations_table() {
+    docker exec "$database" psql -U postgres -d "$database_name" -Atc "SELECT to_regclass('public.migrations')"
+}
+release_migrations="$(docker run --rm "$image" bash -c 'cd database/migrations && ls -1 ./*.php | sed "s#^\./##; s/\.php$//" | paste -sd, -')"
+expect_ok 'the release has its list of migrations' test -n "$release_migrations"
+expect_refused 'the job refuses a typed environment that is not this one' job --environment=production --migrations="$release_migrations" --backup-schedule-paused
+expect_refused 'the job refuses a list that is not the pending migrations' job --environment=staging --migrations=none --backup-schedule-paused
+expect_refused 'the job refuses a backup schedule that is not confirmed paused' job --environment=staging --migrations="$release_migrations"
+expect 'a refused job ran no statement' '' "$(migrations_table)"
+for setting in APP_PROCESS_ROLE=web APP_KEY=held DB_USERNAME=held DB_PASSWORD=held BACKUP_DB_PASSWORD=held BACKUP_STORE_KEY=held; do
+    expect_refused "the job refuses to hold ${setting%%=*}" docker run --rm --network "$network" --env-file "$migration_env" -e "$setting" "$image" bantukasir-migration-job --environment=staging --migrations="$release_migrations" --backup-schedule-paused
+done
+grep -v '^DB_MIGRATION_PASSWORD=' "$migration_env" >"$work/job-without-credential.env"
+expect_refused 'the job refuses to start without the credential supplied at run time' docker run --rm --network "$network" --env-file "$work/job-without-credential.env" "$image" bantukasir-migration-job --environment=staging --migrations="$release_migrations" --backup-schedule-paused
+expect 'no refused start ran a statement' '' "$(migrations_table)"
+
+# REL-23, D-116: on the database the setup left, the first installation waives the
+# backup and nothing else, and one object of any kind makes the database not empty.
+expect_refused 'the first installation does not waive the typed environment' job --environment=production --migrations="$release_migrations" --backup-schedule-paused --first-installation
+expect_refused 'the first installation does not waive the list of migrations' job --environment=staging --migrations=none --backup-schedule-paused --first-installation
+expect_refused 'the first installation does not waive the paused backup schedule' job --environment=staging --migrations="$release_migrations" --first-installation
+as_superuser() {
+    docker exec "$database" psql -X -q -v ON_ERROR_STOP=1 -U postgres -d "$database_name" -c "$1" >/dev/null
+}
+# not_empty_with <description> <kind reported> <SQL that adds it> <SQL that removes it>
+not_empty_with() {
+    expect_ok "$1 is added" as_superuser "$3"
+    job --environment=staging --migrations="$release_migrations" --backup-schedule-paused --first-installation >"$work/not-empty-output" 2>&1
+    expect "the first installation is refused with $1" '1' "$?"
+    expect_ok "the refusal names $2" grep -Eq "PREFLIGHT_REFUSED BACKUP .*\b$2\b" "$work/not-empty-output"
+    expect_ok "$1 is removed" as_superuser "$4"
+}
+not_empty_with 'another schema, empty' schemas 'CREATE SCHEMA kept' 'DROP SCHEMA kept'
+not_empty_with 'a table in another schema' schemas 'CREATE SCHEMA kept; CREATE TABLE kept.sales (id bigint)' 'DROP SCHEMA kept CASCADE'
+not_empty_with 'a table in public' relations 'CREATE TABLE public.kept (id bigint)' 'DROP TABLE public.kept'
+not_empty_with 'a sequence in public' relations 'CREATE SEQUENCE public.kept' 'DROP SEQUENCE public.kept'
+not_empty_with 'a view in public' relations 'CREATE VIEW public.kept AS SELECT 1 AS one' 'DROP VIEW public.kept'
+not_empty_with 'a function in public' functions "CREATE FUNCTION public.kept() RETURNS integer LANGUAGE sql AS 'SELECT 1'" 'DROP FUNCTION public.kept()'
+not_empty_with 'an operator in public' operators 'CREATE OPERATOR public.@@@ (LEFTARG = integer, RIGHTARG = integer, FUNCTION = pg_catalog.int4pl)' 'DROP OPERATOR public.@@@ (integer, integer)'
+not_empty_with 'a type in public' types "CREATE TYPE public.kept AS ENUM ('kept')" 'DROP TYPE public.kept'
+not_empty_with 'another extension' extensions 'CREATE EXTENSION tablefunc' 'DROP EXTENSION tablefunc'
+not_empty_with 'a large object' large_objects 'SELECT pg_catalog.lo_create(8014)' 'SELECT pg_catalog.lo_unlink(8014)'
+not_empty_with 'a table in information_schema' relations 'CREATE TABLE information_schema.kept (id bigint)' 'DROP TABLE information_schema.kept'
+not_empty_with 'a collation' other_objects 'CREATE COLLATION public.kept FROM pg_catalog."C"' 'DROP COLLATION public.kept'
+not_empty_with 'a publication' other_objects 'CREATE PUBLICATION kept' 'DROP PUBLICATION kept'
+expect 'none of them left a migration' '' "$(migrations_table)"
+
+job --environment=staging --migrations="$release_migrations" --backup-schedule-paused --first-installation >"$work/job-output" 2>&1
+expect 'the migration job applies the migrations, as the migration role' '0' "$?"
+cat "$work/job-output"
+expect_ok 'the first installation was verified on the truly empty database the setup left' grep -q '^PREFLIGHT_FIRST_INSTALLATION ' "$work/job-output"
+expect 'the job ran the preflight, the migrations and the verification in that order' \
+    'JOB_STEP preflight|PREFLIGHT_PASSED|JOB_STEP migrations|JOB_STEP verification|Privilege check passed|JOB_PASSED' \
+    "$(grep -oE 'JOB_STEP (preflight|migrations|verification)|PREFLIGHT_PASSED|Privilege check passed|JOB_PASSED' "$work/job-output" | paste -sd'|' -)"
+expect_ok 'the job says nothing secret' no_secret_in "$work/job-output"
+expect_ok 'the migrations table now exists' test -n "$(migrations_table)"
+expect_refused 'the first installation is refused once the migrations ran' job --environment=staging --migrations=none --backup-schedule-paused --first-installation
+expect_ok 'the job with nothing pending and an empty list passes' job --environment=staging --migrations=none --backup-schedule-paused
+
+section 'Role web, with the migrations applied'
 
 expect '/up answers 200' '200' "$(request "$web" /up)"
 expect '/up says nothing' '' "$(body_of "$web")"
@@ -353,6 +437,20 @@ expect_ok 'a container with another proxy hop starts' wait_for_web "$untrusted"
 expect 'a forwarded protocol from an address that is no hop is not believed' '308' "$(request "$untrusted" /up)"
 expect_ok 'its health check does not depend on a hop' docker exec "$untrusted" /usr/local/bin/bantukasir-healthcheck
 docker rm -f "$untrusted" >/dev/null 2>&1
+
+section 'Maintenance mode through a deployment (RB-20 steps 9 and 10; TASK-014)'
+docker run -d --name "$window" --network "$network" --env-file "$web_env" -e APP_START_IN_MAINTENANCE=1 "$image" >/dev/null
+expect_ok 'a new container with the setting starts' wait_for_web "$window"
+expect 'it was in maintenance mode before it served a page' '503' "$(request "$window" /login)"
+expect 'a command is answered before any route runs' '503' "$(request "$window" /commands/resolve -X POST -H 'Accept: application/json')"
+expect 'its /up still answers for the platform' '200' "$(request "$window" /up)"
+expect_ok 'the operator switches the mode off' docker exec "$window" php artisan up
+expect 'then it serves' '200' "$(request "$window" /login)"
+docker rm -f "$window" >/dev/null 2>&1
+docker run -d --name "$window" --network "$network" --env-file "$web_env" -e 'APP_START_IN_MAINTENANCE=1 ' "$image" >/dev/null
+expect_ok 'a new container with a space after the value starts' wait_for_web "$window"
+expect 'it too was in maintenance mode: a slip cannot open the shop' '503' "$(request "$window" /login)"
+docker rm -f "$window" >/dev/null 2>&1
 
 # ------------------------------------------------------------------ 4. Private paths
 

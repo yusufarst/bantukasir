@@ -163,6 +163,15 @@ COPY routes ./routes
 COPY --from=vendor /app/vendor ./vendor
 COPY --from=assets /app/public/build ./public/build
 COPY --chmod=0755 docker/app/entrypoint.sh /usr/local/bin/bantukasir-entrypoint
+COPY --chmod=0755 docker/app/migration-job.sh /usr/local/bin/bantukasir-migration-job
+
+# What the manifest of a backup names as the release (BACKUP_RECOVERY section 5;
+# TASK-014): the release workflow passes the version and the commit, and they are
+# empty in any other build. The image's digest exists only after the image, so the
+# operator sets APP_RELEASE_IMAGE_DIGEST on the resources that run it (RB-20 step 9).
+ARG APP_RELEASE_VERSION=
+ARG APP_RELEASE_COMMIT=
+ENV APP_RELEASE_VERSION=$APP_RELEASE_VERSION APP_RELEASE_COMMIT=$APP_RELEASE_COMMIT
 
 ENV LOG_CHANNEL=stderr LOG_LEVEL=info
 

@@ -1,21 +1,31 @@
 <?php
 
 // Migration review (TEST_STRATEGY section 6, PRODUCTION_DATA_SAFETY section 1,
-// REL-06): a migration that drops a table, a column, a schema or a database,
-// truncates, or deletes or updates rows fails, unless it names the Owner's
-// approval of that exact operation in a line
+// REL-06, REL-20; TASK-014 scope item 6). A migration fails when:
 //
-//     // REL-06 approval: D-NNN
+// - it drops a table, a column, a schema or a database, truncates, deletes or
+//   updates rows, or is marked with the class destructive, unless it names the
+//   Owner's approval of that exact operation in a line
 //
-// where D-NNN is the decision of DECISIONS that records the approval. Every
-// table is treated as retained data. Migrations are forward only (EXC-41), so
-// a down() that drops is refused too.
+//       // REL-06 approval: D-NNN
+//
+//   where D-NNN is the decision of DECISIONS that records the approval;
+// - its comment lacks the metadata of REL-20: its class, expected duration, lock
+//   impact and verification queries.
+//
+// Every table is treated as retained data. Migrations are forward only (EXC-41),
+// so a down() that drops is refused too. What a source says is read by
+// App\Domain\Operations\Release\MigrationReview, which release:preflight reads too.
 //
 // Usage: php scripts/checks/migration-review.php [--migrations=DIR] [--decisions=FILE]
+
+use App\Domain\Operations\Release\MigrationReview;
 
 $root = dirname(__DIR__, 2);
 $migrations = $root.'/database/migrations';
 $decisions = $root.'/docs/00-governance/DECISIONS.md';
+
+require_once $root.'/app/Domain/Operations/Release/MigrationReview.php';
 
 foreach (array_slice($argv, 1) as $argument) {
     if (str_starts_with($argument, '--migrations=')) {
@@ -27,18 +37,6 @@ foreach (array_slice($argv, 1) as $argument) {
         exit(2);
     }
 }
-
-// SQL statements and query-builder calls that remove or rewrite data.
-$destructive = [
-    'DROP TABLE, SCHEMA, DATABASE or COLUMN' => '/\bDROP\s+(?:TABLE|SCHEMA|DATABASE|COLUMN)\b/i',
-    'ALTER TABLE … DROP of a column' => '/\bALTER\s+TABLE\s+\S+\s+DROP\s+(?!CONSTRAINT\b|NOT\b|DEFAULT\b|IDENTITY\b|EXPRESSION\b)/i',
-    'TRUNCATE' => '/\bTRUNCATE\b/i',
-    'DELETE FROM' => '/\bDELETE\s+FROM\b/i',
-    'UPDATE … SET' => '/\bUPDATE\s+\S+\s+SET\b/i',
-    'a schema-builder drop' => '/(?:Schema::|->)(?:drop|dropIfExists|dropAllTables|dropAllViews|dropColumn|dropColumns|dropMorphs|dropNullableMorphs|dropTimestamps|dropTimestampsTz|dropSoftDeletes|dropSoftDeletesTz|dropRememberToken)\s*\(/i',
-    'a query-builder delete or update' => '/->(?:delete|forceDelete|truncate|update|updateOrInsert|upsert|increment|decrement|incrementEach|decrementEach)\s*\(/i',
-    'DB::delete() or DB::update()' => '/\bDB::(?:delete|update)\s*\(/i',
-];
 
 $approved = [];
 
@@ -52,32 +50,36 @@ $problems = [];
 
 foreach ($files ?: [] as $file) {
     $code = (string) file_get_contents($file);
-    $found = [];
+    $missing = MigrationReview::missingMetadata($code);
 
-    foreach ($destructive as $description => $pattern) {
-        if (preg_match($pattern, $code) === 1) {
-            $found[] = $description;
-        }
+    if ($missing !== []) {
+        $problems[] = sprintf('%s: no REL-20 metadata: %s', basename($file), implode(', ', $missing));
     }
 
-    if ($found === []) {
+    if (! MigrationReview::isDestructive($code)) {
         continue;
     }
 
-    preg_match_all('/^\s*\/\/\s*REL-06 approval:\s*(D-\d{3,})\s*$/m', $code, $references);
-    $known = array_filter($references[1], fn (string $decision): bool => array_key_exists($decision, $approved));
+    $found = MigrationReview::destructiveStatements($code);
 
-    if ($references[1] === []) {
+    if ($found === []) {
+        $found = ['marked destructive'];
+    }
+
+    $references = MigrationReview::approvals($code);
+    $known = array_filter($references, fn (string $decision): bool => array_key_exists($decision, $approved));
+
+    if ($references === []) {
         $problems[] = sprintf('%s: %s, with no REL-06 approval reference', basename($file), implode('; ', $found));
-    } elseif (count($known) !== count($references[1])) {
+    } elseif (count($known) !== count($references)) {
         $problems[] = sprintf('%s: %s, with a REL-06 approval reference to a decision that %s does not record', basename($file), implode('; ', $found), $decisions);
     }
 }
 
 if ($problems !== []) {
-    fwrite(STDOUT, "Migration review failed (REL-06):\n  ".implode("\n  ", $problems)."\n");
+    fwrite(STDOUT, "Migration review failed (REL-06, REL-20):\n  ".implode("\n  ", $problems)."\n");
     exit(1);
 }
 
-fwrite(STDOUT, sprintf("Migration review: %d migration(s), none destructive without its approval.\n", count($files ?: [])));
+fwrite(STDOUT, sprintf("Migration review: %d migration(s), none destructive without its approval, each with its REL-20 metadata.\n", count($files ?: [])));
 exit(0);
