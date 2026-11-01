@@ -62,7 +62,7 @@ If the Owner moves the branch back to the base, `git log a58202c..HEAD` is empty
 
 ## 6. Checks (CE-44 to CE-46, D-108, D-117)
 
-Fast runs of CI, the workflow `fast-checks`: `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit`; each PostgreSQL or concurrency test file that the branch changes. Four of the ten allowed.
+Fast runs of CI, the workflow `fast-checks`: `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit`; each PostgreSQL or concurrency test file that the branch changes. Five of the ten allowed.
 
 | Check | Where it ran | Time (Asia/Jakarta) | Duration | Result |
 | --- | --- | --- | --- | --- |
@@ -70,9 +70,60 @@ Fast runs of CI, the workflow `fast-checks`: `composer validate`, `lint`, `analy
 | Fast run | CI run 41307464828 on `2aa4d73` | 1 Nov 19:38 | 4 min 8 s | FAIL; `assets.test.ts`: the catalogue did not name the reasons (reading 8) |
 | Fast run | CI run 41308191462 on `90158d8` | 1 Nov 19:47 | 8 min 9 s | FAIL; `CapabilityMatrixTest`'s mark (reading 9) |
 | **Fast run**: static checks, unit tests, `BarcodeRaceTest`, `CapabilityMatrixTest`, `RouteInventoryTest`, `BarcodeCommandsTest`, `BarcodeTablesTest`, `CatalogCommandsTest`, `ProductSearchTest` | CI run 41309171552 on `76e196f` | 1 Nov 20:00 | 9 min 20 s | **PASS** |
+| **Fast run**, the same, with the fixes of section 7 | CI run 41311601192 on `ea4fbe4` | 1 Nov 20:30 | 7 min 59 s | **PASS** |
 | Guard's preview and guard | Local, on each head | 1 Nov | under 1 min each | PASS, no candidate to judge |
 | The whole of `composer test:postgres`, `composer test:race`, the browser suite, `npm run build`, the image checks with the vulnerability gate | CI on the pull request's final head (CE-44, D-117) | — | — | `NOT_RUN` at this writing |
 
 `npx tsc` and `npx eslint` have no local toolchain on this machine (TASK-014 evidence section 1); the TypeScript files changed are read by `npm run typecheck`, `npm run lint` and `npm run test:unit` in the fast run.
 
-**The heavy suites that this change can affect**: `BackupRunTest` and the release tests read the privilege matrix, so they meet the new tables, and the browser suite meets the new routes through the shell's inventory and the new keys through the page's dictionary. All run on the final head.
+**The heavy suites that this change can affect**: `BackupRunTest` and the release tests read the privilege matrix, so they meet the new tables, and the browser suite meets the new routes through the shell's inventory and the new keys through the page's dictionary. All run on the final head. The commit after `ea4fbe4` changes documents only, so run 41311601192's results stand (CE-45).
+
+## 7. Review (CE-40)
+
+`bk-reviewer-high`, Claude Opus 5.5, read only: package `review/TASK-016/r1`, tree `5ce98bc`, the adversarial review of class A; `--check` `UNCHANGED`. Verdict PASS, with no MUST-FIX, so no verification agent ran (CE-40). It asked for no test run. The self-review before it found no defect in the code; the three red fast runs of section 6 were each a test that the change had to teach.
+
+| ID | Class | Finding | Outcome |
+| --- | --- | --- | --- |
+| R-01 | SHOULD-FIX | The stored result held the token, and a token is neither an internal key nor a document number (SCHEMA section 5.3); `number` was only for a numbered record | Fixed: the result holds the mapping's key alone, and `present()` reads the code from the mapping, which never changes; INTERACTION_CONTRACTS section 1.2 names the case (EXC-81); `BarcodeCommandsTest` reads `result_detail` |
+| R-02 | SHOULD-FIX | Reading 3 said that a `q` with a tab or no-break space matches no token, false at the outer positions | Fixed: reading 3 says what happens; the behaviour stays, as section 3.1 allows and nothing is written from `q` |
+| R-03 | SHOULD-FIX | No test sent `mode=exact` with what a scan delivers | Fixed: the terminators and outer spaces, the outer tab and no-break space, another case, and an inner line break refused, in `ProductSearchTest` |
+| R-04 | SHOULD-FIX | No null in either column of the correction's composite key, and `MATCH FULL` unasserted | Fixed in `BarcodeTablesTest`: both nulls refused, `confmatchtype` read |
+| R-05 | SHOULD-FIX | No test read `Cache-Control` on RC-27 to RC-29 | Fixed: `no-store, private` on a commit, a repeat and a refusal of each |
+| R-06 | NOTE | The Action's CAP-06 refusal on RC-17 has no test | Recorded: reading 6; the first role that separates these capabilities adds it |
+| R-07 | NOTE | `mode=exact`'s refusal of filters binds later clients | F-4. No line in DECISIONS: it changes no business meaning, and INTERACTION_CONTRACTS section 3.1 holds it |
+| R-08 | NOTE | UXS-37's link cannot come from `DUPLICATE_BARCODE` | Added to F-1 |
+| R-09 | NOTE | The record of CE-50 was not yet due | Done: sections 8 to 11, TASK_PLAN and CURRENT_HANDOFF |
+
+## 8. Acceptance criteria
+
+The fast run's results are on the Task's own test files; the whole suites run on the final head.
+
+| ID | Result | Evidence |
+| --- | --- | --- |
+| AC-016-01 | PASS by run 41311601192 | `BarcodeTokenTest`; `test_a_token_round_trips_exactly…`, `test_a_token_that_holds_what_no_token_may…`, `test_a_declared_symbology_validates_its_check_digit` |
+| AC-016-02 | PASS by run 41311601192 | `test_the_bk_namespace_is_reserved…`, `test_a_clash_of_a_generated_code…`, `test_a_product_whose_barcode_is_refused_is_not_created`, the unit test of 2,000 draws |
+| AC-016-03 | PASS by run 41311601192 | `BarcodeRaceTest` (RACE-17's attach part in five cases, RACE-19's ordinary part); `test_a_retirement_records_its_reason_class…`, `BarcodeTablesTest` |
+| AC-016-04 | PASS by run 41311601192 | `test_the_exact_mode_answers_at_most_one_product…`, `test_rd_06_reports_an_exact_barcode…`, `test_an_exact_barcode_leads_the_search…` |
+| AC-016-05 | PASS by run 41311601192 for the constraint, deferred, privilege and retention families; `db:check-privileges` on the final head (`PrivilegeCheckTest`) | `BarcodeTablesTest`, `PrivilegeMatrixTest` |
+
+## 9. Definition of Done
+
+| Dimension | Status | Reason |
+| --- | --- | --- |
+| Business | PASS | Section 8; REQ-CAT-04, REQ-CAT-05 |
+| UI and UX | N/A | No page or control: TASK-017 |
+| Backend | PASS | FormRequest allowlists, the gates, in-transaction guards, the allowlisted answers, L4 tests |
+| Database | PASS, the whole suite on CI at the final head | The migration and its metadata; the four families for its tables |
+| Security | PASS, the whole suite on CI at the final head | A cashier refused before a command runs; the capability matrix; injection only text; `no-store`; no secret; the static checks |
+| Data integrity | PASS | Facts only added; audit and result in the transaction; identity and repeats; the races; failure injection after each write step |
+| Performance | PASS | One bounded statement per lookup on the indexes of SCHEMA section 11; the budgets are TASK-048's |
+| Operations | PASS | Section 11 |
+| Verification | PASS by sections 6 and 7; CI on the final head pending | `DONE` takes effect at the merge with CI green on `develop` (CE-61) |
+
+## 10. Guard (CE-31, CE-50)
+
+`guard.sh --preview` on the working tree: PASS, with no candidate to judge, as `guard.sh` on every head since the resume. The result on the final commit is in the pull request's description.
+
+## 11. Backup impact (EXC-47)
+
+The three class F tables are in the manifest's counts without a change of code: `BackupRunner` counts the classes F, FS, M and S of the privilege matrix. `barcode_active_mappings` is class P, a projection that is not counted, and the dump holds it. No new kind of stored file.
