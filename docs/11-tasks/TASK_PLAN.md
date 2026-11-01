@@ -183,7 +183,7 @@ With more than one executor the Owner may run Tasks of different lanes at the sa
 | OPEN_ITEMS T-27 | TASK-008, with TASK-006 and TASK-015 | The trimming of input against the database's `[[:space:]]` (SCH-14; TASK-004 finding F-2) |
 | OPEN_ITEMS T-28 | TASK-012 (worker pool, RESOLVED); gate TARGET (proxy settings) | The two duties of TR-TIME-03 named for the foundation Task (TASK-004 review finding R-22) |
 | OPEN_ITEMS T-29 | A change control of COPY_DECK before TASK-009 and TASK-011 | A key that is both a text and the parent of other keys: the role descriptions and the command families (TASK-006 finding F-3) |
-| OPEN_ITEMS T-38 | TASK-013 (curl and libcurl); gate RELEASE (every remaining finding, curl and libcurl again) | The temporary acceptance of the image's unfixable Debian findings, D-112, D-113 |
+| OPEN_ITEMS T-38 | TASK-013 (curl and libcurl); gate RELEASE (every remaining finding, curl and libcurl again) | The temporary acceptance of the image's unfixable Debian findings, D-112, D-113, D-115 |
 | OPEN_ITEMS N-12 | Gate GATE-BRANCH | RESOLVED as to the model (D-092): `develop` for implementation, `main` for releases; the creation of `develop` needs the Owner's own authorization, before TASK-001 |
 | OPEN_ITEMS N-09, N-10 | Gate GATE-PUBLISH | Before the first push of implementation work, and so before TASK-001 is `DONE` |
 | OPEN_ITEMS N-04 | Gate GATE-P11 | RESOLVED (D-092): the complete AICWDF-4.3 text is not added to the repository; the binding subset stays in `docs/00-governance` |

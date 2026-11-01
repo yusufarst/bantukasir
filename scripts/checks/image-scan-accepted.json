@@ -1,6 +1,6 @@
 {
-  "decision": "D-112",
-  "limits": "Conditional and temporary, for development only: the Debian findings of the assessed image, at these exact versions. It authorizes no staging or production deployment. A critical finding enters this list only by its own decision of the Owner. TASK-013 reassesses curl and libcurl before its HTTP or S3 integration; gate RELEASE reviews every remaining vulnerability independently.",
+  "decision": "D-112, D-115",
+  "limits": "Conditional and temporary, for development only: the Debian findings of the assessed image, at these exact versions. It authorizes no staging or production deployment and accepts no future CVE. A critical finding enters this list only by its own decision of the Owner. TASK-013 reassesses curl and libcurl before its HTTP or S3 integration; gate RELEASE reviews every remaining vulnerability independently.",
   "assessed": {
     "ciRun": 41129923061,
     "head": "ef64c1a864bcfbe9437665f8a25c7a1dde335aa1",
@@ -8,6 +8,14 @@
     "database": "2026-10-30T06:23:28Z",
     "image": "the release stage of docker/app/Dockerfile: php:8.5.12-fpm-trixie with Debian 13's current packages; identifier sha256:60f08d3557e6e6b3d01cbad903b8fdf11a8e13ca7a4bd9f2b9fded719e4e5b4e in that run. An image of a later build is this assessed image while its packages keep these exact versions, which the gate compares",
     "statusRead": "2026-10-31, security-tracker.debian.org, curl.se, cisagov/vulnrichment and NVD's API"
+  },
+  "assessedD115": {
+    "ciRun": 41179831914,
+    "head": "0735bffef1a90c5e5db0b2b3fe39abc24f83189f",
+    "scanner": "Grype 0.121.0, with Syft 1.55.0",
+    "database": "2026-10-31T06:18:17Z",
+    "image": "the release stage of docker/app/Dockerfile at that head; the same packages at the same exact versions as the assessment of D-112",
+    "statusRead": "2026-11-01, security-tracker.debian.org, curl.se, packages.debian.org and cisagov/vulnrichment; CISA's KEV feed was read only in part, so that known exploitation rests on Grype's database"
   },
   "commonReviewTrigger": "Every entry is reviewed again when the gate refuses it (a fix available, known exploitation, another version or severity), and at gate RELEASE.",
   "accepted": [
@@ -163,6 +171,50 @@
       "rationale": "Proxy credentials that should have been cleared stay on the reused handle.",
       "mitigation": "No outbound proxy is configured, and the request's Proxy header never becomes HTTP_PROXY (nginx-front-controller.conf).",
       "reviewTrigger": "TASK-013 before its HTTP or S3 integration; any environment that needs an outbound proxy."
+    },
+    {
+      "id": "CVE-2026-86414",
+      "severity": "Critical",
+      "decision": "D-115",
+      "sourcePackage": "curl",
+      "packages": [
+        {"name": "curl", "version": "8.14.1-2+deb13u7", "type": "deb"},
+        {"name": "libcurl4t64", "version": "8.14.1-2+deb13u7", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa> (Minor issue); fixed upstream in 8.14.3, 8.16.2, 8.20.2 and 8.23.0, none in trixie; fixed in unstable 8.23.0-1; trixie-backports 8.21.0 is still affected",
+      "critical": {
+        "scanSeverityFrom": "CISA-ADP CVSS 3.1 9.1; the curl project publishes no CVSS",
+        "upstreamSeverity": "curl.se: Low; libcurl and the command-line tool",
+        "knownExploited": "None in Grype's database of 2026-10-31; CISA's KEV feed read only in part; CISA SSVC exploitation poc, automatable yes, technical impact total (record of 2026-10-30)",
+        "needs": "An HTTP proxy answering a CONNECT request with 401 and WWW-Authenticate instead of 407, on a transfer that holds the origin's credentials",
+        "exposure": "Not reachable: no outbound proxy is configured, the health check's fixed loopback request holds no credentials and opens no tunnel, and the application's outbound requests use Guzzle's StreamHandler, not libcurl"
+      },
+      "rationale": "A malicious HTTP proxy can receive the origin's Basic password or Negotiate ticket.",
+      "mitigation": "No outbound proxy; the request's Proxy header never becomes HTTP_PROXY (nginx-front-controller.conf); OutboundHttp does not use libcurl.",
+      "reviewTrigger": "Any environment that needs an outbound proxy; any use of libcurl or of the curl program beyond the health check's loopback request; gate RELEASE."
+    },
+    {
+      "id": "CVE-2026-92388",
+      "severity": "Critical",
+      "decision": "D-115",
+      "sourcePackage": "curl",
+      "packages": [
+        {"name": "curl", "version": "8.14.1-2+deb13u7", "type": "deb"},
+        {"name": "libcurl4t64", "version": "8.14.1-2+deb13u7", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa> (Minor issue); fixed upstream in 8.23.0; fixed in unstable 8.23.0-1; trixie-backports 8.21.0 is still affected",
+      "critical": {
+        "scanSeverityFrom": "CISA-ADP CVSS 3.1 9.1; the curl project publishes no CVSS",
+        "upstreamSeverity": "curl.se: Low; libcurl only, not the command-line tool",
+        "knownExploited": "None in Grype's database of 2026-10-31; CISA's KEV feed read only in part; CISA SSVC exploitation poc, automatable yes, technical impact partial (record of 2026-10-30)",
+        "needs": "CURLOPT_FTP_WILDCARD, a failed FTP wildcard LIST, then the same handle reused or duplicated",
+        "exposure": "Not reachable: nothing in the application calls libcurl or uses FTP, and the curl program is not affected"
+      },
+      "rationale": "A use-after-free or type confusion on a handle reused after a failed FTP wildcard listing.",
+      "mitigation": "No FTP and no libcurl call in the application; OutboundHttp does not use libcurl.",
+      "reviewTrigger": "Any use of libcurl or of FTP; gate RELEASE."
     },
     {
       "id": "CVE-2026-12064",
@@ -358,6 +410,156 @@
       "rationale": "An HTTP/3 server used during transfers.",
       "mitigation": "HTTP/3 is not requested anywhere; no libcurl request at this revision.",
       "reviewTrigger": "TASK-013 before its HTTP or S3 integration."
+    },
+    {
+      "id": "CVE-2026-107928",
+      "severity": "High",
+      "decision": "D-115",
+      "sourcePackage": "curl",
+      "packages": [
+        {"name": "curl", "version": "8.14.1-2+deb13u7", "type": "deb"},
+        {"name": "libcurl4t64", "version": "8.14.1-2+deb13u7", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa> (Minor issue); curl.se: Low; fixed in unstable 8.23.0-1; trixie-backports 8.21.0 is still affected",
+      "rationale": "A malicious WebSocket server can make curl built with GnuTLS send memory past its buffer.",
+      "mitigation": "No WebSocket request anywhere; OutboundHttp does not use libcurl.",
+      "reviewTrigger": "Any use of libcurl or of the curl program beyond the health check's loopback request; gate RELEASE."
+    },
+    {
+      "id": "CVE-2026-107929",
+      "severity": "High",
+      "decision": "D-115",
+      "sourcePackage": "curl",
+      "packages": [
+        {"name": "curl", "version": "8.14.1-2+deb13u7", "type": "deb"},
+        {"name": "libcurl4t64", "version": "8.14.1-2+deb13u7", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa> (Minor issue); curl.se: Low; fixed in unstable 8.23.0-1; trixie-backports 8.21.0 is still affected",
+      "rationale": "A reused connection can have the wrong source address with CURLOPT_INTERFACE or --interface.",
+      "mitigation": "--interface is not used; OutboundHttp does not use libcurl.",
+      "reviewTrigger": "Any use of libcurl or of the curl program beyond the health check's loopback request; gate RELEASE."
+    },
+    {
+      "id": "CVE-2026-87862",
+      "severity": "High",
+      "decision": "D-115",
+      "sourcePackage": "curl",
+      "packages": [
+        {"name": "curl", "version": "8.14.1-2+deb13u7", "type": "deb"},
+        {"name": "libcurl4t64", "version": "8.14.1-2+deb13u7", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa> (Minor issue); curl.se: Low; fixed in unstable 8.23.0-1; trixie-backports 8.21.0 is still affected",
+      "rationale": "Importing an HSTS cache can silently drop a longer-lived child entry.",
+      "mitigation": "No HSTS cache is used; OutboundHttp does not use libcurl.",
+      "reviewTrigger": "Any use of libcurl or of the curl program beyond the health check's loopback request; gate RELEASE."
+    },
+    {
+      "id": "CVE-2026-87863",
+      "severity": "High",
+      "decision": "D-115",
+      "sourcePackage": "curl",
+      "packages": [
+        {"name": "curl", "version": "8.14.1-2+deb13u7", "type": "deb"},
+        {"name": "libcurl4t64", "version": "8.14.1-2+deb13u7", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa> (Minor issue); curl.se: Low; fixed in unstable 8.23.0-1; trixie-backports 8.21.0 is still affected",
+      "rationale": "An extreme max-age can leave a saved HSTS cache truncated, with the error ignored.",
+      "mitigation": "No HSTS cache is used; OutboundHttp does not use libcurl.",
+      "reviewTrigger": "Any use of libcurl or of the curl program beyond the health check's loopback request; gate RELEASE."
+    },
+    {
+      "id": "CVE-2026-87864",
+      "severity": "High",
+      "decision": "D-115",
+      "sourcePackage": "curl",
+      "packages": [
+        {"name": "curl", "version": "8.14.1-2+deb13u7", "type": "deb"},
+        {"name": "libcurl4t64", "version": "8.14.1-2+deb13u7", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa> (Minor issue); curl.se: Low; fixed upstream in 8.22.0; fixed in unstable 8.22.0-1; trixie-backports 8.21.0 is still affected",
+      "rationale": "IMAP APPEND with CURLOPT_CRLF can run overflow bytes as pipelined IMAP commands.",
+      "mitigation": "No IMAP anywhere; OutboundHttp does not use libcurl.",
+      "reviewTrigger": "Any use of libcurl or of the curl program beyond the health check's loopback request; gate RELEASE."
+    },
+    {
+      "id": "CVE-2026-87865",
+      "severity": "High",
+      "decision": "D-115",
+      "sourcePackage": "curl",
+      "packages": [
+        {"name": "curl", "version": "8.14.1-2+deb13u7", "type": "deb"},
+        {"name": "libcurl4t64", "version": "8.14.1-2+deb13u7", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa> (Minor issue); curl.se: Low, libcurl only; fixed in unstable 8.23.0-1; trixie-backports 8.21.0 is still affected",
+      "rationale": "With libssh2 and hashed known_hosts, a key mismatch can reach the key callback as a missing key.",
+      "mitigation": "No SFTP or SCP anywhere; OutboundHttp does not use libcurl.",
+      "reviewTrigger": "Any use of libcurl; gate RELEASE."
+    },
+    {
+      "id": "CVE-2026-92389",
+      "severity": "High",
+      "decision": "D-115",
+      "sourcePackage": "curl",
+      "packages": [
+        {"name": "curl", "version": "8.14.1-2+deb13u7", "type": "deb"},
+        {"name": "libcurl4t64", "version": "8.14.1-2+deb13u7", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa> (Minor issue); curl.se: Low, libcurl only; fixed in unstable 8.23.0-1; trixie-backports 8.21.0 is still affected",
+      "rationale": "A malicious TFTP server can force a download into transmit mode and receive leftover read data.",
+      "mitigation": "No TFTP anywhere; OutboundHttp does not use libcurl.",
+      "reviewTrigger": "Any use of libcurl; gate RELEASE."
+    },
+    {
+      "id": "CVE-2026-92390",
+      "severity": "High",
+      "decision": "D-115",
+      "sourcePackage": "curl",
+      "packages": [
+        {"name": "curl", "version": "8.14.1-2+deb13u7", "type": "deb"},
+        {"name": "libcurl4t64", "version": "8.14.1-2+deb13u7", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa> (Minor issue); curl.se: Low, the command-line tool only; fixed in unstable 8.23.0-1; trixie-backports 8.21.0 is still affected",
+      "rationale": "A server can overwrite an existing local file through --remote-header-name with Early Hints or --etag-save.",
+      "mitigation": "The health check saves nothing (-o /dev/null) and does not use -J; the only address is its own loopback.",
+      "reviewTrigger": "Any use of the curl program beyond the health check's loopback request; gate RELEASE."
+    },
+    {
+      "id": "CVE-2026-92391",
+      "severity": "High",
+      "decision": "D-115",
+      "sourcePackage": "curl",
+      "packages": [
+        {"name": "curl", "version": "8.14.1-2+deb13u7", "type": "deb"},
+        {"name": "libcurl4t64", "version": "8.14.1-2+deb13u7", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa> (Minor issue); curl.se: Low, libcurl only; fixed in unstable 8.23.0-1; trixie-backports 8.21.0 is still affected",
+      "rationale": "A deeply nested multipart structure built through the MIME API overflows the stack at cleanup.",
+      "mitigation": "Nothing in the application builds a libcurl MIME structure; OutboundHttp does not use libcurl.",
+      "reviewTrigger": "Any use of libcurl; gate RELEASE."
+    },
+    {
+      "id": "CVE-2026-94266",
+      "severity": "High",
+      "decision": "D-115",
+      "sourcePackage": "curl",
+      "packages": [
+        {"name": "curl", "version": "8.14.1-2+deb13u7", "type": "deb"},
+        {"name": "libcurl4t64", "version": "8.14.1-2+deb13u7", "type": "deb"}
+      ],
+      "fixState": "wont-fix",
+      "debianStatus": "trixie vulnerable, <no-dsa> (Minor issue); curl.se: Low; fixed in unstable 8.23.0-1; trixie-backports 8.21.0 is still affected",
+      "rationale": "The effective URL can hold credentials that were in neither the input URL nor a redirect, through netrc.",
+      "mitigation": "No .netrc in the image and none is configured; the health check prints no URL; OutboundHttp does not use libcurl.",
+      "reviewTrigger": "Any use of libcurl or of the curl program beyond the health check's loopback request; gate RELEASE."
     },
     {
       "id": "CVE-2026-74860",
@@ -574,6 +776,21 @@
       "rationale": "The deprecated resolver functions ns_printrrf, ns_printrr and fp_nquery.",
       "mitigation": "The application prints no DNS record through those functions.",
       "reviewTrigger": "A Debian point release; any C dependency added to the image."
+    },
+    {
+      "id": "CVE-2026-84243",
+      "severity": "High",
+      "decision": "D-115",
+      "sourcePackage": "glibc",
+      "packages": [
+        {"name": "libc-bin", "version": "2.41-12+deb13u4", "type": "deb"},
+        {"name": "libc6", "version": "2.41-12+deb13u4", "type": "deb"}
+      ],
+      "fixState": "not-fixed",
+      "debianStatus": "trixie vulnerable, with no note of Debian's assessment; unfixed in unstable 2.43-7 as well (Debian bug 1152640, GLIBC-SA-2026-0025)",
+      "rationale": "gettext accepts a LANGUAGE entry holding a slash or equal to .., so a crafted .mo file can be loaded from another path; it needs the environment set across a trust boundary and that file in place.",
+      "mitigation": "No SSH server and no gettext extension in the image, nothing in the repository sets LANGUAGE, the application has no putenv, and a request reaches $_SERVER rather than a process's environment.",
+      "reviewTrigger": "Debian's assessment or a fix; an SSH server or the gettext extension added to the image; a program started with an environment built from input; gate RELEASE."
     },
     {
       "id": "CVE-2026-102010",
