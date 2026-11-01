@@ -117,6 +117,7 @@ function ProductPage({ title, product, priceHistory, barcodes }: { title: string
     const lifecycleReason = blockedReason(unresolved.union, lifecycleCommand);
     const lifecycleLabel = product.active ? t('ux.action.deactivate') : t('ux.action.reactivate');
     const lifecycleEntries: MenuEntry[] = [{ kind: 'action', label: lifecycleLabel, danger: product.active, onSelect: openLifecycle }];
+    const editPage = `${productPage(product.id)}/edit`;
 
     const data: KeyValue[] = [
         { key: 'sku', label: t('catalog.field.sku'), value: product.sku },
@@ -145,7 +146,7 @@ function ProductPage({ title, product, priceHistory, barcodes }: { title: string
                 back={fromCreate ? { href: NEW_PRODUCT_PAGE, page: t('catalog.product_create.title') } : { href: listPage, page: t('catalog.products.title') }}
                 actions={
                     <>
-                        <ButtonLink href={`${productPage(product.id)}/edit`} label={t('catalog.product_edit.title')} variant={'primary'} />
+                        <ButtonLink href={editPage} label={t('catalog.product_edit.title')} variant={'primary'} />
                         {lifecycleReason === undefined ? (
                             <Menu label={t('ux.action.more_actions')} items={lifecycleEntries} />
                         ) : (
@@ -167,7 +168,7 @@ function ProductPage({ title, product, priceHistory, barcodes }: { title: string
                         <Section title={t('catalog.product_detail.price_history')} level={3} card={false}>
                             <ul className={'bk-stack'}>
                                 {priceHistory.map((entry) => (
-                                    <li key={`${entry.startedAt}-${entry.amount}`} className={'bk-meta'}>
+                                    <li key={entry.startedAt} className={'bk-meta'}>
                                         {t('catalog.product_detail.price_entry', { uang: formatMoney(entry.amount), waktu: formatDateTime(entry.startedAt), nama: entry.actorDisplayName })}
                                     </li>
                                 ))}
@@ -309,8 +310,8 @@ function BarcodesSection({ product, barcodes, onDone, onStale, onOpen }: { produ
                         />
                     </div>
                 )}
-                <GenerateBarcodeRun key={`generate-${String(opening)}`} product={product} onDone={finished} />
-                {retiring !== null && <RetireRun key={`retire-${String(opening)}`} barcode={retiring} onClose={() => setRetiring(null)} onDone={finished} onStale={retiredMeanwhile} />}
+                <GenerateBarcodeRun key={opening} product={product} onDone={finished} />
+                {retiring !== null && <RetireRun key={opening} barcode={retiring} onClose={() => setRetiring(null)} onDone={finished} onStale={retiredMeanwhile} />}
             </div>
         </Section>
     );
