@@ -15,7 +15,7 @@ import { AppShell } from '@/layouts/AppShell';
 import { PageContainer, PageHeader } from '@/layouts/Page';
 import { takeSavedNote } from '@/lib/access/users';
 import { blockedReason, CodeField } from '@/lib/catalog/Parts';
-import { CATALOG_COMMANDS, catalogFieldMessage, checkProduct, NEW_PRODUCT_PAGE, productPage, PRODUCTS_SHELL, productsListAddress, takeFromCreate, type ProductDetail, type ProductRow } from '@/lib/catalog/products';
+import { cameFromCreate, CATALOG_COMMANDS, catalogFieldMessage, checkProduct, NEW_PRODUCT_PAGE, productPage, PRODUCTS_SHELL, productsListAddress, type ProductDetail, type ProductRow } from '@/lib/catalog/products';
 import { useScanCapture } from '@/lib/catalog/scanCapture';
 import { committedText } from '@/lib/commands/families';
 import { CommandPanels } from '@/lib/commands/Panels';
@@ -87,7 +87,7 @@ function ProductPage({ title, product, priceHistory, barcodes }: { title: string
     const [stale, setStale] = useState(false);
     const [lifecycle, setLifecycle] = useState(false);
     const [opening, setOpening] = useState(0);
-    const [fromCreate] = useState(takeFromCreate);
+    const [fromCreate] = useState(cameFromCreate);
     const [listPage] = useState(productsListAddress);
     const unresolved = useUnresolved();
 
@@ -176,7 +176,7 @@ function ProductPage({ title, product, priceHistory, barcodes }: { title: string
                         </Section>
                     </div>
                 </Section>
-                {barcodes !== null && <BarcodesSection product={product} barcodes={barcodes} onDone={done} onStale={onStale} onOpen={() => setNote(null)} />}
+                {barcodes !== null && <BarcodesSection product={product} barcodes={barcodes} onDone={done} onChanged={reload} onOpen={() => setNote(null)} />}
             </div>
         </PageContainer>
     );
@@ -230,32 +230,41 @@ function LifecycleRun({ product, onClose, onDone, onStale }: { product: ProductD
 }
 
 /** The section of the barcodes (UXI-171 to UXI-173), by CAP-06, which the server's prop says. */
-function BarcodesSection({ product, barcodes, onDone, onStale, onOpen }: { product: ProductDetail; barcodes: readonly Barcode[]; onDone: (text: string) => void; onStale: () => void; onOpen: () => void }) {
+function BarcodesSection({ product, barcodes, onDone, onChanged, onOpen }: { product: ProductDetail; barcodes: readonly Barcode[]; onDone: (text: string) => void; onChanged: () => void; onOpen: () => void }) {
     const [adding, setAdding] = useState(false);
     const [retiring, setRetiring] = useState<Barcode | null>(null);
     const [opening, setOpening] = useState(0);
+    const [stale, setStale] = useState(false);
     const unresolved = useUnresolved();
     const addReason = blockedReason(unresolved.union, CATALOG_COMMANDS.addBarcode);
 
     const next = (): void => {
         onOpen();
+        setStale(false);
         setOpening((current) => current + 1);
     };
 
     const finished = (text: string): void => {
-        setAdding(false);
         setRetiring(null);
+        setStale(false);
         setOpening((current) => current + 1);
         onDone(text);
+    };
+
+    const added = (text: string): void => {
+        setAdding(false);
+        finished(text);
     };
 
     // A new key for each opening: its command starts again with a new intent.
     const generateKey = `generate-${String(opening)}`;
     const retireKey = `retire-${String(opening)}`;
 
+    // An inline refusal stays at its section (NAVIGATION_CONTRACTS UXP-302).
     const retiredMeanwhile = (): void => {
         setRetiring(null);
-        onStale();
+        setStale(true);
+        onChanged();
     };
 
     const retireEntries = (barcode: Barcode): MenuEntry[] => [
@@ -297,9 +306,10 @@ function BarcodesSection({ product, barcodes, onDone, onStale, onOpen }: { produ
     return (
         <Section title={t('catalog.product_detail.section_barcodes')}>
             <div className={'bk-stack'}>
+                {stale && <StateNotice state={STALE_STATE} />}
                 {barcodes.length > 0 && <DataTable caption={t('catalog.product_detail.section_barcodes')} columns={columns} rows={barcodes} rowKey={(barcode) => String(barcode.mappingId)} />}
                 {adding ? (
-                    <AddBarcodeRun key={opening} product={product} onClose={() => setAdding(false)} onDone={finished} />
+                    <AddBarcodeRun product={product} onClose={() => setAdding(false)} onDone={added} />
                 ) : (
                     <div className={'bk-actions'}>
                         <Button

@@ -17,7 +17,6 @@ import {
     productPage,
     PRODUCTS_SHELL,
     productsAddress,
-    rememberProductsAddress,
     searchPages,
     searchParameters,
     searchProducts,
@@ -128,11 +127,6 @@ function ProductsList({ title, filters, categories }: { title: string; filters: 
     useEffect(() => {
         void load(filters, null);
     }, []);
-
-    // The way back of a child page returns to the list as it stands (NC-10).
-    useEffect(() => {
-        rememberProductsAddress(productsAddress(applied));
-    }, [applied]);
 
     // A typed search runs once the keys pause; a newer one supersedes it.
     useEffect(() => {

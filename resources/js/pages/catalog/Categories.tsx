@@ -12,7 +12,7 @@ import { Committed, EmptyState, NoResults, StateMark, StateNotice } from '@/comp
 import { StatusWord } from '@/components/ui/Status';
 import { AppShell } from '@/layouts/AppShell';
 import { ListLayout, PageHeader } from '@/layouts/Page';
-import { blockedReason } from '@/lib/catalog/Parts';
+import { blockedReason, UnresolvedReason } from '@/lib/catalog/Parts';
 import { CATALOG_COMMANDS, CATEGORIES_PAGE, CATEGORIES_SHELL, catalogFieldMessage, type Category } from '@/lib/catalog/products';
 import { committedText } from '@/lib/commands/families';
 import { CommandPanels } from '@/lib/commands/Panels';
@@ -27,8 +27,8 @@ import type { TranslationKey } from '@/types/translation-keys';
 // stands in the page's address. "Tambah kategori" and a row's "Ubah nama" open an inline
 // form, whose "Batal" sends nothing and whose "Simpan" Enter never activates (UXA-10);
 // a row's "Nonaktifkan" or "Aktifkan kembali" asks in a dialog. A command updates the
-// list in place with its message; a version changed meanwhile shows UXS-17 at once, and
-// the list shows the current values. A category is never deleted (D-042).
+// list in place with its message; a version changed meanwhile shows UXS-17 at the row,
+// and the list shows the current values. A category is never deleted (D-042).
 
 const STALE_STATE: StateId = 'UXS-17';
 
@@ -60,12 +60,13 @@ function CategoriesList({ title, categories, status }: { title: string; categori
     const [action, setAction] = useState<Action | null>(null);
     const [opening, setOpening] = useState(0);
     const [note, setNote] = useState<string | null>(null);
-    const [stale, setStale] = useState(false);
+    // The category whose deactivation or reactivation found it changed (UXS-17 at the row).
+    const [staleRow, setStaleRow] = useState<number | null>(null);
     const unresolved = useUnresolved();
 
     const open = (next: Action): void => {
         setNote(null);
-        setStale(false);
+        setStaleRow(null);
         setOpening((current) => current + 1);
         setAction(next);
     };
@@ -78,9 +79,9 @@ function CategoriesList({ title, categories, status }: { title: string; categori
         reload();
     };
 
-    const onStale = (): void => {
+    const onStale = (category: Category): void => {
         setAction(null);
-        setStale(true);
+        setStaleRow(category.id);
         reload();
     };
 
@@ -103,9 +104,12 @@ function CategoriesList({ title, categories, status }: { title: string; categori
             isHead: true,
             cell: (category) =>
                 action?.kind === 'rename' && action.category.id === category.id ? (
-                    <RenameRun key={opening} category={category} onClose={() => setAction(null)} onDone={done} onStale={onStale} />
+                    <RenameRun key={opening} category={category} onClose={() => setAction(null)} onDone={done} onChanged={reload} />
                 ) : (
-                    category.name
+                    <>
+                        {category.name}
+                        {staleRow === category.id && <StateNotice state={STALE_STATE} />}
+                    </>
                 ),
         },
         { id: 'status', header: t('catalog.field.status'), cell: (category) => (category.active ? <StatusWord tone={'success'} label={t('catalog.status.active')} /> : <StateMark kind={'inactive'} />) },
@@ -139,19 +143,18 @@ function CategoriesList({ title, categories, status }: { title: string; categori
         >
             <div className={'bk-stack'}>
                 {note !== null && <Committed message={note} />}
-                {stale && <StateNotice state={STALE_STATE} />}
                 {action?.kind === 'add' && <AddRun key={opening} onClose={() => setAction(null)} onDone={done} />}
                 {categories.length > 0 && <DataTable caption={title} columns={columns} rows={categories} rowKey={(category) => String(category.id)} />}
                 {categories.length === 0 && status !== null && <NoResults onClear={() => visit(null)} />}
                 {categories.length === 0 && status === null && <EmptyState body={t('catalog.categories.empty')} />}
-                {action?.kind === 'lifecycle' && <LifecycleRun key={opening} category={action.category} onClose={() => setAction(null)} onDone={done} onStale={onStale} />}
+                {action?.kind === 'lifecycle' && <LifecycleRun key={opening} category={action.category} onClose={() => setAction(null)} onDone={done} onStale={() => onStale(action.category)} />}
             </div>
         </ListLayout>
     );
 }
 
 /** The inline form of a name (UXI-203, UXI-204): "Simpan" sends it, "Batal" closes it and sends nothing. */
-function NameForm({ initial, busy, error, onSave, onClose }: { initial: string; busy: boolean; error: string | undefined; onSave: (name: string) => void; onClose: () => void }) {
+function NameForm({ initial, busy, blocked, error, onSave, onClose }: { initial: string; busy: boolean; blocked: boolean; error: string | undefined; onSave: (name: string) => void; onClose: () => void }) {
     const [name, setName] = useState(initial);
     const field = useRef<HTMLInputElement | null>(null);
     const empty = name.trim() === '';
@@ -167,7 +170,7 @@ function NameForm({ initial, busy, error, onSave, onClose }: { initial: string; 
                 <TextInput ref={field} type={'text'} autoComplete={'off'} maxLength={100} value={name} onChange={(event) => setName(event.target.value)} />
             </Field>
             <div className={'bk-actions'}>
-                <Button label={t('ux.action.save')} enterActivates={false} busy={busy} disabledReason={empty ? t('ux.disabled.form_incomplete') : undefined} onClick={() => onSave(name.trim())} />
+                <Button label={t('ux.action.save')} enterActivates={false} busy={busy} disabledReason={empty ? t('ux.disabled.form_incomplete') : blocked && !busy ? <UnresolvedReason /> : undefined} onClick={() => onSave(name.trim())} />
                 <Button label={t('ux.action.cancel')} variant={'secondary'} unavailable={busy} onClick={onClose} />
             </div>
         </CommandForm>
@@ -194,6 +197,7 @@ function AddRun({ onClose, onDone }: { onClose: () => void; onDone: (text: strin
                 <NameForm
                     initial={''}
                     busy={phase.kind === 'submitting'}
+                    blocked={control.blockedBy !== null}
                     error={catalogFieldMessage(refusal?.fields['payload.name'])}
                     onSave={(name) => {
                         setSent(name);
@@ -207,7 +211,8 @@ function AddRun({ onClose, onDone }: { onClose: () => void; onDone: (text: strin
     );
 }
 
-function RenameRun({ category, onClose, onDone, onStale }: { category: Category; onClose: () => void; onDone: (text: string) => void; onStale: () => void }) {
+/** "Ubah nama" at its row: a version changed meanwhile says so there, the typed name stays, and the next save is expected against the row as read again (UXS-17). */
+function RenameRun({ category, onClose, onDone, onChanged }: { category: Category; onClose: () => void; onDone: (text: string) => void; onChanged: () => void }) {
     const control = useCommand(CATALOG_COMMANDS.renameCategory);
     const { phase } = control;
     const refusal = phase.kind === 'rejected' ? phase.refusal : null;
@@ -216,7 +221,7 @@ function RenameRun({ category, onClose, onDone, onStale }: { category: Category;
 
     useEffect(() => {
         if (stale) {
-            onStale();
+            onChanged();
         }
     }, [stale]);
 
@@ -228,9 +233,11 @@ function RenameRun({ category, onClose, onDone, onStale }: { category: Category;
 
     return (
         <div className={'bk-stack'}>
+            {stale && <StateNotice state={STALE_STATE} />}
             <NameForm
                 initial={category.name}
                 busy={phase.kind === 'submitting'}
+                blocked={control.blockedBy !== null}
                 error={catalogFieldMessage(refusal?.fields['payload.name'])}
                 onSave={(name) => control.submit({ categoryId: category.id, name }, { categoryVersion: category.version })}
                 onClose={onClose}

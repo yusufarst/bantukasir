@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect as baseExpect, test, type BrowserContext, type Page, type Route } from '@playwright/test';
 import { ACCESS_TIMEOUT, ACCESS_WAIT, resetPeople, SECURE_LOCAL_ORIGIN, signIn, type Person } from '../support/access';
-import { injected, prepareCommands } from '../support/commands';
+import { injected, prepareCommands, receiptOf } from '../support/commands';
 import { measure } from '../support/measure';
 import { contextAt, watch, WIDTHS } from '../support/specimen';
 
@@ -59,7 +59,7 @@ async function newCategory(page: Page): Promise<string> {
 
     await page.goto('/categories');
     await page.getByRole('button', { name: 'Tambah kategori' }).click();
-    await page.getByLabel('Nama kategori').fill(name);
+    await page.getByLabel('Nama kategori', { exact: true }).fill(name);
     await page.getByRole('button', { name: 'Simpan', exact: true }).click();
     await expect(page.getByText(`Kategori ${name} ditambahkan.`)).toBeVisible();
 
@@ -185,6 +185,8 @@ for (const width of [WIDTHS[0], WIDTHS[4], WIDTHS[7]]) {
         await page.getByLabel('Cari produk').fill(name);
         await expect(page).toHaveURL(new RegExp(`q=${name}`));
         await expect(page.getByRole('main').getByRole('table').locator('tbody tr')).toHaveCount(1);
+        // A search text is never in the browser's storage (SEC-CH-05).
+        expect(await page.evaluate(() => JSON.stringify([window.sessionStorage, window.localStorage]))).not.toContain(name);
         const row = page.getByRole('link', { name, exact: true });
         await expect(row).toBeVisible();
         await expect(page.getByRole('main').getByText('Rp7.500')).toBeVisible();
@@ -244,10 +246,10 @@ test('the search-first step: a scanned code and a SKU that exist, a similar name
     await expect(page.getByRole('button', { name: 'Lanjut isi data' })).toHaveCount(0);
     await checked(page);
 
-    // The product it found says where the way back leads, once.
+    // The product it found says where the way back leads; opened otherwise, to the list.
     await Promise.all([page.waitForURL((url) => url.pathname === `/products/${held.id}`), link.click()]);
     await expect(page.getByRole('link', { name: 'Kembali ke Tambah produk' })).toBeVisible();
-    await page.reload();
+    await page.goto(`/products/${held.id}`);
     await expect(page.getByRole('link', { name: 'Kembali ke Produk' })).toBeVisible();
 
     // An exact SKU, without regard to letter case.
@@ -591,6 +593,8 @@ test('a product changed meanwhile shows its current values, and the next save ho
     await expect(page.getByText('Data sudah berubah')).toBeVisible();
     await expect(page.locator('.bk-kv').getByText('Rp9.000')).toBeVisible();
     await expect(page.getByLabel(/^Merek/)).toHaveValue('Merek baru');
+    // What the form keeps says so before the next save (finding F-5).
+    await expect(page.getByText('Harga lama Rp9.000 → harga baru Rp7.500', { exact: false })).toBeVisible();
     await checked(page);
 
     await page.getByRole('button', { name: 'Simpan perubahan' }).click();
@@ -612,7 +616,7 @@ test('categories: rename, deactivate and reactivate, by the filter; an inactive 
 
     // UXI-204: Enter in the field sends nothing; "Batal" discards the name.
     await page.getByRole('button', { name: `Ubah nama kategori ${name}` }).click();
-    const field = page.getByRole('main').getByLabel('Nama kategori');
+    const field = page.getByRole('main').getByLabel('Nama kategori', { exact: true });
     await expect(field).toBeFocused();
     await checked(page);
     await field.fill('Tidak dipakai');
@@ -620,8 +624,8 @@ test('categories: rename, deactivate and reactivate, by the filter; an inactive 
     await expect(page.getByRole('rowheader', { name, exact: true })).toBeVisible();
 
     await page.getByRole('button', { name: `Ubah nama kategori ${name}` }).click();
-    await page.getByRole('main').getByLabel('Nama kategori').fill(renamed);
-    await page.getByRole('main').getByLabel('Nama kategori').press('Enter');
+    await field.fill(renamed);
+    await field.press('Enter');
     await expect(page.getByText('Nama kategori disimpan.')).toHaveCount(0);
     await page.getByRole('button', { name: 'Simpan', exact: true }).click();
     await expect(page.getByText('Nama kategori disimpan.')).toBeVisible();
@@ -657,6 +661,195 @@ test('categories: rename, deactivate and reactivate, by the filter; an inactive 
     await page.getByRole('menuitem', { name: 'Aktifkan kembali' }).click();
     await page.getByRole('dialog', { name: `Aktifkan kembali kategori ${renamed}?` }).getByRole('button', { name: 'Aktifkan kembali' }).click();
     await expect(page.getByText('Kategori diaktifkan kembali.')).toBeVisible();
+
+    expect(injected(watched.problems)).toEqual([]);
+    await context.close();
+});
+
+test('the keyboard alone: a category, the search-first step, a menu and its dialog', async ({ browser }) => {
+    const context = await contextAt(browser, WIDTHS[0]!);
+    const page = await context.newPage();
+    const watched = await watch(page);
+
+    await signedIn(context, page, 'Agus');
+    const name = `Kategori ${letters(10)}`;
+
+    // UXP-307: Space opens the form, whose field takes the focus; Tab reaches its actions; Space saves.
+    await page.goto('/categories');
+    await page.getByRole('button', { name: 'Tambah kategori' }).focus();
+    await page.keyboard.press('Space');
+    await expect(page.getByLabel('Nama kategori', { exact: true })).toBeFocused();
+    await page.keyboard.type(name);
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: 'Simpan', exact: true })).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: 'Batal' })).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await page.keyboard.press('Space');
+    await expect(page.getByText(`Kategori ${name} ditambahkan.`)).toBeVisible();
+
+    // UXP-303: the fields in order, and "Cek" by Space.
+    await page.goto('/products/new');
+    await page.getByLabel('Barcode', { exact: true }).focus();
+    await page.keyboard.press('Tab');
+    await expect(page.getByLabel('SKU', { exact: true })).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByLabel('Nama', { exact: true })).toBeFocused();
+    await page.keyboard.type(`Z${letters(14)}`);
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: 'Cek', exact: true })).toBeFocused();
+    await page.keyboard.press('Space');
+    await page.getByRole('button', { name: 'Lanjut isi data' }).focus();
+    await page.keyboard.press('Space');
+    await expect(page.getByRole('button', { name: 'Simpan produk' })).toBeVisible();
+
+    // UXP-302: the menu by Enter and the arrows; Esc closes its dialog, and the focus returns to the menu's button.
+    const product = await newProduct(page, name);
+    const menu = page.getByRole('button', { name: 'Tindakan lain', exact: true });
+    await menu.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('menuitem', { name: 'Nonaktifkan' })).toBeFocused();
+    await page.keyboard.press('Enter');
+    const dialog = page.getByRole('dialog', { name: `Nonaktifkan ${product.name}?` });
+    await expect(dialog.getByRole('button', { name: 'Batal' })).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+    await expect(menu).toBeFocused();
+
+    expect(injected(watched.problems)).toEqual([]);
+    await context.close();
+});
+
+test('an unresolved request of each family blocks a new command of it, with the way to resolve it (NC-13)', async ({ browser }) => {
+    const context = await contextAt(browser, WIDTHS[0]!);
+    const page = await context.newPage();
+    const watched = await watch(page);
+
+    await signedIn(context, page, 'Agus');
+    const category = await newCategory(page);
+    const product = await newProduct(page, category);
+    const reason = page.getByText('Ada permintaan sejenis yang statusnya belum pasti.', { exact: false });
+    const toRequests = page.getByRole('main').getByRole('link', { name: 'Buka Permintaan belum pasti' });
+
+    // Categories.
+    await receiptOf(context, 'Agus', 'category.create');
+    await page.goto('/categories');
+    await expect(page.getByRole('button', { name: 'Tambah kategori' })).toHaveAttribute('aria-disabled', 'true');
+    await expect(reason.first()).toBeVisible();
+    await expect(toRequests.first()).toBeVisible();
+    await checked(page);
+    await prepareCommands(context, ['Agus']);
+
+    // Product creation: the page opens on the request's panel, with "Cek status".
+    await receiptOf(context, 'Agus', 'product.create');
+    await page.goto('/products/new');
+    await expect(page.getByRole('button', { name: 'Cek status' })).toBeVisible();
+    await checked(page);
+    await prepareCommands(context, ['Agus']);
+
+    // Product edit: the form says why it waits, and the detail's "Nonaktifkan" too.
+    await receiptOf(context, 'Agus', 'product.update');
+    await page.goto(`/products/${product.id}/edit`);
+    await expect(page.getByRole('button', { name: 'Cek status' })).toBeVisible();
+    await page.getByLabel(/^Merek/).fill('Merek lain');
+    await expect(page.getByRole('button', { name: 'Simpan perubahan' })).toHaveAttribute('aria-disabled', 'true');
+    await expect(reason.first()).toBeVisible();
+    await page.goto(`/products/${product.id}`);
+    await expect(page.getByRole('button', { name: 'Nonaktifkan' })).toHaveAttribute('aria-disabled', 'true');
+    await expect(reason.first()).toBeVisible();
+    await prepareCommands(context, ['Agus']);
+
+    // Barcodes.
+    await receiptOf(context, 'Agus', 'barcode.add');
+    await page.goto(`/products/${product.id}`);
+    await expect(page.getByRole('button', { name: 'Tambah barcode pabrik' })).toHaveAttribute('aria-disabled', 'true');
+    await expect(page.getByRole('button', { name: 'Cek status' })).toBeVisible();
+    await checked(page);
+    await prepareCommands(context, ['Agus']);
+
+    expect(injected(watched.problems)).toEqual([]);
+    await context.close();
+});
+
+test('what changed meanwhile: a product, a barcode and a category at their places (UXS-17), and a refused category (UXS-32), a refused field (UXS-05)', async ({ browser }) => {
+    const context = await contextAt(browser, WIDTHS[0]!);
+    const page = await context.newPage();
+    const watched = await watch(page);
+
+    await signedIn(context, page, 'Agus');
+    const category = await newCategory(page);
+    const product = await newProduct(page, category);
+    const second = await context.newPage();
+
+    // UXP-302: the other tab deactivates it first.
+    await page.goto(`/products/${product.id}`);
+    await second.goto(`/products/${product.id}`);
+    await second.getByRole('button', { name: 'Tindakan lain', exact: true }).click();
+    await second.getByRole('menuitem', { name: 'Nonaktifkan' }).click();
+    await second.getByRole('dialog').getByRole('button', { name: 'Nonaktifkan' }).click();
+    await expect(second.getByText('Produk dinonaktifkan.')).toBeVisible();
+    await page.getByRole('button', { name: 'Tindakan lain', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Nonaktifkan' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Nonaktifkan' }).click();
+    await expect(page.getByText('Data sudah berubah')).toBeVisible();
+    await expect(page.getByRole('main').locator('[data-state="inactive"]')).toBeVisible();
+
+    // The barcode section: the other tab retires it first.
+    await page.goto(`/products/${product.id}`);
+    await second.goto(`/products/${product.id}`);
+    await second.getByRole('button', { name: `Tindakan lain ${product.barcode}` }).click();
+    await second.getByRole('menuitem', { name: 'Pensiunkan barcode' }).click();
+    await second.getByRole('dialog').getByRole('radio', { name: 'Alasan lain' }).click();
+    await second.getByRole('dialog').getByRole('button', { name: 'Pensiunkan barcode' }).click();
+    await expect(second.getByText('Barcode dipensiunkan.')).toBeVisible();
+    await page.getByRole('button', { name: `Tindakan lain ${product.barcode}` }).click();
+    await page.getByRole('menuitem', { name: 'Pensiunkan barcode' }).click();
+    await page.getByRole('dialog').getByRole('radio', { name: 'Alasan lain' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Pensiunkan barcode' }).click();
+    await expect(page.getByText('Data sudah berubah')).toBeVisible();
+    await expect(page.getByText('Dipensiunkan · alasan lain')).toBeVisible();
+
+    // UXP-307: the typed name stays at its row, and the next save holds.
+    const typed = `${category} kedua`;
+    await page.goto('/categories');
+    await second.goto('/categories');
+    await page.getByRole('button', { name: `Ubah nama kategori ${category}` }).click();
+    await page.getByRole('main').getByLabel('Nama kategori', { exact: true }).fill(typed);
+    await second.getByRole('button', { name: `Ubah nama kategori ${category}` }).click();
+    await second.getByRole('main').getByLabel('Nama kategori', { exact: true }).fill(`${category} ketiga`);
+    await second.getByRole('button', { name: 'Simpan', exact: true }).click();
+    await expect(second.getByText('Nama kategori disimpan.')).toBeVisible();
+    await page.getByRole('button', { name: 'Simpan', exact: true }).click();
+    await expect(page.getByRole('main').getByRole('table').getByText('Data sudah berubah')).toBeVisible();
+    await expect(page.getByRole('main').getByLabel('Nama kategori', { exact: true })).toHaveValue(typed);
+    await page.getByRole('button', { name: 'Simpan', exact: true }).click();
+    await expect(page.getByText('Nama kategori disimpan.')).toBeVisible();
+
+    // UXP-303: the other tab deactivates the chosen category; the refusal names it (UXS-32).
+    await page.goto('/products/new');
+    await page.getByLabel('Nama', { exact: true }).fill(`Z${letters(14)}`);
+    await page.getByRole('button', { name: 'Cek', exact: true }).click();
+    await page.getByRole('button', { name: 'Lanjut isi data' }).click();
+    await page.getByLabel('SKU', { exact: true }).fill(`SKU-${letters(8)}`);
+    await page.getByLabel('Kategori', { exact: true }).selectOption({ label: typed });
+    await page.getByLabel('Satuan', { exact: true }).fill('pcs');
+    await page.getByLabel('Harga jual', { exact: true }).fill('7500');
+    await second.goto('/categories');
+    await second.getByRole('button', { name: `Tindakan lain ${typed}` }).click();
+    await second.getByRole('menuitem', { name: 'Nonaktifkan' }).click();
+    await second.getByRole('dialog').getByRole('button', { name: 'Nonaktifkan' }).click();
+    await expect(second.getByText('Kategori dinonaktifkan.')).toBeVisible();
+    await page.getByRole('button', { name: 'Simpan produk' }).click();
+    await expect(page.locator('.bk-field .bk-error').getByText(`Kategori ${typed} sudah nonaktif.`, { exact: false })).toBeVisible();
+    await expect(page.getByLabel('Kategori', { exact: true }).locator('option', { hasText: typed })).toHaveCount(0);
+    await second.close();
+
+    // UXP-304: a value the server refuses, at its field and in the summary (UXS-05).
+    await page.goto(`/products/${product.id}/edit`);
+    await page.getByLabel('Stok minimum', { exact: true }).fill('-1');
+    await page.getByRole('button', { name: 'Simpan perubahan' }).click();
+    await expect(page.locator('.bk-error-summary')).toBeFocused();
+    await expect(page.locator('.bk-field .bk-error').getByText('Stok minimum tidak boleh kurang dari 0.')).toBeVisible();
 
     expect(injected(watched.problems)).toEqual([]);
     await context.close();

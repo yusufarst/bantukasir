@@ -8,9 +8,10 @@ import type { AreaId, DestinationId, SubDestinationId } from '@/lib/navigation';
 // the records as the server sends them, the commands of RC-17 to RC-24 and RC-27 to
 // RC-29, the reads RD-01 and RD-06, the messages of the fields, and what passes from
 // the list to its child pages. A filter or a page is kept in the page's props, which
-// the encrypted history state holds, so that the browser's Back finds them (NC-10); the
+// the encrypted history state holds, so that the browser's Back finds them (NC-10). The
 // way back of a child page is a new entry of the history, so it takes the list's address
-// from the session's harmless interface preferences, as UXP-602's does (SEC-CH-05).
+// from the document's referrer, the address that opened it: a search text is never in
+// the browser's storage (SEC-CH-05).
 
 export const PRODUCTS_PAGE = '/products';
 
@@ -126,53 +127,37 @@ export function productsAddress(filters: ProductFilters): string {
     return search === '' ? PRODUCTS_PAGE : `${PRODUCTS_PAGE}?${search}`;
 }
 
-const LIST_ADDRESS_KEY = 'bk.products.list';
-
-const OPENER_KEY = 'bk.products.opener';
-
-/** The search-first step of UXP-303 opened the product (NC-01; UXI-177, UXI-179). */
-const FROM_CREATE = 'create';
-
-/** UXP-301 remembers its address for the way back of its child pages (NC-10). */
-export function rememberProductsAddress(address: string): void {
+/** The page of this application that opened this document, or null. */
+function openerOf(referrer: string, origin: string): URL | null {
     try {
-        window.sessionStorage.setItem(LIST_ADDRESS_KEY, address);
+        const opener = new URL(referrer);
+
+        return opener.origin === origin ? opener : null;
     } catch {
-        // Without the storage, the way back simply shows the whole list.
+        return null;
     }
 }
 
-/** The address of UXP-301 as it last stood, or the whole list. */
+/** The address of UXP-301 with the filters it stood at when it opened this document, or the whole list (NC-01, NC-10). */
+export function listAddressFrom(referrer: string, origin: string): string {
+    const opener = openerOf(referrer, origin);
+
+    return opener?.pathname === PRODUCTS_PAGE ? `${PRODUCTS_PAGE}${opener.search}` : PRODUCTS_PAGE;
+}
+
+/** Whether the search-first step of UXP-303 opened this document (NC-01; UXI-177, UXI-179). */
+export function openedFromCreate(referrer: string, origin: string): boolean {
+    return openerOf(referrer, origin)?.pathname === NEW_PRODUCT_PAGE;
+}
+
+/** The way back of this document to the list. */
 export function productsListAddress(): string {
-    try {
-        const address = window.sessionStorage.getItem(LIST_ADDRESS_KEY);
-
-        return address !== null && (address === PRODUCTS_PAGE || address.startsWith(`${PRODUCTS_PAGE}?`)) ? address : PRODUCTS_PAGE;
-    } catch {
-        return PRODUCTS_PAGE;
-    }
+    return listAddressFrom(document.referrer, window.location.origin);
 }
 
-/** The search-first step leads to a product that it found. */
-export function leaveFromCreate(): void {
-    try {
-        window.sessionStorage.setItem(OPENER_KEY, FROM_CREATE);
-    } catch {
-        // Without the storage, the way back simply leads to the list.
-    }
-}
-
-/** Whether the search-first step opened this page, read once: a later visit of the product comes from elsewhere. */
-export function takeFromCreate(): boolean {
-    try {
-        const from = window.sessionStorage.getItem(OPENER_KEY);
-
-        window.sessionStorage.removeItem(OPENER_KEY);
-
-        return from === FROM_CREATE;
-    } catch {
-        return false;
-    }
+/** Whether the way back of this document leads to the search-first step. */
+export function cameFromCreate(): boolean {
+    return openedFromCreate(document.referrer, window.location.origin);
 }
 
 /**

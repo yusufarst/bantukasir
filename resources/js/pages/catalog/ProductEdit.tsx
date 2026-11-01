@@ -62,6 +62,8 @@ function EditForm({ title, product, categories }: { title: string; product: Prod
     const [price, setPrice] = useState<string | null>(product.price.amount);
     const [unit, setUnit] = useState(product.baseUnit);
     const [precision, setPrecision] = useState(String(product.quantityPrecision));
+    // The name of the category that the request sent, which a refusal of it names (UXS-32): the list may no longer hold it.
+    const [sentCategory, setSentCategory] = useState('');
     const detail = productPage(product.id);
 
     const priceChanged = price !== product.price.amount;
@@ -104,6 +106,7 @@ function EditForm({ title, product, categories }: { title: string; product: Prod
 
     const save = (): void => {
         if (chosen !== undefined && price !== null) {
+            setSentCategory(chosen.name);
             control.submit(
                 {
                     productId: product.id,
@@ -121,7 +124,7 @@ function EditForm({ title, product, categories }: { title: string; product: Prod
     };
 
     const fieldId = (field: string): string => `${ids}-${field}`;
-    const message = (field: string): string | undefined => (refusal === null ? undefined : catalogFieldMessage(refusal.fields[`payload.${field}`], chosen?.name));
+    const message = (field: string): string | undefined => (refusal === null ? undefined : catalogFieldMessage(refusal.fields[`payload.${field}`], sentCategory));
     const summary: FieldError[] = [];
     const add = (field: string, label: string): string | undefined => {
         const text = message(field);
@@ -153,7 +156,7 @@ function EditForm({ title, product, categories }: { title: string; product: Prod
     return (
         <CommandLayout header={<PageHeader title={title} subtitle={t('catalog.product_detail.subtitle', { produk: product.name })} back={{ href: detail, page: t('catalog.product_detail.title'), onNavigate: guard }} />}>
             {invalid && <ErrorSummary errors={summary} />}
-            {inactive && <StateNotice state={CATEGORY_STATE} body={t('ux.state.inactive.category.body', { kategori: chosen?.name ?? '' })} />}
+            {inactive && <StateNotice state={CATEGORY_STATE} body={t('ux.state.inactive.category.body', { kategori: sentCategory })} />}
             {stale && (
                 <>
                     <StateNotice state={STALE_STATE} />

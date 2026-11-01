@@ -14,7 +14,6 @@ import {
     CATALOG_COMMANDS,
     catalogFieldMessage,
     checkProduct,
-    leaveFromCreate,
     precisionOf,
     productPage,
     PRODUCTS_SHELL,
@@ -107,6 +106,8 @@ function CreateFlow({ title, categories, code }: { title: string; categories: re
     const [stock, setStock] = useState('0');
     const [check, setCheck] = useState<Check>({ kind: 'none' });
     const [holder, setHolder] = useState<ProductRow | null>(null);
+    // The name of the category that the request sent, which a refusal of it names (UXS-32): the list may no longer hold it.
+    const [sentCategory, setSentCategory] = useState('');
     const [listPage] = useState(productsListAddress);
     const latestCheck = useRef(0);
     const barcodeField = useRef<HTMLInputElement | null>(null);
@@ -224,7 +225,7 @@ function CreateFlow({ title, categories, code }: { title: string; categories: re
                         <ul>
                             {exact.map((product) => (
                                 <li key={product.id}>
-                                    <a href={productPage(product.id)} onClick={leaveFromCreate}>
+                                    <a className={'bk-table-link'} href={productPage(product.id)}>
                                         {product.name}
                                     </a>
                                 </li>
@@ -237,7 +238,7 @@ function CreateFlow({ title, categories, code }: { title: string; categories: re
                         <ul>
                             {similar.map((product) => (
                                 <li key={product.id}>
-                                    <a href={productPage(product.id)} onClick={leaveFromCreate}>
+                                    <a className={'bk-table-link'} href={productPage(product.id)}>
                                         {product.name}
                                     </a>
                                 </li>
@@ -263,6 +264,7 @@ function CreateFlow({ title, categories, code }: { title: string; categories: re
 
     const save = (): void => {
         if (chosen !== undefined && price !== null) {
+            setSentCategory(chosen.name);
             control.submit({
                 sku: sku.trim(),
                 name: name.trim(),
@@ -280,7 +282,7 @@ function CreateFlow({ title, categories, code }: { title: string; categories: re
     const fieldId = (field: string): string => `${ids}-${field}`;
     const summary: FieldError[] = [];
     const add = (path: string, id: string, label: string): string | undefined => {
-        const text = refusal === null ? undefined : catalogFieldMessage(refusal.fields[path], chosen?.name);
+        const text = refusal === null ? undefined : catalogFieldMessage(refusal.fields[path], sentCategory);
 
         if (text !== undefined) {
             summary.push({ fieldId: fieldId(id), label, message: text });
@@ -305,7 +307,7 @@ function CreateFlow({ title, categories, code }: { title: string; categories: re
             {refusal?.code === DUPLICATE_SKU && <StateNotice state={SKU_STATE} actions={holderLink} />}
             {refusal?.code === DUPLICATE_BARCODE && <StateNotice state={BARCODE_STATE} actions={holderLink} />}
             {refusal?.code === BARCODE_NOT_ELIGIBLE && <StateNotice state={INELIGIBLE_STATE} body={barcodeError} />}
-            {refusal?.code === CATEGORY_INACTIVE && <StateNotice state={CATEGORY_STATE} body={t('ux.state.inactive.category.body', { kategori: chosen?.name ?? '' })} />}
+            {refusal?.code === CATEGORY_INACTIVE && <StateNotice state={CATEGORY_STATE} body={t('ux.state.inactive.category.body', { kategori: sentCategory })} />}
             <Card>
                 <CommandForm>
                     <Field id={fieldId('sku')} label={t('catalog.field.sku')} required={true} error={skuError}>

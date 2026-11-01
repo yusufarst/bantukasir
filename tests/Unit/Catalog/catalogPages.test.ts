@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { precisionOf, productsAddress, quantityFromEntry, searchParameters } from '@/lib/catalog/products';
+import { listAddressFrom, openedFromCreate, precisionOf, productsAddress, quantityFromEntry, searchParameters } from '@/lib/catalog/products';
 import { shouldCapture } from '@/lib/catalog/scanCapture';
 
 // What the catalogue pages compute without a page (AC-017-02, AC-017-04; TASK-017):
@@ -35,6 +35,29 @@ describe('the address of the list', () => {
     it('gives RD-01 the filters and leaves the page to the read', () => {
         expect(searchParameters(none)).toEqual({});
         expect(searchParameters({ q: 'a', category: 7, brand: 'b', status: 'active', page: 4 })).toEqual({ q: 'a', category: '7', brand: 'b', status: 'active' });
+    });
+});
+
+describe('the way back of a child page (NC-01, NC-10)', () => {
+    const origin = 'https://kasir.test';
+
+    it('returns to the list with the filters that opened the page', () => {
+        expect(listAddressFrom(`${origin}/products?q=pulpen&status=active&page=2`, origin)).toBe('/products?q=pulpen&status=active&page=2');
+        expect(listAddressFrom(`${origin}/products`, origin)).toBe('/products');
+    });
+
+    it('leads to the whole list from any other opener, or none', () => {
+        expect(listAddressFrom(`${origin}/products/7/edit`, origin)).toBe('/products');
+        expect(listAddressFrom(`https://lain.test/products?q=pulpen`, origin)).toBe('/products');
+        expect(listAddressFrom('', origin)).toBe('/products');
+    });
+
+    it('names the search-first step only when it opened the page', () => {
+        expect(openedFromCreate(`${origin}/products/new`, origin)).toBe(true);
+        expect(openedFromCreate(`${origin}/products/new?code=A1`, origin)).toBe(true);
+        expect(openedFromCreate(`${origin}/products`, origin)).toBe(false);
+        expect(openedFromCreate(`https://lain.test/products/new`, origin)).toBe(false);
+        expect(openedFromCreate('', origin)).toBe(false);
     });
 });
 
