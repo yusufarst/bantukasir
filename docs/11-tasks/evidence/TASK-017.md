@@ -32,7 +32,7 @@ Times are Asia/Jakarta. Statuses use the vocabulary of [TEST_STRATEGY](../../08-
 
 ## 3. Readings and technical choices
 
-1. **NC-10, the list's state.** The filters and page stand in the props of the page, written with Inertia's client-side `router.replace`, so the encrypted history state holds them with the address, without a request; the browser's Back restores them. "Kembali ke Produk" is a new history entry, which cannot read another entry's state, so it takes the list's address from `document.referrer`, whose query the policy `strict-origin-when-cross-origin` keeps within the origin. Nothing of it is in browser storage: a search text may name a product, so it is no harmless preference (SEC-CH-05; review finding R-03). A limit: a detail page reached again through its edit page leads back to the whole list, with its filters still on the browser's Back. The way back to the search-first step reads the same referrer.
+1. **NC-10, the list's state.** The filters and page stand in the props of the page, written with Inertia's client-side `router.replace`, so the encrypted history state holds them with the address, without a request; the browser's Back restores them. "Kembali ke Produk" is a new history entry, which cannot read another entry's state, so it takes the list's address from `document.referrer`, whose query the policy `strict-origin-when-cross-origin` keeps within the origin. Nothing of it is in browser storage: a search text may name a product, so it is no harmless preference (SEC-CH-05; review finding R-03). The links between UXP-302 and UXP-304 are Inertia visits (`visitInDocument`), so that the document, and with it the referrer, survives the round trip (R-08), and the shell's guard of a visit asks first when data was entered (UXS-45). The way back to the search-first step reads the same referrer, so the link "Buka :produk" of a refused duplicate in step 2 is also named so, and leads to an empty step 1: a limit, since a referrer cannot tell the two steps apart (R-11). UXI-179's links carry no unsaved-changes guard: that row's result states hold no UXS-45, while UXI-184 and UXI-185 do.
 2. **Restoring "Muat lebih banyak".** A list reopened at page `n` reads its `n × 25` rows in as few reads of RD-01's largest page (100) as it takes.
 3. **Enter in "Cari produk".** RD-01 `mode=exact` with `q` alone (TASK-016 F-4). With no product, it searches for the text, so a name typed and ended with Enter still finds its results, and only an empty result is UXS-33: UXP-301's states hold both UXS-03 and UXS-33, and BR-CAT-31 says an unknown token stays available for search.
 4. **Scan capture.** `useScanCapture`: a text key while no field holds the focus moves the focus to the page's scan field, with no timing, as UXA-11 says. It pauses while a layer (`data-bk-layer`) is open and while a menu holds the focus. UXP-301's search, UXP-303's "Barcode" in step 1, and UXP-302's token field while the inline form is open are its targets. The F2 of the till's `ScanField` is not used: UXI-159's keyboard column has no shortcut.
@@ -79,12 +79,13 @@ Times are Asia/Jakarta. Statuses use the vocabulary of [TEST_STRATEGY](../../08-
 
 ## 7. Checks (CE-44 to CE-46, D-108, D-117)
 
-Fast runs of CI, the workflow `fast-checks`: `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit`; each PostgreSQL or concurrency test file that the branch changes. Three of the ten allowed.
+Fast runs of CI, the workflow `fast-checks`: `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit`; each PostgreSQL or concurrency test file that the branch changes. Five of the ten allowed.
 
 | Check | Where it ran | Time (Asia/Jakarta) | Duration | Result |
 | --- | --- | --- | --- | --- |
 | Fast run | CI run 41322680765 on `3c6282a` | 1 Nov 22:43 | 4 min 25 s | FAIL; `CopyDeckTest` (reading 9); `composer lint` and `analyse` passed |
 | Fast run | CI run 41323382676 on `573d149` | 1 Nov 22:52 | 5 min 0 s | FAIL; `npm run lint`, a template literal in four attributes of `Product.tsx` |
 | **Fast run**: static checks, unit tests, `CatalogPagesTest`, `CapabilityMatrixTest`, `RouteInventoryTest` | CI run 41324304391 on `c0210af` | 1 Nov 23:03 | 8 min 39 s | **PASS** |
+| **Fast run**, the same, with the fixes of round 1 | CI run 41327315420 on `728b1b1` | 1 Nov 23:37 | about 9 min | **PASS** |
 | Guard's preview and guard | Local, on each head | 1 Nov | under 1 min each | PASS, no candidate to judge |
 | `composer test:postgres`, `test:race`, the browser suite, `npm run build`, the image checks | CI on the pull request's final head (D-117) | — | — | `NOT_RUN` at this writing |

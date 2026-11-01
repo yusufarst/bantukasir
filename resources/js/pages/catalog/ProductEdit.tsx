@@ -1,15 +1,15 @@
 import { router } from '@inertiajs/react';
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useState, type MouseEvent } from 'react';
 import { Button, ButtonLink } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { KeyValueList, type KeyValue } from '@/components/ui/Data';
 import { CommandForm, Field, MoneyInput, TextInput } from '@/components/ui/Field';
 import type { StateId } from '@/components/ui/stateCatalogue';
 import { ErrorSummary, StateNotice, type FieldError } from '@/components/ui/States';
-import { AppShell, useLeaveGuard, useUnsavedChanges } from '@/layouts/AppShell';
+import { AppShell, useUnsavedChanges } from '@/layouts/AppShell';
 import { CommandLayout, PageHeader } from '@/layouts/Page';
 import { leaveSavedNote } from '@/lib/access/users';
-import { CategoryField, PrecisionField, UnresolvedReason } from '@/lib/catalog/Parts';
+import { CategoryField, PrecisionField, UnresolvedReason, visitInDocument } from '@/lib/catalog/Parts';
 import { CATALOG_COMMANDS, catalogFieldMessage, precisionOf, productPage, PRODUCTS_SHELL, quantityFromEntry, type Category, type ProductDetail } from '@/lib/catalog/products';
 import { CommandPanels } from '@/lib/commands/Panels';
 import { useCommand } from '@/lib/commands/useCommand';
@@ -25,7 +25,7 @@ import { t } from '@/lib/i18n';
 // "Simpan perubahan" is enabled once a field changed (UXS-13), never by Enter. A version
 // changed meanwhile shows the current values (UXS-17), and the next save is expected
 // against them. Success leads to UXP-302 with its message; leaving with changes asks
-// first (UXS-45).
+// first, by the shell's guard of an Inertia visit (UXS-45).
 
 const STALE_STATE: StateId = 'UXS-17';
 
@@ -52,7 +52,6 @@ export default function ProductEdit({ product, categories }: { product: ProductD
 function EditForm({ title, product, categories }: { title: string; product: ProductDetail; categories: readonly Category[] }) {
     const control = useCommand(CATALOG_COMMANDS.updateProduct);
     const { phase, blockedBy } = control;
-    const guard = useLeaveGuard();
     const ids = useId();
     const initialStock = formatQuantity(product.minimumStock, product.quantityPrecision);
     const [name, setName] = useState(product.name);
@@ -65,6 +64,7 @@ function EditForm({ title, product, categories }: { title: string; product: Prod
     // The name of the category that the request sent, which a refusal of it names (UXS-32): the list may no longer hold it.
     const [sentCategory, setSentCategory] = useState('');
     const detail = productPage(product.id);
+    const toDetail = (event: MouseEvent<HTMLAnchorElement>): void => visitInDocument(event, detail);
 
     const priceChanged = price !== product.price.amount;
     const changed =
@@ -154,7 +154,7 @@ function EditForm({ title, product, categories }: { title: string; product: Prod
     ];
 
     return (
-        <CommandLayout header={<PageHeader title={title} subtitle={t('catalog.product_detail.subtitle', { produk: product.name })} back={{ href: detail, page: t('catalog.product_detail.title'), onNavigate: guard }} />}>
+        <CommandLayout header={<PageHeader title={title} subtitle={t('catalog.product_detail.subtitle', { produk: product.name })} back={{ href: detail, page: t('catalog.product_detail.title'), onNavigate: toDetail }} />}>
             {invalid && <ErrorSummary errors={summary} />}
             {inactive && <StateNotice state={CATEGORY_STATE} body={t('ux.state.inactive.category.body', { kategori: sentCategory })} />}
             {stale && (
@@ -198,7 +198,7 @@ function EditForm({ title, product, categories }: { title: string; product: Prod
                     <PrecisionField id={fieldId('quantityPrecision')} value={precision} disabled={product.unitLocked} hint={product.unitLocked ? t('catalog.field.unit_lock_help') : t('catalog.field.precision_help')} error={precisionError} onChange={setPrecision} />
                     <div className={'bk-actions'}>
                         <Button label={t('ux.action.save_changes')} size={'lg'} enterActivates={false} busy={busy} disabledReason={reason} onClick={save} />
-                        <ButtonLink href={detail} label={t('ux.action.cancel')} variant={'secondary'} onClick={guard} />
+                        <ButtonLink href={detail} label={t('ux.action.cancel')} variant={'secondary'} onClick={toDetail} />
                         {((phase.kind === 'rejected' && !stale) || phase.kind === 'not_committed' || adoptedDone) && <Button label={t('ux.action.edit_again')} variant={'quiet'} onClick={control.startAgain} />}
                     </div>
                 </CommandForm>

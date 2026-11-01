@@ -365,6 +365,19 @@ test('the list: a scanned code looked up exactly, an unknown code kept, the filt
     await expect(page.getByRole('button', { name: 'Aktif', exact: true })).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByRole('link', { name: product.name, exact: true })).toBeVisible();
 
+    // Through the edit page and back, saved or cancelled, the way back still holds them (NC-10; review finding R-08).
+    await Promise.all([page.waitForURL((url) => url.pathname === `/products/${product.id}`), page.getByRole('link', { name: product.name, exact: true }).click()]);
+    await Promise.all([page.waitForURL((url) => url.pathname === `/products/${product.id}/edit`), page.getByRole('link', { name: 'Ubah produk' }).click()]);
+    await page.getByLabel(/^Merek/).fill('Merek lain');
+    await page.getByRole('button', { name: 'Simpan perubahan' }).click();
+    await page.waitForURL((url) => url.pathname === `/products/${product.id}`);
+    await expect(page.getByText('Perubahan produk disimpan.')).toBeVisible();
+    await Promise.all([page.waitForURL((url) => url.pathname === `/products/${product.id}/edit`), page.getByRole('link', { name: 'Ubah produk' }).click()]);
+    await Promise.all([page.waitForURL((url) => url.pathname === `/products/${product.id}`), page.getByRole('link', { name: 'Batal' }).click()]);
+    await expect(page.getByRole('heading', { level: 1, name: 'Detail produk' })).toBeVisible();
+    await Promise.all([page.waitForURL((url) => url.href === list), page.getByRole('link', { name: 'Kembali ke Produk' }).click()]);
+    await expect(page.getByRole('button', { name: 'Aktif', exact: true })).toHaveAttribute('aria-pressed', 'true');
+
     // An inactive filter shows none of the active products.
     await page.getByRole('button', { name: 'Nonaktif', exact: true }).click();
     await expect(page.getByRole('link', { name: product.name, exact: true })).toHaveCount(0);
@@ -703,7 +716,7 @@ test('the keyboard alone: a category, the search-first step, a menu and its dial
     await page.keyboard.press('Space');
     await expect(page.getByRole('button', { name: 'Simpan produk' })).toBeVisible();
 
-    // UXP-302: the menu by Enter and the arrows; Esc closes its dialog, and the focus returns to the menu's button.
+    // UXP-302: the menu by Enter; Esc closes its dialog, and the focus returns to the menu's button.
     const product = await newProduct(page, name);
     const menu = page.getByRole('button', { name: 'Tindakan lain', exact: true });
     await menu.focus();
@@ -821,6 +834,8 @@ test('what changed meanwhile: a product, a barcode and a category at their place
     await expect(second.getByText('Nama kategori disimpan.')).toBeVisible();
     await page.getByRole('button', { name: 'Simpan', exact: true }).click();
     await expect(page.getByRole('main').getByRole('table').getByText('Data sudah berubah')).toBeVisible();
+    // The current name stands beside it, once the row was read again; the next save is expected against that row.
+    await expect(page.locator('.bk-kv').getByText(`${category} ketiga`)).toBeVisible();
     await expect(page.getByRole('main').getByLabel('Nama kategori', { exact: true })).toHaveValue(typed);
     await page.getByRole('button', { name: 'Simpan', exact: true }).click();
     await expect(page.getByText('Nama kategori disimpan.')).toBeVisible();

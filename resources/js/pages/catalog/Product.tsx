@@ -14,7 +14,7 @@ import { StatusWord } from '@/components/ui/Status';
 import { AppShell } from '@/layouts/AppShell';
 import { PageContainer, PageHeader } from '@/layouts/Page';
 import { takeSavedNote } from '@/lib/access/users';
-import { blockedReason, CodeField } from '@/lib/catalog/Parts';
+import { blockedReason, CodeField, visitInDocument } from '@/lib/catalog/Parts';
 import { cameFromCreate, CATALOG_COMMANDS, catalogFieldMessage, checkProduct, NEW_PRODUCT_PAGE, productPage, PRODUCTS_SHELL, productsListAddress, type ProductDetail, type ProductRow } from '@/lib/catalog/products';
 import { useScanCapture } from '@/lib/catalog/scanCapture';
 import { committedText } from '@/lib/commands/families';
@@ -146,7 +146,7 @@ function ProductPage({ title, product, priceHistory, barcodes }: { title: string
                 back={fromCreate ? { href: NEW_PRODUCT_PAGE, page: t('catalog.product_create.title') } : { href: listPage, page: t('catalog.products.title') }}
                 actions={
                     <>
-                        <ButtonLink href={editPage} label={t('catalog.product_edit.title')} variant={'primary'} />
+                        <ButtonLink href={editPage} label={t('catalog.product_edit.title')} variant={'primary'} onClick={(event) => visitInDocument(event, editPage)} />
                         {lifecycleReason === undefined ? (
                             <Menu label={t('ux.action.more_actions')} items={lifecycleEntries} />
                         ) : (

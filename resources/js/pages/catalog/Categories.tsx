@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { FilterChip, FilterChips } from '@/components/ui/Choices';
+import { KeyValueList } from '@/components/ui/Data';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Dialog } from '@/components/ui/Dialog';
 import { CommandForm, Field, TextInput } from '@/components/ui/Field';
@@ -233,7 +234,12 @@ function RenameRun({ category, onClose, onDone, onChanged }: { category: Categor
 
     return (
         <div className={'bk-stack'}>
-            {stale && <StateNotice state={STALE_STATE} />}
+            {stale && (
+                <>
+                    <StateNotice state={STALE_STATE} />
+                    <KeyValueList items={[{ key: String(category.id), label: t('catalog.categories.name'), value: category.name }]} />
+                </>
+            )}
             <NameForm
                 initial={category.name}
                 busy={phase.kind === 'submitting'}

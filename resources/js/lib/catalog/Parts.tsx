@@ -1,4 +1,5 @@
-import type { KeyboardEvent, ReactNode, Ref } from 'react';
+import { router } from '@inertiajs/react';
+import type { KeyboardEvent, MouseEvent, ReactNode, Ref } from 'react';
 import { Field, SelectInput, TextInput } from '@/components/ui/Field';
 import { Icon } from '@/components/ui/Icon';
 import { blockingRequest } from '@/lib/commands/families';
@@ -61,6 +62,21 @@ export function CodeField({
             <TextInput ref={inputRef} icon={'scan'} type={'text'} autoComplete={'off'} enterKeyHint={'search'} spellCheck={false} maxLength={128} value={value} onChange={(event) => onValueChange(event.target.value)} onKeyDown={onKeyDown} />
         </Field>
     );
+}
+
+/**
+ * A link between UXP-302 and UXP-304 stays in the document that the list opened, as an
+ * Inertia visit, so that its referrer still gives the way back to the list with its
+ * filters (NC-10), and the shell asks first when data was entered (UXS-45). A click that
+ * asks for another tab or window is the browser's.
+ */
+export function visitInDocument(event: MouseEvent<HTMLAnchorElement>, href: string): void {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return;
+    }
+
+    event.preventDefault();
+    router.visit(href);
 }
 
 /** The word of an inactive category in a list. */
