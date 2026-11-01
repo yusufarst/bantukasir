@@ -17,9 +17,10 @@ use LogicException;
  * Each locks the product of the mapping it changes (step 6, the update lock: the
  * product guard's barcode mappings, G-09), and expects no version.
  *
- * The result is the mapping, with its product and its code in the stored detail:
- * the page shows the record in place at RP-302, and tells the code that it generated
- * (UXI-172). The code is the mapping's number in the answer.
+ * The result stores the mapping's key alone, since a token is neither an internal key
+ * nor a document number (SCHEMA section 5.3). The answer is rebuilt from the mapping,
+ * which never changes: the page shows the record in place at RP-302, and tells the
+ * code that it generated (UXI-172). The code is the mapping's number in the answer.
  */
 abstract class BarcodeAction extends CatalogAction
 {
@@ -36,14 +37,13 @@ abstract class BarcodeAction extends CatalogAction
             return null;
         }
 
-        $product = $result->detail['productId'] ?? null;
-        $code = $result->detail['code'] ?? null;
+        $mapping = $result->ref === null ? null : $this->barcodes->mapping($result->ref);
 
-        if (! is_int($product) || ! is_string($code)) {
-            throw new LogicException('A barcode command stored its product and its code.');
+        if ($mapping === null) {
+            throw new LogicException('A barcode command stored the mapping that it wrote or retired.');
         }
 
-        return ['type' => $result->type, 'id' => $result->ref, 'number' => $code, 'location' => '/products/'.(string) $product];
+        return ['type' => $result->type, 'id' => $mapping->id, 'number' => $mapping->token, 'location' => '/products/'.(string) $mapping->productId];
     }
 
     /**
@@ -59,8 +59,8 @@ abstract class BarcodeAction extends CatalogAction
         return $product ?? throw CommandRefused::of(ErrorCode::NotFound);
     }
 
-    protected static function mappingResult(int $mapping, int $product, string $code): StoredResult
+    protected static function mappingResult(int $mapping): StoredResult
     {
-        return new StoredResult(self::MAPPING, $mapping, ['productId' => $product, 'code' => $code]);
+        return new StoredResult(self::MAPPING, $mapping);
     }
 }

@@ -44,6 +44,6 @@ final class GenerateBarcode extends BarcodeAction
         );
         $this->written();
 
-        return self::mappingResult($mapping, $product->id, $token['code']);
+        return self::mappingResult($mapping);
     }
 }

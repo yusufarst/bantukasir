@@ -137,6 +137,12 @@ final class BarcodeTablesTest extends DatabaseTestCase
         $this->assertWriteRefused(fn (Connection $c) => $this->insertMapping($c, $token, [...$correction, 'reason' => null]), '23514', 'barcode_mappings_attach_kind_shape');
         $this->assertWriteRefused(fn (Connection $c) => $this->insertMapping($c, $token, [...$correction, 'corrected_reason_class' => 'OTHER']), '23514', 'barcode_mappings_attach_kind_shape');
 
+        // A null in either column of its composite key, and the key that would refuse it
+        // too (review finding R-04).
+        $this->assertWriteRefused(fn (Connection $c) => $this->insertMapping($c, $token, [...$correction, 'corrects_mapping_id' => null]), '23514', 'barcode_mappings_attach_kind_shape');
+        $this->assertWriteRefused(fn (Connection $c) => $this->insertMapping($c, $token, [...$correction, 'corrected_reason_class' => null]), '23514', 'barcode_mappings_attach_kind_shape');
+        $this->assertSame('f', $this->observer()->table('pg_constraint')->where('conname', 'barcode_mappings_corrected_retirement_fk')->value('confmatchtype'));
+
         // Another token's mapping.
         $otherToken = $this->insertToken($this->runtime());
         $this->insertRetirement($this->runtime(), $mapping, ['reason_class' => 'MISASSIGNMENT']);

@@ -54,6 +54,6 @@ final class AddBarcode extends BarcodeAction
         );
         $this->written();
 
-        return self::mappingResult($mapping, $product->id, $input->token);
+        return self::mappingResult($mapping);
     }
 }

@@ -409,6 +409,17 @@ final class ProductSearchTest extends DatabaseTestCase
         $this->postJson('/commands/product.deactivate', $this->envelopeFor('product.deactivate', ['productId' => $inactive], ['productVersion' => 1]))->assertStatus(201);
         $this->search(['mode' => 'exact', 'q' => '0012-Ab'])->assertOk()->assertJsonPath('rows.0.id', $inactive)->assertJsonPath('rows.0.active', false);
 
+        // What a scan delivers: the terminator and outer spaces are removed. `q` follows
+        // the global trimming of section 3.1, so an outer tab or no-break space is
+        // removed too, unlike a token of RC-27 or RD-06; an inner one is refused
+        // (review findings R-02, R-03).
+        foreach (['0012-Ab%0D%0A', '0012-Ab%0A', '%200012-Ab%20', '%090012-Ab', '%C2%A00012-Ab'] as $scanned) {
+            $this->getJson(self::SEARCH.'?context=catalog&mode=exact&q='.$scanned)->assertOk()->assertJsonPath('rows.0.id', $inactive);
+        }
+
+        $this->assertSame([], self::ids($this->getJson(self::SEARCH.'?context=catalog&mode=exact&q=0012-ab%0D%0A')->assertOk()));
+        $this->getJson(self::SEARCH.'?context=catalog&mode=exact&q=0012%0A-Ab')->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
+
         // No prefix, no name, no other case of a token, and no code at all: none.
         foreach (['89', 'Zebra', 'Buku 899', '0012-ab', '012-Ab', '%', "' OR '1'='1"] as $code) {
             $this->assertSame([], self::ids($this->search(['mode' => 'exact', 'q' => $code])->assertOk()), $code);

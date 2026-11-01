@@ -41,7 +41,7 @@ A request passes, in this order:
 
 | Case | HTTP | Body |
 | --- | --- | --- |
-| Committed now | 201 | `{"outcome": "COMMITTED", "operation", "commandId", "repeated": false, "result": {"type", "id", "number", "location"}}`; `number` only for a numbered record; `location` is a path of ROUTE_CONTRACTS |
+| Committed now | 201 | `{"outcome": "COMMITTED", "operation", "commandId", "repeated": false, "result": {"type", "id", "number", "location"}}`; `number` only for a numbered record, or the code of a barcode mapping, read from the mapping and never stored in the result (RC-27 to RC-29; TASK-016); `location` is a path of ROUTE_CONTRACTS |
 | Original result of a repeated identity | 200 | The same body with `"repeated": true`, rebuilt from the stored references under the actor's current authorization (ADR-007 section 3) |
 | Refused | 401, 403, 404, 409, 422, 429, 503 | The error body of ROUTE_CONTRACTS RT-07; the status per code is that of TECHNICAL_RULES section 4 |
 | CSRF check failed | 419 | The framework's answer, read as `CSRF_FAILED` |

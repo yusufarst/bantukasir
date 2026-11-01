@@ -82,6 +82,11 @@ final class BarcodeCommandsTest extends DatabaseTestCase
             $this->assertSame(['barcode' => $token, 'mappingId' => $mapping, 'symbology' => null], self::dataOf($event['change_data']));
             $this->assertSame(['COMMITTED'], $this->outcomesOf($envelope));
 
+            // The result holds references only: the mapping's key, never its token
+            // (SCHEMA section 5.3; review finding R-01).
+            $stored = (array) $observer->table('command_results')->where('command_id', $commandId)->sole();
+            $this->assertSame(['barcode_mapping', $mapping, []], [$stored['result_type'], $stored['result_ref'], self::dataOf($stored['result_detail'])]);
+
             // A repeat returns the original, and writes nothing.
             $before = $this->facts();
             $this->postJson('/commands/barcode.add', $envelope)->assertStatus(200)->assertJsonPath('repeated', true)->assertJsonPath('commandId', $commandId)->assertJsonPath('result.id', $mapping)->assertJsonPath('result.number', $token);
@@ -372,6 +377,29 @@ final class BarcodeCommandsTest extends DatabaseTestCase
 
         // A barcode changes no field of its product, whose version stays.
         $this->assertSame(2, $this->watcher()->table('products')->where('id', $this->product)->value('version'));
+    }
+
+    public function test_no_answer_of_the_three_commands_is_stored_by_a_cache(): void
+    {
+        // EXECUTION_CONTEXT section 10, a route; TR-HTTP-09; review finding R-05.
+        $this->as('Agus');
+        $mapping = TokoContoh::barcode($this->product, 'AKTIF-1');
+
+        foreach ([
+            ['barcode.add', ['productId' => $this->product, 'token' => 'BARU-1']],
+            ['barcode.generate', ['productId' => $this->product]],
+            ['barcode.retire', ['mappingId' => $mapping, 'reasonClass' => 'OTHER']],
+        ] as [$operation, $payload]) {
+            $envelope = $this->commandEnvelope($operation, $payload, []);
+
+            foreach ([
+                'committed' => $this->postJson('/commands/'.$operation, $envelope)->assertStatus(201),
+                'repeated' => $this->postJson('/commands/'.$operation, $envelope)->assertStatus(200),
+                'refused' => $this->postCommand($operation, [], [])->assertStatus(422),
+            ] as $case => $response) {
+                $this->assertSame('no-store, private', $response->headers->get('Cache-Control'), $operation.' '.$case);
+            }
+        }
     }
 
     public function test_a_cashier_is_refused_every_command_before_it_runs(): void

@@ -62,6 +62,6 @@ final class RetireBarcode extends BarcodeAction
         );
         $this->written();
 
-        return self::mappingResult($mapping->id, $product->id, $mapping->token);
+        return self::mappingResult($mapping->id);
     }
 }
