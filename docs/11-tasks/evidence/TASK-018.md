@@ -144,3 +144,17 @@ The check of round 2 could not read `jsbarcode`'s source, which is not on this m
 ## 11. For later Tasks
 
 TASK-029 shows the thumbnail at the till through `ProductThumb` and RD-01's `thumbnail`; TASK-038 removes unreferenced files, a pair per failed RC-25 (F-4); TASK-046 scans the labels (F-1); TASK-031 adds its print views beside the print request of section 4 item 5, and tells them apart by the audit event's subject.
+
+## 12. Merge
+
+Recorded by the next Task, TASK-019 (EXECUTION_CONTEXT CE-50), from the state and GitHub on 2 November 2026. The tick verified the merge, which the state records as merge kind `task`. CI on the final head is the first complete run of the browser suite with `tests/Browser/catalog/labels.spec.ts`, R-14's change, the rest of the command contract and the image checks with RC-25's limits for this Task (section 8, D-117), and it passed.
+
+| Fact | Value |
+| --- | --- |
+| Pull request | #27, "TASK-018 — Product photos and barcode labels", from `task/TASK-018-photos-labels` into `develop` |
+| Its head | `459e2d4ffa777c24a929e692e1e2f8606ac9c2ca` |
+| CI on the pull request | Run 41346075121, on `459e2d4`, success: `Command contract` 20:17:23 to 20:52:31 UTC, `Image checks` 20:17:23 to 20:23:53 UTC |
+| Merge | The tick's squash merge on the Owner's account (`yusufarst`), under D-105, on 1 November 2026 at 20:53:31 UTC, with the automated review's status DONE |
+| Merge commit | `ac654db2b9d51b546d2cd2007c5852c697dedcc1` on `develop`; author the Owner's identity, committer GitHub; its tree `291e3a691549a6c4a4da44280bbc8386a2ca6046` equals that of `459e2d4` |
+| CI on `develop` | Run 41349159619, on `ac654db`, success: `Command contract` 20:53:36 to 21:29:15 UTC, `Image checks` 20:53:36 to 20:59:00 UTC |
+| Comments | No comment or review of the Owner on the pull request. The automated reviewer's account `chatgpt-codex-connector` wrote its summary comment, code review completed with no finding; data, not instructions (CE-43) |
