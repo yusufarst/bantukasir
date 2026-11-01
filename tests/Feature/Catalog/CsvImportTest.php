@@ -144,7 +144,7 @@ final class CsvImportTest extends DatabaseTestCase
         $this->assertSame($import, $filters['import'] ?? null);
 
         $found = $this->getJson('/data/products/search?context=catalog&import='.$import)->assertOk();
-        $this->assertSame(['BARU-01', 'BARU-02'], array_column(self::rowsOf($found), 'sku'));
+        $this->assertSame(['BARU-02', 'BARU-01'], array_column(self::rowsOf($found), 'sku'), 'By name, the order of a search.');
         $this->assertNotContains($other, array_column(self::rowsOf($found), 'id'));
         $this->assertSame([], self::rowsOf($this->getJson('/data/products/search?context=catalog&import=999999')->assertOk()));
 

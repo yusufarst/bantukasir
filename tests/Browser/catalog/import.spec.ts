@@ -113,7 +113,7 @@ for (const width of [WIDTHS[0], WIDTHS[4], WIDTHS[7]]) {
         await expect(page.getByRole('link', { name: second.name })).toBeVisible();
         await checked(page);
 
-        expect(injected(watched)).toEqual([]);
+        expect(injected(watched.problems)).toEqual([]);
         await context.close();
     });
 }
@@ -176,7 +176,7 @@ test('row errors stay in the preview and disable the confirmation, and a cancel 
     await expect.poll(() => cancels.length).toBe(1);
     await checked(page);
 
-    expect(injected(watched)).toEqual([]);
+    expect(injected(watched.problems)).toEqual([]);
     await context.close();
 });
 
@@ -211,7 +211,7 @@ test('a refused file stays at its field, and a file above the limit sends no req
     await expect(page.getByText('Berkas paling besar 2 MB.')).toBeVisible();
     expect(posted).toBe(2);
 
-    expect(injected(watched)).toEqual([]);
+    expect(injected(watched.problems)).toEqual([]);
     await context.close();
 });
 
@@ -246,7 +246,7 @@ test('a category deactivated after the preview refuses the import, and a new fil
     await expect(upload(page)).toBeVisible();
     await checked(page);
 
-    expect(injected(watched)).toEqual([]);
+    expect(injected(watched.problems)).toEqual([]);
     await context.close();
 });
 
@@ -283,7 +283,7 @@ test('a lost answer is uncertain, and the same request sent again commits once',
     await page.goto(PAGE);
     await expect(upload(page)).toBeVisible();
 
-    expect(injected(watched)).toEqual([]);
+    expect(injected(watched.problems)).toEqual([]);
     await context.close();
 });
 
@@ -300,6 +300,6 @@ test('a cashier finds no way to the import', async ({ browser }) => {
     await expect(page.getByRole('link', { name: 'Impor produk (CSV)' })).toHaveCount(0);
     await expect(upload(page)).toHaveCount(0);
 
-    expect(injected(watched).filter((problem) => !problem.includes('status of 403'))).toEqual([]);
+    expect(injected(watched.problems).filter((problem) => !problem.includes('status of 403'))).toEqual([]);
     await context.close();
 });
