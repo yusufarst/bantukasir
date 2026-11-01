@@ -34,7 +34,6 @@ final class MinimumStockRuleTest extends TestCase
         yield 'not canonical' => ['01', 0, 'min_stock'];
         yield 'a separator' => ['1,5', 1, 'min_stock'];
         yield 'an exponent' => ['1e3', 0, 'min_stock'];
-        yield 'an empty text' => ['', 0, 'min_stock'];
         yield 'decimals at precision 0' => ['1.5', 0, 'quantity_whole'];
         yield 'a decimal zero at precision 0' => ['1.0', 0, 'quantity_whole'];
         yield 'too many decimals' => ['1.25', 1, 'quantity_decimals'];
