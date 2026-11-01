@@ -422,6 +422,7 @@ test('a request no longer active is stale, a failed print is asked again, and a 
     // A page to reload (UXS-09): the tab closes and "Cetak" opens no other (review finding R-06).
     await page.route('**/commands/document.print_labels', (route) => route.fulfill({ status: 419, contentType: 'application/json', body: '{}' }));
     await print.click();
+    await expect(page.getByRole('button', { name: 'Muat ulang' })).toBeVisible();
     await expect(print).toHaveAttribute('aria-disabled', 'true');
     await expect.poll(() => context.pages().length).toBe(1);
     await print.click({ force: true });
