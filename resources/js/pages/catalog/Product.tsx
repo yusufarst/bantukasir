@@ -249,6 +249,10 @@ function BarcodesSection({ product, barcodes, onDone, onStale, onOpen }: { produ
         onDone(text);
     };
 
+    // A new key for each opening: its command starts again with a new intent.
+    const generateKey = `generate-${String(opening)}`;
+    const retireKey = `retire-${String(opening)}`;
+
     const retiredMeanwhile = (): void => {
         setRetiring(null);
         onStale();
@@ -310,8 +314,8 @@ function BarcodesSection({ product, barcodes, onDone, onStale, onOpen }: { produ
                         />
                     </div>
                 )}
-                <GenerateBarcodeRun key={opening} product={product} onDone={finished} />
-                {retiring !== null && <RetireRun key={opening} barcode={retiring} onClose={() => setRetiring(null)} onDone={finished} onStale={retiredMeanwhile} />}
+                <GenerateBarcodeRun key={generateKey} product={product} onDone={finished} />
+                {retiring !== null && <RetireRun key={retireKey} barcode={retiring} onClose={() => setRetiring(null)} onDone={finished} onStale={retiredMeanwhile} />}
             </div>
         </Section>
     );
