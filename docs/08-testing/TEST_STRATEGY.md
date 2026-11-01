@@ -102,13 +102,13 @@ The `ci` workflow (ADR-011 item 4) runs the command contract that the foundation
 | Event | Required | Blocks |
 | --- | --- | --- |
 | Pull request into `develop` | Section 6; L1; L2; L3 for the modules the change touches and every race that names them; L4; the L5 critical paths already implemented on `develop` or by the change — sign-in, checkout cash and transfer, close, drawer-funded refund, one recovery case — each from the Task that delivers it ([EXECUTION_CONTEXT](../11-tasks/EXECUTION_CONTEXT.md) EXC-34; D-091) | The merge |
-| Push of a `task/` branch, a checkpoint (D-108) | The whole command contract, as for a pull request | Nothing by itself; the Task's review waits for a green checkpoint ([EXECUTION_CONTEXT](../11-tasks/EXECUTION_CONTEXT.md) CE-46) |
+| Push of a `task/` branch, a fast run (D-117) | `composer validate`, `lint`, `analyse` and `test:unit`; `npm run lint`, `typecheck` and `test:unit`; and each PostgreSQL or concurrency test file that the branch changes | Nothing by itself; the Task's review waits for a green fast run, and a red fast run on a pull request's head holds the merge ([EXECUTION_CONTEXT](../11-tasks/EXECUTION_CONTEXT.md) CE-46) |
 | Push to `develop` | Everything above; all of L3; all of L5 with the accessibility checks | The next release candidate |
 | Release tag | The release workflow (RELEASE_PROCESS section 4) | Publication of the image |
 
 No scheduled workflow is relied on: GitHub may disable scheduled workflows of a quiet public repository.
 
-CI on GitHub's hosted runner is where the heavy checks run: PostgreSQL, concurrency, the browser suite and the whole contract, in the containers of the local environment. A Task gets them before its pull request from checkpoint runs, and on the pull request's final head from the run that gates the merge; the Owner's machine needs no container for BantuKasir. A green result is reused until a change to what it covers invalidates it (EXECUTION_CONTEXT CE-44 to CE-46, D-108).
+CI on GitHub's hosted runner is where the heavy checks run: PostgreSQL, concurrency, the browser suite, the build, the image checks with the vulnerability gate, and the whole contract, in the containers of the local environment. A Task gets them on the pull request's final head, from the run that gates the merge, and again on `develop` at the merge; before that it has fast runs, and every heavy check is `NOT_RUN`, never `PASS`. The Owner's machine needs no container for BantuKasir. A green result is reused until a change to what it covers invalidates it (EXECUTION_CONTEXT CE-44 to CE-46, D-108, D-117).
 
 ## 8. Evidence
 

@@ -2,13 +2,13 @@
 
 The current operational state of BantuKasir. This is the only document that says what is authorized now. Keep it short; history is in Git and in [DECISIONS](../00-governance/DECISIONS.md).
 
-Written 1 November 2026 (Asia/Jakarta) by TASK-014 on its branch `task/TASK-014-release-pipeline`. It describes `develop` once its pull request is squash-merged and CI has passed on that merge (CE-50, CE-61). The previous version is that of the `ops/` pull request #21 of D-115 (squash commit `8f166e6`).
+Written 1 November 2026 (Asia/Jakarta) by the host session of CE-03 from a separate clone, on the branch `ops/fast-build`, on the Owner's instruction D-117. It describes `develop` once this `ops/` pull request is squash-merged by the Owner and CI has passed on that merge (CE-82). The previous version is that of TASK-014's pull request #22 (squash commit `5a5bf06`).
 
 ```text
 PROJECT:              BantuKasir (codename) — goods-only point of sale; one business and one stock pool per installation
 PROJECT STATE:        IMPLEMENTATION — TASK-001 DONE (D-098), TASK-002 DONE (D-099), TASK-003 DONE (D-100), TASK-004 DONE (continuous execution, D-101: pull request #5, squash commit `3dd2b58`), TASK-005 DONE (D-101: pull request #6, squash commit `d375e91`), TASK-006 DONE (D-101: pull request #9, squash commit `ccb464f`), TASK-007 DONE (D-101, D-105: pull request #11, squash commit `7c38804`), TASK-008 DONE (D-101, D-105, D-107: pull request #13, squash commit `e54cbab`), TASK-009 DONE (D-101, D-105, D-107: pull request #15, squash commit `a6cd66d`), TASK-010 DONE (D-101, D-105, D-107, D-109: pull request #17, squash commit `c6702d2`), TASK-011 DONE (D-101, D-105, D-107, D-109: pull request #18, squash commit `d2ec7a6`), TASK-012 DONE (D-101, D-105, D-107, D-109, D-112, D-113: pull request #19, squash commit `9684bd8`), TASK-013 DONE (D-101, D-105, D-107, D-109, D-114, D-115: pull request #20, squash commit `0735bff`, whose develop CI run 41179831914 failed and stays recorded as failed; operationally verified under the one-time exception of D-115 only) and TASK-014 DONE (D-101, D-105, D-107, D-109, D-116, at its squash merge), merged into `develop` and published on GitHub; the re-foundation RF-0 to RF-7 is complete and the Task baseline approved (D-092)
-CURRENT STEP:         Continuous execution (D-101): TASK-014's pull request, then the tick's squash merge and its verification (CE-60, CE-61)
-CURRENT TASK:         None in flight on `develop`. Next: TASK-015 — Categories, products, prices and Product Search (server) — at effort High under D-107 (review class A, its adversarial review at High): agent `bk-executor-high`, review by `bk-reviewer-high`, verification by `bk-reviewer-high`; a Task in flight shows in its pull request and in the executor state (EXECUTION_CONTEXT CE-20, CE-21)
+CURRENT STEP:         Continuous execution (D-101) under FAST BUILD (D-117), in force from this merge: a Task's pushes get fast runs, and the whole command contract with the image checks runs on the pull request's final head and on `develop` (CE-44, CE-46)
+CURRENT TASK:         None in flight on `develop`. Next, after the Owner's resume: TASK-015 — Categories, products, prices and Product Search (server) — at effort High under D-107 (review class A, its adversarial review at High): agent `bk-executor-high`, review by `bk-reviewer-high`, verification by `bk-reviewer-high`; a Task in flight shows in its pull request and in the executor state (EXECUTION_CONTEXT CE-20, CE-21)
 ```
 
 ## 1. Where the project stands
@@ -156,8 +156,8 @@ The re-foundation steps are in [REFOUNDATION_PLAN](../00-governance/REFOUNDATION
 
 Under continuous execution (D-101, D-104) these follow each other without an instruction for each Task; under D-105 the tick merges the pull requests of CE-60 and the Owner merges the others.
 
-1. **TASK-014's pull request** — CI on its final head, the first run of the review's fixes (D-116); the automated review's window; the tick's squash merge and its verification (CE-60, CE-61). A database of Grype newer than the assessed one may report other CVEs, which D-115 does not accept: that is a stop.
-2. **TASK-015 — Categories, products, prices and Product Search (server)** — `READY`; review class A, effort High under D-107, agent `bk-executor-high`; its adversarial review by `bk-reviewer-high`, verification of the fixes by `bk-reviewer-high`. It uses `TokoContoh::staff()` for its fixtures and takes OPEN_ITEMS T-27; it records TASK-014's merge (CE-50).
+1. **The `ops/` pull request of D-117** — the Owner's squash merge, then his resume. While it is open, the tick stops with `UNEXPECTED_PR` before selecting a Task; merged during a Task, it would stop that Task with `TOOLING_CHANGED` (CE-82). Agent definitions load at a session's start, so the host forwards D-117's step 3 to each executor until the host session restarts. A database of Grype newer than the assessed one may report other CVEs, which D-115 does not accept: that is a stop.
+2. **TASK-015 — Categories, products, prices and Product Search (server)** — `READY`; review class A, effort High under D-107, agent `bk-executor-high`; its adversarial review by `bk-reviewer-high`, verification of the fixes by `bk-reviewer-high`. It uses `TokoContoh::staff()` for its fixtures and takes OPEN_ITEMS T-27; it records TASK-014's merge and that of the `ops/` pull request of D-117 (CE-50).
 3. **The `ops/` change of TASK-006's finding F-5** — proposed, not made (CE-80): measure and remove the delay of the local environment on the Owner's Windows machine (the bind mount of the working tree and the PHP settings of the local container); it needs his instruction. TASK-007's local runs used one Playwright worker and `APP_PORT=18080` on the command line, by the Owner's directive (evidence section 13).
 4. **Repository settings** — the Owner makes them himself; agents never change settings.
    - Done: squash merging is allowed on the repository (the Owner, 23 October 2026).
@@ -255,7 +255,7 @@ Nothing else. Every other branch operation, every SSD operation, and every commi
 
 ## 5. Decisions
 
-Latest Owner decisions (11 October to 1 November 2026, D-066 to D-115), recorded in [DECISIONS](../00-governance/DECISIONS.md):
+Latest Owner decisions (11 October to 1 November 2026, D-066 to D-117), recorded in [DECISIONS](../00-governance/DECISIONS.md):
 
 - D-066 — the bookkeeping checkpoint `86822d5` is accepted, with its SSD bundle and push; every executor instruction runs as Claude Opus 5.5 at effort Max (effort clause superseded by D-095);
 - D-067 — question 35, option A: one Sale line per product; the cart combines repeated additions; RF-5 specifies the backend enforcement;
@@ -310,6 +310,7 @@ Latest Owner decisions (11 October to 1 November 2026, D-066 to D-115), recorded
 - D-114 — TASK-013, for that Task alone (31 October 2026): no further checkpoint run, CI on the pull request's final head being the first run of the review's remaining fixes, R-22 above all; the completed review not restarted without a new material finding, and no unaffected test run again; at most three fix cycles, each for the demonstrated issue only; no failing or unverified critical change merged. The safeguards of production data, security, cost and destructive operations are unchanged, and the limits of CE-44 and CE-46 stand for every other Task.
 - D-115 — 1 November 2026: temporary, development-only acceptance of exactly the 13 new CVEs of CI run 41179831914, the critical CVE-2026-86414 and CVE-2026-92388 individually, with no wildcard, suppression, future acceptance or production risk acceptance; a one-time recovery of CE-61 for pull request #20, whose develop CI failed and stays recorded as failed, by one `ops/` pull request with green CI on it and on its merge; TASK-014 only after that verification and the Owner's resume.
 - D-116 — TASK-014, for that Task alone (1 November 2026): no further checkpoint run, CI on the pull request's final head being the first run of the review's fixes, run 41278925232 on `26472df` staying valid evidence for what they do not touch; at most three fix cycles; `--first-installation` only on a truly empty database, verified automatically, with no protection of data bypassed; no production operation authorized. The limits of CE-44 and CE-46 stand for every other Task.
+- D-117 — FAST BUILD (1 November 2026): a push of a `task/` branch runs only the workflow `fast-checks`; the whole command contract and the image checks run on the pull request's final head and on `develop`; the limit of CE-46 is 10 fast runs. Reviews, targeted verification, three fix cycles, the merge's block on any red check, the vulnerability gate and every safeguard stay.
 
 D-019 to D-065 remain as recorded. The next free identifiers are D-117 and ADR-012.
 

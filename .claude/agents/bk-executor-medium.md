@@ -19,18 +19,18 @@ Tools (EXECUTION_CONTEXT CE-47, D-109), so that routine work needs no approval:
 1. Read AGENTS.md, docs/handoff/CURRENT_HANDOFF.md and docs/11-tasks/EXECUTION_CONTEXT.md, section 19 first; then TASK_PLAN sections 1 to 4, the Task's contract and what its "Read first" lists (EXC-01). Record your model identifier. If it is not `claude-opus-5-5`, run `bash scripts/executor/state.sh stop MODEL_MISMATCH --token <token> --detail "<model>"`, report and end (CE-13).
 2. Mode `start`: preflight (EXC-20 against the state and GitHub, EXC-21, EXC-23); `git switch -c <branch> <base>`; build the contract stage by stage, with `bash scripts/executor/state.sh heartbeat --token <token>` at each stage and before each test run; create the evidence file and keep it current.
 3. Checks (EXECUTION_CONTEXT CE-44 to CE-46):
-   - the checks of CE-44 (a) to (d): the contract's tests, the suites the change affects, the static checks and the build;
-   - the heavy ones — PostgreSQL, concurrency, the browser suite and anything that needs a container — run in a checkpoint run of CI, never in a container on this machine. Commit `TASK-NNN: checkpoint — <stage>` with `commit.sh`, run `guard.sh`, then push with `push.sh`, each in its own Bash call. Find the run with `gh run list --branch <branch> --commit <head>`, and wait for it with one background `timeout 2700 gh run watch <run> --exit-status`, with a heartbeat just before and just after it. Read a failure with `gh run view <run> --log-failed`;
+   - before the pull request, a fast run of CI. Commit `TASK-NNN: checkpoint — <stage>` with `commit.sh`, run `guard.sh`, then push with `push.sh`, each in its own Bash call. The push runs the workflow `fast-checks`: the static checks, the unit tests and the PostgreSQL and concurrency test files that the branch changes. Find the run with `gh run list --branch <branch> --commit <head>`, and wait for it with one background `timeout 2700 gh run watch <run> --exit-status`, with a heartbeat just before and just after it. Read a failure with `gh run view <run> --log-failed`;
+   - the heavy ones of CE-44 — the whole of PostgreSQL and concurrency, the browser suite, the build and the image checks — run in CI on the pull request's final head, never in a container on this machine; until then each is `NOT_RUN` in the evidence, never `PASS`;
    - locally, only what needs no container, where its toolchain is installed natively;
    - reuse every result that no later change invalidated; never run a passing check again without such a change (CE-45).
 
-   All must be green. Record the checks as one table in the evidence file — check, where it ran (local, or the CI run and its head), time, duration, result (EXC-61): the reviewer reads them there. More than 5 checkpoint runs, or a runner failure with nothing left to push, is a stop (CE-46).
+   All that have run must be green. Record the checks as one table in the evidence file — check, where it ran (local, or the CI run and its head), time, duration, result (EXC-61): the reviewer reads them there. More than 10 fast runs, or a runner failure with nothing left to push, is a stop (CE-46).
 4. Review (CE-40), once:
-   - with every check of step 3 green on the head to review, a checkpoint run of CI among them: self-review, then `bash scripts/executor/state.sh phase REVIEW --token <token>`;
+   - with a fast run of CI green on the head to review: self-review, then `bash scripts/executor/state.sh phase REVIEW --token <token>`;
    - `bash scripts/executor/review-pack.sh --base <base> --round 1`;
    - invoke the review agent that the delegation names, in the foreground, with the Task, its contract, its review class, the base, the tree and the package path;
    - `bash scripts/executor/review-pack.sh --check <package>` must print `UNCHANGED`;
-   - fix every MUST-FIX and each valid SHOULD-FIX that is within scope and cheap to fix safely, each with a regression test where code changes; record the other findings; run again only the checks of step 3 that the fixes affect, the heavy ones in a checkpoint run (CE-45, CE-46); make no change beyond the findings;
+   - fix every MUST-FIX and each valid SHOULD-FIX that is within scope and cheap to fix safely, each with a regression test where code changes; record the other findings; run again only the checks of step 3 that the fixes affect, in a fast run where it covers them and otherwise on the final head (CE-45, CE-46); make no change beyond the findings;
    - only if the review raised a MUST-FIX: `bash scripts/executor/review-pack.sh --base <base> --round 2 --previous <package>`, then the verification agent that the delegation names, in mode `verify`, as a targeted check of the MUST-FIX fixes and their regression tests; then `--check` again;
    - a MUST-FIX that this check reports NOT FIXED, REGRESSED or new: fix it with a regression test, run the affected checks of step 3, write the round 3 package with `--previous` the round 2 package, and have the verification agent make one more targeted check of that fix alone; then `--check` again.
 
@@ -76,7 +76,7 @@ To stop (CE-70, CE-71): `bash scripts/executor/state.sh stop <REASON> --token <t
 Never:
 - a raw `git commit` or `git push`, or a commit and a push in the same Bash call;
 - merge, enable auto-merge or approve a pull request;
-- wait for the pull request's CI, which the tick follows, or poll GitHub in a loop of model turns; a checkpoint run is awaited only as step 3 says;
+- wait for the pull request's CI, which the tick follows, or poll GitHub in a loop of model turns; a fast run is awaited only as step 3 says;
 - run a container of BantuKasir on this machine (D-108);
 - prefix or chain commands, or change a file other than with Edit or Write (D-109);
 - change `scripts/executor/`, `.claude/` or the executor state other than through its scripts;
