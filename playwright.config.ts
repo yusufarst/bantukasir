@@ -19,6 +19,10 @@ import { SECURE_LOCAL_ORIGIN } from './tests/Browser/support/access';
 // A new test that signs in a person belongs in one of these files or folders.
 const PEOPLE = ['access/**', 'security/**', 'shell/shell.spec.ts', 'shell/session.spec.ts', 'commands/**', 'configuration/**'];
 
+// Maintenance mode is the whole application's, so its tests run after every
+// other test, alone (TASK-014). A failure in another project skips them.
+const MAINTENANCE = ['operations/maintenance.spec.ts'];
+
 export default defineConfig({
     testDir: 'tests/Browser',
     forbidOnly: true,
@@ -32,12 +36,19 @@ export default defineConfig({
         {
             name: 'chromium',
             use: { ...devices['Desktop Chrome'], ...SECURE_LOCAL_ORIGIN },
-            testIgnore: PEOPLE,
+            testIgnore: [...PEOPLE, ...MAINTENANCE],
         },
         {
             name: 'people',
             use: { ...devices['Desktop Chrome'], ...SECURE_LOCAL_ORIGIN },
             testMatch: PEOPLE,
+            workers: 1,
+        },
+        {
+            name: 'maintenance',
+            use: { ...devices['Desktop Chrome'], ...SECURE_LOCAL_ORIGIN },
+            testMatch: MAINTENANCE,
+            dependencies: ['chromium', 'people'],
             workers: 1,
         },
     ],

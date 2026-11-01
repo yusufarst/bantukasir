@@ -1,0 +1,70 @@
+# The release workflow (ADR-011 item 5; RELEASE_PROCESS sections 3 and 4; TASK-014
+# scope item 1): only for a release tag vMAJOR.MINOR.PATCH or a candidate tag
+# vMAJOR.MINOR.PATCH-rc.N, whose pushes the Owner authorizes one by one (REL-10). It
+# builds the image of the tagged commit once, runs the image checks on it, and
+# publishes that same image to the GitHub Container Registry, labelled with its version
+# and commit and never under a floating tag; the operator deploys it by the digest it
+# reports (ADR-011 item 6). It holds no secret of any environment and no environment:
+# its only credential is the token GitHub issues to it. It never publishes from a fork.
+# The dry run of this path is release-dry-run.yml; scripts/checks/release-workflow.php
+# keeps both to these rules.
+name: release
+
+on:
+    push:
+        tags:
+            - "v[0-9]+.[0-9]+.[0-9]+"
+            - "v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
+
+permissions: {}
+
+concurrency:
+    group: release-${{ github.ref }}
+    cancel-in-progress: false
+
+jobs:
+    release:
+        name: Build, check and publish the release image
+        if: github.repository == 'yusufarst/bantukasir' && github.ref_type == 'tag'
+        runs-on: ubuntu-24.04
+        timeout-minutes: 60
+        permissions:
+            contents: read
+            packages: write
+        outputs:
+            digest: ${{ steps.publish.outputs.digest }}
+        env:
+            RELEASE_TAG: ${{ github.ref_name }}
+            RELEASE_VERSION: ${{ github.ref_name }}
+            RELEASE_COMMIT: ${{ github.sha }}
+            RELEASE_SOURCE: ${{ github.server_url }}/${{ github.repository }}
+            RELEASE_RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        steps:
+            - name: Check out the tagged commit with the history of its branches
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  fetch-depth: 0
+                  persist-credentials: false
+
+            - name: Refuse anything but a release or candidate tag on its branch
+              run: bash scripts/release/check-tag.sh "$RELEASE_TAG" "$RELEASE_COMMIT"
+
+            - name: Build the image and run the image checks on it
+              shell: bash
+              run: bash scripts/checks/image-checks.sh 2>&1 | tee "$RUNNER_TEMP/image-checks.log"
+
+            - name: Publish that image with the workflow's own token
+              id: publish
+              env:
+                  REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  REGISTRY_USER: ${{ github.actor }}
+                  RELEASE_IMAGE: ghcr.io/${{ github.repository }}
+              run: bash scripts/release/publish.sh
+
+            - name: Fill the release integrity report
+              env:
+                  RELEASE_DIGEST: ${{ steps.publish.outputs.digest }}
+              run: bash scripts/release/integrity-report.sh "$RUNNER_TEMP/image-checks.log" "$RUNNER_TEMP/integrity-report.md"
+
+            - name: Show the digest and the report in the run's summary
+              run: cat "$RUNNER_TEMP/integrity-report.md" >> "$GITHUB_STEP_SUMMARY"

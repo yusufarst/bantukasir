@@ -199,6 +199,7 @@ Production data protection is CURRENT in [PRODUCTION_DATA_SAFETY](PRODUCTION_DAT
 | --- | --- | --- | --- |
 | [RELEASE_PROCESS.md](../10-release/RELEASE_PROCESS.md) | Controlled releases, migration safety, deployment, checks, rollback, release records, the first installation, the cutover, gate RELEASE | CURRENT (RF-6, D-088) | — |
 | [UAT_PILOT.md](../10-release/UAT_PILOT.md) | UAT scripts per role, the pilot and its acceptance, training, the shop's guidance | CURRENT (RF-6, D-088) | — |
+| [templates/RELEASE_INTEGRITY_REPORT.md](../10-release/templates/RELEASE_INTEGRITY_REPORT.md), [templates/RELEASE_RECORD.md](../10-release/templates/RELEASE_RECORD.md) | The templates of RELEASE_PROCESS sections 4 and 9 | CURRENT (TASK-014) | — |
 | [legacy/P10-RELEASE-UAT.md](../10-release/legacy/P10-RELEASE-UAT.md) | Release readiness, cutover, pilot | LEGACY — SUPERSEDED by the two documents above | RF-6; removal in a later authorized step |
 
 ### docs/11-tasks — P11

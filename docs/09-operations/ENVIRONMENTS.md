@@ -149,6 +149,10 @@ The exact names and the check are `App\Domain\Operations\RequiredSettings` and `
 
 Optional in role `backup` (TASK-013): `BACKUP_RETENTION`, `full` or `reduced` (BACKUP_RECOVERY section 6), any other value refusing the start; `BACKUP_STORE_REGION`, only for a store whose address does not have the form `s3.<region>.<host>`. `config/backup.php` and `config/heartbeat.php` read these settings.
 
+Optional in role `web` (TASK-014): `APP_MAINTENANCE_BYPASS_SECRET`, 32 to 128 letters, digits, `_` or `-`, any other value refusing the start, and refused in role `backup`. Unset, nobody passes maintenance mode. Set, a request for that path gives the browser the framework's signed cookie for 12 hours (RELEASE_PROCESS RB-20 step 7). It is the way past a page and no credential of any data: sign-in and every check of a route still apply. Being a path, it reaches the access log, which only someone who can already read this setting reads; the operator may change it after a window.
+
+`APP_RELEASE_VERSION` and `APP_RELEASE_COMMIT` are set in the image by the release workflow, and the operator sets `APP_RELEASE_IMAGE_DIGEST` on both resources at deployment (RB-20 step 9); the manifest of a backup names them (BACKUP_RECOVERY section 5).
+
 A default is a placeholder, a fallback of `config/` or a value of the local environment: `DB_DATABASE` must not be `bantukasir`, and `DB_USERNAME` and `BACKUP_DB_USERNAME` must not be the local roles' names. When set, `APP_DEBUG` must be off and, in role `web`, `DB_CONNECTION` must be `pgsql`, `SESSION_DRIVER` and `CACHE_STORE` `database` and `SESSION_SECURE_COOKIE` on. In role `backup` the default database connection is the backup role's and the scheduler's lock a file of the container, because that role can only read and insert `backup_runs` (SCH-42). `LOG_CHANNEL` and `LOG_LEVEL` are set in the release image (standard error, `info`). The migration job runs a command in the image, which skips this check, with its own settings (ADR-011 item 7).
 
 ## 12. Database setup

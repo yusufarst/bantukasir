@@ -41,6 +41,7 @@ How a revision of BantuKasir reaches staging and production, how its migrations 
 
 - Versions are `vMAJOR.MINOR.PATCH`; `v1.0.0` is the first production release of V1. PATCH: fixes without a schema change; MINOR: features or additive and expand migrations; MAJOR: a release that removes a capability or contracts the schema in a way an older image cannot use.
 - A release candidate is one commit on `develop` (ADR-011 item 3) whose CI checks pass and whose release notes list every change, every migration with its class and every Task it closes.
+- **The candidate tag** is `vMAJOR.MINOR.PATCH-rc.N`, N from 1, for example `v1.0.0-rc.1`: the version it would become, for staging (TASK-044). Its commit is on `develop` or `main`; a release tag's commit is on `main`. The release workflow refuses every other tag or commit (`scripts/release/check-tag.sh`; TASK-014).
 
 ## 4. Release candidate checks and the integrity report
 
@@ -53,7 +54,9 @@ The release workflow (ADR-011 item 5) builds the image and runs, on it:
 
 The scan of item 3 reports every finding and fails on a high or critical finding that has a fix, has an unknown fix state, is known to be exploited, or is outside the accepted list, and on a report it cannot trust (`scripts/checks/image-scan-gate.sh`, `scripts/checks/image-scan-accepted.json`; D-112, D-115). That list is a temporary acceptance for development: passing it authorizes no deployment to staging or production, and it does not replace the review of section 12.
 
-The **release integrity report**, attached to the release record, states: the version, commit, tag and image digest; the base image digests; the lockfile hashes; the CI run and its results; the suites and their status on this revision (TEST_STRATEGY section 8); the migrations, each with its class and rehearsal evidence; the scan results; the publication guard's result; the compatibility of the previous image with the new schema; known issues; and the cost inventory unchanged or its approved exceptions (COST_POLICY).
+The workflow publishes the image these checks passed, under its version only, never a floating tag, and refuses a version already published; its result is the digest. `.github/workflows/release-dry-run.yml` runs the same path without publishing when a file of the path changes (TASK-014).
+
+The **release integrity report** (template `docs/10-release/templates/RELEASE_INTEGRITY_REPORT.md`, which the workflow fills with what it knows), attached to the release record, states: the version, commit, tag and image digest; the base image digests; the lockfile hashes; the CI run and its results; the suites and their status on this revision (TEST_STRATEGY section 8); the migrations, each with its class and rehearsal evidence; the scan results; the publication guard's result; the compatibility of the previous image with the new schema; known issues; and the cost inventory unchanged or its approved exceptions (COST_POLICY).
 
 ## 5. Migration safety
 
@@ -70,7 +73,7 @@ The **release integrity report**, attached to the release record, states: the ve
 | REL-20 | Every migration is reviewed as SQL (SCH-51) and carries its class, its expected duration and lock impact, and its verification queries: row counts, constraints valid, privileges equal to SCHEMA section 10, and a clean `reconciliation:run`. A production rollback never relies on a down migration. | SCH-51, PDS §2 |
 | REL-21 | Rehearsal on a populated isolated target: with the provisional benchmark dataset in CI or locally for every migration; and, for every migration that changes or moves existing data, on a restore-drill target holding the latest production backup (BACKUP_RECOVERY section 8). An empty database is never enough. | PDS §2, TECHNICAL_RULES section 13.2 |
 | REL-22 | DDL waits at most the migration role's `lock_timeout` of 5 seconds (ENVIRONMENTS ENV-31); an index on a large table is built concurrently, in its own migration step outside a transaction. | ENV-31 |
-| REL-23 | **Preflight** (`release:preflight`, run by the migration job before it migrates): the operator's typed environment name equals the configuration and the database marker (ENV-04); in production a successful backup less than one hour old exists; the pending migrations are exactly the release record's list; no migration is marked destructive without the approval reference; `synchronous_commit` is on; the backup container's schedule is paused. Any failure stops the job before the first statement. | ADR-011 item 7 |
+| REL-23 | **Preflight** (`release:preflight`, run by the migration job before it migrates): the operator's typed environment name equals the configuration and the database marker (ENV-04); in production a successful backup less than one hour old exists; the pending migrations are exactly the release record's list; no migration is marked destructive without the approval reference; `synchronous_commit` is on; the backup container's schedule is paused, as the operator confirms. Any failure stops the job before the first statement. The first installation has no backup yet and no table to hold one (RB-23 step 9 takes the first after the migrations), so the operator may type `--first-installation`, accepted only for a database without a table (TASK-014). | ADR-011 item 7 |
 | REL-24 | A migration that needs no write stop still runs in the authorized window; one that does runs in maintenance mode. | PDS §2 |
 
 ## 6. RB-20 — Deploying a release
@@ -86,9 +89,9 @@ The **release integrity report**, attached to the release record, states: the ve
 
 5. Tell the shop when the window starts; the window lies outside opening hours unless the Owner authorized otherwise.
 6. Pause the backup container's schedule; run `backup:run --reason=pre-release`; the run must succeed.
-7. If the release has migrations: switch on maintenance mode, with a bypass only for the operator.
-8. Run the migration job: preflight (REL-23), then the migrations, then the verification queries of REL-20.
-9. Deploy the new digest to the application and backup resources.
+7. If the release has migrations: switch on maintenance mode (`php artisan down`), with a bypass only for the operator: a request for the path that the application's `APP_MAINTENANCE_BYPASS_SECRET` holds gives that browser the way past the maintenance page, and nothing more (ENVIRONMENTS section 11).
+8. Run the migration job, `bantukasir-migration-job` in a one-off container of the release image (its usage is at the top of `docker/app/migration-job.sh`): preflight (REL-23), then the migrations, then the verification queries of REL-20.
+9. Deploy the new digest to the application and backup resources, with `APP_RELEASE_IMAGE_DIGEST` set to it: an image cannot hold its own digest, and the manifest of a backup names it (BACKUP_RECOVERY section 5).
 10. Run the checks of section 7; switch off maintenance mode.
 11. Resume the backup schedule and run a backup at once.
 12. Report the result to the Owner and for the release record (section 9).
@@ -114,7 +117,7 @@ Read-only checks (REL-07), by the operator, and by the Owner or a staff member w
 
 ## 9. The release record
 
-Written into `docs/10-release/records/` from the operator's report, one file per release (`RELEASE-<version>.md`), without real identities: the version, commit, tag and digest; the Owner's authorization (date and reference); the window; the pre-release backup's identifier; the migrations applied and their verification results; the checks of section 7; the operator's role (never a name in the public repository); incidents and rollbacks; the integrity report. The folder is created with the first record.
+Written into `docs/10-release/records/` from the operator's report, one file per release (`RELEASE-<version>.md`, from the template `docs/10-release/templates/RELEASE_RECORD.md`), without real identities: the version, commit, tag and digest; the Owner's authorization (date and reference); the window; the pre-release backup's identifier; the migrations applied and their verification results; the checks of section 7; the operator's role (never a name in the public repository); incidents and rollbacks; the integrity report. The folder is created with the first record.
 
 ## 10. RB-23 — First installation
 

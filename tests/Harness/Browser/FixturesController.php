@@ -145,6 +145,25 @@ final class FixturesController
     }
 
     /**
+     * Turns the application's real maintenance mode on or off (RELEASE_PROCESS
+     * RB-20 step 7; TASK-014), on the local or test database only. The browser
+     * suite runs the tests that use it after every other test, alone
+     * (playwright.config.ts), because the mode is the whole application's.
+     */
+    public function maintenance(Request $request): JsonResponse
+    {
+        EnvironmentMarker::require(DB::connection(), ['local', 'test']);
+
+        if ($request->boolean('on')) {
+            app()->maintenanceMode()->activate(['status' => 503]);
+        } else {
+            app()->maintenanceMode()->deactivate();
+        }
+
+        return new JsonResponse(['on' => app()->maintenanceMode()->active()]);
+    }
+
+    /**
      * The person's existing account, read without changing it — its password
      * and sign-in sessions stay as they are — or, on the first use of the
      * fixtures, created by TokoContoh::person().

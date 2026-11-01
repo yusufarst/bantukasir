@@ -37,6 +37,7 @@
             "@php scripts/checks/translation-keys.php",
             "@php scripts/checks/translation-types.php --check",
             "@php scripts/checks/migration-review.php",
+            "@php scripts/checks/release-workflow.php",
             "bash scripts/checks/secret-scan.sh",
             "@composer audit --locked",
             "phpunit --testsuite=Network"
@@ -47,7 +48,7 @@
         "test:race": "phpunit --testsuite=Concurrency"
     },
     "scripts-descriptions": {
-        "lint": "Pint, the translation-key and literal check, the check that the TypeScript key type equals lang/id, the migration review, the secret scan, the dependency audit and then its negative proofs that need the network, the PHPUnit suite Network (TEST_STRATEGY section 6).",
+        "lint": "Pint, the translation-key and literal check, the check that the TypeScript key type equals lang/id, the migration review, the check of the release workflows, the secret scan, the dependency audit and then its negative proofs that need the network, the PHPUnit suite Network (TEST_STRATEGY section 6).",
         "analyse": "PHPStan with Larastan and the project's rules for process functions, raw SQL and floats in exact values.",
         "test:unit": "L1 unit tests, which need no network, including the negative samples of the static checks.",
         "test:postgres": "Tests on real PostgreSQL (L2 and L4).",
