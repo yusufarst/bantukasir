@@ -318,24 +318,25 @@ final class CapabilityMatrixTest extends DatabaseTestCase
     public function test_a_signed_in_route_without_a_declared_capability_is_refused_at_run_time(): void
     {
         // SEC-AZ-01: refused, not only found by the route inventory (review
-        // finding R-32). The route would answer "served" if it ran.
-        Route::middleware(['web', 'auth', 'signin.session', 'throttle:authenticated'])->get('/harness/ungated', static fn (): string => 'served');
-        Route::middleware(['web', 'auth', 'signin.session', 'throttle:authenticated'])->post('/harness/ungated', static fn (): string => 'served');
+        // finding R-32). The route would answer its mark if it ran, a text that no
+        // key of the page's dictionary holds.
+        Route::middleware(['web', 'auth', 'signin.session', 'throttle:authenticated'])->get('/harness/ungated', static fn (): string => 'ungated-route-ran');
+        Route::middleware(['web', 'auth', 'signin.session', 'throttle:authenticated'])->post('/harness/ungated', static fn (): string => 'ungated-route-ran');
 
         foreach (['owner', 'ops', 'cashier', 'combined'] as $actor) {
             $this->as($actor);
             $refusals = $this->refusals();
 
             $this->getJson('/harness/ungated')->assertStatus(403)->assertExactJson(['outcome' => 'REJECTED', 'code' => 'FORBIDDEN', 'messageKey' => 'ux.state.forbidden', 'params' => [], 'fields' => [], 'lines' => []]);
-            $this->postJson('/harness/ungated')->assertStatus(403)->assertDontSeeText('served');
-            $this->get('/harness/ungated')->assertStatus(403)->assertDontSeeText('served');
+            $this->postJson('/harness/ungated')->assertStatus(403)->assertDontSeeText('ungated-route-ran');
+            $this->get('/harness/ungated')->assertStatus(403)->assertDontSeeText('ungated-route-ran');
             $this->assertSame($refusals + 3, $this->refusals(), sprintf('Each refusal of %s is recorded (SEC-LOG-03).', $actor));
         }
 
         // Without a sign-in session, authentication refuses it first.
         $this->as('guest');
-        $this->getJson('/harness/ungated')->assertStatus(401)->assertDontSeeText('served');
-        $this->postJson('/harness/ungated')->assertStatus(401)->assertDontSeeText('served');
+        $this->getJson('/harness/ungated')->assertStatus(401)->assertDontSeeText('ungated-route-ran');
+        $this->postJson('/harness/ungated')->assertStatus(401)->assertDontSeeText('ungated-route-ran');
         $this->get('/harness/ungated')->assertRedirect('/login');
     }
 
