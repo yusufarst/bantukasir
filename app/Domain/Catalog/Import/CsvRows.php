@@ -58,11 +58,11 @@ final class CsvRows
         foreach (CsvColumn::cases() as $column) {
             $cell = Str::trim($record->cells[$column->value] ?? '');
 
-            if (in_array($column, $record->broken, true)) {
-                $problems[$column->value] = ['catalog.csv_import.error.invalid_value', ['kolom' => $column->header()]];
-                $texts[$column->value] = '';
-            } elseif (str_starts_with($cell, '=')) {
+            if (str_starts_with($cell, '=')) {
                 $problems[$column->value] = ['catalog.csv_import.error.formula', []];
+                $texts[$column->value] = '';
+            } elseif (in_array($column, $record->broken, true)) {
+                $problems[$column->value] = ['catalog.csv_import.error.invalid_value', ['kolom' => $column->header()]];
                 $texts[$column->value] = '';
             } else {
                 $texts[$column->value] = $cell;

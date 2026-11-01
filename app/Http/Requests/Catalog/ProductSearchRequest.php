@@ -18,8 +18,9 @@ use LogicException;
  * required, one of the contexts of the contract, each open only to its capability
  * and answering FORBIDDEN until its Task adds it; `q`, up to 128 characters without
  * a control character; `mode`, `search` or `exact` (TASK-016); `category`, `brand`,
- * `status`, `import` (TASK-019), `page` and `perPage`, which `exact` refuses, because a
- * filter could then pass over a code's own product for another's SKU, and it answers at most one. Any
+ * `status`, `import` (TASK-019, in the context `catalog` only, whose page RC-31 leads to),
+ * `page` and `perPage`, which `exact` refuses, because a filter could then pass over a
+ * code's own product for another's SKU, and it answers at most one. Any
  * other parameter is refused, and so is any body: the read takes its parameters from
  * the query string alone (TASK-008 review finding R-01).
  *
@@ -113,7 +114,7 @@ final class ProductSearchRequest extends RefusingRequest
 
                 if ($this->json()->all() !== [] || $this->request->all() !== [] || $this->files->all() !== []
                     || ($this->query->has('category') && ObjectScope::key($this->query('category')) === null)
-                    || ($this->query->has('import') && ObjectScope::key($this->query('import')) === null)
+                    || ($this->query->has('import') && (ObjectScope::key($this->query('import')) === null || $this->query('context') !== 'catalog'))
                     || ($sequence !== null && preg_match('/^[0-9]{1,16}$/D', $sequence) !== 1)
                     || ($this->query('mode') === 'exact' && array_intersect(self::NOT_EXACT, array_keys($this->query->all())) !== [])) {
                     $validator->errors()->add('', '');

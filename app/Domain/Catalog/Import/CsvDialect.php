@@ -83,8 +83,8 @@ final class CsvDialect
      * their order; a name is compared after trimming outer spaces and without regard to
      * letter case. A separator splits the header when it yields a known name and the other
      * does not; with neither or both the file is refused, and so is a file with a missing
-     * required column, an unknown column, or a column twice, which is unexpected
-     * (BR-CAT-39).
+     * required column, an unknown column, a column twice, which is unexpected, or a name
+     * with a quote out of place (BR-CAT-39).
      *
      * @return array{0: string, 1: list<CsvColumn>}
      *
@@ -95,21 +95,21 @@ final class CsvDialect
         $known = self::knownColumns();
         $atSemicolon = 0;
         $atComma = 0;
-        $bySemicolon = self::record($text, ';', $atSemicolon)['cells'];
-        $byComma = self::record($text, ',', $atComma)['cells'];
-        $semicolonKnown = self::knownCount($bySemicolon, $known);
-        $commaKnown = self::knownCount($byComma, $known);
+        $bySemicolon = self::record($text, ';', $atSemicolon);
+        $byComma = self::record($text, ',', $atComma);
+        $semicolonKnown = self::knownCount($bySemicolon['cells'], $known);
+        $commaKnown = self::knownCount($byComma['cells'], $known);
 
         if (($semicolonKnown > 0) === ($commaKnown > 0)) {
             throw CsvFileRefused::of('catalog.csv_import.error.missing_column', ['kolom' => self::names(self::missing([]))]);
         }
 
-        [$separator, $names, $at] = $semicolonKnown > 0 ? [';', $bySemicolon, $atSemicolon] : [',', $byComma, $atComma];
+        [$separator, $header, $at] = $semicolonKnown > 0 ? [';', $bySemicolon, $atSemicolon] : [',', $byComma, $atComma];
         $columns = [];
         $unknown = [];
 
-        foreach ($names as $name) {
-            $column = $known[self::comparable($name)] ?? null;
+        foreach ($header['cells'] as $index => $name) {
+            $column = isset($header['broken'][$index]) ? null : ($known[self::comparable($name)] ?? null);
 
             if ($column === null || in_array($column, $columns, true)) {
                 $unknown[] = trim($name, ' ');

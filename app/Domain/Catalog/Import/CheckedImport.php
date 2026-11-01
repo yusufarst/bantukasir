@@ -24,6 +24,23 @@ final readonly class CheckedImport
         public ?string $inactiveCategory,
     ) {}
 
+    /**
+     * A row whose category the command does not hold locked matched another one after the
+     * locks were taken: it no longer matches what was locked, and is refused
+     * (INTERACTION_CONTRACTS RC-31; RACE-29).
+     *
+     * @param  list<int>  $locked
+     */
+    public function refuseRowsOutside(array $locked): void
+    {
+        foreach ($this->rows as $row) {
+            if ($row->categoryId !== null && ! in_array($row->categoryId, $locked, true)) {
+                $row->categoryId = null;
+                $row->addError('catalog.csv_import.error.category_missing');
+            }
+        }
+    }
+
     public function errorRowCount(): int
     {
         return count(array_filter($this->rows, static fn (CsvRow $row): bool => $row->errors !== []));

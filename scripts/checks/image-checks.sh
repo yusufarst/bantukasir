@@ -216,6 +216,8 @@ expect 'the image declares no port but the base image'\''s 9000, where nothing c
 expect_ok 'the image has a health check' test -n "$(docker inspect --format '{{json .Config.Healthcheck.Test}}' "$image")"
 expect 'the media folder belongs to the runtime user, only for it and its group' 'www-data 750' \
     "$(docker run --rm "$image" stat -c '%U %a' storage/app/private/media)"
+expect 'the temporary area of the CSV import belongs to the runtime user, only for it and its group' 'www-data 750' \
+    "$(docker run --rm "$image" stat -c '%U %a' storage/app/private/csv-imports)"
 expect_refused 'the application files cannot be changed by the runtime user' docker run --rm "$image" bash -c 'touch app/probe || touch public/probe'
 expect 'PHP has GD with PNG, JPEG and WebP, and pdo_pgsql' 'ok' \
     "$(docker run --rm "$image" php -r 'echo extension_loaded("pdo_pgsql") && function_exists("imagecreatefrompng") && function_exists("imagecreatefromjpeg") && function_exists("imagecreatefromwebp") ? "ok" : "absent";')"
@@ -466,6 +468,7 @@ for path in \
     /probe.php /index.php /artisan.php /index.php.bak \
     /vendor /vendor/autoload.php /vendor/composer/installed.json \
     /storage /storage/logs/laravel.log /storage/framework/sessions/ /storage/app/private/media/sentinel /storage/app/private/media/ \
+    /storage/app/private/csv-imports/ \
     /bootstrap/cache/config.php /composer.json /composer.lock /package.json /artisan /app/Models/User.php \
     /config/app.php /routes/web.php /database/setup/setup.sql /tests/Harness/Fixtures/TokoContoh.php; do
     status="$(request "$web" "$path" -H 'Accept: application/json')"

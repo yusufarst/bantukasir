@@ -204,6 +204,24 @@ final class CsvImportRaceTest extends DatabaseTestCase
         $this->assertFalse($this->watcher()->table('categories')->where('id', $category)->value('active'));
     }
 
+    public function test_a_row_that_comes_to_match_a_category_after_the_locks_is_refused(): void
+    {
+        // Review finding R-02: no row is created under a category that holds no share lock
+        // of this command. The category appears while the confirmation holds its locks.
+        $import = $this->stored($this->csv('KUNCI-6;Satu', 'LEPAS-6;Dua;Muncul Nanti'));
+        $refused = $this->confirmation($import);
+        $confirmation = $this->start($refused, ['after_lock:6']);
+        Worker::ready($confirmation);
+
+        $confirmation->run()->awaitBarrier('after_lock:6');
+        TokoContoh::category('Muncul Nanti');
+        $confirmation->release();
+
+        $this->assertSame(['refused' => 'CSV_INVALID'], $confirmation->finish()->result);
+        $this->assertNothingOf($refused, ['KUNCI-6', 'LEPAS-6']);
+        $this->assertSame([], Storage::disk(CsvImportFiles::DISK)->allFiles());
+    }
+
     /**
      * The file's rows, each `SKU;Nama` or `SKU;Nama;Kategori`, or a whole row.
      */

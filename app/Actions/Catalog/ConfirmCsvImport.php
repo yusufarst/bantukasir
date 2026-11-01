@@ -34,7 +34,8 @@ use Throwable;
  * by its checksum, and validated in full. The categories that its rows match take their
  * share locks, ascending, and the whole file is checked again under them: a category
  * deactivated meanwhile, or named only by an inactive one, is CATEGORY_INACTIVE; a row that
- * no longer matches, or any other error, is CSV_INVALID with the errors in `lines`; a code
+ * no longer matches, also one that now matches a category it holds no lock on, or any other
+ * error, is CSV_INVALID with the errors in `lines`; a code
  * that the catalogue already holds is DUPLICATE_SKU or DUPLICATE_BARCODE, as is one that a
  * race commits first, on the unique index (RACE-22). Then every row through the
  * catalogue's services, all or none (BR-CAT-38): a product with stock 0, its first price
@@ -102,10 +103,12 @@ final class ConfirmCsvImport extends CatalogAction
         $payload = $context->envelope->payload;
         $file = $this->previewedFile($actor->id, self::text($payload['importId'] ?? null), self::text($payload['fileSha256'] ?? null));
 
-        $this->lockCategories($this->checks->check($file));
+        $locked = $this->checks->check($file)->categoryIds;
+        $this->lockCategories($locked);
         $this->services->points->afterLock('6');
 
         $checked = $this->checks->check($file);
+        $checked->refuseRowsOutside($locked);
         self::refuseProblems($checked);
 
         $productIds = [];
@@ -184,11 +187,13 @@ final class ConfirmCsvImport extends CatalogAction
      * The share locks of step 6, ascending (TR §7.1). A category that its lock finds
      * inactive was deactivated after the match (RACE-29).
      *
+     * @param  list<int>  $ids
+     *
      * @throws CommandRefused CATEGORY_INACTIVE
      */
-    private function lockCategories(CheckedImport $matched): void
+    private function lockCategories(array $ids): void
     {
-        foreach ($matched->categoryIds as $id) {
+        foreach ($ids as $id) {
             $category = $this->categories->lockShared($id);
 
             if ($category === null || ! $category->active) {

@@ -6,15 +6,18 @@ use App\Actions\Catalog\ConfirmCsvImport;
 use App\Actions\Commands\CommandContext;
 use App\Database\CommandPoints;
 use App\Domain\Catalog\Import\CsvDialect;
+use App\Domain\Catalog\Import\CsvImportChecks;
 use App\Domain\Catalog\Import\CsvImportFiles;
 use App\Domain\Commands\CommandRefused;
 use App\Domain\Commands\Envelope;
+use App\Http\Requests\Catalog\ProductSearchRequest;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Connection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -155,6 +158,51 @@ final class CsvImportTest extends DatabaseTestCase
         }
 
         $this->getJson('/data/products/search?context=catalog&mode=exact&q=BARU-01&import='.$import)->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
+
+        // Only the catalogue's context takes it (review finding R-03), and a context that no
+        // Task opened yet answers before it; the rule is read so that the first to open one
+        // has it.
+        $this->getJson('/data/products/search?context=till&import='.$import)->assertStatus(403);
+        $this->as('Rina');
+        $this->getJson('/data/products/search?context=till&import='.$import)->assertStatus(403);
+        $fails = static function (string $context) use ($import): bool {
+            $request = ProductSearchRequest::create('/data/products/search?context='.$context.'&import='.$import);
+            $validator = Validator::make($request->query->all(), $request->rules());
+            $validator->after($request->after());
+
+            return $validator->fails();
+        };
+        $this->assertTrue($fails('till'));
+        $this->assertFalse($fails('catalog'));
+    }
+
+    public function test_a_file_above_the_limit_of_php_is_the_refusal_of_its_size(): void
+    {
+        // Review finding R-01; SEC-UP-02: PHP takes the body, and the upload arrives failed.
+        $this->as('Agus');
+        $failed = new UploadedFile(__FILE__, 'besar.csv', null, UPLOAD_ERR_INI_SIZE, true);
+        $response = $this->post(self::PREVIEW, ['file' => $failed], ['Accept' => 'application/json'])->assertStatus(422);
+        $this->assertSame('CSV_INVALID', $response->json('code'));
+        $this->assertSame([['key' => 'ux.validation.upload.too_large', 'params' => ['ukuran' => '2 MB']]], $response->json('fields.file'));
+
+        // Any other failure cannot be read.
+        $partial = new UploadedFile(__FILE__, 'sebagian.csv', null, UPLOAD_ERR_PARTIAL, true);
+        $response = $this->post(self::PREVIEW, ['file' => $partial], ['Accept' => 'application/json'])->assertStatus(422);
+        $this->assertSame('VALIDATION_FAILED', $response->json('code'));
+        $this->assertSame('ux.validation.upload.unreadable', $response->json('fields.file.0.key'));
+        $this->assertSame([], $this->temporaryFiles());
+    }
+
+    public function test_the_categories_are_locked_in_ascending_order_of_their_keys(): void
+    {
+        // Review finding R-07; TR section 7.1: whatever order the rows name them in.
+        $this->as('Agus');
+        $lower = TokoContoh::category('Kategori Satu');
+        $higher = TokoContoh::category('Kategori Dua');
+        $this->assertLessThan($higher, $lower);
+
+        $checked = app(CsvImportChecks::class)->check(CsvDialect::parse($this->csv('A-1;Satu;Kategori Dua;;pcs;0;1000;;', 'A-2;Dua;Kategori Satu;;pcs;0;1000;;', 'A-3;Tiga;Kategori Dua;;pcs;0;1000;;')));
+        $this->assertSame([$lower, $higher], $checked->categoryIds);
     }
 
     public function test_the_dialect_reaches_the_records_exactly(): void

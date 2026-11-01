@@ -146,6 +146,9 @@ final class CsvDialectTest extends TestCase
             $this->assertSame(['catalog.csv_import.error.formula'], self::keys(self::row($row)), $row);
         }
 
+        // Also with a quote in it, the formula is what the row is told (review finding R-05).
+        $this->assertSame(['catalog.csv_import.error.formula'], self::keys(self::row('PEN-01;=HYPERLINK("x");Alat Tulis;;pcs;0;15000;;')));
+
         // Inside a cell it is text.
         $this->assertSame([], self::row('A=1;B=2;Alat Tulis;;pcs;0;15000;;')->errors);
     }
@@ -337,6 +340,13 @@ final class CsvDialectTest extends TestCase
             ['key' => 'catalog.csv_import.error.missing_column', 'params' => ['kolom' => 'Satuan, Desimal, Harga jual']],
             ['key' => 'catalog.csv_import.error.unknown_column', 'params' => ['kolom' => 'Warna']],
         ], self::refusal("SKU;Nama;Kategori;Warna\n"));
+
+        // A name with a quote out of place is no column (review finding R-06); a quoted name is.
+        $this->assertSame([
+            ['key' => 'catalog.csv_import.error.missing_column', 'params' => ['kolom' => 'SKU']],
+            ['key' => 'catalog.csv_import.error.unknown_column', 'params' => ['kolom' => 'SKU']],
+        ], self::refusal("\"SK\"U;Nama;Kategori;Satuan;Desimal;Harga jual\n"));
+        $this->assertCount(1, self::rows("\"SKU\";Nama;Kategori;Satuan;Desimal;Harga jual\nPEN-01;Pulpen;Alat Tulis;pcs;0;15000\n"));
 
         // The optional columns may be absent.
         $this->assertCount(1, self::rows("SKU;Nama;Kategori;Satuan;Desimal;Harga jual\nPEN-01;Pulpen;Alat Tulis;pcs;0;15000\n"));
