@@ -93,7 +93,7 @@ export const STATE_CATALOGUE: Readonly<Record<StateId, StateEntry>> = {
     'UXS-36': { title: 'ux.state.drawer_short.title', tone: 'danger', urgency: 'alert', presentation: 'notice', texts: ['ux.state.drawer_short.body'] },
     'UXS-37-sku': { title: 'ux.state.duplicate_code.sku.title', body: 'ux.state.duplicate_code.sku.body', tone: 'danger', urgency: 'alert', presentation: 'notice', texts: ['ux.state.duplicate_code.open'] },
     'UXS-37-barcode': { title: 'ux.state.duplicate_code.barcode.title', body: 'ux.state.duplicate_code.barcode.body', tone: 'danger', urgency: 'alert', presentation: 'notice', texts: ['ux.state.duplicate_code.open'] },
-    'UXS-38': { title: 'ux.state.barcode_ineligible.title', tone: 'danger', urgency: 'alert', presentation: 'notice' },
+    'UXS-38': { title: 'ux.state.barcode_ineligible.title', tone: 'danger', urgency: 'alert', presentation: 'notice', texts: ['ux.state.barcode_ineligible.retired', 'ux.state.barcode_ineligible.reserved', 'ux.state.barcode_ineligible.check_digit'] },
     'UXS-39': { title: 'ux.state.csv_invalid.title', tone: 'danger', urgency: 'alert', presentation: 'notice', texts: ['ux.state.csv_invalid.body'] },
     'UXS-40-cost': { title: 'ux.state.replay_rejected.cost.title', body: 'ux.state.replay_rejected.cost.body', tone: 'danger', urgency: 'alert', presentation: 'notice' },
     'UXS-40-reversal': { title: 'ux.state.replay_rejected.reversal.title', body: 'ux.state.replay_rejected.reversal.body', tone: 'danger', urgency: 'alert', presentation: 'notice' },

@@ -41,7 +41,7 @@ A request passes, in this order:
 
 | Case | HTTP | Body |
 | --- | --- | --- |
-| Committed now | 201 | `{"outcome": "COMMITTED", "operation", "commandId", "repeated": false, "result": {"type", "id", "number", "location"}}`; `number` only for a numbered record; `location` is a path of ROUTE_CONTRACTS |
+| Committed now | 201 | `{"outcome": "COMMITTED", "operation", "commandId", "repeated": false, "result": {"type", "id", "number", "location"}}`; `number` only for a numbered record, or the code of a barcode mapping, read from the mapping and never stored in the result (RC-27 to RC-29; TASK-016); `location` is a path of ROUTE_CONTRACTS |
 | Original result of a repeated identity | 200 | The same body with `"repeated": true`, rebuilt from the stored references under the actor's current authorization (ADR-007 section 3) |
 | Refused | 401, 403, 404, 409, 422, 429, 503 | The error body of ROUTE_CONTRACTS RT-07; the status per code is that of TECHNICAL_RULES section 4 |
 | CSRF check failed | 419 | The framework's answer, read as `CSRF_FAILED` |
@@ -157,7 +157,7 @@ No cash leaves the drawer before the refund is COMMITTED; an uncertain refund is
 | Parameter | Rule |
 | --- | --- |
 | `q` | 0 to 128 characters after trimming; a scanned token keeps its case and punctuation (BR-CAT-17) |
-| `mode` | `exact` for a scanned or typed code (exact barcode, then exact SKU, at most one product); `search` otherwise (BR-CAT-24) |
+| `mode` | `exact` for a scanned or typed code (exact barcode, then exact SKU, at most one product), which takes no filter and no page, because a filter could pass over a code's own product for another's SKU (TASK-016); `search` otherwise (BR-CAT-24) |
 | `context` | `till`, `catalog`, `receiving`, `issue`, `adjustment`, `opening`, `stock` or `correction`; it sets which products are selectable and which fields are returned. A context is open only to the capability of the pages that use it — `till` CAP-21, `catalog` CAP-04, `receiving` CAP-11, `issue` CAP-13, `adjustment` CAP-16, `opening` CAP-15, `stock` CAP-14 (stock pages), `correction` CAP-07 — and any other answers `FORBIDDEN`, as does a context until its Task adds it (TRACEABILITY section 7). Labels take no context: UXP-306 opens from a product already found, and lists that product's active tokens (TASK-015) |
 | `category`, `brand`, `status`, `page`, `perPage` | Filters and paging; `status` only for `catalog`; `perPage` at most 100 |
 

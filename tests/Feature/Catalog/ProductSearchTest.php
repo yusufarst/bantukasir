@@ -14,13 +14,13 @@ use Tests\Harness\DatabaseTestCase;
 use Tests\Harness\Fixtures\TokoContoh;
 
 /**
- * RD-01 and RD-06 (AC-015-03, AC-015-05; INTERACTION_CONTRACTS sections 3.1 and
- * 3.5; ROUTE_CONTRACTS RD-01, RD-06, RT-08; BR-CAT-04, BR-CAT-23 to BR-CAT-27;
+ * RD-01 and RD-06 (AC-015-03, AC-015-05, AC-016-04; INTERACTION_CONTRACTS sections
+ * 3.1 and 3.5; ROUTE_CONTRACTS RD-01, RD-06, RT-08; BR-CAT-04, BR-CAT-23 to BR-CAT-27;
  * THR-04; TECHNICAL_RULES section 12; EXECUTION_CONTEXT section 10, a read; suites
- * AUTH01, AUTH02, SEC01 and SEARCH02): the order and paging, the filters as
- * allowlists, the fields per role, never a cost; every context not yet provided
- * refused; injection payloads treated as text; the indexes that serve a search;
- * and the two documents agreeing on the contexts.
+ * AUTH01, AUTH02, SEC01, SEARCH01 and SEARCH02): the order and paging, the barcode's
+ * rank and the exact mode; the filters as allowlists, the fields per role, never a
+ * cost; every context not yet provided refused; injection payloads treated as text;
+ * the indexes that serve a search; and the two documents agreeing on the contexts.
  */
 final class ProductSearchTest extends DatabaseTestCase
 {
@@ -117,7 +117,7 @@ final class ProductSearchTest extends DatabaseTestCase
         $this->assertSame([false], array_column((array) $this->search(['status' => 'inactive'])->json('rows'), 'active'));
         $this->assertSame([$merek], self::ids($this->search(['q' => 'pulpen', 'brand' => 'merek', 'status' => 'active', 'category' => (string) $this->category])));
 
-        foreach ([['status' => 'semua'], ['status' => ''], ['category' => 'abc'], ['category' => '0'], ['category' => '9223372036854775808'], ['mode' => 'exact'], ['mode' => 'lain'], ['sort' => 'name'], ['cost' => '1'], ['category' => ['1']], ['q' => ['a']], ['context' => ['catalog']]] as $invalid) {
+        foreach ([['status' => 'semua'], ['status' => ''], ['category' => 'abc'], ['category' => '0'], ['category' => '9223372036854775808'], ['mode' => 'lain'], ['sort' => 'name'], ['cost' => '1'], ['category' => ['1']], ['q' => ['a']], ['context' => ['catalog']]] as $invalid) {
             $this->search($invalid)->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
         }
 
@@ -269,9 +269,11 @@ final class ProductSearchTest extends DatabaseTestCase
         }
     }
 
-    public function test_rd_06_answers_the_exact_sku_and_up_to_10_similar_names_and_refuses_nothing_as_a_duplicate(): void
+    public function test_rd_06_answers_the_exact_barcode_the_exact_sku_and_up_to_10_similar_names_and_refuses_nothing_as_a_duplicate(): void
     {
         $exact = $this->product('Pen-01', 'Pulpen Hitam');
+        $coded = $this->product('LAIN-01', 'Tinta Biru');
+        TokoContoh::barcode($coded, '0012-Ab');
 
         foreach (range(1, 12) as $number) {
             $this->product(sprintf('SIMILAR-%02d', $number), sprintf('Pulpen Hitam %02d', $number));
@@ -282,9 +284,10 @@ final class ProductSearchTest extends DatabaseTestCase
 
         foreach (['Hendra' => 'owner', 'Agus' => 'ops', 'Dewi' => 'combined'] as $person => $actor) {
             $this->as($person);
-            $response = $this->getJson(self::CHECK.'?sku=PEN-01&name='.rawurlencode('pulpen hitam'))->assertOk();
+            $response = $this->getJson(self::CHECK.'?barcode=0012-Ab&sku=PEN-01&name='.rawurlencode('pulpen hitam'))->assertOk();
             $this->assertJsonChannel($response, 'data.products.check', $actor);
             $this->assertSame('no-store, private', $this->cacheControl($response));
+            $this->assertSame([$coded, 'LAIN-01'], [$response->json('barcode.id'), $response->json('barcode.sku')], 'The product of the exact barcode.');
             $this->assertSame([$exact, 'Pen-01'], [$response->json('sku.id'), $response->json('sku.sku')], 'Without regard to letter case, as it is stored.');
             $similar = (array) $response->json('similarNames');
             $this->assertCount(10, $similar);
@@ -298,16 +301,154 @@ final class ProductSearchTest extends DatabaseTestCase
         $this->assertContains($holds, self::similarIds($this->getJson(self::CHECK.'?name='.rawurlencode('Merek Khusus'))->assertOk()));
 
         // Nothing found is no refusal; one check alone answers the other as empty.
-        $this->getJson(self::CHECK.'?sku=TIDAK-ADA')->assertOk()->assertExactJson(['sku' => null, 'similarNames' => []]);
+        $this->getJson(self::CHECK.'?sku=TIDAK-ADA')->assertOk()->assertExactJson(['barcode' => null, 'sku' => null, 'similarNames' => []]);
         $this->assertSame([], self::similarIds($this->getJson(self::CHECK.'?name=zzzzzzzz')->assertOk()));
         $this->assertNull($this->getJson(self::CHECK.'?name=Kertas')->assertOk()->json('sku'));
 
-        // The parameters are allowlists; `barcode` is TASK-016's.
-        foreach (['', '?barcode=8991234567890', '?sku=PEN-01&barcode=899', '?lain=x', '?sku[]=x', '?sku='.str_repeat('s', 65), '?name='.str_repeat('n', 201), '?sku=a%00b', '?name=a%07b'] as $query) {
+        // The parameters are allowlists.
+        foreach (['', '?lain=x', '?sku[]=x', '?barcode[]=x', '?sku='.str_repeat('s', 65), '?name='.str_repeat('n', 201), '?sku=a%00b', '?name=a%07b'] as $query) {
             $this->getJson(self::CHECK.$query)->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
         }
 
         $this->json('GET', self::CHECK.'?sku=PEN-01', ['name' => 'x'])->assertStatus(422);
+    }
+
+    public function test_rd_06_reports_an_exact_barcode_as_br_cat_17_reads_a_token(): void
+    {
+        // AC-016-04.
+        $product = $this->product('PEN-01', 'Pulpen Hitam');
+        $mapping = TokoContoh::barcode($product, '0012-Ab');
+        $this->as('Agus');
+
+        // Compared exactly: leading zeros, case and punctuation; the terminator and
+        // outer spaces removed.
+        foreach (['0012-Ab', rawurlencode(" 0012-Ab \r\n")] as $query) {
+            $this->getJson(self::CHECK.'?barcode='.$query)->assertOk()->assertJsonPath('barcode.id', $product)->assertJsonPath('sku', null);
+        }
+
+        foreach (['012-Ab', '0012-ab', '0012Ab', '0012-Ab-'] as $other) {
+            $this->getJson(self::CHECK.'?barcode='.$other)->assertOk()->assertJsonPath('barcode', null);
+        }
+
+        // A token that holds what no token may is refused at its field.
+        foreach (['%C3%A9', 'a%07b', 'a%0Ab', '%0A12', '%C2%A012', str_repeat('a', 129)] as $query) {
+            $response = $this->getJson(self::CHECK.'?barcode='.$query)->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
+            $fields = (array) $response->json('fields');
+            $this->assertArrayHasKey('barcode', $fields, $query);
+        }
+
+        // Injection is only text (THR-04).
+        $this->getJson(self::CHECK.'?barcode='.rawurlencode("' OR '1'='1"))->assertOk()->assertJsonPath('barcode', null);
+
+        // A retired token has no product to show; RC-17 refuses it.
+        $this->postJson('/commands/barcode.retire', $this->envelopeFor('barcode.retire', ['mappingId' => $mapping, 'reasonClass' => 'OTHER'], []))->assertStatus(201);
+        $this->getJson(self::CHECK.'?barcode=0012-Ab')->assertOk()->assertJsonPath('barcode', null);
+    }
+
+    public function test_an_exact_barcode_leads_the_search_and_a_retired_one_leads_nowhere(): void
+    {
+        // BR-CAT-24: the barcode's rank, before the exact SKU, the prefix and the name.
+        $sku = $this->product('899', 'Zebra');
+        $prefix = $this->product('8991', 'Kertas');
+        $name = $this->product('A-01', 'Buku 899');
+        $coded = $this->product('B-01', 'Pena');
+        $mapping = TokoContoh::barcode($coded, '899');
+        $this->as('Agus');
+
+        $response = $this->search(['q' => '899'])->assertOk();
+        $this->assertSame([$coded, $sku, $prefix, $name], self::ids($response));
+        $this->assertFalse($response->json('hasMore'));
+
+        // A token is compared exactly, unlike a SKU: `abc` is no match of `ABC`.
+        $other = $this->product('C-01', 'Spidol');
+        TokoContoh::barcode($other, 'ABC-7');
+        $this->assertSame([$other], self::ids($this->search(['q' => 'ABC-7'])));
+        $this->assertSame([], self::ids($this->search(['q' => 'abc-7'])));
+
+        // The filters apply to the barcode's rank too.
+        $this->assertSame([], self::ids($this->search(['q' => 'ABC-7', 'status' => 'inactive'])));
+
+        // A token's inactive product is in the results, marked (BR-CAT-27).
+        $this->postJson('/commands/product.deactivate', $this->envelopeFor('product.deactivate', ['productId' => $other], ['productVersion' => 1]))->assertStatus(201);
+        $this->search(['q' => 'ABC-7'])->assertOk()->assertJsonPath('rows.0.id', $other)->assertJsonPath('rows.0.active', false);
+
+        // A retired token leads to no product; the other matches stay.
+        $this->postJson('/commands/barcode.retire', $this->envelopeFor('barcode.retire', ['mappingId' => $mapping, 'reasonClass' => 'MISASSIGNMENT'], []))->assertStatus(201);
+        $this->assertSame([$sku, $prefix, $name], self::ids($this->search(['q' => '899'])));
+    }
+
+    public function test_the_exact_mode_answers_at_most_one_product_the_barcode_before_the_sku(): void
+    {
+        // AC-016-04; INTERACTION_CONTRACTS section 3.1.
+        $bySku = $this->product('899', 'Zebra');
+        $this->product('8991', 'Kertas');
+        $this->product('A-01', 'Buku 899');
+        $coded = $this->product('B-01', 'Pena');
+        $mapping = TokoContoh::barcode($coded, '899');
+        $inactive = $this->product('C-01', 'Spidol');
+        TokoContoh::barcode($inactive, '0012-Ab');
+
+        foreach (['Hendra' => 'owner', 'Agus' => 'ops', 'Dewi' => 'combined'] as $person => $actor) {
+            $this->as($person);
+            $response = $this->search(['mode' => 'exact', 'q' => '899'])->assertOk();
+            $this->assertJsonChannel($response, 'data.products.search', $actor);
+            $this->assertSame([[$coded], 1, 1, false], [self::ids($response), $response->json('page'), $response->json('perPage'), $response->json('hasMore')]);
+        }
+
+        $this->as('Agus');
+
+        // The sequence of a scan is repeated, so that scans apply in order (BR-CAT-30).
+        $this->getJson(self::SEARCH.'?context=catalog&mode=exact&q=899', ['X-Search-Sequence' => '7'])->assertOk()->assertHeader('X-Search-Sequence', '7');
+
+        // The exact SKU, without regard to letter case, when no token is active.
+        $this->assertSame([$coded], self::ids($this->search(['mode' => 'exact', 'q' => 'b-01'])));
+        $this->postJson('/commands/barcode.retire', $this->envelopeFor('barcode.retire', ['mappingId' => $mapping, 'reasonClass' => 'OTHER'], []))->assertStatus(201);
+        $this->assertSame([$bySku], self::ids($this->search(['mode' => 'exact', 'q' => '899'])));
+
+        // An inactive product is answered, marked: the page decides (BR-CAT-27).
+        $this->postJson('/commands/product.deactivate', $this->envelopeFor('product.deactivate', ['productId' => $inactive], ['productVersion' => 1]))->assertStatus(201);
+        $this->search(['mode' => 'exact', 'q' => '0012-Ab'])->assertOk()->assertJsonPath('rows.0.id', $inactive)->assertJsonPath('rows.0.active', false);
+
+        // What a scan delivers: the terminator and outer spaces are removed. `q` follows
+        // the global trimming of section 3.1, so an outer tab or no-break space is
+        // removed too, unlike a token of RC-27 or RD-06; an inner one is refused
+        // (review findings R-02, R-03).
+        foreach (['0012-Ab%0D%0A', '0012-Ab%0A', '%200012-Ab%20', '%090012-Ab', '%C2%A00012-Ab'] as $scanned) {
+            $this->getJson(self::SEARCH.'?context=catalog&mode=exact&q='.$scanned)->assertOk()->assertJsonPath('rows.0.id', $inactive);
+        }
+
+        $this->assertSame([], self::ids($this->getJson(self::SEARCH.'?context=catalog&mode=exact&q=0012-ab%0D%0A')->assertOk()));
+        $this->getJson(self::SEARCH.'?context=catalog&mode=exact&q=0012%0A-Ab')->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
+
+        // No prefix, no name, no other case of a token, and no code at all: none.
+        foreach (['89', 'Zebra', 'Buku 899', '0012-ab', '012-Ab', '%', "' OR '1'='1"] as $code) {
+            $this->assertSame([], self::ids($this->search(['mode' => 'exact', 'q' => $code])->assertOk()), $code);
+        }
+
+        $this->search(['mode' => 'exact'])->assertOk()->assertExactJson(['rows' => [], 'page' => 1, 'perPage' => 1, 'hasMore' => false]);
+
+        // A filter or a page has no place in a lookup of one code.
+        foreach (['category' => (string) $this->category, 'brand' => 'Merek', 'status' => 'active', 'page' => '2', 'perPage' => '10'] as $name => $value) {
+            $this->search(['mode' => 'exact', 'q' => '899', $name => $value])->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
+        }
+
+        // The other contexts stay closed in this mode too, and so does a cashier.
+        $this->getJson(self::SEARCH.'?context=till&mode=exact&q=899')->assertStatus(403);
+        $this->as('Rina');
+        $this->getJson(self::SEARCH.'?context=catalog&mode=exact&q=899')->assertStatus(403);
+    }
+
+    public function test_the_indexes_of_section_11_serve_the_exact_lookup(): void
+    {
+        $product = $this->product('PEN-01', 'Pulpen Hitam');
+        TokoContoh::barcode($product, '899');
+
+        $plan = $this->planOf(new SearchFilters(q: '899', exact: true));
+
+        $this->assertStringContainsString('barcode_tokens_token_unique', $plan);
+
+        // Either index of lower(sku) serves an equality.
+        $this->assertMatchesRegularExpression('/products_sku_(?:ci_uniq|prefix_index)/', $plan);
     }
 
     public function test_a_read_that_answers_writes_nothing(): void
@@ -331,6 +472,8 @@ final class ProductSearchTest extends DatabaseTestCase
 
         $this->search(['q' => 'pulpen'])->assertOk()->assertJsonPath('rows.0.sku', 'PEN-01');
         $this->getJson(self::CHECK.'?sku=PEN-01&name=pulpen')->assertOk()->assertJsonPath('sku.sku', 'PEN-01');
+        $this->search(['mode' => 'exact', 'q' => 'PEN-01'])->assertOk()->assertJsonPath('rows.0.sku', 'PEN-01');
+        $this->getJson(self::CHECK.'?barcode=899')->assertOk()->assertJsonPath('barcode', null);
 
         $this->assertSame($before, $state());
     }

@@ -7,8 +7,9 @@ use App\Queries\Catalog\SearchFirst;
 use Illuminate\Http\JsonResponse;
 
 /**
- * RD-06, `GET /data/products/check` (ROUTE_CONTRACTS section 3; CAP-04): the exact
- * SKU's product and the similar names, before a product is created (BR-CAT-04).
+ * RD-06, `GET /data/products/check` (ROUTE_CONTRACTS section 3; CAP-04): the product
+ * of the exact barcode, of the exact SKU, and the similar names, before a product is
+ * created (BR-CAT-04).
  */
 final class SearchFirstController
 {
@@ -16,6 +17,6 @@ final class SearchFirstController
     {
         $checks = $request->checks();
 
-        return new JsonResponse($check($checks['sku'], $checks['name']), 200);
+        return new JsonResponse($check($checks['barcode'], $checks['sku'], $checks['name']), 200);
     }
 }

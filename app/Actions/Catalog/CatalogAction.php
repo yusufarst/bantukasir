@@ -7,6 +7,7 @@ use App\Actions\Commands\CommandServices;
 use App\Domain\Access\Capabilities;
 use App\Domain\Access\Capability;
 use App\Domain\Audit\Actor;
+use App\Domain\Catalog\Barcodes\Barcodes;
 use App\Domain\Catalog\Categories;
 use App\Domain\Catalog\CategoryRecord;
 use App\Domain\Catalog\ProductRecord;
@@ -40,6 +41,7 @@ abstract class CatalogAction extends CommandAction
         CommandServices $services,
         protected readonly Categories $categories,
         protected readonly Products $products,
+        protected readonly Barcodes $barcodes,
     ) {
         parent::__construct($services);
     }
@@ -133,6 +135,24 @@ abstract class CatalogAction extends CommandAction
         }
 
         return $product;
+    }
+
+    /**
+     * The token's one ordinary mapping to the product and its active row, after the
+     * token in the canonical order of SCH-32 (TASK-016): two write steps. Returns
+     * the mapping's internal key.
+     *
+     * @param  Barcodes::MANUFACTURER|Barcodes::INTERNAL  $kind
+     */
+    protected function attachToken(int $tokenId, string $kind, int $productId, User $actor, int $commandId): int
+    {
+        $mapping = $this->barcodes->insertMapping($tokenId, $kind, $productId, $actor->id, $actor->display_name, $commandId);
+        $this->written();
+
+        $this->barcodes->activate($tokenId, $mapping, $productId);
+        $this->written();
+
+        return $mapping;
     }
 
     /**

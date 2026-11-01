@@ -161,6 +161,24 @@ return [
             'runtime' => ['select' => true, 'insert' => true],
         ],
 
+        // Catalog, the barcodes (SCHEMA section 5.6; TASK-016).
+        'barcode_tokens' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'barcode_mappings' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'barcode_mapping_retirements' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'barcode_active_mappings' => [
+            'class' => 'P',
+            'runtime' => ['select' => true, 'insert' => true, 'delete' => true],
+        ],
+
         // Operations (SCHEMA section 5.12; TASK-013): written by the backup role
         // (SCH-42), read by the runtime role.
         'backup_runs' => [

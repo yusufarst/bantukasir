@@ -6,17 +6,22 @@ use Illuminate\Database\Query\Builder;
 
 /**
  * RD-01, the shared Product Search (ROUTE_CONTRACTS RD-01; INTERACTION_CONTRACTS
- * section 3.1; BR-CAT-23 to BR-CAT-27; ARC-23; TASK-015 scope item 3). The order:
- * the exact SKU, then the SKUs that start with the text, then the names that hold
- * it anywhere; within each, by name, then internal identifier, the stable total
- * order of TR-PAGE-01. Every comparison is without regard to letter case through
- * lower() in the database, the only authority for it (SCH-14), so that each uses
- * its index of SCHEMA section 11. TASK-016 adds the exact barcode before them.
+ * section 3.1; BR-CAT-23 to BR-CAT-27; ARC-23; TASK-015 scope item 3, TASK-016 scope
+ * item 4). The order: the product a token is active on, the token compared exactly;
+ * the exact SKU, then the SKUs that start with the text, then the names that hold it
+ * anywhere; within each, by name, then internal identifier, the stable total order of
+ * TR-PAGE-01. Every comparison of a SKU or a name is without regard to letter case
+ * through lower() in the database, the only authority for it (SCH-14), so that each
+ * uses its index of SCHEMA section 11.
  *
  * Results are paged by the server: at most 100 per page and one row more read to
  * say whether another page exists; never a total, which would count every match
  * on each keystroke (TR-PAGE-05). Inactive products are in the results with their
  * active flag, read-only for the page (BR-CAT-27), unless `status` filters them.
+ *
+ * The mode `exact` is the lookup of a scanned or typed code: the product a token is
+ * active on, else the product of that exact SKU; at most one product, marked active
+ * or not, and no other filter (TASK-016). A retired token leads to no product.
  */
 final class ProductSearch
 {
@@ -32,13 +37,14 @@ final class ProductSearch
     public function __invoke(SearchFilters $filters): array
     {
         $rows = $this->builder($filters)->get()->all();
-        $page = array_slice($rows, 0, $filters->perPage);
+        $perPage = $filters->exact ? 1 : $filters->perPage;
+        $page = array_slice($rows, 0, $perPage);
 
         return [
             'rows' => array_map(static fn (object $row): array => ProductRows::row($row)->toArray(), $page),
             'page' => $filters->page,
-            'perPage' => $filters->perPage,
-            'hasMore' => count($rows) > $filters->perPage,
+            'perPage' => $perPage,
+            'hasMore' => count($rows) > $perPage,
         ];
     }
 
@@ -48,6 +54,10 @@ final class ProductSearch
      */
     public function builder(SearchFilters $filters): Builder
     {
+        if ($filters->exact) {
+            return $this->exactBuilder($filters->q);
+        }
+
         $query = ProductRows::query();
 
         if ($filters->q !== '') {
@@ -55,12 +65,13 @@ final class ProductSearch
             $pattern = ProductRows::literal($filters->q);
 
             $query->where(static function (Builder $match) use ($exact, $pattern): void {
-                $match->whereRaw('lower(p.sku) = lower(?)', [$exact])
+                $match->whereRaw('p.id = '.ProductRows::TOKEN_PRODUCT, [$exact])
+                    ->orWhereRaw('lower(p.sku) = lower(?)', [$exact])
                     ->orWhereRaw("lower(p.sku) like lower(?) || '%' escape '!'", [$pattern])
                     ->orWhereRaw("lower(p.name) like '%' || lower(?) || '%' escape '!'", [$pattern]);
             });
 
-            $query->orderByRaw("case when lower(p.sku) = lower(?) then 1 when lower(p.sku) like lower(?) || '%' escape '!' then 2 else 3 end", [$exact, $pattern]);
+            $query->orderByRaw('case when p.id = '.ProductRows::TOKEN_PRODUCT." then 0 when lower(p.sku) = lower(?) then 1 when lower(p.sku) like lower(?) || '%' escape '!' then 2 else 3 end", [$exact, $exact, $pattern]);
         }
 
         if ($filters->category !== null) {
@@ -78,5 +89,19 @@ final class ProductSearch
         return $query->orderBy('p.name')->orderBy('p.id')
             ->offset(($filters->page - 1) * $filters->perPage)
             ->limit($filters->perPage + 1);
+    }
+
+    /**
+     * The one product of a code, in one statement: its token's before its SKU's.
+     */
+    private function exactBuilder(string $code): Builder
+    {
+        return ProductRows::query()
+            ->where(static function (Builder $match) use ($code): void {
+                $match->whereRaw('p.id = '.ProductRows::TOKEN_PRODUCT, [$code])
+                    ->orWhereRaw('lower(p.sku) = lower(?)', [$code]);
+            })
+            ->orderByRaw('case when p.id = '.ProductRows::TOKEN_PRODUCT.' then 0 else 1 end', [$code])
+            ->limit(1);
     }
 }

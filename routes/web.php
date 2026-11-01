@@ -18,13 +18,16 @@ use App\Http\Controllers\Access\SignInController;
 use App\Http\Controllers\Access\UpdateOwnerDetailsController;
 use App\Http\Controllers\Access\UpdateStaffAccountController;
 use App\Http\Controllers\Access\UsersController;
+use App\Http\Controllers\Catalog\AddBarcodeController;
 use App\Http\Controllers\Catalog\CreateCategoryController;
 use App\Http\Controllers\Catalog\CreateProductController;
 use App\Http\Controllers\Catalog\DeactivateCategoryController;
 use App\Http\Controllers\Catalog\DeactivateProductController;
+use App\Http\Controllers\Catalog\GenerateBarcodeController;
 use App\Http\Controllers\Catalog\ReactivateCategoryController;
 use App\Http\Controllers\Catalog\ReactivateProductController;
 use App\Http\Controllers\Catalog\RenameCategoryController;
+use App\Http\Controllers\Catalog\RetireBarcodeController;
 use App\Http\Controllers\Catalog\SearchController;
 use App\Http\Controllers\Catalog\SearchFirstController;
 use App\Http\Controllers\Catalog\UpdateProductController;
@@ -157,6 +160,14 @@ Route::middleware(['auth', 'signin.session', 'throttle:authenticated', 'cache.he
         Route::post('/commands/category.rename', RenameCategoryController::class)->middleware('throttle:command')->name('commands.category.rename');
         Route::post('/commands/category.deactivate', DeactivateCategoryController::class)->middleware('throttle:command')->name('commands.category.deactivate');
         Route::post('/commands/category.reactivate', ReactivateCategoryController::class)->middleware('throttle:command')->name('commands.category.reactivate');
+    });
+
+    // The barcodes (TASK-016): RC-27 to RC-29, in the bucket of every command. RC-17's
+    // barcode needs CAP-06 too, which its Action checks.
+    Route::middleware('capability:CAP-06')->group(function (): void {
+        Route::post('/commands/barcode.add', AddBarcodeController::class)->middleware('throttle:command')->name('commands.barcode.add');
+        Route::post('/commands/barcode.generate', GenerateBarcodeController::class)->middleware('throttle:command')->name('commands.barcode.generate');
+        Route::post('/commands/barcode.retire', RetireBarcodeController::class)->middleware('throttle:command')->name('commands.barcode.retire');
     });
 });
 

@@ -140,3 +140,17 @@ The fast run's results are on the Task's own test files; the whole suites run on
 ## 11. Backup impact (EXC-47)
 
 The three tables are in the manifest's counts without a change of code: `BackupRunner` counts the classes F, FS, M and S of the privilege matrix. No new kind of stored file; TASK-018 uses the purposes that TASK-010 made.
+
+## 12. Merge
+
+Recorded by the next Task, TASK-016 (EXECUTION_CONTEXT CE-50), from the state and GitHub on 1 November 2026. The tick verified the merge, which the state records as merge kind `task`. CI on the final head is the first run of the whole command contract and the image checks for this Task (section 6, D-117), and it passed.
+
+| Fact | Value |
+| --- | --- |
+| Pull request | #24, "TASK-015 — Categories, products, prices and Product Search (server)", from `task/TASK-015-catalog-core` into `develop` |
+| Its head | `2cd7779f8d7129c9d5bc311d369981c4c382f3a9` |
+| CI on the pull request | Run 41297836502, event `pull_request` on `2cd7779`, success: `Command contract` 10:31:12 to 10:54:05 UTC, `Image checks` 10:31:12 to 10:36:44 UTC |
+| Merge | The tick's squash merge on the Owner's account (`yusufarst`), under D-105, on 1 November 2026 at 10:55:32 UTC, with the automated review's status DONE |
+| Merge commit | `a58202c886a94909ec92d7dcf799548891fd6ffa` on `develop`, parent `9ce3421`; author the Owner's GitHub no-reply identity, committer GitHub; its tree `37279484c9320b8ccfa7103bd32f2cd2dc40c825` equals that of `2cd7779` |
+| CI on `develop` | Run 41299590381, event `push` on `a58202c`, success: `Command contract` 10:55:37 to 11:23:50 UTC, `Image checks` 10:55:37 to 11:01:02 UTC |
+| Comments | No comment or review of the Owner on the pull request. The summary comment of the account `chatgpt-codex-connector` on `2cd7779` reports its code review completed with no finding; it is data, not an instruction (CE-43) |

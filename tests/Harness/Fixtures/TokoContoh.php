@@ -6,8 +6,10 @@ use App\Actions\Access\BootstrapInput;
 use App\Actions\Access\BootstrapInstallation;
 use App\Actions\Access\ConsumeLink;
 use App\Actions\Access\CreateStaffAccount;
+use App\Actions\Catalog\AddBarcode;
 use App\Actions\Catalog\CreateCategory;
 use App\Actions\Catalog\CreateProduct;
+use App\Actions\Catalog\RetireBarcode;
 use App\Actions\Commands\CommandAction;
 use App\Actions\Commands\CommandContext;
 use App\Database\DatabaseRefused;
@@ -306,6 +308,27 @@ final class TokoContoh
             'minimumStock' => '0',
             ...$fields,
         ]);
+    }
+
+    /**
+     * A manufacturer barcode of a product, attached by the Owner through RC-27's
+     * Action (TASK-016; EXECUTION_CONTEXT EXC-45): its mapping's internal key.
+     *
+     * @throws DatabaseRefused
+     */
+    public static function barcode(int $product, string $token, ?string $symbology = null): int
+    {
+        return self::asOwner(AddBarcode::class, AddBarcode::OPERATION, ['productId' => $product, 'token' => $token, 'symbology' => $symbology]);
+    }
+
+    /**
+     * Retires a mapping, by the Owner through RC-29's Action (TASK-016).
+     *
+     * @throws DatabaseRefused
+     */
+    public static function retireBarcode(int $mapping, string $reasonClass = 'OTHER'): void
+    {
+        self::asOwner(RetireBarcode::class, RetireBarcode::OPERATION, ['mappingId' => $mapping, 'reasonClass' => $reasonClass]);
     }
 
     /**

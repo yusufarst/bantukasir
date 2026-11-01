@@ -166,7 +166,7 @@ final class CatalogCommandsTest extends DatabaseTestCase
 
         // A control character in a text, a text that looks like a number, and an
         // unknown field: refused, never trimmed (TR-VAL-01, TR-VAL-05, TR-VAL-06).
-        foreach ([['name' => "Pulpen\u{0007}"], ['brand' => "Merek\nBaru"], ['baseUnit' => "pcs\u{001B}"], ['categoryId' => (string) $this->category], ['quantityPrecision' => '0'], ['warna' => 'merah'], ['barcode' => ['token' => '8991234567890']]] as $payload) {
+        foreach ([['name' => "Pulpen\u{0007}"], ['brand' => "Merek\nBaru"], ['baseUnit' => "pcs\u{001B}"], ['categoryId' => (string) $this->category], ['quantityPrecision' => '0'], ['warna' => 'merah']] as $payload) {
             $this->post17($this->productEnvelope($payload))->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
         }
 

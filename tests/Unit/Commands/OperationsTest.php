@@ -10,13 +10,16 @@ use App\Actions\Access\ReactivateAccount;
 use App\Actions\Access\RevokePasswordLink;
 use App\Actions\Access\UpdateOwnerDetails;
 use App\Actions\Access\UpdateStaffAccount;
+use App\Actions\Catalog\AddBarcode;
 use App\Actions\Catalog\CreateCategory;
 use App\Actions\Catalog\CreateProduct;
 use App\Actions\Catalog\DeactivateCategory;
 use App\Actions\Catalog\DeactivateProduct;
+use App\Actions\Catalog\GenerateBarcode;
 use App\Actions\Catalog\ReactivateCategory;
 use App\Actions\Catalog\ReactivateProduct;
 use App\Actions\Catalog\RenameCategory;
+use App\Actions\Catalog\RetireBarcode;
 use App\Actions\Catalog\UpdateProduct;
 use App\Actions\Commands\CommandActions;
 use App\Actions\Configuration\ChangeBusinessProfile;
@@ -87,7 +90,8 @@ final class OperationsTest extends TestCase
         $this->assertSame(['posting_block.block'], array_values(array_filter($listed, static fn (string $operation): bool => ! Operations::submittedByUsers($operation))));
         $this->assertThrows(fn () => Operations::familyOf('sale.refund'), LogicException::class);
         // The commands built so far, each a known operation (TASK-010: RC-32;
-        // TASK-011: RC-35 to RC-42; TASK-015: RC-17 to RC-24).
+        // TASK-011: RC-35 to RC-42; TASK-015: RC-17 to RC-24; TASK-016: RC-27 to
+        // RC-29).
         $this->assertSame([
             'business_profile.change' => ChangeBusinessProfile::class,
             'user.create' => CreateStaffAccount::class,
@@ -106,6 +110,9 @@ final class OperationsTest extends TestCase
             'category.rename' => RenameCategory::class,
             'category.deactivate' => DeactivateCategory::class,
             'category.reactivate' => ReactivateCategory::class,
+            'barcode.add' => AddBarcode::class,
+            'barcode.generate' => GenerateBarcode::class,
+            'barcode.retire' => RetireBarcode::class,
         ], CommandActions::built());
     }
 

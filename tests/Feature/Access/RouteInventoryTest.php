@@ -88,6 +88,10 @@ final class RouteInventoryTest extends TestCase
         'POST /commands/category.rename' => ['commands.category.rename', 'RC-22', 'CAP-04', [...self::SIGNED_IN, 'capability:CAP-04', 'throttle:command']],
         'POST /commands/category.deactivate' => ['commands.category.deactivate', 'RC-23', 'CAP-04', [...self::SIGNED_IN, 'capability:CAP-04', 'throttle:command']],
         'POST /commands/category.reactivate' => ['commands.category.reactivate', 'RC-24', 'CAP-04', [...self::SIGNED_IN, 'capability:CAP-04', 'throttle:command']],
+        // TASK-016: RC-27 to RC-29.
+        'POST /commands/barcode.add' => ['commands.barcode.add', 'RC-27', 'CAP-06', [...self::SIGNED_IN, 'capability:CAP-06', 'throttle:command']],
+        'POST /commands/barcode.generate' => ['commands.barcode.generate', 'RC-28', 'CAP-06', [...self::SIGNED_IN, 'capability:CAP-06', 'throttle:command']],
+        'POST /commands/barcode.retire' => ['commands.barcode.retire', 'RC-29', 'CAP-06', [...self::SIGNED_IN, 'capability:CAP-06', 'throttle:command']],
     ];
 
     public function test_the_routes_are_exactly_those_listed_each_with_its_gate(): void

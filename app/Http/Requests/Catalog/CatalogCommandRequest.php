@@ -2,20 +2,23 @@
 
 namespace App\Http\Requests\Catalog;
 
+use App\Domain\Catalog\Barcodes\Symbology;
 use App\Http\Requests\Commands\CommandRequest;
 use App\Support\Formatting\Format;
 use App\Support\Numbers\Quantity;
+use App\Support\Validation\BarcodeTokenRule;
 use App\Support\Validation\MinimumStockRule;
 use App\Support\Validation\MoneyRule;
 use Illuminate\Contracts\Validation\Validator;
 
 /**
- * The FormRequest base of RC-17 to RC-24 (INTERACTION_CONTRACTS section 5;
- * TECHNICAL_RULES sections 5 and 11.3; COPY_DECK section 16.1; TASK-015 scope item
- * 2): the rules of the fields they share and their keys. Every text is trimmed by
- * the global middleware, is valid UTF-8 and holds no control character, a line
- * break included (TR-VAL-05); `[[:cntrl:]]` of the database matches the same set
- * as `\p{Cc}` (TextSemanticsTest, SCH-14). An identifier, a version and the
+ * The FormRequest base of RC-17 to RC-24 and RC-27 to RC-29 (INTERACTION_CONTRACTS
+ * section 5; TECHNICAL_RULES sections 5 and 11.3; COPY_DECK section 16.1; TASK-015
+ * scope item 2, TASK-016 scope item 3): the rules of the fields they share and their
+ * keys. Every text is trimmed by the global middleware, is valid UTF-8 and holds no
+ * control character, a line break included (TR-VAL-05); `[[:cntrl:]]` of the
+ * database matches the same set as `\p{Cc}` (TextSemanticsTest, SCH-14). A barcode
+ * token alone follows BR-CAT-17 (BarcodeTokenRule). An identifier, a version and the
  * precision are JSON whole numbers, never a text that looks like one (TR-VAL-06).
  * An object's scope is the whole shop's, so a missing one is the Action's
  * NOT_FOUND under its lock.
@@ -28,7 +31,7 @@ abstract class CatalogCommandRequest extends CommandRequest
     protected const int NAME_MAX = 200;
 
     /** The paths that hold a JSON whole number. */
-    private const array WHOLE_NUMBERS = ['payload.productId', 'payload.categoryId', 'payload.quantityPrecision', 'expected.productVersion', 'expected.categoryVersion'];
+    private const array WHOLE_NUMBERS = ['payload.productId', 'payload.mappingId', 'payload.categoryId', 'payload.quantityPrecision', 'expected.productVersion', 'expected.categoryVersion'];
 
     /**
      * @return list<callable(Validator): void>
@@ -73,6 +76,24 @@ abstract class CatalogCommandRequest extends CommandRequest
     }
 
     /**
+     * The rules of a token that must be there; its presence is the caller's.
+     *
+     * @return list<mixed>
+     */
+    protected static function tokenRules(): array
+    {
+        return ['string', new BarcodeTokenRule];
+    }
+
+    /**
+     * @return list<string>
+     */
+    protected static function symbologyRules(): array
+    {
+        return ['nullable', 'string', 'in:'.implode(',', Symbology::names())];
+    }
+
+    /**
      * @return array<string, mixed>
      */
     protected static function categoryTargetRules(): array
@@ -100,6 +121,17 @@ abstract class CatalogCommandRequest extends CommandRequest
             'payload.sku.string' => ['ux.validation.sku'],
             'payload.sku.max' => ['ux.validation.sku'],
             'payload.sku.regex' => ['ux.validation.sku'],
+            'payload.token.string' => ['ux.validation.barcode_token'],
+            'payload.token.barcode_token_rule' => ['ux.validation.barcode_token'],
+            'payload.barcode.token.required_with' => ['ux.validation.required'],
+            'payload.barcode.token.string' => ['ux.validation.barcode_token'],
+            'payload.barcode.token.barcode_token_rule' => ['ux.validation.barcode_token'],
+            'payload.symbology.string' => ['ux.validation.choose_one'],
+            'payload.symbology.in' => ['ux.validation.choose_one'],
+            'payload.barcode.symbology.string' => ['ux.validation.choose_one'],
+            'payload.barcode.symbology.in' => ['ux.validation.choose_one'],
+            'payload.reasonClass.string' => ['ux.validation.choose_one'],
+            'payload.reasonClass.in' => ['ux.validation.choose_one'],
             'payload.name.string' => ['ux.validation.required'],
             'payload.name.max' => ['ux.validation.text_max', ['maks' => static::NAME_MAX]],
             'payload.brand.string' => ['ux.validation.required'],

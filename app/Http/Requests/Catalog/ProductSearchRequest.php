@@ -17,10 +17,11 @@ use LogicException;
  * 3.1; TECHNICAL_RULES sections 11.3 and 11.4; TASK-015 scope item 3): `context`,
  * required, one of the contexts of the contract, each open only to its capability
  * and answering FORBIDDEN until its Task adds it; `q`, up to 128 characters without
- * a control character; `mode`, only `search` until TASK-016 adds `exact`; `category`,
- * `brand`, `status`, `page` and `perPage`. Any other parameter is refused, and so
- * is any body: the read takes its parameters from the query string alone (TASK-008
- * review finding R-01).
+ * a control character; `mode`, `search` or `exact` (TASK-016); `category`, `brand`,
+ * `status`, `page` and `perPage`, which `exact` refuses, because a filter could then
+ * pass over a code's own product for another's SKU, and it answers at most one. Any
+ * other parameter is refused, and so is any body: the read takes its parameters from
+ * the query string alone (TASK-008 review finding R-01).
  *
  * The client's sequence number travels in the header SEQUENCE_HEADER, which the
  * answer repeats, so that a page applies only the answer to its newest request
@@ -45,6 +46,9 @@ final class ProductSearchRequest extends RefusingRequest
 
     private const string PLAIN_TEXT = '/\A[^\p{Cc}]*\z/u';
 
+    /** What the mode `exact` does not take. */
+    private const array NOT_EXACT = ['category', 'brand', 'status', 'page', 'perPage'];
+
     public function authorize(): bool
     {
         $context = $this->query('context');
@@ -68,7 +72,7 @@ final class ProductSearchRequest extends RefusingRequest
         return [
             'context' => ['required', 'string', 'in:'.implode(',', self::CONTEXTS)],
             'q' => ['nullable', 'string', 'max:128', 'regex:'.self::PLAIN_TEXT],
-            'mode' => ['sometimes', 'string', 'in:search'],
+            'mode' => ['sometimes', 'string', 'in:search,exact'],
             'category' => ['sometimes', 'string', 'regex:/^[1-9][0-9]{0,18}$/D'],
             'brand' => ['nullable', 'string', 'max:100', 'regex:'.self::PLAIN_TEXT],
             'status' => ['sometimes', 'string', 'in:active,inactive'],
@@ -108,7 +112,8 @@ final class ProductSearchRequest extends RefusingRequest
 
                 if ($this->json()->all() !== [] || $this->request->all() !== [] || $this->files->all() !== []
                     || ($this->query->has('category') && ObjectScope::key($this->query('category')) === null)
-                    || ($sequence !== null && preg_match('/^[0-9]{1,16}$/D', $sequence) !== 1)) {
+                    || ($sequence !== null && preg_match('/^[0-9]{1,16}$/D', $sequence) !== 1)
+                    || ($this->query('mode') === 'exact' && array_intersect(self::NOT_EXACT, array_keys($this->query->all())) !== [])) {
                     $validator->errors()->add('', '');
                 }
             },
@@ -142,6 +147,7 @@ final class ProductSearchRequest extends RefusingRequest
             $status === 'active' || $status === 'inactive' ? $status : null,
             is_string($page) ? (int) $page : 1,
             is_string($perPage) ? (int) $perPage : ProductSearch::PER_PAGE,
+            ($validated['mode'] ?? null) === 'exact',
         );
     }
 
