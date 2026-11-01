@@ -33,8 +33,8 @@ const STALE_VERSION = 'STALE_VERSION';
 
 const VALIDATION_FAILED = 'VALIDATION_FAILED';
 
-/** The most labels of one print request (DOCUMENT_CONTRACTS DC-05). */
-const MAX_LABELS = 100;
+/** The labels one print request may hold: 1 to 100 (DOCUMENT_CONTRACTS DC-05). */
+const LABEL_COUNTS: readonly number[] = [...Array(100).keys()].map((index) => index + 1);
 
 const RELOADED: string[] = ['barcodes'];
 
@@ -58,17 +58,11 @@ export default function Labels({ product, barcodes }: { product: Product; barcod
     );
 }
 
-/** The whole number of labels typed, or null when it is not 1 to 100. */
+/** The whole number of labels typed, or null when it is not one of 1 to 100. */
 function labelCount(text: string): number | null {
     const entry = text.trim();
 
-    if (!/^[0-9]{1,3}$/.test(entry)) {
-        return null;
-    }
-
-    const count = Number(entry);
-
-    return count >= 1 && count <= MAX_LABELS ? count : null;
+    return LABEL_COUNTS.find((count) => String(count) === entry) ?? null;
 }
 
 function LabelsForm({ title, product, barcodes }: { title: string; product: Product; barcodes: readonly LabelBarcode[] }) {

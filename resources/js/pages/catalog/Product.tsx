@@ -258,6 +258,10 @@ function PhotoSection({ product, onDone, onStale, onOpen }: { product: ProductDe
     const unresolved = useUnresolved();
     const reason = blockedReason(unresolved.union, CATALOG_COMMANDS.removePhoto);
 
+    // A new key for each opening: its command starts again with a new intent.
+    const uploadKey = `upload-${String(opening)}`;
+    const removeKey = `remove-${String(opening)}`;
+
     const finished = (text: string): void => {
         setRemoving(false);
         setOpening((current) => current + 1);
@@ -288,10 +292,10 @@ function PhotoSection({ product, onDone, onStale, onOpen }: { product: ProductDe
             <div className={'bk-stack'}>
                 {product.photo === null ? <ProductThumb name={product.name} src={null} /> : <img className={'bk-photo'} src={product.photo} alt={t('catalog.photo.thumbnail_alt', { produk: product.name })} />}
                 <div className={'bk-actions'}>
-                    <PhotoUploadRun key={`upload-${String(opening)}`} product={product} onDone={finished} onStale={staleNow} onOpen={onOpen} />
+                    <PhotoUploadRun key={uploadKey} product={product} onDone={finished} onStale={staleNow} onOpen={onOpen} />
                     {product.photo !== null && reason === undefined && <Menu label={t('ux.action.more_actions')} rowName={t('catalog.product_detail.section_photo')} items={entries} />}
                 </div>
-                {removing && <PhotoRemoveRun key={`remove-${String(opening)}`} product={product} onClose={() => setRemoving(false)} onDone={finished} onStale={staleNow} />}
+                {removing && <PhotoRemoveRun key={removeKey} product={product} onClose={() => setRemoving(false)} onDone={finished} onStale={staleNow} />}
             </div>
         </Section>
     );

@@ -1,5 +1,6 @@
 import { Head, usePage } from '@inertiajs/react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import type { StateId } from '@/components/ui/stateCatalogue';
 import { StateNotice } from '@/components/ui/States';
 import { brandOf, documentTitle, type Shop } from '@/layouts/AppShell';
 import { drawCode128 } from '@/lib/documents/code128';
@@ -12,6 +13,8 @@ import { t } from '@/lib/i18n';
 // cost or a price. It has no control and no shell: it opens in its own tab from UXP-306,
 // which stays for another print, and the browser's print dialog opens once the labels are
 // drawn. A print dialog is not proof of ink, and nothing here writes (TR-HTTP-02).
+
+const FAILED_STATE: StateId = 'UXS-44';
 
 interface Label {
     readonly name: string;
@@ -42,7 +45,7 @@ export default function LabelPrint({ label }: { label: Label }) {
             <main className={'bk-labels'}>
                 <h1 className={'bk-sr-only'}>{title}</h1>
                 {failed ? (
-                    <StateNotice state={'UXS-44'} />
+                    <StateNotice state={FAILED_STATE} />
                 ) : (
                     [...Array(label.count).keys()].map((index) => <LabelCard key={index} label={label} onFailed={() => setFailed(true)} />)
                 )}

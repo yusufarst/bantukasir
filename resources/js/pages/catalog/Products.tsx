@@ -5,7 +5,7 @@ import { FilterChip, FilterChips } from '@/components/ui/Choices';
 import { LoadMore } from '@/components/ui/Data';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Field, SelectInput, TextInput } from '@/components/ui/Field';
-import { Menu } from '@/components/ui/Menu';
+import { Menu, type MenuEntry } from '@/components/ui/Menu';
 import { EmptyState, LoadFailed, Loading, NoResults, StateMark, StateNotice, UnknownCode } from '@/components/ui/States';
 import { StatusWord } from '@/components/ui/Status';
 import type { StateId } from '@/components/ui/stateCatalogue';
@@ -62,6 +62,13 @@ type ListState =
     | { readonly kind: 'loading' }
     | { readonly kind: 'failed' }
     | { readonly kind: 'rows'; readonly rows: readonly ProductRow[]; readonly hasMore: boolean; readonly unknownCode: string | null; readonly filters: ProductFilters };
+
+/** The row's overflow (UXI-163): UXP-306, in this document, so that its referrer still gives the list's way back. */
+function labelEntries(row: ProductRow): MenuEntry[] {
+    const href = labelsPage(row.id);
+
+    return [{ kind: 'link', label: t('catalog.labels.title'), href, onNavigate: (event) => visitInDocument(event, href) }];
+}
 
 export default function Products({ filters, categories, canPrintLabels }: { filters: ProductFilters; categories: readonly Category[]; canPrintLabels: boolean }) {
     const title = t('catalog.products.title');
@@ -252,7 +259,7 @@ function ProductsList({ title, filters, categories, canPrintLabels }: { title: s
                       isAction: true,
                       cell: (row: ProductRow) =>
                           row.activeBarcode ? (
-                              <Menu label={t('ux.action.more_actions')} rowName={row.name} items={[{ kind: 'link', label: t('catalog.labels.title'), href: labelsPage(row.id), onNavigate: (event) => visitInDocument(event, labelsPage(row.id)) }]} />
+                              <Menu label={t('ux.action.more_actions')} rowName={row.name} items={labelEntries(row)} />
                           ) : null,
                   },
               ]
