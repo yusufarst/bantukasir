@@ -35,7 +35,7 @@ final class ProductSearch
         $page = array_slice($rows, 0, $filters->perPage);
 
         return [
-            'rows' => array_values(array_map(static fn (object $row): array => ProductRows::row($row)->toArray(), $page)),
+            'rows' => array_map(static fn (object $row): array => ProductRows::row($row)->toArray(), $page),
             'page' => $filters->page,
             'perPage' => $filters->perPage,
             'hasMore' => count($rows) > $filters->perPage,

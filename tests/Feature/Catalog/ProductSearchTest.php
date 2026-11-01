@@ -325,8 +325,8 @@ final class ProductSearchTest extends DatabaseTestCase
         };
 
         $expected = ['adjustment', 'catalog', 'correction', 'issue', 'opening', 'receiving', 'stock', 'till'];
-        $this->assertSame($expected, $names($inInteraction[1]));
-        $this->assertSame($expected, $names($inRoute[1]));
+        $this->assertSame($expected, $names($inInteraction[1] ?? ''));
+        $this->assertSame($expected, $names($inRoute[1] ?? ''));
         $this->assertStringNotContainsString('`labels`', substr($interaction, (int) strpos($interaction, '### 3.1'), (int) strpos($interaction, '### 3.2') - (int) strpos($interaction, '### 3.1')));
     }
 
