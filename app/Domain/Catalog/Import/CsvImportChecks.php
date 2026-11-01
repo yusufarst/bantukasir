@@ -33,7 +33,7 @@ final class CsvImportChecks
             }
         }
 
-        sort($categoryIds);
+        usort($categoryIds, static fn (int $first, int $second): int => $first <=> $second);
 
         return new CheckedImport($file->sha256, $rows, $categoryIds, $inactive);
     }

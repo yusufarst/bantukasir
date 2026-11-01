@@ -358,7 +358,7 @@ final class CsvImportTest extends DatabaseTestCase
         // A file replaced behind the preview's back.
         $preview = $this->preview($content)->assertOk();
         $importId = self::text($preview->json('importId'));
-        $path = $this->temporaryFiles()[0];
+        $path = $this->temporaryFile();
         Storage::disk(CsvImportFiles::DISK)->put($path, $this->csv('LAIN-01;Lain;Alat Tulis;;pcs;0;1000;;'));
         $this->assertFileChanged($this->postConfirm($importId, hash('sha256', $content)));
         $this->assertSame($before, $this->facts());
@@ -369,7 +369,7 @@ final class CsvImportTest extends DatabaseTestCase
 
         // A file past its 24 hours counts as gone (ARC-43).
         $preview = $this->preview($content)->assertOk();
-        $path = $this->temporaryFiles()[0];
+        $path = $this->temporaryFile();
         touch(Storage::disk(CsvImportFiles::DISK)->path($path), time() - CsvImportFiles::MAX_AGE_SECONDS);
         $this->assertFileChanged($this->confirm($preview));
         $this->assertSame($before, $this->facts());
@@ -423,7 +423,7 @@ final class CsvImportTest extends DatabaseTestCase
         $preview = $this->preview($this->csv('PEN-01;Pulpen;Alat Tulis;;pcs;0;1000;;'))->assertOk();
         $importId = self::text($preview->json('importId'));
 
-        foreach (['/products/import/'.$importId, '/products/import/'.$importId.'/cancel', '/media/'.$importId, '/storage/'.$this->temporaryFiles()[0]] as $path) {
+        foreach (['/products/import/'.$importId, '/products/import/'.$importId.'/cancel', '/media/'.$importId, '/storage/'.$this->temporaryFile()] as $path) {
             $this->assertNotSame(200, $this->getJson($path)->getStatusCode(), $path);
         }
 
@@ -448,7 +448,7 @@ final class CsvImportTest extends DatabaseTestCase
 
         $preview = $this->preview($this->csv(...$rows), $name)->assertOk();
         $this->assertSame(count($texts), $preview->json('readyRows'));
-        $path = $this->temporaryFiles()[0];
+        $path = $this->temporaryFile();
         $this->assertMatchesRegularExpression('/^[0-9]+\/[0-9a-f]{64}$/D', $path, 'The stored path holds nothing of the upload.');
         $this->confirm($preview)->assertStatus(201);
 
@@ -738,7 +738,18 @@ final class CsvImportTest extends DatabaseTestCase
      */
     private function temporaryFiles(): array
     {
-        return array_values(array_map(static fn (mixed $path): string => is_string($path) ? $path : '', Storage::disk(CsvImportFiles::DISK)->allFiles()));
+        return Storage::disk(CsvImportFiles::DISK)->allFiles();
+    }
+
+    /**
+     * The path of the one temporary file there is.
+     */
+    private function temporaryFile(): string
+    {
+        $files = $this->temporaryFiles();
+        $this->assertCount(1, $files);
+
+        return $files[0];
     }
 
     /** One independent session for every read of the test. */
