@@ -15,7 +15,7 @@ use Tests\Harness\TestDatabase;
  * TASK-007 scope item 6): 200 when the application has booted and its
  * database answers, 503 when the database does not; an empty body either
  * way — no detail, version or name; no session and no cookie; and the bucket
- * before sign-in, 120 a minute per address.
+ * before sign-in, 120 a minute per address. Changed only to prove the targeted run of D-117.
  */
 final class HealthRouteTest extends DatabaseTestCase
 {
