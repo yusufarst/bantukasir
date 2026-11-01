@@ -263,6 +263,9 @@ export interface TranslationPlaceholders {
     'ux.shell.document_title_public': 'halaman';
     'ux.state.abandoned.body': never;
     'ux.state.abandoned.title': never;
+    'ux.state.barcode_ineligible.check_digit': never;
+    'ux.state.barcode_ineligible.reserved': never;
+    'ux.state.barcode_ineligible.retired': never;
     'ux.state.barcode_ineligible.title': never;
     'ux.state.blocked.body': 'produk';
     'ux.state.blocked.open_incident': never;
@@ -391,6 +394,7 @@ export interface TranslationPlaceholders {
     'ux.state.unverified.label': never;
     'ux.state.validation.body': never;
     'ux.state.validation.title': never;
+    'ux.validation.barcode_token': never;
     'ux.validation.choose_one': never;
     'ux.validation.email': never;
     'ux.validation.min_stock': never;

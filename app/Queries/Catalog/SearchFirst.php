@@ -6,10 +6,12 @@ use Illuminate\Database\Query\Builder;
 
 /**
  * RD-06, the search-first check of UXP-303 (ROUTE_CONTRACTS RD-06;
- * INTERACTION_CONTRACTS section 3.5; BR-CAT-04; TASK-015 scope item 4): the product
- * whose SKU is the one typed, without regard to letter case, and up to 10 products
- * of a similar name. It refuses nothing: a similar name is a warning, and a taken
- * SKU is refused when the product is created (RC-17). TASK-016 adds the barcode.
+ * INTERACTION_CONTRACTS section 3.5; BR-CAT-04; TASK-015 scope item 4, TASK-016 scope
+ * item 4): the product a token is active on, the token compared exactly; the product
+ * whose SKU is the one typed, without regard to letter case; and up to 10 products of
+ * a similar name. It refuses nothing: a similar name is a warning, and a taken SKU or
+ * barcode is refused when the product is created (RC-17). A retired token has no
+ * product to show, and RC-17 refuses it.
  *
  * A similar name is one that pg_trgm finds similar (`%`, its threshold of 0.3) or
  * that holds the typed name, which a long name holding a short one is not; the most
@@ -21,14 +23,25 @@ final class SearchFirst
     public const int SIMILAR_NAMES = 10;
 
     /**
-     * @return array{sku: array<string, mixed>|null, similarNames: list<array<string, mixed>>}
+     * @return array{barcode: array<string, mixed>|null, sku: array<string, mixed>|null, similarNames: list<array<string, mixed>>}
      */
-    public function __invoke(?string $sku, ?string $name): array
+    public function __invoke(?string $barcode, ?string $sku, ?string $name): array
     {
         return [
+            'barcode' => $barcode === null ? null : $this->exactBarcode($barcode),
             'sku' => $sku === null ? null : $this->exactSku($sku),
             'similarNames' => $name === null ? [] : $this->similarNames($name),
         ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function exactBarcode(string $barcode): ?array
+    {
+        $row = ProductRows::query()->whereRaw('p.id = '.ProductRows::TOKEN_PRODUCT, [$barcode])->first();
+
+        return $row === null ? null : ProductRows::row($row)->toArray();
     }
 
     /**

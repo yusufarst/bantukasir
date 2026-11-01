@@ -10,13 +10,16 @@ use App\Actions\Access\ReactivateAccount;
 use App\Actions\Access\RevokePasswordLink;
 use App\Actions\Access\UpdateOwnerDetails;
 use App\Actions\Access\UpdateStaffAccount;
+use App\Actions\Catalog\AddBarcode;
 use App\Actions\Catalog\CreateCategory;
 use App\Actions\Catalog\CreateProduct;
 use App\Actions\Catalog\DeactivateCategory;
 use App\Actions\Catalog\DeactivateProduct;
+use App\Actions\Catalog\GenerateBarcode;
 use App\Actions\Catalog\ReactivateCategory;
 use App\Actions\Catalog\ReactivateProduct;
 use App\Actions\Catalog\RenameCategory;
+use App\Actions\Catalog\RetireBarcode;
 use App\Actions\Catalog\UpdateProduct;
 use App\Actions\Configuration\ChangeBusinessProfile;
 use App\Domain\Commands\Operations;
@@ -58,6 +61,10 @@ final class CommandActions
         RenameCategory::OPERATION => RenameCategory::class,
         DeactivateCategory::OPERATION => DeactivateCategory::class,
         ReactivateCategory::OPERATION => ReactivateCategory::class,
+        // RC-27 to RC-29 (TASK-016).
+        AddBarcode::OPERATION => AddBarcode::class,
+        GenerateBarcode::OPERATION => GenerateBarcode::class,
+        RetireBarcode::OPERATION => RetireBarcode::class,
     ];
 
     /**

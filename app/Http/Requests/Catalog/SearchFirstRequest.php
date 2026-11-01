@@ -2,16 +2,18 @@
 
 namespace App\Http\Requests\Catalog;
 
+use App\Domain\Catalog\Barcodes\BarcodeToken;
 use App\Http\Requests\Commands\RefusingRequest;
+use App\Support\Validation\BarcodeTokenRule;
 use Illuminate\Contracts\Validation\Validator;
 use LogicException;
 
 /**
  * The query of RD-06 (ROUTE_CONTRACTS RD-06, RT-08; INTERACTION_CONTRACTS section
- * 3.5; TECHNICAL_RULES section 11.3; TASK-015 scope item 4): `sku` and `name`, at
- * least one, each within its field's limit and without a control character.
- * `barcode` joins with TASK-016, and until then it is an unknown parameter. Any
- * other parameter is refused, and so is any body.
+ * 3.5; TECHNICAL_RULES section 11.3; TASK-015 scope item 4, TASK-016 scope item 4):
+ * `barcode`, `sku` and `name`, at least one, each within its field's limit and without
+ * a control character; the barcode as BR-CAT-17 reads a token. Any other parameter is
+ * refused, and so is any body.
  */
 final class SearchFirstRequest extends RefusingRequest
 {
@@ -23,6 +25,7 @@ final class SearchFirstRequest extends RefusingRequest
     public function rules(): array
     {
         return [
+            'barcode' => ['nullable', 'string', new BarcodeTokenRule],
             'sku' => ['nullable', 'string', 'max:64', 'regex:'.self::PLAIN_TEXT],
             'name' => ['nullable', 'string', 'max:200', 'regex:'.self::PLAIN_TEXT],
         ];
@@ -33,7 +36,7 @@ final class SearchFirstRequest extends RefusingRequest
      */
     protected function allowed(): array
     {
-        return ['sku', 'name'];
+        return ['barcode', 'sku', 'name'];
     }
 
     /**
@@ -42,6 +45,8 @@ final class SearchFirstRequest extends RefusingRequest
     protected function fieldKeys(): array
     {
         return [
+            'barcode.string' => ['ux.validation.barcode_token'],
+            'barcode.barcode_token_rule' => ['ux.validation.barcode_token'],
             'sku.max' => ['ux.validation.sku'],
             'sku.regex' => ['ux.validation.sku'],
             'name.max' => ['ux.validation.text_max', ['maks' => 200]],
@@ -57,7 +62,7 @@ final class SearchFirstRequest extends RefusingRequest
             ...parent::after(),
             function (Validator $validator): void {
                 if ($this->json()->all() !== [] || $this->request->all() !== [] || $this->files->all() !== []
-                    || (! is_string($this->query('sku')) && ! is_string($this->query('name')))) {
+                    || (! is_string($this->query('barcode')) && ! is_string($this->query('sku')) && ! is_string($this->query('name')))) {
                     $validator->errors()->add('', '');
                 }
             },
@@ -65,9 +70,9 @@ final class SearchFirstRequest extends RefusingRequest
     }
 
     /**
-     * The query string's values, validated.
+     * The query string's values, validated; the barcode as its token.
      *
-     * @return array{sku: string|null, name: string|null}
+     * @return array{barcode: string|null, sku: string|null, name: string|null}
      */
     public function checks(): array
     {
@@ -79,9 +84,14 @@ final class SearchFirstRequest extends RefusingRequest
             }
         }
 
+        $barcode = $validated['barcode'] ?? null;
         $sku = $validated['sku'] ?? null;
         $name = $validated['name'] ?? null;
 
-        return ['sku' => is_string($sku) ? $sku : null, 'name' => is_string($name) ? $name : null];
+        return [
+            'barcode' => is_string($barcode) ? BarcodeToken::normalized($barcode) : null,
+            'sku' => is_string($sku) ? $sku : null,
+            'name' => is_string($name) ? $name : null,
+        ];
     }
 }

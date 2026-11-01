@@ -55,6 +55,8 @@ return [
         'choose_one' => 'Pilih salah satu.',
         'min_stock' => 'Stok minimum tidak boleh kurang dari 0.',
         'sku' => 'SKU berisi 1 sampai 64 karakter, tanpa karakter kontrol.',
+        // The barcode's field (TASK-016; COPY_DECK section 16.1).
+        'barcode_token' => 'Barcode berisi 1 sampai 128 huruf, angka, atau tanda baca biasa.',
         // The password fields (TASK-006; COPY_DECK section 16.1).
         'password' => 'Kata sandi belum memenuhi syarat: minimal 8 karakter, dengan huruf besar, huruf kecil, angka, dan simbol.',
         'password_max' => 'Paling banyak 128 karakter.',
@@ -342,8 +344,13 @@ return [
             ],
             'open' => 'Buka :produk',
         ],
+        // The reasons of COPY_DECK section 13.2 (TASK-016); `not_correctable` is
+        // TASK-020's.
         'barcode_ineligible' => [
             'title' => 'Barcode tidak dapat dipakai',
+            'retired' => 'Barcode ini sudah dipensiunkan dan tidak bisa dipakai lagi. Hanya barcode pabrik yang dipensiunkan karena salah pasang yang bisa dipasang Pemilik ke produk yang benar, dengan Koreksi salah pasang barcode. Tidak ada yang disimpan.',
+            'reserved' => 'Kode yang diawali BK- hanya untuk barcode internal yang dibuat aplikasi. Tidak ada yang disimpan.',
+            'check_digit' => 'Angka pemeriksa barcode ini tidak cocok. Periksa lagi kodenya. Tidak ada yang disimpan.',
         ],
         'csv_invalid' => [
             'title' => 'Berkas CSV belum benar',

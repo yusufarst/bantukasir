@@ -19,6 +19,14 @@ final class ProductRows
     /** The character that escapes LIKE's wildcards in every pattern here. */
     public const string ESCAPE = '!';
 
+    /**
+     * The product that a token is active on, compared exactly, in one statement with
+     * the row that uses it: a correction changes the token's mapping in one
+     * transaction, so a lookup sees its product before or after it, never none and
+     * never both (SCHEMA section 5.6, RACE-18). It takes the token as its binding.
+     */
+    public const string TOKEN_PRODUCT = '(select am.product_id from barcode_tokens t join barcode_active_mappings am on am.token_id = t.id where t.token = ?)';
+
     public static function query(): Builder
     {
         return DB::table('products', 'p')

@@ -113,6 +113,9 @@ final class Allowlists
         // The answer that committed RC-35 or RC-41, with its link, the only channel
         // that ever carries one (SEC-ACC-05; TASK-011).
         'commands.committed.link' => ['owner' => ['outcome', 'operation', 'commandId', 'repeated', 'result', 'result.type', 'result.id', 'result.location', 'link', 'link.url', 'link.expiresAt']],
+        // RC-27 to RC-29 and their status check: the mapping with its code (TASK-016).
+        'commands.committed.barcode' => ['*' => ['outcome', 'operation', 'commandId', 'repeated', 'result', 'result.type', 'result.id', 'result.number', 'result.location']],
+        'commands.resolve.barcode' => ['*' => ['outcome', 'operation', 'commandId', 'result', 'result.type', 'result.id', 'result.number', 'result.location']],
         'commands.refused' => ['*' => ['outcome', 'code', 'messageKey', 'params', 'fields', 'lines']],
         // RD-03, the shell's indicators (TASK-009).
         'data.shell' => ['*' => ['unresolvedRequests', 'asOf']],
@@ -138,8 +141,9 @@ final class Allowlists
         'page', 'perPage', 'hasMore',
     ];
 
-    /** RD-06 with an exact SKU and a similar name. */
+    /** RD-06 with an exact barcode, an exact SKU and a similar name. */
     private const array CHECK_RESULT = [
+        'barcode', 'barcode.id', 'barcode.name', 'barcode.sku', 'barcode.baseUnit', 'barcode.quantityPrecision', 'barcode.price', 'barcode.price.amount', 'barcode.price.revisionId', 'barcode.active', 'barcode.thumbnail',
         'sku', 'sku.id', 'sku.name', 'sku.sku', 'sku.baseUnit', 'sku.quantityPrecision', 'sku.price', 'sku.price.amount', 'sku.price.revisionId', 'sku.active', 'sku.thumbnail',
         'similarNames', 'similarNames.*', 'similarNames.*.id', 'similarNames.*.name', 'similarNames.*.sku', 'similarNames.*.baseUnit', 'similarNames.*.quantityPrecision',
         'similarNames.*.price', 'similarNames.*.price.amount', 'similarNames.*.price.revisionId', 'similarNames.*.active', 'similarNames.*.thumbnail',

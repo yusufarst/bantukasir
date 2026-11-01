@@ -198,6 +198,16 @@ final class CapabilityMatrixTest extends DatabaseTestCase
         'RC-24' => ['method' => 'POST', 'path' => '/commands/category.reactivate', 'json' => true, 'answers' => [
             'guest' => [401, null], 'owner' => [422, null], 'ops' => [422, null], 'cashier' => [403, null], 'combined' => [422, null],
         ]],
+        // TASK-016: RC-27 to RC-29 for CAP-06, each sent without its fields.
+        'RC-27' => ['method' => 'POST', 'path' => '/commands/barcode.add', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [422, null], 'ops' => [422, null], 'cashier' => [403, null], 'combined' => [422, null],
+        ]],
+        'RC-28' => ['method' => 'POST', 'path' => '/commands/barcode.generate', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [422, null], 'ops' => [422, null], 'cashier' => [403, null], 'combined' => [422, null],
+        ]],
+        'RC-29' => ['method' => 'POST', 'path' => '/commands/barcode.retire', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [422, null], 'ops' => [422, null], 'cashier' => [403, null], 'combined' => [422, null],
+        ]],
     ];
 
     /** @var array<string, array{id: int, email: string, password: string}> */

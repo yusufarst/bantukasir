@@ -103,7 +103,10 @@ return Application::configure(basePath: dirname(__DIR__))
             TrimStrings::class,
             ConvertEmptyStringsToNull::class,
         ]);
-        $middleware->trimStrings(except: ['token']);
+        // A one-time link's token is never altered; a barcode token keeps everything
+        // but its scanner terminator and outer ASCII spaces (BR-CAT-17, TR-VAL-05;
+        // App\Domain\Catalog\Barcodes\BarcodeToken): RC-27, RC-17 and RD-06.
+        $middleware->trimStrings(except: ['token', 'payload.token', 'payload.barcode.token', 'barcode']);
 
         // A signed-in route that names no capability gate is refused at run
         // time too (SEC-AZ-01; review finding R-32).
