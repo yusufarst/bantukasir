@@ -24,7 +24,7 @@ final class HealthRouteTest extends DatabaseTestCase
         $response = $this->get('/up');
 
         $response->assertOk();
-        $this->assertSame('', $response->getContent());
+        $this->assertSame('a deliberate failure, to prove that a fast run stops (D-117)', $response->getContent());
         $this->assertSame([], $response->headers->getCookies(), 'No session and no cookie.');
         $this->assertFalse($response->headers->has('Set-Cookie'));
         $this->assertSame(0, $this->observer()->table('sessions')->count());
