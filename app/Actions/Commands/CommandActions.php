@@ -18,10 +18,13 @@ use App\Actions\Catalog\DeactivateProduct;
 use App\Actions\Catalog\GenerateBarcode;
 use App\Actions\Catalog\ReactivateCategory;
 use App\Actions\Catalog\ReactivateProduct;
+use App\Actions\Catalog\RemoveProductPhoto;
 use App\Actions\Catalog\RenameCategory;
 use App\Actions\Catalog\RetireBarcode;
+use App\Actions\Catalog\SetProductPhoto;
 use App\Actions\Catalog\UpdateProduct;
 use App\Actions\Configuration\ChangeBusinessProfile;
+use App\Actions\Documents\RecordLabelPrint;
 use App\Domain\Commands\Operations;
 use LogicException;
 
@@ -65,6 +68,10 @@ final class CommandActions
         AddBarcode::OPERATION => AddBarcode::class,
         GenerateBarcode::OPERATION => GenerateBarcode::class,
         RetireBarcode::OPERATION => RetireBarcode::class,
+        // RC-25, RC-26 and RC-47 (TASK-018).
+        SetProductPhoto::OPERATION => SetProductPhoto::class,
+        RemoveProductPhoto::OPERATION => RemoveProductPhoto::class,
+        RecordLabelPrint::OPERATION => RecordLabelPrint::class,
     ];
 
     /**

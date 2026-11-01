@@ -5,7 +5,7 @@ namespace App\Domain\Media;
 /**
  * The limits of an uploaded image of one purpose (SECURITY_MODEL section 13;
  * BR-CFG-04): its bytes and its pixels, with the values that the field
- * errors of COPY_DECK section 16.2 name. TASK-018 adds the product photo's.
+ * errors of COPY_DECK section 16.2 name.
  */
 final readonly class ImageLimits
 {
@@ -20,6 +20,12 @@ final readonly class ImageLimits
     public static function logo(): self
     {
         return new self(5 * 1024 * 1024, 16_000_000, '5 MB', 16);
+    }
+
+    /** A product photo: at most 8 MiB and 24 megapixels. */
+    public static function photo(): self
+    {
+        return new self(8 * 1024 * 1024, 24_000_000, '8 MB', 24);
     }
 
     /**

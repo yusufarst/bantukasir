@@ -2,6 +2,7 @@
 
 namespace App\Queries\Catalog;
 
+use App\Domain\Media\StoredFiles;
 use App\DTO\Catalog\ProductDetailData;
 use App\Policies\NotFound;
 use App\Policies\ObjectScope;
@@ -39,7 +40,7 @@ final class ProductPages
             ->join('categories as c', 'c.id', '=', 'p.category_id')
             ->join('selling_price_revisions as r', 'r.id', '=', 'p.current_price_revision_id')
             ->where('p.id', $key)
-            ->first(['p.id', 'p.sku', 'p.name', 'p.category_id', 'c.name as category_name', 'c.active as category_active', 'p.brand', 'p.base_unit', 'p.quantity_precision', 'r.id as revision_id', 'r.amount', 'p.minimum_stock', 'p.active', 'p.version']);
+            ->first(['p.id', 'p.sku', 'p.name', 'p.category_id', 'c.name as category_name', 'c.active as category_active', 'p.brand', 'p.base_unit', 'p.quantity_precision', 'r.id as revision_id', 'r.amount', 'p.minimum_stock', 'p.active', 'p.version', 'p.photo_file_id']);
 
         if ($row === null) {
             throw new NotFound;
@@ -60,6 +61,7 @@ final class ProductPages
         $minimum = $values['minimum_stock'] ?? null;
         $active = $values['active'] ?? null;
         $version = $values['version'] ?? null;
+        $photo = $values['photo_file_id'] ?? null;
 
         if (! is_int($id) || ! is_string($sku) || ! is_string($name) || ! is_int($category) || ! is_string($categoryName) || ! is_bool($categoryActive)
             || ! is_string($unit) || ! is_int($precision) || ! is_int($revision) || (! is_int($amount) && ! is_string($amount)) || ! is_string($minimum) || ! is_bool($active) || ! is_int($version)) {
@@ -84,7 +86,39 @@ final class ProductPages
             // No movement exists before `stock_movements` (BR-CAT-07): TASK-021 reads it
             // here, with the refusal of RC-18 that TASK-015 left for it.
             false,
+            is_int($photo) ? StoredFiles::deliveryPath($photo) : null,
         );
+    }
+
+    /**
+     * The product's active tokens, for UXP-306 and whether its labels can be printed
+     * (BR-CAT-35; G-09): each with the mapping that RC-47 names.
+     *
+     * @return list<array{mappingId: int, token: string}>
+     */
+    public function activeBarcodes(int $productId): array
+    {
+        $rows = DB::table('barcode_active_mappings', 'a')
+            ->join('barcode_tokens as t', 't.id', '=', 'a.token_id')
+            ->where('a.product_id', $productId)
+            ->orderBy('a.mapping_id')
+            ->limit(self::BARCODES)
+            ->get(['a.mapping_id', 't.token']);
+        $barcodes = [];
+
+        foreach ($rows as $row) {
+            $values = (array) $row;
+            $mapping = $values['mapping_id'] ?? null;
+            $token = $values['token'] ?? null;
+
+            if (! is_int($mapping) || ! is_string($token)) {
+                throw new LogicException('An active mapping holds its columns (SCHEMA section 5.6).');
+            }
+
+            $barcodes[] = ['mappingId' => $mapping, 'token' => $token];
+        }
+
+        return $barcodes;
     }
 
     /**

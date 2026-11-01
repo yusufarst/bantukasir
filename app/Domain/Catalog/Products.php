@@ -159,6 +159,15 @@ final class Products
     }
 
     /**
+     * Points the product whose update lock the caller holds at a photo, or at none,
+     * one version on (BR-CAT-44). The file it pointed at stays (D-042).
+     */
+    public function setPhoto(ProductRecord $product, ?int $fileId): void
+    {
+        $this->change($product, ['photo_file_id' => $fileId]);
+    }
+
+    /**
      * @param  array<string, mixed>  $columns
      */
     private function change(ProductRecord $product, array $columns): void
@@ -175,7 +184,7 @@ final class Products
     private static function query(): Builder
     {
         return DB::table('products', 'p')
-            ->select(['p.id', 'p.sku', 'p.name', 'p.category_id', 'p.brand', 'p.base_unit', 'p.quantity_precision', 'p.current_price_revision_id', 'p.minimum_stock', 'p.active', 'p.version']);
+            ->select(['p.id', 'p.sku', 'p.name', 'p.category_id', 'p.brand', 'p.base_unit', 'p.quantity_precision', 'p.current_price_revision_id', 'p.minimum_stock', 'p.active', 'p.version', 'p.photo_file_id']);
     }
 
     private static function recordOf(?object $row): ?ProductRecord
@@ -196,6 +205,7 @@ final class Products
         $minimum = $values['minimum_stock'] ?? null;
         $active = $values['active'] ?? null;
         $version = $values['version'] ?? null;
+        $photo = $values['photo_file_id'] ?? null;
 
         if (! is_int($id) || ! is_string($sku) || ! is_string($name) || ! is_int($category) || ! is_string($unit)
             || ! is_int($precision) || ! is_int($revision) || ! is_string($minimum) || ! is_bool($active) || ! is_int($version)) {
@@ -222,6 +232,7 @@ final class Products
             Quantity::fromDatabase($minimum, $precision),
             $active,
             $version,
+            is_int($photo) ? $photo : null,
         );
     }
 

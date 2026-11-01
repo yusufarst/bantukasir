@@ -38,10 +38,49 @@ final class ImageNormalizer
     /** The memory reserved besides the pixels and three copies of the upload. */
     private const int MARGIN_BYTES = 64 * 1024 * 1024;
 
+    /** The longest side of a stored product photo (SECURITY_MODEL section 13). */
+    public const int PHOTO_LONGEST_SIDE = 2048;
+
+    /**
+     * The longest side of a photo's thumbnail: four device pixels for each CSS pixel
+     * of the largest place that shows one, 48 px in the previews of the till. A
+     * technical choice of TASK-018; the rule names no size.
+     */
+    public const int THUMBNAIL_LONGEST_SIDE = 192;
+
     /**
      * @throws ImageRefused
      */
     public function normalize(string $bytes, InspectedImage $inspected): NormalizedImage
+    {
+        $image = self::decoded($bytes, $inspected);
+
+        return self::encoded($image, $inspected->mediaType);
+    }
+
+    /**
+     * A product photo: decoded and turned as any image, reduced to at most 2,048
+     * pixels on its longest side, never enlarged, with its thumbnail made from it
+     * (SECURITY_MODEL section 13). Both are encoded in the upload's own format and
+     * hold no metadata.
+     *
+     * @throws ImageRefused
+     */
+    public function normalizePhoto(string $bytes, InspectedImage $inspected): NormalizedPhoto
+    {
+        $image = self::reduced(self::decoded($bytes, $inspected), self::PHOTO_LONGEST_SIDE);
+        $photo = self::encoded($image, $inspected->mediaType);
+        $thumbnail = self::encoded(self::reduced($image, self::THUMBNAIL_LONGEST_SIDE), $inspected->mediaType);
+
+        return new NormalizedPhoto($photo, $thumbnail);
+    }
+
+    /**
+     * The upload decoded and turned upright.
+     *
+     * @throws ImageRefused
+     */
+    private static function decoded(string $bytes, InspectedImage $inspected): GdImage
     {
         self::requireSupport($inspected->mediaType);
         self::reserveMemory($inspected, strlen($bytes));
@@ -60,14 +99,55 @@ final class ImageNormalizer
             imagepalettetotruecolor($image);
         }
 
-        $image = self::upright($image, $inspected->orientation);
-        $encoded = self::encode($image, $inspected->mediaType);
+        return self::upright($image, $inspected->orientation);
+    }
+
+    /**
+     * @throws ImageRefused
+     */
+    private static function encoded(GdImage $image, string $mediaType): NormalizedImage
+    {
+        $encoded = self::encode($image, $mediaType);
 
         if ($encoded === '') {
             throw new ImageRefused(ImageProblem::Unreadable);
         }
 
-        return new NormalizedImage($encoded, $inspected->mediaType, imagesx($image), imagesy($image));
+        return new NormalizedImage($encoded, $mediaType, imagesx($image), imagesy($image));
+    }
+
+    /**
+     * The image with its longest side at most this long, its proportions kept in
+     * whole pixels and every side at least one, transparency kept; the image itself
+     * when it is small enough.
+     *
+     * @param  int<1, max>  $longest
+     *
+     * @throws ImageRefused
+     */
+    private static function reduced(GdImage $image, int $longest): GdImage
+    {
+        $width = imagesx($image);
+        $height = imagesy($image);
+        $side = max($width, $height);
+
+        if ($side <= $longest) {
+            return $image;
+        }
+
+        $newWidth = max(1, intdiv($width * $longest + intdiv($side, 2), $side));
+        $newHeight = max(1, intdiv($height * $longest + intdiv($side, 2), $side));
+        $reduced = imagecreatetruecolor($newWidth, $newHeight);
+
+        if (! $reduced instanceof GdImage) {
+            throw new ImageRefused(ImageProblem::Unreadable);
+        }
+
+        self::keepAlpha($reduced);
+
+        imagecopyresampled($reduced, $image, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+
+        return $reduced;
     }
 
     /**

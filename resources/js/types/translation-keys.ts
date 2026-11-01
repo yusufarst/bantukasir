@@ -156,8 +156,21 @@ export interface TranslationPlaceholders {
     'catalog.field.unit': never;
     'catalog.field.unit_help': never;
     'catalog.field.unit_lock_help': never;
+    'catalog.labels.barcode': never;
+    'catalog.labels.print': never;
+    'catalog.labels.quantity': never;
+    'catalog.labels.size_help': never;
+    'catalog.labels.title': never;
     'catalog.photo.placeholder_alt': never;
+    'catalog.photo.remove': never;
+    'catalog.photo.remove_confirm.body': never;
+    'catalog.photo.remove_confirm.title': never;
+    'catalog.photo.removed': never;
+    'catalog.photo.replace': never;
+    'catalog.photo.rules': never;
+    'catalog.photo.saved': never;
     'catalog.photo.thumbnail_alt': 'produk';
+    'catalog.photo.upload': never;
     'catalog.product.deactivate_confirm.body': never;
     'catalog.product.deactivate_confirm.title': 'produk';
     'catalog.product.deactivated': never;
@@ -179,6 +192,7 @@ export interface TranslationPlaceholders {
     'catalog.product_detail.price_history': never;
     'catalog.product_detail.section_barcodes': never;
     'catalog.product_detail.section_data': never;
+    'catalog.product_detail.section_photo': never;
     'catalog.product_detail.section_price': never;
     'catalog.product_detail.subtitle': 'produk';
     'catalog.product_detail.title': never;
@@ -279,6 +293,7 @@ export interface TranslationPlaceholders {
     'config.settings.profile_desc': never;
     'config.settings.title': never;
     'config.settings.users_desc': never;
+    'documents.label.sku': 'sku';
     'ux.action.back_home': never;
     'ux.action.back_to': 'halaman';
     'ux.action.cancel': never;

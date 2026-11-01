@@ -18,11 +18,14 @@ use App\Actions\Catalog\DeactivateProduct;
 use App\Actions\Catalog\GenerateBarcode;
 use App\Actions\Catalog\ReactivateCategory;
 use App\Actions\Catalog\ReactivateProduct;
+use App\Actions\Catalog\RemoveProductPhoto;
 use App\Actions\Catalog\RenameCategory;
 use App\Actions\Catalog\RetireBarcode;
+use App\Actions\Catalog\SetProductPhoto;
 use App\Actions\Catalog\UpdateProduct;
 use App\Actions\Commands\CommandActions;
 use App\Actions\Configuration\ChangeBusinessProfile;
+use App\Actions\Documents\RecordLabelPrint;
 use App\Domain\Commands\Operations;
 use LogicException;
 use Tests\Harness\Commands\Probe;
@@ -91,7 +94,7 @@ final class OperationsTest extends TestCase
         $this->assertThrows(fn () => Operations::familyOf('sale.refund'), LogicException::class);
         // The commands built so far, each a known operation (TASK-010: RC-32;
         // TASK-011: RC-35 to RC-42; TASK-015: RC-17 to RC-24; TASK-016: RC-27 to
-        // RC-29).
+        // RC-29; TASK-018: RC-25, RC-26 and RC-47).
         $this->assertSame([
             'business_profile.change' => ChangeBusinessProfile::class,
             'user.create' => CreateStaffAccount::class,
@@ -113,6 +116,9 @@ final class OperationsTest extends TestCase
             'barcode.add' => AddBarcode::class,
             'barcode.generate' => GenerateBarcode::class,
             'barcode.retire' => RetireBarcode::class,
+            'product_photo.set' => SetProductPhoto::class,
+            'product_photo.remove' => RemoveProductPhoto::class,
+            'document.print_labels' => RecordLabelPrint::class,
         ], CommandActions::built());
     }
 

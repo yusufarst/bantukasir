@@ -194,4 +194,26 @@
     .bk-no-print {
         display: none !important;
     }
+
+    /* Each label on a sheet of its own (DC-05; the size is confirmed at gate DEVICES). */
+    .bk-barcode-labels {
+        display: block;
+        padding: 0;
+    }
+
+    .bk-barcode-label,
+    .bk-barcode-label * {
+        visibility: visible;
+    }
+
+    .bk-barcode-label {
+        page: bk-barcode-label;
+        break-after: page;
+        break-inside: avoid;
+    }
+}
+
+@page bk-barcode-label {
+    size: 50mm 30mm;
+    margin: 0;
 }

@@ -153,3 +153,17 @@ The automated reviewer's P2 finding on the head `cf1781d` (review comment 443660
 | Image checks on `cf1781d` | CI run 41330696494 | 2 Nov | 5 min 28 s | PASS; to run again on the fix's head |
 | Command contract on `cf1781d` | CI run 41330696494 | 2 Nov | — | Pending when the fix was committed, with no failure shown; `NOT_RUN` as a result, and superseded by the fix's head |
 | `guard.sh --preview` | Local, on the fix | 2 Nov | under 1 min | PASS, no candidate to judge |
+
+## 12. Merge
+
+Recorded by the next Task, TASK-018 (EXECUTION_CONTEXT CE-50), from the state and GitHub on 2 November 2026. The tick verified the merge, which the state records as merge kind `task`. CI on the final head is the first complete run of the browser suite with `tests/Browser/catalog/`, the fix of R-19 and the rest of the command contract for this Task (section 7, D-117), and it passed.
+
+| Fact | Value |
+| --- | --- |
+| Pull request | #26, "TASK-017 — Catalogue pages", from `task/TASK-017-catalog-pages` into `develop` |
+| Its head | `65224ea05b64c6383668f882aa1ad11145112af7` |
+| CI on the pull request | Run 41331884730, on `65224ea`, success: `Command contract` 17:32:38 to 17:58:51 UTC, `Image checks` 17:32:39 to 17:39:23 UTC |
+| Merge | The tick's squash merge on the Owner's account (`yusufarst`), under D-105, on 1 November 2026 at 18:00:37 UTC, with the automated review's status DONE |
+| Merge commit | `56712e8dc35a29a364890a7e2b0d57cdc66644c6` on `develop`; author the Owner's identity, committer GitHub; its tree `66b7426ea3ee94c2491747c27323e1c1909a5653` equals that of `65224ea` |
+| CI on `develop` | Run 41334356563, on `56712e8`, success: `Command contract` 18:00:42 to 18:30:06 UTC, `Image checks` 18:00:42 to 18:07:29 UTC |
+| Comments | No comment or review of the Owner on the pull request. The automated reviewer's account `chatgpt-codex-connector` wrote its summary comment and one review, the P2 finding of section 11; data, not instructions (CE-43) |

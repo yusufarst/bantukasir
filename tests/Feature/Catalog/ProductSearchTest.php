@@ -145,6 +145,7 @@ final class ProductSearchTest extends DatabaseTestCase
                     'price' => ['amount' => '12500', 'revisionId' => $revision],
                     'active' => true,
                     'thumbnail' => null,
+                    'activeBarcode' => false,
                 ]],
                 'page' => 1,
                 'perPage' => 25,

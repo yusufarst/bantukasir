@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState, type ChangeEvent } from 'react';
 import { Button, ButtonLink } from '@/components/ui/Button';
 import { Section } from '@/components/ui/Card';
 import { SegmentedControl } from '@/components/ui/Choices';
@@ -7,6 +7,7 @@ import { KeyValueList, type KeyValue } from '@/components/ui/Data';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Dialog } from '@/components/ui/Dialog';
 import { CommandForm } from '@/components/ui/Field';
+import { Icon } from '@/components/ui/Icon';
 import { Menu, type MenuEntry } from '@/components/ui/Menu';
 import type { StateId } from '@/components/ui/stateCatalogue';
 import { Committed, StateMark, StateNotice } from '@/components/ui/States';
@@ -14,8 +15,8 @@ import { StatusWord } from '@/components/ui/Status';
 import { AppShell } from '@/layouts/AppShell';
 import { PageContainer, PageHeader } from '@/layouts/Page';
 import { takeSavedNote } from '@/lib/access/users';
-import { blockedReason, CodeField, visitInDocument } from '@/lib/catalog/Parts';
-import { cameFromCreate, CATALOG_COMMANDS, catalogFieldMessage, checkProduct, NEW_PRODUCT_PAGE, productPage, PRODUCTS_SHELL, productsListAddress, type ProductDetail, type ProductRow } from '@/lib/catalog/products';
+import { blockedReason, CodeField, ProductThumb, visitInDocument } from '@/lib/catalog/Parts';
+import { cameFromCreate, CATALOG_COMMANDS, catalogFieldMessage, checkProduct, labelsPage, NEW_PRODUCT_PAGE, productPage, PRODUCTS_SHELL, productsListAddress, type ProductDetail, type ProductRow } from '@/lib/catalog/products';
 import { useScanCapture } from '@/lib/catalog/scanCapture';
 import { committedText } from '@/lib/commands/families';
 import { CommandPanels } from '@/lib/commands/Panels';
@@ -28,11 +29,12 @@ import { t } from '@/lib/i18n';
 // section 8.3; INTERACTION_INVENTORY UXI-165, UXI-166, UXI-168, UXI-171 to UXI-173 and
 // UXI-177; NAVIGATION_CONTRACTS UXP-302; BR-CAT-08, BR-CAT-13, BR-CAT-19, BR-CAT-52;
 // TASK-017 scope item 1): the product's data, its price and price history, its barcodes,
-// and its status, an inactive one marked. A command updates its section in place with
-// its message; each asks in a dialog or an inline form that Enter never confirms. No
-// control deletes anything (D-042). TASK-018, TASK-020, TASK-022 and TASK-025 add the
-// photo, labels, correction, stock and cost history, and TASK-042 and TASK-022 the way
-// back to UXP-612 and UXP-006 (UXI-177).
+// and its status, an inactive one marked, its photo (UXI-169, UXI-170; BR-CAT-44 to
+// BR-CAT-46) and the way to its labels (UXI-175). A command updates its section in place
+// with its message; each asks in a dialog or an inline form that Enter never confirms. No
+// control deletes anything (D-042). TASK-020, TASK-022 and TASK-025 add the correction,
+// stock and cost history, and TASK-042 and TASK-022 the way back to UXP-612 and UXP-006
+// (UXI-177).
 
 const STALE_STATE: StateId = 'UXS-17';
 
@@ -48,7 +50,15 @@ const BARCODE_NOT_ELIGIBLE = 'BARCODE_NOT_ELIGIBLE';
 
 const VALIDATION_FAILED = 'VALIDATION_FAILED';
 
-const RELOADED: string[] = ['product', 'priceHistory', 'barcodes'];
+const RELOADED: string[] = ['product', 'priceHistory', 'barcodes', 'canPrintLabels'];
+
+/** The images a photo may be (BR-CAT-47); the server judges the content. */
+const PHOTO_TYPES = 'image/png,image/jpeg,image/webp';
+
+/** The largest photo (SECURITY_MODEL section 13), and how the refusal names it (COPY_DECK section 16.2). */
+const PHOTO_MAX_BYTES = 8 * 1024 * 1024;
+
+const PHOTO_SIZE_LABEL = '8 MB';
 
 const MANUFACTURER = 'MANUFACTURER';
 
@@ -72,17 +82,25 @@ interface Barcode {
     readonly reasonClass: string | null;
 }
 
-export default function Product({ product, priceHistory, barcodes }: { product: ProductDetail; priceHistory: readonly PriceEntry[]; barcodes: readonly Barcode[] | null }) {
+interface ProductProps {
+    readonly product: ProductDetail;
+    readonly priceHistory: readonly PriceEntry[];
+    readonly barcodes: readonly Barcode[] | null;
+    readonly canChangePhoto: boolean;
+    readonly canPrintLabels: boolean;
+}
+
+export default function Product(props: ProductProps) {
     const title = t('catalog.product_detail.title');
 
     return (
         <AppShell title={title} {...PRODUCTS_SHELL}>
-            <ProductPage title={title} product={product} priceHistory={priceHistory} barcodes={barcodes} />
+            <ProductPage title={title} {...props} />
         </AppShell>
     );
 }
 
-function ProductPage({ title, product, priceHistory, barcodes }: { title: string; product: ProductDetail; priceHistory: readonly PriceEntry[]; barcodes: readonly Barcode[] | null }) {
+function ProductPage({ title, product, priceHistory, barcodes, canChangePhoto, canPrintLabels }: ProductProps & { title: string }) {
     const [note, setNote] = useState(takeSavedNote);
     const [stale, setStale] = useState(false);
     const [lifecycle, setLifecycle] = useState(false);
@@ -118,6 +136,7 @@ function ProductPage({ title, product, priceHistory, barcodes }: { title: string
     const lifecycleLabel = product.active ? t('ux.action.deactivate') : t('ux.action.reactivate');
     const lifecycleEntries: MenuEntry[] = [{ kind: 'action', label: lifecycleLabel, danger: product.active, onSelect: openLifecycle }];
     const editPage = `${productPage(product.id)}/edit`;
+    const labels = labelsPage(product.id);
 
     const data: KeyValue[] = [
         { key: 'sku', label: t('catalog.field.sku'), value: product.sku },
@@ -176,7 +195,15 @@ function ProductPage({ title, product, priceHistory, barcodes }: { title: string
                         </Section>
                     </div>
                 </Section>
+                {canChangePhoto && <PhotoSection product={product} onDone={done} onStale={onStale} onOpen={() => setNote(null)} />}
                 {barcodes !== null && <BarcodesSection product={product} barcodes={barcodes} onDone={done} onChanged={reload} onOpen={() => setNote(null)} />}
+                {canPrintLabels && (
+                    <Section title={t('catalog.labels.title')} titleHidden={true}>
+                        <div className={'bk-actions'}>
+                            <ButtonLink href={labels} label={t('catalog.labels.title')} variant={'secondary'} onClick={(event) => visitInDocument(event, labels)} />
+                        </div>
+                    </Section>
+                )}
             </div>
         </PageContainer>
     );
@@ -216,6 +243,189 @@ function LifecycleRun({ product, onClose, onDone, onStale }: { product: ProductD
                     <>
                         <Button label={t('ux.action.cancel')} variant={'secondary'} unavailable={busy} data-initial-focus={true} onClick={onClose} />
                         <Button label={deactivating ? t('ux.action.deactivate') : t('ux.action.reactivate')} variant={deactivating ? 'danger' : 'primary'} enterActivates={false} busy={busy} onClick={() => control.submit({ productId: product.id }, { productVersion: product.version })} />
+                    </>
+                }
+            />
+            {!asking && !stale && !committed && (
+                <div className={'bk-stack'}>
+                    <CommandPanels control={control} />
+                    {(phase.kind === 'rejected' || phase.kind === 'not_committed' || phase.kind === 'throttled') && <Button label={t('ux.action.edit_again')} variant={'quiet'} onClick={onClose} />}
+                </div>
+            )}
+        </>
+    );
+}
+
+/** The section of the photo (UXI-169, UXI-170), by CAP-09, which the server's prop says. */
+function PhotoSection({ product, onDone, onStale, onOpen }: { product: ProductDetail; onDone: (text: string) => void; onStale: () => void; onOpen: () => void }) {
+    const [removing, setRemoving] = useState(false);
+    const [opening, setOpening] = useState(0);
+    const unresolved = useUnresolved();
+    const reason = blockedReason(unresolved.union, CATALOG_COMMANDS.removePhoto);
+
+    // A new key for each opening: its command starts again with a new intent.
+    const uploadKey = `upload-${String(opening)}`;
+    const removeKey = `remove-${String(opening)}`;
+
+    const finished = (text: string): void => {
+        setRemoving(false);
+        setOpening((current) => current + 1);
+        onDone(text);
+    };
+
+    const staleNow = (): void => {
+        setRemoving(false);
+        setOpening((current) => current + 1);
+        onStale();
+    };
+
+    const entries: MenuEntry[] = [
+        {
+            kind: 'action',
+            label: t('catalog.photo.remove'),
+            danger: true,
+            onSelect: () => {
+                onOpen();
+                setOpening((current) => current + 1);
+                setRemoving(true);
+            },
+        },
+    ];
+
+    return (
+        <Section title={t('catalog.product_detail.section_photo')}>
+            <div className={'bk-stack'}>
+                {product.photo === null ? <ProductThumb name={product.name} src={null} /> : <img className={'bk-photo'} src={product.photo} alt={t('catalog.photo.thumbnail_alt', { produk: product.name })} />}
+                <div className={'bk-actions'}>
+                    <PhotoUploadRun key={uploadKey} product={product} onDone={finished} onStale={staleNow} onOpen={onOpen} onAgain={() => setOpening((current) => current + 1)} />
+                    {product.photo !== null && reason === undefined && <Menu label={t('ux.action.more_actions')} rowName={t('catalog.product_detail.section_photo')} items={entries} />}
+                </div>
+                {removing && <PhotoRemoveRun key={removeKey} product={product} onClose={() => setRemoving(false)} onDone={finished} onStale={staleNow} />}
+            </div>
+        </Section>
+    );
+}
+
+/**
+ * "Unggah foto" or "Ganti foto" (UXI-169): the file chosen is sent at once, as multipart; a
+ * refusal stays at the field, with its reason. A file above the limit is refused here and no
+ * request leaves: the limits of PHP and Nginx above the application's answer without a code,
+ * which the command client could only read as uncertain (SEC-UP-02). The field is safe from
+ * Enter inside its command form (UXA-10), and after a 429 (UXS-12) a new file is a new
+ * request, never the frozen one sent again.
+ */
+function PhotoUploadRun({ product, onDone, onStale, onOpen, onAgain }: { product: ProductDetail; onDone: (text: string) => void; onStale: () => void; onOpen: () => void; onAgain: () => void }) {
+    const control = useCommand(CATALOG_COMMANDS.setPhoto);
+    const { phase, blockedBy } = control;
+    const [tooLarge, setTooLarge] = useState(false);
+    const ids = useId();
+    const refusal = phase.kind === 'rejected' ? phase.refusal : null;
+    const stale = refusal?.code === STALE_VERSION;
+    const committed = phase.kind === 'committed';
+    const busy = phase.kind === 'submitting';
+    const blocked = blockedBy !== null && !busy;
+    const throttled = phase.kind === 'throttled';
+    const refused = refusal === null ? undefined : catalogFieldMessage(refusal.fields['payload.photo']);
+    const error = tooLarge ? t('ux.validation.upload.too_large', { ukuran: PHOTO_SIZE_LABEL }) : refused;
+    const label = product.photo === null ? t('catalog.photo.upload') : t('catalog.photo.replace');
+    const labelId = `${ids}-label`;
+    const hintId = `${ids}-hint`;
+    const errorId = `${ids}-error`;
+
+    useEffect(() => {
+        if (stale) {
+            onStale();
+        }
+    }, [stale]);
+
+    useEffect(() => {
+        if (committed) {
+            onDone(control.ownRequest ? t('catalog.photo.saved') : committedText(control.target?.operation ?? ''));
+        }
+    }, [committed]);
+
+    const choose = (event: ChangeEvent<HTMLInputElement>): void => {
+        const file = event.target.files?.item(0) ?? null;
+
+        // The same file may be chosen again after a refusal.
+        event.target.value = '';
+
+        if (file === null) {
+            return;
+        }
+
+        onOpen();
+        setTooLarge(file.size > PHOTO_MAX_BYTES);
+
+        if (file.size <= PHOTO_MAX_BYTES) {
+            control.submit({ productId: product.id, photo: file }, { productVersion: product.version });
+        }
+    };
+
+    return (
+        <div className={'bk-stack'}>
+            {blocked ? (
+                <Button label={label} variant={'secondary'} enterActivates={false} disabledReason={blockedReason([blockedBy], CATALOG_COMMANDS.setPhoto)} />
+            ) : (
+                <CommandForm>
+                    <div className={'bk-field'} data-invalid={error !== undefined}>
+                        <span className={'bk-file'}>
+                            <input type={'file'} accept={PHOTO_TYPES} disabled={busy || throttled} aria-labelledby={labelId} aria-describedby={error === undefined ? hintId : `${errorId} ${hintId}`} aria-invalid={error === undefined ? undefined : true} onChange={choose} />
+                            <span className={'bk-btn bk-btn--secondary'} id={labelId} aria-hidden={true}>
+                                {label}
+                            </span>
+                        </span>
+                        {error !== undefined && (
+                            <p className={'bk-error'} id={errorId}>
+                                <Icon name={'danger'} size={'sm'} />
+                                <span>{error}</span>
+                            </p>
+                        )}
+                        <p className={'bk-hint'} id={hintId}>
+                            {t('catalog.photo.rules')}
+                        </p>
+                    </div>
+                </CommandForm>
+            )}
+            {!committed && !stale && refusal?.code !== VALIDATION_FAILED && !busy && <CommandPanels control={control} />}
+            {throttled && <Button label={t('ux.action.edit_again')} variant={'quiet'} onClick={onAgain} />}
+        </div>
+    );
+}
+
+/** "Lepas foto", in its dialog (UXI-170; D-042): the file is kept and no longer shown. */
+function PhotoRemoveRun({ product, onClose, onDone, onStale }: { product: ProductDetail; onClose: () => void; onDone: (text: string) => void; onStale: () => void }) {
+    const control = useCommand(CATALOG_COMMANDS.removePhoto);
+    const { phase } = control;
+    const asking = phase.kind === 'idle' || phase.kind === 'submitting';
+    const stale = phase.kind === 'rejected' && phase.refusal.code === STALE_VERSION;
+    const committed = phase.kind === 'committed';
+    const busy = phase.kind === 'submitting';
+
+    useEffect(() => {
+        if (stale) {
+            onStale();
+        }
+    }, [stale]);
+
+    useEffect(() => {
+        if (committed) {
+            onDone(control.ownRequest ? t('catalog.photo.removed') : committedText(control.target?.operation ?? ''));
+        }
+    }, [committed]);
+
+    return (
+        <>
+            <Dialog
+                open={asking}
+                onOpenChange={(next) => (next ? undefined : onClose())}
+                title={t('catalog.photo.remove_confirm.title')}
+                description={<p>{t('catalog.photo.remove_confirm.body')}</p>}
+                dismissible={!busy}
+                actions={
+                    <>
+                        <Button label={t('ux.action.cancel')} variant={'secondary'} unavailable={busy} data-initial-focus={true} onClick={onClose} />
+                        <Button label={t('catalog.photo.remove')} variant={'danger'} enterActivates={false} busy={busy} onClick={() => control.submit({ productId: product.id }, { productVersion: product.version })} />
                     </>
                 }
             />

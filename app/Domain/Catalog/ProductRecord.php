@@ -24,6 +24,7 @@ final readonly class ProductRecord
         public Quantity $minimumStock,
         public bool $active,
         public int $version,
+        public ?int $photoFileId = null,
     ) {}
 
     /**
