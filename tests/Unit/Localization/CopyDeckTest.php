@@ -30,7 +30,8 @@ final class CopyDeckTest extends TestCase
                 str_starts_with($key, 'ux.format.month.') => $this->listItem($deck, 'Months', self::MONTHS, substr($key, strlen('ux.format.month.'))),
                 str_starts_with($key, 'ux.format.day.') => $this->listItem($deck, 'Days', self::DAYS, substr($key, strlen('ux.format.day.'))),
                 str_starts_with($key, 'ux.format.duration.') => $this->named($deck, $key),
-                str_starts_with($key, 'ux.state.') => $this->state($deck, $key),
+                // A row that starts with the key is a reason of section 13.2 (TASK-016).
+                str_starts_with($key, 'ux.state.') && ! str_contains($deck, "\n| `{$key}` | ") => $this->state($deck, $key),
                 default => $this->row($deck, $key),
             };
         }
