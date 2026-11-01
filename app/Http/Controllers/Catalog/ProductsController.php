@@ -1,0 +1,72 @@
+<?php
+
+namespace App\Http\Controllers\Catalog;
+
+use App\Domain\Access\Capabilities;
+use App\Domain\Access\Capability;
+use App\DTO\Catalog\CategoryRowData;
+use App\Http\Requests\Catalog\ProductCreatePageRequest;
+use App\Http\Requests\Catalog\ProductsPageRequest;
+use App\Models\User;
+use App\Queries\Catalog\CategoryRows;
+use App\Queries\Catalog\ProductPages;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
+
+/**
+ * RP-301 to RP-304, the product pages (ROUTE_CONTRACTS section 2; COPY_DECK sections 8.2
+ * to 8.5; TASK-017 scope item 1). RP-301 gives its filters and the categories to filter
+ * by; its results come from RD-01. RP-302's sections go by capability: the price history
+ * (CAP-04, the page's gate) and the barcodes (CAP-06). TASK-018, TASK-020, TASK-022 and
+ * TASK-025 add theirs.
+ */
+final class ProductsController
+{
+    public function index(ProductsPageRequest $request, CategoryRows $categories): Response
+    {
+        return Inertia::render('catalog/Products', [
+            'filters' => $request->filters(),
+            'categories' => self::arrays($categories->list()),
+        ]);
+    }
+
+    public function create(ProductCreatePageRequest $request, CategoryRows $categories): Response
+    {
+        return Inertia::render('catalog/ProductCreate', [
+            'categories' => self::arrays($categories->choices()),
+            'code' => $request->code(),
+        ]);
+    }
+
+    public function show(Request $request, string $product, ProductPages $pages): Response
+    {
+        $detail = $pages->detail($product);
+        $viewer = $request->user();
+
+        return Inertia::render('catalog/Product', [
+            'product' => $detail->toArray(),
+            'priceHistory' => $pages->priceHistory($detail->id),
+            'barcodes' => $viewer instanceof User && Capabilities::allows($viewer, Capability::Cap06) ? $pages->barcodes($detail->id) : null,
+        ]);
+    }
+
+    public function edit(string $product, ProductPages $pages, CategoryRows $categories): Response
+    {
+        $detail = $pages->detail($product);
+
+        return Inertia::render('catalog/ProductEdit', [
+            'product' => $detail->toArray(),
+            'categories' => self::arrays($categories->choices($detail->categoryId)),
+        ]);
+    }
+
+    /**
+     * @param  list<CategoryRowData>  $rows
+     * @return list<array{id: int, name: string, active: bool, version: int}>
+     */
+    private static function arrays(array $rows): array
+    {
+        return array_map(static fn (CategoryRowData $row): array => $row->toArray(), $rows);
+    }
+}

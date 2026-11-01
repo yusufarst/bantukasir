@@ -18,6 +18,8 @@ export interface ButtonProps extends NativeProps {
     label: string;
     /** The row a row action acts on: its name joins the accessible name, "Hapus baris Pulpen gel hitam" (COPY_DECK CW-11). */
     rowName?: string;
+    /** The whole accessible name where COPY_DECK words one that holds the label, "Ubah nama kategori Alat Tulis" (UXI-204). */
+    accessibleName?: string;
     variant?: ButtonVariant;
     size?: ButtonSize;
     block?: boolean;
@@ -57,6 +59,7 @@ export interface ButtonProps extends NativeProps {
 export function Button({
     label,
     rowName,
+    accessibleName,
     variant = 'primary',
     size = 'md',
     block = false,
@@ -82,7 +85,7 @@ export function Button({
     const blocked = busy || unavailable || disabledReason !== undefined;
     const visibleLabel = busy ? t('ux.state.submitting.title') : label;
     // While sending, the name follows the label and the shortcut is hidden (8.1).
-    const named = rowName === undefined ? label : `${label} ${rowName}`;
+    const named = accessibleName ?? (rowName === undefined ? label : `${label} ${rowName}`);
     const name = busy ? visibleLabel : withShortcut(named, shortcut);
     const described = [describedBy, disabledReason !== undefined ? reasonId : undefined].filter((id) => id !== undefined).join(' ');
 

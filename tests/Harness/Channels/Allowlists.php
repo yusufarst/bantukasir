@@ -93,6 +93,27 @@ final class Allowlists
         'access/User' => ['owner' => ['user', 'user.id', 'user.displayName', 'user.email', 'user.roles', 'user.roles.*', 'user.status', 'user.version', 'user.passwordSet', 'user.linkExpiresAt', 'user.superAdmin', 'user.self']],
         'access/UserEdit' => ['owner' => ['user', 'user.id', 'user.displayName', 'user.email', 'user.roles', 'user.roles.*', 'user.version']],
         'access/LinkHandover' => ['owner' => ['user', 'user.id', 'user.displayName']],
+        // The catalogue pages (TASK-017), for every kind of account that CAP-04 opens
+        // them to: never a cost, a valuation or a margin (BR-CAT-26). TASK-018,
+        // TASK-020, TASK-022 and TASK-025 add their sections to UXP-302.
+        'catalog/Products' => ['*' => ['filters', 'filters.q', 'filters.category', 'filters.brand', 'filters.status', 'filters.page', ...self::CATEGORIES]],
+        'catalog/ProductCreate' => ['*' => [...self::CATEGORIES, 'code']],
+        'catalog/Product' => ['*' => [
+            ...self::PRODUCT,
+            'priceHistory', 'priceHistory.*', 'priceHistory.*.amount', 'priceHistory.*.startedAt', 'priceHistory.*.actorDisplayName',
+            'barcodes', 'barcodes.*', 'barcodes.*.mappingId', 'barcodes.*.token', 'barcodes.*.kind', 'barcodes.*.active', 'barcodes.*.reasonClass',
+        ]],
+        'catalog/ProductEdit' => ['*' => [...self::PRODUCT, ...self::CATEGORIES]],
+        'catalog/Categories' => ['*' => ['filters', 'filters.status', ...self::CATEGORIES]],
+    ];
+
+    /** The categories of a catalogue page. */
+    private const array CATEGORIES = ['categories', 'categories.*', 'categories.*.id', 'categories.*.name', 'categories.*.active', 'categories.*.version'];
+
+    /** A product of UXP-302 and UXP-304. */
+    private const array PRODUCT = [
+        'product', 'product.id', 'product.sku', 'product.name', 'product.categoryId', 'product.categoryName', 'product.categoryActive', 'product.brand', 'product.baseUnit',
+        'product.quantityPrecision', 'product.price', 'product.price.amount', 'product.price.revisionId', 'product.minimumStock', 'product.active', 'product.version', 'product.unitLocked',
     ];
 
     /**

@@ -27,18 +27,21 @@ export function SegmentedControl<V extends string>({
     value,
     onValueChange,
     size = 'md',
+    legendHidden = false,
 }: {
     legend: string;
     options: readonly SegmentedOption<V>[];
     value: V | null;
     onValueChange: (value: V) => void;
     size?: 'md' | 'xl';
+    /** The legend for assistive technology only, where the dialog above already asks the question (UXI-173). */
+    legendHidden?: boolean;
 }) {
     const legendId = useId();
 
     return (
         <div className={'bk-field'}>
-            <span className={'bk-label bk-legend'} id={legendId}>
+            <span className={legendHidden ? 'bk-sr-only' : 'bk-label bk-legend'} id={legendId}>
                 {legend}
             </span>
             <RadioGroup.Root
