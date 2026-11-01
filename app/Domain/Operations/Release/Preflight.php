@@ -88,9 +88,9 @@ final class Preflight
     private function backupRefusal(Connection $connection, string $marker, PreflightInput $input): ?string
     {
         if ($input->firstInstallation) {
-            $tables = $connection->scalar("select count(*) from pg_catalog.pg_tables where schemaname operator(pg_catalog.=) 'public'");
+            $empty = $connection->scalar("select not exists (select from pg_catalog.pg_tables where schemaname operator(pg_catalog.=) 'public')");
 
-            return is_numeric($tables) && (int) $tables === 0 ? null : 'The first installation is typed, but this database already holds tables.';
+            return $empty === true ? null : 'The first installation is typed, but this database already holds tables.';
         }
 
         if (! in_array($marker, config()->array('release.backup_required_in'), true)) {

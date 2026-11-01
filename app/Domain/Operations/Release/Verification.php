@@ -6,6 +6,7 @@ use App\Database\Identifier;
 use App\Database\PrivilegeMatrix;
 use App\Domain\Operations\Backup\BackupRunner;
 use Illuminate\Database\Connection;
+use UnexpectedValueException;
 
 /**
  * The verification queries of RELEASE_PROCESS REL-20 that the migration job runs
@@ -36,7 +37,7 @@ final class Verification
             }
 
             $count = $connection->scalar('select count(*) from '.Identifier::quote($table));
-            $counts[$table] = is_numeric($count) ? (int) $count : 0;
+            $counts[$table] = is_int($count) ? $count : throw new UnexpectedValueException('The count of a table is not a whole number.');
         }
 
         return $counts;
