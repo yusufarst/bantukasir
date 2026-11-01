@@ -31,7 +31,7 @@ final class PrivilegeMatrixTest extends TestCase
     {
         $matrix = PrivilegeMatrix::load();
 
-        $this->assertSame(['audit_events', 'backup_runs', 'barcode_active_mappings', 'barcode_mapping_retirements', 'barcode_mappings', 'barcode_tokens', 'business_profile_current', 'business_profile_revisions', 'cache', 'cache_locks', 'categories', 'command_identities', 'command_request_receipts', 'command_results', 'intent_reconciliations', 'migrations', 'onboarding_releases', 'onboarding_state', 'password_reset_tokens', 'products', 'recovery_epoch', 'security_log_entries', 'selling_price_revisions', 'sessions', 'stale_intent_reports', 'stored_files', 'users'], array_keys($matrix->tables()));
+        $this->assertSame(['audit_events', 'backup_runs', 'barcode_active_mappings', 'barcode_mapping_retirements', 'barcode_mappings', 'barcode_tokens', 'business_profile_current', 'business_profile_revisions', 'cache', 'cache_locks', 'categories', 'command_identities', 'command_request_receipts', 'command_results', 'csv_product_imports', 'intent_reconciliations', 'migrations', 'onboarding_releases', 'onboarding_state', 'password_reset_tokens', 'products', 'recovery_epoch', 'security_log_entries', 'selling_price_revisions', 'sessions', 'stale_intent_reports', 'stored_files', 'users'], array_keys($matrix->tables()));
         $this->assertSame(['SELECT', 'INSERT', 'UPDATE', 'DELETE'], $matrix->tablePrivileges('cache', 'runtime'));
         $this->assertSame(['SELECT', 'INSERT', 'UPDATE', 'DELETE'], $matrix->tablePrivileges('cache_locks', 'runtime'));
         $this->assertSame([], $matrix->tablePrivileges('migrations', 'runtime'));

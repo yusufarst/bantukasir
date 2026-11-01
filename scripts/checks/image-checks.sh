@@ -509,6 +509,10 @@ expect_body_limit /login 1180000 'is refused by PHP'\''s limit, through the appl
 expect_body_limit /login 1300000 'is refused by Nginx' 413 ''
 expect_body_limit /up 1300000 'is refused by Nginx wherever it goes' 413 ''
 expect 'the refusal of Nginx carries a header of SEC-HDR-02' 'x-content-type-options: nosniff' "$(header_of "$web" x-content-type-options | tr '[:upper:]' '[:lower:]')"
+# RR-01: the application 2 MiB, PHP 4M, Nginx 5m.
+expect_body_limit /products/import/preview 3800000 'reaches the application' '' '*'
+expect_body_limit /products/import/preview 4600000 'is refused by PHP'\''s limit, through the application' 413 '{}'
+expect_body_limit /products/import/preview 5500000 'is refused by Nginx' 413 ''
 # RC-32: the application 5 MiB, PHP 7M, Nginx 8m.
 expect_body_limit /commands/business_profile.change 6500000 'reaches the application' '' '*'
 expect_body_limit /commands/business_profile.change 7800000 'is refused by PHP'\''s limit, through the application' 413 '{}'
@@ -545,6 +549,8 @@ for _ in 1 2 3; do
         "$(request "$stub" /commands/business_profile.change) $(body_of "$stub")"
     expect 'RC-25 has its limits in PHP, whichever worker answers' '200 10M 9M received no-proxy' \
         "$(request "$stub" /commands/product_photo.set) $(body_of "$stub")"
+    expect 'RR-01 has its limits in PHP, whichever worker answers' '200 4M 3M received no-proxy' \
+        "$(request "$stub" /products/import/preview) $(body_of "$stub")"
 done
 started="$(date +%s)"
 terminated="$(request "$stub" /slow)"

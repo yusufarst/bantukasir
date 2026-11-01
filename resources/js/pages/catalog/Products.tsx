@@ -6,11 +6,12 @@ import { LoadMore } from '@/components/ui/Data';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Field, SelectInput, TextInput } from '@/components/ui/Field';
 import { Menu, type MenuEntry } from '@/components/ui/Menu';
-import { EmptyState, LoadFailed, Loading, NoResults, StateMark, StateNotice, UnknownCode } from '@/components/ui/States';
+import { Committed, EmptyState, LoadFailed, Loading, NoResults, StateMark, StateNotice, UnknownCode } from '@/components/ui/States';
 import { StatusWord } from '@/components/ui/Status';
 import type { StateId } from '@/components/ui/stateCatalogue';
 import { AppShell } from '@/layouts/AppShell';
 import { ListLayout, PageHeader } from '@/layouts/Page';
+import { takeSavedNote } from '@/lib/access/users';
 import { categoryOption, CodeField, ProductThumb, visitInDocument } from '@/lib/catalog/Parts';
 import {
     catalogFieldMessage,
@@ -41,7 +42,8 @@ import type { TranslationKey } from '@/types/translation-keys';
 // that the browser's Back and the way back of a child page return to them (NC-10). No
 // cost is ever shown (BR-CAT-26), and an inactive product is marked (UXS-32). A product
 // with an active barcode has "Cetak label barcode" in its row's overflow (UXI-163), for
-// CAP-08. TASK-022 adds the stock state of a row.
+// CAP-08. TASK-022 adds the stock state of a row. RC-31 leads here filtered to the products
+// of its import, with its summary message (NAVIGATION_CONTRACTS UXP-308; TASK-019).
 
 /** The wait after the last key before a typed search runs. */
 const TYPING_MS = 300;
@@ -88,6 +90,7 @@ function ProductsList({ title, filters, categories, canPrintLabels }: { title: s
     const [problem, setProblem] = useState<'invalid' | 'failed' | null>(null);
     const [fieldErrors, setFieldErrors] = useState<Readonly<Record<string, unknown>>>({});
     const [loadingMore, setLoadingMore] = useState(false);
+    const [note] = useState(takeSavedNote);
     // While a read of new filters is out, the rows shown are the earlier ones: no next page of them.
     const [reading, setReading] = useState(true);
     const latest = useRef(0);
@@ -231,7 +234,7 @@ function ProductsList({ title, filters, categories, canPrintLabels }: { title: s
     const clearAll = (): void => {
         setQ('');
         setBrand('');
-        change({ q: '', category: null, brand: '', status: null });
+        change({ q: '', category: null, brand: '', status: null, import: null });
     };
 
     const columns: readonly Column<ProductRow>[] = [
@@ -266,7 +269,7 @@ function ProductsList({ title, filters, categories, canPrintLabels }: { title: s
             : []),
     ];
 
-    const filtered = applied.q !== '' || applied.category !== null || applied.brand !== '' || applied.status !== null;
+    const filtered = applied.q !== '' || applied.category !== null || applied.brand !== '' || applied.status !== null || (applied.import ?? null) !== null;
 
     return (
         <ListLayout
@@ -297,6 +300,7 @@ function ProductsList({ title, filters, categories, canPrintLabels }: { title: s
             more={list.kind === 'rows' && list.hasMore && (reading || list.filters === applied) ? <LoadMore onLoad={loadMore} busy={loadingMore || reading} /> : undefined}
         >
             <div className={'bk-stack'}>
+                {note !== null && <Committed message={note} />}
                 {problem === 'invalid' && <StateNotice state={INVALID_STATE} />}
                 {problem === 'failed' && list.kind === 'rows' && <LoadFailed onRetry={() => void load(applied, null)} />}
                 {list.kind === 'loading' && <Loading />}

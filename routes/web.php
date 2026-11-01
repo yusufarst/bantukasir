@@ -20,11 +20,15 @@ use App\Http\Controllers\Access\UpdateStaffAccountController;
 use App\Http\Controllers\Access\UsersController;
 use App\Http\Controllers\Catalog\AddBarcodeController;
 use App\Http\Controllers\Catalog\CategoriesController;
+use App\Http\Controllers\Catalog\ConfirmCsvImportController;
 use App\Http\Controllers\Catalog\CreateCategoryController;
 use App\Http\Controllers\Catalog\CreateProductController;
 use App\Http\Controllers\Catalog\DeactivateCategoryController;
 use App\Http\Controllers\Catalog\DeactivateProductController;
 use App\Http\Controllers\Catalog\GenerateBarcodeController;
+use App\Http\Controllers\Catalog\ImportCancelController;
+use App\Http\Controllers\Catalog\ImportController;
+use App\Http\Controllers\Catalog\ImportPreviewController;
 use App\Http\Controllers\Catalog\LabelsController;
 use App\Http\Controllers\Catalog\ProductsController;
 use App\Http\Controllers\Catalog\ReactivateCategoryController;
@@ -157,6 +161,15 @@ Route::middleware(['auth', 'signin.session', 'throttle:authenticated', 'cache.he
     // needs to this route.
     Route::get('/data/products/search', SearchController::class)->middleware(['capability:CAP-02', 'throttle:search'])->name('data.products.search');
 
+    // The CSV import (TASK-019): RP-308 before RP-302, whose path would take it; RR-01
+    // in the bucket `csv`; RR-02, which takes only its path; and RC-31.
+    Route::middleware('capability:CAP-10')->group(function (): void {
+        Route::get('/products/import', [ImportController::class, 'show'])->middleware('input.allow')->name('products.import');
+        Route::post('/products/import/preview', ImportPreviewController::class)->middleware('throttle:csv')->name('products.import.preview');
+        Route::post('/products/import/{import}/cancel', ImportCancelController::class)->middleware('input.allow')->name('products.import.cancel');
+        Route::post('/commands/csv_import.confirm', ConfirmCsvImportController::class)->middleware('throttle:command')->name('commands.csv_import.confirm');
+    });
+
     Route::middleware('capability:CAP-04')->group(function (): void {
         Route::get('/data/products/check', SearchFirstController::class)->middleware('throttle:search')->name('data.products.check');
         Route::post('/commands/product.create', CreateProductController::class)->middleware('throttle:command')->name('commands.product.create');
@@ -170,7 +183,7 @@ Route::middleware(['auth', 'signin.session', 'throttle:authenticated', 'cache.he
 
         // The catalogue pages (TASK-017): RP-301 to RP-304 and RP-307, each taking
         // only the parameters of its row of ROUTE_CONTRACTS.
-        Route::get('/products', [ProductsController::class, 'index'])->middleware('input.allow:q,category,brand,status,page')->name('products.index');
+        Route::get('/products', [ProductsController::class, 'index'])->middleware('input.allow:q,category,brand,status,page,import')->name('products.index');
         Route::get('/products/new', [ProductsController::class, 'create'])->middleware('input.allow:code')->name('products.create');
         Route::get('/products/{product}', [ProductsController::class, 'show'])->middleware('input.allow')->name('products.show');
         Route::get('/products/{product}/edit', [ProductsController::class, 'edit'])->middleware('input.allow')->name('products.edit');

@@ -166,6 +166,15 @@ abstract class CommandAction
     protected function beforeTransaction(CommandContext $context): void {}
 
     /**
+     * After the outcome, outside every transaction, with the code of a refusal or null
+     * for a committed command or its repeat: temporary working data that the outcome
+     * ends is removed here (ARCHITECTURE ARC-43). Nothing by default. It must never
+     * change the answer. A failure with no code leaves the outcome uncertain and does
+     * not reach it.
+     */
+    protected function settled(CommandContext $context, ?ErrorCode $refusal): void {}
+
+    /**
      * Runs the command.
      *
      * @throws CommandRefused a definite refusal, or SERVICE_BUSY
@@ -177,6 +186,27 @@ abstract class CommandAction
             throw new LogicException('The envelope names another operation than its Action.');
         }
 
+        try {
+            $outcome = $this->outcome($context);
+        } catch (CommandRefused $refusal) {
+            $this->settled($context, $refusal->error);
+
+            throw $refusal;
+        }
+
+        $this->settled($context, null);
+
+        return $outcome;
+    }
+
+    /**
+     * The command in its transaction, attempted again where TR-RETRY-01 allows.
+     *
+     * @throws CommandRefused a definite refusal, or SERVICE_BUSY
+     * @throws ActorNotAllowed FORBIDDEN, from the actor guard or the check of an original result
+     */
+    private function outcome(CommandContext $context): CommandOutcome
+    {
         $first = $this->services->clock->now();
         self::refuseAfterHardEnd($context->receivedAt, $first);
         $this->beforeTransaction($context);

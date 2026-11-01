@@ -18,8 +18,8 @@ use LogicException;
  * required, one of the contexts of the contract, each open only to its capability
  * and answering FORBIDDEN until its Task adds it; `q`, up to 128 characters without
  * a control character; `mode`, `search` or `exact` (TASK-016); `category`, `brand`,
- * `status`, `page` and `perPage`, which `exact` refuses, because a filter could then
- * pass over a code's own product for another's SKU, and it answers at most one. Any
+ * `status`, `import` (TASK-019), `page` and `perPage`, which `exact` refuses, because a
+ * filter could then pass over a code's own product for another's SKU, and it answers at most one. Any
  * other parameter is refused, and so is any body: the read takes its parameters from
  * the query string alone (TASK-008 review finding R-01).
  *
@@ -47,7 +47,7 @@ final class ProductSearchRequest extends RefusingRequest
     private const string PLAIN_TEXT = '/\A[^\p{Cc}]*\z/u';
 
     /** What the mode `exact` does not take. */
-    private const array NOT_EXACT = ['category', 'brand', 'status', 'page', 'perPage'];
+    private const array NOT_EXACT = ['category', 'brand', 'status', 'import', 'page', 'perPage'];
 
     public function authorize(): bool
     {
@@ -76,6 +76,7 @@ final class ProductSearchRequest extends RefusingRequest
             'category' => ['sometimes', 'string', 'regex:/^[1-9][0-9]{0,18}$/D'],
             'brand' => ['nullable', 'string', 'max:100', 'regex:'.self::PLAIN_TEXT],
             'status' => ['sometimes', 'string', 'in:active,inactive'],
+            'import' => ['sometimes', 'string', 'regex:/^[1-9][0-9]{0,18}$/D'],
             'page' => ['sometimes', 'string', 'regex:/^[1-9][0-9]{0,5}$/D'],
             'perPage' => ['sometimes', 'string', 'regex:/^(?:[1-9][0-9]?|100)$/D'],
         ];
@@ -86,7 +87,7 @@ final class ProductSearchRequest extends RefusingRequest
      */
     protected function allowed(): array
     {
-        return ['context', 'q', 'mode', 'category', 'brand', 'status', 'page', 'perPage'];
+        return ['context', 'q', 'mode', 'category', 'brand', 'status', 'import', 'page', 'perPage'];
     }
 
     /**
@@ -112,6 +113,7 @@ final class ProductSearchRequest extends RefusingRequest
 
                 if ($this->json()->all() !== [] || $this->request->all() !== [] || $this->files->all() !== []
                     || ($this->query->has('category') && ObjectScope::key($this->query('category')) === null)
+                    || ($this->query->has('import') && ObjectScope::key($this->query('import')) === null)
                     || ($sequence !== null && preg_match('/^[0-9]{1,16}$/D', $sequence) !== 1)
                     || ($this->query('mode') === 'exact' && array_intersect(self::NOT_EXACT, array_keys($this->query->all())) !== [])) {
                     $validator->errors()->add('', '');
@@ -139,6 +141,7 @@ final class ProductSearchRequest extends RefusingRequest
         $status = $validated['status'] ?? null;
         $page = $validated['page'] ?? null;
         $perPage = $validated['perPage'] ?? null;
+        $import = $validated['import'] ?? null;
 
         return new SearchFilters(
             is_string($q) ? $q : '',
@@ -148,6 +151,7 @@ final class ProductSearchRequest extends RefusingRequest
             is_string($page) ? (int) $page : 1,
             is_string($perPage) ? (int) $perPage : ProductSearch::PER_PAGE,
             ($validated['mode'] ?? null) === 'exact',
+            is_string($import) ? ObjectScope::key($import) : null,
         );
     }
 

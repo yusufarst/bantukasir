@@ -49,6 +49,7 @@ export const CATALOG_COMMANDS = {
     setPhoto: { operation: 'product_photo.set', family: 'photo' },
     removePhoto: { operation: 'product_photo.remove', family: 'photo' },
     printLabels: { operation: 'document.print_labels', family: 'print' },
+    confirmImport: { operation: 'csv_import.confirm', family: 'csv_import' },
 } as const;
 
 /** A result of RD-01 or RD-06 (App\DTO\Catalog\ProductRowData). */
@@ -98,6 +99,8 @@ export interface ProductFilters {
     readonly brand: string;
     readonly status: string | null;
     readonly page: number;
+    /** The CSV import whose products the list holds: RC-31's location (TASK-019). */
+    readonly import?: number | null;
 }
 
 /** The precisions a product may have (BR-NUM-02). */
@@ -130,6 +133,10 @@ export function productsAddress(filters: ProductFilters): string {
 
     if (filters.page > 1) {
         query.set('page', String(filters.page));
+    }
+
+    if (filters.import !== undefined && filters.import !== null) {
+        query.set('import', String(filters.import));
     }
 
     const search = query.toString();
@@ -253,6 +260,10 @@ export function searchParameters(filters: ProductFilters): Record<string, string
 
     if (filters.status !== null) {
         parameters.status = filters.status;
+    }
+
+    if (filters.import !== undefined && filters.import !== null) {
+        parameters.import = String(filters.import);
     }
 
     return parameters;

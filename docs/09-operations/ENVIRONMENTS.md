@@ -70,7 +70,7 @@ One Coolify project per installation, with the environments `production` and `st
 | Backup | The same image; process role `backup`; its main process serves nothing | The private network only; no published port | The file volume, read only; a private temporary area for the run, emptied at the end of every run | None | `php artisan schedule:run` every minute; in role `backup` the scheduler registers only SC-03 | ADR-010 item 6 |
 | PostgreSQL | The official image of the version the foundation Task pins | The private network only; never published | Its persistent volume | None | — | The platform's own scheduled database backup stays off: ADR-010 replaces it |
 
-The image declares its health check (TASK-012): in role web RH-01, on a listener of the loopback address that needs no trusted hop; in role backup, success while the container runs. Role web answers on port 8080, which the resource names. The file volume is mounted on `storage/app/private/media`, which belongs to the image's user `www-data` (mode 0750); an empty volume takes that owner, and a host folder must be given it by the operator.
+The image declares its health check (TASK-012): in role web RH-01, on a listener of the loopback address that needs no trusted hop; in role backup, success while the container runs. Role web answers on port 8080, which the resource names. The file volume is mounted on `storage/app/private/media`, which belongs to the image's user `www-data` (mode 0750); an empty volume takes that owner, and a host folder must be given it by the operator. The temporary area of the CSV import is `storage/app/private/csv-imports` in the container's own files, outside that volume, so a new container starts it empty and no backup holds it (TASK-019; ARC-43).
 
 ## 7. Cloudflare
 

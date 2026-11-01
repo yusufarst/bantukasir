@@ -8,9 +8,10 @@ use Illuminate\Contracts\Validation\Validator;
 
 /**
  * The parameters of RP-301 (ROUTE_CONTRACTS section 2; INTERACTION_CONTRACTS sections
- * 3.1 and 3.2; TASK-017 scope item 1): `q`, `category`, `brand`, `status` and `page`,
- * each optional and within RD-01's limits, as allowlists; an invalid value is
- * VALIDATION_FAILED. The results themselves come from RD-01.
+ * 3.1 and 3.2; TASK-017 scope item 1): `q`, `category`, `brand`, `status`, `page` and
+ * `import`, RC-31's location (TASK-019), each optional and within RD-01's limits, as
+ * allowlists; an invalid value is VALIDATION_FAILED. The results themselves come from
+ * RD-01.
  */
 final class ProductsPageRequest extends RefusingRequest
 {
@@ -27,6 +28,7 @@ final class ProductsPageRequest extends RefusingRequest
             'brand' => ['nullable', 'string', 'max:100', 'regex:'.self::PLAIN_TEXT],
             'status' => ['sometimes', 'string', 'in:active,inactive'],
             'page' => ['sometimes', 'string', 'regex:/^[1-9][0-9]{0,5}$/D'],
+            'import' => ['sometimes', 'string', 'regex:/^[1-9][0-9]{0,18}$/D'],
         ];
     }
 
@@ -35,7 +37,7 @@ final class ProductsPageRequest extends RefusingRequest
      */
     protected function allowed(): array
     {
-        return ['q', 'category', 'brand', 'status', 'page'];
+        return ['q', 'category', 'brand', 'status', 'page', 'import'];
     }
 
     /**
@@ -57,7 +59,8 @@ final class ProductsPageRequest extends RefusingRequest
         return [
             ...parent::after(),
             function (Validator $validator): void {
-                if ($this->query->has('category') && ObjectScope::key($this->query('category')) === null) {
+                if (($this->query->has('category') && ObjectScope::key($this->query('category')) === null)
+                    || ($this->query->has('import') && ObjectScope::key($this->query('import')) === null)) {
                     $validator->errors()->add('', '');
                 }
             },
@@ -67,7 +70,7 @@ final class ProductsPageRequest extends RefusingRequest
     /**
      * The filters as the page keeps them: a text absent is empty, a filter absent null.
      *
-     * @return array{q: string, category: int|null, brand: string, status: string|null, page: int}
+     * @return array{q: string, category: int|null, brand: string, status: string|null, page: int, import: int|null}
      */
     public function filters(): array
     {
@@ -77,6 +80,7 @@ final class ProductsPageRequest extends RefusingRequest
         $brand = $validated['brand'] ?? null;
         $status = $validated['status'] ?? null;
         $page = $validated['page'] ?? null;
+        $import = $validated['import'] ?? null;
 
         return [
             'q' => is_string($q) ? $q : '',
@@ -84,6 +88,7 @@ final class ProductsPageRequest extends RefusingRequest
             'brand' => is_string($brand) ? $brand : '',
             'status' => is_string($status) ? $status : null,
             'page' => is_string($page) ? (int) $page : 1,
+            'import' => is_string($import) ? ObjectScope::key($import) : null,
         ];
     }
 }

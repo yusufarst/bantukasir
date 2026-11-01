@@ -22,7 +22,7 @@ final class CommandRefused extends RuntimeException
     /**
      * @param  array<string, string|int>  $params
      * @param  array<string, list<array{key: string, params: array<string, string|int>}>>  $fields
-     * @param  array<int, array<string, string|int>>  $lines
+     * @param  array<int, array<string, mixed>>  $lines
      */
     public function __construct(
         public readonly ErrorCode $error,

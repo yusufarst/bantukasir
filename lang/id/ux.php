@@ -67,6 +67,8 @@ return [
         'email' => 'Format email belum benar.',
         'upload' => [
             'image_type' => 'Berkas harus JPG, PNG, atau WebP.',
+            'csv_type' => 'Berkas harus CSV dengan pengodean UTF-8. Dari aplikasi spreadsheet, simpan sebagai CSV UTF-8.',
+            'csv_rows' => 'Paling banyak 5.000 baris data.',
             'too_large' => 'Berkas paling besar :ukuran.',
             'too_many_pixels' => 'Gambar paling besar :jumlah megapiksel.',
             'animated' => 'Gambar bergerak tidak bisa dipakai.',

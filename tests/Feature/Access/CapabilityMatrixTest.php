@@ -242,6 +242,20 @@ final class CapabilityMatrixTest extends DatabaseTestCase
         'RP-306P' => ['method' => 'GET', 'path' => '/products/{product}/labels/print/{printRequest}', 'json' => true, 'answers' => [
             'guest' => [401, null], 'owner' => [404, null], 'ops' => [404, null], 'cashier' => [403, null], 'combined' => [404, null],
         ]],
+        // TASK-019: the CSV import for CAP-10; RR-02 answers the same for an import that
+        // does not exist.
+        'RP-308' => ['method' => 'GET', 'path' => '/products/import', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [200, null], 'cashier' => [403, null], 'combined' => [200, null],
+        ]],
+        'RR-01' => ['method' => 'POST', 'path' => '/products/import/preview', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [422, null], 'ops' => [422, null], 'cashier' => [403, null], 'combined' => [422, null],
+        ]],
+        'RR-02' => ['method' => 'POST', 'path' => '/products/import/{import}/cancel', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [204, null], 'ops' => [204, null], 'cashier' => [403, null], 'combined' => [204, null],
+        ]],
+        'RC-31' => ['method' => 'POST', 'path' => '/commands/csv_import.confirm', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [422, null], 'ops' => [422, null], 'cashier' => [403, null], 'combined' => [422, null],
+        ]],
     ];
 
     /** @var array<string, array{id: int, email: string, password: string}> */
