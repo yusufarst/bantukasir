@@ -323,7 +323,7 @@ final class CsvDialectTest extends TestCase
     {
         $required = 'SKU, Nama, Kategori, Satuan, Desimal, Harga jual';
 
-        foreach (['', "\n", 'bukan csv', 'A|B|C', 'SKU', 'SKU,Nama;Kategori,Satuan'] as $header) {
+        foreach (['', "\n", 'bukan csv', 'A|B|C', 'SKU', 'SKU;Nama,Kategori'] as $header) {
             $this->assertSame([['key' => 'catalog.csv_import.error.missing_column', 'params' => ['kolom' => $required]]], self::refusal($header."\n"), $header);
         }
     }
