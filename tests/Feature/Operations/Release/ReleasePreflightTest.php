@@ -68,7 +68,7 @@ final class ReleasePreflightTest extends DatabaseTestCase
         $this->migration()->listen(function (QueryExecuted $query) use (&$statements): void {
             $statements[] = $query->sql;
         });
-        $before = $this->snapshot('migrations');
+        $before = $this->migration()->table('migrations')->pluck('migration')->all();
 
         [$exit, $output] = $this->preflight();
 
@@ -80,7 +80,7 @@ final class ReleasePreflightTest extends DatabaseTestCase
             $this->assertMatchesRegularExpression('/\A\s*select\b/i', $statement);
         }
 
-        $this->assertSame($before, $this->snapshot('migrations'));
+        $this->assertSame($before, $this->migration()->table('migrations')->pluck('migration')->all());
     }
 
     public function test_it_refuses_a_typed_environment_that_is_not_the_configuration_and_the_marker(): void
