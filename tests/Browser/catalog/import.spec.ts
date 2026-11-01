@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect as baseExpect, test, type BrowserContext, type Page } from '@playwright/test';
+import { expect as baseExpect, test, type BrowserContext, type Locator, type Page } from '@playwright/test';
 import { ACCESS_TIMEOUT, ACCESS_WAIT, resetPeople, SECURE_LOCAL_ORIGIN, signIn, type Person } from '../support/access';
 import { injected, prepareCommands } from '../support/commands';
 import { measure } from '../support/measure';
@@ -60,7 +60,7 @@ function csvFile(rows: readonly string[], bom = false): { name: string; mimeType
     return { name: 'produk.csv', mimeType: 'text/csv', buffer: Buffer.from(`${bom ? '﻿' : ''}${[HEADER, ...rows].join('\r\n')}\r\n`, 'utf8') };
 }
 
-function upload(page: Page) {
+function upload(page: Page): Locator {
     return page.getByLabel('Pilih berkas CSV');
 }
 

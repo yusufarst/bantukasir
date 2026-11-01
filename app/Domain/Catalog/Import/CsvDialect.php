@@ -338,7 +338,7 @@ final class CsvDialect
             }
 
             if ($stop === "\r") {
-                if (($text[$at + 1] ?? '') !== "\n") {
+                if (substr($text, $at + 1, 1) !== "\n") {
                     throw self::wrongType();
                 }
 

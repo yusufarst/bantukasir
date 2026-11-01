@@ -738,7 +738,7 @@ final class CsvImportTest extends DatabaseTestCase
      */
     private function temporaryFiles(): array
     {
-        return Storage::disk(CsvImportFiles::DISK)->allFiles();
+        return array_values(array_map(static fn (mixed $path): string => is_string($path) ? $path : '', Storage::disk(CsvImportFiles::DISK)->allFiles()));
     }
 
     /** One independent session for every read of the test. */

@@ -126,10 +126,10 @@ final class CsvDialectTest extends TestCase
     public function test_a_line_break_inside_a_field_or_a_quote_out_of_place_is_an_error_of_that_cell(): void
     {
         foreach ([
-            "line feed" => "PEN-01;\"Pulpen\nHitam\";Alat Tulis;;pcs;0;15000;;",
-            "carriage return" => "PEN-01;\"Pulpen\rHitam\";Alat Tulis;;pcs;0;15000;;",
-            "quote inside" => 'PEN-01;Pulpen 5" Hitam;Alat Tulis;;pcs;0;15000;;',
-            "text after a quote" => 'PEN-01;"Pulpen" Hitam;Alat Tulis;;pcs;0;15000;;',
+            'line feed' => "PEN-01;\"Pulpen\nHitam\";Alat Tulis;;pcs;0;15000;;",
+            'carriage return' => "PEN-01;\"Pulpen\rHitam\";Alat Tulis;;pcs;0;15000;;",
+            'quote inside' => 'PEN-01;Pulpen 5" Hitam;Alat Tulis;;pcs;0;15000;;',
+            'text after a quote' => 'PEN-01;"Pulpen" Hitam;Alat Tulis;;pcs;0;15000;;',
         ] as $case => $row) {
             $this->assertSame([['key' => self::INVALID_VALUE, 'params' => ['kolom' => 'Nama']]], self::row($row)->errors, $case);
         }
