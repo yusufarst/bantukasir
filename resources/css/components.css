@@ -2168,6 +2168,32 @@
         text-decoration: underline;
     }
 
+    /* A product's row (UXI-162): its thumbnail or placeholder (BR-CAT-44) beside its name. */
+    .bk-product-cell {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+    }
+
+    .bk-product-cell a,
+    .bk-token {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .bk-thumb {
+        flex: none;
+        display: grid;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        border-radius: var(--radius-md);
+        background: var(--color-surface-sunken);
+        color: var(--color-text-secondary);
+        object-fit: cover;
+    }
+
     /* The one-time link of UXP-606 (UXI-354): dark modules on white, large enough to scan, whatever the theme. */
     .bk-qr {
         display: block;

@@ -19,11 +19,13 @@ use App\Http\Controllers\Access\UpdateOwnerDetailsController;
 use App\Http\Controllers\Access\UpdateStaffAccountController;
 use App\Http\Controllers\Access\UsersController;
 use App\Http\Controllers\Catalog\AddBarcodeController;
+use App\Http\Controllers\Catalog\CategoriesController;
 use App\Http\Controllers\Catalog\CreateCategoryController;
 use App\Http\Controllers\Catalog\CreateProductController;
 use App\Http\Controllers\Catalog\DeactivateCategoryController;
 use App\Http\Controllers\Catalog\DeactivateProductController;
 use App\Http\Controllers\Catalog\GenerateBarcodeController;
+use App\Http\Controllers\Catalog\ProductsController;
 use App\Http\Controllers\Catalog\ReactivateCategoryController;
 use App\Http\Controllers\Catalog\ReactivateProductController;
 use App\Http\Controllers\Catalog\RenameCategoryController;
@@ -160,6 +162,14 @@ Route::middleware(['auth', 'signin.session', 'throttle:authenticated', 'cache.he
         Route::post('/commands/category.rename', RenameCategoryController::class)->middleware('throttle:command')->name('commands.category.rename');
         Route::post('/commands/category.deactivate', DeactivateCategoryController::class)->middleware('throttle:command')->name('commands.category.deactivate');
         Route::post('/commands/category.reactivate', ReactivateCategoryController::class)->middleware('throttle:command')->name('commands.category.reactivate');
+
+        // The catalogue pages (TASK-017): RP-301 to RP-304 and RP-307, each taking
+        // only the parameters of its row of ROUTE_CONTRACTS.
+        Route::get('/products', [ProductsController::class, 'index'])->middleware('input.allow:q,category,brand,status,page')->name('products.index');
+        Route::get('/products/new', [ProductsController::class, 'create'])->middleware('input.allow:code')->name('products.create');
+        Route::get('/products/{product}', [ProductsController::class, 'show'])->middleware('input.allow')->name('products.show');
+        Route::get('/products/{product}/edit', [ProductsController::class, 'edit'])->middleware('input.allow')->name('products.edit');
+        Route::get('/categories', [CategoriesController::class, 'index'])->middleware('input.allow:status')->name('categories.index');
     });
 
     // The barcodes (TASK-016): RC-27 to RC-29, in the bucket of every command. RC-17's

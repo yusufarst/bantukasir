@@ -9,8 +9,8 @@ import type { TranslationKey } from '@/types/translation-keys';
 // else regardless — and a destination appears only once it exists
 // (EXECUTION_CONTEXT EXC-52): each page Task registers its destination below,
 // with its route and the capabilities of its row of INTERACTION_INVENTORY.
-// No destination exists yet: TASK-007 builds the frame, the Tasks of
-// TRACEABILITY section 9.2 add UXI-001 to UXI-021.
+// TASK-007 builds the frame, the Tasks of TRACEABILITY section 9.2 add UXI-001
+// to UXI-021.
 
 export type RoleCode = 'SUPER_ADMIN' | 'OPERATIONS_ADMIN' | 'CASHIER';
 
@@ -75,15 +75,20 @@ export const SUB_ORDER: Readonly<Record<AreaId, Readonly<Partial<Record<Persona,
 /**
  * The registered destinations. A page Task adds its destination here with its
  * route when it delivers the page (TRACEABILITY section 9.2): UXI-008
- * "Pengaturan", the Owner's (CAP-25, CAP-32), from TASK-010.
+ * "Pengaturan", the Owner's (CAP-25, CAP-32), from TASK-010; UXI-005 "Produk"
+ * (CAP-02, CAP-04), from TASK-017.
  */
 export const DESTINATIONS: Readonly<Partial<Record<DestinationId, DestinationEntry>>> = {
+    products: { label: 'catalog.products.title', href: '/products', icon: 'tag', capabilities: ['CAP-02', 'CAP-04'] },
     settings: { label: 'config.settings.title', href: '/settings', icon: 'sliders', capabilities: ['CAP-25', 'CAP-32'] },
 };
 
-/** The registered items of each sub-navigation: none yet. */
+/** The registered items of each sub-navigation: UXI-009 and UXI-010, from TASK-017. */
 export const SUB_DESTINATIONS: Readonly<Record<AreaId, Readonly<Partial<Record<SubDestinationId, SubDestinationEntry>>>>> = {
-    products: {},
+    products: {
+        products: { label: 'catalog.products.title', href: '/products', capabilities: ['CAP-02', 'CAP-04'] },
+        categories: { label: 'catalog.categories.title', href: '/categories', capabilities: ['CAP-04'] },
+    },
     stock: {},
     reports: {},
 };

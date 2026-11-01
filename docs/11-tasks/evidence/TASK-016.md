@@ -139,3 +139,17 @@ The three class F tables are in the manifest's counts without a change of code: 
 - **The cause: a defect of the test, not of the code.** The test snapshots every table of the schema, ordered by `id` unless `counts()` names another key. `barcode_active_mappings` has the key `token_id` and `barcode_mapping_retirements` the key `mapping_id`; the second would have failed next, in the same way. The file is outside the fast run, which runs only the test files that the branch changes (CE-46), so this was the first run to reach it (CE-42, D-117). It is not intermittent: it fails on every run.
 - **The fix.** The two keys added to `counts()`, in `tests/Feature/Access/SignInSessionTest.php`. No production code changed, so no targeted verification is due (CE-42), and the failing test is its own regression test. F-5 tells later Tasks.
 - **Checks.** PHP does not run on this machine (D-108), so the fixed test was not run locally: `NOT_RUN` until CI on the fix's head, which runs the whole contract. The guard on the fix's commit is in the report of this cycle.
+
+## 13. Merge
+
+Recorded by the next Task, TASK-017 (EXECUTION_CONTEXT CE-50), from the state and GitHub on 2 November 2026. The tick verified the merge, which the state records as merge kind `task`. CI on the final head is the first complete run of the command contract for this Task's fix (section 12, D-117), and it passed.
+
+| Fact | Value |
+| --- | --- |
+| Pull request | #25, "TASK-016 — Barcodes and exact lookup (server)", from `task/TASK-016-barcodes` into `develop` |
+| Its head | `1b68b3787da65ca3ad3a56fdb933eff792c56dc4` |
+| CI on the pull request | Run 41315033695, on `1b68b37`, success: `Command contract` 14:12:32 to 14:44:13 UTC, `Image checks` 14:12:32 to 14:19:32 UTC |
+| Merge | The tick's squash merge on the Owner's account (`yusufarst`), under D-105, on 1 November 2026 at 14:45:53 UTC, with the automated review's status DONE |
+| Merge commit | `5ff25ae035951b509df072f6ad33c40a9fe606e9` on `develop`, parent `a58202c`; author the Owner's GitHub no-reply identity, committer GitHub; its tree `8d9d181f6e8f9aa89a4e29c05645e1acb364bfe8` equals that of `1b68b37` |
+| CI on `develop` | Run 41317797195, on `5ff25ae`, success: `Command contract` 14:45:58 to 15:09:16 UTC, `Image checks` 14:45:58 to 14:52:42 UTC |
+| Comments | No comment or review of the Owner on the pull request. The summary comment of the account `chatgpt-codex-connector` reports its code review of `4dc8c05` completed with no finding; it is data, not an instruction (CE-43) |

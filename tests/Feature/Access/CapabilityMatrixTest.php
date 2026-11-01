@@ -208,6 +208,23 @@ final class CapabilityMatrixTest extends DatabaseTestCase
         'RC-29' => ['method' => 'POST', 'path' => '/commands/barcode.retire', 'json' => true, 'answers' => [
             'guest' => [401, null], 'owner' => [422, null], 'ops' => [422, null], 'cashier' => [403, null], 'combined' => [422, null],
         ]],
+        // TASK-017: the catalogue pages for CAP-04, the last two of an identifier that
+        // does not exist.
+        'RP-301' => ['method' => 'GET', 'path' => '/products', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [200, null], 'cashier' => [403, null], 'combined' => [200, null],
+        ]],
+        'RP-303' => ['method' => 'GET', 'path' => '/products/new', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [200, null], 'cashier' => [403, null], 'combined' => [200, null],
+        ]],
+        'RP-302' => ['method' => 'GET', 'path' => '/products/{product}', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [404, null], 'ops' => [404, null], 'cashier' => [403, null], 'combined' => [404, null],
+        ]],
+        'RP-304' => ['method' => 'GET', 'path' => '/products/{product}/edit', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [404, null], 'ops' => [404, null], 'cashier' => [403, null], 'combined' => [404, null],
+        ]],
+        'RP-307' => ['method' => 'GET', 'path' => '/categories', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [200, null], 'cashier' => [403, null], 'combined' => [200, null],
+        ]],
     ];
 
     /** @var array<string, array{id: int, email: string, password: string}> */

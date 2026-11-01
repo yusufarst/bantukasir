@@ -67,12 +67,20 @@ describe('the primary navigation of each role', () => {
     });
 
     it('registers no destination before the Task that delivers its page (EXC-52)', () => {
-        // UXI-008 "Pengaturan" is TASK-010's, with the capabilities of its row.
-        expect(ALL.filter((id) => DESTINATIONS[id] !== undefined)).toEqual(['settings']);
+        // UXI-008 "Pengaturan" is TASK-010's and UXI-005 "Produk" TASK-017's, with the capabilities of their rows.
+        expect(ALL.filter((id) => DESTINATIONS[id] !== undefined)).toEqual(['products', 'settings']);
         expect(DESTINATIONS.settings).toEqual({ label: 'config.settings.title', href: '/settings', icon: 'sliders', capabilities: ['CAP-25', 'CAP-32'] });
-        expect(Object.values(SUB_DESTINATIONS).every((area) => Object.keys(area).length === 0)).toBe(true);
-        expect(navigationFor(['SUPER_ADMIN'], FLAGS.owner, DESTINATIONS).map((item) => item.id)).toEqual(['settings']);
-        expect(navigationFor(['CASHIER', 'OPERATIONS_ADMIN'], FLAGS.combined, DESTINATIONS)).toEqual([]);
+        expect(DESTINATIONS.products).toEqual({ label: 'catalog.products.title', href: '/products', icon: 'tag', capabilities: ['CAP-02', 'CAP-04'] });
+        // UXI-009 and UXI-010; UXI-011 "Impor produk (CSV)" comes with TASK-019.
+        expect(Object.keys(SUB_DESTINATIONS.products)).toEqual(['products', 'categories']);
+        expect(SUB_DESTINATIONS.products.categories).toEqual({ label: 'catalog.categories.title', href: '/categories', capabilities: ['CAP-04'] });
+        expect(Object.keys(SUB_DESTINATIONS.stock)).toEqual([]);
+        expect(Object.keys(SUB_DESTINATIONS.reports)).toEqual([]);
+        expect(navigationFor(['SUPER_ADMIN'], FLAGS.owner, DESTINATIONS).map((item) => item.id)).toEqual(['products', 'settings']);
+        expect(navigationFor(['CASHIER', 'OPERATIONS_ADMIN'], FLAGS.combined, DESTINATIONS).map((item) => item.id)).toEqual(['products']);
+        expect(navigationFor(['OPERATIONS_ADMIN'], FLAGS.ops, DESTINATIONS).map((item) => item.id)).toEqual(['products']);
+        expect(navigationFor(['CASHIER'], FLAGS.cashier, DESTINATIONS)).toEqual([]);
+        expect(subNavigationFor('products', ['OPERATIONS_ADMIN'], FLAGS.ops, SUB_DESTINATIONS.products).map((item) => item.id)).toEqual(['products', 'categories']);
     });
 });
 

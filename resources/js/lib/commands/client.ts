@@ -157,7 +157,7 @@ export function countsAsActivity(status: number): boolean {
  * RT-10, so that it never counts as user activity; any other request that the
  * application answered tells the shell (USER_REQUEST_EVENT).
  */
-export async function requestJson(method: 'GET' | 'POST', url: string, body: unknown, options: { background?: boolean; waitMs?: number; signal?: AbortSignal } = {}): Promise<Arrived | null> {
+export async function requestJson(method: 'GET' | 'POST', url: string, body: unknown, options: { background?: boolean; waitMs?: number; signal?: AbortSignal; headers?: Readonly<Record<string, string>> } = {}): Promise<Arrived | null> {
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), options.waitMs ?? CLIENT_WAIT_MS);
 
@@ -167,7 +167,7 @@ export async function requestJson(method: 'GET' | 'POST', url: string, body: unk
     } else {
         options.signal?.addEventListener('abort', () => controller.abort(), { once: true });
     }
-    const headers: Record<string, string> = { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrfToken() };
+    const headers: Record<string, string> = { ...options.headers, Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrfToken() };
     const form = body instanceof FormData;
 
     // A form sets its own multipart type with its boundary.

@@ -92,6 +92,12 @@ final class RouteInventoryTest extends TestCase
         'POST /commands/barcode.add' => ['commands.barcode.add', 'RC-27', 'CAP-06', [...self::SIGNED_IN, 'capability:CAP-06', 'throttle:command']],
         'POST /commands/barcode.generate' => ['commands.barcode.generate', 'RC-28', 'CAP-06', [...self::SIGNED_IN, 'capability:CAP-06', 'throttle:command']],
         'POST /commands/barcode.retire' => ['commands.barcode.retire', 'RC-29', 'CAP-06', [...self::SIGNED_IN, 'capability:CAP-06', 'throttle:command']],
+        // TASK-017: the catalogue pages.
+        'GET /products' => ['products.index', 'RP-301', 'CAP-04', [...self::SIGNED_IN, 'capability:CAP-04', 'input.allow:q,category,brand,status,page']],
+        'GET /products/new' => ['products.create', 'RP-303', 'CAP-04', [...self::SIGNED_IN, 'capability:CAP-04', 'input.allow:code']],
+        'GET /products/{product}' => ['products.show', 'RP-302', 'CAP-04', [...self::SIGNED_IN, 'capability:CAP-04', 'input.allow']],
+        'GET /products/{product}/edit' => ['products.edit', 'RP-304', 'CAP-04', [...self::SIGNED_IN, 'capability:CAP-04', 'input.allow']],
+        'GET /categories' => ['categories.index', 'RP-307', 'CAP-04', [...self::SIGNED_IN, 'capability:CAP-04', 'input.allow:status']],
     ];
 
     public function test_the_routes_are_exactly_those_listed_each_with_its_gate(): void

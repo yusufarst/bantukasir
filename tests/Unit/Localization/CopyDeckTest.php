@@ -54,7 +54,9 @@ final class CopyDeckTest extends TestCase
         $found = preg_match_all('/^\| `'.preg_quote($key, '/').'` \| ([^|]*) \|/m', $deck, $matches);
 
         if ($found !== 0) {
-            $this->assertSame(1, $found, "COPY_DECK names {$key} in exactly one row.");
+            // A key may start a row in two tables, as `catalog.field.unit_lock_help` does
+            // in sections 8.1 and 15 (TASK-017): every such row gives it the same copy.
+            $this->assertSame([trim($matches[1][0])], array_values(array_unique(array_map(trim(...), $matches[1]))), "COPY_DECK gives {$key} one copy.");
 
             return trim($matches[1][0]);
         }

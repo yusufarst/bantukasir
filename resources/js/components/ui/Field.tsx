@@ -1,4 +1,4 @@
-import { createContext, useContext, useId, useState, type FormEvent, type InputHTMLAttributes, type KeyboardEvent, type ReactNode, type Ref } from 'react';
+import { createContext, useContext, useId, useState, type FormEvent, type InputHTMLAttributes, type KeyboardEvent, type ReactNode, type Ref, type SelectHTMLAttributes } from 'react';
 import { cn } from '@/lib/cn';
 import { RUPIAH_SYMBOL } from '@/lib/format';
 import { t } from '@/lib/i18n';
@@ -122,6 +122,42 @@ export function TextInput({ size = 'md', prefix, suffix, icon, numeric = false, 
                     {suffix}
                 </span>
             )}
+        </div>
+    );
+}
+
+/**
+ * A choice among more options than a segmented control holds, such as the categories
+ * of a product (UXI-160, UXI-182; TASK-017): the browser's own list, for the keyboard
+ * and every width, inside the control's boundary of DESIGN_SYSTEM 8.3.
+ */
+export function SelectInput({
+    disabled,
+    children,
+    ref,
+    ...rest
+}: Omit<SelectHTMLAttributes<HTMLSelectElement>, 'id' | 'size' | 'className' | 'aria-describedby' | 'aria-invalid' | 'required'> & { ref?: Ref<HTMLSelectElement> }) {
+    const field = useContext(FieldIds);
+
+    if (field === null) {
+        throw new Error('A SelectInput is placed inside a Field, which gives it its label (UXA-13).');
+    }
+
+    return (
+        <div className={'bk-input'} data-invalid={field.invalid} data-disabled={disabled === true}>
+            <select
+                {...rest}
+                ref={ref}
+                id={field.id}
+                className={'bk-input__control'}
+                disabled={disabled}
+                required={field.required}
+                aria-required={field.required ? true : undefined}
+                aria-invalid={field.invalid ? true : undefined}
+                aria-describedby={field.describedBy}
+            >
+                {children}
+            </select>
         </div>
     );
 }

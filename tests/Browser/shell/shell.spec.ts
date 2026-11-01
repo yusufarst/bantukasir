@@ -54,13 +54,13 @@ for (const persona of Object.keys(PEOPLE) as (keyof typeof PEOPLE)[]) {
             await expect(page.getByRole('banner')).toHaveCount(1);
             await expect(page.getByRole('main')).toHaveCount(1);
 
-            // The one destination that exists is the Owner's "Pengaturan"
-            // (TASK-010; EXC-52): in the side navigation, or the drawer at
-            // compact width; the other roles have none yet.
-            if (persona === 'owner' && width === WIDTHS[7]) {
+            // The destinations that exist are "Produk" (TASK-017) and the Owner's
+            // "Pengaturan" (TASK-010; EXC-52): in the side navigation, or the drawer
+            // at compact width; a cashier has none yet.
+            if (persona !== 'cashier' && width === WIDTHS[7]) {
                 await expect(page.getByRole('button', { name: 'Buka menu' })).toHaveCount(1);
-            } else if (persona === 'owner') {
-                await expect(page.getByRole('navigation', { name: 'Menu utama' }).getByRole('link')).toHaveText(['Pengaturan']);
+            } else if (persona !== 'cashier') {
+                await expect(page.getByRole('navigation', { name: 'Menu utama' }).getByRole('link')).toHaveText(persona === 'owner' ? ['Produk', 'Pengaturan'] : ['Produk']);
                 await expect(page.getByRole('banner').getByText('Toko Contoh')).toBeVisible();
             } else {
                 await expect(page.getByRole('navigation')).toHaveCount(0);
