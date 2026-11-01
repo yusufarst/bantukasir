@@ -365,7 +365,7 @@ test('the list: a scanned code looked up exactly, an unknown code kept, the filt
     await expect(page.getByRole('button', { name: 'Aktif', exact: true })).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByRole('link', { name: product.name, exact: true })).toBeVisible();
 
-    // Through the edit page and back, saved or cancelled, the way back still holds them (NC-10; review finding R-08).
+    // Through the edit page and back, saved, cancelled or left with "Tinggalkan", the way back still holds them (NC-10; review findings R-11, R-17).
     await Promise.all([page.waitForURL((url) => url.pathname === `/products/${product.id}`), page.getByRole('link', { name: product.name, exact: true }).click()]);
     await Promise.all([page.waitForURL((url) => url.pathname === `/products/${product.id}/edit`), page.getByRole('link', { name: 'Ubah produk' }).click()]);
     await page.getByLabel(/^Merek/).fill('Merek lain');
@@ -375,6 +375,12 @@ test('the list: a scanned code looked up exactly, an unknown code kept, the filt
     await Promise.all([page.waitForURL((url) => url.pathname === `/products/${product.id}/edit`), page.getByRole('link', { name: 'Ubah produk' }).click()]);
     await Promise.all([page.waitForURL((url) => url.pathname === `/products/${product.id}`), page.getByRole('link', { name: 'Batal' }).click()]);
     await expect(page.getByRole('heading', { level: 1, name: 'Detail produk' })).toBeVisible();
+    await Promise.all([page.waitForURL((url) => url.pathname === `/products/${product.id}/edit`), page.getByRole('link', { name: 'Ubah produk' }).click()]);
+    await page.getByLabel(/^Merek/).fill('Tidak disimpan');
+    await page.getByRole('link', { name: 'Batal' }).click();
+    await Promise.all([page.waitForURL((url) => url.pathname === `/products/${product.id}`), page.getByRole('dialog', { name: 'Perubahan belum disimpan' }).getByRole('button', { name: 'Tinggalkan' }).click()]);
+    await expect(page.getByRole('main').getByText('Merek lain')).toBeVisible();
+    await expect(page.getByText('Tidak disimpan')).toHaveCount(0);
     await Promise.all([page.waitForURL((url) => url.href === list), page.getByRole('link', { name: 'Kembali ke Produk' }).click()]);
     await expect(page.getByRole('button', { name: 'Aktif', exact: true })).toHaveAttribute('aria-pressed', 'true');
 
