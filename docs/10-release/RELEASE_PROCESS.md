@@ -51,7 +51,7 @@ The release workflow (ADR-011 item 5) builds the image and runs, on it:
 3. a scan of the image's file system for secrets and of its packages for known vulnerabilities, with open-source tools chosen by the operations Task;
 4. a check that no development dependency and no test fixture is in the image.
 
-The scan of item 3 reports every finding and fails on a high or critical finding that has a fix, has an unknown fix state, is known to be exploited, or is outside the accepted list, and on a report it cannot trust (`scripts/checks/image-scan-gate.sh`, `scripts/checks/image-scan-accepted.json`; D-112). That list is a temporary acceptance for development: passing it authorizes no deployment to staging or production, and it does not replace the review of section 12.
+The scan of item 3 reports every finding and fails on a high or critical finding that has a fix, has an unknown fix state, is known to be exploited, or is outside the accepted list, and on a report it cannot trust (`scripts/checks/image-scan-gate.sh`, `scripts/checks/image-scan-accepted.json`; D-112, D-115). That list is a temporary acceptance for development: passing it authorizes no deployment to staging or production, and it does not replace the review of section 12.
 
 The **release integrity report**, attached to the release record, states: the version, commit, tag and image digest; the base image digests; the lockfile hashes; the CI run and its results; the suites and their status on this revision (TEST_STRATEGY section 8); the migrations, each with its class and rehearsal evidence; the scan results; the publication guard's result; the compatibility of the previous image with the new schema; known issues; and the cost inventory unchanged or its approved exceptions (COST_POLICY).
 

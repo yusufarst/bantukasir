@@ -135,6 +135,7 @@ All by the Owner (Asia/Jakarta). D-019 to D-025 answer the questions of the [re-
 | D-112 | TASK-012, 31 October 2026: conditional, temporary acceptance, for development only, of the 43 unfixable Debian high and critical CVEs (112 findings) of CI run 41129923061 in the image it assessed. No staging or production deployment is authorized by it. | Accepted risk, recorded by TASK-012 as the Owner's answer to its stop `OWNER_DECISION` (CE-72). The scan keeps running and reporting; a fixable finding, a new one or a known-exploited one fails CI, and a new critical one needs a separate review. "The assessed image" is its packages at their exact versions, which the gate compares. TASK-013 reassesses curl and libcurl; gate RELEASE reviews everything that remains. OPEN_ITEMS T-38. Terms in section 6. |
 | D-113 | TASK-012, 31 October 2026, a limited exception to CE-44 and CE-46 for that Task alone, on the precedent of D-110: no further checkpoint run; CI on the pull request's final head is the first run of the review's remaining fixes and must prove every required check, the 49 cases of the vulnerability gate and the complete image checks included. Nothing unrun is marked PASS, no red pull request is merged, and no security gate is skipped; a red run enters the fix cycles of CE-42, at most three. curl of `trixie-backports` is not upgraded automatically in TASK-012: its availability, benefits, remaining vulnerabilities and support tradeoffs are recorded, and it is reassessed in TASK-013 before HTTP or S3 integration and again at gate RELEASE. This is not a production risk acceptance. | Governance, recorded by TASK-012 as the Owner's answer to its stop `CHECKPOINT_LIMIT` (CE-72). The limits of CE-44 and CE-46 stand for every other Task; the guard, the independent review and the merge rules are unchanged. Continuous execution goes on only after green CI, an eligible merge and the verification of CE-61. OPEN_ITEMS T-38. Terms in section 6. |
 | D-114 | TASK-013, 31 October 2026, a limited exception to CE-44 and CE-46 for that Task alone, following D-113: no further checkpoint run; CI on the pull request's final head is the first run of the review's remaining fixes, R-22 above all, and of what they touch in backup integrity, encryption, retention, recovery and failure handling. A review is not restarted, nor an unaffected test run again, unless a new material finding arises. A red run has only its demonstrated issue fixed, at most three cycles of CE-42, and no failing or unverified critical change is merged. | Governance, recorded by TASK-013 as the Owner's answer to its stop `CHECKPOINT_LIMIT` (CE-72). The limits of CE-44 and CE-46 stand for every other Task; the safeguards of production data, security, cost and destructive operations are unchanged. Continuous execution goes on after a successful merge and the verification of CE-61. Terms in section 6. |
+| D-115 | 1 November 2026: temporary, development-only acceptance of exactly the 13 new CVEs (26 findings) of CI run 41179831914 on `develop`, the critical CVE-2026-86414 and CVE-2026-92388 individually, at their exact package versions, with no wildcard, no scanner suppression, no automatic acceptance of a future CVE and no staging or production risk acceptance. A one-time recovery exception to CE-61 for pull request #20: its develop CI failed and that failure stands; after one `ops/` pull request with only this acceptance and its records, merged by the Owner, green CI on that pull request and on its merge, with the original merge's identity and content verified, TASK-013 may be treated as operationally verified under this exception. TASK-014 starts only after that verification and the Owner's resume. | Accepted risk and governance, the Owner's answer to the stop `DEVELOP_CI_RED`. The gate's logic and Grype are unchanged. CE-61 stands for every other merge. OPEN_ITEMS T-38. Terms in section 6. |
 
 ## 4. Facts supplied by the Owner
 
@@ -1901,3 +1902,37 @@ The Owner gave this decision on 31 October 2026, as his answer to the stop `CHEC
 - **The fixes it covers.** R-22, R-24, R-26 and R-27, in `BackupRunner.php`, with the regression tests of `BackupFailuresTest.php` and `BackupRunTest.php`, all `NOT_RUN` until that run ([TASK-013 evidence](../11-tasks/evidence/TASK-013.md) sections 8 and 15). Section 15 says what the run must show; the next Task's record of this merge states what it showed (CE-50).
 - **What holds a red run from a merge.** `ci_result` of `scripts/executor/lib.sh` counts every check run of the head, as for D-113. The targeted checks of CE-40 stand, and rounds 2 and 3 are complete.
 - **Unchanged:** the limits of CE-44 and CE-46 for every other Task, the guard, the independent review, the merge rules of D-105 and D-109, and every safeguard of production data, security, cost and destructive operations. No deployment to staging or production is authorized.
+
+### D-115 — The 13 new findings of CI run 41179831914, and a one-time recovery of CE-61 for pull request #20
+
+The Owner gave this decision on 1 November 2026, as his answer to the stop `DEVELOP_CI_RED` on the squash commit `0735bff` of pull request #20, after a read-only diagnosis that he authorized. His words:
+
+> OWNER DECISION — D-115 (CONDITIONAL APPROVAL)
+>
+> Approve temporary DEVELOPMENT-ONLY acceptance of exactly the 13 new CVEs diagnosed from run 41179831914.
+>
+> Critical (individually approved): CVE-2026-86414, CVE-2026-92388.
+>
+> High (curl/libcurl): CVE-2026-107928, CVE-2026-107929, CVE-2026-87862, CVE-2026-87863, CVE-2026-87864, CVE-2026-87865, CVE-2026-92389, CVE-2026-92390, CVE-2026-92391, CVE-2026-94266.
+>
+> High (glibc): CVE-2026-84243.
+>
+> Use exact affected package versions and D-112 evidence fields. No wildcard, scanner suppression, or automatic acceptance of future CVEs. No staging or production risk acceptance.
+>
+> IMPORTANT — CE-61 RECOVERY:
+> The original develop CI for PR #20 FAILED. Do not rewrite that history or claim it passed.
+>
+> Authorize a one-time documented recovery exception: after an ops/ PR containing only this security acceptance and necessary records is merged, require green CI on the ops PR and its develop merge. Verify the original PR #20 merge identity and content, and record both the original failure and subsequent recovery evidence.
+>
+> Only then may TASK-013 be treated as operationally verified under this explicit exception.
+>
+> Follow CE-82: create one ops/ PR, Owner performs the merge, and resume only through the authorized procedure.
+>
+> Preserve security gates, production protections, and existing task scope. Do not start TASK-014 before recovery verification and the required Owner resume.
+>
+> Keep the report concise. No repeated full reviews or unnecessary retries.
+
+- **How it is carried out.** `scripts/checks/image-scan-accepted.json` holds the 13 entries with the fields of D-112, each at its exact package and version; `scripts/checks/image-scan-gate-test.sh` pins them and the nine critical identifiers. `scripts/checks/image-scan-gate.sh` and the scan are not changed, so that any other finding is still refused. The assessment and the recovery's record are [TASK-013 evidence](../11-tasks/evidence/TASK-013.md) section 17.
+- **Why a retry cannot turn that run green.** The accepted list is in the commit that CI checks out, so the run on `0735bff` stays red and stays on record. The tick's check of CE-61 reads that run, and its adoption of the `ops/` pull request (CE-82) moves that check to the merge of the `ops/` pull request. That is the exception, and it is this one merge's only.
+- **Limitations.** Exposure was judged by reading the code, not by an exploit test. Known exploitation rests on Grype's database of 31 October 2026, since CISA's KEV feed was read only in part, and SSVC was read for the two critical findings only. A search of the whole of `vendor/` for libcurl calls timed out: `app/`, the framework's source and `composer.lock` were read, in which Guzzle is the only HTTP client. Debian gives CVE-2026-84243 no assessment yet. The severities conflict: CISA-ADP's 9.1 against the curl project's Low.
+- **Unchanged:** CE-61 for every other merge, the guard, the merge rules of D-105 and D-109, gate RELEASE's independent review (T-38), and every safeguard of production data, security, cost and destructive operations. No deployment to staging or production is authorized.

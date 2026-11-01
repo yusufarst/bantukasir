@@ -274,3 +274,37 @@ The final head is now that of section 16, so `test:postgres` must show 438, thes
 **A limit that stays (R-32).** pdo_pgsql prepares a statement and then executes it, and PostgreSQL counts `statement_timeout` for each of those messages. So one statement could take up to twice what remained, and in the worst case pass the no-overlap lock: it needs a lock wait of nearly the whole limit followed by an execution of over 5 minutes on the same statement. That reading is the reviewer's, from its knowledge of pdo_pgsql, and is not verified here. It stays finite, and what it risks is a second run's `prepare()` removing the first's temporary files, which fails the first run and leaves stored copies alone. Executing without prepares on this connection would close it, but that is an unverified setting in `config/database.php` that changes every check, for a corner of two faults.
 
 **A lapse of the checks.** R-35's fix came after round 5, which judged it optional; it moves one call and was not read by a check. CI on the final head runs it.
+
+## 17. Merge, the failure on `develop` and its recovery (CE-50, CE-61, D-115)
+
+Written on the `ops/` branch of D-115. TASK-013 is treated as operationally verified only when the last row below is filled by green runs; until then it is not.
+
+| Fact | Value | Result |
+| --- | --- | --- |
+| Pull request | #20 into `develop`, head `4b106f5`, the tick's squash merge, automated review DONE | — |
+| CI on the head | Runs 41178290131 (pull request) and 41178287698 (push), both jobs. In run 41178290131: `test:unit` 618, `test:postgres` 438, `test:race` 29, browser suite 234; `Image checks: 273 passed, 0 failed`, `Scan gate tests: 49 passed, 0 failed`, gate 112 accepted, 0 refused, on Grype's database of 2026-10-30T06:23:28Z. These are the first runs of R-22, R-24, R-26, R-27 and R-30 (D-114) | PASS |
+| Merge commit | `0735bff`; tree `8f1ad66`, equal to the head's; author the Owner's no-reply identity | PASS, read on 1 November 2026 |
+| **CI on `develop` at the merge** | **Run 41179831914: `Command contract` passed, `Image checks` 272 passed and 1 failed** | **FAIL; it stays red and on record** |
+| The tick's other checks of CE-61 | Base, content, author and fast-forward come before its CI check in `verify_merge`, which reached `DEVELOP_CI_RED` | PASS, by that order; nothing was recorded in the state for this merge |
+| The recovery (D-115) | CI on the `ops/` pull request and on its squash merge; the next Task's record states them (CE-50) | `NOT_RUN` at this writing |
+
+**The failure.** The gate gave 112 accepted, 26 refused, all `REFUSED_NOT_ACCEPTED`, on Grype's database of 2026-10-31T06:18:17Z; the gate's own tests passed. No code of TASK-013 caused it: the 13 CVEs are new database entries for packages unchanged since D-112 (OPEN_ITEMS T-38 (d)).
+
+| CVE | Grype, curl project | Package at exact version | Needs | Exposure, by reading the code |
+| --- | --- | --- | --- | --- |
+| CVE-2026-86414 | Critical, Low | curl, libcurl4t64 8.14.1-2+deb13u7 | An HTTP proxy's 401 to CONNECT, with the origin's credentials | Not reachable: no proxy; the health check holds no credentials and opens no tunnel |
+| CVE-2026-92388 | Critical, Low | the same; libcurl's flaw | FTP wildcard, a failed LIST, handle reuse | Not reachable: no libcurl call and no FTP |
+| CVE-2026-107928 | High, Low | the same | WebSocket with GnuTLS | Not used |
+| CVE-2026-107929 | High, Low | the same | `--interface` | Not used |
+| CVE-2026-87862, CVE-2026-87863 | High, Low | the same | An HSTS cache | Not used |
+| CVE-2026-87864 | High, Low | the same | IMAP APPEND | Not used |
+| CVE-2026-87865 | High, Low | the same | SFTP or SCP | Not used |
+| CVE-2026-92389 | High, Low | the same | TFTP | Not used |
+| CVE-2026-92390 | High, Low | the same; the tool's flaw | `-J` | Not used |
+| CVE-2026-92391 | High, Low | the same | The MIME API | Not used |
+| CVE-2026-94266 | High, Low | the same | The effective URL, with netrc | Not used; no `.netrc` |
+| CVE-2026-84243 | High, none | libc-bin, libc6 2.41-12+deb13u4 | `LANGUAGE` across a trust boundary and a crafted `.mo` | Not reachable from a request: no SSH, no gettext extension, no `LANGUAGE` set, no `putenv` |
+
+**Status, read on 1 November 2026.** Debian marks all 12 curl CVEs vulnerable in trixie, `<no-dsa>` (Minor issue), fixed only in unstable; curl 8.21.0 of `trixie-backports` is within the affected range of all 12, so it offers no safer update for these. glibc has no fix anywhere, and Debian gives no assessment. For the two critical findings, CISA-ADP gives CVSS 9.1, and its SSVC says proof of concept, automatable, not active exploitation. Grype's database shows none of the 13 as known exploited.
+
+**Limits.** D-115 states them: no exploit test; CISA's KEV feed read only in part; SSVC read for the two critical findings only; the search of the whole of `vendor/` for libcurl calls timed out. Nothing here is a production risk acceptance. The `ops/` pull request's CI must show `Scan gate tests: 50 passed, 0 failed`, one more than before, for the pinned 13, and `Image checks: 273 passed, 0 failed`. A database newer than the one above may report other CVEs; D-115 does not accept them, and that is a stop.
