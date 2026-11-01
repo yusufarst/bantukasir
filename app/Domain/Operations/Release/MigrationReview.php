@@ -27,15 +27,22 @@ final class MigrationReview
 
     public const string DESTRUCTIVE_CLASS = 'destructive';
 
-    /** SQL statements and query-builder calls that remove or rewrite data. */
+    /**
+     * SQL statements and query-builder calls that remove or rewrite data. These are
+     * text patterns, so they fail closed: a statement they mistake for one of these
+     * needs its approval or another wording, and the reviewer of SCH-51 reads the rest.
+     */
     private const array DESTRUCTIVE_STATEMENTS = [
         'DROP TABLE, SCHEMA, DATABASE or COLUMN' => '/\bDROP\s+(?:TABLE|SCHEMA|DATABASE|COLUMN)\b/i',
-        'ALTER TABLE … DROP of a column' => '/\bALTER\s+TABLE\s+\S+\s+DROP\s+(?!CONSTRAINT\b|NOT\b|DEFAULT\b|IDENTITY\b|EXPRESSION\b)/i',
+        'DROP of an object that holds data, or with CASCADE' => '/\bDROP\s+(?:MATERIALIZED\s+VIEW|FOREIGN\s+TABLE|SEQUENCE|DOMAIN|OWNED)\b|\bDROP\b[^;]*?\bCASCADE\b/is',
+        'ALTER TABLE … DROP of a column' => '/\bALTER\s+TABLE\b[^;]*?\bDROP\s+(?!CONSTRAINT\b|NOT\b|DEFAULT\b|IDENTITY\b|EXPRESSION\b)/is',
         'TRUNCATE' => '/\bTRUNCATE\b/i',
         'DELETE FROM' => '/\bDELETE\s+FROM\b/i',
-        'UPDATE … SET' => '/\bUPDATE\s+\S+\s+SET\b/i',
-        'a schema-builder drop' => '/(?:Schema::|->)(?:drop|dropIfExists|dropAllTables|dropAllViews|dropColumn|dropColumns|dropMorphs|dropNullableMorphs|dropTimestamps|dropTimestampsTz|dropSoftDeletes|dropSoftDeletesTz|dropRememberToken)\s*\(/i',
-        'a query-builder delete or update' => '/->(?:delete|forceDelete|truncate|update|updateOrInsert|upsert|increment|decrement|incrementEach|decrementEach)\s*\(/i',
+        'UPDATE … SET' => '/\bUPDATE\s+(?:ONLY\s+)?\S+(?:\s+(?:AS\s+)?\S+)?\s+SET\b|\bDO\s+UPDATE\s+SET\b/i',
+        'MERGE INTO' => '/\bMERGE\s+INTO\b/i',
+        'a change of a column\'s type' => '/\bALTER\s+(?:COLUMN\s+)?\S+\s+(?:SET\s+DATA\s+)?TYPE\b|->change\s*\(/i',
+        'a schema-builder drop' => '/(?:Schema::|->)(?:drop|dropIfExists|dropAllTables|dropAllTypes|dropAllViews|dropDatabaseIfExists|dropColumn|dropColumns|dropConstrainedForeignId|dropConstrainedForeignIdFor|dropMorphs|dropNullableMorphs|dropTimestamps|dropTimestampsTz|dropSoftDeletes|dropSoftDeletesTz|dropRememberToken)\s*\(/i',
+        'a query-builder delete or update' => '/(?:->|::)(?:delete|deleteQuietly|deleteOrFail|destroy|forceDelete|forceDeleteQuietly|forceDestroy|truncate|update|updateFrom|updateOrCreate|updateOrFail|updateOrInsert|updateQuietly|upsert|increment|decrement|incrementEach|decrementEach)\s*\(/i',
         'DB::delete() or DB::update()' => '/\bDB::(?:delete|update)\s*\(/i',
     ];
 

@@ -4,6 +4,7 @@ namespace Tests\Unit\StaticChecks;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Process\Process;
 
 /**
  * The release workflows and their scripts (AC-014-01; ADR-011 item 5; RELEASE_PROCESS
@@ -151,6 +152,57 @@ final class ReleaseWorkflowTest extends TestCase
         }
     }
 
+    /**
+     * @return array<string, array{int, string}>
+     */
+    public static function versionsNotPublished(): array
+    {
+        return [
+            'no such manifest' => [1, 'no such manifest: ghcr.io/owner/repository:v1.2.3'],
+            'manifest unknown' => [1, 'manifest unknown'],
+            'name unknown' => [1, 'name unknown: the package does not exist'],
+        ];
+    }
+
+    #[DataProvider('versionsNotPublished')]
+    public function test_publishing_goes_on_only_on_the_registrys_answer_that_the_version_does_not_exist(int $exit, string $answer): void
+    {
+        [$process, $calls] = $this->publish($exit, $answer, 'ghcr.io/owner/repository@sha256:'.str_repeat('c', 64));
+
+        $this->assertSame(0, $process->getExitCode(), $process->getOutput().$process->getErrorOutput());
+        $this->assertStringContainsString('push ghcr.io/owner/repository:v1.2.3', $calls);
+        $this->assertStringContainsString('digest=sha256:'.str_repeat('c', 64), (string) file_get_contents($this->folder.'/github-output'));
+    }
+
+    public function test_publishing_refuses_a_version_already_published(): void
+    {
+        [$process, $calls] = $this->publish(0, '{}', 'unused');
+
+        $this->assertSame(1, $process->getExitCode());
+        $this->assertStringContainsString('is already published', $process->getOutput());
+        $this->assertStringNotContainsString('push ', $calls);
+    }
+
+    public function test_publishing_refuses_when_the_registry_cannot_say(): void
+    {
+        foreach (['unauthorized: authentication required', 'received unexpected HTTP status: 503 Service Unavailable', 'toomanyrequests: rate limit'] as $answer) {
+            [$process, $calls] = $this->publish(1, $answer, 'unused');
+
+            $this->assertSame(1, $process->getExitCode(), $answer);
+            $this->assertStringContainsString('could not say', $process->getOutput());
+            $this->assertStringNotContainsString($answer, $process->getOutput());
+            $this->assertStringNotContainsString('push ', $calls);
+        }
+    }
+
+    public function test_publishing_fails_without_a_digest_of_its_form(): void
+    {
+        [$process] = $this->publish(1, 'manifest unknown', 'ghcr.io/owner/repository@not-a-digest');
+
+        $this->assertSame(1, $process->getExitCode());
+        $this->assertStringContainsString('PUBLISH_FAILED', $process->getOutput());
+    }
+
     public function test_the_templates_hold_what_their_sections_ask_for(): void
     {
         $record = (string) file_get_contents(self::projectRoot().'/docs/10-release/templates/RELEASE_RECORD.md');
@@ -164,6 +216,45 @@ final class ReleaseWorkflowTest extends TestCase
         foreach (['Version', 'Commit', 'Tag', 'Image digest', 'Base images', 'Lockfiles', 'CI run', 'suites', 'Migrations', 'rehearsal', 'Scan results', 'publication guard', 'compatibility of the previous image', 'Known issues', 'cost inventory'] as $field) {
             $this->assertStringContainsStringIgnoringCase($field, $report);
         }
+    }
+
+    /**
+     * scripts/release/publish.sh against a stub of docker first on the PATH, which
+     * records its calls; the registry's answer to the inspection is the arguments.
+     *
+     * @return array{Process, string} the run, and the calls of docker
+     */
+    private function publish(int $inspectExit, string $inspectAnswer, string $reference): array
+    {
+        $calls = $this->folder.'/docker-calls';
+        file_put_contents($calls, '');
+        $stub = $this->folder.'/docker';
+        file_put_contents($stub, <<<'BASH'
+            #!/usr/bin/env bash
+            echo "$*" >>"$STUB_CALLS"
+            case "$1" in
+                login) cat >/dev/null ;;
+                manifest) echo "$STUB_ANSWER" >&2; exit "$STUB_EXIT" ;;
+                inspect) echo "$STUB_REFERENCE" ;;
+            esac
+
+            BASH);
+        chmod($stub, 0755);
+
+        $process = self::runCheck(['bash', 'scripts/release/publish.sh'], [
+            'PATH' => $this->folder.PATH_SEPARATOR.(string) getenv('PATH'),
+            'STUB_CALLS' => $calls,
+            'STUB_ANSWER' => $inspectAnswer,
+            'STUB_EXIT' => (string) $inspectExit,
+            'STUB_REFERENCE' => $reference,
+            'REGISTRY_TOKEN' => bin2hex(random_bytes(8)),
+            'REGISTRY_USER' => 'someone',
+            'RELEASE_IMAGE' => 'ghcr.io/Owner/Repository',
+            'RELEASE_VERSION' => 'v1.2.3',
+            'GITHUB_OUTPUT' => $this->folder.'/github-output',
+        ]);
+
+        return [$process, (string) file_get_contents($calls)];
     }
 
     private function changed(string $workflow, string $search, string $replace): string

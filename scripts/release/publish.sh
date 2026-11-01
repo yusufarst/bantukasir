@@ -14,10 +14,20 @@ target="${RELEASE_IMAGE,,}:$RELEASE_VERSION"
 trap 'docker logout ghcr.io >/dev/null 2>&1 || true' EXIT
 printf '%s' "$REGISTRY_TOKEN" | docker login ghcr.io --username "$REGISTRY_USER" --password-stdin
 
-if docker manifest inspect "$target" >/dev/null 2>&1; then
+# Only the registry's own answer that the version does not exist lets it go on: any
+# other failure says nothing about what is published, so it refuses.
+if answer="$(docker manifest inspect "$target" 2>&1)"; then
     echo "PUBLISH_REFUSED $RELEASE_VERSION is already published, and a released image is never replaced"
     exit 1
 fi
+
+case "$answer" in
+    *"no such manifest"* | *"manifest unknown"* | *"name unknown"*) ;;
+    *)
+        echo "PUBLISH_REFUSED the registry could not say whether $RELEASE_VERSION is published"
+        exit 1
+        ;;
+esac
 
 docker tag "$checked" "$target"
 docker push "$target"

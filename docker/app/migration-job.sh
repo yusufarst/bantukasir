@@ -14,6 +14,9 @@
 #       --migrations=<the release record's list, by name, or none> \
 #       --backup-schedule-paused
 #
+# On a new database, which has no backup yet, the operator adds --first-installation,
+# which it refuses unless the catalog shows that database truly empty (REL-23, D-116).
+#
 # It runs release:preflight, the migrations and the verification queries of REL-20,
 # in that order, each stopping the job (App\Console\Commands\ReleaseMigrate). It
 # refuses to start with a credential of the application or backup container, so that

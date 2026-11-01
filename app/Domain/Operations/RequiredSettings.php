@@ -85,6 +85,7 @@ final class RequiredSettings
             'HEARTBEAT_WEB_URL',
             'HEARTBEAT_RECONCILIATION_URL',
             'APP_MAINTENANCE_BYPASS_SECRET',
+            'APP_START_IN_MAINTENANCE',
         ],
     ];
 
@@ -108,6 +109,7 @@ final class RequiredSettings
             'SESSION_DRIVER' => ['database'],
             'CACHE_STORE' => ['database'],
             'SESSION_SECURE_COOKIE' => ['true', '1', 'on', 'yes'],
+            'APP_START_IN_MAINTENANCE' => ['1'],
         ],
         self::BACKUP => [
             'APP_DEBUG' => ['false', '0', 'off', 'no'],

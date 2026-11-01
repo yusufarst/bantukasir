@@ -83,14 +83,15 @@ final class Preflight
      * than one hour old. The first installation has nothing to back up, and the
      * backup's own table does not exist until its migrations run (RB-23 step 9
      * takes the first backup after them), so the operator may say so, and that is
-     * accepted only for a database without a table (reading of TASK-014).
+     * accepted only when the catalog shows this database truly empty (D-116). It
+     * waives this condition alone: every other refusal stands.
      */
     private function backupRefusal(Connection $connection, string $marker, PreflightInput $input): ?string
     {
         if ($input->firstInstallation) {
-            $empty = $connection->scalar("select not exists (select from pg_catalog.pg_tables where schemaname operator(pg_catalog.=) 'public')");
+            $held = EmptyDatabase::holds($connection);
 
-            return $empty === true ? null : 'The first installation is typed, but this database already holds tables.';
+            return $held === [] ? null : sprintf('The first installation is typed, but this database is not empty: it holds %s (REL-23).', implode(', ', $held));
         }
 
         if (! in_array($marker, config()->array('release.backup_required_in'), true)) {
@@ -128,13 +129,15 @@ final class Preflight
     /**
      * REL-06: a pending migration that is marked destructive, or holds a
      * destructive statement, needs its approval reference, and the release record
-     * must name that approval.
+     * must name that approval. The record names no other: a typed approval is what
+     * lets the job accept fewer rows afterwards, so it must answer to a migration.
      *
      * @param  array<string, string>  $pending
      */
     private function destructiveRefusal(array $pending, PreflightInput $input): ?string
     {
         $refused = [];
+        $named = [];
 
         foreach ($pending as $name => $file) {
             $code = (string) file_get_contents($file);
@@ -144,13 +147,20 @@ final class Preflight
             }
 
             $references = MigrationReview::approvals($code);
+            $named = [...$named, ...$references];
 
             if ($references === [] || array_diff($references, $input->approvals) !== []) {
                 $refused[] = $name;
             }
         }
 
-        return $refused === [] ? null : sprintf('Destructive without its approval reference in the migration and in the release record (REL-06): %s.', implode(', ', $refused));
+        if ($refused !== []) {
+            return sprintf('Destructive without its approval reference in the migration and in the release record (REL-06): %s.', implode(', ', $refused));
+        }
+
+        $surplus = array_diff($input->approvals, $named);
+
+        return $surplus === [] ? null : sprintf('The release record names approvals that no pending destructive migration names (REL-06): %s.', implode(', ', $surplus));
     }
 
     /**

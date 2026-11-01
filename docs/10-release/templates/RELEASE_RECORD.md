@@ -44,10 +44,10 @@ The decisions named here reach the job as `--destructive-approvals`.
 | Maintenance mode on, with the operator's bypass | | |
 | The migration job: its `PREFLIGHT_PASSED` line | | |
 | The migration job: the migrations applied | | |
-| The migration job: its `VERIFY_COUNT` lines and `JOB_PASSED` | | |
-| The digest deployed to the application and backup resources, with `APP_RELEASE_IMAGE_DIGEST` set to it | | |
+| The migration job: `JOB_PASSED`; the `VERIFY_COUNT` lines hold production's row counts, so they stay in the operator's private record (OPERATIONS_RUNBOOK OPR-03) | | |
+| The digest deployed to the application and backup resources, with `APP_RELEASE_IMAGE_DIGEST` set to it and, with maintenance mode on, `APP_START_IN_MAINTENANCE=1` on the application | | |
 | The checks of RB-21 (RELEASE_PROCESS section 7) | | |
-| Maintenance mode off | | |
+| Maintenance mode off, and `APP_START_IN_MAINTENANCE` removed | | |
 | The backup schedule resumed, and the backup run at once | | |
 
 ## Incidents and rollbacks

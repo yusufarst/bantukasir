@@ -20,7 +20,8 @@ use Throwable;
  * supplied at run time and the only connection it uses: the preflight, then the
  * migrations, then the verification queries, in that order, each stopping the job.
  * One job at a time on a database, by an advisory lock of its session. It has the
- * options of release:preflight, and its lines are the release record's evidence.
+ * options of release:preflight. Its lines go to the operator's private record (OPR-03),
+ * and the release record states their result, never the row counts.
  */
 final class ReleaseMigrate extends Command
 {
@@ -32,7 +33,7 @@ final class ReleaseMigrate extends Command
         {--migrations= : The release record\'s list of migrations, by name, separated by commas, or "none"}
         {--destructive-approvals= : The decisions that the release record names under REL-06, separated by commas}
         {--backup-schedule-paused : The operator confirms that the backup container\'s schedule is paused}
-        {--first-installation : The operator says that this database is new and empty, so that it has no backup yet}';
+        {--first-installation : The operator says that this database is new, so that it has no backup yet; refused unless the catalog shows it truly empty}';
 
     protected $description = 'The migration job: the release preflight, the migrations, then the verification queries of REL-20';
 
@@ -60,8 +61,30 @@ final class ReleaseMigrate extends Command
 
         try {
             return $this->steps($connection, $verification);
+        } catch (Throwable $thrown) {
+            $this->line('JOB_FAILED '.self::failure($thrown));
+
+            return SymfonyCommand::FAILURE;
         } finally {
+            $this->releaseLock($connection);
+        }
+    }
+
+    /**
+     * The class and the code of a failure, for the release record: the message of a
+     * database's exception names the server and the SQL.
+     */
+    private static function failure(Throwable $thrown): string
+    {
+        return $thrown::class.' '.$thrown->getCode();
+    }
+
+    private function releaseLock(Connection $connection): void
+    {
+        try {
             $connection->scalar('select pg_catalog.pg_advisory_unlock(?::bigint)', [self::LOCK]);
+        } catch (Throwable) {
+            // The session that held the lock is gone, and the lock with it.
         }
     }
 
@@ -83,7 +106,7 @@ final class ReleaseMigrate extends Command
             $migrated = $this->call('migrate', ['--database' => Preflight::CONNECTION, '--force' => true]);
         } catch (Throwable $thrown) {
             // A migration that failed rolled back in its own transaction (RB-22).
-            $this->line('JOB_FAILED MIGRATIONS '.$thrown->getMessage());
+            $this->line('JOB_FAILED MIGRATIONS '.self::failure($thrown));
 
             return SymfonyCommand::FAILURE;
         }

@@ -30,7 +30,7 @@ final class ReleasePreflight extends Command
         {--migrations= : The release record\'s list of migrations, by name, separated by commas, or "none"}
         {--destructive-approvals= : The decisions that the release record names under REL-06, separated by commas}
         {--backup-schedule-paused : The operator confirms that the backup container\'s schedule is paused}
-        {--first-installation : The operator says that this database is new and empty, so that it has no backup yet}';
+        {--first-installation : The operator says that this database is new, so that it has no backup yet; refused unless the catalog shows it truly empty}';
 
     protected $description = 'Refuse a release before its first statement unless the conditions of REL-23 hold (read only)';
 
@@ -67,6 +67,10 @@ final class ReleasePreflight extends Command
 
         if ($refusals !== []) {
             return SymfonyCommand::FAILURE;
+        }
+
+        if ($this->option('first-installation') === true) {
+            $this->line('PREFLIGHT_FIRST_INSTALLATION the catalog shows this database truly empty; no backup is required');
         }
 
         $this->line(sprintf('PREFLIGHT_PASSED %s migrations=%d', $environment, count($migrations)));

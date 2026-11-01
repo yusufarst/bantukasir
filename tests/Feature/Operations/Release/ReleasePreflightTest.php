@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Operations\Release;
 
+use App\Domain\Operations\Release\EmptyDatabase;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Database\Migrations\Migrator;
 use Illuminate\Support\Facades\Artisan;
@@ -173,6 +174,17 @@ final class ReleasePreflightTest extends DatabaseTestCase
         $this->assertSame(0, $this->preflight([...$list, '--destructive-approvals' => 'D-900'])[0]);
     }
 
+    public function test_it_refuses_an_approval_that_no_pending_destructive_migration_names(): void
+    {
+        $outcome = $this->preflight(['--destructive-approvals' => 'D-999']);
+        $this->assertRefused('DESTRUCTIVE', $outcome);
+        $this->assertStringContainsString('D-999', $outcome[1]);
+
+        $this->pendingFrom('approved');
+        $list = ['--migrations' => '2026_12_31_000003_harness_approved_destructive'];
+        $this->assertRefused('DESTRUCTIVE', $this->preflight([...$list, '--destructive-approvals' => 'D-900,D-999']));
+    }
+
     public function test_it_refuses_synchronous_commit_off_in_the_session(): void
     {
         $this->migration()->statement('set synchronous_commit = off');
@@ -198,14 +210,55 @@ final class ReleasePreflightTest extends DatabaseTestCase
         $this->assertRefused('BACKUP_SCHEDULE', $this->preflight(['--backup-schedule-paused' => null]));
     }
 
+    /**
+     * The whole path on a truly empty database, and each other kind of object on one,
+     * are in the image checks (scripts/checks/image-checks.sh): the test database
+     * always holds the migrations' tables.
+     */
     public function test_the_first_installation_is_refused_on_a_database_that_holds_tables(): void
     {
-        config(['release.backup_required_in' => ['test']]);
-
         $outcome = $this->preflight(['--first-installation' => true]);
 
         $this->assertRefused('BACKUP', $outcome);
-        $this->assertStringContainsString('already holds tables', $outcome[1]);
+        $this->assertStringContainsString('this database is not empty: it holds relations', $outcome[1]);
+        $this->assertStringNotContainsString('PREFLIGHT_FIRST_INSTALLATION', $outcome[1]);
+
+        config(['release.backup_required_in' => ['test']]);
+        $this->assertRefused('BACKUP', $this->preflight(['--first-installation' => true]));
+    }
+
+    public function test_the_first_installation_waives_no_other_condition(): void
+    {
+        $this->pendingFrom('destructive');
+
+        $outcome = $this->preflight(['--first-installation' => true, '--backup-schedule-paused' => null]);
+
+        foreach (['BACKUP', 'MIGRATIONS', 'DESTRUCTIVE', 'BACKUP_SCHEDULE'] as $code) {
+            $this->assertRefused($code, $outcome);
+        }
+
+        $this->assertRefused('ENVIRONMENT', $this->preflight(['--first-installation' => true, '--environment' => 'production']));
+    }
+
+    public function test_what_the_setup_leaves_does_not_count_and_anything_else_does(): void
+    {
+        $held = EmptyDatabase::holds($this->migration());
+
+        $this->assertContains('relations', $held);
+        $this->assertNotContains('schemas', $held);
+        $this->assertNotContains('extensions', $held);
+        $this->assertNotContains('large_objects', $held);
+        $this->assertNotContains('other_objects', $held);
+
+        $object = $this->migration()->scalar('select pg_catalog.lo_create(0)');
+
+        try {
+            $this->assertContains('large_objects', EmptyDatabase::holds($this->migration()));
+        } finally {
+            $this->migration()->scalar('select pg_catalog.lo_unlink(?)', [$object]);
+        }
+
+        $this->assertNotContains('large_objects', EmptyDatabase::holds($this->migration()));
     }
 
     public function test_it_reports_every_refusal_of_one_run(): void

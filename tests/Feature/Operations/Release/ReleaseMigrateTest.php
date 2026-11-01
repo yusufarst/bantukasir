@@ -100,9 +100,24 @@ final class ReleaseMigrateTest extends DatabaseTestCase
         [$exit, $output] = $this->job(['--migrations' => self::FAILING]);
 
         $this->assertSame(1, $exit, $output);
-        $this->assertStringContainsString('JOB_FAILED MIGRATIONS', $output);
+        $this->assertStringContainsString('JOB_FAILED MIGRATIONS Illuminate\Database\QueryException 42883', $output);
         $this->assertStringNotContainsString('JOB_STEP verification', $output);
         $this->assertFalse($this->applied(self::FAILING));
+
+        // Its lines leave the container: nothing of the server or of the SQL.
+        $this->assertStringNotContainsString('Host', $output);
+        $this->assertStringNotContainsString('harness_no_such_function', $output);
+    }
+
+    public function test_a_typed_approval_that_answers_to_no_migration_stops_the_job(): void
+    {
+        $this->pendingFrom('pending');
+
+        [$exit, $output] = $this->job(['--destructive-approvals' => 'D-999']);
+
+        $this->assertSame(1, $exit, $output);
+        $this->assertStringContainsString('PREFLIGHT_REFUSED DESTRUCTIVE', $output);
+        $this->assertFalse($this->applied(self::NOTE));
     }
 
     public function test_a_failed_privilege_check_fails_the_job_after_the_migrations(): void
