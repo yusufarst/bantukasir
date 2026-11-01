@@ -64,8 +64,8 @@ describe('the rows', () => {
 
     it('reads the rows of a refusal in the order of the file', () => {
         expect(rowsOfRefusal({ 10: { errors: [wrong] }, 2: { errors: [wrong] }, 3: { errors: [] }, x: { errors: [wrong] }, 4: 'bukan' })).toEqual([
-            { row: 2, errors: [wrong] },
-            { row: 10, errors: [wrong] },
+            { row: '2', errors: [wrong] },
+            { row: '10', errors: [wrong] },
         ]);
     });
 

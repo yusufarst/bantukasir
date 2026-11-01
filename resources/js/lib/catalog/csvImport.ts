@@ -176,16 +176,21 @@ export function importErrorText(error: ImportError): string | undefined {
 }
 
 /** A row's error with its row number, the format of every row error (COPY_DECK section 16.3). */
-export function rowErrorText(row: number, error: ImportError): string {
+export function rowErrorText(row: number | string, error: ImportError): string {
     return t('catalog.csv_import.error.row', { nomor: String(row), masalah: importErrorText(error) ?? '' });
 }
 
-/** The row errors of a refusal of RC-31 (INTERACTION_CONTRACTS section 1.6), in the order of the file. */
-export function rowsOfRefusal(lines: Readonly<Record<string, unknown>>): readonly { readonly row: number; readonly errors: readonly ImportError[] }[] {
+/** The key of one error of a row in a list. */
+export function rowErrorKey(row: number | string, index: number): string {
+    return `${String(row)}-${String(index)}`;
+}
+
+/** The row errors of a refusal of RC-31 (INTERACTION_CONTRACTS section 1.6), in the order of the file: the row numbers stay texts, compared by their digits. */
+export function rowsOfRefusal(lines: Readonly<Record<string, unknown>>): readonly { readonly row: string; readonly errors: readonly ImportError[] }[] {
     return Object.entries(lines)
-        .map(([row, line]) => ({ row: Number(row), errors: importErrors(isRecord(line) ? line.errors : null) }))
-        .filter((line) => Number.isSafeInteger(line.row) && line.errors.length > 0)
-        .sort((first, second) => first.row - second.row);
+        .map(([row, line]) => ({ row, errors: importErrors(isRecord(line) ? line.errors : null) }))
+        .filter((line) => /^[1-9][0-9]*$/.test(line.row) && line.errors.length > 0)
+        .sort((first, second) => first.row.length - second.row.length || (first.row < second.row ? -1 : 1));
 }
 
 /** The rows with errors first (NAVIGATION_CONTRACTS UXP-308), each part in the order of the file. */

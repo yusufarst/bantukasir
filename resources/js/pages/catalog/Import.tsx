@@ -23,6 +23,7 @@ import {
     importErrorText,
     namesMissingCategory,
     previewImport,
+    rowErrorKey,
     rowErrorText,
     rowsOfRefusal,
     type ImportColumn,
@@ -111,7 +112,7 @@ function RefusedNotice({ refusal, footer }: { refusal: Refusal; footer: ReactNod
     const list =
         rows.length === 0 ? null : (
             <ul>
-                {rows.flatMap(({ row, errors }) => errors.map((error, index) => <li key={`${String(row)}-${String(index)}`}>{rowErrorText(row, error)}</li>))}
+                {rows.flatMap(({ row, errors }) => errors.map((error, index) => <li key={rowErrorKey(row, index)}>{rowErrorText(row, error)}</li>))}
             </ul>
         );
     const firstFileError = fileErrors[0];
@@ -279,7 +280,7 @@ function ImportFlow({ title, columns, canManageCategories }: { title: string; co
                           row.errors.length === 0 ? null : (
                               <ul className={'bk-error'}>
                                   {row.errors.map((error, index) => (
-                                      <li key={`${error.key}-${String(index)}`}>{rowErrorText(row.row, error)}</li>
+                                      <li key={rowErrorKey(row.row, index)}>{rowErrorText(row.row, error)}</li>
                                   ))}
                               </ul>
                           ),
