@@ -135,3 +135,21 @@ The fixes of R-17 and the record were made after round 3, in the browser suite a
 ## 10. Operations and backup impact (EXC-47)
 
 None: no table, no stored file, no procedure.
+
+## 11. Fix cycle 1 on pull request #26 (CE-43)
+
+The automated reviewer's P2 finding on the head `cf1781d` (review comment 4436608305), numbered R-19 here. Its other output, the summary comment and the review receipt, carries no finding.
+
+- **The finding holds, read in the code.** `change()` and the typed search call `keep(next)` before `load(next)`, so `applied` holds the new filters while the rows are still the earlier ones. When that read fails or is refused, `load()` keeps the rows, as INTERACTION_CONTRACTS section 3.2 says, and sets `reading` to false. "Muat lebih banyak" was enabled again, and asked for page 2 of the new filters, to be added after rows of the old ones: a mixed list, without the new first page.
+- **The fix** (`resources/js/pages/catalog/Products.tsx`). The rows of `ListState` carry `filters`, the filters and page they answer. "Muat lebih banyak" stands only for the rows of exactly the filters applied, or as busy during a read. A failed next page changes neither, so its rows keep the way to it. "Coba lagi" reads the filters applied and brings the way back. Nothing is changed in the rows kept or in the notices.
+- **The regression test**, in "the list: paging kept on a reload…" of `catalog.spec.ts`: changed filters that fail and that are refused, a retry that fails again, then each read successfully; and a failed next page, which keeps its button. It has not run yet, so it is not shown to have failed on the code before the fix; the code path above is the evidence for that.
+- **Review class B:** no targeted verification is required (CE-42, CE-43).
+
+| Check | Where it ran | Time (Asia/Jakarta) | Duration | Result |
+| --- | --- | --- | --- | --- |
+| `npm run typecheck` | Local, on the fix | 2 Nov | under 1 min | `NOT_RUN`: `tsc` is not installed on this machine |
+| Static checks, unit tests, the browser suite with the regression test, the rest of the command contract, the image checks | CI on the fix's head (D-117) | — | — | `NOT_RUN` at this writing |
+| Fast run on `cf1781d` | CI run 41330653587 | 2 Nov | 7 min 27 s | PASS |
+| Image checks on `cf1781d` | CI run 41330696494 | 2 Nov | 5 min 28 s | PASS; to run again on the fix's head |
+| Command contract on `cf1781d` | CI run 41330696494 | 2 Nov | — | Pending when the fix was committed, with no failure shown; `NOT_RUN` as a result, and superseded by the fix's head |
+| `guard.sh --preview` | Local, on the fix | 2 Nov | under 1 min | PASS, no candidate to judge |

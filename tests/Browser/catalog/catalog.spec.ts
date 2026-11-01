@@ -421,6 +421,12 @@ test('the list: paging kept on a reload, a newer search over a late one, nothing
             return;
         }
 
+        if (parameters.get('brand') === 'ditolak') {
+            await route.fulfill({ status: 422, json: { fields: { brand: [{ key: 'ux.validation.required', params: {} }] } } });
+
+            return;
+        }
+
         if (parameters.get('q') === 'lama') {
             hold.late = route;
 
@@ -484,6 +490,50 @@ test('the list: paging kept on a reload, a newer search over a late one, nothing
     await page.getByRole('button', { name: 'Coba lagi' }).click();
     await expect(rows).toHaveCount(25);
     await expect(page.getByText('Gagal memuat')).toHaveCount(0);
+
+    // A failed next page keeps its rows and the way to it, since they are still the filters' own.
+    const more = page.getByRole('button', { name: 'Muat lebih banyak' });
+    failing = true;
+    await more.click();
+    await expect(page.getByText('Gagal memuat')).toBeVisible();
+    await expect(rows).toHaveCount(25);
+    await expect(more).toBeVisible();
+    await expect(page).not.toHaveURL(/page=/);
+    failing = false;
+    await page.getByRole('button', { name: 'Coba lagi' }).click();
+    await expect(page.getByText('Gagal memuat')).toHaveCount(0);
+    await expect(rows).toHaveCount(25);
+
+    // Changed filters that fail keep the earlier rows, but offer no next page: it would be
+    // of the new filters, added after rows of the old ones (finding R-19).
+    failing = true;
+    await page.getByRole('button', { name: 'Aktif', exact: true }).click();
+    await expect(page).toHaveURL(/status=active/);
+    await expect(page.getByText('Gagal memuat')).toBeVisible();
+    await expect(rows).toHaveCount(25);
+    await expect(more).toHaveCount(0);
+
+    // "Coba lagi" that fails again keeps it so; once the new filters are read, the way is back.
+    // A busy button has another name, and the notice stays through the read, so wait for it to end.
+    const refused = page.waitForEvent('requestfailed', (request) => SEARCH.test(request.url()));
+    await page.getByRole('button', { name: 'Coba lagi' }).click();
+    await refused;
+    await expect(page.locator('button[aria-busy="true"]')).toHaveCount(0);
+    await expect(page.getByText('Gagal memuat')).toBeVisible();
+    await expect(more).toHaveCount(0);
+    failing = false;
+    await page.getByRole('button', { name: 'Coba lagi' }).click();
+    await expect(page.getByText('Gagal memuat')).toHaveCount(0);
+    await expect(more).toBeVisible();
+
+    // A refused filter does the same; the field shows why, and a corrected one reads again.
+    await page.getByLabel('Merek', { exact: true }).fill('ditolak');
+    await expect(page.locator('.bk-field .bk-error')).toBeVisible();
+    await expect(rows).toHaveCount(25);
+    await expect(more).toHaveCount(0);
+    await page.getByLabel('Merek', { exact: true }).fill('');
+    await expect(page.locator('.bk-field .bk-error')).toHaveCount(0);
+    await expect(more).toBeVisible();
 
     expect(injected(watched.problems)).toEqual([]);
     await context.close();

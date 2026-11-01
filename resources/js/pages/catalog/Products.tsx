@@ -50,11 +50,15 @@ const STATUS_FILTERS: readonly { readonly value: string; readonly label: Transla
     { value: 'inactive', label: 'catalog.status.inactive' },
 ];
 
-/** What the list shows: its rows stay through a later read that fails or is refused (INTERACTION_CONTRACTS section 3.2). */
+/**
+ * What the list shows: its rows stay through a later read that fails or is refused
+ * (INTERACTION_CONTRACTS section 3.2), and `filters` says which filters and page they
+ * answer, so that no next page of other filters is added to them.
+ */
 type ListState =
     | { readonly kind: 'loading' }
     | { readonly kind: 'failed' }
-    | { readonly kind: 'rows'; readonly rows: readonly ProductRow[]; readonly hasMore: boolean; readonly unknownCode: string | null };
+    | { readonly kind: 'rows'; readonly rows: readonly ProductRow[]; readonly hasMore: boolean; readonly unknownCode: string | null; readonly filters: ProductFilters };
 
 export default function Products({ filters, categories }: { filters: ProductFilters; categories: readonly Category[] }) {
     const title = t('catalog.products.title');
@@ -108,13 +112,13 @@ function ProductsList({ title, filters, categories }: { title: string; filters: 
             case 'read':
                 setProblem(null);
                 setFieldErrors({});
-                setList({ kind: 'rows', rows: answer.body.rows, hasMore: answer.body.hasMore, unknownCode: answer.body.rows.length === 0 ? scanned : null });
+                setList({ kind: 'rows', rows: answer.body.rows, hasMore: answer.body.hasMore, unknownCode: answer.body.rows.length === 0 ? scanned : null, filters: next });
 
                 return;
             case 'invalid':
                 setProblem('invalid');
                 setFieldErrors(answer.fields);
-                setList((current) => (current.kind === 'loading' ? { kind: 'rows', rows: [], hasMore: false, unknownCode: null } : current));
+                setList((current) => (current.kind === 'loading' ? { kind: 'rows', rows: [], hasMore: false, unknownCode: null, filters: next } : current));
 
                 return;
             case 'failed':
@@ -176,7 +180,7 @@ function ProductsList({ title, filters, categories }: { title: string; filters: 
             if (answer.kind === 'read' && answer.body.rows.length > 0) {
                 setReading(false);
                 setProblem(null);
-                setList({ kind: 'rows', rows: answer.body.rows, hasMore: false, unknownCode: null });
+                setList({ kind: 'rows', rows: answer.body.rows, hasMore: false, unknownCode: null, filters: next });
             } else {
                 void load(next, code);
             }
@@ -203,9 +207,11 @@ function ProductsList({ title, filters, categories }: { title: string; filters: 
             setLoadingMore(false);
 
             if (answer.kind === 'read') {
+                const next = { ...applied, page };
+
                 setProblem(null);
-                keep({ ...applied, page });
-                setList({ kind: 'rows', rows: [...rows, ...answer.body.rows], hasMore: answer.body.hasMore, unknownCode: null });
+                keep(next);
+                setList({ kind: 'rows', rows: [...rows, ...answer.body.rows], hasMore: answer.body.hasMore, unknownCode: null, filters: next });
             } else {
                 setProblem('failed');
             }
@@ -265,7 +271,7 @@ function ProductsList({ title, filters, categories }: { title: string; filters: 
                     </FilterChips>
                 </>
             }
-            more={list.kind === 'rows' && list.hasMore ? <LoadMore onLoad={loadMore} busy={loadingMore || reading} /> : undefined}
+            more={list.kind === 'rows' && list.hasMore && (reading || list.filters === applied) ? <LoadMore onLoad={loadMore} busy={loadingMore || reading} /> : undefined}
         >
             <div className={'bk-stack'}>
                 {problem === 'invalid' && <StateNotice state={INVALID_STATE} />}
