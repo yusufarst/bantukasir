@@ -65,7 +65,7 @@ final class Preflight
      *
      * @return array<string, string> their files, by name
      */
-    public function pendingMigrations(): array
+    private function pendingMigrations(): array
     {
         /** @var array<string, string> $pending */
         $pending = $this->migrator->usingConnection(self::CONNECTION, function (): array {

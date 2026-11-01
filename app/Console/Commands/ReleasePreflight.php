@@ -18,13 +18,12 @@ use Throwable;
  */
 final class ReleasePreflight extends Command
 {
-    /** A migration's name; a decision's identifier. */
     private const string MIGRATION_NAME = '/\A[0-9A-Za-z_]{1,200}\z/';
 
     private const string DECISION = '/\AD-\d{3,}\z/';
 
     /** What the release record's list says when it lists no migration. */
-    public const string NO_MIGRATIONS = 'none';
+    private const string NO_MIGRATIONS = 'none';
 
     protected $signature = 'release:preflight
         {--environment= : The name of the environment, typed by the operator; it must equal the configuration and the database marker}
