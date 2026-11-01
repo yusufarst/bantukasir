@@ -59,6 +59,7 @@ If the Owner moves the branch back to the base, `git log a58202c..HEAD` is empty
 | F-2 | `ux.state.barcode_ineligible.not_correctable` waits for the correction, and RACE-17's move and RACE-19's corrections are not built here | TASK-020 |
 | F-3 | RD-01's `till` context, which the exact mode serves for a scan, waits for its Task, as TASK-015's F-1 records | TASK-028, TASK-029 |
 | F-4 | `mode=exact` answers 422 to `perPage` and the other filters (reading 4), so a shared search component must not send them in that mode | TASK-017, TASK-029 |
+| F-5 | `SignInSessionTest::counts()` reads every table of the schema, in order of `id` unless it names another key, and the fast run does not hold it (section 12). A new table whose key is not `id` adds its line there | Each Task that adds such a table |
 
 ## 6. Checks (CE-44 to CE-46, D-108, D-117)
 
@@ -72,7 +73,11 @@ Fast runs of CI, the workflow `fast-checks`: `composer validate`, `lint`, `analy
 | **Fast run**: static checks, unit tests, `BarcodeRaceTest`, `CapabilityMatrixTest`, `RouteInventoryTest`, `BarcodeCommandsTest`, `BarcodeTablesTest`, `CatalogCommandsTest`, `ProductSearchTest` | CI run 41309171552 on `76e196f` | 1 Nov 20:00 | 9 min 20 s | **PASS** |
 | **Fast run**, the same, with the fixes of section 7 | CI run 41311601192 on `ea4fbe4` | 1 Nov 20:30 | 7 min 59 s | **PASS** |
 | Guard's preview and guard | Local, on each head | 1 Nov | under 1 min each | PASS, no candidate to judge |
-| The whole of `composer test:postgres`, `composer test:race`, the browser suite, `npm run build`, the image checks with the vulnerability gate | CI on the pull request's final head (CE-44, D-117) | — | — | `NOT_RUN` at this writing |
+| Image checks with the vulnerability gate | CI run 41312936376 on `4dc8c05` | 1 Nov 20:47 | 6 min 14 s | PASS on that head; runs again on the fix's head |
+| Static checks, `composer test:unit` | CI run 41312936376 on `4dc8c05` | 1 Nov 20:47 | within the job's 17 min 51 s | PASS |
+| `composer test:postgres`, the whole suite | CI run 41312936376 on `4dc8c05` | 1 Nov 20:51 | 13 min 50 s | **FAIL**, 1 error of 545 tests (section 12) |
+| `composer test:race`, the browser suite, `npm run lint`, `typecheck`, `test:unit` and `build` in that job | CI, skipped in run 41312936376 after the failure | — | — | `NOT_RUN` on `4dc8c05`; they run on the fix's head |
+| The whole command contract and the image checks | CI on the fix's head (CE-42, CE-44, D-117) | — | — | `NOT_RUN` at this writing |
 
 `npx tsc` and `npx eslint` have no local toolchain on this machine (TASK-014 evidence section 1); the TypeScript files changed are read by `npm run typecheck`, `npm run lint` and `npm run test:unit` in the fast run.
 
@@ -127,3 +132,10 @@ The fast run's results are on the Task's own test files; the whole suites run on
 ## 11. Backup impact (EXC-47)
 
 The three class F tables are in the manifest's counts without a change of code: `BackupRunner` counts the classes F, FS, M and S of the privilege matrix. `barcode_active_mappings` is class P, a projection that is not counted, and the dump holds it. No new kind of stored file.
+
+## 12. Fix cycle 1 on pull request #25 (CE-42, failure 1 of 3)
+
+- **The failure.** CI run 41312936376 on `4dc8c05`, job `Command contract`, step `composer test:postgres`: one error of 545 tests, `SignInSessionTest::test_signing_out_and_a_session_ending_change_nothing_but_the_sign_in_session_and_the_security_log`, with SQLSTATE 42703: `column "id" does not exist`, in `select * from "barcode_active_mappings" order by "id" asc`. The steps after it did not run. `Image checks` passed.
+- **The cause: a defect of the test, not of the code.** The test snapshots every table of the schema, ordered by `id` unless `counts()` names another key. `barcode_active_mappings` has the key `token_id` and `barcode_mapping_retirements` the key `mapping_id`; the second would have failed next, in the same way. The file is outside the fast run, which runs only the test files that the branch changes (CE-46), so this was the first run to reach it (CE-42, D-117). It is not intermittent: it fails on every run.
+- **The fix.** The two keys added to `counts()`, in `tests/Feature/Access/SignInSessionTest.php`. No production code changed, so no targeted verification is due (CE-42), and the failing test is its own regression test. F-5 tells later Tasks.
+- **Checks.** PHP does not run on this machine (D-108), so the fixed test was not run locally: `NOT_RUN` until CI on the fix's head, which runs the whole contract. The guard on the fix's commit is in the report of this cycle.

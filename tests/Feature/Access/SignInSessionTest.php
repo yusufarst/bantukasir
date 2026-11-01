@@ -241,6 +241,8 @@ final class SignInSessionTest extends DatabaseTestCase
                 'password_reset_tokens' => 'email',
                 'command_results' => 'command_id',
                 'intent_reconciliations' => 'report_id',
+                'barcode_mapping_retirements' => 'mapping_id',
+                'barcode_active_mappings' => 'token_id',
                 default => 'id',
             });
         }
