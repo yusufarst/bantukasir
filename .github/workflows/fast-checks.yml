@@ -1,0 +1,86 @@
+# The fast run of a task/ branch (EXECUTION_CONTEXT CE-46, TEST_STRATEGY section 7,
+# D-117): on every push, before and after the pull request, the static checks, the
+# unit tests and the PostgreSQL and concurrency test files that the branch changes,
+# in the containers of the local environment, stopping at the first failure. The
+# whole of PostgreSQL, concurrency, the browser suite, the build and the image
+# checks run in the ci workflow, on the pull request and on develop. It is its own
+# workflow so that a head never holds a skipped `Command contract`, which the tick
+# reads as red (scripts/executor/lib.sh). A newer push of the same branch cancels
+# its older run. It holds no secret and publishes nothing.
+name: fast-checks
+
+on:
+    push:
+        branches:
+            - "task/**"
+
+concurrency:
+    group: fast-checks-${{ github.ref }}
+    cancel-in-progress: true
+
+permissions:
+    contents: read
+
+jobs:
+    fast-checks:
+        name: Fast checks
+        runs-on: ubuntu-24.04
+        timeout-minutes: 30
+        steps:
+            - name: Check out the repository with its history
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  fetch-depth: 0
+                  persist-credentials: false
+
+            - name: Select the commits for the secret scan
+              id: commits
+              env:
+                  PUSH_BEFORE: ${{ github.event.before }}
+                  PUSH_AFTER: ${{ github.sha }}
+                  PUSH_REF: ${{ github.ref }}
+              run: |
+                  if [ -n "$PUSH_BEFORE" ] && [ "$PUSH_BEFORE" != 0000000000000000000000000000000000000000 ]; then
+                      log_opts="$PUSH_BEFORE..$PUSH_AFTER"
+                  else
+                      # A new branch: the commits that no other branch on GitHub holds.
+                      others="$(git for-each-ref --format='%(refname)' refs/remotes/origin | grep -v -x "refs/remotes/origin/${PUSH_REF#refs/heads/}" | grep -v -x 'refs/remotes/origin/HEAD' | tr '\n' ' ')"
+                      log_opts="$PUSH_AFTER --not $others"
+                  fi
+                  echo "log_opts=$log_opts" >> "$GITHUB_OUTPUT"
+
+            - name: Start the local environment (one command)
+              run: docker compose up -d --build --wait
+
+            - name: composer validate
+              run: docker compose exec -T app composer validate --strict --no-check-all
+
+            - name: composer lint
+              env:
+                  SECRET_SCAN_LOG_OPTS: ${{ steps.commits.outputs.log_opts }}
+              run: docker compose exec -T -e SECRET_SCAN_LOG_OPTS app composer lint
+
+            - name: composer analyse
+              run: docker compose exec -T app composer analyse
+
+            - name: composer test:unit
+              run: docker compose exec -T app composer test:unit
+
+            - name: Install the npm dependencies from the lockfile
+              run: docker compose run --rm node npm ci
+
+            - name: npm run lint
+              run: docker compose run --rm node npm run lint
+
+            - name: npm run typecheck
+              run: docker compose run --rm node npm run typecheck
+
+            - name: npm run test:unit
+              run: docker compose run --rm node npm run test:unit
+
+            - name: The PostgreSQL and concurrency test files that the branch changes
+              run: bash scripts/checks/targeted-tests.sh origin/develop
+
+            - name: Stop the local environment
+              if: always()
+              run: docker compose down

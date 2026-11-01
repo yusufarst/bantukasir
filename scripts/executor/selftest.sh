@@ -1295,12 +1295,22 @@ done
 [ -z "$miss" ] && pass "14 settings: the allow and deny entries of D-109" || failc "14 settings D-109:$miss"
 bad="$(printf '%s\n' "$allow_have" | grep -E '^Bash\((\*|npm \*|npx \*|node |timeout \*|sed|perl|python|awk|cd |bash \*|sh\)|cat |sleep)' || true)"
 [ -z "$bad" ] && pass "14 settings: no broad allow entry for Bash(*), npm *, npx *, node, timeout *, sed, perl, python, awk, cd, bash *, cat or sleep (D-109)" || failc "14 settings broad allow (D-109): $bad"
-# The executor agents of D-104 and D-108: one body, the steps, checkpoint runs
+# The workflows of D-117: a task/ push runs only the fast run, and the whole
+# contract and the image checks stay on the pull request and on develop.
+fast="$REPO_ROOT/.github/workflows/fast-checks.yml"
+full="$REPO_ROOT/.github/workflows/ci.yml"
+ok=1
+grep -qF '"task/**"' "$fast" || ok=0
+if grep -qE '^ +pull_request:|test:postgres|test:race|test:e2e|npm run build|image-checks' "$fast"; then ok=0; fi
+if grep -qF 'task/' "$full" && grep -qF '"task/**"' "$full"; then ok=0; fi
+for s in 'pull_request:' '- develop' '- main' 'composer test:postgres' 'composer test:race' 'npm run build' 'npm run test:e2e' 'bash scripts/checks/image-checks.sh' 'name: Command contract' 'name: Image checks' "cancel-in-progress: \${{ github.event_name == 'pull_request' }}"; do grep -qF -- "$s" "$full" || ok=0; done
+[ "$ok" = 1 ] && pass "13 the fast run is only on task/ pushes, and the whole verification only on pull requests and develop (D-117)" || failc "13 the workflows of D-117"
+# The executor agents of D-104, D-108 and D-117: one body, the steps, fast runs
 # of CI before the pull request, no wait for the pull request's CI.
 b0="$(tail -n +7 "$REPO_ROOT/.claude/agents/bk-executor-high.md")"
 ok=1
 for lvl in medium xhigh max; do [ "$(tail -n +7 "$REPO_ROOT/.claude/agents/bk-executor-$lvl.md")" = "$b0" ] || ok=0; done
-for s in '3. Checks (EXECUTION_CONTEXT CE-44 to CE-46):' 'run in a checkpoint run of CI, never in a container on this machine' '4. Review (CE-40), once:' '7. Report and end (CE-41, CE-60):' 'Do not wait for CI.' '- wait for the pull request'"'"'s CI, which the tick follows, or poll GitHub in a loop of model turns;' '- run a container of BantuKasir on this machine (D-108);' 'Tools (EXECUTION_CONTEXT CE-47, D-109)' '- prefix or chain commands, or change a file other than with Edit or Write (D-109);' 'timeout 2700 gh run watch <run> --exit-status' 'Never repeat the full review.' 'Mode `fix`: the delegation'"'"'s Reason names a red CI'; do printf '%s\n' "$b0" | grep -qF -- "$s" || ok=0; done
+for s in '3. Checks (EXECUTION_CONTEXT CE-44 to CE-46):' 'runs the workflow `fast-checks`' 'never in a container on this machine' 'never `PASS`' '4. Review (CE-40), once:' '7. Report and end (CE-41, CE-60):' 'Do not wait for CI.' '- wait for the pull request'"'"'s CI, which the tick follows, or poll GitHub in a loop of model turns;' '- run a container of BantuKasir on this machine (D-108);' 'Tools (EXECUTION_CONTEXT CE-47, D-109)' '- prefix or chain commands, or change a file other than with Edit or Write (D-109);' 'timeout 2700 gh run watch <run> --exit-status' 'Never repeat the full review.' 'Mode `fix`: the delegation'"'"'s Reason names a red CI'; do printf '%s\n' "$b0" | grep -qF -- "$s" || ok=0; done
 if printf '%s\n' "$b0" | grep -qF -e 'pr.sh wait-ci' -e '8. Green'; then ok=0; fi
 [ "$ok" = 1 ] && pass "13 the four executor agents share one body with the steps of D-104, D-108 and D-109, without a wait for the pull request's CI" || failc "13 the executor agents' bodies (D-104, D-108, D-109)"
 
@@ -1393,6 +1403,20 @@ expect_class "15 CI green in the phase CI gives WAKE CI_GREEN:<pr>:<head>:<seq>"
 fx_checks "$HEADSHA" "21|Command contract|completed|failure" "23|lint|completed|failure" "12|another app|completed|success"
 classify
 expect_class "15 CI red gives WAKE CI_RED:<pr>:<head>:<highest failed check run>" "^WAKE CI_RED:7:$HEADSHA:23 RUN fix TASK-003 agent=bk-executor-high "
+# The fast run of D-117 on a pull request's head: it never makes the head green,
+# and a red fast run or red image checks hold the merge.
+fx_checks "$HEADSHA" "12|Fast checks|completed|success"
+classify
+expect_class "15 a green fast run without the command contract gives QUIET NOOP CI_PENDING (D-117)" "^QUIET NOOP CI_PENDING pr=7 head=$HEADSHA 0 min$"
+fx_checks "$HEADSHA" "$GREEN" "12|Fast checks|completed|failure"
+classify
+expect_class "15 a red fast run with a green command contract is CI red (D-117)" "^WAKE CI_RED:7:$HEADSHA:12 RUN fix TASK-003 "
+fx_checks "$HEADSHA" "$GREEN" "12|Fast checks|completed|success" "13|Image checks|completed|failure"
+classify
+expect_class "15 red image checks with a green command contract are CI red (D-117)" "^WAKE CI_RED:7:$HEADSHA:13 RUN fix TASK-003 "
+fx_checks "$HEADSHA" "$GREEN" "12|Fast checks|completed|success" "13|Image checks|in_progress|"
+classify
+expect_class "15 image checks still running give QUIET NOOP CI_PENDING (D-117)" "^QUIET NOOP CI_PENDING pr=7 head=$HEADSHA 0 min$"
 fx_checks "$HEADSHA" "11|Command contract|in_progress|"
 classify
 expect_class "15 CI pending gives QUIET NOOP CI_PENDING" "^QUIET NOOP CI_PENDING pr=7 head=$HEADSHA 0 min$"
