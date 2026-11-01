@@ -226,9 +226,12 @@ final class ProductSearchTest extends DatabaseTestCase
 
         // A NUL, a control character, invalid UTF-8 and a text beyond the limit
         // never reach the database as a failure of its own.
-        foreach (['q=%00', 'q=a%00b', 'q=a%07b', 'q=%FF%FE', 'q='.str_repeat('a', 129)] as $query) {
+        foreach (['q=a%00b', 'q=a%07b', 'q=%FF%FE', 'q='.str_repeat('a', 129)] as $query) {
             $this->getJson(self::SEARCH.'?context=catalog&'.$query)->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
         }
+
+        // An outer NUL is white space to the framework's trimming: an empty search.
+        $this->getJson(self::SEARCH.'?context=catalog&q=%00')->assertOk();
 
         $this->search(['q' => str_repeat('a', 128)])->assertOk();
 
