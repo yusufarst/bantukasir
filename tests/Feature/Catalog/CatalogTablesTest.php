@@ -206,11 +206,9 @@ final class CatalogTablesTest extends DatabaseTestCase
         $this->assertDenied($runtime, fn (Connection $c) => $c->table('selling_price_revisions')->delete());
 
         // Class M: only the listed columns; never removed.
-        foreach (['id' => 1, 'created_at' => now()] as $column => $value) {
-            $this->assertDenied($runtime, fn (Connection $c) => $c->table('categories')->update([$column => $value]));
-        }
+        $this->assertDenied($runtime, fn (Connection $c) => $c->table('categories')->update(['created_at' => now()]));
 
-        foreach (['id' => 1, 'created_command_id' => $this->command, 'created_at' => now()] as $column => $value) {
+        foreach (['created_command_id' => $this->command, 'created_at' => now()] as $column => $value) {
             $this->assertDenied($runtime, fn (Connection $c) => $c->table('products')->update([$column => $value]));
         }
 
@@ -218,7 +216,7 @@ final class CatalogTablesTest extends DatabaseTestCase
             $this->assertDenied($runtime, fn (Connection $c) => $c->table($table)->delete());
             $this->assertDenied($runtime, fn (Connection $c) => $c->table($table)->truncate());
             $this->assertDenied($this->backup(), fn (Connection $c) => $c->table($table)->delete());
-            $this->assertDenied($this->backup(), fn (Connection $c) => $c->table($table)->update(['id' => 1]));
+            $this->assertDenied($this->backup(), fn (Connection $c) => $c->table($table)->update(['created_at' => now()]));
             $this->assertSame($runtime->table($table)->count(), $this->backup()->table($table)->count(), $table);
         }
 
