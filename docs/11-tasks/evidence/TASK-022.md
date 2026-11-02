@@ -29,10 +29,14 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | `tests/Feature/Inventory/ReceivingPagesTest.php` | Same run | 22:44 | 18 s | `PASS`, 5 tests, 12,233 assertions |
 | `tests/Feature/Inventory/StockAttentionTest.php` | Same run | 22:44 | 15 s | `PASS`, 4 tests, 178 assertions |
 | `tests/Feature/Inventory/StockPagesTest.php` | Same run | 22:44 | 25 s | `PASS`, 7 tests, 12,184 assertions |
-| `npx tsc --noEmit`, `npx eslint` | Local | 22:05 | — | `NOT_RUN`: neither is installed on this machine |
+| Guard (Gitleaks 8.30.1, the secret scan, identity, candidates) | Local, on `8bda0e0`, the review's fixes | 23:12 | under 1 min of scanning | `PASS`, no candidate |
+| `composer validate`, `lint`, `analyse`, `test:unit` | Fast run 41479313079 on `8bda0e0` | 23:16 to 23:17 | 1 min 7 s | `PASS` |
+| `npm run lint`, `typecheck`, `test:unit` | Same run | 23:18 to 23:19 | 1 min 0 s | `PASS` |
+| The PostgreSQL test files that the branch changes, with the new cases of R-01 and R-02 in `StockAttentionTest`, `StockPagesTest` and `ReceivingPagesTest`, and the changed `ReceivingsController` | Same run | 23:19 to 23:24 | 4 min 33 s | `PASS` |
+| `npx tsc --noEmit`, `npx eslint` | Local | 22:05, 23:10 | — | `NOT_RUN`: neither is installed on this machine |
 | The whole command contract — `test:postgres`, `test:race`, `build`, the browser suite with `tests/Browser/inventory/` and the changed browser files — and the image checks | CI on the pull request's final head | — | — | `NOT_RUN` at this writing (CE-41, D-117) |
 
-Fast run 4, 41473137685 on `65bb79d`, is the run of the code to review: four fast runs of the 10 that CE-46 allows.
+Fast run 4, 41473137685 on `65bb79d`, is the run of the code to review; fast run 5, 41479313079 on `8bda0e0`, that of the review's fixes (section 7): five fast runs of the 10 that CE-46 allows. The new browser tests of R-03 and the changed `ReceivingCreate.tsx` run first in the browser suite on the pull request's final head.
 
 ## 2. What was built (contract section 4.1)
 
@@ -65,9 +69,35 @@ Fast run 4, 41473137685 on `65bb79d`, is the run of the code to review: four fas
 - **F-1, for the next change control of COPY_DECK:** two keys of this Task's pages cannot be read from their rows by `CopyDeckTest`, whose cells name keys alone or in lists separated by "; ": `inventory.receipt_new.reference` (section 9.6, UXI-238, in a cell "…, each + `ux.action.optional`") and `catalog.product_detail.stock_now` (section 8.3, UXI-167, in a cell with `inventory.state.*`). The page uses `inventory.receipts.col_reference` "Referensi", the same text, for the reference field, and shows UXI-167's stock and state with `inventory.stock.col_stock` and `inventory.stock.col_state`; no text changes. The approved artifact is not edited.
 - **F-2, for TASK-017's control UXI-162 or the next change control:** the state of a row of UXP-301 needs RD-01's stock, which TASK-021 added, and a column whose header COPY_DECK section 8.2 does not name. UXI-162 is not among this Task's controls (TRACEABILITY section 9.2), so UXP-301 is unchanged.
 - **F-3, for TASK-048:** RP-402 without a product filter orders by `stock_movements.recorded_at`, and RP-404 by `receiving_documents.confirmed_at`, neither of which has an index; each page is bounded, and its plan sorts the rows of the filter. An index, if the budgets need one, is a new migration (EXC-41).
-- **F-5.** Three fast runs were spent on static checks that do not run on this machine: a double-quoted string that Pint wants single (run 1), PHPStan's level 9 on `mixed` in the new tests, a test helper `sorted()` that shadowed `ChannelInspector::sorted()`, and a needless `array_values` (run 2), and literals in JSX attributes, a state identifier and a template (run 3). Each was a defect of the change, fixed in the next checkpoint.
 - **F-4, from TASK-021 F-3:** a body of RC-07 above RT-12's 1 MiB, possible only with 500 lines of nearly 1,000 characters of the Owner's zero evidence outside ASCII, is refused whole; the page does not warn before it. Recorded, not built: no text of COPY_DECK names it.
+- **F-5.** Three fast runs were spent on static checks that do not run on this machine: a double-quoted string that Pint wants single (run 1), PHPStan's level 9 on `mixed` in the new tests, a test helper `sorted()` that shadowed `ChannelInspector::sorted()`, and a needless `array_values` (run 2), and literals in JSX attributes, a state identifier and a template (run 3). Each was a defect of the change, fixed in the next checkpoint.
+- **F-6, for TASK-048 or a later change of RP-401:** the review's notes R-08 and R-09, recorded and not changed. A refresh of UXP-401 after "Muat lebih banyak" past 100 rows reads its pages one after another, so the counts shown are those of its first page's snapshot, never of a mixture (R-08). A failed "Muat lebih banyak" keeps the rows with UXS-21's notice and its "Coba lagi", where UI_STATES names UXS-22 for a part that cannot load; the text differs, the recovery is the same (R-09).
 
-## 5. Review (CE-40)
+## 5. Definition of Done (TEST_STRATEGY section 10)
+
+| Dimension | Result | Reason |
+| --- | --- | --- |
+| Business | PASS on the fast runs, the L5 criteria subject to CI on the final head | AC-022-01 to AC-022-06 below; the requirements of contract section 5 |
+| UI and UX | PASS subject to CI on the final head | The pages of KS-08 and KS-09 and their controls against the approved P7 artifacts (EXC-50 to EXC-53), COPY_DECK verbatim (`CopyDeckTest`); their browser tests, with axe, the widths and the contrast, run first on the pull request's final head (D-117); F-1 and F-2 |
+| Backend | PASS on the fast runs | The FormRequests' allowlists, the cursor's shape and its texts refused as VALIDATION_FAILED (R-02), object scope with NOT_FOUND, the DTOs and the channel allowlists of every role, L4 tests |
+| Database | N/A | No migration (contract section 9); no index added, F-3 |
+| Security | PASS on the fast runs | CAP-11 and CAP-14 at each route, the cashier and a visitor refused, the route inventory and the capability matrix; no cost to a staff account but RP-406's purchase cost (CAP-12); a zero's evidence and RP-403's cost evidence under CAP-20; the draft never in the browser's storage; no secret; the static checks |
+| Data integrity | N/A | The pages write no business fact; RC-07 is TASK-021's |
+| Performance | PASS | Each read bounded: keyset pages of at most 100 rows, RD-02 one statement; the budgets are measured at TASK-048 (F-3) |
+| Operations | N/A | No backup, runbook or status impact |
+| Verification | PASS subject to CI on the final head | Self-review; the review of class A and the targeted verification of its MUST-FIX (section 7); fast runs green on the reviewed code and on the fixes (section 1); the whole command contract and the image checks run on the pull request's final head (CE-41, D-117) |
+
+## 6. Acceptance criteria
+
+| Criterion | Status | Where |
+| --- | --- | --- |
+| AC-022-01 | PASS on the fast run | `StockAttentionTest`: the thresholds of minimum 5 and 0, a new product Habis, the badge and the list from one definition and equal to the Domain's `StockState` |
+| AC-022-02 | PASS subject to CI on the final head | `stock.spec.ts`: the refresh every 30 seconds while visible and on focus, as background reads, and a failed refresh keeping the rows with their time (UXS-21) |
+| AC-022-03 | PASS subject to CI on the final head | `receiving.spec.ts`: the review and its confirmation, never Enter; the draft absent from the browser's storage; the uncertain answer and each refusal (R-03) |
+| AC-022-04 | PASS on the fast run | `ReceivingPagesTest`, `StockPagesTest`, `StockAttentionTest` and the channel allowlists: the purchase cost of RP-406 for Operations, never an average cost, cost of goods sold, margin, profit or value; the cashier refused on every route |
+| AC-022-05 | PASS on the fast run | `StockAttentionTest`, `StockPagesTest`, `ReceivingPagesTest`: keyset pages both ways, a cursor past a name of 200 characters (R-01), the payload of each role under CAP-14 |
+| AC-022-06 | PASS subject to CI on the final head | `stock.spec.ts`, `receiving.spec.ts`: KS-08 and KS-09 with their states, axe and the measurements at the widths of KEY_SCREENS section 4 named in the tests; R-06 |
+
+## 7. Review (CE-40)
 
 **Self-review** of the whole change against the contract's scope items 1 to 4 and the rules it cites, before the isolated review: each item is built as section 2 says; nothing out of scope (no adjustment, reversal, cost correction, incident or migration); every route with its gate, the parameters of its row as allowlists and NOT_FOUND for a guessed identifier; no cost on a staff account's page but the purchase cost of RP-406 (CAP-12), and the cost evidence of RP-403 for the Owner alone; the draft of RP-405 in page memory only; the 37 controls of section 4.2 against TRACEABILITY section 9.2, with those of later Tasks absent (reading 13). It found the empty typed search of RP-405 shown as an unknown code, fixed before fast run 2 to UXS-03.

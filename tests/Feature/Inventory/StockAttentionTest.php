@@ -149,6 +149,8 @@ final class StockAttentionTest extends DatabaseTestCase
         $this->assertSame(200, mb_strlen($long));
         TokoContoh::product('ATT-L1', ['name' => $long, 'categoryId' => $this->otherCategory]);
         TokoContoh::product('ATT-L2', ['name' => str_repeat("\u{1D538}", 198).' 2', 'categoryId' => $this->otherCategory]);
+        // A name of line and paragraph separators, which no rule of a name refuses (review finding R-11).
+        TokoContoh::product('ATT-L3', ['name' => 'A'.str_repeat("\u{2028}\u{2029}", 99).'Z', 'categoryId' => $this->otherCategory]);
         $this->as('Agus');
 
         $seen = [];
@@ -161,7 +163,7 @@ final class StockAttentionTest extends DatabaseTestCase
         } while (is_string($after) && count($seen) < 20);
 
         sort($seen, SORT_STRING);
-        $this->assertSame(['ATT-0', 'ATT-1', 'ATT-5', 'ATT-6', 'ATT-L1', 'ATT-L2', 'ATT-M0', 'ATT-NEW'], $seen);
+        $this->assertSame(['ATT-0', 'ATT-1', 'ATT-5', 'ATT-6', 'ATT-L1', 'ATT-L2', 'ATT-L3', 'ATT-M0', 'ATT-NEW'], $seen);
     }
 
     public function test_the_parameters_are_allowlists(): void

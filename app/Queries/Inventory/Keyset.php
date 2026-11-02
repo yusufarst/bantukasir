@@ -36,7 +36,8 @@ final class Keyset
      */
     public static function encode(array $position): string
     {
-        return rtrim(strtr(base64_encode(json_encode($position, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)), '+/', '-_'), '=');
+        // U+2028 and U+2029 too, which JSON_UNESCAPED_UNICODE alone still escapes in six bytes (review finding R-11).
+        return rtrim(strtr(base64_encode(json_encode($position, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_LINE_TERMINATORS)), '+/', '-_'), '=');
     }
 
     /**
