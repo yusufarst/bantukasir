@@ -343,3 +343,64 @@ test('an answer lost freezes the draft as it was sent, "Kirim ulang" sends the s
     expect(injected(watched.problems)).toEqual([]);
     await context.close();
 });
+
+test('a scan still out when the request is sent adds nothing to the frozen draft, and its loading state ends', async ({ browser }) => {
+    const context = await contextAt(browser, WIDTHS[0]!);
+    const page = await context.newPage();
+    const watched = await watch(page);
+
+    await signedIn(context, page, 'Dewi');
+    const product = await newProduct(page);
+    await received(page, product, '4');
+    await draftOf(page, product, '1');
+
+    // A scan whose answer is held until the request was sent and its answer lost (pull request #32, finding P2).
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+        release = resolve;
+    });
+    await page.route('**/data/products/search**', async (route) => {
+        await held;
+        await route.continue();
+    });
+    const sent: ReturnType<typeof envelopeOf>[] = [];
+    await page.route(CONFIRM_ROUTE, async (route) => {
+        sent.push(envelopeOf(route.request()));
+        await (sent.length === 1 ? route.abort('failed') : route.continue());
+    });
+    const form = page.getByRole('form', { name: 'Catat barang keluar' });
+    const searching = page.waitForRequest((request) => request.url().includes('/data/products/search'));
+    await scan(page, product.barcode);
+    await searching;
+    await expect(form.locator('[data-state="loading"]')).toHaveCount(1);
+
+    // UXS-14, and the search's loading state ends with the freeze.
+    await sendReview(page);
+    await expect(page.getByText('Status belum pasti', { exact: true })).toBeVisible();
+    await expect(form.locator('[data-state="loading"]')).toHaveCount(0);
+
+    // The held answer arrives after the freeze: the line keeps its quantity and the field its code.
+    const answered = page.waitForResponse((response) => response.url().includes('/data/products/search'));
+    release();
+    await (await answered).finished();
+    await page.evaluate(
+        () =>
+            new Promise<void>((resolve) => {
+                window.setTimeout(resolve, 500);
+            }),
+    );
+    await expect(line(page, product.name)).toHaveCount(1);
+    await expect(line(page, product.name).getByLabel('Jumlah', { exact: true })).toHaveValue('1');
+    await expect(page.getByLabel('Cari atau scan produk', { exact: true })).toHaveValue(product.barcode);
+
+    // "Kirim ulang" sends the request as it was reviewed, and the issue holds the one unit.
+    await Promise.all([page.waitForURL((url) => /^\/stock\/issues\/\d+$/.test(url.pathname)), page.getByRole('button', { name: 'Kirim ulang' }).click()]);
+    await expect(page.getByText('Barang keluar tercatat.')).toBeVisible();
+    expect(sent).toHaveLength(2);
+    expect(sent[1]).toEqual(sent[0]);
+    expect(sent[0]?.payload).toMatchObject({ lines: [{ productId: product.id, quantity: '1' }] });
+    await expect(page.getByRole('main').getByRole('table').getByRole('row').filter({ hasText: product.name })).toContainText('1 pcs');
+
+    expect(injected(watched.problems)).toEqual([]);
+    await context.close();
+});

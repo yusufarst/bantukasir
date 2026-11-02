@@ -259,10 +259,16 @@ function IssueForm({ title, postingFrozen }: IssueCreateProps & { title: string 
 
     useEffect(() => () => void supersede(), []);
 
+    /** Ends every search still out, and its loading or failed state, which nothing would end then; results already shown stay. */
+    const endSearches = (): void => {
+        supersede();
+        setResults((current) => (current.kind === 'searching' || current.kind === 'failed' ? { kind: 'none' } : current));
+    };
+
     // A frozen request ends every search still out, so that no answer changes the lines that were sent (pull request #32, finding P2).
     useEffect(() => {
         if (frozen) {
-            supersede();
+            endSearches();
         }
     }, [frozen]);
 
@@ -423,7 +429,7 @@ function IssueForm({ title, postingFrozen }: IssueCreateProps & { title: string 
         }
 
         // No search still out may add to the lines once they are sent.
-        supersede();
+        endSearches();
         setSent(lines);
         control.submit(
             {
@@ -506,7 +512,7 @@ function IssueForm({ title, postingFrozen }: IssueCreateProps & { title: string 
     const resultsView = (
         <>
             {results.kind === 'searching' && <Loading lines={1} />}
-            {results.kind === 'failed' && <LoadFailed onRetry={() => runSearch(results.text, results.exact)} />}
+            {results.kind === 'failed' && !frozen && <LoadFailed onRetry={() => runSearch(results.text, results.exact)} />}
             {results.kind === 'unknown' && <UnknownCode code={results.code} />}
             {results.kind === 'inactive' && <StateNotice state={INACTIVE_STATE} body={t('ux.state.inactive.product.body', { produk: results.product.name })} />}
             {results.kind === 'rows' && results.rows.length > 0 && (
