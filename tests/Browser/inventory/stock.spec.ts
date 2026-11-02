@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect as baseExpect, test, type BrowserContext, type Page } from '@playwright/test';
-import { ACCESS_TIMEOUT, ACCESS_WAIT, resetPeople, SECURE_LOCAL_ORIGIN, signIn, type Person } from '../support/access';
+import { ACCESS_TIMEOUT, ACCESS_WAIT, HOME, resetPeople, SECURE_LOCAL_ORIGIN, signIn, type Person } from '../support/access';
 import { injected, prepareCommands } from '../support/commands';
 import { measure } from '../support/measure';
 import { contextAt, watch, WIDTHS } from '../support/specimen';
@@ -261,7 +261,9 @@ test('the badge of "Stok" shows the number of RD-03 with its name (UXI-006)', as
 
     await page.route(SHELL_DATA, (route) => route.fulfill({ json: { unresolvedRequests: 0, stockAttention: 7, asOf: '2026-11-02T03:00:00.000000Z' } }));
     await signedIn(context, page, 'Hendra');
-    await page.goto('/products');
+    // The shell's page of the Owner's home: its content holds no rows that other tests of the
+    // shared database add, so the checks below measure the badge and the shell alone.
+    await page.goto(HOME);
 
     const stock = page.getByRole('navigation', { name: 'Menu utama' }).getByRole('link', { name: /^Stok/ });
     await expect(stock).toContainText('7');

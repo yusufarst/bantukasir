@@ -590,6 +590,7 @@ function ReceivingForm({ title, postingFrozen, zeroAllowed, categories }: Receiv
                 <CommandForm label={title}>
                     <CodeField label={t('inventory.line.search')} hint={t('inventory.line.search_hint')} disabled={frozen} error={results.kind === 'invalid' ? catalogFieldMessage(results.fields.q) : undefined} value={search} onValueChange={edited} onEnter={lookUp} inputRef={searchField} />
                     {resultsView}
+                    {lineViews.length > 0 && <h2 className={'bk-sr-only'}>{t('inventory.line.product')}</h2>}
                     {lineViews.length > 0 && (
                         <ul className={'bk-stack'} aria-label={t('inventory.receipt_new.title')}>
                             {lineViews.map(({ line, quantityError, costError, evidenceError, marked }) => (

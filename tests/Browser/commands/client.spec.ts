@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect as baseExpect, test, type Page, type Request, type Route } from '@playwright/test';
-import { ACCESS_TIMEOUT, ACCESS_WAIT, HOME, resetPeople, SECURE_LOCAL_ORIGIN, signIn, type Account } from '../support/access';
+import { ACCESS_TIMEOUT, ACCESS_WAIT, HOME, homeOf, resetPeople, SECURE_LOCAL_ORIGIN, signIn, type Account } from '../support/access';
 import { COMMAND_SPECIMEN, envelopeOf, injected, prepareCommands, PROBE_ROUTE, refusal, refuse, RESOLVE_ROUTE, storedReferences } from '../support/commands';
 import { watch } from '../support/specimen';
 
@@ -315,7 +315,9 @@ test('a repeat of an uncertain request that runs nothing keeps its reference and
 
     // 401: the page leaves the sign-in session with the reference kept, and
     // the page of the family then opens on the request's panel (NC-13 (b)).
-    await Promise.all([page.waitForURL((url) => url.pathname === HOME), panel(page).getByRole('button', { name: 'Kirim ulang' }).click()]);
+    // The browser loads `/`, which sends Agus, still signed in on the server,
+    // to his home, Stok since TASK-022 (RN-01).
+    await Promise.all([page.waitForURL((url) => url.pathname === homeOf('Agus')), panel(page).getByRole('button', { name: 'Kirim ulang' }).click()]);
     expect(sent).toHaveLength(4);
     expect(new Set(sent.map((request) => envelopeOf(request).sourceIntentId)).size).toBe(1);
     expect(await storedReferences(page)).toEqual(kept);

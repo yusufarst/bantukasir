@@ -76,6 +76,7 @@ Fast run 4, 41473137685 on `65bb79d`, is the run of the code to review; fast run
 - **F-4, from TASK-021 F-3:** a body of RC-07 above RT-12's 1 MiB, possible only with 500 lines of nearly 1,000 characters of the Owner's zero evidence outside ASCII, is refused whole; the page does not warn before it. Recorded, not built: no text of COPY_DECK names it.
 - **F-5.** Three fast runs were spent on static checks that do not run on this machine: a double-quoted string that Pint wants single (run 1), PHPStan's level 9 on `mixed` in the new tests, a test helper `sorted()` that shadowed `ChannelInspector::sorted()`, and a needless `array_values` (run 2), and literals in JSX attributes, a state identifier and a template (run 3). Each was a defect of the change, fixed in the next checkpoint.
 - **F-6, for TASK-048 or a later change of RP-401:** the review's notes R-08 and R-09, recorded and not changed. A refresh of UXP-401 after "Muat lebih banyak" past 100 rows reads its pages one after another, so the counts shown are those of its first page's snapshot, never of a mixture (R-08). A failed "Muat lebih banyak" keeps the rows with UXS-21's notice and its "Coba lagi", where UI_STATES names UXS-22 for a part that cannot load; the text differs, the recovery is the same (R-09).
+- **F-7, for TASK-017's list UXP-301 or a later change of it, an open question for the Owner:** `.bk-product-cell a` sets `min-width: 0` over `.bk-table-link`'s 44 px, so on UXP-301 a product with a short name — "Satu", which `import.spec.ts` imports — has a link 30 px wide, below UXA-07's 44 × 44. It predates this Task, which changes neither `components.css` nor `Products.tsx`; it showed only because this Task's badge test measured UXP-301 after `import.spec.ts` had run (section 12). UXP-401's rows use `.bk-table-link` alone and keep 44 px.
 
 ## 5. Definition of Done (TEST_STRATEGY section 10)
 
@@ -224,3 +225,40 @@ CI run 41494562925 on `912c103` passed everything up to the browser suite, which
 | The whole command contract with the browser suite, and the image checks | CI on the pull request's new head | — | — | `NOT_RUN` at this writing (CE-41, D-117) |
 
 Nine fast runs of the 10 that CE-46 allows, with this cycle's.
+
+## 12. Fix cycle 4 on pull request #31 (CE-42, failure 3 of 3)
+
+CI run 41506729991 on `47118eb` passed every step of the command contract but `npm run test:e2e`, and the image checks. The browser suite ran whole for the first time: 279 tests passed, 7 failed, 2 did not run (11.2 min). Fast run 9 on `47118eb` had passed. Three defects of this Task's change, each shown by the log of the failed step:
+
+| Failed tests | What the log shows | Cause | Fix |
+| --- | --- | --- | --- |
+| `client.spec.ts:285`, the 401 on a repeat of an uncertain request | `page.waitForURL` for `/account` until the test's 2 minutes; the page was on `/stock`, its address replaced by each background refresh | The browser loads `/` after a 401 (`leaveSignedInSession`), and `HomeRedirectController` sends Agus, still signed in on the server, to `Homes::of`, which this Task made Stok for Operations (RN-01). The test, of TASK-009, still waited for `HOME` | The test waits for `homeOf('Agus')`, as the other tests of Agus do since this Task. No production code |
+| `receiving.spec.ts:120`, `:275`, `:313`, `:419` at 640 × 400 and 320 × 640 | Axe `heading-order: h3` at the first check with a line in the draft; the checks without a line passed | UXP-405 headed each line with a level-3 `Section` straight after the page's level-1 title | `ReceivingCreate.tsx`: as KS-09 places it, one level-2 heading `inventory.line.product` "Produk", for assistive technology only (`bk-sr-only`, out of the layout), stands before the lines while there are any; each line keeps its level-3 heading and its style (R-23) |
+| `stock.spec.ts:259`, the badge of "Stok" | `smallTargets`: `a "Satu" 30x44` | The test measured UXP-301 for Hendra, whose list held "Satu", imported by `import.spec.ts` earlier in the run, with the 30 px link of F-7 | The test checks the badge on Hendra's home, `HOME`, whose page `shell.spec.ts` already measures for him (test 277 of the run passed); the badge, its number and its name are asserted as before |
+
+Each failing test is its own regression test: on `47118eb` each fails as above, and each fix removes the cause the log shows. The steps after each failed check had not run; they were read again against the pages before the push: UXP-303 over UXP-405 and its way back, the review, UXP-406 with its `Committed` note, the movement's link and UXP-403's way back by the referrer (`strict-origin-when-cross-origin` keeps a same-origin address), the targets of the line's controls (`.bk-input`, `.bk-chip`, `.bk-btn`, `.bk-table-link` and `.bk-error-summary a`, each at least 44 px), and the width of a level-2 name of 15 letters at 320 px. Axe reported no other rule at any failed check. R-22 is not changed (section 11).
+
+**Targeted verification** (CE-42: the fix changes the markup of UXP-405 in a class-A Task), by `bk-reviewer-high` at High:
+
+| Round | Package | Verdict |
+| --- | --- | --- |
+| 6 | `review/TASK-022/r6`, head `47118eb` with the fix uncommitted, previous `r5`; `--check`, run only after the executor's fixes of R-23 and R-24, `CHANGED tree`; the package `review/TASK-022/r7`, previous `r6`, shows in its `fix.patch` that the tree differs from r6's by those fixes and this record alone, so the read-only review changed nothing | PASS: the three failures FIXED, subject to CI; no MUST-FIX; two SHOULD-FIX, one NOTE. Its reading of the steps never run: no step judged likely to fail |
+
+| Finding | Severity | Outcome |
+| --- | --- | --- |
+| R-23: the fix as reviewed made each line's `Section` level 2, so the names took `bk-h2`, the style of a section heading, where DESIGN_SYSTEM gives card titles and lines the subheading and KS-09 puts one hidden level-2 "Produk" above the lines | SHOULD-FIX | Fixed as KS-09 does, above: the lines keep level 3 and `bk-h3`; the hidden level-2 heading is an absolutely positioned `bk-sr-only` element, which takes no track of the form's grid and which `measure()` skips (`clip-path: inset(50%)`). The heading order is h1, h2, h3 for each line, then the review dialog's h2 |
+| R-24: CURRENT_HANDOFF named no fix cycle 4 and still said that one remained | SHOULD-FIX | Fixed: its bullet of fix cycle 4 |
+| R-25: `receiving.spec.ts:229`'s `toContainText('2')` on the first row always holds, through the year of its date | NOTE | Recorded: not part of the failure; for a later change of the test, the document's reference or address in the first row |
+
+**Checks of the cycle** (CE-45). The fix changes `ReceivingCreate.tsx` and two browser test files; no PHP, no PostgreSQL test and no unit test changes, so `composer validate`, `lint`, `analyse`, `test:unit`, `test:postgres` and `test:race` of run 41494562925 on `912c103` and the image checks of run 41506729991 stay valid for what the fix does not touch, and the whole contract runs again on the new head.
+
+| Check | Where it ran | Time | Duration | Result |
+| --- | --- | --- | --- | --- |
+| `npm run test:e2e` | CI run 41506729991 on `47118eb` | 3 November, 02:31 to 02:43 | 11 min 40 s | `FAIL`: 7 of 288, above |
+| The other steps of the command contract, and the image checks | Same run | 3 November, 02:05 to 02:43 | 37 min 15 s; 7 min 13 s | `PASS` |
+| `npx eslint`, `npm run typecheck` | Local | 3 November, 02:51 | — | `NOT_RUN`: the Node toolchain is not installed on this machine |
+| Guard, preview on the working tree | Local | 3 November, 03:01 | under 1 min | `PASS`, no candidate |
+| `npm run lint`, `typecheck`, `test:unit`; the PHP static checks and unit tests | Fast run 10 on the fix's commit | — | — | `NOT_RUN` at this writing; its result is in the executor's report |
+| The whole command contract with the browser suite, and the image checks | CI on the pull request's new head | — | — | `NOT_RUN` at this writing (CE-41, D-117) |
+
+Ten fast runs of the 10 that CE-46 allows, with this cycle's. This is the last fix cycle of CE-42: a fourth red CI is the stop `CI_FAILURE_LIMIT`.
