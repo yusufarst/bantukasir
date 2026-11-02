@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Inventory;
 
+use App\Domain\Access\Capabilities;
+use App\Domain\Access\Capability;
 use App\Domain\Access\Role;
 use App\Domain\Inventory\OnboardingState;
 use App\DTO\Catalog\CategoryRowData;
@@ -51,7 +53,9 @@ final class ReceivingsController
      */
     public function show(Request $request, string $document, ReceivingDocuments $documents): Response
     {
-        $read = $documents->detail($document, self::isOwner($request->user()));
+        // A zero's evidence or reason is cost evidence, CAP-20's, as on UXP-403 (review finding R-10).
+        $viewer = $request->user();
+        $read = $documents->detail($document, $viewer instanceof User && Capabilities::allows($viewer, Capability::Cap20));
 
         return Inertia::render('inventory/Receiving', $read);
     }

@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect as baseExpect, test, type BrowserContext, type Page } from '@playwright/test';
 import { ACCESS_TIMEOUT, ACCESS_WAIT, homeOf, resetPeople, SECURE_LOCAL_ORIGIN, signIn, type Person } from '../support/access';
-import { injected, prepareCommands } from '../support/commands';
+import { envelopeOf, injected, prepareCommands, refusal } from '../support/commands';
 import { measure } from '../support/measure';
 import { contextAt, watch, WIDTHS } from '../support/specimen';
 
@@ -72,8 +72,8 @@ async function fillAndSave(page: Page, fields: { sku: string; category: string }
     await page.getByRole('button', { name: 'Simpan produk' }).click();
 }
 
-/** A new product with a barcode through UXP-303; the page is left on its UXP-302. */
-async function newProduct(page: Page, category: string): Promise<{ name: string; sku: string; barcode: string }> {
+/** A new product with a barcode through UXP-303, and its internal key; the page is left on its UXP-302. */
+async function newProduct(page: Page, category: string): Promise<{ id: number; name: string; sku: string; barcode: string }> {
     const product = { name: `Z${letters(14)}`, sku: `SKU-${letters(8)}`, barcode: digits() };
 
     await page.goto('/products/new');
@@ -84,7 +84,24 @@ async function newProduct(page: Page, category: string): Promise<{ name: string;
     await fillAndSave(page, { sku: product.sku, category });
     await page.waitForURL((url) => /^\/products\/\d+$/.test(url.pathname));
 
-    return product;
+    return { id: Number(new URL(page.url()).pathname.split('/').pop()), ...product };
+}
+
+/** RC-07's route (ROUTE_CONTRACTS RC-07). */
+const CONFIRM_ROUTE = '**/commands/receiving.confirm';
+
+/** "Tinjau", then the review's confirmation, which sends RC-07. */
+async function sendReview(page: Page): Promise<void> {
+    await page.getByRole('button', { name: 'Tinjau' }).click();
+    await page.getByRole('dialog', { name: 'Tinjau barang masuk' }).getByRole('button', { name: /^Konfirmasi barang masuk/ }).click();
+}
+
+/** UXP-405 with a draft of one line of the product, its cost filled. */
+async function draftOf(page: Page, product: { name: string; barcode: string }): Promise<void> {
+    await page.goto('/stock/receivings/new');
+    await scan(page, product.barcode);
+    await expect(line(page, product.name)).toHaveCount(1);
+    await line(page, product.name).getByLabel('Biaya', { exact: true }).fill('4000');
 }
 
 /** The line of the draft for a product. */
@@ -250,6 +267,115 @@ test('leaving a draft asks first, and Enter in a field sends nothing', async ({ 
     await Promise.all([page.waitForURL((url) => url.pathname === '/stock/receivings'), dialog.getByRole('button', { name: 'Tinggalkan' }).click()]);
     expect(sent).toBe(0);
 
+    await context.close();
+});
+
+// Review finding R-03: UXS-14 and the refusals of RC-07 on UXP-405 (INTERACTION_CONTRACTS section
+// 1.3; UI_STATES section 6).
+test('an answer lost freezes the draft as it was sent, and "Kirim ulang" sends the same intent, which commits', async ({ browser }) => {
+    const context = await contextAt(browser, WIDTHS[0]!);
+    const page = await context.newPage();
+    const watched = await watch(page);
+
+    await signedIn(context, page, 'Agus');
+    const category = await newCategory(page);
+    const product = await newProduct(page, category);
+
+    await draftOf(page, product);
+    const sent: ReturnType<typeof envelopeOf>[] = [];
+    await page.route(CONFIRM_ROUTE, async (route) => {
+        sent.push(envelopeOf(route.request()));
+        await (sent.length === 1 ? route.abort('failed') : route.continue());
+    });
+    await sendReview(page);
+
+    // UXS-14: the draft frozen as it was sent, with "Kirim ulang" and "Cek status".
+    await expect(page.getByText('Status belum pasti', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Kirim ulang' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Cek status' })).toBeVisible();
+    await expect(line(page, product.name).getByLabel('Jumlah', { exact: true })).toBeDisabled();
+    await expect(line(page, product.name).getByLabel('Biaya', { exact: true })).toBeDisabled();
+    await expect(page.getByLabel('Cari atau scan produk', { exact: true })).toBeDisabled();
+    await expect(page.getByLabel(/^Referensi/)).toBeDisabled();
+    await checked(page);
+
+    // "Kirim ulang" sends the same request — the same intent, key and lines — which commits.
+    await Promise.all([page.waitForURL((url) => /^\/stock\/receivings\/\d+$/.test(url.pathname)), page.getByRole('button', { name: 'Kirim ulang' }).click()]);
+    await expect(page.getByText('Barang masuk tercatat.')).toBeVisible();
+    expect(sent).toHaveLength(2);
+    expect(sent[1]).toEqual(sent[0]);
+    expect(sent[0]?.payload).toMatchObject({ lines: [{ productId: product.id, quantity: '1', cost: { status: 'KNOWN', amount: '4000' } }] });
+
+    expect(injected(watched.problems)).toEqual([]);
+    await context.close();
+});
+
+test('each refusal of RC-07 returns to the draft with its line marked and its message', async ({ browser }) => {
+    const context = await contextAt(browser, WIDTHS[0]!);
+    const page = await context.newPage();
+    const watched = await watch(page);
+
+    await signedIn(context, page, 'Agus');
+    const category = await newCategory(page);
+    const product = await newProduct(page, category);
+
+    await draftOf(page, product);
+    let answer: { status: number; json: Record<string, unknown> } = { status: 422, json: refusal('VALIDATION_FAILED') };
+    await page.route(CONFIRM_ROUTE, (route) => route.fulfill(answer));
+    const named = { 0: { productId: product.id } };
+    const marked = () => line(page, product.name).locator('[data-marked="true"]');
+    const kept = async (): Promise<void> => {
+        await expect(page.getByRole('dialog')).toHaveCount(0);
+        await expect(line(page, product.name)).toHaveCount(1);
+        await expect(line(page, product.name).getByLabel('Biaya', { exact: true })).toHaveValue('4.000');
+    };
+
+    // VALIDATION_FAILED: each field at its line, by the line's index as sent, and the document's own.
+    answer = {
+        status: 422,
+        json: { ...refusal('VALIDATION_FAILED'), fields: { 'payload.lines.0.quantity': [{ key: 'ux.validation.quantity_max', params: {} }], 'payload.reference': [{ key: 'ux.validation.text_max', params: { maks: 100 } }] } },
+    };
+    await sendReview(page);
+    await kept();
+    await expect(page.getByText('Periksa isian', { exact: true }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: `${product.name}: Jumlah`, exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Referensi', exact: true })).toBeVisible();
+    await expect(line(page, product.name).getByText('Jumlah terlalu besar. Paling banyak 99.999.999,999.')).toBeVisible();
+    await expect(page.getByText('Paling banyak 100 karakter.')).toHaveCount(2);
+    await checked(page);
+
+    // STALE_VERSION: the product read again, its line marked.
+    answer = { status: 409, json: { ...refusal('STALE_VERSION'), lines: named } };
+    const reread = page.waitForRequest((request) => request.url().includes('/data/products/search') && new URL(request.url()).searchParams.get('q') === product.sku);
+    await sendReview(page);
+    await kept();
+    await expect(page.getByText('Data sudah berubah', { exact: true }).first()).toBeVisible();
+    await reread;
+    await expect(marked()).toHaveCount(1);
+    await expect(page.getByRole('link', { name: 'Referensi', exact: true })).toHaveCount(0);
+
+    // ONBOARDING_FREEZE.
+    answer = { status: 409, json: refusal('ONBOARDING_FREEZE') };
+    await sendReview(page);
+    await kept();
+    await expect(page.getByText('Masa input stok awal aktif', { exact: true }).first()).toBeVisible();
+
+    // PRODUCT_INACTIVE: the product named, its line marked.
+    answer = { status: 409, json: { ...refusal('PRODUCT_INACTIVE'), lines: named } };
+    await sendReview(page);
+    await kept();
+    await expect(page.getByText(`Produk ${product.name} sudah nonaktif dan tidak bisa dipakai.`, { exact: false }).first()).toBeVisible();
+    await expect(marked()).toHaveCount(1);
+
+    // POSTING_BLOCKED: the product named, and for staff whom to tell.
+    answer = { status: 409, json: { ...refusal('POSTING_BLOCKED'), lines: named } };
+    await sendReview(page);
+    await kept();
+    await expect(page.getByText(`Produk ${product.name} diblokir sementara`, { exact: false }).first()).toContainText('Beri tahu Pemilik.');
+    await expect(marked()).toHaveCount(1);
+    await checked(page);
+
+    expect(injected(watched.problems)).toEqual([]);
     await context.close();
 });
 

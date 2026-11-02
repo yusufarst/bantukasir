@@ -4,6 +4,7 @@ namespace App\Http\Requests\Inventory;
 
 use App\Http\Requests\Commands\RefusingRequest;
 use App\Policies\ObjectScope;
+use App\Queries\Inventory\Keyset;
 use App\Queries\Inventory\StockHistory;
 use Illuminate\Contracts\Validation\Validator;
 
@@ -31,8 +32,8 @@ final class HistoryPageRequest extends RefusingRequest
             'type' => ['sometimes', 'string', 'in:'.implode(',', StockHistory::TYPES)],
             'from' => ['sometimes', 'string', 'regex:/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/D', 'date'],
             'to' => ['sometimes', 'string', 'regex:/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/D', 'date'],
-            'after' => ['sometimes', 'string', 'regex:/^[A-Za-z0-9_-]{1,400}$/D'],
-            'before' => ['sometimes', 'string', 'regex:/^[A-Za-z0-9_-]{1,400}$/D'],
+            'after' => ['sometimes', 'string', Keyset::CURSOR],
+            'before' => ['sometimes', 'string', Keyset::CURSOR],
             'perPage' => ['sometimes', 'string', 'regex:/^(?:[1-9][0-9]?|100)$/D'],
             'from_page' => ['sometimes', 'string', 'in:'.implode(',', self::OPENERS)],
         ];

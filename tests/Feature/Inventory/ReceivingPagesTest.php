@@ -123,6 +123,14 @@ final class ReceivingPagesTest extends DatabaseTestCase
         foreach (['from=2026-13-01', 'q='.str_repeat('a', 129), 'perPage=0', 'after=x&before=y', 'status=draft', 'before=***'] as $query) {
             $this->getJson('/stock/receivings?'.$query)->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
         }
+
+        // A cursor whose time is no instant of the calendar is refused, never a server error
+        // (review finding R-02).
+        foreach (['["2026-13-45T99:99:99.000000Z",1]', '["0000-01-01T00:00:00.000000Z",1]', '["2026-02-29T00:00:00.000000Z",1]'] as $position) {
+            $cursor = rtrim(strtr(base64_encode($position), '+/', '-_'), '=');
+            $this->getJson('/stock/receivings?after='.$cursor)->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
+            $this->getJson('/stock/receivings?before='.$cursor)->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
+        }
     }
 
     public function test_the_detail_shows_the_purchase_cost_to_operations_and_a_zeros_reason_to_the_owner_alone(): void

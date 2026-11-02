@@ -14,7 +14,25 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 
 | Check | Where it ran | Time | Duration | Result |
 | --- | --- | --- | --- | --- |
-| The whole command contract and the image checks | CI on the pull request's final head | — | — | `NOT_RUN` at this writing |
+| Guard, preview on the working tree | Local | 22:10 | under 1 min of scanning | `PASS`, no candidate |
+| Guard (Gitleaks 8.30.1, the secret scan, identity, candidates) | Local, on `7526324`, `be47008`, `79a28e9`, `65bb79d` | 22:11, 22:18, 22:26, 22:35 | under 1 min of scanning each | `PASS`, no candidate |
+| `composer lint` | Fast run 41469208849 on `7526324` | 22:15 | 22 s | `FAIL`: Pint's `single_quote` in `StockAttention.php` (finding F-5); the later steps did not run |
+| `composer analyse` | Fast run 41470367163 on `be47008` | 22:22 | 16 s | `FAIL`: 11 PHPStan errors, ten in the new tests and one needless `array_values` (finding F-5) |
+| `npm run lint` | Fast run 41471727887 on `79a28e9` | 22:32 | 5 s | `FAIL`: three literals in JSX attributes (finding F-5); the PHP static checks and `composer test:unit` passed before it |
+| `composer validate`, `lint`, `analyse`, `test:unit` (866 tests) | Fast run 41473137685 on `65bb79d` | 22:38 to 22:39 | 52 s | `PASS` |
+| `npm run lint`, `typecheck`, `test:unit` (21 files) | Same run | 22:40 to 22:41 | 51 s | `PASS` |
+| `tests/Feature/Access/CapabilityMatrixTest.php` | Same run | 22:41 | 1 min 53 s | `PASS`, 7 tests, 2,748 assertions |
+| `tests/Feature/Access/HomeRedirectTest.php` | Same run | 22:43 | 7 s | `PASS`, 4 tests, 71 assertions |
+| `tests/Feature/Access/RouteInventoryTest.php` | Same run | 22:43 | under 1 s | `PASS`, 8 tests, 1,021 assertions |
+| `tests/Feature/Access/ShellDataTest.php` | Same run | 22:43 | 11 s | `PASS`, 3 tests, 93 assertions |
+| `tests/Feature/Catalog/ProductSearchTest.php` | Same run | 22:43 | 55 s | `PASS`, 16 tests, 598 assertions |
+| `tests/Feature/Inventory/ReceivingPagesTest.php` | Same run | 22:44 | 18 s | `PASS`, 5 tests, 12,233 assertions |
+| `tests/Feature/Inventory/StockAttentionTest.php` | Same run | 22:44 | 15 s | `PASS`, 4 tests, 178 assertions |
+| `tests/Feature/Inventory/StockPagesTest.php` | Same run | 22:44 | 25 s | `PASS`, 7 tests, 12,184 assertions |
+| `npx tsc --noEmit`, `npx eslint` | Local | 22:05 | — | `NOT_RUN`: neither is installed on this machine |
+| The whole command contract — `test:postgres`, `test:race`, `build`, the browser suite with `tests/Browser/inventory/` and the changed browser files — and the image checks | CI on the pull request's final head | — | — | `NOT_RUN` at this writing (CE-41, D-117) |
+
+Fast run 4, 41473137685 on `65bb79d`, is the run of the code to review: four fast runs of the 10 that CE-46 allows.
 
 ## 2. What was built (contract section 4.1)
 
@@ -47,4 +65,9 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 - **F-1, for the next change control of COPY_DECK:** two keys of this Task's pages cannot be read from their rows by `CopyDeckTest`, whose cells name keys alone or in lists separated by "; ": `inventory.receipt_new.reference` (section 9.6, UXI-238, in a cell "…, each + `ux.action.optional`") and `catalog.product_detail.stock_now` (section 8.3, UXI-167, in a cell with `inventory.state.*`). The page uses `inventory.receipts.col_reference` "Referensi", the same text, for the reference field, and shows UXI-167's stock and state with `inventory.stock.col_stock` and `inventory.stock.col_state`; no text changes. The approved artifact is not edited.
 - **F-2, for TASK-017's control UXI-162 or the next change control:** the state of a row of UXP-301 needs RD-01's stock, which TASK-021 added, and a column whose header COPY_DECK section 8.2 does not name. UXI-162 is not among this Task's controls (TRACEABILITY section 9.2), so UXP-301 is unchanged.
 - **F-3, for TASK-048:** RP-402 without a product filter orders by `stock_movements.recorded_at`, and RP-404 by `receiving_documents.confirmed_at`, neither of which has an index; each page is bounded, and its plan sorts the rows of the filter. An index, if the budgets need one, is a new migration (EXC-41).
+- **F-5.** Three fast runs were spent on static checks that do not run on this machine: a double-quoted string that Pint wants single (run 1), PHPStan's level 9 on `mixed` in the new tests, a test helper `sorted()` that shadowed `ChannelInspector::sorted()`, and a needless `array_values` (run 2), and literals in JSX attributes, a state identifier and a template (run 3). Each was a defect of the change, fixed in the next checkpoint.
 - **F-4, from TASK-021 F-3:** a body of RC-07 above RT-12's 1 MiB, possible only with 500 lines of nearly 1,000 characters of the Owner's zero evidence outside ASCII, is refused whole; the page does not warn before it. Recorded, not built: no text of COPY_DECK names it.
+
+## 5. Review (CE-40)
+
+**Self-review** of the whole change against the contract's scope items 1 to 4 and the rules it cites, before the isolated review: each item is built as section 2 says; nothing out of scope (no adjustment, reversal, cost correction, incident or migration); every route with its gate, the parameters of its row as allowlists and NOT_FOUND for a guessed identifier; no cost on a staff account's page but the purchase cost of RP-406 (CAP-12), and the cost evidence of RP-403 for the Owner alone; the draft of RP-405 in page memory only; the 37 controls of section 4.2 against TRACEABILITY section 9.2, with those of later Tasks absent (reading 13). It found the empty typed search of RP-405 shown as an unknown code, fixed before fast run 2 to UXS-03.

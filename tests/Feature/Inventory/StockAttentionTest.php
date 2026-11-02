@@ -141,6 +141,29 @@ final class StockAttentionTest extends DatabaseTestCase
         $this->assertSame(['ATT-0', 'ATT-1', 'ATT-5', 'ATT-6', 'ATT-M0', 'ATT-NEW'], $seen);
     }
 
+    public function test_the_pages_go_on_past_a_name_of_200_characters_of_any_script(): void
+    {
+        // Review finding R-01: a cursor carries the boundary row's name; 200 characters of four
+        // bytes each, the longest a name may be, still make a cursor the parameter accepts.
+        $long = str_repeat("\u{1D538}", 198).' 1';
+        $this->assertSame(200, mb_strlen($long));
+        TokoContoh::product('ATT-L1', ['name' => $long, 'categoryId' => $this->otherCategory]);
+        TokoContoh::product('ATT-L2', ['name' => str_repeat("\u{1D538}", 198).' 2', 'categoryId' => $this->otherCategory]);
+        $this->as('Agus');
+
+        $seen = [];
+        $after = null;
+
+        do {
+            $page = $this->getJson('/data/stock?perPage=1'.($after === null ? '' : '&after='.self::text($after)))->assertOk();
+            $seen = [...$seen, ...$this->skus($page)];
+            $after = $page->json('nextCursor');
+        } while (is_string($after) && count($seen) < 20);
+
+        sort($seen, SORT_STRING);
+        $this->assertSame(['ATT-0', 'ATT-1', 'ATT-5', 'ATT-6', 'ATT-L1', 'ATT-L2', 'ATT-M0', 'ATT-NEW'], $seen);
+    }
+
     public function test_the_parameters_are_allowlists(): void
     {
         $this->as('Agus');
@@ -149,8 +172,9 @@ final class StockAttentionTest extends DatabaseTestCase
             $this->getJson('/data/stock?'.$query)->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
         }
 
-        // A cursor that is not the list's is refused, never read as another position.
-        foreach (['[7]', '[1,"Produk"]', '["Produk",0]', '"Produk"'] as $position) {
+        // A cursor that is not the list's is refused, never read as another position; nor is a
+        // name with a control character PostgreSQL could not compare (review finding R-02).
+        foreach (['[7]', '[1,"Produk"]', '["Produk",0]', '"Produk"', '["Produk\u0000",1]', '["Pro\u001fduk",1]'] as $position) {
             $this->getJson('/data/stock?after='.rtrim(strtr(base64_encode($position), '+/', '-_'), '='))->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
         }
 

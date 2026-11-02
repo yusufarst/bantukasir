@@ -159,6 +159,16 @@ final class StockPagesTest extends DatabaseTestCase
             $this->getJson('/stock/history?'.$query)->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
         }
 
+        // A cursor whose time is no instant of the calendar is refused, never a server error
+        // (review finding R-02), both ways and with a product's own order.
+        foreach (['["2026-13-45T99:99:99.000000Z",1]', '["0000-01-01T00:00:00.000000Z",1]', '["2026-02-29T00:00:00.000000Z",1]', '[0]'] as $position) {
+            $cursor = rtrim(strtr(base64_encode($position), '+/', '-_'), '=');
+            $this->getJson('/stock/history?after='.$cursor)->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
+            $this->getJson('/stock/history?before='.$cursor)->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
+        }
+
+        $this->getJson('/stock/history?product='.$this->pen.'&after='.rtrim(strtr(base64_encode('["2026-11-02T03:00:00.000000Z",1]'), '+/', '-_'), '='))->assertStatus(422);
+
         $this->getJson('/stock/history?product=999999')->assertStatus(404)->assertJsonPath('code', 'NOT_FOUND');
     }
 

@@ -197,9 +197,29 @@ function refusalMessage(entries: unknown): string | undefined {
             return t('ux.validation.zero_evidence');
         case 'ux.validation.lines_min':
             return t('ux.validation.lines_min');
+        case 'ux.validation.quantity_positive':
+            return t('ux.validation.quantity_positive');
         default:
             return catalogFieldMessage(entries);
     }
+}
+
+/** The longest text of a search (ROUTE_CONTRACTS RD-01), in characters. */
+const SEARCH_MAX = 128;
+
+/** A product of a refusal read again in the context `receiving`, found by its key among the rows of one search. */
+async function foundIn(productId: number, search: Readonly<Record<string, string>>): Promise<DraftProduct | null> {
+    const answer = await searchProducts({ context: RECEIVING_CONTEXT, ...search });
+    const row = answer.kind === 'read' ? answer.body.rows.find((candidate) => candidate.id === productId) : undefined;
+
+    return row === undefined ? null : draftProductOf(row);
+}
+
+/** A product that changed after the review, as it is now: by its SKU as reviewed, else by its name; null when neither finds it. */
+async function rereadProduct(productId: number, reviewed: DraftProduct): Promise<DraftProduct | null> {
+    const bySku = await foundIn(productId, { q: reviewed.sku, mode: 'exact' });
+
+    return bySku ?? (await foundIn(productId, { q: Array.from(reviewed.name).slice(0, SEARCH_MAX).join('') }));
 }
 
 /** The products that a refusal names in its lines (RT-07; TASK-021). */
@@ -424,10 +444,8 @@ function ReceivingForm({ title, postingFrozen, zeroAllowed, categories }: Receiv
                 continue;
             }
 
-            void searchProducts({ context: RECEIVING_CONTEXT, q: line.product.sku, mode: 'exact' }).then((answer) => {
-                const row = answer.kind === 'read' ? answer.body.rows.find((candidate) => candidate.id === productId) : undefined;
-                const fresh = row === undefined ? null : draftProductOf(row);
-
+            // By its SKU as reviewed, then, should the SKU itself have changed, by its name (review finding R-05).
+            void rereadProduct(productId, line.product).then((fresh) => {
                 if (fresh !== null) {
                     setLines((current) => current.map((candidate) => (candidate.product.id === productId ? { ...candidate, product: fresh } : candidate)));
                 }
@@ -504,6 +522,21 @@ function ReceivingForm({ title, postingFrozen, zeroAllowed, categories }: Receiv
 
         return { line, quantityError, costError, evidenceError, marked: named.includes(line.product.id) };
     });
+
+    // The document's own fields, refused at their field and in the summary (review finding R-04).
+    const referenceId = `${ids}-reference`;
+    const documentDateId = `${ids}-document-date`;
+    const referenceError = refusal === null ? undefined : refusalMessage(refusal.fields['payload.reference']);
+    const documentDateError = refusal === null ? undefined : refusalMessage(refusal.fields['payload.documentDate']);
+
+    for (const [id, label, message] of [
+        [referenceId, t('inventory.receipts.col_reference'), referenceError],
+        [documentDateId, t('inventory.receipt_new.document_date'), documentDateError],
+    ] as const) {
+        if (invalid && message !== undefined) {
+            summary.push({ fieldId: id, label, message });
+        }
+    }
 
     const unknownLines = lines.filter((line) => line.unknown).length;
     const refusalState = refusal === null ? undefined : REFUSAL_STATES[refusal.code];
@@ -593,10 +626,10 @@ function ReceivingForm({ title, postingFrozen, zeroAllowed, categories }: Receiv
                             ))}
                         </ul>
                     )}
-                    <Field label={t('inventory.receipts.col_reference')} optional={true}>
+                    <Field id={referenceId} label={t('inventory.receipts.col_reference')} optional={true} error={referenceError}>
                         <TextInput type={'text'} autoComplete={'off'} maxLength={REFERENCE_MAX} disabled={frozen} value={reference} onChange={(event) => setReference(event.target.value)} />
                     </Field>
-                    <Field label={t('inventory.receipt_new.document_date')} optional={true} hint={t('inventory.receipt_new.document_date_help')}>
+                    <Field id={documentDateId} label={t('inventory.receipt_new.document_date')} optional={true} hint={t('inventory.receipt_new.document_date_help')} error={documentDateError}>
                         <TextInput type={'date'} disabled={frozen} value={documentDate} onChange={(event) => setDocumentDate(event.target.value)} />
                     </Field>
                     <div className={'bk-actions'}>

@@ -4,6 +4,7 @@ namespace App\Http\Requests\Inventory;
 
 use App\Http\Requests\Commands\RefusingRequest;
 use App\Policies\ObjectScope;
+use App\Queries\Inventory\Keyset;
 use App\Queries\Inventory\StockList;
 use Illuminate\Contracts\Validation\Validator;
 
@@ -27,7 +28,7 @@ final class StockListRequest extends RefusingRequest
             'q' => ['nullable', 'string', 'max:128', 'regex:'.self::PLAIN_TEXT],
             'state' => ['sometimes', 'string', 'in:'.implode(',', StockList::STATES)],
             'category' => ['sometimes', 'string', 'regex:/^[1-9][0-9]{0,18}$/D'],
-            'after' => ['sometimes', 'string', 'regex:/^[A-Za-z0-9_-]{1,400}$/D'],
+            'after' => ['sometimes', 'string', Keyset::CURSOR],
             'perPage' => ['sometimes', 'string', 'regex:/^(?:[1-9][0-9]?|100)$/D'],
         ];
     }
