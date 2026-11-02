@@ -207,7 +207,8 @@ test('an Operations admin records a manual issue with scans, a reason and a revi
 });
 
 test('the Owner finds Barang keluar in the sub-navigation, and insufficient stock is refused with the stock available', async ({ browser }) => {
-    const context = await contextAt(browser, WIDTHS[6] ?? WIDTHS[0]!);
+    // At 1366 px the sub-navigation is tabs; below 600 px it is a menu (frame.spec.ts).
+    const context = await contextAt(browser, WIDTHS[1] ?? WIDTHS[0]!);
     const page = await context.newPage();
     const watched = await watch(page);
 
@@ -256,6 +257,40 @@ test('the Owner finds Barang keluar in the sub-navigation, and insufficient stoc
     expect(injected(watched.problems)).toEqual([]);
     await context.close();
 });
+
+// UXP-407, UXP-408 with its review and UXP-409 at the 200 % zoom of 1280 × 800 and at 320 × 640,
+// beside the 1440 px of the tests above (EXC-53; TS-25; UX01, UX02; review finding R-01).
+for (const width of [WIDTHS[4], WIDTHS[7]]) {
+    test(`the manual issue pages and the review fit ${width?.name ?? ''}`, async ({ browser }) => {
+        const context = await contextAt(browser, width ?? WIDTHS[0]!);
+        const page = await context.newPage();
+        const watched = await watch(page);
+
+        await signedIn(context, page, 'Agus');
+        const product = await newProduct(page);
+        await received(page, product, '3');
+
+        await page.goto('/stock/issues');
+        await expect(page.getByRole('heading', { level: 1, name: 'Barang keluar' })).toBeVisible();
+        await checked(page);
+
+        await draftOf(page, product, '2');
+        await page.getByLabel('Cari atau scan produk', { exact: true }).fill('');
+        await checked(page);
+        await page.getByRole('button', { name: 'Tinjau' }).click();
+        const review = page.getByRole('dialog', { name: 'Tinjau barang keluar' });
+        await expect(review.getByText('3 pcs')).toBeVisible();
+        await checked(page);
+        await Promise.all([page.waitForURL((url) => /^\/stock\/issues\/\d+$/.test(url.pathname)), review.getByRole('button', { name: /^Konfirmasi barang keluar/ }).click()]);
+
+        await expect(page.getByRole('heading', { level: 1, name: 'Detail barang keluar' })).toBeVisible();
+        await expect(page.getByText('Barang keluar tercatat.')).toBeVisible();
+        await checked(page);
+
+        expect(injected(watched.problems)).toEqual([]);
+        await context.close();
+    });
+}
 
 test('an answer lost freezes the draft as it was sent, "Kirim ulang" sends the same intent, and leaving a draft asks first', async ({ browser }) => {
     const context = await contextAt(browser, WIDTHS[0]!);

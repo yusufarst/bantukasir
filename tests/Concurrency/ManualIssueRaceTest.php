@@ -63,7 +63,7 @@ final class ManualIssueRaceTest extends DatabaseTestCase
     public function test_race_03_two_issues_for_the_last_unit_give_one_success_and_one_insufficient_stock(): void
     {
         // AC-023-03, BR-INV-04, BR-INV-20: the second waits on the product guard and the balance,
-        // then finds no stock left, in both orders of arrival.
+        // then finds no stock left — held at the balance's lock, then until the first's commit.
         TokoContoh::stock($this->product, '1', '7000');
 
         $first = $this->start($this->issue('1'), ['after_lock:7']);
