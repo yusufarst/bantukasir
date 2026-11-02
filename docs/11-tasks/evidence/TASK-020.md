@@ -24,8 +24,14 @@ Every check ran in CI, on GitHub's hosted runner, with the local environment's c
 | `tests/Feature/Access/RouteInventoryTest.php` | Same run | 11:03 | 1 s | `PASS`, 8 tests, 925 assertions |
 | `tests/Feature/Catalog/ProductSearchTest.php` | Same run | 11:04 | 59 s | `PASS`, 15 tests, 545 assertions |
 | Guard (Gitleaks 8.30.1, the secret scan, identity, candidates) | Local, on `3056a0f`, `de0c0bc`, `a0f7444` | 10:13, 10:24, 10:54 | under 1 min of scanning each | `PASS`, no candidate |
-| Browser suite, with `tests/Browser/catalog/correction.spec.ts` (R-02 to R-04's and R-11's cases among them) | CI on the pull request's final head | — | — | `NOT_RUN` at this writing (CE-44, D-117) |
-| `composer test:postgres`, `composer test:race`, `npm run build`, image checks | CI on the pull request's final head | — | — | `NOT_RUN` at this writing (CE-44, D-117) |
+| `composer validate`, `lint`, `analyse`, `test:unit` | CI run 41387680655, job `Command contract`, on `d891366` | 11:20 | 34 s | `PASS` |
+| `composer test:postgres` | Same run | 11:21 | 14 min 48 s | `PASS` |
+| `composer test:race` | Same run | 11:35 | 1 min 39 s | `PASS` |
+| `npm run lint`, `typecheck`, `test:unit`, `build` | Same run | 11:38 | 41 s | `PASS` |
+| `npm run test:e2e` | Same run | 11:38 | 8 min | `FAIL`: 272 passed, 1 failed (finding F-6), and the 2 of maintenance did not run, as a failure in another project skips them |
+| Image checks | Same run, job `Image checks` | 11:18 | 6 min 43 s | `PASS` |
+| `npx eslint`, `npx tsc --noEmit` | Local, on the fix of F-6 | — | — | `NOT_RUN`: neither is installed on this machine; both run in CI on the fix's head |
+| The whole command contract and the image checks | CI on the head of the fix of F-6, the pull request's final head | — | — | `NOT_RUN` at this writing (CE-41, D-117); each result above bears on the same code, since the fix changes one test file only (CE-45), and the workflow runs all of them again |
 
 ## 2. What was built (contract section 4.1)
 
@@ -57,6 +63,7 @@ In INTERACTION_CONTRACTS, recording what the code does and changing no business 
 - **F-3, for TASK-042:** the event `BARCODE_CORRECTION` holds the reason in `audit_events.reason` and `kind`, `fromProductId`, `toProductId`, `correctedMappingId` and `mappingId` in `change_data`; `audit.action.barcode_correction` is in COPY_DECK, not yet in `lang/id`.
 - **F-4, for the next change control of P7 (R-10):** UI_STATES' row of UXP-305 omits UXS-37, which RC-30's `DUPLICATE_BARCODE` needs, and UXS-22, which its reads need. The page shows both; UI_STATES is an approved artifact and stays.
 - **F-5, for TASK-044 or the next change control (R-07, R-12):** Enter on the code of the product the token was on shows UXS-33, and Enter on a typed name replaces listed results with UXS-33; after a re-read that puts the token on the chosen product, "Tinjau" says "Isi barcode, produk yang benar, dan alasan." while the field still shows it. `not_correctable` says that a barcode retired as a misassignment can be attached, which does not explain the refusal of the product it left; the page cannot send that request. No copy exists for a better text.
+- **F-6, fix cycle 1 of CE-42.** The browser test "a next page that a new search supersedes…" first ran on `d891366` and failed on its own locator: while results stand, the list `ul` and the field share the name "Produk yang benar", so `getByLabel` resolved to both. The test now takes the field by its role, through `productInput`. The same locator on the retired path, where Enter follows a typed code by less than the search's 300 ms, takes it too, because a slow runner could show the list first. The page and the production code are unchanged, so no targeted verification applies (CE-42).
 
 ## 6. Definition of Done (TEST_STRATEGY section 10)
 
@@ -79,7 +86,7 @@ In INTERACTION_CONTRACTS, recording what the code does and changing no business 
 | AC-020-01 | PASS on the fast run | `BarcodeCorrectionTest`: the roles at the route and in the Action, the reason, recent authentication; `CapabilityMatrixTest` |
 | AC-020-02 | PASS on the fast run | `BarcodeCorrectionTest`: the move, the re-attachment, every refused token |
 | AC-020-03 | PASS on the fast run | `BarcodeCorrectionRaceTest`: RACE-17, RACE-19, and RACE-18's lookups at every write step of a move and a re-attachment |
-| AC-020-04 | `NOT_RUN` until the final head | `tests/Browser/catalog/correction.spec.ts`; the page's L4 answer passes on the fast run |
+| AC-020-04 | `NOT_RUN` until the final head | `tests/Browser/catalog/correction.spec.ts`: on `d891366` every test of the file but the one of F-6 passed; the page's L4 answer passes on the fast run |
 
 ## 8. Review (CE-40)
 

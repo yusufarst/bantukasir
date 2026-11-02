@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect as baseExpect, test, type BrowserContext, type Page } from '@playwright/test';
+import { expect as baseExpect, test, type BrowserContext, type Locator, type Page } from '@playwright/test';
 import { ACCESS_TIMEOUT, ACCESS_WAIT, resetPeople, SECURE_LOCAL_ORIGIN, signIn, type Person } from '../support/access';
 import { injected, prepareCommands, receiptOf } from '../support/commands';
 import { measure } from '../support/measure';
@@ -110,6 +110,11 @@ async function scanToken(page: Page, token: string): Promise<void> {
         await page.getByLabel('Barcode', { exact: true }).fill(token);
         await page.getByLabel('Barcode', { exact: true }).press('Enter');
     })()]);
+}
+
+/** "Produk yang benar" by its role: while results stand, their list carries the same name. */
+function productInput(page: Page): Locator {
+    return page.getByRole('textbox', { name: 'Produk yang benar', exact: true });
 }
 
 /** UXI-191: the product chosen from the shared Product Search. */
@@ -262,8 +267,8 @@ test('a barcode retired as a misassignment is attached again; what cannot be cor
     await expect(page.getByText('Tidak ada hasil', { exact: false })).toBeVisible();
 
     await page.getByLabel('Produk yang benar', { exact: true }).fill(right.barcode);
-    await page.getByLabel('Produk yang benar', { exact: true }).press('Enter');
-    await expect(page.getByLabel('Produk yang benar', { exact: true })).toHaveValue(right.name);
+    await productInput(page).press('Enter');
+    await expect(productInput(page)).toHaveValue(right.name);
     await page.getByLabel('Alasan', { exact: true }).fill('Terbukti salah pasang');
 
     // Ctrl+Enter opens the review, whose text names a re-attachment.
@@ -446,7 +451,7 @@ test('a next page that a new search supersedes leaves "Muat lebih banyak" ready'
     await page.getByRole('button', { name: 'Muat lebih banyak' }).click();
     await expect(page.getByRole('button', { name: 'Muat lebih banyak' })).toHaveCount(0);
 
-    await page.getByLabel('Produk yang benar', { exact: true }).fill('dua');
+    await productInput(page).fill('dua');
     await expect(page.getByRole('button', { name: 'Muat lebih banyak' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Muat lebih banyak' })).not.toHaveAttribute('aria-disabled', 'true');
 
