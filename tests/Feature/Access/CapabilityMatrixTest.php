@@ -256,6 +256,18 @@ final class CapabilityMatrixTest extends DatabaseTestCase
         'RC-31' => ['method' => 'POST', 'path' => '/commands/csv_import.confirm', 'json' => true, 'answers' => [
             'guest' => [401, null], 'owner' => [422, null], 'ops' => [422, null], 'cashier' => [403, null], 'combined' => [422, null],
         ]],
+        // TASK-020: the misassignment correction for CAP-07, the Owner's alone: RP-305 of an
+        // identifier that does not exist, RD-05 without its token, and RC-30, whose recent
+        // authentication comes before its fields.
+        'RP-305' => ['method' => 'GET', 'path' => '/products/{product}/barcode-correction', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [404, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RD-05' => ['method' => 'GET', 'path' => '/data/barcode-tokens/lookup', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [422, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RC-30' => ['method' => 'POST', 'path' => '/commands/barcode.correct_misassignment', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [423, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
     ];
 
     /** @var array<string, array{id: int, email: string, password: string}> */

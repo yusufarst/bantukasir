@@ -166,7 +166,7 @@ No cash leaves the drawer before the refund is COMMITTED; an uncertain refund is
 - **The till.** `context=till` needs the actor's own OPEN session, else `NO_OPEN_SESSION` (BR-CAT-33). An exact match of an active product adds one base unit to the cart, combined with that product's line (BR-CAT-29, D-067); no match keeps the code in the field (UXS-33).
 - **Fields.** Every role: identity, name, SKU, base unit and precision, current price with its revision, active flag, thumbnail, whether it holds an active barcode (`activeBarcode`, for UXI-163; TASK-018). Cashier: on-hand stock for checkout. Owner and OPERATIONS_ADMIN: on-hand stock, minimum stock and attention state. Never a cost, a valuation or a margin (BR-CAT-26).
 - **Opening context** (D-087) adds each product's eligibility: `ELIGIBLE` (no movement and no effective entry), `ZERO_COUNTED` (an effective zero count, with its identifier), `COUNTED` (an effective OPENING), `REPLACEABLE` (every OPENING of the product is reversed and it has no effective entry, with the latest reversed opening line it would replace) or `HAS_MOVEMENT` (another movement exists; not eligible, BR-INV-26).
-- **Correction context** returns active products only.
+- **Correction context** returns active products only; in `exact`, a code whose own product is inactive answers none, never another product's SKU (TASK-020).
 
 ### 3.2 Lists, filters and paging (IC-03)
 
@@ -187,7 +187,7 @@ The stock list and the shell indicators are read when the page opens, at least e
 ### 3.5 Search-first and token lookup (IC-06)
 
 - **RD-06** runs on "Cek" or on the Enter that ends a scanned code in the search-first step of UXP-303: exact barcode and exact SKU, each with its product when in scope, and up to 10 similar names. An exact match shows its product; similar names show UXS-47 and need "Tetap buat produk baru" (BR-CAT-04). The server does not refuse a similar name; it refuses a duplicate SKU or barcode when the product is created (RC-17).
-- **RD-05** returns the token's kind, its active product, its retirement records and whether it is correctable: a manufacturer token that is active on a product, or retired as a misassignment (D-051, D-052).
+- **RD-05** returns the token's kind, its active product, its retirement records and whether it is correctable: a manufacturer token that is active on a product, or retired as a misassignment (D-051, D-052). Only a token's last mapping decides that, since each earlier one was already corrected. A token that was never mapped answers with `kind` null, not a refusal (UXS-33; TASK-020).
 
 ### 3.6 Unresolved request receipts (IC-07, RD-04)
 
@@ -380,7 +380,7 @@ Audit `BARCODE_ADD`, `BARCODE_GENERATE`, `BARCODE_RETIRE`. Result: RP-302 in pla
 
 ### RC-30 `barcode.correct_misassignment`
 
-Payload `token`, `targetProductId`, `reason` (1 to 1,000); expected `mapping`: the product the token was on and whether it was active or retired as a misassignment, as RD-05 showed it. The Owner with recent authentication; both products locked in ascending order. The token is a manufacturer token that is active on another product or retired as a misassignment (`BARCODE_NOT_ELIGIBLE`, `params.reason` `not_correctable`); the mapping is as expected (`STALE_VERSION`); at most one active mapping after commit (`DUPLICATE_BARCODE`). Commits the new mapping and, for a move, the retirement of the old one as a misassignment; audit `BARCODE_CORRECTION`. Result `location` RP-302 of the correct product. Tests: RACE-17 to RACE-19.
+Payload `token`, `targetProductId`, `reason` (1 to 1,000); expected `mapping`: the product the token was on (`productId`) and whether it was active or retired as a misassignment (`state`, `ACTIVE` or `RETIRED_MISASSIGNMENT`), as RD-05 showed it. The Owner with recent authentication; both products locked in ascending order. The token is a manufacturer token that is active on another product or retired as a misassignment from another product, since a correction moves it to a different product (G-09) (`BARCODE_NOT_ELIGIBLE`, `params.reason` `not_correctable`); the mapping is as expected (`STALE_VERSION`); at most one active mapping after commit (`DUPLICATE_BARCODE`). Commits the new mapping and, for a move, the retirement of the old one as a misassignment; audit `BARCODE_CORRECTION`. Result `location` RP-302 of the correct product. Tests: RACE-17 to RACE-19.
 
 ### RC-31 `csv_import.confirm`
 

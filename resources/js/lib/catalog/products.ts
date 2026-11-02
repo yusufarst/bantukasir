@@ -3,10 +3,10 @@ import { requestJson } from '@/lib/commands/client';
 import { t } from '@/lib/i18n';
 import type { AreaId, DestinationId, SubDestinationId } from '@/lib/navigation';
 
-// The catalogue pages (COPY_DECK sections 8.1 to 8.5 and 8.8; ROUTE_CONTRACTS RP-301 to
-// RP-304 and RP-307; INTERACTION_CONTRACTS sections 3.1 and 3.5; TASK-017 scope item 1):
+// The catalogue pages (COPY_DECK sections 8.1 to 8.6 and 8.8; ROUTE_CONTRACTS RP-301 to
+// RP-305 and RP-307; INTERACTION_CONTRACTS sections 3.1 and 3.5; TASK-017 scope item 1):
 // the records as the server sends them, the commands of RC-17 to RC-24 and RC-27 to
-// RC-29, the reads RD-01 and RD-06, the messages of the fields, and what passes from
+// RC-30, the reads RD-01, RD-05 and RD-06, the messages of the fields, and what passes from
 // the list to its child pages. A filter or a page is kept in the page's props, which
 // the encrypted history state holds, so that the browser's Back finds them (NC-10). The
 // way back of a child page is a new entry of the history, so it takes the list's address
@@ -28,6 +28,11 @@ export function labelsPage(id: number): string {
     return `${productPage(id)}/labels`;
 }
 
+/** UXP-305, opened from a product (ROUTE_CONTRACTS RP-305). */
+export function correctionPage(id: number): string {
+    return `${productPage(id)}/barcode-correction`;
+}
+
 /** Where the catalogue's pages stand in the shell. */
 export const PRODUCTS_SHELL = { current: 'products', area: 'products', subCurrent: 'products' } as const satisfies { current: DestinationId; area: AreaId; subCurrent: SubDestinationId };
 
@@ -46,6 +51,7 @@ export const CATALOG_COMMANDS = {
     addBarcode: { operation: 'barcode.add', family: 'barcode' },
     generateBarcode: { operation: 'barcode.generate', family: 'barcode' },
     retireBarcode: { operation: 'barcode.retire', family: 'barcode' },
+    correctBarcode: { operation: 'barcode.correct_misassignment', family: 'barcode_correction', recentAuth: true },
     setPhoto: { operation: 'product_photo.set', family: 'photo' },
     removePhoto: { operation: 'product_photo.remove', family: 'photo' },
     printLabels: { operation: 'document.print_labels', family: 'print' },
@@ -242,6 +248,27 @@ export function searchProducts(parameters: Readonly<Record<string, string>>): Pr
     return read(`/data/products/search?${query.toString()}`, (body) => ({ rows: rowsOf(body.rows), hasMore: body.hasMore === true }), { 'X-Search-Sequence': String(lastSequence) });
 }
 
+/** What RC-30 expects, as RD-05 showed it: the product the token was on, and whether it was active or retired as a misassignment. */
+export interface TokenMappingState {
+    readonly productId: number;
+    readonly productName: string;
+    readonly state: 'ACTIVE' | 'RETIRED_MISASSIGNMENT';
+}
+
+/** The answer of RD-05 (App\DTO\Catalog\TokenMappingData); `kind` is null for a token that was never mapped. */
+export interface TokenLookup {
+    readonly token: string;
+    readonly kind: 'MANUFACTURER' | 'INTERNAL' | null;
+    readonly activeProduct: { readonly id: number; readonly name: string } | null;
+    readonly mapping: TokenMappingState | null;
+    readonly correctable: boolean;
+}
+
+/** RD-05 for a scanned or typed token (INTERACTION_CONTRACTS section 3.5). */
+export function lookUpToken(token: string): Promise<ReadAnswer<TokenLookup>> {
+    return read(`/data/barcode-tokens/lookup?${new URLSearchParams({ token }).toString()}`, (body) => body as unknown as TokenLookup);
+}
+
 /** The filters of a search as RD-01 takes them. */
 export function searchParameters(filters: ProductFilters): Record<string, string> {
     const parameters: Record<string, string> = {};
@@ -392,6 +419,8 @@ export function catalogFieldMessage(entries: unknown, categoryName = ''): string
             return t('ux.state.barcode_ineligible.reserved');
         case 'ux.state.barcode_ineligible.check_digit':
             return t('ux.state.barcode_ineligible.check_digit');
+        case 'ux.state.barcode_ineligible.not_correctable':
+            return t('ux.state.barcode_ineligible.not_correctable');
         case 'ux.state.inactive.category':
             return t('ux.state.inactive.category.body', { kategori: categoryName });
         case 'ux.validation.quantity_positive':

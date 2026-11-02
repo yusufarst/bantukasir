@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { listAddressFrom, openedFromCreate, precisionOf, productsAddress, quantityFromEntry, searchParameters } from '@/lib/catalog/products';
+import { correctionPage, listAddressFrom, openedFromCreate, precisionOf, productPage, productsAddress, quantityFromEntry, searchParameters } from '@/lib/catalog/products';
 import { shouldCapture } from '@/lib/catalog/scanCapture';
 
 // What the catalogue pages compute without a page (AC-017-02, AC-017-04; TASK-017):
@@ -21,6 +21,13 @@ describe('a quantity as typed', () => {
         expect(quantityFromEntry('1.5')).toBe('1.5');
         expect(quantityFromEntry('abc')).toBe('abc');
         expect(quantityFromEntry('-1')).toBe('-1');
+    });
+});
+
+describe('the address of the misassignment correction', () => {
+    it('is that of ROUTE_CONTRACTS RP-305, under the product it opens from', () => {
+        expect(correctionPage(7)).toBe('/products/7/barcode-correction');
+        expect(correctionPage(7).startsWith(productPage(7))).toBe(true);
     });
 });
 

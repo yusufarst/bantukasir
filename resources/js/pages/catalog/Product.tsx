@@ -16,7 +16,7 @@ import { AppShell } from '@/layouts/AppShell';
 import { PageContainer, PageHeader } from '@/layouts/Page';
 import { takeSavedNote } from '@/lib/access/users';
 import { blockedReason, CodeField, ProductThumb, visitInDocument } from '@/lib/catalog/Parts';
-import { cameFromCreate, CATALOG_COMMANDS, catalogFieldMessage, checkProduct, labelsPage, NEW_PRODUCT_PAGE, productPage, PRODUCTS_SHELL, productsListAddress, type ProductDetail, type ProductRow } from '@/lib/catalog/products';
+import { cameFromCreate, CATALOG_COMMANDS, catalogFieldMessage, checkProduct, correctionPage, labelsPage, NEW_PRODUCT_PAGE, productPage, PRODUCTS_SHELL, productsListAddress, type ProductDetail, type ProductRow } from '@/lib/catalog/products';
 import { useScanCapture } from '@/lib/catalog/scanCapture';
 import { committedText } from '@/lib/commands/families';
 import { CommandPanels } from '@/lib/commands/Panels';
@@ -30,11 +30,11 @@ import { t } from '@/lib/i18n';
 // UXI-177; NAVIGATION_CONTRACTS UXP-302; BR-CAT-08, BR-CAT-13, BR-CAT-19, BR-CAT-52;
 // TASK-017 scope item 1): the product's data, its price and price history, its barcodes,
 // and its status, an inactive one marked, its photo (UXI-169, UXI-170; BR-CAT-44 to
-// BR-CAT-46) and the way to its labels (UXI-175). A command updates its section in place
+// BR-CAT-46), the way to its labels (UXI-175) and, for the Owner, to the misassignment
+// correction (UXI-174; TASK-020). A command updates its section in place
 // with its message; each asks in a dialog or an inline form that Enter never confirms. No
-// control deletes anything (D-042). TASK-020, TASK-022 and TASK-025 add the correction,
-// stock and cost history, and TASK-042 and TASK-022 the way back to UXP-612 and UXP-006
-// (UXI-177).
+// control deletes anything (D-042). TASK-022 and TASK-025 add stock and cost history, and
+// TASK-042 and TASK-022 the way back to UXP-612 and UXP-006 (UXI-177).
 
 const STALE_STATE: StateId = 'UXS-17';
 
@@ -66,6 +66,8 @@ const MISASSIGNMENT = 'MISASSIGNMENT';
 
 const OTHER = 'OTHER';
 
+const UNRESOLVED_PAGE = '/requests';
+
 type ReasonClass = typeof MISASSIGNMENT | typeof OTHER;
 
 interface PriceEntry {
@@ -86,6 +88,7 @@ interface ProductProps {
     readonly product: ProductDetail;
     readonly priceHistory: readonly PriceEntry[];
     readonly barcodes: readonly Barcode[] | null;
+    readonly canCorrectBarcode: boolean;
     readonly canChangePhoto: boolean;
     readonly canPrintLabels: boolean;
 }
@@ -100,7 +103,7 @@ export default function Product(props: ProductProps) {
     );
 }
 
-function ProductPage({ title, product, priceHistory, barcodes, canChangePhoto, canPrintLabels }: ProductProps & { title: string }) {
+function ProductPage({ title, product, priceHistory, barcodes, canCorrectBarcode, canChangePhoto, canPrintLabels }: ProductProps & { title: string }) {
     const [note, setNote] = useState(takeSavedNote);
     const [stale, setStale] = useState(false);
     const [lifecycle, setLifecycle] = useState(false);
@@ -196,7 +199,7 @@ function ProductPage({ title, product, priceHistory, barcodes, canChangePhoto, c
                     </div>
                 </Section>
                 {canChangePhoto && <PhotoSection product={product} onDone={done} onStale={onStale} onOpen={() => setNote(null)} />}
-                {barcodes !== null && <BarcodesSection product={product} barcodes={barcodes} onDone={done} onChanged={reload} onOpen={() => setNote(null)} />}
+                {barcodes !== null && <BarcodesSection product={product} barcodes={barcodes} canCorrect={canCorrectBarcode} onDone={done} onChanged={reload} onOpen={() => setNote(null)} />}
                 {canPrintLabels && (
                     <Section title={t('catalog.labels.title')} titleHidden={true}>
                         <div className={'bk-actions'}>
@@ -439,8 +442,35 @@ function PhotoRemoveRun({ product, onClose, onDone, onStale }: { product: Produc
     );
 }
 
-/** The section of the barcodes (UXI-171 to UXI-173), by CAP-06, which the server's prop says. */
-function BarcodesSection({ product, barcodes, onDone, onChanged, onOpen }: { product: ProductDetail; barcodes: readonly Barcode[]; onDone: (text: string) => void; onChanged: () => void; onOpen: () => void }) {
+/**
+ * The way to the misassignment correction (UXI-174), in the section's overflow, for CAP-07, which
+ * the server's prop says. While this user holds an unresolved correction it stays in its place,
+ * disabled, with its reason and the way to UXP-006 (UXS-13; NC-13).
+ */
+function CorrectionEntry({ product }: { product: ProductDetail }) {
+    const unresolved = useUnresolved();
+    const title = t('catalog.barcode_correction.title');
+    const href = correctionPage(product.id);
+    const entries: MenuEntry[] = [{ kind: 'link', label: title, href, onNavigate: (event) => visitInDocument(event, href) }];
+
+    return blockedReason(unresolved.union, CATALOG_COMMANDS.correctBarcode) === undefined ? (
+        <Menu label={t('ux.action.more_actions')} rowName={t('catalog.product_detail.section_barcodes')} items={entries} />
+    ) : (
+        <Button
+            label={title}
+            variant={'secondary'}
+            enterActivates={false}
+            disabledReason={
+                <>
+                    {t('catalog.barcode_correction.disabled_unresolved')} <a href={UNRESOLVED_PAGE}>{t('ux.action.open_unresolved')}</a>
+                </>
+            }
+        />
+    );
+}
+
+/** The section of the barcodes (UXI-171 to UXI-174), by CAP-06, which the server's prop says. */
+function BarcodesSection({ product, barcodes, canCorrect, onDone, onChanged, onOpen }: { product: ProductDetail; barcodes: readonly Barcode[]; canCorrect: boolean; onDone: (text: string) => void; onChanged: () => void; onOpen: () => void }) {
     const [adding, setAdding] = useState(false);
     const [retiring, setRetiring] = useState<Barcode | null>(null);
     const [opening, setOpening] = useState(0);
@@ -535,6 +565,11 @@ function BarcodesSection({ product, barcodes, onDone, onChanged, onOpen }: { pro
                     </div>
                 )}
                 <GenerateBarcodeRun key={generateKey} product={product} onDone={finished} />
+                {canCorrect && (
+                    <div className={'bk-actions'}>
+                        <CorrectionEntry product={product} />
+                    </div>
+                )}
                 {retiring !== null && <RetireRun key={retireKey} barcode={retiring} onClose={() => setRetiring(null)} onDone={finished} onStale={retiredMeanwhile} />}
             </div>
         </Section>

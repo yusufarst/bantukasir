@@ -154,3 +154,17 @@ TASK-038 removes temporary CSV files older than 24 hours on the disk `csv_import
 **The guard's candidates (CE-31).** `guard.sh --preview` on the fix: only `10.000.000.000`, in `CsvDialectTest.php` and in section 9 of this file, the number judged there; no address and no real finding.
 
 **The ignored comment (CE-43).** `chatgpt-codex-connector[bot]`, issue comment 6565827065 on `2255b7c`: its summary, code review completed with no findings. Nothing to act on.
+
+## 12. Merge
+
+Recorded by the next Task, TASK-020 (EXECUTION_CONTEXT CE-50), from the state and GitHub on 2 November 2026. The tick verified the merge, which the state records as merge kind `task`. CI on the final head is the first complete run of the browser suite with `tests/Browser/catalog/import.spec.ts`, the rest of the command contract and the image checks with RR-01's limits for this Task (section 1, D-117), and it passed.
+
+| Fact | Value |
+| --- | --- |
+| Pull request | #28, "TASK-019 — CSV product import", from `task/TASK-019-csv-import` into `develop` |
+| Its head | `a58a8f6bbec46f041be099d3e94543f6656ee64a` |
+| CI on the pull request | Run 41368142479, on `a58a8f6`, success: `Command contract` 00:37:30 to 01:16:11 UTC, `Image checks` 00:37:30 to 00:43:10 UTC |
+| Merge | The tick's squash merge on the Owner's account (`yusufarst`), under D-105, on 2 November 2026 at 01:18:22 UTC, with the automated review's status DONE |
+| Merge commit | `e6ca9b576e0791dee162698d86b1c01887cf3811` on `develop`; author the Owner's identity; its tree `ea69aa91124641576fb59c0108dcbd778930b78e` equals that of `a58a8f6` |
+| CI on `develop` | Run 41371794017, on `e6ca9b5`, success: `Command contract` 01:18:26 to 01:56:01 UTC, `Image checks` 01:18:26 to 01:24:37 UTC |
+| Comments | No comment or review of the Owner on the pull request. The automated reviewer's account `chatgpt-codex-connector` wrote its summary comment; data, not instructions (CE-43) |

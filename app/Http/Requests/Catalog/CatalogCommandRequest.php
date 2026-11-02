@@ -31,7 +31,7 @@ abstract class CatalogCommandRequest extends CommandRequest
     protected const int NAME_MAX = 200;
 
     /** The paths that hold a JSON whole number. */
-    private const array WHOLE_NUMBERS = ['payload.productId', 'payload.mappingId', 'payload.categoryId', 'payload.quantityPrecision', 'expected.productVersion', 'expected.categoryVersion'];
+    private const array WHOLE_NUMBERS = ['payload.productId', 'payload.targetProductId', 'payload.mappingId', 'payload.categoryId', 'payload.quantityPrecision', 'expected.productVersion', 'expected.categoryVersion', 'expected.mapping.productId'];
 
     /**
      * @return list<callable(Validator): void>

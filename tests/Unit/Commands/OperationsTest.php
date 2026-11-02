@@ -12,6 +12,7 @@ use App\Actions\Access\UpdateOwnerDetails;
 use App\Actions\Access\UpdateStaffAccount;
 use App\Actions\Catalog\AddBarcode;
 use App\Actions\Catalog\ConfirmCsvImport;
+use App\Actions\Catalog\CorrectBarcodeMisassignment;
 use App\Actions\Catalog\CreateCategory;
 use App\Actions\Catalog\CreateProduct;
 use App\Actions\Catalog\DeactivateCategory;
@@ -121,6 +122,7 @@ final class OperationsTest extends TestCase
             'product_photo.remove' => RemoveProductPhoto::class,
             'document.print_labels' => RecordLabelPrint::class,
             'csv_import.confirm' => ConfirmCsvImport::class,
+            'barcode.correct_misassignment' => CorrectBarcodeMisassignment::class,
         ], CommandActions::built());
     }
 

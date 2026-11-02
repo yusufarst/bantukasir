@@ -15,7 +15,8 @@ use LogicException;
  * The base of RC-27 to RC-29 (INTERACTION_CONTRACTS, "RC-27 to RC-29 barcodes";
  * TECHNICAL_RULES section 7.2, "Barcode add, generate, retire"; BR-CAT-22; CAP-06).
  * Each locks the product of the mapping it changes (step 6, the update lock: the
- * product guard's barcode mappings, G-09), and expects no version.
+ * product guard's barcode mappings, G-09), and expects no version. RC-30 shares its
+ * answer, under its own capability (TASK-020).
  *
  * The result stores the mapping's key alone, since a token is neither an internal key
  * nor a document number (SCHEMA section 5.3). The answer is rebuilt from the mapping,
@@ -33,7 +34,7 @@ abstract class BarcodeAction extends CatalogAction
 
     public function present(User $viewer, int $commandId, StoredResult $result): ?array
     {
-        if (! Capabilities::allows($viewer, Capability::Cap06)) {
+        if (! Capabilities::allows($viewer, $this->capabilities()[0])) {
             return null;
         }
 
