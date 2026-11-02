@@ -70,11 +70,12 @@ final class StockAttentionTest extends DatabaseTestCase
             $states[$sku] = $values['state'] ?? null;
 
             // The Domain's StockState says the same of each row.
-            $precision = is_int($values['quantityPrecision'] ?? null) ? $values['quantityPrecision'] : 0;
-            $this->assertSame(StockState::of(Quantity::of($values['onHand'] ?? null, $precision), Quantity::of($values['minimum'] ?? null, $precision))->value, $values['state'] ?? null, $sku);
+            $given = $values['quantityPrecision'] ?? null;
+            $precision = is_int($given) ? $given : 0;
+            $this->assertSame(StockState::of(Quantity::of(self::text($values['onHand'] ?? null), $precision), Quantity::of(self::text($values['minimum'] ?? null), $precision))->value, $values['state'] ?? null, $sku);
         }
 
-        $this->assertSame(['ATT-0' => 'OUT', 'ATT-1' => 'LOW', 'ATT-5' => 'LOW', 'ATT-6' => 'NORMAL', 'ATT-M0' => 'NORMAL', 'ATT-NEW' => 'OUT'], self::sorted($states));
+        $this->assertSame(['ATT-0' => 'OUT', 'ATT-1' => 'LOW', 'ATT-5' => 'LOW', 'ATT-6' => 'NORMAL', 'ATT-M0' => 'NORMAL', 'ATT-NEW' => 'OUT'], self::bySku($states));
         $this->assertSame([2, 2], [$list->json('outCount'), $list->json('lowCount')]);
         $this->assertSame('2026-11-02T03:00:00.000000Z', $list->json('asOf'));
 
@@ -177,7 +178,7 @@ final class StockAttentionTest extends DatabaseTestCase
      * @param  array<string, mixed>  $states
      * @return array<string, mixed>
      */
-    private static function sorted(array $states): array
+    private static function bySku(array $states): array
     {
         ksort($states, SORT_STRING);
 

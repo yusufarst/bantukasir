@@ -96,7 +96,8 @@ final class ReceivingPagesTest extends DatabaseTestCase
         $this->as('Agus');
 
         $this->assertSame([$this->documents[2], $this->documents[1], $this->documents[0]], $this->ids('/stock/receivings'));
-        $first = (array) (((array) ($this->propsOf($this->get('/stock/receivings'))['receivings'] ?? []))['rows'] ?? [])[2];
+        $listed = (array) (((array) ($this->propsOf($this->get('/stock/receivings'))['receivings'] ?? []))['rows'] ?? []);
+        $first = (array) ($listed[2] ?? []);
         $this->assertSame([$this->documents[0], '2026-11-02T03:00:00.000000Z', 'NOTA-1', 1, 'Hendra'], [$first['id'], $first['confirmedAt'], $first['reference'], $first['lineCount'], $first['actorDisplayName']]);
 
         $this->assertSame([$this->documents[1]], $this->ids('/stock/receivings?q=nota-2'));
@@ -179,7 +180,8 @@ final class ReceivingPagesTest extends DatabaseTestCase
         $products = [];
 
         foreach ($lines as $line) {
-            $id = is_int($line['productId'] ?? null) ? $line['productId'] : 0;
+            $given = $line['productId'] ?? null;
+            $id = is_int($given) ? $given : 0;
             $products[$id] = ['productId' => $id, 'version' => 1];
         }
 
@@ -202,7 +204,7 @@ final class ReceivingPagesTest extends DatabaseTestCase
     {
         $receivings = (array) ($this->propsOf($this->get($path)->assertOk())['receivings'] ?? []);
 
-        return array_values(array_column((array) ($receivings['rows'] ?? []), 'id'));
+        return array_column((array) ($receivings['rows'] ?? []), 'id');
     }
 
     /**

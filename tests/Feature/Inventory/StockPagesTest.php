@@ -96,7 +96,7 @@ final class StockPagesTest extends DatabaseTestCase
 
         $all = $this->history('/stock/history');
         $this->assertSame([[$this->paper, 2], [$this->pen, 2], [$this->paper, 1], [$this->pen, 1]], self::keys($all['rows']));
-        $first = (array) $all['rows'][3];
+        $first = (array) ($all['rows'][3] ?? []);
         $this->assertSame(['RECEIPT', '3', 'pcs', 'Hendra'], [$first['type'], $first['quantity'], $first['baseUnit'], $first['actorDisplayName']]);
         $this->assertSame(['kind' => 'RECEIVING', 'id' => $this->documents[0], 'at' => '2026-11-02T03:00:00.000000Z'], $first['source']);
         $this->assertSame([null, null], [$all['nextCursor'], $all['previousCursor']]);

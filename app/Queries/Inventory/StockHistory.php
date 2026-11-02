@@ -56,7 +56,7 @@ final class StockHistory
             $rows = array_reverse($rows);
         }
 
-        $data = array_values(array_map(static fn (object $row): array => self::row((array) $row), $rows));
+        $data = array_map(static fn (object $row): array => self::row((array) $row), $rows);
 
         if ($data === []) {
             return ['rows' => [], 'nextCursor' => null, 'previousCursor' => null];
