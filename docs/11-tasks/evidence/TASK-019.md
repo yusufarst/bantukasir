@@ -35,7 +35,7 @@ Fast runs of CI, the workflow `fast-checks`. Eight of the ten allowed.
 | **Fast run**, the same with the fixes of the review | CI run 41362980541 on `c40560b` | 2 Nov 06:37 | 9 min 6 s; its test files 3 min 35 s | **PASS** |
 | `release dry run` (the workflow, for the changed Dockerfile) | CI run 41362980484 on `c40560b` | 2 Nov 06:37 | — | PASS |
 | Guard | Local, on each head | 2 Nov | under 5 min each | PASS, one candidate judged (section 9) |
-| `composer test:postgres`, `test:race`, the browser suite with `import.spec.ts`, `npm run build`, the image checks with RR-01's limits | CI on the pull request's final head (D-117) | — | — | `NOT_RUN` at this writing |
+| `composer test:postgres`, `test:race`, the browser suite with `import.spec.ts`, `npm run build`, the image checks with RR-01's limits | CI on the pull request's final head (D-117) | — | — | `NOT_RUN` at this writing; the first full run and fix cycle 1 are in section 11 |
 
 ## 2. What was built (contract section 4.1)
 
@@ -133,3 +133,24 @@ The executor's self-review of the whole diff against the contract preceded it (E
 ## 10. For later Tasks
 
 TASK-038 removes temporary CSV files older than 24 hours on the disk `csv_imports`, whatever their state (F-1); TASK-048 measures 5,000 rows (F-2); TASK-021's stock tables come under "no stock or cost" of AC-019-03; a later context of RD-01 stays refused `import`.
+
+## 11. Fix cycle 1 on pull request #28 (CE-42)
+
+**The failure.** The workflow `ci` on the pull request's first head `2255b7c` failed in `composer test:postgres`, failure 1 of 3. One test of 598 failed: `CatalogCommandsTest::test_the_sku_cannot_be_edited_and_no_route_changes_a_price_outside_rc_17_and_rc_18`, TASK-015's list of the Actions that write a price revision, which did not name `ConfirmCsvImport.php`. The steps after it in that job did not run. No fast run held it: that test file did not change, and `fast-checks` runs only the changed test files (CE-46).
+
+**The reading.** A defect of the test's list, not of the code. AC-015-02 says that no route changes a price outside RC-17 and RC-18. RC-31 changes none: BR-CAT-37 and scope item 4 have it create every product of its file with its first price, as RC-17 does, and it refuses a SKU that exists. So AC-015-02 stays as written and no production code changes, and CE-42 asks for no targeted verification.
+
+**The fix.** Only `tests/Feature/Catalog/CatalogCommandsTest.php`. The test now names RC-31 among the writers and keeps its meaning by a second assertion: only `ConfirmCsvImport.php` and `CreateProduct.php` set a first price (`pointAtFirstRevision`), which leaves `UpdateProduct.php` as the only Action that changes one.
+
+| Check | Where it ran | Time | Duration | Result |
+| --- | --- | --- | --- | --- |
+| `Command contract` | CI run 41364719758 on `2255b7c` | 2 Nov 06:59 | 24 min 32 s; `composer test:postgres` 20 min 6 s | FAIL; `composer test:postgres`, 597 of 598 |
+| `composer test:race`, `npm ci`, `npm run lint`, `typecheck`, `test:unit`, `build`, the browser suite with `import.spec.ts` | The same job | — | — | `NOT_RUN`: skipped after the failure |
+| `Image checks` with RR-01's limits | CI run 41364719758 on `2255b7c` | 2 Nov 06:59 | 7 min 0 s | PASS |
+| `Fast checks` | CI run 41364698366 on `2255b7c` | 2 Nov 06:59 | 8 min 0 s | PASS |
+| `Release dry run` | CI run 41364719759 on `2255b7c` | 2 Nov 06:59 | 6 min 57 s | PASS |
+| The fix's test and every step above | CI on the new head (CE-41) | — | — | `NOT_RUN` at this writing. No PHP runs on this machine (D-108), so nothing of the fix ran locally |
+
+**The guard's candidates (CE-31).** `guard.sh --preview` on the fix: only `10.000.000.000`, in `CsvDialectTest.php` and in section 9 of this file, the number judged there; no address and no real finding.
+
+**The ignored comment (CE-43).** `chatgpt-codex-connector[bot]`, issue comment 6565827065 on `2255b7c`: its summary, code review completed with no findings. Nothing to act on.
