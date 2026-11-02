@@ -28,6 +28,7 @@ use App\Actions\Catalog\UpdateProduct;
 use App\Actions\Commands\CommandActions;
 use App\Actions\Configuration\ChangeBusinessProfile;
 use App\Actions\Documents\RecordLabelPrint;
+use App\Actions\Inventory\ConfirmReceiving;
 use App\Domain\Commands\Operations;
 use LogicException;
 use Tests\Harness\Commands\Probe;
@@ -96,7 +97,8 @@ final class OperationsTest extends TestCase
         $this->assertThrows(fn () => Operations::familyOf('sale.refund'), LogicException::class);
         // The commands built so far, each a known operation (TASK-010: RC-32;
         // TASK-011: RC-35 to RC-42; TASK-015: RC-17 to RC-24; TASK-016: RC-27 to
-        // RC-29; TASK-018: RC-25, RC-26 and RC-47).
+        // RC-29; TASK-018: RC-25, RC-26 and RC-47; TASK-019: RC-31; TASK-020: RC-30;
+        // TASK-021: RC-07).
         $this->assertSame([
             'business_profile.change' => ChangeBusinessProfile::class,
             'user.create' => CreateStaffAccount::class,
@@ -123,6 +125,7 @@ final class OperationsTest extends TestCase
             'document.print_labels' => RecordLabelPrint::class,
             'csv_import.confirm' => ConfirmCsvImport::class,
             'barcode.correct_misassignment' => CorrectBarcodeMisassignment::class,
+            'receiving.confirm' => ConfirmReceiving::class,
         ], CommandActions::built());
     }
 

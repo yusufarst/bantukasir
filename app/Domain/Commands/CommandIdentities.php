@@ -51,6 +51,31 @@ final class CommandIdentities
     }
 
     /**
+     * Inserts the identity of a command that a process runs, the scheduled SC-01
+     * above all, whose intent is derived from its run (INTERACTION_CONTRACTS
+     * section 7; SCHEMA section 5.3), in its transaction. TASK-036 builds that
+     * command; until then the fixtures of a posting block use this (TASK-021).
+     */
+    public function insertProcessCommand(Envelope $envelope, string $actorKind, string $process, string $fingerprint, string $receivedAt): int
+    {
+        self::requireTransaction();
+
+        if (preg_match('/^[0-9a-f]{64}$/', $fingerprint) !== 1) {
+            throw new InvalidArgumentException('A fingerprint is SHA-256, 64 hexadecimal digits.');
+        }
+
+        $id = DB::scalar(<<<'SQL'
+            insert into command_identities (kind, operation, operation_version, source_intent_id, idempotency_key,
+                actor_kind, actor_user_id, actor_process, fingerprint, recovery_epoch, received_at, recorded_at)
+            values ('COMMAND', ?, ?, ?, ?, ?, null, ?, decode(?, 'hex'), decode(?, 'hex'), ?, ?)
+            returning id
+            SQL, [$envelope->operation, $envelope->version, $envelope->sourceIntentId, $envelope->idempotencyKey,
+            $actorKind, $process, $fingerprint, $envelope->recoveryEpoch, $receivedAt, $this->now()]);
+
+        return self::id($id);
+    }
+
+    /**
      * Inserts the FENCE of a resolution in the current epoch, with the user
      * who checked as its actor (ADR-007 section 4), in its transaction.
      */

@@ -53,4 +53,20 @@ final class OnboardingState
 
         return is_string($state) ? $state : null;
     }
+
+    /**
+     * The state under the share lock of a posting (TR §7.1 step 2.3; SCHEMA section 7), or
+     * null before the bootstrap: a start of onboarding waits for this lock, and a posting
+     * that waited for a start reads the state that it committed (G-10; RACE-04).
+     */
+    public function lockShared(): ?string
+    {
+        if (DB::transactionLevel() === 0) {
+            throw new LogicException('The onboarding state is locked in the transaction of its command (TR-TX-01).');
+        }
+
+        $state = DB::table('onboarding_state')->where('id', 1)->sharedLock()->value('state');
+
+        return is_string($state) ? $state : null;
+    }
 }

@@ -51,6 +51,10 @@ return [
         'quantity_whole' => 'Produk ini dihitung utuh. Isi tanpa koma.',
         'quantity_max' => 'Jumlah terlalu besar. Paling banyak 99.999.999,999.',
         'required' => 'Wajib diisi.',
+        // The fields of a stock posting (TASK-021; COPY_DECK section 16.1).
+        'lines_min' => 'Tambahkan minimal satu baris.',
+        'lines_max' => 'Paling banyak :maks baris.',
+        'zero_evidence' => 'Isi bukti atau alasan untuk biaya nol.',
         // The catalogue's fields (TASK-015; COPY_DECK section 16.1).
         'choose_one' => 'Pilih salah satu.',
         'min_stock' => 'Stok minimum tidak boleh kurang dari 0.',

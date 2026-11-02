@@ -12,18 +12,23 @@ use App\Actions\Catalog\CreateProduct;
 use App\Actions\Catalog\RetireBarcode;
 use App\Actions\Commands\CommandAction;
 use App\Actions\Commands\CommandContext;
+use App\Actions\Inventory\ConfirmReceiving;
 use App\Database\DatabaseRefused;
 use App\Database\EnvironmentMarker;
 use App\Domain\Access\Accounts;
 use App\Domain\Access\OneTimeLinks;
 use App\Domain\Access\Role;
 use App\Domain\Access\StaffRoles;
+use App\Domain\Commands\CommandIdentities;
 use App\Domain\Commands\Envelope;
+use App\Domain\Commands\Fingerprint;
 use App\Domain\Commands\Operations;
 use App\Domain\Commands\RecoveryEpoch;
+use App\Domain\Commands\StoredResult;
 use App\Domain\Configuration\BusinessProfiles;
 use App\Domain\Configuration\ProfileFields;
 use App\Domain\Inventory\OnboardingState;
+use App\Domain\Inventory\PostingBlocks;
 use App\Models\User;
 use App\Support\Time\Clock;
 use Illuminate\Database\ConnectionInterface;
@@ -31,6 +36,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use LogicException;
+use Tests\Harness\Inventory\PostingBlockScenario;
 
 /**
  * The fixture builder of the synthetic shop "Toko Contoh" (KEY_SCREENS
@@ -332,18 +338,88 @@ final class TokoContoh
     }
 
     /**
+     * A receiving of the shop, confirmed by the Owner through RC-07's Action (TASK-021;
+     * EXECUTION_CONTEXT EXC-45), at the versions its products stand at: its document's
+     * internal key.
+     *
+     * @param  list<array{productId: int, quantity: string, cost: array<string, string>}>  $lines
+     *
+     * @throws DatabaseRefused
+     */
+    public static function receive(array $lines, ?string $reference = null, ?string $documentDate = null): int
+    {
+        $versions = [];
+
+        foreach ($lines as $line) {
+            $version = DB::table('products')->where('id', $line['productId'])->value('version');
+            $versions[$line['productId']] = ['productId' => $line['productId'], 'version' => is_int($version) ? $version : 0];
+        }
+
+        return self::asOwner(ConfirmReceiving::class, ConfirmReceiving::OPERATION, ['reference' => $reference, 'documentDate' => $documentDate, 'lines' => $lines], ['products' => array_values($versions)]);
+    }
+
+    /**
+     * One line of a product received at a KNOWN cost, through RC-07's Action (TASK-021): the
+     * document's internal key.
+     *
+     * @throws DatabaseRefused
+     */
+    public static function stock(int $product, string $quantity, string $amount = '1000'): int
+    {
+        return self::receive([['productId' => $product, 'quantity' => $quantity, 'cost' => ['status' => 'KNOWN', 'amount' => $amount]]]);
+    }
+
+    /**
+     * A posting block of a product, through the Inventory module's block service, until the
+     * reconciliation of TASK-036 exists (TASK-021 scope item 7; EXECUTION_CONTEXT EXC-45): its
+     * internal key.
+     *
+     * @throws DatabaseRefused
+     */
+    public static function postingBlock(int $product, string $detailCode = 'BALANCE_MISMATCH'): int
+    {
+        self::build(DB::connection());
+
+        return PostingBlockScenario::write($product, $detailCode, self::recoveryEpoch());
+    }
+
+    /**
+     * The Owner's reopening of a block, through the same service, until RC-16 of TASK-036
+     * exists (TASK-021 scope item 7).
+     *
+     * @throws DatabaseRefused
+     */
+    public static function reopenPostings(int $block, ?string $reason = null): void
+    {
+        self::build(DB::connection());
+
+        $owner = User::query()->where('role_super_admin', true)->where('status', 'ACTIVE')->firstOrFail();
+        $envelope = new Envelope('posting_block.reopen', Operations::VERSION, (string) Str::uuid(), (string) Str::uuid(), self::recoveryEpoch(), [], ['blockId' => $block]);
+
+        DB::transaction(static function () use ($owner, $envelope, $block, $reason): void {
+            $identities = app(CommandIdentities::class);
+            $fingerprint = Fingerprint::of($envelope->operation, $envelope->version, Fingerprint::user($owner->id), [], $envelope->payload);
+            $command = $identities->insertCommand($envelope, $owner->id, $fingerprint, app(Clock::class)->now()->format('Y-m-d H:i:s.uP'));
+
+            app(PostingBlocks::class)->reopen($block, $owner->id, $owner->display_name, $reason, $command);
+            $identities->recordResult($command, new StoredResult('posting_block', $block));
+        });
+    }
+
+    /**
      * The result's key of a command that the Owner runs through its Action.
      *
      * @param  class-string<CommandAction>  $action
      * @param  array<string, mixed>  $payload
+     * @param  array<string, mixed>  $expected
      */
-    private static function asOwner(string $action, string $operation, array $payload): int
+    private static function asOwner(string $action, string $operation, array $payload, array $expected = []): int
     {
         self::build(DB::connection());
         self::shop();
 
         $owner = User::query()->where('role_super_admin', true)->where('status', 'ACTIVE')->firstOrFail();
-        $envelope = new Envelope($operation, Operations::VERSION, (string) Str::uuid(), (string) Str::uuid(), self::recoveryEpoch(), [], $payload);
+        $envelope = new Envelope($operation, Operations::VERSION, (string) Str::uuid(), (string) Str::uuid(), self::recoveryEpoch(), $expected, $payload);
         $id = app($action)->execute(new CommandContext($owner->id, $envelope, app(Clock::class)->now()))->result['id'] ?? null;
 
         return is_int($id) ? $id : throw new LogicException(sprintf('The fixture of %s was not created.', $operation));

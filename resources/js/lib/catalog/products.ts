@@ -69,6 +69,8 @@ export interface ProductRow {
     readonly active: boolean;
     readonly thumbnail: string | null;
     readonly activeBarcode: boolean;
+    /** RD-01's stock that the role may see (App\DTO\Inventory\ProductStockData); TASK-022 shows it. */
+    readonly stock?: { readonly onHand: string; readonly minimum?: string; readonly state?: 'OUT' | 'LOW' | 'NORMAL' | null };
 }
 
 /** A category of the pages (App\DTO\Catalog\CategoryRowData). */

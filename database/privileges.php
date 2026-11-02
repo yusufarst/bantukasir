@@ -185,6 +185,42 @@ return [
             'runtime' => ['select' => true, 'insert' => true, 'delete' => true],
         ],
 
+        // Inventory (SCHEMA section 5.7; TASK-021).
+        'stock_movements' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'stock_balances' => [
+            'class' => 'P',
+            'runtime' => ['select' => true, 'insert' => true, 'update' => ['on_hand', 'last_sequence', 'updated_at']],
+        ],
+        'receiving_documents' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'receiving_lines' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'inventory_posting_blocks' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'inventory_posting_block_reopenings' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+
+        // Costing (SCHEMA section 5.8; TASK-021).
+        'acquisition_cost_evidence' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'inventory_valuations' => [
+            'class' => 'P',
+            'runtime' => ['select' => true, 'insert' => true, 'update' => ['value_status', 'value', 'publication_no', 'last_sequence', 'published_at']],
+        ],
+
         // Operations (SCHEMA section 5.12; TASK-013): written by the backup role
         // (SCH-42), read by the runtime role.
         'backup_runs' => [

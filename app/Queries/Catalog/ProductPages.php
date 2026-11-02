@@ -83,8 +83,8 @@ final class ProductPages
             Quantity::fromDatabase($minimum, $precision)->toCanonical(),
             $active,
             $version,
-            // No movement exists before `stock_movements` (BR-CAT-07): TASK-021 reads it
-            // here, with the refusal of RC-18 that TASK-015 left for it.
+            // BR-CAT-07 is Inventory's to say, and the Catalog does not read it (STK-13): the
+            // pages that show the lock ask Queries\Inventory\ProductStock (withUnitLocked).
             false,
             is_int($photo) ? StoredFiles::deliveryPath($photo) : null,
         );

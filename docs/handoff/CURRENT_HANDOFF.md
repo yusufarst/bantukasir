@@ -11,6 +11,8 @@ CURRENT STEP:         Continuous execution (D-101) under FAST BUILD (D-117): a T
 CURRENT TASK:         None in flight on `develop`. Next: TASK-021 — Stock ledger, valuation and receiving (server) — at effort Max (review class A): agent `bk-executor-max`, review by `bk-reviewer-max`, verification by `bk-reviewer-xhigh`; a Task in flight shows in its pull request and in the executor state (EXECUTION_CONTEXT CE-20, CE-21)
 ```
 
+**On the branch `task/TASK-021-ledger-receiving` only:** the Owner paused TASK-021 on 2 November 2026, in its build, because he is shutting down the laptop (`STOPPED OWNER_STOP`, the phase before it `BUILD`). Nothing of it is merged and it has no pull request yet. Its progress, unfinished work, checks and next action are in its [evidence](../11-tasks/evidence/TASK-021.md), sections 1 to 4. No other Task starts. To resume, the Owner has `bash scripts/executor/state.sh resume` run (EXECUTION_CONTEXT CE-72). The Task's record removes this note (CE-50).
+
 ## 1. Where the project stands
 
 The re-foundation steps are in [REFOUNDATION_PLAN](../00-governance/REFOUNDATION_PLAN.md) section 2; the Task baseline is [TASK_PLAN](../11-tasks/TASK_PLAN.md), with the rules of [EXECUTION_CONTEXT](../11-tasks/EXECUTION_CONTEXT.md). Everything before TASK-001 is recorded in [DECISIONS](../00-governance/DECISIONS.md) (D-019 to D-097) and REFOUNDATION_PLAN; this file keeps what bears on the next step.

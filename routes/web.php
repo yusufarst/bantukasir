@@ -50,6 +50,7 @@ use App\Http\Controllers\Configuration\ChangeBusinessProfileController;
 use App\Http\Controllers\Configuration\ProfileController;
 use App\Http\Controllers\Documents\LabelPrintController;
 use App\Http\Controllers\Documents\RecordLabelPrintController;
+use App\Http\Controllers\Inventory\ConfirmReceivingController;
 use App\Http\Controllers\Media\MediaController;
 use App\Http\Controllers\Testing\SpecimenController;
 use Illuminate\Support\Facades\Route;
@@ -223,6 +224,10 @@ Route::middleware(['auth', 'signin.session', 'throttle:authenticated', 'cache.he
         Route::get('/products/{product}/labels/print/{printRequest}', [LabelPrintController::class, 'show'])->middleware('input.allow')->name('products.labels.print');
         Route::post('/commands/document.print_labels', RecordLabelPrintController::class)->middleware(['throttle:command', 'throttle:print'])->name('commands.document.print_labels');
     });
+
+    // The stock ledger (TASK-021): RC-07, in the bucket of every command. TASK-022 adds the
+    // pages of CAP-11.
+    Route::post('/commands/receiving.confirm', ConfirmReceivingController::class)->middleware(['capability:CAP-11', 'throttle:command'])->name('commands.receiving.confirm');
 });
 
 // RD-07, a stored image (TASK-010): signed in, with the middleware of every

@@ -27,6 +27,7 @@ use App\Actions\Catalog\SetProductPhoto;
 use App\Actions\Catalog\UpdateProduct;
 use App\Actions\Configuration\ChangeBusinessProfile;
 use App\Actions\Documents\RecordLabelPrint;
+use App\Actions\Inventory\ConfirmReceiving;
 use App\Domain\Commands\Operations;
 use LogicException;
 
@@ -78,6 +79,8 @@ final class CommandActions
         ConfirmCsvImport::OPERATION => ConfirmCsvImport::class,
         // RC-30 (TASK-020).
         CorrectBarcodeMisassignment::OPERATION => CorrectBarcodeMisassignment::class,
+        // RC-07 (TASK-021).
+        ConfirmReceiving::OPERATION => ConfirmReceiving::class,
     ];
 
     /**

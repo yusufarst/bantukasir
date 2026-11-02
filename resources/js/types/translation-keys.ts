@@ -345,6 +345,7 @@ export interface TranslationPlaceholders {
     'config.settings.profile_desc': never;
     'config.settings.title': never;
     'config.settings.users_desc': never;
+    'costing.field.zero_disabled': never;
     'documents.label.sku': 'sku';
     'ux.action.back_home': never;
     'ux.action.back_to': 'halaman';
@@ -552,6 +553,8 @@ export interface TranslationPlaceholders {
     'ux.validation.barcode_token': never;
     'ux.validation.choose_one': never;
     'ux.validation.email': never;
+    'ux.validation.lines_max': 'maks';
+    'ux.validation.lines_min': never;
     'ux.validation.min_stock': never;
     'ux.validation.money': never;
     'ux.validation.money_max': never;
@@ -573,6 +576,7 @@ export interface TranslationPlaceholders {
     'ux.validation.upload.too_large': 'ukuran';
     'ux.validation.upload.too_many_pixels': 'jumlah';
     'ux.validation.upload.unreadable': never;
+    'ux.validation.zero_evidence': never;
 }
 
 export type TranslationKey = keyof TranslationPlaceholders;

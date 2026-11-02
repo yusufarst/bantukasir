@@ -243,6 +243,8 @@ final class SignInSessionTest extends DatabaseTestCase
                 'intent_reconciliations' => 'report_id',
                 'barcode_mapping_retirements' => 'mapping_id',
                 'barcode_active_mappings' => 'token_id',
+                'stock_balances', 'inventory_valuations' => 'product_id',
+                'inventory_posting_block_reopenings' => 'block_id',
                 default => 'id',
             });
         }

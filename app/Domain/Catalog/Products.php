@@ -66,6 +66,41 @@ final class Products
     }
 
     /**
+     * The products of a stock posting under their update locks, ascending (TR §7.1 step 6;
+     * TR-LOCK-01): FOR NO KEY UPDATE, which the FOR UPDATE of an edit of the unit or the
+     * precision conflicts with (RACE-05). A row whose lock waited for another command is
+     * read as that command left it. A product that does not exist is absent from the
+     * answer, which stands in the order of the keys.
+     *
+     * @param  list<int>  $ids
+     * @return array<int, GuardedProduct>
+     */
+    public function lockForPosting(array $ids): array
+    {
+        self::requireTransaction();
+
+        $rows = DB::table('products')->whereIn('id', $ids)->orderBy('id')->lock('for no key update')->get(['id', 'base_unit', 'quantity_precision', 'active', 'version']);
+        $products = [];
+
+        foreach ($rows as $row) {
+            $values = (array) $row;
+            $id = $values['id'] ?? null;
+            $unit = $values['base_unit'] ?? null;
+            $precision = $values['quantity_precision'] ?? null;
+            $active = $values['active'] ?? null;
+            $version = $values['version'] ?? null;
+
+            if (! is_int($id) || ! is_string($unit) || ! is_int($precision) || ! is_bool($active) || ! is_int($version)) {
+                throw new LogicException('A product row holds its columns (SCHEMA section 5.6).');
+            }
+
+            $products[$id] = new GuardedProduct($id, $unit, $precision, $active, $version);
+        }
+
+        return $products;
+    }
+
+    /**
      * Adds an active product with no movement and no stock (BR-CAT-03), its
      * pointer to be moved by the Action.
      *
