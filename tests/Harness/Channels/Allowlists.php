@@ -96,7 +96,9 @@ final class Allowlists
         // The catalogue pages (TASK-017), for every kind of account that CAP-04 opens
         // them to: never a cost, a valuation or a margin (BR-CAT-26). TASK-020, TASK-022
         // and TASK-025 add their sections to UXP-302.
-        'catalog/Products' => ['*' => ['filters', 'filters.q', 'filters.category', 'filters.brand', 'filters.status', 'filters.page', ...self::CATEGORIES, 'canPrintLabels']],
+        'catalog/Products' => ['*' => ['filters', 'filters.q', 'filters.category', 'filters.brand', 'filters.status', 'filters.page', 'filters.import', ...self::CATEGORIES, 'canPrintLabels']],
+        // UXP-308 (TASK-019): the column list of DC-04.
+        'catalog/Import' => ['*' => ['columns', 'columns.*', 'columns.*.header', 'columns.*.required', 'canManageCategories']],
         'catalog/ProductCreate' => ['*' => [...self::CATEGORIES, 'code']],
         'catalog/Product' => ['*' => [
             ...self::PRODUCT,
@@ -153,6 +155,12 @@ final class Allowlists
             'ops' => self::SEARCH_RESULT,
             'combined' => self::SEARCH_RESULT,
         ],
+        // RR-01 (TASK-019): the import, its checksum, and every row with its errors.
+        'products.import.preview' => [
+            'owner' => self::IMPORT_PREVIEW,
+            'ops' => self::IMPORT_PREVIEW,
+            'combined' => self::IMPORT_PREVIEW,
+        ],
         'data.products.check' => [
             'owner' => self::CHECK_RESULT,
             'ops' => self::CHECK_RESULT,
@@ -168,6 +176,12 @@ final class Allowlists
     ];
 
     /** RD-06 with an exact barcode, an exact SKU and a similar name. */
+    private const array IMPORT_PREVIEW = [
+        'importId', 'fileSha256', 'dataRowCount', 'readyRows', 'errorRows',
+        'rows', 'rows.*', 'rows.*.row', 'rows.*.sku', 'rows.*.name', 'rows.*.category', 'rows.*.sellingPrice',
+        'rows.*.errors', 'rows.*.errors.*', 'rows.*.errors.*.key', 'rows.*.errors.*.params', 'rows.*.errors.*.params.kolom',
+    ];
+
     private const array CHECK_RESULT = [
         'barcode', 'barcode.id', 'barcode.name', 'barcode.sku', 'barcode.baseUnit', 'barcode.quantityPrecision', 'barcode.price', 'barcode.price.amount', 'barcode.price.revisionId', 'barcode.active', 'barcode.thumbnail', 'barcode.activeBarcode',
         'sku', 'sku.id', 'sku.name', 'sku.sku', 'sku.baseUnit', 'sku.quantityPrecision', 'sku.price', 'sku.price.amount', 'sku.price.revisionId', 'sku.active', 'sku.thumbnail', 'sku.activeBarcode',

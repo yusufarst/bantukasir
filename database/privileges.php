@@ -161,6 +161,12 @@ return [
             'runtime' => ['select' => true, 'insert' => true],
         ],
 
+        // Catalog, the CSV import's record (SCHEMA section 5.6; TASK-019).
+        'csv_product_imports' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+
         // Catalog, the barcodes (SCHEMA section 5.6; TASK-016).
         'barcode_tokens' => [
             'class' => 'F',

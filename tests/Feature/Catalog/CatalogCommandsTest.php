@@ -267,16 +267,27 @@ final class CatalogCommandsTest extends DatabaseTestCase
         $this->postCommand('category.rename', ['categoryId' => $this->category, 'name' => 'Baru', 'sellingPrice' => '1'], ['categoryVersion' => 1])->assertStatus(422);
         $this->assertSame($before, $this->facts());
 
+        // RC-17 and RC-31 give a new product its first price, and RC-31 only by
+        // creating every product of its file; RC-18 alone changes a price.
         $writers = [];
+        $firstPrices = [];
 
         foreach (glob(base_path('app/Actions/*/*.php')) ?: [] as $file) {
-            if (str_contains((string) file_get_contents($file), 'products->insertRevision(')) {
+            $source = (string) file_get_contents($file);
+
+            if (str_contains($source, 'products->insertRevision(')) {
                 $writers[] = basename($file);
+            }
+
+            if (str_contains($source, 'products->pointAtFirstRevision(')) {
+                $firstPrices[] = basename($file);
             }
         }
 
         sort($writers);
-        $this->assertSame(['CreateProduct.php', 'UpdateProduct.php'], $writers);
+        sort($firstPrices);
+        $this->assertSame(['ConfirmCsvImport.php', 'CreateProduct.php', 'UpdateProduct.php'], $writers);
+        $this->assertSame(['ConfirmCsvImport.php', 'CreateProduct.php'], $firstPrices);
     }
 
     public function test_deactivation_and_reactivation_of_a_product_keep_it_readable_and_delete_nothing(): void

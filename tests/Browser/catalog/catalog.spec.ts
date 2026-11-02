@@ -121,7 +121,7 @@ for (const width of [WIDTHS[0], WIDTHS[4], WIDTHS[7]]) {
             await page.keyboard.press('Escape');
         } else {
             await expect(page.getByRole('navigation', { name: 'Menu utama' }).getByRole('link')).toHaveText(['Produk']);
-            await expect(page.getByRole('navigation', { name: 'Submenu Produk' }).getByRole('link')).toHaveText(['Produk', 'Kategori']);
+            await expect(page.getByRole('navigation', { name: 'Submenu Produk' }).getByRole('link')).toHaveText(['Produk', 'Kategori', 'Impor produk (CSV)']);
         }
 
         await checked(page);

@@ -146,7 +146,8 @@ ENTRYPOINT ["/usr/local/bin/bantukasir-entrypoint"]
 # belong to root, so that its processes can write only its runtime folders. The
 # media folder exists here with its owner, so that no process of another user
 # can create it first (TASK-010 finding F-8), and an empty volume mounted on it
-# takes this owner and mode. The image declares no port of its own: the platform's
+# takes this owner and mode; so does the temporary area of the CSV import, which
+# no volume holds (TASK-019). The image declares no port of its own: the platform's
 # resource of role web names 8080, and role backup publishes none (ADR-010 item
 # 6). The base image's declaration of 9000 cannot be removed; PHP-FPM listens on
 # the loopback address only, so nothing can be reached there.
@@ -176,11 +177,11 @@ ENV APP_RELEASE_VERSION=$APP_RELEASE_VERSION APP_RELEASE_COMMIT=$APP_RELEASE_COM
 ENV LOG_CHANNEL=stderr LOG_LEVEL=info
 
 RUN set -eux; \
-    mkdir -p bootstrap/cache storage/app/private/media storage/framework/cache/data storage/framework/cache/locks storage/framework/sessions storage/framework/views storage/logs; \
+    mkdir -p bootstrap/cache storage/app/private/media storage/app/private/csv-imports storage/framework/cache/data storage/framework/cache/locks storage/framework/sessions storage/framework/views storage/logs; \
     php artisan package:discover --no-interaction; \
     chown -R www-data:www-data bootstrap/cache storage; \
     chmod -R u=rwX,g=rX,o= bootstrap/cache storage; \
-    chmod 0750 storage/app/private/media
+    chmod 0750 storage/app/private/media storage/app/private/csv-imports
 
 USER www-data
 

@@ -3,6 +3,7 @@
 namespace App\Queries\Catalog;
 
 use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Facades\DB;
 
 /**
  * RD-01, the shared Product Search (ROUTE_CONTRACTS RD-01; INTERACTION_CONTRACTS
@@ -84,6 +85,11 @@ final class ProductSearch
 
         if ($filters->status !== null) {
             $query->where('p.active', $filters->status === 'active');
+        }
+
+        // RC-31's location: the products of one import (TASK-019).
+        if ($filters->import !== null) {
+            $query->whereIn('p.created_command_id', DB::table('csv_product_imports')->select('command_id')->where('id', $filters->import));
         }
 
         return $query->orderBy('p.name')->orderBy('p.id')

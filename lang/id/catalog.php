@@ -3,8 +3,9 @@
 // Interface dictionary, file catalog (ADR-005; COPY_DECK section 1.1):
 // products, categories, barcodes, labels, CSV import. Its keys are copied
 // verbatim from COPY_DECK by the first Task that uses them. TASK-017 adds those
-// of its pages (COPY_DECK sections 8.1 to 8.5 and 8.8), and TASK-018 those of the
-// photo and the labels (COPY_DECK sections 8.3 and 8.7).
+// of its pages (COPY_DECK sections 8.1 to 8.5 and 8.8), TASK-018 those of the
+// photo and the labels (COPY_DECK sections 8.3 and 8.7), and TASK-019 those of the
+// CSV import (COPY_DECK sections 8.9, 15 and 16.3).
 
 return [
     'field' => [
@@ -143,5 +144,50 @@ return [
         ],
         'deactivated' => 'Kategori dinonaktifkan.',
         'reactivated' => 'Kategori diaktifkan kembali.',
+    ],
+    'csv_import' => [
+        'title' => 'Impor produk (CSV)',
+        'format_title' => 'Format kolom',
+        'column' => [
+            'sku' => 'SKU',
+            'name' => 'Nama',
+            'category' => 'Kategori',
+            'brand' => 'Merek',
+            'base_unit' => 'Satuan',
+            'quantity_precision' => 'Desimal',
+            'selling_price' => 'Harga jual',
+            'minimum_stock' => 'Stok minimum',
+            'barcode' => 'Barcode',
+        ],
+        'format_intro' => 'Gunakan berkas CSV dengan pengodean UTF-8 dan judul kolom persis seperti daftar di bawah. Kolom lain tidak diterima. SKU dan barcode dibaca sebagai teks, sehingga angka nol di depan tetap ada.',
+        'scope_note' => 'Impor hanya membuat produk baru dengan stok 0. Produk yang sudah ada tidak diubah, dan stok serta biaya tidak ikut diimpor.',
+        'limits' => 'Paling besar 2 MB dan 5.000 baris data.',
+        'choose_file' => 'Pilih berkas CSV',
+        'preview_title' => 'Pratinjau impor',
+        'preview_summary' => ':siap baris siap diimpor, :salah baris perlu diperbaiki.',
+        'all_or_nothing' => 'Semua baris diimpor bersama, atau tidak ada yang diimpor.',
+        'create_category_link' => 'Buat kategori di halaman Kategori',
+        'confirm' => 'Impor :jumlah produk',
+        'success' => ':jumlah produk baru ditambahkan.',
+        'cancel' => 'Batalkan impor',
+        'empty' => 'Belum ada berkas yang dipilih.',
+        'disabled_unresolved' => 'Ada impor yang statusnya belum pasti. Cek statusnya dulu.',
+        'disabled_errors' => 'Perbaiki semua baris yang salah dulu.',
+        'error' => [
+            'row' => 'Baris :nomor: :masalah',
+            'category_missing' => 'Tidak ada kategori aktif dengan nama ini.',
+            'category_ambiguous' => 'Nama kategori cocok dengan lebih dari satu kategori aktif.',
+            'sku_taken' => 'SKU sudah dipakai produk lain.',
+            'sku_duplicate' => 'SKU muncul lebih dari sekali di berkas ini.',
+            'barcode_taken' => 'Barcode sudah dipakai.',
+            'barcode_duplicate' => 'Barcode muncul lebih dari sekali di berkas ini.',
+            'barcode_reserved' => 'Barcode yang diawali BK- tidak bisa diimpor.',
+            'required' => 'Kolom :kolom wajib diisi.',
+            'invalid_value' => 'Isi kolom :kolom belum benar.',
+            'formula' => 'Sel yang diawali = tidak diterima.',
+            'unknown_column' => 'Kolom tidak dikenal: :kolom.',
+            'missing_column' => 'Kolom wajib tidak ada: :kolom.',
+            'file_changed' => 'Berkas berubah setelah pratinjau. Pilih berkasnya lagi untuk pratinjau baru.',
+        ],
     ],
 ];

@@ -68,10 +68,10 @@ final class CatalogPagesTest extends DatabaseTestCase
         $this->as('Agus');
 
         $filters = $this->propsOf($this->get('/products?q=pulpen&category='.$this->category.'&brand=Merek%20A&status=inactive&page=3')->assertOk())['filters'] ?? null;
-        $this->assertSame(['q' => 'pulpen', 'category' => $this->category, 'brand' => 'Merek A', 'status' => 'inactive', 'page' => 3], $filters);
+        $this->assertSame(['q' => 'pulpen', 'category' => $this->category, 'brand' => 'Merek A', 'status' => 'inactive', 'page' => 3, 'import' => null], $filters);
 
         $none = $this->propsOf($this->get('/products')->assertOk())['filters'] ?? null;
-        $this->assertSame(['q' => '', 'category' => null, 'brand' => '', 'status' => null, 'page' => 1], $none);
+        $this->assertSame(['q' => '', 'category' => null, 'brand' => '', 'status' => null, 'page' => 1, 'import' => null], $none);
 
         foreach (['status=lain', 'category=abc', 'category=0', 'page=0', 'page=abc', 'sort=name', 'q='.str_repeat('a', 129), 'brand='.str_repeat('b', 101)] as $query) {
             $this->getJson('/products?'.$query)->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');

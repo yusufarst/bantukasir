@@ -71,16 +71,17 @@ describe('the primary navigation of each role', () => {
         expect(ALL.filter((id) => DESTINATIONS[id] !== undefined)).toEqual(['products', 'settings']);
         expect(DESTINATIONS.settings).toEqual({ label: 'config.settings.title', href: '/settings', icon: 'sliders', capabilities: ['CAP-25', 'CAP-32'] });
         expect(DESTINATIONS.products).toEqual({ label: 'catalog.products.title', href: '/products', icon: 'tag', capabilities: ['CAP-02', 'CAP-04'] });
-        // UXI-009 and UXI-010; UXI-011 "Impor produk (CSV)" comes with TASK-019.
-        expect(Object.keys(SUB_DESTINATIONS.products)).toEqual(['products', 'categories']);
+        // UXI-009 and UXI-010; UXI-011 "Impor produk (CSV)", TASK-019's.
+        expect(Object.keys(SUB_DESTINATIONS.products)).toEqual(['products', 'categories', 'csv']);
         expect(SUB_DESTINATIONS.products.categories).toEqual({ label: 'catalog.categories.title', href: '/categories', capabilities: ['CAP-04'] });
+        expect(SUB_DESTINATIONS.products.csv).toEqual({ label: 'catalog.csv_import.title', href: '/products/import', capabilities: ['CAP-10'] });
         expect(Object.keys(SUB_DESTINATIONS.stock)).toEqual([]);
         expect(Object.keys(SUB_DESTINATIONS.reports)).toEqual([]);
         expect(navigationFor(['SUPER_ADMIN'], FLAGS.owner, DESTINATIONS).map((item) => item.id)).toEqual(['products', 'settings']);
         expect(navigationFor(['CASHIER', 'OPERATIONS_ADMIN'], FLAGS.combined, DESTINATIONS).map((item) => item.id)).toEqual(['products']);
         expect(navigationFor(['OPERATIONS_ADMIN'], FLAGS.ops, DESTINATIONS).map((item) => item.id)).toEqual(['products']);
         expect(navigationFor(['CASHIER'], FLAGS.cashier, DESTINATIONS)).toEqual([]);
-        expect(subNavigationFor('products', ['OPERATIONS_ADMIN'], FLAGS.ops, SUB_DESTINATIONS.products).map((item) => item.id)).toEqual(['products', 'categories']);
+        expect(subNavigationFor('products', ['OPERATIONS_ADMIN'], FLAGS.ops, SUB_DESTINATIONS.products).map((item) => item.id)).toEqual(['products', 'categories', 'csv']);
     });
 });
 

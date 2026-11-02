@@ -93,7 +93,7 @@ final class RouteInventoryTest extends TestCase
         'POST /commands/barcode.generate' => ['commands.barcode.generate', 'RC-28', 'CAP-06', [...self::SIGNED_IN, 'capability:CAP-06', 'throttle:command']],
         'POST /commands/barcode.retire' => ['commands.barcode.retire', 'RC-29', 'CAP-06', [...self::SIGNED_IN, 'capability:CAP-06', 'throttle:command']],
         // TASK-017: the catalogue pages.
-        'GET /products' => ['products.index', 'RP-301', 'CAP-04', [...self::SIGNED_IN, 'capability:CAP-04', 'input.allow:q,category,brand,status,page']],
+        'GET /products' => ['products.index', 'RP-301', 'CAP-04', [...self::SIGNED_IN, 'capability:CAP-04', 'input.allow:q,category,brand,status,page,import']],
         'GET /products/new' => ['products.create', 'RP-303', 'CAP-04', [...self::SIGNED_IN, 'capability:CAP-04', 'input.allow:code']],
         'GET /products/{product}' => ['products.show', 'RP-302', 'CAP-04', [...self::SIGNED_IN, 'capability:CAP-04', 'input.allow']],
         'GET /products/{product}/edit' => ['products.edit', 'RP-304', 'CAP-04', [...self::SIGNED_IN, 'capability:CAP-04', 'input.allow']],
@@ -104,6 +104,11 @@ final class RouteInventoryTest extends TestCase
         'POST /commands/document.print_labels' => ['commands.document.print_labels', 'RC-47', 'CAP-08', [...self::SIGNED_IN, 'capability:CAP-08', 'throttle:command', 'throttle:print']],
         'GET /products/{product}/labels' => ['products.labels', 'RP-306', 'CAP-08', [...self::SIGNED_IN, 'capability:CAP-08', 'input.allow']],
         'GET /products/{product}/labels/print/{printRequest}' => ['products.labels.print', 'RP-306P', 'CAP-08', [...self::SIGNED_IN, 'capability:CAP-08', 'input.allow']],
+        // TASK-019: RP-308, RR-01, RR-02 and RC-31.
+        'GET /products/import' => ['products.import', 'RP-308', 'CAP-10', [...self::SIGNED_IN, 'capability:CAP-10', 'input.allow']],
+        'POST /products/import/preview' => ['products.import.preview', 'RR-01', 'CAP-10', [...self::SIGNED_IN, 'capability:CAP-10', 'throttle:csv']],
+        'POST /products/import/{import}/cancel' => ['products.import.cancel', 'RR-02', 'CAP-10', [...self::SIGNED_IN, 'capability:CAP-10', 'input.allow']],
+        'POST /commands/csv_import.confirm' => ['commands.csv_import.confirm', 'RC-31', 'CAP-10', [...self::SIGNED_IN, 'capability:CAP-10', 'throttle:command']],
     ];
 
     public function test_the_routes_are_exactly_those_listed_each_with_its_gate(): void

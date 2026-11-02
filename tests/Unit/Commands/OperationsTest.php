@@ -11,6 +11,7 @@ use App\Actions\Access\RevokePasswordLink;
 use App\Actions\Access\UpdateOwnerDetails;
 use App\Actions\Access\UpdateStaffAccount;
 use App\Actions\Catalog\AddBarcode;
+use App\Actions\Catalog\ConfirmCsvImport;
 use App\Actions\Catalog\CreateCategory;
 use App\Actions\Catalog\CreateProduct;
 use App\Actions\Catalog\DeactivateCategory;
@@ -119,6 +120,7 @@ final class OperationsTest extends TestCase
             'product_photo.set' => SetProductPhoto::class,
             'product_photo.remove' => RemoveProductPhoto::class,
             'document.print_labels' => RecordLabelPrint::class,
+            'csv_import.confirm' => ConfirmCsvImport::class,
         ], CommandActions::built());
     }
 
