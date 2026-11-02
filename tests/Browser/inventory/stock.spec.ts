@@ -177,6 +177,85 @@ test('the list refreshes in the background every 30 seconds and on focus, and a 
     await checked(page);
 });
 
+// Pull request #31, finding P2: a refresh on focus or at 30 seconds while a filter's read was out
+// superseded it with the filters still shown, so the list and its address went back to them.
+test('a refresh while a filter is being read never brings back the filters shown before it', async ({ page }) => {
+    const context = page.context();
+    const reads: { readonly state: string | null; readonly background: boolean }[] = [];
+    let release = (): void => undefined;
+    const held = new Promise<void>((resolve) => {
+        release = resolve;
+    });
+    let lowFails = false;
+
+    await page.clock.install();
+    await signedIn(context, page, 'Dewi');
+
+    // RD-02: without a filter, one row of each state; the read of "Habis" held until released.
+    await page.route(STOCK_DATA, async (route) => {
+        const state = new URL(route.request().url()).searchParams.get('state');
+
+        reads.push({ state, background: route.request().headers()['x-background-request'] === '1' });
+
+        if (state === 'LOW' && lowFails) {
+            await route.fulfill({ status: 503, json: { code: 'SERVICE_BUSY' } });
+
+            return;
+        }
+
+        if (state === 'OUT') {
+            await held;
+            await route.fulfill({ json: { rows: [stubRow(1, 'OUT')], outCount: 1, lowCount: 1, asOf: '2026-11-02T03:00:00.000000Z', nextCursor: null } });
+
+            return;
+        }
+
+        await route.fulfill({ json: { rows: [stubRow(1, 'OUT'), stubRow(2, 'LOW'), stubRow(3, 'NORMAL')], outCount: 1, lowCount: 1, asOf: '2026-11-02T03:00:00.000000Z', nextCursor: null } });
+    });
+    await page.goto('/stock');
+    const rows = page.getByRole('main').getByRole('table').locator('tbody tr');
+    await expect(rows).toHaveCount(3);
+
+    // "Habis", its read out; then the focus and the 30 seconds' refresh, which wait for it. The
+    // clock goes 20 seconds before the click and 15 after it, so that the refresh falls due while
+    // the read is out and the read's own wait of 30 seconds does not (review finding R-14).
+    await page.clock.fastForward(20_000);
+    await page.getByRole('button', { name: 'Habis', exact: true }).click();
+    await expect.poll(() => reads.some((read) => read.state === 'OUT' && !read.background)).toBe(true);
+    const chosen = reads.length;
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+    await page.clock.fastForward(15_000);
+    release();
+
+    // The list and its address are those of "Habis", the chip pressed, the read never failed.
+    await expect(page).toHaveURL(/state=OUT/);
+    await expect(rows).toHaveCount(1);
+    await expect(page.getByRole('button', { name: 'Habis', exact: true, pressed: true })).toBeVisible();
+    await expect(page.getByText('Data belum diperbarui')).toHaveCount(0);
+    expect(reads.slice(chosen).filter((read) => read.state !== 'OUT')).toEqual([]);
+
+    // A later refresh reads the filter asked for.
+    const settled = reads.length;
+    await page.clock.fastForward(30_000);
+    await expect.poll(() => reads.length).toBeGreaterThan(settled);
+    expect(reads.slice(settled)).toEqual(reads.slice(settled).map(() => ({ state: 'OUT', background: true })));
+    await expect(rows).toHaveCount(1);
+    await expect(page).toHaveURL(/state=OUT/);
+
+    // "Menipis" whose read fails keeps the rows shown; "Muat ulang" then reads "Menipis", never
+    // the filter shown (review finding R-15).
+    lowFails = true;
+    await page.getByRole('button', { name: 'Menipis', exact: true }).click();
+    await expect(page.getByText('Data belum diperbarui')).toBeVisible();
+    await expect(rows).toHaveCount(1);
+    lowFails = false;
+    await page.getByRole('button', { name: 'Muat ulang' }).first().click();
+    await expect(page).toHaveURL(/state=LOW/);
+    await expect(rows).toHaveCount(3);
+    await expect(page.getByRole('button', { name: 'Menipis', exact: true, pressed: true })).toBeVisible();
+    await expect(page.getByText('Data belum diperbarui')).toHaveCount(0);
+});
+
 test('the badge of "Stok" shows the number of RD-03 with its name (UXI-006)', async ({ page }) => {
     const context = page.context();
 

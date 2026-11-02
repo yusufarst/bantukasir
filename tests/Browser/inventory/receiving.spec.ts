@@ -379,6 +379,41 @@ test('each refusal of RC-07 returns to the draft with its line marked and its me
     await context.close();
 });
 
+// Pull request #31, finding P1: the review's children are made with every render, so a quantity
+// emptied or half typed reached the formatter and ended the page with its draft.
+test('a quantity emptied or half typed keeps the page and its draft, and the review shows it once it is one', async ({ browser }) => {
+    const context = await contextAt(browser, WIDTHS[0]!);
+    const page = await context.newPage();
+    const watched = await watch(page);
+
+    await signedIn(context, page, 'Agus');
+    const category = await newCategory(page);
+    const product = await newProduct(page, category);
+
+    await draftOf(page, product);
+    const quantity = line(page, product.name).getByLabel('Jumlah', { exact: true });
+
+    for (const typed of ['', '0,', '1,', '01', '2,0']) {
+        await quantity.fill(typed);
+        await expect(quantity).toHaveValue(typed);
+        await expect(page.getByRole('heading', { level: 1, name: 'Catat barang masuk' })).toBeVisible();
+        await expect(line(page, product.name).getByLabel('Biaya', { exact: true })).toHaveValue('4.000');
+    }
+
+    // "2,0" of a product of whole units is 2: the review shows it in its form.
+    await page.getByLabel('Cari atau scan produk', { exact: true }).fill('');
+    await page.getByRole('button', { name: 'Tinjau' }).click();
+    const review = page.getByRole('dialog', { name: 'Tinjau barang masuk' });
+    await expect(review.getByRole('listitem').filter({ hasText: product.name })).toContainText('2 pcs');
+    await review.getByRole('button', { name: 'Kembali ubah' }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(quantity).toHaveValue('2,0');
+
+    // No page error of the formatter, nor any other.
+    expect(injected(watched.problems)).toEqual([]);
+    await context.close();
+});
+
 // KS-09 at the widths of KEY_SCREENS section 4 and 1440 px: the page and its review.
 for (const width of [WIDTHS[4], WIDTHS[7]]) {
     test(`UXP-405 and its review fit ${width?.name ?? ''}`, async ({ browser }) => {

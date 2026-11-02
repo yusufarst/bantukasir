@@ -1,5 +1,5 @@
 import { leaveSignedInSession } from '@/lib/browserSession';
-import type { ReadAnswer } from '@/lib/catalog/products';
+import { quantityFromEntry, type ReadAnswer } from '@/lib/catalog/products';
 import { requestJson } from '@/lib/commands/client';
 import { formatQuantity } from '@/lib/format';
 import { t } from '@/lib/i18n';
@@ -46,6 +46,33 @@ export const RECEIVING_COMMAND = { operation: 'receiving.confirm', family: 'stoc
 
 /** The most lines of a receiving (TECHNICAL_RULES section 11.2). */
 export const MAX_RECEIVING_LINES = 500;
+
+/** The largest whole part of a quantity (TECHNICAL_RULES section 11.1): eight digits. */
+export const QUANTITY_DIGITS_MAX = 8;
+
+/**
+ * A draft's quantity as typed, in the canonical form of its shortest digits — "01" is "1" and
+ * "2,50" is "2.5" — when it is a quantity of the product's precision within the largest; null
+ * while it is not one yet: emptied, half typed such as "1,", or with more decimals. The review
+ * formats only this, never the entry as typed, so that no edit of a line can end the page and
+ * its draft (pull request #31, finding P1).
+ */
+export function draftQuantity(text: string, precision: number): string | null {
+    const match = /^([0-9]+)(?:\.([0-9]+))?$/.exec(quantityFromEntry(text));
+
+    if (match === null) {
+        return null;
+    }
+
+    const whole = (match[1] ?? '').replace(/^0+(?=[0-9])/, '');
+    const fraction = (match[2] ?? '').replace(/0+$/, '');
+
+    if (fraction.length > precision || whole.replace(/^0+/, '').length > QUANTITY_DIGITS_MAX) {
+        return null;
+    }
+
+    return fraction === '' ? whole : `${whole}.${fraction}`;
+}
 
 export type StockState = 'OUT' | 'LOW' | 'NORMAL';
 

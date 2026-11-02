@@ -20,7 +20,7 @@ import { useCommand } from '@/lib/commands/useCommand';
 import { formatCost, formatCount, formatQuantity } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import { postingBlockedReason } from '@/lib/inventory/Parts';
-import { MAX_RECEIVING_LINES, NEW_RECEIVING_PAGE, RECEIVING_COMMAND, RECEIVINGS_PAGE, RECEIVINGS_SHELL, backFrom } from '@/lib/inventory/stock';
+import { MAX_RECEIVING_LINES, NEW_RECEIVING_PAGE, QUANTITY_DIGITS_MAX, RECEIVING_COMMAND, RECEIVINGS_PAGE, RECEIVINGS_SHELL, backFrom, draftQuantity } from '@/lib/inventory/stock';
 import { CreateFlow } from '@/pages/catalog/ProductCreate';
 
 // UXP-405 "Catat barang masuk" (ROUTE_CONTRACTS RP-405, RD-01 `receiving`, RC-07; KS-09; COPY_DECK
@@ -54,9 +54,6 @@ const EVIDENCE_MAX = 1000;
 
 /** The largest whole rupiah of a cost (TECHNICAL_RULES section 11.1): twelve digits. */
 const MONEY_DIGITS_MAX = 12;
-
-/** The largest whole part of a quantity (TECHNICAL_RULES section 11.1): eight digits. */
-const QUANTITY_DIGITS_MAX = 8;
 
 const VALIDATION_FAILED = 'VALIDATION_FAILED';
 
@@ -649,11 +646,17 @@ function ReceivingForm({ title, postingFrozen, zeroAllowed, categories }: Receiv
                 <p>{t('inventory.receipt_new.review_lines', { jumlah: formatCount(lines.length) })}</p>
                 {unknownLines > 0 && <p>{t('inventory.receipt_new.review_unknown', { jumlah: formatCount(unknownLines) })}</p>}
                 <ul className={'bk-stack'}>
-                    {lines.map((line) => (
-                        <li key={line.key} data-unknown={line.unknown}>
-                            <strong>{line.product.name}</strong> · <span className={'bk-num'}>{formatQuantity(quantityFromEntry(line.quantity), line.product.quantityPrecision, line.product.baseUnit)}</span> · {line.unknown || line.amount === null ? <StateMark kind={'cost_unknown'} /> : <span className={'bk-num'}>{formatCost(line.amount)}</span>}
-                        </li>
-                    ))}
+                    {lines.map((line) => {
+                        // The review's children are made with every render, the dialog closed too, so a line's quantity is
+                        // formatted only once it is one; the review opens only then (pull request #31, finding P1).
+                        const quantity = draftQuantity(line.quantity, line.product.quantityPrecision);
+
+                        return (
+                            <li key={line.key} data-unknown={line.unknown}>
+                                <strong>{line.product.name}</strong> · <span className={'bk-num'}>{quantity === null ? line.quantity : formatQuantity(quantity, line.product.quantityPrecision, line.product.baseUnit)}</span> · {line.unknown || line.amount === null ? <StateMark kind={'cost_unknown'} /> : <span className={'bk-num'}>{formatCost(line.amount)}</span>}
+                            </li>
+                        );
+                    })}
                 </ul>
                 <p>{t('inventory.receipt_new.review_note')}</p>
             </ReviewDialog>

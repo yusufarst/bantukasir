@@ -133,3 +133,38 @@ The reviewer found the widened guard tests of section 2 item 7 justified by what
 ## 8. The guard's candidates (CE-31)
 
 `guard.sh --preview` and `guard.sh` on every checkpoint, `7526324` to `e269506`, list no candidate: no address, host, e-mail or home path. The guard on the record's commit is reported with the pull request, because this file cannot name its own commit.
+
+## 9. Fix cycle 1 on pull request #31 (CE-42, CE-43)
+
+Pull request #31 opened on `9b2af60`. The repository's automated reviewer left two findings on it, change requests under CE-43; each was checked against the code and holds. Its summary comment and its review receipt are information only. Times are Asia/Jakarta, 2 and 3 November 2026.
+
+| Finding | Severity | What held | Fix | Regression tests |
+| --- | --- | --- | --- | --- |
+| P1, review comment 4445124822: the formatter fed a draft quantity that is no quantity yet | P1 | UXP-405's review is a child of `ReviewDialog`, made with every render while the dialog is closed too, and it called `formatQuantity(quantityFromEntry(…))` on the quantity as typed. An emptied field, a decimal half typed (`0,`, `1,`) and the entries that `quantityProblem` accepts but are not canonical (`01`, `2,0` of a whole unit) threw `NonCanonicalNumberError` during render, which ended the page and the draft in its memory (BR-INV-17) | `draftQuantity` in `lib/inventory/stock.ts`: the canonical shortest form of an entry that is a quantity of the precision within eight whole digits, otherwise null, with the acceptance of `quantityProblem`; the review formats only it. `QUANTITY_DIGITS_MAX` moved there. What RC-07 is sent is unchanged | `tests/Unit/Inventory/receivingDraft.test.ts` (the old call throws on those entries; `draftQuantity` never lets the formatter throw at precisions 0 to 3); `receiving.spec.ts` "a quantity emptied or half typed keeps the page and its draft…", which ends the page at the first emptied field on `9b2af60` |
+| P2, review comment 4445124828: a refresh in the background superseded the read of a new filter | P2 | UXP-401's refresh — every 30 seconds while visible, on focus, after a settled command — read the filters shown and advanced the read counter, so the answer of a filter the user had just chosen was dropped and the list and its address went back to the old filters while the controls showed the new; nothing read it again | `Stock.tsx`: a read the user asked for (a filter, the search, "Muat lebih banyak", "Muat ulang") holds `userRead` until it answers, and a refresh while it is out does nothing; the refresh reads the filters last asked for (`requested`), with the rows shown when the list shows them (`wanted()`) | `stock.spec.ts` "a refresh while a filter is being read never brings back the filters shown before it": the read of "Habis" held through a focus and the 30 seconds' refresh, then the list, its address and the chip those of "Habis", and the next refresh of "Habis" |
+
+**Targeted verification** (CE-43: the fixes change the production behaviour of a class-A Task), by `bk-reviewer-high` at High:
+
+| Round | Package | Verdict |
+| --- | --- | --- |
+| 3 | `review/TASK-022/r3`, head `9b2af60` with the fixes uncommitted, tree `ddaa88f`, previous `r2`; `--check` `UNCHANGED` | FAIL: P1 FIXED; P2's code FIXED; one MUST-FIX in its test (R-14), one SHOULD-FIX, three NOTEs |
+| 4 | `review/TASK-022/r4`, tree `e89f080`, previous `r3`; `--check` `UNCHANGED` | PASS: R-14 and R-15 FIXED, no new MUST-FIX; three NOTEs |
+
+| Finding | Severity | Outcome |
+| --- | --- | --- |
+| R-14: the P2 test's `fastForward(30_000)` while the read of "Habis" was held also fired that read's own wait of 30 seconds, so the read failed and the test failed before and after the fix | MUST-FIX | Fixed: the clock goes 20 seconds before the click and 15 after it, so that the refresh falls due while the read is out and its wait does not; "Data belum diperbarui" asserted absent. Verified FIXED |
+| R-15: "Muat ulang" and "Coba lagi" read the filters shown, unlike the refresh | SHOULD-FIX | Fixed: both read `wanted()`, as the refresh does; the test's last part, a failed read of "Menipis" then "Muat ulang", reads "Menipis". Verified FIXED |
+| R-16 (round 3): a refresh dropped while a user read is out is not run after it; the next comes within 30 seconds | NOTE | Recorded: the delay is bounded by the client's wait |
+| R-17 (round 3), R-18 (round 4): this record | NOTE | This section |
+| R-18 (round 3): the quantity is parsed in three places, `plusOne`, `quantityProblem` and `draftQuantity` | NOTE | Recorded: their acceptance is equal today; for the next change of UXP-405 |
+| R-16 (round 4): the 30 seconds' refresh falls due during the held read only when the page's start takes under 10 seconds; otherwise the focus alone proves P2 | NOTE | Recorded |
+| R-17 (round 4): after a filter refused as UXS-05, "Muat ulang" asks for it again and is refused again, as the refresh does since P2 | NOTE | Recorded, intended: the field holds the refusal until the user changes it |
+
+**Checks of the cycle** (CE-45). The fixes change `ReceivingCreate.tsx`, `Stock.tsx` and `lib/inventory/stock.ts` and add tests; no PHP and no PostgreSQL test file changes, so the fast runs' PHP results and the targeted PostgreSQL files of section 1 stay valid.
+
+| Check | Where it ran | Time | Duration | Result |
+| --- | --- | --- | --- | --- |
+| `npm run typecheck` | Local | 2 November, 23:56 | — | `NOT_RUN`: `tsc` is not installed on this machine |
+| Guard, preview on the working tree | Local | 3 November, 00:07 | under 1 min | `PASS`, no candidate |
+| `npm run lint`, `typecheck`, `test:unit` with `receivingDraft.test.ts`; the PHP static checks and unit tests | Fast run 7 on the fix's commit | — | — | `NOT_RUN` at this writing; its result is in the executor's report |
+| The browser suite with the new tests of P1, P2 and R-15, and the rest of the command contract and the image checks | CI on the pull request's new head | — | — | `NOT_RUN` at this writing (CE-41, D-117) |

@@ -79,10 +79,16 @@ function StockList({ title, filters, categories, stock }: { title: string; filte
     const [loadingMore, setLoadingMore] = useState(false);
     const [reading, setReading] = useState(false);
     const latest = useRef(0);
+    // The read that the user asked for and that is still out, by its number: a refresh in the
+    // background waits for it and never supersedes it (pull request #31, finding P2).
+    const userRead = useRef<number | null>(null);
     const searchField = useRef<HTMLInputElement | null>(null);
     const current = useRef(shown);
+    // The filters last asked for, which a refresh reads, also when the list still shows others.
+    const requested = useRef(applied);
 
     current.current = shown;
+    requested.current = applied;
     useScanCapture(searchField);
 
     /** The page's state in its address and in the encrypted history state, with no request to the server. */
@@ -108,10 +114,18 @@ function StockList({ title, filters, categories, stock }: { title: string; filte
             latest.current += 1;
             const mine = latest.current;
 
+            if (!background) {
+                userRead.current = mine;
+            }
+
             setLoadingMore(false);
             setReading(!background);
 
             const answer = await readStockRows(next, next.perPage, background);
+
+            if (userRead.current === mine) {
+                userRead.current = null;
+            }
 
             if (mine !== latest.current) {
                 return;
@@ -136,12 +150,27 @@ function StockList({ title, filters, categories, stock }: { title: string; filte
         [show],
     );
 
-    /** The automatic refresh of the filters shown, as background reads (RT-10). */
-    const refresh = useCallback((): void => {
-        const { filters: of, page } = current.current;
+    /** The filters last asked for, with as many rows as are shown when the list shows them. */
+    const wanted = useCallback((): StockFilters => {
+        const of = requested.current;
+        const { filters: shownFilters, page } = current.current;
+        const showsThem = shownFilters.q === of.q && shownFilters.state === of.state && shownFilters.category === of.category;
 
-        void load({ ...of, perPage: Math.max(page.rows.length, STOCK_PER_PAGE) }, null, true);
-    }, [load]);
+        return { ...of, perPage: showsThem ? Math.max(page.rows.length, STOCK_PER_PAGE) : STOCK_PER_PAGE };
+    }, []);
+
+    /**
+     * The automatic refresh, as background reads (RT-10), of the filters last asked for; none
+     * while a read the user asked for is out.
+     */
+    const refresh = useCallback((): void => {
+        if (userRead.current === null) {
+            void load(wanted(), null, true);
+        }
+    }, [load, wanted]);
+
+    /** "Muat ulang" and "Coba lagi": the filters last asked for, as the refresh reads them (review finding R-15). */
+    const reload = (): void => void load(wanted(), null, false);
 
     // The page opens with its first page; it is read again in the background at least every 30
     // seconds while visible, on focus and after a committed command (INTERACTION_CONTRACTS 3.3).
@@ -172,6 +201,7 @@ function StockList({ title, filters, categories, stock }: { title: string; filte
         (patch: Partial<StockFilters>, scanned: string | null = null): void => {
             const next = { ...applied, ...patch, perPage: STOCK_PER_PAGE };
 
+            requested.current = next;
             setApplied(next);
             void load(next, scanned, false);
         },
@@ -211,8 +241,13 @@ function StockList({ title, filters, categories, stock }: { title: string; filte
         latest.current += 1;
         const mine = latest.current;
 
+        userRead.current = mine;
         setLoadingMore(true);
         void readStock(of, page.nextCursor, STOCK_PER_PAGE, false).then((answer) => {
+            if (userRead.current === mine) {
+                userRead.current = null;
+            }
+
             if (mine !== latest.current) {
                 return;
             }
@@ -223,6 +258,7 @@ function StockList({ title, filters, categories, stock }: { title: string; filte
                 const rows = [...page.rows, ...answer.body.rows];
                 const next = { ...of, perPage: Math.min(rows.length, MAX_PER_PAGE) };
 
+                requested.current = next;
                 setApplied(next);
                 show(next, { ...answer.body, rows }, null);
             } else {
@@ -289,17 +325,17 @@ function StockList({ title, filters, categories, stock }: { title: string; filte
                     </FilterChips>
                 </>
             }
-            refresh={<RefreshLine at={formatDateTime(shown.page.asOf)} onReload={() => void load({ ...shown.filters, perPage: Math.max(rows.length, STOCK_PER_PAGE) }, null, false)} />}
+            refresh={<RefreshLine at={formatDateTime(shown.page.asOf)} onReload={reload} />}
             more={shown.page.nextCursor !== null && sameFilters ? <LoadMore onLoad={loadMore} busy={loadingMore || reading} /> : undefined}
         >
             <div className={'bk-stack'}>
                 {problem === 'invalid' && <StateNotice state={INVALID_STATE} />}
-                {problem === 'failed' && rows.length > 0 && <StaleRead at={formatDateTime(shown.page.asOf)} onReload={() => void load({ ...shown.filters, perPage: Math.max(rows.length, STOCK_PER_PAGE) }, null, false)} />}
+                {problem === 'failed' && rows.length > 0 && <StaleRead at={formatDateTime(shown.page.asOf)} onReload={reload} />}
                 {rows.length > 0 && <DataTable caption={title} columns={columns} rows={rows} rowKey={(row) => String(row.id)} />}
                 {rows.length === 0 && shown.unknownCode !== null && <UnknownCode code={shown.unknownCode} />}
                 {rows.length === 0 && shown.unknownCode === null && problem === null && filtered && <NoResults onClear={clearAll} />}
                 {rows.length === 0 && shown.unknownCode === null && problem === null && !filtered && <EmptyState body={t('inventory.stock.empty')} />}
-                {rows.length === 0 && problem === 'failed' && <LoadFailed onRetry={() => void load({ ...shown.filters, perPage: STOCK_PER_PAGE }, null, false)} />}
+                {rows.length === 0 && problem === 'failed' && <LoadFailed onRetry={reload} />}
             </div>
         </ListLayout>
     );
