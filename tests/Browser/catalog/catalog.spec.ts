@@ -120,7 +120,8 @@ for (const width of [WIDTHS[0], WIDTHS[4], WIDTHS[7]]) {
             await expect(page.getByRole('menuitem', { name: 'Kategori' })).toBeVisible();
             await page.keyboard.press('Escape');
         } else {
-            await expect(page.getByRole('navigation', { name: 'Menu utama' }).getByRole('link')).toHaveText(['Produk']);
+            // "Stok" (TASK-022) carries its badge when products need attention.
+            await expect(page.getByRole('navigation', { name: 'Menu utama' }).getByRole('link')).toHaveText([/^Stok/, 'Produk']);
             await expect(page.getByRole('navigation', { name: 'Submenu Produk' }).getByRole('link')).toHaveText(['Produk', 'Kategori', 'Impor produk (CSV)']);
         }
 

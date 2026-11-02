@@ -43,7 +43,7 @@ final class CapabilityMatrixTest extends DatabaseTestCase
      */
     private const array ROUTES = [
         'RN-01' => ['method' => 'GET', 'path' => '/', 'json' => false, 'answers' => [
-            'guest' => [302, '/login'], 'owner' => [302, '/account'], 'ops' => [302, '/account'], 'cashier' => [302, '/account'], 'combined' => [302, '/account'],
+            'guest' => [302, '/login'], 'owner' => [302, '/account'], 'ops' => [302, '/stock'], 'cashier' => [302, '/account'], 'combined' => [302, '/stock'],
         ]],
         'RP-001' => ['method' => 'GET', 'path' => '/login', 'json' => false, 'answers' => [
             'guest' => [200, null], 'owner' => [302, '/'], 'ops' => [302, '/'], 'cashier' => [302, '/'], 'combined' => [302, '/'],
@@ -272,6 +272,30 @@ final class CapabilityMatrixTest extends DatabaseTestCase
         // without recent authentication: an empty envelope reaches its fields.
         'RC-07' => ['method' => 'POST', 'path' => '/commands/receiving.confirm', 'json' => true, 'answers' => [
             'guest' => [401, null], 'owner' => [422, null], 'ops' => [422, null], 'cashier' => [403, null], 'combined' => [422, null],
+        ]],
+        // TASK-022: the stock pages and RD-02 for CAP-14, whose cashier's cell is the stock at
+        // checkout, which opens no gate; the receiving pages for CAP-11; the detail pages of an
+        // identifier that does not exist.
+        'RP-401' => ['method' => 'GET', 'path' => '/stock', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [200, null], 'cashier' => [403, null], 'combined' => [200, null],
+        ]],
+        'RP-402' => ['method' => 'GET', 'path' => '/stock/history', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [200, null], 'cashier' => [403, null], 'combined' => [200, null],
+        ]],
+        'RP-403' => ['method' => 'GET', 'path' => '/stock/movements/{movement}', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [404, null], 'ops' => [404, null], 'cashier' => [403, null], 'combined' => [404, null],
+        ]],
+        'RD-02' => ['method' => 'GET', 'path' => '/data/stock', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [200, null], 'ops' => [200, null], 'cashier' => [403, null], 'combined' => [200, null],
+        ]],
+        'RP-404' => ['method' => 'GET', 'path' => '/stock/receivings', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [200, null], 'cashier' => [403, null], 'combined' => [200, null],
+        ]],
+        'RP-405' => ['method' => 'GET', 'path' => '/stock/receivings/new', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [200, null], 'cashier' => [403, null], 'combined' => [200, null],
+        ]],
+        'RP-406' => ['method' => 'GET', 'path' => '/stock/receivings/{document}', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [404, null], 'ops' => [404, null], 'cashier' => [403, null], 'combined' => [404, null],
         ]],
     ];
 

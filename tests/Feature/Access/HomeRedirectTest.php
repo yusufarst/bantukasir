@@ -9,9 +9,10 @@ use Tests\Harness\Http\Browsers;
 /**
  * RN-01, the home redirect (AC-007-02; ROUTE_CONTRACTS RN-01;
  * NAVIGATION_CONTRACTS NC-12, UXP-001; INFORMATION_ARCHITECTURE section 4;
- * TASK-007 scope item 7): no role's home page exists yet, so every role and
- * the combined account are sent to Akun saya (RP-003), until TASK-022,
- * TASK-027, TASK-029 and TASK-041 switch them; a first visit is sent to the
+ * TASK-007 scope item 7): Operations and the combined account without an
+ * OPEN session are sent to Stok (RP-401, TASK-022); the Owner and a cashier
+ * to Akun saya (RP-003), until TASK-027, TASK-029 and TASK-041 switch them;
+ * a first visit is sent to the
  * sign-in page without the note that a sign-in session ended, and a browser
  * whose sign-in session a limit ended gets it — by the application's limit
  * or, a minute later, by the framework's own lifetime of the session.
@@ -31,11 +32,13 @@ final class HomeRedirectTest extends DatabaseTestCase
 
     public function test_every_role_and_the_combined_account_go_to_their_home(): void
     {
-        foreach (['Hendra', 'Agus', 'Rina', 'Dewi'] as $person) {
+        // TASK-022: Operations and the combined account, which has no OPEN cash session
+        // before TASK-027, go to Stok (RP-401).
+        foreach (['Hendra' => '/account', 'Agus' => '/stock', 'Rina' => '/account', 'Dewi' => '/stock'] as $person => $home) {
             $account = TokoContoh::person($person);
             $this->browse($this->signInBrowser($account['email'], $account['password']));
 
-            $this->get('/')->assertRedirect('/account');
+            $this->get('/')->assertRedirect($home);
         }
     }
 

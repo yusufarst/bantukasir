@@ -259,7 +259,12 @@ describe('the unresolved requests and their number', () => {
     it("reads RD-03's answer: 401 ends the sign-in session, anything unreadable is a failed read, never a zero", () => {
         const arrived = (status: number, body: unknown): Arrived => ({ status, body, retryAfter: null });
 
-        expect(indicatorsOf(arrived(200, { unresolvedRequests: 2, asOf: '2026-10-28T03:00:00.000000Z' }))).toEqual({ kind: 'read', count: 2, asOf: '2026-10-28T03:00:00.000000Z' });
+        expect(indicatorsOf(arrived(200, { unresolvedRequests: 2, asOf: '2026-10-28T03:00:00.000000Z' }))).toEqual({ kind: 'read', count: 2, asOf: '2026-10-28T03:00:00.000000Z', stockAttention: null });
+        // The badge of "Stok" (TASK-022): a count, or null for a cashier; anything else fails.
+        expect(indicatorsOf(arrived(200, { unresolvedRequests: 0, stockAttention: 4, asOf: '2026-10-28T03:00:00.000000Z' }))).toEqual({ kind: 'read', count: 0, asOf: '2026-10-28T03:00:00.000000Z', stockAttention: 4 });
+        expect(indicatorsOf(arrived(200, { unresolvedRequests: 0, stockAttention: null, asOf: '2026-10-28T03:00:00.000000Z' }))).toEqual({ kind: 'read', count: 0, asOf: '2026-10-28T03:00:00.000000Z', stockAttention: null });
+        expect(indicatorsOf(arrived(200, { unresolvedRequests: 0, stockAttention: -1, asOf: '2026-10-28T03:00:00.000000Z' }))).toEqual({ kind: 'failed' });
+        expect(indicatorsOf(arrived(200, { unresolvedRequests: 0, stockAttention: '4', asOf: '2026-10-28T03:00:00.000000Z' }))).toEqual({ kind: 'failed' });
         expect(indicatorsOf(arrived(401, { code: 'UNAUTHENTICATED' }))).toEqual({ kind: 'ended' });
         expect(indicatorsOf(arrived(419, null))).toEqual({ kind: 'failed' });
         expect(indicatorsOf(arrived(503, null))).toEqual({ kind: 'failed' });

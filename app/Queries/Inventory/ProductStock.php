@@ -65,6 +65,20 @@ final class ProductStock
     }
 
     /**
+     * The stock of one product for the section "Stok" of RP-302 (UXI-167; TASK-022): on hand, the
+     * minimum and the attention state, null for an inactive product (INVENTORY section 10). Only a
+     * full holder of CAP-14 is given it; the caller asks.
+     *
+     * @return array<string, mixed>
+     */
+    public function of(int $productId, bool $active): array
+    {
+        [$onHand, $minimum] = self::stocksOf([$productId])[$productId] ?? throw new LogicException('A product of a page has its row.');
+
+        return ProductStockData::withAttention($onHand->toCanonical(), $minimum->toCanonical(), $active ? StockState::of($onHand, $minimum) : null)->toArray();
+    }
+
+    /**
      * Whether a product's unit and precision are locked: it has a movement (BR-CAT-07).
      */
     public function unitLocked(int $productId): bool

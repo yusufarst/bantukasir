@@ -23,7 +23,10 @@ use LogicException;
  * code's own product for another's SKU, and it answers at most one. Any
  * other parameter is refused, and so is any body: the read takes its parameters from
  * the query string alone (TASK-008 review finding R-01). `status` is the context `catalog`'s
- * alone; the context `correction` (TASK-020) answers active products only.
+ * alone; the context `correction` (TASK-020) answers active products only. The context
+ * `receiving` (TASK-022, CAP-11) adds each product's version, which RC-07 expects as reviewed;
+ * the context `stock` (TASK-022, CAP-14) is the product filter of RP-402. A cashier's restricted
+ * cell of CAP-14 opens neither.
  *
  * The client's sequence number travels in the header SEQUENCE_HEADER, which the
  * answer repeats, so that a page applies only the answer to its newest request
@@ -44,7 +47,7 @@ final class ProductSearchRequest extends RefusingRequest
      *
      * @var array<string, Capability>
      */
-    private const array PROVIDED = ['catalog' => Capability::Cap04, 'correction' => Capability::Cap07];
+    private const array PROVIDED = ['catalog' => Capability::Cap04, 'correction' => Capability::Cap07, 'receiving' => Capability::Cap11, 'stock' => Capability::Cap14];
 
     private const string PLAIN_TEXT = '/\A[^\p{Cc}]*\z/u';
 
@@ -156,6 +159,7 @@ final class ProductSearchRequest extends RefusingRequest
             ($validated['mode'] ?? null) === 'exact',
             is_string($import) ? ObjectScope::key($import) : null,
             ($validated['context'] ?? null) === 'correction',
+            ($validated['context'] ?? null) === 'receiving',
         );
     }
 

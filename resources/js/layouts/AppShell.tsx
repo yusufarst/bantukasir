@@ -40,7 +40,8 @@ import { SIGN_OUT_WAIT_SECONDS, afterActivity, deadlinesOf, laterOf, mayReportAc
 // (RD-03): the account-menu item "Permintaan belum pasti" with its number
 // (UXI-025), the banner (UXI-029) and the sign-out warning (UXI-027,
 // UXI-028), read from the references of this browser and the user's
-// receipts, with the last data kept when a read fails (UXS-21).
+// receipts, with the last data kept when a read fails (UXS-21). TASK-022 adds
+// the badge of "Stok" (UXI-006), from the same reads.
 
 /** The shared props of a signed-in page (SEC-CH-02; App\DTO\Access\SignedInData). */
 export interface SignedIn {
@@ -887,12 +888,16 @@ function SignedInShell({
 
     const view = times === null ? null : viewAt(now, times);
     const user = signedIn.user;
+    // The badge of "Stok" (UXI-006; TASK-022): the Habis and Menipis products of the last
+    // successful read, never a zero for a failed one; none when nothing needs attention.
+    const attention = requests.stockAttention;
     const items: NavItem[] = navigationFor(user.roles, user.capabilities, DESTINATIONS).map(({ id, entry }) => ({
         id,
         label: t(entry.label),
         href: entry.href,
         icon: entry.icon,
         current: id === current,
+        ...(id === 'stock' && attention !== null && attention > 0 ? { badge: { count: formatCount(attention), label: t('ux.nav.stock_badge.label', { jumlah: formatCount(attention) }) } } : {}),
     }));
     const subItems: SubNavItem[] =
         area === undefined

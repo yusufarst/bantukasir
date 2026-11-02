@@ -116,17 +116,25 @@ export function linkAddress(link: Link): string {
 }
 
 /**
- * The home of every role until the roles' own homes exist: Akun saya (RN-01,
- * NC-12; TASK-007).
+ * Akun saya (RP-003): the home of the Owner and a cashier until their own homes
+ * exist (RN-01, NC-12; TASK-007), and the page that every role has.
  */
 export const HOME = '/account';
 
-/** Signs in on UXP-001 with the keyboard: the form, then Enter (UXA-10 exception); the full page load ends at the home. */
+/** Stok (RP-401): the home of Operations and of the combined account without an OPEN session (RN-01, NC-12; TASK-022). */
+export const STOCK_HOME = '/stock';
+
+/** The home of each person of Toko Contoh (NC-12): Agus is Operations, Dewi the combined account. */
+export function homeOf(person: Person): string {
+    return person === 'Agus' || person === 'Dewi' ? STOCK_HOME : HOME;
+}
+
+/** Signs in on UXP-001 with the keyboard: the form, then Enter (UXA-10 exception); the full page load ends at the account's home. */
 export async function signIn(page: Page, account: Account): Promise<void> {
     await page.goto('/login');
     await page.getByLabel('Email').fill(account.email);
     await page.getByLabel('Kata sandi', { exact: true }).fill(account.password);
-    await Promise.all([page.waitForURL((url) => url.pathname === HOME), page.getByLabel('Kata sandi', { exact: true }).press('Enter')]);
+    await Promise.all([page.waitForURL((url) => url.pathname === HOME || url.pathname === STOCK_HOME), page.getByLabel('Kata sandi', { exact: true }).press('Enter')]);
 }
 
 /**

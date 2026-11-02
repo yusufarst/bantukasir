@@ -6,8 +6,9 @@ namespace App\Queries\Catalog;
  * The validated parameters of RD-01 (ROUTE_CONTRACTS RD-01): the search text, with
  * its case and punctuation as typed; the filters of a Product Search; its page;
  * whether the mode is `exact`, which takes no filter and no page; the CSV import whose
- * products it lists (TASK-019); and whether its context takes active products only
- * (TASK-020).
+ * products it lists (TASK-019); whether its context takes active products only
+ * (TASK-020); and whether its rows carry each product's version, which the context
+ * `receiving` gives for RC-07's expected versions (TASK-022).
  */
 final readonly class SearchFilters
 {
@@ -24,5 +25,6 @@ final readonly class SearchFilters
         public bool $exact = false,
         public ?int $import = null,
         public bool $activeOnly = false,
+        public bool $withVersion = false,
     ) {}
 }

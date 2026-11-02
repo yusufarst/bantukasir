@@ -63,6 +63,8 @@ return [
         'subtitle' => ':produk',
         'section_data' => 'Data produk',
         'section_price' => 'Harga jual',
+        // The section "Stok" (UXI-167; TASK-022).
+        'section_stock' => 'Stok',
         'section_photo' => 'Foto produk',
         'section_barcodes' => 'Barcode',
         'price_history' => 'Riwayat harga jual',

@@ -51,6 +51,8 @@ return [
         'quantity_whole' => 'Produk ini dihitung utuh. Isi tanpa koma.',
         'quantity_max' => 'Jumlah terlalu besar. Paling banyak 99.999.999,999.',
         'required' => 'Wajib diisi.',
+        // The date filters of the stock lists (TASK-022; COPY_DECK section 16.1).
+        'date_order' => 'Tanggal awal tidak boleh setelah tanggal akhir.',
         // The fields of a stock posting (TASK-021; COPY_DECK section 16.1).
         'lines_min' => 'Tambahkan minimal satu baris.',
         'lines_max' => 'Paling banyak :maks baris.',
@@ -106,6 +108,11 @@ return [
         'reactivate' => 'Aktifkan kembali',
         'more_actions' => 'Tindakan lain',
         'remove_line' => 'Hapus baris',
+        // UXI-056 on UXP-006 and the keyset paging of UXI-222 and UXI-233 (TASK-022; COPY_DECK
+        // section 5).
+        'view_result' => 'Lihat hasil',
+        'next_page' => 'Berikutnya',
+        'previous_page' => 'Sebelumnya',
         // The password visibility toggle (TASK-006; COPY_DECK section 5).
         'show_password' => 'Tampilkan kata sandi',
         'hide_password' => 'Sembunyikan kata sandi',
@@ -129,6 +136,10 @@ return [
         'menu_close' => 'Tutup menu',
         'main' => 'Menu utama',
         'sub' => 'Submenu :halaman',
+        // The badge of "Stok" (UXI-006; TASK-022; COPY_DECK section 4.3).
+        'stock_badge' => [
+            'label' => ':jumlah produk perlu restok',
+        ],
     ],
     'announce' => [
         'added' => 'Ditambahkan: :produk, jumlah :jumlah.',
@@ -143,6 +154,8 @@ return [
         'no_change' => 'Belum ada perubahan.',
         'form_incomplete' => 'Lengkapi isian yang wajib dulu.',
         'unresolved_family' => 'Ada permintaan sejenis yang statusnya belum pasti. Cek statusnya dulu.',
+        // The onboarding freeze (TASK-022; COPY_DECK section 15).
+        'onboarding' => 'Tidak bisa dipakai selama masa input stok awal.',
     ],
     // The states of UI_STATES section 2 with their wording (COPY_DECK section
     // 12). A state key is the parent of its texts: the title or label, the

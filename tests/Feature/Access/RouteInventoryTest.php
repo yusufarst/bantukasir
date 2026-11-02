@@ -115,6 +115,14 @@ final class RouteInventoryTest extends TestCase
         'POST /commands/barcode.correct_misassignment' => ['commands.barcode.correct_misassignment', 'RC-30', 'CAP-07', [...self::SIGNED_IN, 'capability:CAP-07', 'throttle:command', 'password.confirm']],
         // TASK-021: RC-07.
         'POST /commands/receiving.confirm' => ['commands.receiving.confirm', 'RC-07', 'CAP-11', [...self::SIGNED_IN, 'capability:CAP-11', 'throttle:command']],
+        // TASK-022: the stock pages, RD-02 and the receiving pages.
+        'GET /stock' => ['stock.index', 'RP-401', 'CAP-14', [...self::SIGNED_IN, 'capability:CAP-14', 'input.allow:q,state,category,after,perPage']],
+        'GET /stock/history' => ['stock.history', 'RP-402', 'CAP-14', [...self::SIGNED_IN, 'capability:CAP-14', 'input.allow:product,type,from,to,after,before,perPage,from_page']],
+        'GET /stock/movements/{movement}' => ['stock.movement', 'RP-403', 'CAP-14', [...self::SIGNED_IN, 'capability:CAP-14', 'input.allow']],
+        'GET /data/stock' => ['data.stock', 'RD-02', 'CAP-14', [...self::SIGNED_IN, 'capability:CAP-14']],
+        'GET /stock/receivings' => ['receivings.index', 'RP-404', 'CAP-11', [...self::SIGNED_IN, 'capability:CAP-11', 'input.allow:from,to,q,after,before,perPage']],
+        'GET /stock/receivings/new' => ['receivings.create', 'RP-405', 'CAP-11', [...self::SIGNED_IN, 'capability:CAP-11', 'input.allow']],
+        'GET /stock/receivings/{document}' => ['receivings.show', 'RP-406', 'CAP-11', [...self::SIGNED_IN, 'capability:CAP-11', 'input.allow']],
     ];
 
     public function test_the_routes_are_exactly_those_listed_each_with_its_gate(): void

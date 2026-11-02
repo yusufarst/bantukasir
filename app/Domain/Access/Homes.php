@@ -17,21 +17,30 @@ use App\Models\User;
  * Operations and for the combined account without an OPEN session, TASK-027
  * Buka sesi kas for a cashier without one, TASK-029 Kasir for a cashier and
  * the combined account with one, TASK-041 Beranda for the Owner
- * (TRACEABILITY, RN-01).
+ * (TRACEABILITY, RN-01). No cash session exists before TASK-027, so the
+ * combined account has none of its own and its home is Stok.
  */
 final class Homes
 {
     /** The path of RP-003, UXP-003 "Akun saya". */
     public const string ACCOUNT = '/account';
 
+    /** The path of RP-401, UXP-401 "Stok" (TASK-022). */
+    public const string STOCK = '/stock';
+
     /**
-     * The path of the account's home. No role's home page exists yet, so
-     * every account's home is RP-003 (above); the Tasks that deliver them
-     * choose by the account's roles here.
+     * The path of the account's home: Stok for an account that holds
+     * OPERATIONS_ADMIN without SUPER_ADMIN — Operations and the combined
+     * account — and Akun saya for the Owner and a cashier, until their homes
+     * exist.
      */
     public static function of(User $user): string
     {
-        unset($user);
+        $roles = $user->roles();
+
+        if (in_array(Role::OperationsAdmin, $roles, true) && ! in_array(Role::SuperAdmin, $roles, true)) {
+            return self::STOCK;
+        }
 
         return self::ACCOUNT;
     }
