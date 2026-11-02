@@ -26,8 +26,14 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | `composer validate`, `lint`, `analyse`, `test:unit` | Fast run 41539530903 on `04c2599` | 05:46 to 05:47 | 59 s | `PASS` |
 | `npm run lint`, `typecheck`, `test:unit` | Same run | 05:47 to 05:48 | 1 min 50 s | `PASS` |
 | The PostgreSQL and concurrency test files that the branch changes: `ManualIssueRaceTest`, `CapabilityMatrixTest`, `RouteInventoryTest`, `SignInSessionTest`, `ProductSearchTest`, `ConfirmManualIssueTest`, `ConfirmReceivingTest`, `IssuePagesTest`, `IssueTablesTest`, `LedgerTablesTest` | Same run | 05:48 to 05:54 | 5 min 44 s | `PASS` |
+| Guard (Gitleaks 8.30.1, the secret scan, identity, candidates) | Local, on `5cc3d82`, the review's fixes | 06:10 | under 1 min of scanning | `PASS`, no candidate |
+| `composer validate`, `lint`, `analyse`, `test:unit` | Fast run 41543415444 on `5cc3d82` | 06:14 to 06:16 | 1 min 27 s | `PASS` |
+| `npm run lint`, `typecheck`, `test:unit`, with the changed `issue.spec.ts` | Same run | 06:16 to 06:17 | 1 min 51 s | `PASS` |
+| The PostgreSQL and concurrency test files that the branch changes, `ManualIssueRaceTest` with its reworded comment among them | Same run | 06:17 to 06:23 | 6 min 5 s | `PASS` |
 | `npx tsc --noEmit`, `npx eslint` | Local | 04:58 | — | `NOT_RUN`: neither is installed on this machine |
 | The whole command contract — `test:postgres`, `test:race`, `build`, the browser suite with `tests/Browser/inventory/issue.spec.ts` and the changed browser files — and the image checks | CI on the pull request's final head | — | — | `NOT_RUN` at this writing (CE-41, D-117) |
+
+Fast run 4, 41539530903 on `04c2599`, is the run of the code to review; fast run 5, 41543415444 on `5cc3d82`, that of the review's fixes (section 8): five fast runs of the 10 that CE-46 allows. The record's commit changes documents only. The browser tests, with the widths of R-01, run first in the browser suite on the pull request's final head.
 
 ## 2. What was built (contract section 4.1)
 
@@ -86,7 +92,7 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Data integrity | PASS on the fast runs | Append-only facts, the projection equal to its fact, the audit and result in the transaction, identity and idempotency, RACE-03 and the failure after every write step |
 | Performance | PASS | Keyset pages of at most 100 rows; an issue holds at most 200 lines; the budgets are measured at TASK-048 |
 | Operations | PASS | Section 5's backup impact; no runbook or status change |
-| Verification | PASS subject to CI on the final head | Self-review; the class-A review and the targeted verification of its MUST-FIX (section 8); the fast runs green on the reviewed code and on the fixes (section 1); the whole command contract and the image checks on the final head (CE-41, D-117) |
+| Verification | PASS subject to CI on the final head | Self-review; the class-A review and the targeted verification of its MUST-FIX, PASS (section 8); the fast runs green on the reviewed code and on the fixes (section 1); the whole command contract and the image checks on the final head (CE-41, D-117) |
 
 ## 7. Acceptance criteria
 
@@ -98,3 +104,32 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | AC-023-04 | PASS on the fast run | `IssueTablesTest`: an issue movement without its allocation, and an allocation without its projection, fail at commit; `ConfirmManualIssueTest`: every projection equal to its fact |
 | AC-023-05 | PASS on the fast run | Section 5 |
 | AC-023-06 | PASS subject to CI on the final head | `IssuePagesTest` on the fast run; `issue.spec.ts`, with the widths of R-01, on the final head |
+
+## 8. Review (CE-40)
+
+**Self-review** of the whole change against the contract's scope items 1 to 4 and the rules it cites, before the isolated review: each item is built as section 2 says; nothing out of scope (no reversal, adjustment or Sale); every route with its gate, its parameters as allowlists and NOT_FOUND for a guessed identifier; no cost on any page; the draft of RP-408 in page memory only; the 16 controls of contract section 4.2 against TRACEABILITY section 9.2, UXI-266 absent (reading 10). It found the review's line values built inside a JSX expression, which the literal rule refuses, moved out before the first push.
+
+| Round | Agent, effort | Package | Verdict |
+| --- | --- | --- | --- |
+| 1, the adversarial review (class A) | `bk-reviewer-high`, High | `review/TASK-023/r1`, head `04c2599`, tree `21d4448`; `--check` `UNCHANGED` | FAIL: one MUST-FIX, one SHOULD-FIX, six NOTEs; no defect of the code |
+| 2, the targeted verification of the MUST-FIX | `bk-reviewer-high`, High | `review/TASK-023/r2`, head `5cc3d82`, previous `r1`; `--check` `UNCHANGED` | PASS: R-01 FIXED, no new MUST-FIX; one SHOULD-FIX, two NOTEs |
+
+The reviewer found the widened guard tests of section 2 item 9 justified and none weakened.
+
+| Finding | Severity | Outcome |
+| --- | --- | --- |
+| R-01: the pages of the Task were not checked at the 200 % zoom of 1280 × 800 or at 320 × 640 (EXECUTION_CONTEXT section 10, EXC-53, TS-25) | MUST-FIX | Fixed: a loop of `issue.spec.ts` over 640 × 400 and 320 × 640 opens UXP-407, UXP-408 with a line, the review and UXP-409, with axe and the measurements on each; the second test moved from 360 to 1366 px, where the sub-navigation is tabs. Verified FIXED by reading; the tests run first on the final head (D-117) |
+| R-02: the evidence lacked the ADR-008 cases covered, the backup impact, the Definition of Done and the criteria | SHOULD-FIX | Fixed: sections 5 to 7 |
+| R-03: the reason field uses `inventory.issues.col_reason` | NOTE | Recorded as F-1 |
+| R-04: the race test's comment said "both orders of arrival" | NOTE | Fixed: the comment names the two holds it tests |
+| R-05 (round 1): intermediate publication numbers of a product with several lines | NOTE | Recorded, for TASK-025: a publication number counts movements, as RC-07's does |
+| R-06 (round 1): the fact and its projection are one write step | NOTE | Recorded as reading 9 |
+| R-07 (round 1): section 2 retells the change | NOTE | Recorded; kept as references for later Tasks, as TASK-022's evidence is |
+| R-08 (round 1): no Sale or cost of goods sold is shown by the absence of their tables | NOTE | Recorded, for TASK-028 and TASK-040: allocations of type MANUAL_ISSUE stay out of cost of goods sold |
+| R-05 (round 2): fast run 5 and this section missing from the evidence | SHOULD-FIX | Fixed: section 1 and this section |
+| R-06 (round 2): UXS-31 and UXS-14 are checked at one width each | NOTE | Recorded: their pages are the ones the width loop checks |
+| R-07 (round 2): an emptied search field before a check | NOTE | No change |
+
+## 9. The guard's candidates (CE-31)
+
+`guard.sh --preview` and `guard.sh` on every checkpoint, `f15c1b7` to `5cc3d82`, list no candidate: no address, host, e-mail or home path. The guard on the record's commit is reported with the pull request, because this file cannot name its own commit.
