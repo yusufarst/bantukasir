@@ -92,7 +92,7 @@ async function newProduct(page: Page, category: string): Promise<NewProduct> {
     await page.getByRole('button', { name: 'Lanjut isi data' }).click();
     await page.getByLabel(/^Barcode pabrik/).fill(product.barcode);
     await fillAndSave(page, { sku: product.sku, category });
-    await page.waitForURL((url) => /^\/products\/\d+$/.test(url.pathname));
+    await page.waitForURL((url) => /^\/products\/\d+$/.test(url.pathname), { timeout: ACCESS_WAIT });
 
     return { ...product, id: new URL(page.url()).pathname.split('/').at(-1) ?? '' };
 }
@@ -120,7 +120,8 @@ for (const width of [WIDTHS[0], WIDTHS[4], WIDTHS[7]]) {
             await expect(page.getByRole('menuitem', { name: 'Kategori' })).toBeVisible();
             await page.keyboard.press('Escape');
         } else {
-            await expect(page.getByRole('navigation', { name: 'Menu utama' }).getByRole('link')).toHaveText(['Produk']);
+            // "Stok" (TASK-022) carries its badge when products need attention.
+            await expect(page.getByRole('navigation', { name: 'Menu utama' }).getByRole('link')).toHaveText([/^Stok/, 'Produk']);
             await expect(page.getByRole('navigation', { name: 'Submenu Produk' }).getByRole('link')).toHaveText(['Produk', 'Kategori', 'Impor produk (CSV)']);
         }
 
@@ -169,8 +170,10 @@ for (const width of [WIDTHS[0], WIDTHS[4], WIDTHS[7]]) {
         expect(sent).toBe(0);
         await page.getByRole('button', { name: 'Simpan produk' }).click();
 
-        // UXP-302 with its message; the way back leads to the list.
-        await page.waitForURL((url) => /^\/products\/\d+$/.test(url.pathname));
+        // UXP-302 with its message; the way back leads to the list. The saved form left
+        // nothing unsent, so the unsaved-changes guard never holds the visit (CI run 41494562925).
+        await page.waitForURL((url) => /^\/products\/\d+$/.test(url.pathname), { timeout: ACCESS_WAIT });
+        await expect(page.getByRole('dialog', { name: 'Perubahan belum disimpan' })).toHaveCount(0);
         const detail = new URL(page.url()).pathname;
         await expect(page.getByRole('heading', { level: 1, name: 'Detail produk' })).toBeVisible();
         await expect(page.getByText(`Produk ${name} ditambahkan.`)).toBeVisible();
@@ -304,7 +307,7 @@ test('the search-first step: a scanned code and a SKU that exist, a similar name
     // Corrected, it is saved, and its stock is a whole number of the unit.
     await page.getByLabel('Stok minimum', { exact: true }).fill('5');
     await page.getByRole('button', { name: 'Simpan produk' }).click();
-    await page.waitForURL((url) => /^\/products\/\d+$/.test(url.pathname));
+    await page.waitForURL((url) => /^\/products\/\d+$/.test(url.pathname), { timeout: ACCESS_WAIT });
     await expect(page.getByText('5 pcs')).toBeVisible();
 
     expect(injected(watched.problems)).toEqual([]);

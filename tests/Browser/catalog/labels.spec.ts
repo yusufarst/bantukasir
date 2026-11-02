@@ -72,7 +72,7 @@ async function newProduct(page: Page): Promise<NewProduct> {
     await page.getByLabel('Satuan', { exact: true }).fill('pcs');
     await page.getByLabel('Harga jual', { exact: true }).fill('7777');
     await page.getByRole('button', { name: 'Simpan produk' }).click();
-    await page.waitForURL((url) => /^\/products\/\d+$/.test(url.pathname));
+    await page.waitForURL((url) => /^\/products\/\d+$/.test(url.pathname), { timeout: ACCESS_WAIT });
 
     return { ...product, id: new URL(page.url()).pathname.split('/').at(-1) ?? '' };
 }

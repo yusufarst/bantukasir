@@ -51,6 +51,11 @@ use App\Http\Controllers\Configuration\ProfileController;
 use App\Http\Controllers\Documents\LabelPrintController;
 use App\Http\Controllers\Documents\RecordLabelPrintController;
 use App\Http\Controllers\Inventory\ConfirmReceivingController;
+use App\Http\Controllers\Inventory\HistoryController;
+use App\Http\Controllers\Inventory\MovementsController;
+use App\Http\Controllers\Inventory\ReceivingsController;
+use App\Http\Controllers\Inventory\StockController;
+use App\Http\Controllers\Inventory\StockDataController;
 use App\Http\Controllers\Media\MediaController;
 use App\Http\Controllers\Testing\SpecimenController;
 use Illuminate\Support\Facades\Route;
@@ -225,9 +230,26 @@ Route::middleware(['auth', 'signin.session', 'throttle:authenticated', 'cache.he
         Route::post('/commands/document.print_labels', RecordLabelPrintController::class)->middleware(['throttle:command', 'throttle:print'])->name('commands.document.print_labels');
     });
 
-    // The stock ledger (TASK-021): RC-07, in the bucket of every command. TASK-022 adds the
-    // pages of CAP-11.
+    // The stock ledger (TASK-021): RC-07, in the bucket of every command.
     Route::post('/commands/receiving.confirm', ConfirmReceivingController::class)->middleware(['capability:CAP-11', 'throttle:command'])->name('commands.receiving.confirm');
+
+    // The stock pages (TASK-022): RP-401 to RP-403 and RD-02 for CAP-14, which a cashier holds
+    // only at checkout, a restricted cell that opens no gate; each page takes only the
+    // parameters of its row of ROUTE_CONTRACTS, and RD-02 refuses any other in its FormRequest.
+    Route::middleware('capability:CAP-14')->group(function (): void {
+        Route::get('/stock', [StockController::class, 'index'])->middleware('input.allow:q,state,category,after,perPage')->name('stock.index');
+        Route::get('/stock/history', [HistoryController::class, 'index'])->middleware('input.allow:product,type,from,to,after,before,perPage,from_page')->name('stock.history');
+        Route::get('/stock/movements/{movement}', [MovementsController::class, 'show'])->middleware('input.allow')->name('stock.movement');
+        Route::get('/data/stock', StockDataController::class)->name('data.stock');
+    });
+
+    // The receiving pages (TASK-022): RP-404 to RP-406 for CAP-11; RP-405 before RP-406, whose
+    // path would take it.
+    Route::middleware('capability:CAP-11')->group(function (): void {
+        Route::get('/stock/receivings', [ReceivingsController::class, 'index'])->middleware('input.allow:from,to,q,after,before,perPage')->name('receivings.index');
+        Route::get('/stock/receivings/new', [ReceivingsController::class, 'create'])->middleware('input.allow')->name('receivings.create');
+        Route::get('/stock/receivings/{document}', [ReceivingsController::class, 'show'])->middleware('input.allow')->name('receivings.show');
+    });
 });
 
 // RD-07, a stored image (TASK-010): signed in, with the middleware of every

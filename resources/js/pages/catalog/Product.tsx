@@ -24,6 +24,7 @@ import { useUnresolved } from '@/lib/commands/unresolved';
 import { useCommand } from '@/lib/commands/useCommand';
 import { formatDateTime, formatMoney, formatQuantity } from '@/lib/format';
 import { t } from '@/lib/i18n';
+import { productHistory, stateWord, type StockState } from '@/lib/inventory/stock';
 
 // UXP-302 "Detail produk" (ROUTE_CONTRACTS RP-302, RC-19, RC-20, RC-27 to RC-29; COPY_DECK
 // section 8.3; INTERACTION_INVENTORY UXI-165, UXI-166, UXI-168, UXI-171 to UXI-173 and
@@ -33,8 +34,8 @@ import { t } from '@/lib/i18n';
 // BR-CAT-46), the way to its labels (UXI-175) and, for the Owner, to the misassignment
 // correction (UXI-174; TASK-020). A command updates its section in place
 // with its message; each asks in a dialog or an inline form that Enter never confirms. No
-// control deletes anything (D-042). TASK-022 and TASK-025 add stock and cost history, and
-// TASK-042 and TASK-022 the way back to UXP-612 and UXP-006 (UXI-177).
+// control deletes anything (D-042). TASK-022 adds the section "Stok" (UXI-167); TASK-025 adds
+// the cost history, and TASK-042 the way back to UXP-612 (UXI-177).
 
 const STALE_STATE: StateId = 'UXS-17';
 
@@ -91,6 +92,8 @@ interface ProductProps {
     readonly canCorrectBarcode: boolean;
     readonly canChangePhoto: boolean;
     readonly canPrintLabels: boolean;
+    /** The section "Stok" (UXI-167; TASK-022), for a full holder of CAP-14; never a cost. */
+    readonly stock: { readonly onHand: string; readonly minimum: string; readonly state: StockState | null } | null;
 }
 
 export default function Product(props: ProductProps) {
@@ -103,7 +106,7 @@ export default function Product(props: ProductProps) {
     );
 }
 
-function ProductPage({ title, product, priceHistory, barcodes, canCorrectBarcode, canChangePhoto, canPrintLabels }: ProductProps & { title: string }) {
+function ProductPage({ title, product, priceHistory, barcodes, canCorrectBarcode, canChangePhoto, canPrintLabels, stock }: ProductProps & { title: string }) {
     const [note, setNote] = useState(takeSavedNote);
     const [stale, setStale] = useState(false);
     const [lifecycle, setLifecycle] = useState(false);
@@ -198,6 +201,7 @@ function ProductPage({ title, product, priceHistory, barcodes, canCorrectBarcode
                         </Section>
                     </div>
                 </Section>
+                {stock !== null && <StockSection product={product} stock={stock} />}
                 {canChangePhoto && <PhotoSection product={product} onDone={done} onStale={onStale} onOpen={() => setNote(null)} />}
                 {barcodes !== null && <BarcodesSection product={product} barcodes={barcodes} canCorrect={canCorrectBarcode} onDone={done} onChanged={reload} onOpen={() => setNote(null)} />}
                 {canPrintLabels && (
@@ -209,6 +213,30 @@ function ProductPage({ title, product, priceHistory, barcodes, canCorrectBarcode
                 )}
             </div>
         </PageContainer>
+    );
+}
+
+/**
+ * UXI-167, the section "Stok" (TASK-022): the stock on hand and its state — none for an
+ * inactive product, which shows its mark (INVENTORY section 10) — and "Riwayat stok", the
+ * history filtered to this product, which names this page as the way back.
+ */
+function StockSection({ product, stock }: { product: ProductDetail; stock: NonNullable<ProductProps['stock']> }) {
+    const word = stock.state === null ? null : stateWord(stock.state);
+    const items: KeyValue[] = [
+        { key: 'onHand', label: t('inventory.stock.col_stock'), value: <span className={'bk-num'}>{formatQuantity(stock.onHand, product.quantityPrecision, product.baseUnit)}</span> },
+        { key: 'state', label: t('inventory.stock.col_state'), value: word === null ? <StateMark kind={'inactive'} /> : <StatusWord tone={word.tone} label={t(word.label)} /> },
+    ];
+
+    return (
+        <Section title={t('catalog.product_detail.section_stock')}>
+            <div className={'bk-stack'}>
+                <KeyValueList items={items} />
+                <div className={'bk-actions'}>
+                    <ButtonLink href={productHistory(product.id, 'product')} label={t('inventory.history.title')} variant={'secondary'} />
+                </div>
+            </div>
+        </Section>
     );
 }
 

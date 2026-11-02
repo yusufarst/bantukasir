@@ -62,12 +62,14 @@ final class ShellDataTest extends DatabaseTestCase
 
         $this->as('Agus');
         $answer = $this->getJson('/data/shell')->assertOk();
-        $answer->assertExactJson(['unresolvedRequests' => 2, 'asOf' => '2026-10-28T03:00:00.250000Z']);
+        // The stock-attention count (TASK-022) is tested in tests/Feature/Inventory/StockAttentionTest.php;
+        // the shop of this test has no product.
+        $answer->assertExactJson(['unresolvedRequests' => 2, 'stockAttention' => 0, 'asOf' => '2026-10-28T03:00:00.250000Z']);
         $this->assertJsonChannel($answer, 'data.shell', 'ops');
         $this->assertStringContainsString('no-store', (string) $answer->headers->get('Cache-Control'));
 
         $this->as('Rina');
-        $this->getJson('/data/shell')->assertOk()->assertJsonPath('unresolvedRequests', 1);
+        $this->getJson('/data/shell')->assertOk()->assertJsonPath('unresolvedRequests', 1)->assertJsonPath('stockAttention', null);
 
         // The Owner's count is his own, never every user's.
         $this->as('Hendra');

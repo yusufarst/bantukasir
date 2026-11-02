@@ -67,21 +67,27 @@ describe('the primary navigation of each role', () => {
     });
 
     it('registers no destination before the Task that delivers its page (EXC-52)', () => {
-        // UXI-008 "Pengaturan" is TASK-010's and UXI-005 "Produk" TASK-017's, with the capabilities of their rows.
-        expect(ALL.filter((id) => DESTINATIONS[id] !== undefined)).toEqual(['products', 'settings']);
+        // UXI-008 "Pengaturan" is TASK-010's, UXI-005 "Produk" TASK-017's and UXI-006 "Stok" TASK-022's, with the capabilities of their rows.
+        expect(ALL.filter((id) => DESTINATIONS[id] !== undefined)).toEqual(['stock', 'products', 'settings']);
         expect(DESTINATIONS.settings).toEqual({ label: 'config.settings.title', href: '/settings', icon: 'sliders', capabilities: ['CAP-25', 'CAP-32'] });
         expect(DESTINATIONS.products).toEqual({ label: 'catalog.products.title', href: '/products', icon: 'tag', capabilities: ['CAP-02', 'CAP-04'] });
+        expect(DESTINATIONS.stock).toEqual({ label: 'inventory.stock.title', href: '/stock', icon: 'boxes', capabilities: ['CAP-14'] });
         // UXI-009 and UXI-010; UXI-011 "Impor produk (CSV)", TASK-019's.
         expect(Object.keys(SUB_DESTINATIONS.products)).toEqual(['products', 'categories', 'csv']);
         expect(SUB_DESTINATIONS.products.categories).toEqual({ label: 'catalog.categories.title', href: '/categories', capabilities: ['CAP-04'] });
         expect(SUB_DESTINATIONS.products.csv).toEqual({ label: 'catalog.csv_import.title', href: '/products/import', capabilities: ['CAP-10'] });
-        expect(Object.keys(SUB_DESTINATIONS.stock)).toEqual([]);
+        // UXI-012 to UXI-014, TASK-022's; Barang keluar, Stok awal and Insiden come with their Tasks.
+        expect(Object.keys(SUB_DESTINATIONS.stock)).toEqual(['stock', 'history', 'receipts']);
+        expect(SUB_DESTINATIONS.stock.receipts).toEqual({ label: 'inventory.receipts.title', href: '/stock/receivings', capabilities: ['CAP-11'] });
         expect(Object.keys(SUB_DESTINATIONS.reports)).toEqual([]);
-        expect(navigationFor(['SUPER_ADMIN'], FLAGS.owner, DESTINATIONS).map((item) => item.id)).toEqual(['products', 'settings']);
-        expect(navigationFor(['CASHIER', 'OPERATIONS_ADMIN'], FLAGS.combined, DESTINATIONS).map((item) => item.id)).toEqual(['products']);
-        expect(navigationFor(['OPERATIONS_ADMIN'], FLAGS.ops, DESTINATIONS).map((item) => item.id)).toEqual(['products']);
+        expect(navigationFor(['SUPER_ADMIN'], FLAGS.owner, DESTINATIONS).map((item) => item.id)).toEqual(['stock', 'products', 'settings']);
+        expect(navigationFor(['CASHIER', 'OPERATIONS_ADMIN'], FLAGS.combined, DESTINATIONS).map((item) => item.id)).toEqual(['stock', 'products']);
+        expect(navigationFor(['OPERATIONS_ADMIN'], FLAGS.ops, DESTINATIONS).map((item) => item.id)).toEqual(['stock', 'products']);
+        // A cashier's CAP-14 is the stock at checkout, which opens no gate and shows no Stok.
         expect(navigationFor(['CASHIER'], FLAGS.cashier, DESTINATIONS)).toEqual([]);
         expect(subNavigationFor('products', ['OPERATIONS_ADMIN'], FLAGS.ops, SUB_DESTINATIONS.products).map((item) => item.id)).toEqual(['products', 'categories', 'csv']);
+        expect(subNavigationFor('stock', ['OPERATIONS_ADMIN'], FLAGS.ops, SUB_DESTINATIONS.stock).map((item) => item.id)).toEqual(['stock', 'history', 'receipts']);
+        expect(subNavigationFor('stock', ['SUPER_ADMIN'], FLAGS.owner, SUB_DESTINATIONS.stock).map((item) => item.id)).toEqual(['stock', 'history', 'receipts']);
     });
 });
 

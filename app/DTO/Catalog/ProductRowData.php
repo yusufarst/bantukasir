@@ -9,7 +9,9 @@ use App\DTO\PageData;
  * BR-CAT-26): what every role that sees a result sees — identity, name, SKU, base
  * unit and precision, the current price with its revision, the active flag and the
  * thumbnail's path, and whether it holds an active barcode, for UXI-163. Never a cost, a
- * valuation or a margin. RD-01 adds the stock the role may see (Queries\Inventory\ProductStock).
+ * valuation or a margin. RD-01 adds the stock the role may see (Queries\Inventory\ProductStock),
+ * and in the context `receiving` the product's version, which RC-07 expects as reviewed
+ * (TASK-022): withVersion().
  */
 final readonly class ProductRowData implements PageData
 {
@@ -24,7 +26,19 @@ final readonly class ProductRowData implements PageData
         public bool $active,
         public ?string $thumbnail,
         public bool $activeBarcode,
+        public int $version,
     ) {}
+
+    /**
+     * The row with the product's version, for the context `receiving` (INTERACTION_CONTRACTS
+     * RC-07, `expected.products`).
+     *
+     * @return array{id: int, name: string, sku: string, baseUnit: string, quantityPrecision: int, price: array{amount: string, revisionId: int}, active: bool, thumbnail: string|null, activeBarcode: bool, version: int}
+     */
+    public function withVersion(): array
+    {
+        return [...$this->toArray(), 'version' => $this->version];
+    }
 
     /**
      * @return array{id: int, name: string, sku: string, baseUnit: string, quantityPrecision: int, price: array{amount: string, revisionId: int}, active: bool, thumbnail: string|null, activeBarcode: bool}

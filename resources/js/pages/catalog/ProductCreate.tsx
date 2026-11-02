@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState, type MouseEvent } from 'react';
 import { Button, ButtonLink } from '@/components/ui/Button';
 import { Card, Section } from '@/components/ui/Card';
 import { CommandForm, Field, MoneyInput, TextInput } from '@/components/ui/Field';
@@ -38,7 +38,9 @@ import { t } from '@/lib/i18n';
 // is refused at its field, with a link to the product that RD-06 finds, since the refusal
 // names none (TASK-016 finding F-1). Success leads to UXP-302 of the new product, with
 // stock 0. Leaving with data entered asks first (UXS-45). TASK-022 and TASK-035 open the
-// page over their working pages (NC-11); `code` carries their unknown code.
+// page over their working pages (NC-11): `CreateFlow` with `over`, whose back and cancel return
+// to the working page and whose success hands the new product to it; `code` carries their
+// unknown code. The working page then holds the one unsaved-changes guard of the document.
 
 const SKU_STATE: StateId = 'UXS-37-sku';
 
@@ -77,9 +79,41 @@ export default function ProductCreate({ categories, code }: { categories: readon
 
     return (
         <AppShell title={title} {...PRODUCTS_SHELL}>
-            <CreateFlow title={title} categories={categories} code={code} />
+            <GuardedCreateFlow title={title} categories={categories} code={code} />
         </AppShell>
     );
+}
+
+/**
+ * UXP-303 as its own page, with its unsaved-changes guard (UXS-45). The visit to the new
+ * product is made here, after the guard: the effects of one commit run child first, so a
+ * visit made by `CreateFlow` would reach the guard before it heard that nothing is left
+ * unsent, and the guard would hold the page on its dialog (CI run 41494562925).
+ */
+function GuardedCreateFlow({ title, categories, code }: { title: string; categories: readonly Category[]; code: string | null }) {
+    const [dirty, setDirty] = useState(false);
+    const [saved, setSaved] = useState<string | null>(null);
+
+    useUnsavedChanges(dirty);
+
+    useEffect(() => {
+        if (saved !== null) {
+            router.visit(saved);
+        }
+    }, [saved]);
+
+    return <CreateFlow title={title} categories={categories} code={code} onDirty={setDirty} onSaved={setSaved} />;
+}
+
+/**
+ * UXP-303 over a working page (NC-11; UXA-05): the page it covers stays, with its draft, and
+ * these return to it — `onBack` from its back and cancel, `onCreated` with the new product.
+ */
+export interface OverWorkingPage {
+    readonly page: string;
+    readonly href: string;
+    readonly onBack: () => void;
+    readonly onCreated: (product: { readonly id: number; readonly sku: string }) => void;
 }
 
 /** The products that hold the barcode or SKU, each once. */
@@ -89,10 +123,37 @@ function exactProducts(result: CheckResult): readonly ProductRow[] {
     return result.sku === null || result.sku.id === result.barcode?.id ? barcode : [...barcode, result.sku];
 }
 
-function CreateFlow({ title, categories, code }: { title: string; categories: readonly Category[]; code: string | null }) {
+export function CreateFlow({
+    title,
+    categories,
+    code,
+    onDirty,
+    onSaved,
+    over,
+}: {
+    title: string;
+    categories: readonly Category[];
+    code: string | null;
+    /** Whether data was entered and not sent, for the guard of the page that holds it. */
+    onDirty: (dirty: boolean) => void;
+    /** As its own page: the address of the new product, which the page that holds the guard visits. */
+    onSaved?: (location: string) => void;
+    over?: OverWorkingPage;
+}) {
     const control = useCommand(CATALOG_COMMANDS.createProduct);
     const { phase, blockedBy } = control;
-    const guard = useLeaveGuard();
+    const pageGuard = useLeaveGuard();
+    // Over a working page, back and cancel return to it and leave nothing (NC-11).
+    const guard = (event: MouseEvent<HTMLAnchorElement>): void => {
+        if (over === undefined) {
+            pageGuard(event);
+
+            return;
+        }
+
+        event.preventDefault();
+        over.onBack();
+    };
     const ids = useId();
     const [step, setStep] = useState<'search' | 'form'>('search');
     const [barcode, setBarcode] = useState(code ?? '');
@@ -108,7 +169,7 @@ function CreateFlow({ title, categories, code }: { title: string; categories: re
     const [holder, setHolder] = useState<ProductRow | null>(null);
     // The name of the category that the request sent, which a refusal of it names (UXS-32): the list may no longer hold it.
     const [sentCategory, setSentCategory] = useState('');
-    const [listPage] = useState(productsListAddress);
+    const [listPage] = useState(() => over?.href ?? productsListAddress());
     const latestCheck = useRef(0);
     const barcodeField = useRef<HTMLInputElement | null>(null);
 
@@ -121,13 +182,28 @@ function CreateFlow({ title, categories, code }: { title: string; categories: re
     const goToForm = (): void => setStep('form');
     const typed = barcode !== (code ?? '') || sku !== '' || name !== '' || category !== '' || brand !== '' || unit !== '' || precision !== '0' || price !== null || stock !== '0';
 
-    useUnsavedChanges(typed && !committed);
+    const dirty = typed && !committed;
+
+    useEffect(() => onDirty(dirty), [dirty]);
 
     useEffect(() => {
-        if (location !== undefined) {
-            leaveSavedNote(t('catalog.product_create.success', { produk: name.trim() }));
-            router.visit(location);
+        if (location === undefined) {
+            return;
         }
+
+        if (over !== undefined) {
+            const result = phase.kind === 'committed' ? phase.result : null;
+            const id = result?.id;
+
+            if (typeof id === 'number') {
+                over.onCreated({ id, sku: sku.trim() });
+            }
+
+            return;
+        }
+
+        leaveSavedNote(t('catalog.product_create.success', { produk: name.trim() }));
+        onSaved?.(location);
     }, [location]);
 
     const refusal = phase.kind === 'rejected' ? phase.refusal : null;
@@ -190,7 +266,7 @@ function CreateFlow({ title, categories, code }: { title: string; categories: re
         });
     };
 
-    const header = <PageHeader title={title} back={{ href: listPage, page: t('catalog.products.title'), onNavigate: guard }} />;
+    const header = <PageHeader title={title} back={{ href: listPage, page: over?.page ?? t('catalog.products.title'), onNavigate: guard }} />;
     const cancel = <ButtonLink href={listPage} label={t('ux.action.cancel')} variant={'secondary'} onClick={guard} />;
 
     if (step === 'search') {
@@ -299,7 +375,8 @@ function CreateFlow({ title, categories, code }: { title: string; categories: re
     const priceError = add('payload.sellingPrice', 'price', t('catalog.field.selling_price'));
     const stockError = add('payload.minimumStock', 'stock', t('catalog.field.min_stock'));
     const barcodeError = add(BARCODE_PATH, 'barcode', t('catalog.field.manufacturer_barcode'));
-    const holderLink = holder === null ? undefined : <ButtonLink href={productPage(holder.id)} label={t('ux.state.duplicate_code.open', { produk: holder.name })} variant={'secondary'} onClick={guard} />;
+    // Over a working page the product is not opened: that would leave the draft (NC-11).
+    const holderLink = holder === null || over !== undefined ? undefined : <ButtonLink href={productPage(holder.id)} label={t('ux.state.duplicate_code.open', { produk: holder.name })} variant={'secondary'} onClick={guard} />;
 
     return (
         <CommandLayout header={header}>

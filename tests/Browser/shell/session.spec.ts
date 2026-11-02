@@ -1,6 +1,6 @@
 import { expect as baseExpect, test, type Browser, type BrowserContext, type Page } from '@playwright/test';
 import { SIGN_OUT_WAIT_SECONDS } from '../../../resources/js/lib/sessionTimes';
-import { ACCESS_TIMEOUT, ACCESS_WAIT, HOME, resetPeople, SECURE_LOCAL_ORIGIN, signIn, unexpected, type Account, type Person } from '../support/access';
+import { ACCESS_TIMEOUT, ACCESS_WAIT, HOME, homeOf, resetPeople, SECURE_LOCAL_ORIGIN, signIn, unexpected, type Account, type Person } from '../support/access';
 import { watch } from '../support/specimen';
 
 const expect = baseExpect.configure({ timeout: ACCESS_WAIT });
@@ -112,7 +112,9 @@ test('after a sign-out, the next user sees nothing of the first through Back, Fo
     const { Agus: agus, Rina: rina } = await resetPeople(context, ['Agus', 'Rina']);
     const watched = await watch(page);
 
+    // Agus lands on Stok (TASK-022); his email is on Akun saya.
     await signIn(page, agus);
+    await page.goto(HOME);
     await expect(page.getByText(agus.email)).toBeVisible();
     await page.getByRole('link', { name: 'Ubah kata sandi' }).click();
     await expect(page.getByRole('heading', { level: 1, name: 'Ubah kata sandi' })).toBeVisible();
@@ -260,9 +262,9 @@ test("a tab hidden by a sign-out that it never hears the answer of asks the serv
 
     // The wait passes and the sign-out is still unanswered: the second tab
     // asks the server, whose answer is the truth — the sign-in session is
-    // still valid, so it is Agus's home.
+    // still valid, so it is Agus's home, Stok (TASK-022).
     await context.clock.fastForward((SIGN_OUT_WAIT_SECONDS + 1) * 1000);
-    await second.waitForURL((url) => url.pathname === HOME);
+    await second.waitForURL((url) => url.pathname === homeOf('Agus'));
     await expect(second.getByRole('button', { name: 'Menu akun Agus' })).toBeVisible();
 
     // The answer then comes: the page the second tab loaded hears it and
@@ -304,6 +306,7 @@ test("another user's sign-in in another tab ends the page of a user whose sign-i
     const first = await context.newPage();
 
     await signIn(first, agus);
+    await first.goto(HOME);
     await expect(first.getByText(agus.email)).toBeVisible();
 
     await endOnServer(browser, 'Agus');

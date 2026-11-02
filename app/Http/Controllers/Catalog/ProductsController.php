@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Catalog;
 
 use App\Domain\Access\Capabilities;
 use App\Domain\Access\Capability;
+use App\Domain\Access\Grant;
 use App\DTO\Catalog\CategoryRowData;
 use App\Http\Requests\Catalog\ProductCreatePageRequest;
 use App\Http\Requests\Catalog\ProductsPageRequest;
@@ -20,7 +21,8 @@ use Inertia\Response;
  * to 8.5; TASK-017 scope item 1). RP-301 gives its filters and the categories to filter
  * by; its results come from RD-01. RP-302's sections go by capability: the price history
  * (CAP-04, the page's gate), the photo (CAP-09), the barcodes (CAP-06) with the way to their
- * correction (CAP-07, TASK-020) and the labels (CAP-08). TASK-022 and TASK-025 add theirs.
+ * correction (CAP-07, TASK-020), the labels (CAP-08) and the stock (CAP-14, TASK-022); TASK-025
+ * adds its own.
  * Whether a product's unit and precision are locked is Inventory's to say (BR-CAT-07; STK-13).
  */
 final class ProductsController
@@ -56,6 +58,8 @@ final class ProductsController
             'canChangePhoto' => self::allows($viewer, Capability::Cap09),
             // UXI-175: a product with an active barcode (INTERACTION_INVENTORY).
             'canPrintLabels' => self::allows($viewer, Capability::Cap08) && $pages->activeBarcodes($detail->id) !== [],
+            // UXI-167, the section "Stok" (TASK-022): for a full holder of CAP-14.
+            'stock' => $viewer instanceof User && Capabilities::of($viewer, Capability::Cap14) === Grant::Full ? $stock->of($detail->id, $detail->active) : null,
         ]);
     }
 

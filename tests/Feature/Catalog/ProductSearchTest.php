@@ -236,11 +236,16 @@ final class ProductSearchTest extends DatabaseTestCase
         foreach (['Hendra', 'Agus', 'Dewi'] as $person) {
             $this->as($person);
 
-            // `correction` opened with TASK-020, for CAP-07, the Owner's alone.
-            foreach ($person === 'Hendra' ? ['till', 'receiving', 'issue', 'adjustment', 'opening', 'stock'] : ['till', 'receiving', 'issue', 'adjustment', 'opening', 'stock', 'correction'] as $context) {
+            // `correction` opened with TASK-020, for CAP-07, the Owner's alone; `receiving` and
+            // `stock` with TASK-022, for CAP-11 and CAP-14, which all three hold.
+            foreach ($person === 'Hendra' ? ['till', 'issue', 'adjustment', 'opening'] : ['till', 'issue', 'adjustment', 'opening', 'correction'] as $context) {
                 $before = $refusals();
                 $this->getJson(self::SEARCH.'?context='.$context)->assertStatus(403)->assertJsonPath('code', 'FORBIDDEN');
                 $this->assertSame($before + 1, $refusals(), $context.' is recorded (SEC-LOG-03).');
+            }
+
+            foreach (['receiving', 'stock'] as $context) {
+                $this->getJson(self::SEARCH.'?context='.$context.'&q=PEN')->assertOk();
             }
 
             // A context no contract names, or none, is a refused parameter.

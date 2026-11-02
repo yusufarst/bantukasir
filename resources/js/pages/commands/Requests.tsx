@@ -1,13 +1,14 @@
 import { usePage } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAnnounce } from '@/components/ui/Announcer';
-import { Button } from '@/components/ui/Button';
+import { Button, ButtonLink } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { LoadMore } from '@/components/ui/Data';
 import { Notice } from '@/components/ui/Notice';
 import { EmptyState, LoadFailed, Loading, RecoveryPanel, StillSubmitting } from '@/components/ui/States';
 import { AppShell } from '@/layouts/AppShell';
 import { PageContainer, PageHeader } from '@/layouts/Page';
+import type { CommandResult } from '@/lib/commands/answers';
 import { announceSettled, checkStatus, recheckDelay, RECORD_CHECK_WAIT_MINUTES } from '@/lib/commands/client';
 import { committedText, familyLabel, familyMustNot, isLabelledFamily } from '@/lib/commands/families';
 import { releaseReference } from '@/lib/commands/references';
@@ -27,9 +28,11 @@ import { t } from '@/lib/i18n';
 // Owner's "Cek status", whose NOT_COMMITTED writes the fence. A conclusive
 // answer releases the reference and the card disappears; IN_PROGRESS repeats
 // the check after 3, 6 and 12 seconds and then every 15 seconds; a check
-// without an answer leaves the request as it was. "Lihat hasil" (UXI-056)
-// comes with the first result page (TASK-022), and until then a request
-// resolved as committed says so here.
+// without an answer leaves the request as it was. A request resolved as
+// committed says so here, with "Lihat hasil" (UXI-056) to its result page
+// where one exists: RP-406 of a receiving (TASK-022); the Tasks of the other
+// result pages add their operations to RESULT_PAGES. The result page is
+// authorized again when it opens (SEC-AZ-06).
 
 interface SharedProps {
     readonly auth: { readonly user: { readonly id: number; readonly roles: readonly string[] } };
@@ -39,6 +42,22 @@ interface SharedProps {
 
 /** The home of every role (RN-01), named "halaman awal" (NC-12). */
 const HOME = '/';
+
+/** The operations whose result page exists (UXI-056; INTERACTION_CONTRACTS section 9). */
+const RESULT_PAGES: readonly string[] = ['receiving.confirm'];
+
+/** The result page of a committed request, from its answer's location, or null. */
+function resultPageOf(operation: string, result: CommandResult | null): string | null {
+    const location = result?.location;
+
+    return RESULT_PAGES.includes(operation) && typeof location === 'string' && location.startsWith('/') && !location.startsWith('//') ? location : null;
+}
+
+/** What a check concluded: its text and, for a committed request, its result page. */
+interface Conclusion {
+    readonly text: string;
+    readonly href: string | null;
+}
 
 /** The key of a card: its operation and intent, one card per request (section 2.2). */
 function intentKey(request: { operation: string; sourceIntentId: string }): string {
@@ -65,7 +84,7 @@ function RequestsPage({ title }: { title: string }) {
     const announce = useAnnounce();
     const [own, setOwn] = useState<'loading' | 'loaded' | 'failed'>('loading');
     const [others, setOthers] = useState<Others>({ state: 'loading' });
-    const [result, setResult] = useState<string | null>(null);
+    const [result, setResult] = useState<Conclusion | null>(null);
 
     const readOwn = useCallback((): void => {
         void refreshReceipts(false).then((read) => setOwn(read ? 'loaded' : 'failed'));
@@ -101,8 +120,8 @@ function RequestsPage({ title }: { title: string }) {
     }, [readOwn, readOthers]);
 
     const concluded = useCallback(
-        (text: string): void => {
-            setResult(text);
+        (text: string, href: string | null = null): void => {
+            setResult({ text, href });
             announce(text, false);
         },
         [announce],
@@ -124,8 +143,8 @@ function RequestsPage({ title }: { title: string }) {
             <div className={'bk-stack'}>
                 <PageHeader title={title} back={{ href: HOME }} subtitle={t('commands.unresolved.intro')} />
                 {result !== null && (
-                    <Notice tone={'neutral'} urgency={'none'}>
-                        <p>{result}</p>
+                    <Notice tone={'neutral'} urgency={'none'} actions={result.href === null ? undefined : <ButtonLink href={result.href} label={t('ux.action.view_result')} variant={'secondary'} />}>
+                        <p>{result.text}</p>
                     </Notice>
                 )}
                 {own === 'loading' && mine.length === 0 ? (
@@ -151,7 +170,7 @@ function RequestsPage({ title }: { title: string }) {
                     <ul className={'bk-stack'} role={'list'}>
                         {others.rows.map((row) => (
                             <li key={intentKey(row)}>
-                                <OtherRequest row={row} epoch={props.recoveryEpoch} onConcluded={(text) => (concluded(text), removeOther(row))} />
+                                <OtherRequest row={row} epoch={props.recoveryEpoch} onConcluded={(text, href) => (concluded(text, href ?? null), removeOther(row))} />
                             </li>
                         ))}
                     </ul>
@@ -170,7 +189,7 @@ type CheckView = { readonly kind: 'idle' } | { readonly kind: 'checking' } | { r
  * repeats while the original is still running, and the conclusion that the
  * page announces. A request that stays HELD keeps "Cek status" only.
  */
-function useRowCheck(request: { operation: string; sourceIntentId: string; recoveryEpoch: string | null }, epoch: string | null, onConcluded: (text: string) => void, onResolved: () => void) {
+function useRowCheck(request: { operation: string; sourceIntentId: string; recoveryEpoch: string | null }, epoch: string | null, onConcluded: (text: string, href?: string | null) => void, onResolved: () => void) {
     const [view, setView] = useState<CheckView>({ kind: 'idle' });
     const timer = useRef<number | null>(null);
     const done = useRef(0);
@@ -207,7 +226,7 @@ function useRowCheck(request: { operation: string; sourceIntentId: string; recov
             switch (answer.kind) {
                 case 'committed':
                     onResolved();
-                    onConcluded(committedText(request.operation));
+                    onConcluded(committedText(request.operation), resultPageOf(request.operation, answer.result));
 
                     return;
                 case 'not_committed':
@@ -289,7 +308,7 @@ function CheckNote({ view }: { view: CheckView }) {
 }
 
 /** A card of the user's own request (UXI-055). */
-function OwnRequest({ request, userId, epoch, onConcluded }: { request: UnresolvedRequest; userId: number; epoch: string | null; onConcluded: (text: string) => void }) {
+function OwnRequest({ request, userId, epoch, onConcluded }: { request: UnresolvedRequest; userId: number; epoch: string | null; onConcluded: (text: string, href?: string | null) => void }) {
     const resolved = useCallback((): void => {
         releaseReference(userId, request);
         forgetReceipt(request);
@@ -320,7 +339,7 @@ function OwnRequest({ request, userId, epoch, onConcluded }: { request: Unresolv
 }
 
 /** A card of another user's request, for the Owner (UXI-058). */
-function OtherRequest({ row, epoch, onConcluded }: { row: ReceiptRow; epoch: string | null; onConcluded: (text: string) => void }) {
+function OtherRequest({ row, epoch, onConcluded }: { row: ReceiptRow; epoch: string | null; onConcluded: (text: string, href?: string | null) => void }) {
     const resolved = useCallback((): void => announceSettled(), []);
     const { view, check } = useRowCheck({ ...row, recoveryEpoch: null }, epoch, onConcluded, resolved);
 

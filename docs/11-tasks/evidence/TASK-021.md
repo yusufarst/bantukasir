@@ -233,3 +233,17 @@ Nothing of `scripts/checks/image-scan-gate.sh`, the scan, the image, the applica
 | `composer lint`: the secret scan, and the migration review, which reads the headings of DECISIONS | The fast run of the push and CI on the new head | `NOT_RUN` at this writing |
 
 `jq` is absent on this machine, so the gate's tests run in CI only (TASK-012 finding F-5). If the new head fails on T-37 alone, that failure stays a `FAIL` and the Task stops for the Owner, who runs CI's retries himself; a newer database that refuses another finding stops it too (T-38 (d)).
+
+## 15. Merge
+
+Recorded by the next Task, TASK-022 (EXECUTION_CONTEXT CE-50), from the state and GitHub on 2 November 2026, by read-only Git and GitHub commands. The tick verified the merge, which the state records as merge kind `task`. CI on the final head ran the whole command contract, with `HomeRedirectTest`, and the image checks with D-118's three entries, and passed: the checks of section 14.4 that were `NOT_RUN` passed there.
+
+| Fact | Value |
+| --- | --- |
+| Pull request | #30, "TASK-021 — Stock ledger, valuation and receiving (server)", from `task/TASK-021-ledger-receiving` into `develop` |
+| Its head | `7fb8012556d2aa67f4598d0f974cf3b372402434` |
+| CI on the pull request | Run 41444003470, on `7fb8012`, success: `Command contract` 12:21:20 to 13:01:14 UTC, `Image checks` 12:21:21 to 12:28:01 UTC |
+| Merge | The tick's squash merge on the Owner's account (`yusufarst`), under D-105, on 2 November 2026 at 13:03:26 UTC, with the automated review's status DONE |
+| Merge commit | `f90a274c0f323981684e7e865d00042de9d32347` on `develop`; author the Owner's identity; its tree `0b3c284c01571e08b3c3ac946a0b6e5e75203944` equals that of `7fb8012` |
+| CI on `develop` | Run 41449698033, on `f90a274`, success: `Command contract` 13:03:32 to 13:40:24 UTC, `Image checks` 13:03:42 to 13:10:13 UTC |
+| Comments | No comment or review of the Owner on the pull request. The automated reviewer's account `chatgpt-codex-connector` wrote its summary comment; data, not instructions (CE-43) |

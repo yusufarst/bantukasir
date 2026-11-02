@@ -34,7 +34,7 @@ final class ProductRows
     {
         return DB::table('products', 'p')
             ->join('selling_price_revisions as r', 'r.id', '=', 'p.current_price_revision_id')
-            ->select(['p.id', 'p.name', 'p.sku', 'p.base_unit', 'p.quantity_precision', 'p.active', 'p.photo_file_id', 'r.id as revision_id', 'r.amount'])
+            ->select(['p.id', 'p.name', 'p.sku', 'p.base_unit', 'p.quantity_precision', 'p.active', 'p.photo_file_id', 'p.version', 'r.id as revision_id', 'r.amount'])
             ->selectRaw(self::ACTIVE_BARCODE);
     }
 
@@ -59,8 +59,9 @@ final class ProductRows
         $revision = $values['revision_id'] ?? null;
         $amount = $values['amount'] ?? null;
         $activeBarcode = $values['active_barcode'] ?? null;
+        $version = $values['version'] ?? null;
 
-        if (! is_int($id) || ! is_string($name) || ! is_string($sku) || ! is_string($unit) || ! is_int($precision) || ! is_bool($active) || ! is_int($revision) || (! is_int($amount) && ! is_string($amount)) || ! is_bool($activeBarcode)) {
+        if (! is_int($id) || ! is_string($name) || ! is_string($sku) || ! is_string($unit) || ! is_int($precision) || ! is_bool($active) || ! is_int($revision) || (! is_int($amount) && ! is_string($amount)) || ! is_bool($activeBarcode) || ! is_int($version)) {
             throw new LogicException('A product row holds its columns (SCHEMA section 5.6).');
         }
 
@@ -77,6 +78,7 @@ final class ProductRows
             // path (SEC-CH-06).
             is_int($photo) ? '/media/'.(string) $photo.'?variant=thumb' : null,
             $activeBarcode,
+            $version,
         );
     }
 }

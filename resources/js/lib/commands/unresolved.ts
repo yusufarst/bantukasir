@@ -221,9 +221,15 @@ export interface UnresolvedState {
     readonly asOf: string | null;
     /** Whether the last read failed (UXS-21 with asOf, UXS-22 without). */
     readonly failed: boolean;
+    /**
+     * The badge of "Stok" (UXI-006; TASK-022): the Habis and Menipis products of the last
+     * successful read of RD-03 or RD-02, which count them by one definition; null before one,
+     * and for an account without the stock pages. A failed read keeps the last number.
+     */
+    readonly stockAttention: number | null;
 }
 
-let state: UnresolvedState = { userId: null, union: [], serverCount: null, asOf: null, failed: false };
+let state: UnresolvedState = { userId: null, union: [], serverCount: null, asOf: null, failed: false, stockAttention: null };
 let rows: readonly ReceiptRow[] = [];
 const listeners = new Set<() => void>();
 let reading: Promise<void> | null = null;
@@ -245,7 +251,7 @@ function subscribe(listener: () => void): () => void {
 export function setUser(userId: number): void {
     if (state.userId !== userId) {
         rows = [];
-        state = { userId, union: [], serverCount: null, asOf: null, failed: false };
+        state = { userId, union: [], serverCount: null, asOf: null, failed: false, stockAttention: null };
     }
 
     publish({ userId });
@@ -275,8 +281,28 @@ export function forgetReceipt(request: { operation: string; sourceIntentId: stri
     publish({ serverCount: state.serverCount === null ? null : Math.max(0, state.serverCount - gone) });
 }
 
-/** What an answer of RD-03 means for the shell. */
-export type IndicatorsAnswer = { readonly kind: 'read'; readonly count: number; readonly asOf: string } | { readonly kind: 'ended' } | { readonly kind: 'failed' };
+/**
+ * The badge's number that RD-02 just read with the stock list (TASK-022): the list and the
+ * badge then show the same read (BR-INV-41).
+ */
+export function setStockAttention(count: number): void {
+    publish({ stockAttention: count });
+}
+
+/** What an answer of RD-03 means for the shell; `stockAttention` is null without the stock pages. */
+export type IndicatorsAnswer =
+    | { readonly kind: 'read'; readonly count: number; readonly asOf: string; readonly stockAttention: number | null }
+    | { readonly kind: 'ended' }
+    | { readonly kind: 'failed' };
+
+/** A count of RD-03 that a role may not have: null when absent or null, undefined when unreadable. */
+function countOrNull(value: unknown): number | null | undefined {
+    if (value === null || value === undefined) {
+        return null;
+    }
+
+    return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : undefined;
+}
 
 /**
  * Reads an answer of RD-03: 401 means the sign-in session has ended (UXS-09,
@@ -292,8 +318,9 @@ export function indicatorsOf(arrived: Arrived | null): IndicatorsAnswer {
     const body = arrived?.status === 200 && isRecord(arrived.body) ? arrived.body : null;
     const count = body !== null && typeof body.unresolvedRequests === 'number' && Number.isSafeInteger(body.unresolvedRequests) && body.unresolvedRequests >= 0 ? body.unresolvedRequests : null;
     const asOf = body !== null && typeof body.asOf === 'string' ? body.asOf : null;
+    const stockAttention = body === null ? undefined : countOrNull(body.stockAttention);
 
-    return count === null || asOf === null ? { kind: 'failed' } : { kind: 'read', count, asOf };
+    return count === null || asOf === null || stockAttention === undefined ? { kind: 'failed' } : { kind: 'read', count, asOf, stockAttention };
 }
 
 /** What the shell does when a read of its indicators finds the sign-in session ended. */
@@ -341,19 +368,19 @@ export function refreshIndicators(): Promise<void> {
             return;
         }
 
-        const { count, asOf } = answer;
+        const { count, asOf, stockAttention } = answer;
 
         if (count === 0) {
             rows = [];
         } else if (!(await refreshReceipts(true, leaving.signal))) {
             if (!leaving.signal.aborted) {
-                publish({ failed: true });
+                publish({ failed: true, stockAttention });
             }
 
             return;
         }
 
-        publish({ serverCount: count, asOf, failed: false });
+        publish({ serverCount: count, asOf, failed: false, stockAttention });
     })().finally(() => {
         reading = null;
     });

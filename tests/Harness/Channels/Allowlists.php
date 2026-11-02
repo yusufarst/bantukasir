@@ -105,6 +105,8 @@ final class Allowlists
             'priceHistory', 'priceHistory.*', 'priceHistory.*.amount', 'priceHistory.*.startedAt', 'priceHistory.*.actorDisplayName',
             'barcodes', 'barcodes.*', 'barcodes.*.mappingId', 'barcodes.*.token', 'barcodes.*.kind', 'barcodes.*.active', 'barcodes.*.reasonClass',
             'canCorrectBarcode', 'canChangePhoto', 'canPrintLabels',
+            // The section "Stok" (UXI-167; TASK-022), for a full holder of CAP-14: never a cost.
+            'stock', 'stock.onHand', 'stock.minimum', 'stock.state',
         ]],
         // UXP-305, the Owner's alone (TASK-020): the product it opened from.
         'catalog/BarcodeCorrection' => ['owner' => ['product', 'product.id']],
@@ -114,6 +116,61 @@ final class Allowlists
         'documents/LabelPrint' => ['*' => ['label', 'label.name', 'label.sku', 'label.code', 'label.count']],
         'catalog/ProductEdit' => ['*' => [...self::PRODUCT, ...self::CATEGORIES]],
         'catalog/Categories' => ['*' => ['filters', 'filters.status', ...self::CATEGORIES]],
+        // The stock pages (TASK-022), for every kind of account that CAP-14 opens them to: no
+        // cost in the list, the history or a movement; the movement's cost evidence for the
+        // Owner alone (CAP-20).
+        'inventory/Stock' => ['*' => ['filters', 'filters.q', 'filters.state', 'filters.category', 'filters.perPage', ...self::CATEGORIES, ...self::STOCK_LIST_PROP]],
+        'inventory/History' => ['*' => [
+            'filters', 'filters.product', 'filters.type', 'filters.from', 'filters.to', 'product', 'product.id', 'product.name', 'product.sku', 'opener',
+            'history', 'history.rows', 'history.rows.*', 'history.rows.*.id', 'history.rows.*.productSequence', 'history.rows.*.recordedAt', 'history.rows.*.type',
+            'history.rows.*.quantity', 'history.rows.*.baseUnit', 'history.rows.*.quantityPrecision', 'history.rows.*.product', 'history.rows.*.product.id',
+            'history.rows.*.product.name', 'history.rows.*.product.sku', 'history.rows.*.actorDisplayName', 'history.rows.*.source', 'history.rows.*.source.kind',
+            'history.rows.*.source.id', 'history.rows.*.source.at', 'history.nextCursor', 'history.previousCursor',
+        ]],
+        'inventory/Movement' => [
+            'owner' => [...self::MOVEMENT, 'costEvidence', 'costEvidence.status', 'costEvidence.total', 'costEvidence.zeroNote'],
+            'ops' => self::MOVEMENT,
+            'combined' => self::MOVEMENT,
+        ],
+        // The receiving pages (TASK-022), for every kind of account that CAP-11 opens them to:
+        // the purchase cost of each line (CAP-12, D-033, D-047); a zero's evidence or reason for
+        // the Owner alone.
+        'inventory/Receivings' => ['*' => [
+            'filters', 'filters.from', 'filters.to', 'filters.q', 'postingFrozen',
+            'receivings', 'receivings.rows', 'receivings.rows.*', 'receivings.rows.*.id', 'receivings.rows.*.confirmedAt', 'receivings.rows.*.reference',
+            'receivings.rows.*.lineCount', 'receivings.rows.*.actorDisplayName', 'receivings.nextCursor', 'receivings.previousCursor',
+        ]],
+        'inventory/ReceivingCreate' => ['*' => ['postingFrozen', 'zeroAllowed', ...self::CATEGORIES]],
+        'inventory/Receiving' => [
+            'owner' => [...self::RECEIVING, 'lines.*.zeroNote'],
+            'ops' => self::RECEIVING,
+            'combined' => self::RECEIVING,
+        ],
+    ];
+
+    /** RD-02's answer, and the prop `stock` of RP-401 that holds its first page. */
+    private const array STOCK_LIST = [
+        'rows', 'rows.*', 'rows.*.id', 'rows.*.name', 'rows.*.sku', 'rows.*.baseUnit', 'rows.*.quantityPrecision', 'rows.*.onHand', 'rows.*.minimum', 'rows.*.state',
+        'outCount', 'lowCount', 'asOf', 'nextCursor',
+    ];
+
+    private const array STOCK_LIST_PROP = [
+        'stock', 'stock.rows', 'stock.rows.*', 'stock.rows.*.id', 'stock.rows.*.name', 'stock.rows.*.sku', 'stock.rows.*.baseUnit', 'stock.rows.*.quantityPrecision',
+        'stock.rows.*.onHand', 'stock.rows.*.minimum', 'stock.rows.*.state', 'stock.outCount', 'stock.lowCount', 'stock.asOf', 'stock.nextCursor',
+    ];
+
+    /** One movement of RP-403. */
+    private const array MOVEMENT = [
+        'movement', 'movement.id', 'movement.type', 'movement.quantity', 'movement.baseUnit', 'movement.quantityPrecision', 'movement.recordedAt',
+        'movement.product', 'movement.product.id', 'movement.product.name', 'movement.product.sku', 'movement.actorDisplayName', 'movement.reference',
+        'movement.source', 'movement.source.kind', 'movement.source.id', 'movement.source.at',
+    ];
+
+    /** One document of RP-406 with its lines and their purchase cost. */
+    private const array RECEIVING = [
+        'document', 'document.id', 'document.confirmedAt', 'document.reference', 'document.documentDate', 'document.lineCount', 'document.actorDisplayName',
+        'lines', 'lines.*', 'lines.*.lineNo', 'lines.*.product', 'lines.*.product.id', 'lines.*.product.name', 'lines.*.product.sku', 'lines.*.movementId',
+        'lines.*.quantity', 'lines.*.baseUnit', 'lines.*.quantityPrecision', 'lines.*.cost', 'lines.*.cost.status', 'lines.*.cost.amount',
     ];
 
     /** The categories of a catalogue page. */
@@ -150,8 +207,22 @@ final class Allowlists
         // The refusal of a posting with the lines it concerns, each by its product (RT-07;
         // TASK-021).
         'commands.refused.lines' => ['*' => ['outcome', 'code', 'messageKey', 'params', 'fields', 'lines', 'lines.*', 'lines.*.productId']],
-        // RD-03, the shell's indicators (TASK-009).
-        'data.shell' => ['*' => ['unresolvedRequests', 'asOf']],
+        // RD-03, the shell's indicators (TASK-009), with the stock-attention count of the
+        // badge, null for a cashier (TASK-022).
+        'data.shell' => ['*' => ['unresolvedRequests', 'stockAttention', 'asOf']],
+        // RD-02, the stock list (TASK-022): no cost.
+        'data.stock' => [
+            'owner' => self::STOCK_LIST,
+            'ops' => self::STOCK_LIST,
+            'combined' => self::STOCK_LIST,
+        ],
+        // RD-01 in the context `receiving` (TASK-022): each row with its product's version, for
+        // RC-07's expected versions.
+        'data.products.search.receiving' => [
+            'owner' => [...self::SEARCH_RESULT, 'rows.*.version'],
+            'ops' => [...self::SEARCH_RESULT, 'rows.*.version'],
+            'combined' => [...self::SEARCH_RESULT, 'rows.*.version'],
+        ],
         // RD-01 in the catalog context and RD-06 (TASK-015): the Owner's, the
         // Operations admin's and the combined account's, never a cost, a
         // valuation or a margin (BR-CAT-26). RD-01 carries the stock per role
