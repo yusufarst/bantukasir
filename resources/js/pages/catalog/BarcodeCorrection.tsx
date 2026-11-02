@@ -56,7 +56,6 @@ const REASON_MAX = 1000;
 
 interface CorrectedProduct {
     readonly id: number;
-    readonly name: string;
 }
 
 type Lookup =
@@ -86,9 +85,11 @@ export default function BarcodeCorrection({ product }: { product: CorrectedProdu
 
 /**
  * "Produk yang benar" (UXI-191): the shared Product Search, active products only, without the
- * product the token is on, which it cannot move to. Typing searches once the keys pause, and the
- * Enter that ends a code looks it up exactly and chooses its product (BR-CAT-32). A newer read
- * supersedes an older one (TR-PAGE-04). A choice stands in the field; a change of the text ends it.
+ * product the token was on, since a correction moves it to a different one (G-09). Typing searches
+ * once the keys pause, and the Enter that ends a code looks it up exactly and chooses its product
+ * (BR-CAT-32). A newer read supersedes an older one (TR-PAGE-04), and so does the end of this
+ * field, whose late answer chooses nothing for another token. A choice stands in the field; a
+ * change of the text ends it.
  */
 function ProductPicker({
     id,
@@ -100,7 +101,7 @@ function ProductPicker({
     onChoose,
 }: {
     id: string;
-    excluded: number | null;
+    excluded: number;
     chosen: ProductRow | null;
     disabled: boolean;
     error: string | undefined;
@@ -113,19 +114,24 @@ function ProductPicker({
     const latest = useRef(0);
     const timer = useRef<number | null>(null);
 
-    const stopTyping = (): void => {
+    /** Ends the typing's wait and every read still out: their answers are applied to nothing. */
+    const supersede = (): number => {
         if (timer.current !== null) {
             window.clearTimeout(timer.current);
             timer.current = null;
         }
+
+        latest.current += 1;
+
+        return latest.current;
     };
 
-    useEffect(() => stopTyping, []);
+    useEffect(() => () => void supersede(), []);
 
     const search = (typed: string): void => {
-        latest.current += 1;
-        const mine = latest.current;
+        const mine = supersede();
 
+        setLoadingMore(false);
         setResults({ kind: 'searching' });
         void searchProducts({ context: CORRECTION_CONTEXT, q: typed }).then((answer) => {
             if (mine !== latest.current) {
@@ -143,8 +149,8 @@ function ProductPicker({
     };
 
     const edited = (next: string): void => {
-        stopTyping();
-        latest.current += 1;
+        supersede();
+        setLoadingMore(false);
         setText(next);
         onChoose(null);
 
@@ -161,8 +167,8 @@ function ProductPicker({
     };
 
     const choose = (product: ProductRow): void => {
-        stopTyping();
-        latest.current += 1;
+        supersede();
+        setLoadingMore(false);
         setText(product.name);
         setResults({ kind: 'none' });
         onChoose(product);
@@ -176,10 +182,9 @@ function ProductPicker({
             return;
         }
 
-        stopTyping();
-        latest.current += 1;
-        const mine = latest.current;
+        const mine = supersede();
 
+        setLoadingMore(false);
         setResults({ kind: 'searching' });
         void searchProducts({ context: CORRECTION_CONTEXT, q: code, mode: 'exact' }).then((answer) => {
             if (mine !== latest.current) {
@@ -203,8 +208,7 @@ function ProductPicker({
     };
 
     const loadMore = (current: Extract<Results, { kind: 'rows' }>): void => {
-        latest.current += 1;
-        const mine = latest.current;
+        const mine = supersede();
 
         setLoadingMore(true);
         void searchProducts({ context: CORRECTION_CONTEXT, q: current.text, page: String(current.page + 1) }).then((answer) => {
@@ -267,7 +271,7 @@ function CorrectionForm({ title, product }: { title: string; product: CorrectedP
 
     const found = lookup.kind === 'found' ? lookup.answer : null;
     const mapping = found?.mapping ?? null;
-    const target = mapping !== null && chosen !== null && !(mapping.state === ACTIVE && mapping.productId === chosen.id) ? chosen : null;
+    const target = mapping !== null && chosen !== null && mapping.productId !== chosen.id ? chosen : null;
     const refusal = phase.kind === 'rejected' ? phase.refusal : null;
     const stale = refusal?.code === STALE_VERSION;
     const duplicate = refusal?.code === DUPLICATE_BARCODE;
@@ -380,7 +384,7 @@ function CorrectionForm({ title, product }: { title: string; product: CorrectedP
     const reviewItems: KeyValue[] = [{ key: 'reason', label: t('catalog.barcode_correction.reason'), value: reason.trim() }];
 
     return (
-        <CommandLayout header={<PageHeader title={title} subtitle={t('catalog.product_detail.subtitle', { produk: product.name })} back={{ href: detail, page: t('catalog.product_detail.title'), onNavigate: toDetail }} />}>
+        <CommandLayout header={<PageHeader title={title} back={{ href: detail, page: t('catalog.product_detail.title'), onNavigate: toDetail }} />}>
             {invalid && <ErrorSummary errors={summary} />}
             {stale && <StateNotice state={STALE_STATE} />}
             {duplicate && <StateNotice state={DUPLICATE_STATE} />}
@@ -413,7 +417,7 @@ function CorrectionForm({ title, product }: { title: string; product: CorrectedP
                             <p className={'bk-meta'} role={'status'}>
                                 {mapping.state === ACTIVE ? t('catalog.barcode_correction.current_mapping', { produk: mapping.productName }) : t('catalog.barcode_correction.retired_mapping', { produk: mapping.productName })}
                             </p>
-                            <ProductPicker key={found?.token} id={fieldId('targetProductId')} excluded={mapping.state === ACTIVE ? mapping.productId : null} chosen={chosen} disabled={frozen} error={targetError} inputRef={productField} onChoose={setChosen} />
+                            <ProductPicker key={found?.token} id={fieldId('targetProductId')} excluded={mapping.productId} chosen={chosen} disabled={frozen} error={targetError} inputRef={productField} onChoose={setChosen} />
                         </>
                     )}
                     <Field id={fieldId('reason')} label={t('catalog.barcode_correction.reason')} required={true} error={reasonError}>

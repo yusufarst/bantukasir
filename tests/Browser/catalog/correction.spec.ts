@@ -19,6 +19,8 @@ const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-prac
 
 const LOOKUP = /\/data\/barcode-tokens\/lookup/;
 
+const SEARCH = /\/data\/products\/search/;
+
 const COMMAND = '**/commands/barcode.correct_misassignment';
 
 const TITLE = 'Koreksi salah pasang barcode';
@@ -317,6 +319,136 @@ test('a mapping that changed since the lookup is said in place and read again (U
     // The next review expects the mapping as it is now.
     await Promise.all([page.waitForURL((url) => url.pathname === `/products/${third.id}`), confirmCorrection(page)]);
     await expect(page.getByText(`Barcode ${wrong.barcode} sekarang terpasang pada ${third.name}.`)).toBeVisible();
+
+    expect(injected(watched.problems)).toEqual([]);
+    await context.close();
+});
+
+test('a failed read is said where it was asked and never reads as an unknown code; a retry recovers (UXS-22)', async ({ browser }) => {
+    // Review finding R-04.
+    const context = await contextAt(browser, WIDTHS[0]!);
+    const page = await context.newPage();
+    const watched = await watch(page);
+
+    await signedIn(context, page, 'Hendra');
+    const category = await newCategory(page);
+    const right = await newProduct(page, category);
+    const wrong = await newProduct(page, category);
+
+    await openCorrection(page, wrong);
+
+    // RD-05.
+    await page.route(LOOKUP, (route) => route.abort());
+    await page.getByLabel('Barcode', { exact: true }).fill(wrong.barcode);
+    await page.getByLabel('Barcode', { exact: true }).press('Enter');
+    await expect(page.getByText('Gagal memuat')).toBeVisible();
+    await expect(page.getByText('Kode tidak dikenal')).toHaveCount(0);
+    await expect(page.getByText('Sekarang terpasang pada', { exact: false })).toHaveCount(0);
+    await expect(page.getByLabel('Produk yang benar', { exact: true })).toHaveCount(0);
+    await page.unroute(LOOKUP);
+    await page.getByRole('button', { name: 'Coba lagi' }).click();
+    await expect(page.getByText(`Sekarang terpasang pada ${wrong.name}`)).toBeVisible();
+    await expect(page.getByText('Gagal memuat')).toHaveCount(0);
+
+    // RD-01 in its context.
+    await page.route(SEARCH, (route) => route.abort());
+    await page.getByLabel('Produk yang benar', { exact: true }).fill(right.name);
+    await expect(page.getByText('Gagal memuat')).toBeVisible();
+    await expect(page.getByText('Tidak ada hasil')).toHaveCount(0);
+    await page.unroute(SEARCH);
+    await page.getByRole('button', { name: 'Coba lagi' }).click();
+    await expect(page.getByRole('list', { name: 'Produk yang benar' }).getByRole('button', { name: right.name })).toBeVisible();
+
+    expect(injected(watched.problems)).toEqual([]);
+    await context.close();
+});
+
+test('a late answer of the product search chooses nothing for another token (TR-PAGE-04)', async ({ browser }) => {
+    // Review finding R-02.
+    const context = await contextAt(browser, WIDTHS[0]!);
+    const page = await context.newPage();
+    const watched = await watch(page);
+
+    await signedIn(context, page, 'Hendra');
+    const category = await newCategory(page);
+    const right = await newProduct(page, category);
+    const other = await newProduct(page, category);
+    const wrong = await newProduct(page, category);
+
+    await openCorrection(page, wrong);
+    await scanToken(page, wrong.barcode);
+
+    // The exact read of "Produk yang benar" is held while the Owner scans another token.
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+        release = resolve;
+    });
+    await page.route(SEARCH, async (route) => {
+        await held;
+        await route.continue();
+    });
+    const asked = page.waitForRequest(SEARCH);
+    await page.getByLabel('Produk yang benar', { exact: true }).fill(right.barcode);
+    await page.getByLabel('Produk yang benar', { exact: true }).press('Enter');
+    await asked;
+
+    await scanToken(page, other.barcode);
+    await expect(page.getByText(`Sekarang terpasang pada ${other.name}`)).toBeVisible();
+
+    const answered = page.waitForResponse(SEARCH);
+    release();
+    await answered;
+    await page.unroute(SEARCH);
+
+    // The new token's form is as it was: no product, and "Tinjau" says why.
+    await page.getByLabel('Alasan', { exact: true }).fill('Alasan');
+    await expect(page.getByLabel('Produk yang benar', { exact: true })).toHaveValue('');
+    await expect(page.getByRole('button', { name: 'Tinjau' })).toHaveAttribute('aria-disabled', 'true');
+    await expect(page.getByText('Isi barcode, produk yang benar, dan alasan.')).toBeVisible();
+
+    expect(injected(watched.problems)).toEqual([]);
+    await context.close();
+});
+
+test('a next page that a new search supersedes leaves "Muat lebih banyak" ready', async ({ browser }) => {
+    // Review finding R-03.
+    const context = await contextAt(browser, WIDTHS[0]!);
+    const page = await context.newPage();
+    const watched = await watch(page);
+
+    await signedIn(context, page, 'Hendra');
+    const category = await newCategory(page);
+    const wrong = await newProduct(page, category);
+
+    await openCorrection(page, wrong);
+    await scanToken(page, wrong.barcode);
+
+    // Stubbed answers with another page; the second page is held until the test ends.
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+        release = resolve;
+    });
+    const row = (index: number): Record<string, unknown> => ({ id: 900000 + index, name: `Produk contoh ${index}`, sku: `CTH-${index}`, baseUnit: 'pcs', quantityPrecision: 0, price: { amount: '1000', revisionId: index }, active: true, thumbnail: null, activeBarcode: false });
+    await page.route(SEARCH, async (route) => {
+        if (new URL(route.request().url()).searchParams.get('page') === '2') {
+            await held;
+        }
+
+        await route.fulfill({ json: { rows: [row(1)], page: 1, perPage: 25, hasMore: true } });
+    });
+
+    await page.getByLabel('Produk yang benar', { exact: true }).fill('satu');
+    await page.getByRole('button', { name: 'Muat lebih banyak' }).click();
+    await expect(page.getByRole('button', { name: 'Muat lebih banyak' })).toHaveCount(0);
+
+    await page.getByLabel('Produk yang benar', { exact: true }).fill('dua');
+    await expect(page.getByRole('button', { name: 'Muat lebih banyak' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Muat lebih banyak' })).not.toHaveAttribute('aria-disabled', 'true');
+
+    const late = page.waitForResponse((response) => new URL(response.url()).searchParams.get('page') === '2');
+    release();
+    await late;
+    await page.unroute(SEARCH);
 
     expect(injected(watched.problems)).toEqual([]);
     await context.close();

@@ -150,16 +150,42 @@ final class BarcodeCorrectionTest extends DatabaseTestCase
         $this->assertSame(['barcode' => 'SALAH-2', 'correctedMappingId' => $old, 'fromProductId' => $this->wrong, 'kind' => 'REATTACH', 'mappingId' => $mapping, 'toProductId' => $this->right], self::dataOf($event['change_data']));
     }
 
-    public function test_a_token_retired_as_a_misassignment_may_return_to_the_same_product(): void
+    public function test_a_token_retired_as_a_misassignment_never_returns_to_the_product_it_left(): void
     {
-        // RC-30 names "active on another product" only for an active token: a retirement that
-        // was itself the mistake is corrected by attaching the token where it was (evidence).
+        // G-09: a correction moves the token to a different product; going back to the wrong
+        // one would reuse a retired token and correct nothing (BR-CAT-19; review finding R-01).
         $old = TokoContoh::barcode($this->wrong, 'SALAH-3');
         TokoContoh::retireBarcode($old, 'MISASSIGNMENT');
         $this->owner();
+        $before = $this->factsAndRows();
 
-        $this->postCommand('SALAH-3', $this->wrong, 'Pensiun keliru', $this->wrong, self::RETIRED)->assertStatus(201)->assertJsonPath('result.location', '/products/'.$this->wrong);
+        $this->assertNotCorrectable($this->postCommand('SALAH-3', $this->wrong, 'Pensiun keliru', $this->wrong, self::RETIRED));
+
+        $this->assertSame($before, $this->factsAndRows());
+        $this->assertSame([], $this->exactProducts('SALAH-3', 'catalog'));
+
+        // Nor, after a move, to the product of the mapping retired after it.
+        $moved = self::number($this->postCommand('SALAH-3', $this->right, 'Benar', $this->wrong, self::RETIRED)->assertStatus(201)->json('result.id'));
+        TokoContoh::retireBarcode($moved, 'MISASSIGNMENT');
+        $this->owner();
+        $this->assertNotCorrectable($this->postCommand('SALAH-3', $this->right, 'Lagi', $this->right, self::RETIRED));
+
+        // The product it left first is another product now: the last mapping decides.
+        $this->postCommand('SALAH-3', $this->wrong, 'Ternyata', $this->right, self::RETIRED)->assertStatus(201);
         $this->assertSame([$this->wrong], $this->exactProducts('SALAH-3', 'catalog'));
+    }
+
+    public function test_a_target_that_became_inactive_still_takes_the_token(): void
+    {
+        // RC-30 lists no refusal for it, and RC-27 lets an inactive product take a token
+        // (UXI-171): only RD-01's context leaves it out (evidence reading 5; review finding R-06).
+        TokoContoh::barcode($this->wrong, 'AKTIF-1');
+        $this->owner();
+        $this->postJson('/commands/product.deactivate', $this->envelope(['productId' => $this->right], ['operation' => 'product.deactivate', 'expected' => ['productVersion' => 1]]))->assertStatus(201);
+
+        $this->postCommand('AKTIF-1', $this->right, 'Alasan', $this->wrong, self::ACTIVE)->assertStatus(201);
+        $this->assertSame([$this->right], $this->exactProducts('AKTIF-1', 'catalog'));
+        $this->assertSame([], $this->exactProducts('AKTIF-1', 'correction'));
     }
 
     public function test_a_token_read_as_a_token_keeps_its_case_with_only_the_terminator_and_outer_spaces_removed(): void
@@ -568,7 +594,7 @@ final class BarcodeCorrectionTest extends DatabaseTestCase
         $response = $this->get('/products/'.$this->wrong.'/barcode-correction')->assertOk()->assertHeader('Cache-Control', 'no-store, private');
         $this->assertPageChannel($response, 'owner', array_values(array_map(static fn (array $one): string => $one['password'], $this->people)));
         $this->assertSame('catalog/BarcodeCorrection', $this->inertiaPage($response)['component'] ?? null);
-        $this->assertSame(['id' => $this->wrong, 'name' => 'Pulpen Hitam'], $this->propsOf($response)['product'] ?? null);
+        $this->assertSame(['id' => $this->wrong], $this->propsOf($response)['product'] ?? null);
         $this->assertTrue($this->propsOf($this->get('/products/'.$this->wrong)->assertOk())['canCorrectBarcode'] ?? null);
 
         foreach (['999999', 'abc', '-1', '0'] as $identifier) {

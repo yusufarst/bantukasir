@@ -107,7 +107,7 @@ final class Allowlists
             'canCorrectBarcode', 'canChangePhoto', 'canPrintLabels',
         ]],
         // UXP-305, the Owner's alone (TASK-020): the product it opened from.
-        'catalog/BarcodeCorrection' => ['owner' => ['product', 'product.id', 'product.name']],
+        'catalog/BarcodeCorrection' => ['owner' => ['product', 'product.id']],
         // UXP-306 and its print view (TASK-018): a label is the code, the name and the
         // SKU, never a cost or a price (BR-CAT-35).
         'catalog/Labels' => ['*' => ['product', 'product.id', 'product.name', 'barcodes', 'barcodes.*', 'barcodes.*.mappingId', 'barcodes.*.token']],

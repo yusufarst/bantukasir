@@ -18,7 +18,7 @@ final class BarcodeCorrectionController
         $detail = $pages->detail($product);
 
         return Inertia::render('catalog/BarcodeCorrection', [
-            'product' => ['id' => $detail->id, 'name' => $detail->name],
+            'product' => ['id' => $detail->id],
         ]);
     }
 }

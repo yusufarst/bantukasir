@@ -46,13 +46,12 @@ final readonly class CurrentMapping
     }
 
     /**
-     * Whether RC-30 may attach the token to this product: an active token moves to another
-     * product only, and a token retired as a misassignment to any product (RC-30).
+     * Whether RC-30 may attach the token to this product: a correction moves the token to a
+     * different product, also when it was retired, since going back to the product it left
+     * would reuse a retired token and correct nothing (G-09; BR-CAT-19, BR-CAT-51).
      */
     public function correctableTo(int $productId): bool
     {
-        $state = $this->correctableState();
-
-        return $state !== null && ! ($state === self::ACTIVE && $this->productId === $productId);
+        return $this->correctableState() !== null && $this->productId !== $productId;
     }
 }
