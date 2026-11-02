@@ -3,7 +3,7 @@
 | | |
 | --- | --- |
 | Task | [TASK-021](../tasks/TASK-021-ledger-receiving.md), review class A |
-| Instruction | Continuous execution, D-101, as the delegation of the tick printed it (EXECUTION_CONTEXT CE-01); resumed once (CE-24, CE-72) on the Owner's note "Owner authorizes TASK-021 continuation from safe-shutdown checkpoint b531068." |
+| Instruction | Continuous execution, D-101, as the delegation of the tick printed it (EXECUTION_CONTEXT CE-01); resumed once (CE-24, CE-72) on the Owner's note "Owner authorizes TASK-021 continuation from safe-shutdown checkpoint b531068."; in the phase `CI`, its fix cycle 1 stopped with `OWNER_DECISION` and resumed on the Owner's decision D-118 (section 14) |
 | Executor | Agent `bk-executor-max`, model `claude-opus-5-5`, effort Max from the table of EXECUTION_CONTEXT section 19; review by `bk-reviewer-max`, verification by `bk-reviewer-xhigh` |
 | Branch and base | `task/TASK-021-ledger-receiving`, from `b363c634106cc29b06a7eb208349339b5542bdb3` (origin/develop) |
 | Preflight (EXC-20, EXC-21, EXC-23) | The tree clean but for `Claude outputs/` and `plan-p0-p11-review.patch`; the stash of D-030; TASK-016 `DONE`, no gate; PHP and `tsc` do not run on this machine, so every check ran in CI (D-108, D-117) |
@@ -48,10 +48,15 @@ Every check ran in CI, on GitHub's hosted runner, with the local environment's c
 | `tests/Feature/Catalog/ProductSearchTest.php` | Same run | 16:54 | 1 min 2 s | `PASS`, 16 tests, 610 assertions |
 | `tests/Feature/Inventory/ConfirmReceivingTest.php` | Same run | 16:55 | 56 s | `PASS`, 14 tests, 679 assertions |
 | `tests/Feature/Inventory/LedgerTablesTest.php` | Same run | 16:56 | 12 s | `PASS`, 19 tests, 717 assertions |
-| `composer lint`, `analyse` and `LedgerTablesTest` after the review's one change of code, the comment of R-06 (section 10) | The fast run of the final push and CI on the pull request's final head | — | — | `NOT_RUN` at this writing (CE-45) |
-| The whole command contract — `composer test:postgres`, `composer test:race`, `npm run build`, the browser suite — and the image checks | CI on the pull request's final head | — | — | `NOT_RUN` (D-117) |
+| Guard, on the commit | Local, on `c5a99fd`, the record | before the push at 17:34 | under 1 min of scanning | `PASS`, no candidate (`push.sh` pushes only a head the guard passed) |
+| Fast run 5: `composer validate`, `lint`, `analyse`, `test:unit` (866 tests); `npm run lint`, `typecheck`, `test:unit` (21 files); the ten changed test files of fast run 4, `LedgerTablesTest` after the comment of R-06 (section 10) among them | CI run 41429931461 on `c5a99fd` | 17:34 to 17:48 | 13 min 58 s (the job) | `PASS`; `Targeted tests: 10 passed, 0 failed`, `LedgerTablesTest` 19 tests, 717 assertions |
+| `Command contract` on the pull request's head: `composer validate`, `lint`, `analyse`, `test:unit` | CI run 41430015401 on `c5a99fd` | 17:35 to 17:38 | within the job | `PASS` |
+| `Command contract`: `composer test:postgres` | Same run | 17:38 to 17:57 | 18 min 45 s | `FAIL`: 653 tests, 1 failure, `HomeRedirectTest`, OPEN_ITEMS T-37 (section 14.1) |
+| `Command contract`: `composer test:race`, `npm run lint`, `typecheck`, `test:unit`, `npm run build`, the browser suite | Same run | — | — | `NOT_RUN` on `c5a99fd`: the job stopped at the failure |
+| `Image checks` | Same run | 17:35 to 17:42 | 7 min 19 s | `FAIL`: 371 passed, 1 failed; the scan gate refused three new High findings (section 14.1); `Scan gate tests: 50 passed, 0 failed` |
+| The whole command contract and the image checks on the head of fix cycle 1 | CI on the pull request's new head | — | — | `NOT_RUN` at this writing (section 14.4) |
 
-Fast run 4 is the run of the reviewed code: four fast runs of the 10 that CE-46 allows before the pull request.
+Fast run 4 is the run of the reviewed code, and fast run 5 that of the record: five fast runs of the 10 that CE-46 allows before the pull request.
 
 ## 3. What was built (contract section 4.1)
 
@@ -125,7 +130,7 @@ Earlier findings this Task closes: TASK-015 F-3 (RC-18's refusal at the field), 
 | Data integrity | PASS, on the fast run | Append-only facts; the balance the sum of the movements after every commit; atomic audit and result; RACE-01, RACE-02, RACE-05, RACE-24, a deactivation in both orders, crossing postings without a deadlock; failure injection after each of the 16 write steps, for first and for later movements |
 | Performance | PASS | Each read bounded: RD-01's page and one statement of stock for it; a document of at most 500 lines; the budgets are measured at TASK-048 |
 | Operations | PASS | Six of the tables in the backup manifest's counts (section 12); no runbook or status impact |
-| Verification | PASS, subject to CI on the final head | Self-review, the review of class A (section 10); a fast run green on the reviewed code (section 2); the whole command contract and the image checks run on the pull request's final head (CE-41, D-117) |
+| Verification | PASS, subject to CI on the final head | Self-review, the review of class A (section 10); a fast run green on the reviewed code (section 2); the whole command contract and the image checks run on the pull request's final head (CE-41, D-117). CI on `c5a99fd` failed, outside the Task's code: fix cycle 1 (section 14) |
 
 ## 8. Acceptance criteria
 
@@ -187,3 +192,44 @@ The first preview, before the stop, gave one candidate of the kind `number16` in
 ## 13. For later Tasks
 
 Section 6. The Task that depends directly on this one: TASK-022, `READY` at this merge.
+
+## 14. Fix cycle 1 (CE-42)
+
+CI run 41430015401 on `c5a99fd`, the head of pull request #30, failed: failure 1 of 3 (CE-42). The tick handed it to this Task's executor at 17:59, which stopped at 18:04 with `OWNER_DECISION`, changing nothing; the Owner answered at 18:50 with D-118, and the run resumed in the phase `CI` (CE-24, CE-72).
+
+### 14.1 What failed
+
+| Job | Result | Reading |
+| --- | --- | --- |
+| `Image checks` | `FAIL`: 371 passed, 1 failed | The scan gate refused CVE-2026-119373, CVE-2026-119374 and CVE-2026-119379, High, in `libsqlite3-0` 3.46.1-7+deb13u2, `fix=not-fixed`, `exploited=no`, as `REFUSED_NOT_ACCEPTED`: new entries of Grype's database of 2026-11-02T06:26:52Z, in a package that TASK-021 does not change (no file of `docker/`, `.github/`, `scripts/`, `composer.json`, `package.json` or their lock files differs from the base). `Scan gate: 138 accepted, 3 refused, 184 of lower severity reported`; every other image check passed. A new finding needs a decision (D-112, D-115, OPEN_ITEMS T-38 (d)) |
+| `Command contract` | `FAIL` at `composer test:postgres`: 653 tests, 1 failure | `HomeRedirectTest::test_a_sign_in_session_that_a_limit_ended_gets_the_note_at_the_home_too`, "31 minutes — Failed asserting that null is identical to 'signed_out'", at its line 95: the intermittent failure of OPEN_ITEMS T-37, the same test and assertion, outside TASK-021's scope (D-118, item 3). It stays a `FAIL`; the steps after it did not run on `c5a99fd` (section 2) |
+| `Fast checks` | `PASS` | Fast run 5 (section 2) |
+
+### 14.2 The verification of the Owner's condition (D-118, item 1)
+
+| Condition | Source this run could reach | Result | Limits |
+| --- | --- | --- | --- |
+| Debian's fix status | Grype's database of 2026-11-02T06:26:52Z, built from Debian's security tracker, in run 41430015401 | `not-fixed` and no fixed version for Debian 13, for each of the three: no fix is available | Debian's tracker itself is outside the domains that the tools allow (CE-47) and was not read; the database is that morning's |
+| Runtime exposure | `docker/app/Dockerfile`; the image's package list printed by run 41430015401; php.net's pages on the installation of SQLite3 and PDO_SQLITE, read on 2 November 2026; `config/database.php`, `config/cache.php`, `config/session.php`, `app/Domain/Operations/RequiredSettings.php`; `app/`, `config/`, `bootstrap/`, `routes/` and `database/`; the production dependencies' sources in `vendor/`, at the versions of the image | Loaded, never called, so not materially reachable. PHP builds its SQLite3 and PDO_SQLITE extensions by default against the system's libsqlite, required since PHP 7.4, and the build's removal step keeps `libsqlite3-0` only for a kept package or for a library that PHP's executables under `/usr/local` link: every PHP process of the image maps it. No SQLite database is opened: only PostgreSQL connections are configured; `settings:check` refuses another `DB_CONNECTION` in role `web`, and role `backup` uses its own PostgreSQL connection; sessions and the cache are PostgreSQL, an array or files; no file of the application names SQLite; of the production dependencies, searched package by package, only the framework's `SQLiteConnector` opens one, for a connection whose driver is `sqlite`, which none is, and Symfony's `PdoSessionHandler` and `SessionHandlerFactory`, which nothing wires; the `sqlite3` program is not installed | No `ldd`, `php -m` or exploit test in the image (D-108). The flaws' descriptions and vectors were not reachable; the reading holds for any flaw of the library, whose code runs only when a program calls it |
+| No known active exploitation | Grype's database of 2026-11-02T06:26:52Z, which carries CISA's catalog of known exploited vulnerabilities, and EPSS | No record of exploitation for the three or for a related record; EPSS 0.00144 for CVE-2026-119373 and 0.00184 for CVE-2026-119374 and CVE-2026-119379 | CISA's feed itself is outside the allowed domains and was not read; the catalog lists what CISA knows |
+
+The three conditions hold, so the acceptance stands. The other libsqlite3 findings, of lower severity, are reported only and not added (D-118).
+
+### 14.3 What changed
+
+- `scripts/checks/image-scan-accepted.json`: the three entries, with the fields of D-112, and the record `assessedD118`.
+- `scripts/checks/image-scan-gate-test.sh`: the list's counts, 59 CVEs and 141 findings, and one more test that pins D-118's three entries at their package and version, as the list's tests pin D-115's; the nine critical identifiers unchanged.
+- DECISIONS D-118 and its row; OPEN_ITEMS T-38; this section and section 2; CURRENT_HANDOFF.
+
+Nothing of `scripts/checks/image-scan-gate.sh`, the scan, the image, the application, the Access module, `HomeRedirectTest` or the stock ledger changes. The fix changes no production behaviour, so no targeted verification follows (CE-42), and no review is repeated (D-118, item 5).
+
+### 14.4 Checks of the fix
+
+| Check | Where it runs | Result |
+| --- | --- | --- |
+| Guard, preview on the working tree | Local | `PASS`, no candidate |
+| `Scan gate tests` (51, one new) and the scan gate on the image of the new head | CI on the pull request's new head, job `Image checks` | `NOT_RUN` at this writing |
+| The whole command contract, with `HomeRedirectTest` and the steps that did not run on `c5a99fd` | CI on the pull request's new head, job `Command contract` | `NOT_RUN` at this writing |
+| `composer lint`: the secret scan, and the migration review, which reads the headings of DECISIONS | The fast run of the push and CI on the new head | `NOT_RUN` at this writing |
+
+`jq` is absent on this machine, so the gate's tests run in CI only (TASK-012 finding F-5). If the new head fails on T-37 alone, that failure stays a `FAIL` and the Task stops for the Owner, who runs CI's retries himself; a newer database that refuses another finding stops it too (T-38 (d)).

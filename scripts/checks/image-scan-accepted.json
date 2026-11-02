@@ -1,5 +1,5 @@
 {
-  "decision": "D-112, D-115",
+  "decision": "D-112, D-115, D-118",
   "limits": "Conditional and temporary, for development only: the Debian findings of the assessed image, at these exact versions. It authorizes no staging or production deployment and accepts no future CVE. A critical finding enters this list only by its own decision of the Owner. TASK-013 reassesses curl and libcurl before its HTTP or S3 integration; gate RELEASE reviews every remaining vulnerability independently.",
   "assessed": {
     "ciRun": 41129923061,
@@ -16,6 +16,14 @@
     "database": "2026-10-31T06:18:17Z",
     "image": "the release stage of docker/app/Dockerfile at that head; the same packages at the same exact versions as the assessment of D-112",
     "statusRead": "2026-11-01, security-tracker.debian.org, curl.se, packages.debian.org and cisagov/vulnrichment; CISA's KEV feed was read only in part, so that known exploitation rests on Grype's database"
+  },
+  "assessedD118": {
+    "ciRun": 41430015401,
+    "head": "c5a99fdfd0952d24bfa889a0a92a96079d93ae66",
+    "scanner": "Grype 0.121.0, with Syft 1.55.0",
+    "database": "2026-11-02T06:26:52Z",
+    "image": "the release stage of docker/app/Dockerfile at that head; libsqlite3-0 at 3.46.1-7+deb13u2, the version that TASK-012's image already held (TASK-012 evidence section 2.1)",
+    "statusRead": "2026-11-02, Grype's database of that run alone for Debian's fix state, known exploitation and EPSS: security-tracker.debian.org, NVD, sqlite.org and CISA's KEV feed are outside the domains that this run's tools allow (EXECUTION_CONTEXT CE-47); php.net for PHP's default build with SQLite3 and PDO_SQLITE"
   },
   "commonReviewTrigger": "Every entry is reviewed again when the gate refuses it (a fix available, known exploitation, another version or severity), and at gate RELEASE.",
   "accepted": [
@@ -947,6 +955,48 @@
       "rationale": "A heap overflow in gz_vacate, through gzprintf after a non-blocking gzwrite stall.",
       "mitigation": "No process in the image writes through gzprintf to a non-blocking device; no route drives it.",
       "reviewTrigger": "TASK-013, whose pg_dump compresses to a regular file; a Debian point release."
+    },
+    {
+      "id": "CVE-2026-119373",
+      "severity": "High",
+      "decision": "D-118",
+      "sourcePackage": "sqlite3",
+      "packages": [
+        {"name": "libsqlite3-0", "version": "3.46.1-7+deb13u2", "type": "deb"}
+      ],
+      "fixState": "not-fixed",
+      "debianStatus": "Not read from Debian's tracker by this run (CE-47); Grype's database of 2026-11-02T06:26:52Z, built from it, gives the state not-fixed and no fixed version for Debian 13",
+      "rationale": "A flaw of the SQLite library, High by the scan's database, which records no known exploitation (EPSS 0.00144). Its description was not reachable by this run; the assessment holds whatever the flaw is, because the library's code runs only when a program calls it to open or query a database.",
+      "mitigation": "No SQLite database is opened in the image: config/database.php defines PostgreSQL connections only; settings:check refuses a DB_CONNECTION other than pgsql in role web; sessions and the cache use PostgreSQL, an array or files; nothing in app/ opens one, and of the production dependencies only the framework's SQLiteConnector would, for a connection whose driver is sqlite, which none is; the sqlite3 program is not installed. PHP links the library for its SQLite3 and PDO_SQLITE extensions, so its processes load it unused.",
+      "reviewTrigger": "A fix in Debian 13 or known exploitation, which the gate then refuses; any SQLite database, connection or call of SQLite3 or PDO_SQLITE; a change of the base image or of PHP's build; gate RELEASE."
+    },
+    {
+      "id": "CVE-2026-119374",
+      "severity": "High",
+      "decision": "D-118",
+      "sourcePackage": "sqlite3",
+      "packages": [
+        {"name": "libsqlite3-0", "version": "3.46.1-7+deb13u2", "type": "deb"}
+      ],
+      "fixState": "not-fixed",
+      "debianStatus": "Not read from Debian's tracker by this run (CE-47); Grype's database of 2026-11-02T06:26:52Z, built from it, gives the state not-fixed and no fixed version for Debian 13",
+      "rationale": "A flaw of the SQLite library, High by the scan's database, which records no known exploitation (EPSS 0.00184). Its description was not reachable by this run; the assessment holds whatever the flaw is, because the library's code runs only when a program calls it to open or query a database.",
+      "mitigation": "No SQLite database is opened in the image: config/database.php defines PostgreSQL connections only; settings:check refuses a DB_CONNECTION other than pgsql in role web; sessions and the cache use PostgreSQL, an array or files; nothing in app/ opens one, and of the production dependencies only the framework's SQLiteConnector would, for a connection whose driver is sqlite, which none is; the sqlite3 program is not installed. PHP links the library for its SQLite3 and PDO_SQLITE extensions, so its processes load it unused.",
+      "reviewTrigger": "A fix in Debian 13 or known exploitation, which the gate then refuses; any SQLite database, connection or call of SQLite3 or PDO_SQLITE; a change of the base image or of PHP's build; gate RELEASE."
+    },
+    {
+      "id": "CVE-2026-119379",
+      "severity": "High",
+      "decision": "D-118",
+      "sourcePackage": "sqlite3",
+      "packages": [
+        {"name": "libsqlite3-0", "version": "3.46.1-7+deb13u2", "type": "deb"}
+      ],
+      "fixState": "not-fixed",
+      "debianStatus": "Not read from Debian's tracker by this run (CE-47); Grype's database of 2026-11-02T06:26:52Z, built from it, gives the state not-fixed and no fixed version for Debian 13",
+      "rationale": "A flaw of the SQLite library, High by the scan's database, which records no known exploitation (EPSS 0.00184). Its description was not reachable by this run; the assessment holds whatever the flaw is, because the library's code runs only when a program calls it to open or query a database.",
+      "mitigation": "No SQLite database is opened in the image: config/database.php defines PostgreSQL connections only; settings:check refuses a DB_CONNECTION other than pgsql in role web; sessions and the cache use PostgreSQL, an array or files; nothing in app/ opens one, and of the production dependencies only the framework's SQLiteConnector would, for a connection whose driver is sqlite, which none is; the sqlite3 program is not installed. PHP links the library for its SQLite3 and PDO_SQLITE extensions, so its processes load it unused.",
+      "reviewTrigger": "A fix in Debian 13 or known exploitation, which the gate then refuses; any SQLite database, connection or call of SQLite3 or PDO_SQLITE; a change of the base image or of PHP's build; gate RELEASE."
     }
   ]
 }
