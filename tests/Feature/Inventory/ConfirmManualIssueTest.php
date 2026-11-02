@@ -261,11 +261,12 @@ final class ConfirmManualIssueTest extends DatabaseTestCase
             '2' => ['productId' => $this->pen, 'available' => '5'],
             '3' => ['productId' => $this->rice, 'available' => '0'],
         ], (array) $short->json('lines'));
-        $this->assertJsonChannel($short, 'commands.refused.stock', 'ops');
 
-        // A warning is never an override: the same lines are refused again, by the Owner too.
+        // A warning is never an override: the same lines are refused again, by the Owner too. The
+        // channel's allowlist reads a list of lines, as one refused line from the first gives.
         $this->as('Hendra');
-        $this->confirm($this->envelopeOf([self::line($sugar, '1.26')]))->assertStatus(422)->assertJsonPath('code', 'INSUFFICIENT_STOCK')->assertJsonPath('lines', [['productId' => $sugar, 'available' => '1.25']]);
+        $owner = $this->confirm($this->envelopeOf([self::line($sugar, '1.26')]))->assertStatus(422)->assertJsonPath('code', 'INSUFFICIENT_STOCK')->assertJsonPath('lines', [['productId' => $sugar, 'available' => '1.25']]);
+        $this->assertJsonChannel($owner, 'commands.refused.stock', 'owner');
         $this->assertSame($before, $this->factsAndRows());
 
         // Exactly the stock, added together across lines, posts and leaves zero.
@@ -361,7 +362,8 @@ final class ConfirmManualIssueTest extends DatabaseTestCase
         $this->assertSame('ux.validation.required', self::firstKey($absent, 'payload.reasonCode'));
 
         foreach ([
-            ['note' => "Pecah\n"],
+            // A control character inside the note; the framework's trimming removes an outer one.
+            ['note' => "Pecah\nlagi"],
             ['note' => 7],
             ['lines' => 'x'],
             ['lines' => ['x']],
