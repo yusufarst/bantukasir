@@ -9,7 +9,7 @@ use App\DTO\PageData;
  * BR-CAT-26): what every role that sees a result sees — identity, name, SKU, base
  * unit and precision, the current price with its revision, the active flag and the
  * thumbnail's path, and whether it holds an active barcode, for UXI-163. Never a cost, a
- * valuation or a margin. TASK-021 adds the stock the role may see.
+ * valuation or a margin. RD-01 adds the stock the role may see (Queries\Inventory\ProductStock).
  */
 final readonly class ProductRowData implements PageData
 {

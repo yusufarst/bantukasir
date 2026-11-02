@@ -3,14 +3,20 @@
 namespace App\Actions\Catalog;
 
 use App\Actions\Commands\CommandContext;
+use App\Actions\Commands\CommandServices;
 use App\Domain\Access\ActorNotAllowed;
 use App\Domain\Access\Capabilities;
 use App\Domain\Access\Capability;
 use App\Domain\Audit\AuditCategory;
+use App\Domain\Catalog\Barcodes\Barcodes;
+use App\Domain\Catalog\Categories;
 use App\Domain\Catalog\ProductFields;
+use App\Domain\Catalog\ProductRecord;
+use App\Domain\Catalog\Products;
 use App\Domain\Commands\CommandRefused;
 use App\Domain\Commands\ErrorCode;
 use App\Domain\Commands\StoredResult;
+use App\Domain\Inventory\StockLedger;
 use App\Models\User;
 
 /**
@@ -29,8 +35,11 @@ use App\Models\User;
  * before and after it, because `products` keeps only the last (BR-AUD-02); the
  * price's are in PRICE_CHANGE.
  *
- * TASK-021 adds the check of the first movement here (BR-CAT-07); its key is the
- * database's guarantee of it (TASK-015 section 4.3).
+ * Under the same lock a product that has a stock movement refuses a change of its unit
+ * or precision at the field (BR-CAT-07; TASK-021): a posting holds the same lock, so an
+ * edit either commits before the first movement, which then finds a new version, or is
+ * refused (RACE-05). The composite key of `stock_movements` is the database's guarantee
+ * of it.
  *
  * Write steps (TEST_STRATEGY TS-21): the revision when the price changes; the
  * product; PRODUCT_EDIT; PRICE_CHANGE when the price changes; then the result.
@@ -38,6 +47,16 @@ use App\Models\User;
 final class UpdateProduct extends CatalogAction
 {
     public const string OPERATION = 'product.update';
+
+    public function __construct(
+        CommandServices $services,
+        Categories $categories,
+        Products $products,
+        Barcodes $barcodes,
+        private readonly StockLedger $ledger,
+    ) {
+        parent::__construct($services, $categories, $products, $barcodes);
+    }
 
     public function operation(): string
     {
@@ -61,6 +80,10 @@ final class UpdateProduct extends CatalogAction
             || $product->categoryId !== $seen->categoryId
             || $product->unitChangedBy($fields) !== $unitChanges) {
             throw CommandRefused::of(ErrorCode::StaleVersion);
+        }
+
+        if ($unitChanges && $this->ledger->hasMovement($id)) {
+            throw self::unitLocked($product, $fields);
         }
 
         if ($category !== null) {
@@ -115,5 +138,24 @@ final class UpdateProduct extends CatalogAction
         }
 
         return new StoredResult(self::PRODUCT, $id);
+    }
+
+    /**
+     * The refusal of BR-CAT-07, at each field that would change (INTERACTION_CONTRACTS RC-18).
+     */
+    private static function unitLocked(ProductRecord $product, ProductFields $fields): CommandRefused
+    {
+        $lock = [['key' => 'catalog.field.unit_lock_help', 'params' => []]];
+        $refused = [];
+
+        if ($fields->baseUnit !== $product->baseUnit) {
+            $refused['payload.baseUnit'] = $lock;
+        }
+
+        if ($fields->quantityPrecision !== $product->quantityPrecision) {
+            $refused['payload.quantityPrecision'] = $lock;
+        }
+
+        return new CommandRefused(ErrorCode::ValidationFailed, fields: $refused);
     }
 }

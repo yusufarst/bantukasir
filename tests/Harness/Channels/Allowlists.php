@@ -147,11 +147,15 @@ final class Allowlists
         'commands.committed.barcode' => ['*' => ['outcome', 'operation', 'commandId', 'repeated', 'result', 'result.type', 'result.id', 'result.number', 'result.location']],
         'commands.resolve.barcode' => ['*' => ['outcome', 'operation', 'commandId', 'result', 'result.type', 'result.id', 'result.number', 'result.location']],
         'commands.refused' => ['*' => ['outcome', 'code', 'messageKey', 'params', 'fields', 'lines']],
+        // The refusal of a posting with the lines it concerns, each by its product (RT-07;
+        // TASK-021).
+        'commands.refused.lines' => ['*' => ['outcome', 'code', 'messageKey', 'params', 'fields', 'lines', 'lines.*', 'lines.*.productId']],
         // RD-03, the shell's indicators (TASK-009).
         'data.shell' => ['*' => ['unresolvedRequests', 'asOf']],
         // RD-01 in the catalog context and RD-06 (TASK-015): the Owner's, the
         // Operations admin's and the combined account's, never a cost, a
-        // valuation or a margin (BR-CAT-26). TASK-021 adds the stock per role.
+        // valuation or a margin (BR-CAT-26). RD-01 carries the stock per role
+        // (TASK-021); RD-06 carries none.
         'data.products.search' => [
             'owner' => self::SEARCH_RESULT,
             'ops' => self::SEARCH_RESULT,
@@ -180,6 +184,7 @@ final class Allowlists
     private const array SEARCH_RESULT = [
         'rows', 'rows.*', 'rows.*.id', 'rows.*.name', 'rows.*.sku', 'rows.*.baseUnit', 'rows.*.quantityPrecision',
         'rows.*.price', 'rows.*.price.amount', 'rows.*.price.revisionId', 'rows.*.active', 'rows.*.thumbnail', 'rows.*.activeBarcode',
+        'rows.*.stock', 'rows.*.stock.onHand', 'rows.*.stock.minimum', 'rows.*.stock.state',
         'page', 'perPage', 'hasMore',
     ];
 

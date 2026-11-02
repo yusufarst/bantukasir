@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# The regression tests of scripts/checks/image-scan-gate.sh (Owner decisions D-112, D-115),
+# The regression tests of scripts/checks/image-scan-gate.sh (Owner decisions D-112, D-115, D-118),
 # on synthetic reports, and of the accepted list that the decision records. They
 # need jq only, and run at the start of the scan in scripts/checks/image-checks.sh.
 set -uo pipefail
@@ -198,14 +198,17 @@ accepted_file="$list"
 check 'the accepted list is complete and exact, and accepts one of its findings' 0 'Scan gate: 1 accepted, 0 refused'
 unset accepted_file
 
-record 'the list names the 56 assessed CVEs' 56 "$(jq '.accepted | length' "$list")"
-record 'each CVE is listed once' 56 "$(jq '[.accepted[].id] | unique | length' "$list")"
-record 'the list holds the 138 findings of the assessed runs' 138 "$(jq '[.accepted[].packages[]] | length' "$list")"
+record 'the list names the 59 assessed CVEs' 59 "$(jq '.accepted | length' "$list")"
+record 'each CVE is listed once' 59 "$(jq '[.accepted[].id] | unique | length' "$list")"
+record 'the list holds the 141 findings of the assessed runs' 141 "$(jq '[.accepted[].packages[]] | length' "$list")"
 record 'D-112 accepted its 43 entries' 43 "$(jq '[.accepted[] | select(.decision == "D-112")] | length' "$list")"
 record 'D-115 accepted exactly its 13 entries' \
     'CVE-2026-107928 CVE-2026-107929 CVE-2026-84243 CVE-2026-86414 CVE-2026-87862 CVE-2026-87863 CVE-2026-87864 CVE-2026-87865 CVE-2026-92388 CVE-2026-92389 CVE-2026-92390 CVE-2026-92391 CVE-2026-94266' \
     "$(jq -r '[.accepted[] | select(.decision == "D-115") | .id] | sort | join(" ")' "$list")"
-record 'every entry is a Debian package' 138 "$(jq '[.accepted[].packages[] | select(.type == "deb")] | length' "$list")"
+record 'D-118 accepted exactly its 3 entries, each in libsqlite3-0 3.46.1-7+deb13u2 alone' \
+    'CVE-2026-119373 libsqlite3-0 3.46.1-7+deb13u2 CVE-2026-119374 libsqlite3-0 3.46.1-7+deb13u2 CVE-2026-119379 libsqlite3-0 3.46.1-7+deb13u2' \
+    "$(jq -r '[.accepted[] | select(.decision == "D-118") | "\(.id) \(.packages | map("\(.name) \(.version)") | join(" "))"] | sort | join(" ")' "$list")"
+record 'every entry is a Debian package' 141 "$(jq '[.accepted[].packages[] | select(.type == "deb")] | length' "$list")"
 # A critical finding enters only by its own decision of the Owner, which adds its
 # identifier here.
 record 'the critical findings are exactly the nine that D-112 and D-115 assessed' \

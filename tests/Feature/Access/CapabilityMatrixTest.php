@@ -268,6 +268,11 @@ final class CapabilityMatrixTest extends DatabaseTestCase
         'RC-30' => ['method' => 'POST', 'path' => '/commands/barcode.correct_misassignment', 'json' => true, 'answers' => [
             'guest' => [401, null], 'owner' => [423, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
         ]],
+        // TASK-021: the receiving confirmation for CAP-11, the Owner's and OPERATIONS_ADMIN's,
+        // without recent authentication: an empty envelope reaches its fields.
+        'RC-07' => ['method' => 'POST', 'path' => '/commands/receiving.confirm', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [422, null], 'ops' => [422, null], 'cashier' => [403, null], 'combined' => [422, null],
+        ]],
     ];
 
     /** @var array<string, array{id: int, email: string, password: string}> */

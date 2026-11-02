@@ -113,6 +113,8 @@ final class RouteInventoryTest extends TestCase
         'GET /products/{product}/barcode-correction' => ['products.barcode_correction', 'RP-305', 'CAP-07', [...self::SIGNED_IN, 'capability:CAP-07', 'input.allow']],
         'GET /data/barcode-tokens/lookup' => ['data.barcodes.lookup', 'RD-05', 'CAP-07', [...self::SIGNED_IN, 'capability:CAP-07', 'throttle:search']],
         'POST /commands/barcode.correct_misassignment' => ['commands.barcode.correct_misassignment', 'RC-30', 'CAP-07', [...self::SIGNED_IN, 'capability:CAP-07', 'throttle:command', 'password.confirm']],
+        // TASK-021: RC-07.
+        'POST /commands/receiving.confirm' => ['commands.receiving.confirm', 'RC-07', 'CAP-11', [...self::SIGNED_IN, 'capability:CAP-11', 'throttle:command']],
     ];
 
     public function test_the_routes_are_exactly_those_listed_each_with_its_gate(): void

@@ -10,6 +10,7 @@ use App\Http\Requests\Catalog\ProductsPageRequest;
 use App\Models\User;
 use App\Queries\Catalog\CategoryRows;
 use App\Queries\Catalog\ProductPages;
+use App\Queries\Inventory\ProductStock;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -20,6 +21,7 @@ use Inertia\Response;
  * by; its results come from RD-01. RP-302's sections go by capability: the price history
  * (CAP-04, the page's gate), the photo (CAP-09), the barcodes (CAP-06) with the way to their
  * correction (CAP-07, TASK-020) and the labels (CAP-08). TASK-022 and TASK-025 add theirs.
+ * Whether a product's unit and precision are locked is Inventory's to say (BR-CAT-07; STK-13).
  */
 final class ProductsController
 {
@@ -40,9 +42,10 @@ final class ProductsController
         ]);
     }
 
-    public function show(Request $request, string $product, ProductPages $pages): Response
+    public function show(Request $request, string $product, ProductPages $pages, ProductStock $stock): Response
     {
         $detail = $pages->detail($product);
+        $detail = $detail->withUnitLocked($stock->unitLocked($detail->id));
         $viewer = $request->user();
 
         return Inertia::render('catalog/Product', [
@@ -56,9 +59,10 @@ final class ProductsController
         ]);
     }
 
-    public function edit(string $product, ProductPages $pages, CategoryRows $categories): Response
+    public function edit(string $product, ProductPages $pages, CategoryRows $categories, ProductStock $stock): Response
     {
         $detail = $pages->detail($product);
+        $detail = $detail->withUnitLocked($stock->unitLocked($detail->id));
 
         return Inertia::render('catalog/ProductEdit', [
             'product' => $detail->toArray(),

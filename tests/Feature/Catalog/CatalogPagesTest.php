@@ -144,6 +144,36 @@ final class CatalogPagesTest extends DatabaseTestCase
         $this->assertSame(2, $product['version'] ?? null);
     }
 
+    public function test_the_detail_and_the_edit_show_the_unit_locked_once_the_product_has_a_movement(): void
+    {
+        // BR-CAT-07; TASK-017 finding F-2: Inventory says it, since TASK-021 (STK-13).
+        $pages = ['/products/'.$this->product, '/products/'.$this->product.'/edit'];
+        $this->as('Agus');
+
+        foreach ($pages as $path) {
+            $this->assertFalse(((array) ($this->propsOf($this->get($path)->assertOk())['product'] ?? []))['unitLocked'] ?? null, $path);
+        }
+
+        TokoContoh::stock($this->product, '3');
+        $other = TokoContoh::product('PLP-002', ['categoryId' => $this->category]);
+        $secrets = array_values(array_map(static fn (array $one): string => $one['password'], $this->people));
+
+        foreach (['Hendra' => 'owner', 'Agus' => 'ops', 'Dewi' => 'combined'] as $person => $actor) {
+            $this->as($person);
+
+            foreach ($pages as $path) {
+                $response = $this->get($path)->assertOk();
+                $this->assertPageChannel($response, $actor, $secrets);
+                $product = (array) ($this->propsOf($response)['product'] ?? []);
+                // A movement changes no field of its product, so its version stays.
+                $this->assertSame([true, 1], [$product['unitLocked'] ?? null, $product['version'] ?? null], $path.' for '.$actor);
+            }
+
+            // Another product, with no movement, stays open.
+            $this->assertFalse(((array) ($this->propsOf($this->get('/products/'.$other.'/edit')->assertOk())['product'] ?? []))['unitLocked'] ?? null, $actor);
+        }
+    }
+
     public function test_a_form_offers_the_active_categories_and_the_edit_keeps_the_one_the_product_has(): void
     {
         $this->as('Agus');

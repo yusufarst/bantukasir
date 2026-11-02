@@ -27,12 +27,27 @@ final class CostRule implements ValidationRule
 
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
+        match (self::problem($value, $attribute)) {
+            'invalid' => $fail($this->invalidMessage),
+            'too_large' => $fail($this->tooLargeMessage),
+            null => null,
+        };
+    }
+
+    /**
+     * What the value fails with, or null when it is valid, for a FormRequest to name the key
+     * of the error body of ROUTE_CONTRACTS RT-07.
+     *
+     * @return 'invalid'|'too_large'|null
+     */
+    public static function problem(mixed $value, string $attribute): ?string
+    {
         $parts = is_string($value) ? CanonicalNumber::split($value) : null;
 
         if (! is_string($value) || $parts === null || $parts['negative'] || strlen($parts['fraction']) > Cost::SCALE || TrimmedInput::wasTrimmed($attribute)) {
-            $fail($this->invalidMessage);
-        } elseif (CanonicalNumber::exceeds($value, Limits::COST_MAX)) {
-            $fail($this->tooLargeMessage);
+            return 'invalid';
         }
+
+        return CanonicalNumber::exceeds($value, Limits::COST_MAX) ? 'too_large' : null;
     }
 }

@@ -33,6 +33,31 @@ final readonly class ProductDetailData implements PageData
     ) {}
 
     /**
+     * The same product with what Inventory says of its first movement (BR-CAT-07; STK-13).
+     */
+    public function withUnitLocked(bool $unitLocked): self
+    {
+        return new self(
+            $this->id,
+            $this->sku,
+            $this->name,
+            $this->categoryId,
+            $this->categoryName,
+            $this->categoryActive,
+            $this->brand,
+            $this->baseUnit,
+            $this->quantityPrecision,
+            $this->priceAmount,
+            $this->priceRevisionId,
+            $this->minimumStock,
+            $this->active,
+            $this->version,
+            $unitLocked,
+            $this->photo,
+        );
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function toArray(): array

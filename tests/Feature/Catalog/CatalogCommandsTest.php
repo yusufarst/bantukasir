@@ -253,6 +253,43 @@ final class CatalogCommandsTest extends DatabaseTestCase
         $this->assertSame($before, $this->facts());
     }
 
+    public function test_the_unit_and_the_precision_are_refused_at_their_fields_once_the_product_has_a_movement(): void
+    {
+        // BR-CAT-07, RACE-05; TASK-015 finding F-3, completed by TASK-021: RC-18 reads the
+        // product's first movement under its lock and refuses each field that would change.
+        $this->as('Agus');
+        $product = TokoContoh::product('PEN-01', ['categoryId' => $this->category]);
+
+        // A new product has no movement, no balance and no valuation (BR-CAT-03).
+        foreach (['stock_movements', 'stock_balances', 'inventory_valuations'] as $table) {
+            $this->assertSame(0, $this->watcher()->table($table)->where('product_id', $product)->count(), $table);
+        }
+
+        TokoContoh::stock($product, '3');
+        $this->as('Agus');
+        $before = $this->factsAndRows();
+
+        foreach ([
+            [['baseUnit' => 'kg'], ['payload.baseUnit']],
+            [['quantityPrecision' => 2], ['payload.quantityPrecision']],
+            [['baseUnit' => 'kg', 'quantityPrecision' => 2, 'name' => 'Pulpen Biru'], ['payload.baseUnit', 'payload.quantityPrecision']],
+        ] as [$change, $paths]) {
+            $refused = $this->postCommand('product.update', $this->editPayload($product, $change), ['productVersion' => 1])->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED')->assertJsonPath('outcome', 'REJECTED');
+            $this->assertSame($paths, array_keys((array) $refused->json('fields')), (string) json_encode($change));
+
+            foreach ($paths as $path) {
+                $this->assertSame('catalog.field.unit_lock_help', self::firstKey($refused, $path), $path);
+            }
+        }
+
+        $this->assertSame($before, $this->factsAndRows());
+
+        // Every other field stays editable, and the stock does not move with it.
+        $this->postCommand('product.update', $this->editPayload($product, ['name' => 'Pulpen Biru']), ['productVersion' => 1])->assertStatus(201);
+        $this->assertSame(['pcs', 0, 'Pulpen Biru', 2], array_values((array) $this->watcher()->table('products')->where('id', $product)->first(['base_unit', 'quantity_precision', 'name', 'version'])));
+        $this->assertSame(['3.000', 1], array_values((array) $this->watcher()->table('stock_balances')->where('product_id', $product)->first(['on_hand', 'last_sequence'])));
+    }
+
     public function test_the_sku_cannot_be_edited_and_no_route_changes_a_price_outside_rc_17_and_rc_18(): void
     {
         // AC-015-02: RC-18 takes no SKU; the lifecycle and category commands take

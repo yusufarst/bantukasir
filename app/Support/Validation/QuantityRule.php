@@ -30,16 +30,33 @@ final class QuantityRule implements ValidationRule
 
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
+        match ($this->problem($value, $attribute)) {
+            'quantity_positive' => $fail(__('ux.validation.quantity_positive')),
+            'quantity_whole' => $fail(__('ux.validation.quantity_whole')),
+            'quantity_decimals' => $fail(__('ux.validation.quantity_decimals', ['desimal' => Format::count($this->precision)])),
+            'quantity_max' => $fail(__('ux.validation.quantity_max')),
+            null => null,
+        };
+    }
+
+    /**
+     * The leaf of the key under `ux.validation` that the value fails with, or null when it
+     * is valid, for the error body of ROUTE_CONTRACTS RT-07.
+     *
+     * @return 'quantity_positive'|'quantity_whole'|'quantity_decimals'|'quantity_max'|null
+     */
+    public function problem(mixed $value, string $attribute): ?string
+    {
         $parts = is_string($value) ? CanonicalNumber::split($value) : null;
 
         if (! is_string($value) || $parts === null || $parts['negative'] || trim($parts['integer'].$parts['fraction'], '0') === '' || TrimmedInput::wasTrimmed($attribute)) {
-            $fail(__('ux.validation.quantity_positive'));
-        } elseif (strlen($parts['fraction']) > $this->precision) {
-            $fail($this->precision === 0
-                ? __('ux.validation.quantity_whole')
-                : __('ux.validation.quantity_decimals', ['desimal' => Format::count($this->precision)]));
-        } elseif (CanonicalNumber::exceeds($value, Limits::QUANTITY_MAX)) {
-            $fail(__('ux.validation.quantity_max'));
+            return 'quantity_positive';
         }
+
+        if (strlen($parts['fraction']) > $this->precision) {
+            return $this->precision === 0 ? 'quantity_whole' : 'quantity_decimals';
+        }
+
+        return CanonicalNumber::exceeds($value, Limits::QUANTITY_MAX) ? 'quantity_max' : null;
     }
 }
