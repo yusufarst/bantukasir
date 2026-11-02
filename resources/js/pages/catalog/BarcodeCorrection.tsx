@@ -2,7 +2,7 @@ import { router } from '@inertiajs/react';
 import { useEffect, useId, useRef, useState, type MouseEvent, type RefObject } from 'react';
 import { Button, ButtonLink } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { KeyValueList, LoadMore } from '@/components/ui/Data';
+import { KeyValueList, LoadMore, type KeyValue } from '@/components/ui/Data';
 import { ReviewDialog } from '@/components/ui/Dialog';
 import { CommandForm, Field, TextInput } from '@/components/ui/Field';
 import type { StateId } from '@/components/ui/stateCatalogue';
@@ -377,6 +377,7 @@ function CorrectionForm({ title, product }: { title: string; product: CorrectedP
             : mapping.state === ACTIVE
               ? t('catalog.barcode_correction.review_body_move', { kode: found.token, lama: mapping.productName, baru: target.name })
               : t('catalog.barcode_correction.review_body_reattach', { kode: found.token, lama: mapping.productName, baru: target.name });
+    const reviewItems: KeyValue[] = [{ key: 'reason', label: t('catalog.barcode_correction.reason'), value: reason.trim() }];
 
     return (
         <CommandLayout header={<PageHeader title={title} subtitle={t('catalog.product_detail.subtitle', { produk: product.name })} back={{ href: detail, page: t('catalog.product_detail.title'), onNavigate: toDetail }} />}>
@@ -426,7 +427,7 @@ function CorrectionForm({ title, product }: { title: string; product: CorrectedP
             </Card>
             <ReviewDialog open={review && (phase.kind === 'idle' || busy || throttled)} onOpenChange={setReview} title={t('catalog.barcode_correction.review_title')} confirmLabel={t('catalog.barcode_correction.confirm')} busy={busy} onConfirm={confirm}>
                 <p>{reviewBody}</p>
-                <KeyValueList items={[{ key: 'reason', label: t('catalog.barcode_correction.reason'), value: reason.trim() }]} />
+                <KeyValueList items={reviewItems} />
             </ReviewDialog>
             {!invalid && <CommandPanels control={control} {...(committed ? { committed: t('catalog.barcode_correction.success', { kode: found?.token ?? token.trim(), produk: chosen?.name ?? '' }) } : {})} />}
         </CommandLayout>

@@ -451,9 +451,10 @@ function CorrectionEntry({ product }: { product: ProductDetail }) {
     const unresolved = useUnresolved();
     const title = t('catalog.barcode_correction.title');
     const href = correctionPage(product.id);
+    const entries: MenuEntry[] = [{ kind: 'link', label: title, href, onNavigate: (event) => visitInDocument(event, href) }];
 
     return blockedReason(unresolved.union, CATALOG_COMMANDS.correctBarcode) === undefined ? (
-        <Menu label={t('ux.action.more_actions')} rowName={t('catalog.product_detail.section_barcodes')} items={[{ kind: 'link', label: title, href, onNavigate: (event) => visitInDocument(event, href) }]} />
+        <Menu label={t('ux.action.more_actions')} rowName={t('catalog.product_detail.section_barcodes')} items={entries} />
     ) : (
         <Button
             label={title}
