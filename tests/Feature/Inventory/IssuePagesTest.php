@@ -34,7 +34,8 @@ final class IssuePagesTest extends DatabaseTestCase
     {
         parent::setUp();
 
-        $this->travelTo('2026-11-03T03:00:00Z');
+        // A time before the runner's own: a command's hard end counts from the time it was received.
+        $this->travelTo('2026-11-01T03:00:00Z');
         TokoContoh::shop();
         $this->setUpCommands();
         $category = TokoContoh::category('Alat Tulis');
@@ -95,14 +96,14 @@ final class IssuePagesTest extends DatabaseTestCase
 
         $this->assertSame([$this->issues[2], $this->issues[1], $this->issues[0]], $this->ids('/stock/issues'));
         $listed = (array) (((array) ($this->propsOf($this->get('/stock/issues'))['issues'] ?? []))['rows'] ?? []);
-        $this->assertSame(['id' => $this->issues[0], 'confirmedAt' => '2026-11-03T03:00:00.000000Z', 'reasonCode' => 'DAMAGED', 'lineCount' => 1, 'actorDisplayName' => 'Hendra'], $listed[2] ?? null);
-        $this->assertSame(['id' => $this->issues[1], 'confirmedAt' => '2026-11-03T03:01:00.000000Z', 'reasonCode' => 'SAMPLE', 'lineCount' => 1, 'actorDisplayName' => 'Agus'], $listed[1] ?? null);
+        $this->assertSame(['id' => $this->issues[0], 'confirmedAt' => '2026-11-01T03:00:00.000000Z', 'reasonCode' => 'DAMAGED', 'lineCount' => 1, 'actorDisplayName' => 'Hendra'], $listed[2] ?? null);
+        $this->assertSame(['id' => $this->issues[1], 'confirmedAt' => '2026-11-01T03:01:00.000000Z', 'reasonCode' => 'SAMPLE', 'lineCount' => 1, 'actorDisplayName' => 'Agus'], $listed[1] ?? null);
 
         $this->assertSame([$this->issues[1]], $this->ids('/stock/issues?reason=SAMPLE'));
         $this->assertSame([], $this->ids('/stock/issues?reason=LOST'));
-        $this->assertSame(3, count($this->ids('/stock/issues?from=2026-11-03&to=2026-11-03')));
-        $this->assertSame([], $this->ids('/stock/issues?from=2026-11-04'));
-        $this->assertSame([$this->issues[0]], $this->ids('/stock/issues?reason=DAMAGED&from=2026-11-03&to=2026-11-03'));
+        $this->assertSame(3, count($this->ids('/stock/issues?from=2026-11-01&to=2026-11-01')));
+        $this->assertSame([], $this->ids('/stock/issues?from=2026-11-02'));
+        $this->assertSame([$this->issues[0]], $this->ids('/stock/issues?reason=DAMAGED&from=2026-11-01&to=2026-11-01'));
 
         // Two pages of two and one, and back.
         $page = (array) ($this->propsOf($this->get('/stock/issues?perPage=2'))['issues'] ?? []);
@@ -130,7 +131,7 @@ final class IssuePagesTest extends DatabaseTestCase
         $this->as('Agus');
 
         $props = $this->propsOf($this->get('/stock/issues/'.$this->issues[1])->assertOk());
-        $this->assertSame(['id' => $this->issues[1], 'confirmedAt' => '2026-11-03T03:01:00.000000Z', 'reasonCode' => 'SAMPLE', 'note' => 'Untuk pameran', 'lineCount' => 1, 'actorDisplayName' => 'Agus'], $props['issue'] ?? null);
+        $this->assertSame(['id' => $this->issues[1], 'confirmedAt' => '2026-11-01T03:01:00.000000Z', 'reasonCode' => 'SAMPLE', 'note' => 'Untuk pameran', 'lineCount' => 1, 'actorDisplayName' => 'Agus'], $props['issue'] ?? null);
 
         $two = $this->propsOf($this->get('/stock/issues/'.$this->issues[2])->assertOk());
         $lines = (array) ($two['lines'] ?? []);
@@ -140,11 +141,11 @@ final class IssuePagesTest extends DatabaseTestCase
         $movement = ((array) $lines[1])['movementId'] ?? null;
         $this->assertIsInt($movement);
         $read = (array) ($this->propsOf($this->get('/stock/movements/'.$movement)->assertOk())['movement'] ?? []);
-        $this->assertSame(['MANUAL_ISSUE', '-3', 'INTERNAL_USE', null, ['kind' => 'MANUAL_ISSUE', 'id' => $this->issues[2], 'at' => '2026-11-03T03:02:00.000000Z']], [$read['type'], $read['quantity'], $read['reasonCode'], $read['reference'], $read['source']]);
+        $this->assertSame(['MANUAL_ISSUE', '-3', 'INTERNAL_USE', null, ['kind' => 'MANUAL_ISSUE', 'id' => $this->issues[2], 'at' => '2026-11-01T03:02:00.000000Z']], [$read['type'], $read['quantity'], $read['reasonCode'], $read['reference'], $read['source']]);
 
         // The history names it as its source too.
         $history = (array) (((array) ($this->propsOf($this->get('/stock/history?product='.$this->paper))['history'] ?? []))['rows'] ?? []);
-        $this->assertSame(['kind' => 'MANUAL_ISSUE', 'id' => $this->issues[2], 'at' => '2026-11-03T03:02:00.000000Z'], ((array) $history[0])['source'] ?? null);
+        $this->assertSame(['kind' => 'MANUAL_ISSUE', 'id' => $this->issues[2], 'at' => '2026-11-01T03:02:00.000000Z'], ((array) $history[0])['source'] ?? null);
 
         // No cost, for the Owner neither: the allocation is the reports' (ADR-008 section 6).
         $this->as('Hendra');
