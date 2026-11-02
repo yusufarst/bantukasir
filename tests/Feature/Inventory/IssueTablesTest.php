@@ -417,7 +417,7 @@ final class IssueTablesTest extends DatabaseTestCase
      */
     private function issueMovement(Connection $c, int $sequence = 1): int
     {
-        return $this->insertIssueMovement($c, $this->insertLine($c, $this->insertIssue($c, ['command_id' => $sequence === 1 ? $this->command : $this->commands[$sequence - 2]])), ['product_sequence' => $sequence]);
+        return $this->insertIssueMovement($c, $this->insertLine($c, $this->insertIssue($c, ['command_id' => $sequence === 1 ? $this->command : ($this->commands[$sequence - 2] ?? 0)])), ['product_sequence' => $sequence]);
     }
 
     /**
