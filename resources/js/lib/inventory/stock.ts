@@ -112,6 +112,16 @@ export function draftQuantity(text: string, precision: number): string | null {
     return fraction === '' ? whole : `${whole}.${fraction}`;
 }
 
+/**
+ * A draft's quantity as its command receives it: the canonical form that the review shows, so
+ * that what was reviewed is what is sent — "01" and "1,0" are "1" — since the server refuses a
+ * quantity that is not canonical (QuantityRule). A text that is no quantity yet is sent as typed,
+ * and the server refuses it at its field (pull request #32, finding P2).
+ */
+export function sentQuantity(text: string, precision: number): string {
+    return draftQuantity(text, precision) ?? quantityFromEntry(text);
+}
+
 export type StockState = 'OUT' | 'LOW' | 'NORMAL';
 
 export const STOCK_STATES: readonly StockState[] = ['OUT', 'LOW', 'NORMAL'];

@@ -301,13 +301,19 @@ test('an answer lost freezes the draft as it was sent, "Kirim ulang" sends the s
     const product = await newProduct(page);
     await received(page, product, '4');
 
-    // Leaving a draft asks first (UXS-45).
-    await draftOf(page, product, '1');
+    // Leaving a draft asks first (UXS-45). The quantity "1,0" of a whole unit is sent as the review
+    // shows it, "1", which the server accepts (pull request #32, finding P2).
+    await draftOf(page, product, '1,0');
     await page.getByRole('link', { name: 'Batal' }).click();
     const leave = page.getByRole('dialog', { name: 'Perubahan belum disimpan' });
     await expect(leave.getByRole('button', { name: 'Tetap di halaman ini' })).toBeFocused();
     await leave.getByRole('button', { name: 'Tetap di halaman ini' }).click();
     await expect(line(page, product.name)).toHaveCount(1);
+
+    // A search's results left on the page before the request is sent (pull request #32, finding P2).
+    await page.getByLabel('Cari atau scan produk', { exact: true }).fill(product.name);
+    const result = page.getByRole('button', { name: `${product.name} ${product.sku}`, exact: true });
+    await expect(result).toBeVisible();
 
     // UXS-14: the draft frozen as it was sent, with "Kirim ulang" and "Cek status".
     const sent: ReturnType<typeof envelopeOf>[] = [];
@@ -322,6 +328,9 @@ test('an answer lost freezes the draft as it was sent, "Kirim ulang" sends the s
     await expect(line(page, product.name).getByLabel('Jumlah', { exact: true })).toBeDisabled();
     await expect(page.getByLabel('Alasan', { exact: true })).toBeDisabled();
     await expect(page.getByLabel('Cari atau scan produk', { exact: true })).toBeDisabled();
+    // A result cannot add a line that the request sent again would not hold.
+    await expect(result).toBeDisabled();
+    await expect(line(page, product.name)).toHaveCount(1);
     await checked(page);
 
     // "Kirim ulang" sends the same request — the same intent, key and lines — which commits.

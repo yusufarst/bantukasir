@@ -20,7 +20,7 @@ import { useCommand } from '@/lib/commands/useCommand';
 import { formatCount, formatQuantity } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import { postingBlockedReason } from '@/lib/inventory/Parts';
-import { backFrom, draftQuantity, ISSUE_COMMAND, ISSUE_REASONS, issueReasonOf, ISSUES_PAGE, ISSUES_SHELL, issueSteps, MAX_ISSUE_LINES, QUANTITY_DIGITS_MAX, reasonWord, signedQuantity, type IssueReason } from '@/lib/inventory/stock';
+import { backFrom, draftQuantity, ISSUE_COMMAND, ISSUE_REASONS, issueReasonOf, ISSUES_PAGE, ISSUES_SHELL, issueSteps, MAX_ISSUE_LINES, QUANTITY_DIGITS_MAX, reasonWord, sentQuantity, signedQuantity, type IssueReason } from '@/lib/inventory/stock';
 
 // UXP-408 "Catat barang keluar" (ROUTE_CONTRACTS RP-408, RD-01 `issue`, RC-08; COPY_DECK section
 // 9.9; INTERACTION_INVENTORY UXI-256 to UXI-264; NAVIGATION_CONTRACTS UXP-408; UI_STATES section 6;
@@ -259,8 +259,19 @@ function IssueForm({ title, postingFrozen }: IssueCreateProps & { title: string 
 
     useEffect(() => () => void supersede(), []);
 
-    /** Adds the product as a new line, or with a scan one base unit to its latest line (UXI-256). */
+    // A frozen request ends every search still out, so that no answer changes the lines that were sent (pull request #32, finding P2).
+    useEffect(() => {
+        if (frozen) {
+            supersede();
+        }
+    }, [frozen]);
+
+    /** Adds the product as a new line, or with a scan one base unit to its latest line (UXI-256); nothing while the request is frozen. */
     const add = (product: DraftProduct, scanned: boolean): void => {
+        if (frozen) {
+            return;
+        }
+
         if (!product.active) {
             setResults({ kind: 'inactive', product });
 
@@ -288,6 +299,10 @@ function IssueForm({ title, postingFrozen }: IssueCreateProps & { title: string 
     };
 
     const runSearch = (typed: string, exact: boolean): void => {
+        if (frozen) {
+            return;
+        }
+
         const mine = supersede();
 
         setResults({ kind: 'searching' });
@@ -407,12 +422,15 @@ function IssueForm({ title, postingFrozen }: IssueCreateProps & { title: string 
             products.set(line.product.id, line.product.version);
         }
 
+        // No search still out may add to the lines once they are sent.
+        supersede();
         setSent(lines);
         control.submit(
             {
                 reasonCode: reason,
                 note: note.trim() === '' ? null : note.trim(),
-                lines: lines.map((line) => ({ productId: line.product.id, quantity: quantityFromEntry(line.quantity) })),
+                // The quantity as the review showed it (pull request #32, finding P2).
+                lines: lines.map((line) => ({ productId: line.product.id, quantity: sentQuantity(line.quantity, line.product.quantityPrecision) })),
             },
             { products: [...products.entries()].map(([productId, version]) => ({ productId, version })) },
         );
@@ -495,7 +513,7 @@ function IssueForm({ title, postingFrozen }: IssueCreateProps & { title: string 
                 <ul className={'bk-stack'}>
                     {results.rows.map((row) => (
                         <li key={row.id}>
-                            <Button label={row.name} rowName={row.sku} variant={'secondary'} block={true} enterActivates={true} onClick={() => add(row, false)}>
+                            <Button label={row.name} rowName={row.sku} variant={'secondary'} block={true} enterActivates={true} unavailable={frozen} onClick={() => add(row, false)}>
                                 <span className={'bk-meta'}>{row.active ? row.sku : t('ux.state.inactive.label')}</span>
                             </Button>
                         </li>

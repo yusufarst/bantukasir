@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { issueReasonOf, issuesAddress, issueSteps, ISSUE_REASONS } from '@/lib/inventory/stock';
+import { issueReasonOf, issuesAddress, issueSteps, ISSUE_REASONS, sentQuantity } from '@/lib/inventory/stock';
 
 // The review of a draft of a manual issue on UXP-408 and the address of UXP-407 (TASK-023 scope
 // item 4; BR-INV-07, BR-INV-19, BR-INV-20; COPY_DECK sections 9.8 and 9.9): the stock before, the
@@ -45,6 +45,25 @@ describe('the review of a manual issue', () => {
 
     it('is exact at the largest quantities, in thousandths', () => {
         expect(issueSteps([{ productId: 1, quantity: '0.001', onHand: '99999999.999' }])).toEqual([{ before: '99999999.999', after: '99999999.998' }]);
+    });
+});
+
+// What the review shows is what RC-08 receives: the server's QuantityRule refuses a leading zero
+// and more decimals, as written, than the product's precision (pull request #32, finding P2).
+describe('the quantity that a line sends', () => {
+    it('sends the canonical quantity that the review shows, never the text as typed', () => {
+        expect(sentQuantity('01', 0)).toBe('1');
+        expect(sentQuantity('1,0', 0)).toBe('1');
+        expect(sentQuantity('007', 0)).toBe('7');
+        expect(sentQuantity('2,50', 2)).toBe('2.5');
+        expect(sentQuantity('0,250', 3)).toBe('0.25');
+        expect(sentQuantity('1.250,5', 1)).toBe('1250.5');
+        expect(sentQuantity(' 3 ', 0)).toBe('3');
+    });
+
+    it('sends a text that is no quantity of the precision yet as typed, for the server to refuse at its field', () => {
+        expect(sentQuantity('1,5', 0)).toBe('1.5');
+        expect(sentQuantity('abc', 0)).toBe('abc');
     });
 });
 
