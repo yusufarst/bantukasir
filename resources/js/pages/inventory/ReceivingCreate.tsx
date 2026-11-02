@@ -8,7 +8,7 @@ import { ReviewDialog } from '@/components/ui/Dialog';
 import { CommandForm, Field, MoneyInput, TextInput } from '@/components/ui/Field';
 import { Notice } from '@/components/ui/Notice';
 import type { StateId } from '@/components/ui/stateCatalogue';
-import { ErrorSummary, LoadFailed, Loading, StateMark, StateNotice, UnknownCode, type FieldError } from '@/components/ui/States';
+import { ErrorSummary, LoadFailed, Loading, NoResults, StateMark, StateNotice, UnknownCode, type FieldError } from '@/components/ui/States';
 import { AppShell, useLeaveGuard, useUnsavedChanges } from '@/layouts/AppShell';
 import { CommandLayout, PageHeader } from '@/layouts/Page';
 import { leaveSavedNote } from '@/lib/access/users';
@@ -540,7 +540,7 @@ function ReceivingForm({ title, postingFrozen, zeroAllowed, categories }: Receiv
                     ))}
                 </ul>
             )}
-            {results.kind === 'rows' && results.rows.length === 0 && <UnknownCode code={search.trim()} action={<Button label={t('catalog.product_create.title')} variant={'secondary'} onClick={() => openCreate(search.trim())} />} />}
+            {results.kind === 'rows' && results.rows.length === 0 && <NoResults onClear={() => edited('')} />}
         </>
     );
 

@@ -36,8 +36,8 @@ final class StockAttention
     public static function counts(): Builder
     {
         return self::products()
-            ->selectRaw("count(*) filter (where (".self::STATE.") = 'OUT') as out_count")
-            ->selectRaw("count(*) filter (where (".self::STATE.") = 'LOW') as low_count");
+            ->selectRaw('count(*) filter (where ('.self::STATE.") = 'OUT') as out_count")
+            ->selectRaw('count(*) filter (where ('.self::STATE.") = 'LOW') as low_count");
     }
 
     /**
