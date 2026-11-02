@@ -237,14 +237,15 @@ final class ProductSearchTest extends DatabaseTestCase
             $this->as($person);
 
             // `correction` opened with TASK-020, for CAP-07, the Owner's alone; `receiving` and
-            // `stock` with TASK-022, for CAP-11 and CAP-14, which all three hold.
-            foreach ($person === 'Hendra' ? ['till', 'issue', 'adjustment', 'opening'] : ['till', 'issue', 'adjustment', 'opening', 'correction'] as $context) {
+            // `stock` with TASK-022, for CAP-11 and CAP-14, and `issue` with TASK-023, for
+            // CAP-13, which all three hold.
+            foreach ($person === 'Hendra' ? ['till', 'adjustment', 'opening'] : ['till', 'adjustment', 'opening', 'correction'] as $context) {
                 $before = $refusals();
                 $this->getJson(self::SEARCH.'?context='.$context)->assertStatus(403)->assertJsonPath('code', 'FORBIDDEN');
                 $this->assertSame($before + 1, $refusals(), $context.' is recorded (SEC-LOG-03).');
             }
 
-            foreach (['receiving', 'stock'] as $context) {
+            foreach (['receiving', 'issue', 'stock'] as $context) {
                 $this->getJson(self::SEARCH.'?context='.$context.'&q=PEN')->assertOk();
             }
 
@@ -258,7 +259,7 @@ final class ProductSearchTest extends DatabaseTestCase
         // narrow form of the till is TASK-028's.
         $this->as('Rina');
 
-        foreach (['catalog', 'till', 'stock'] as $context) {
+        foreach (['catalog', 'till', 'stock', 'issue'] as $context) {
             $this->getJson(self::SEARCH.'?context='.$context)->assertStatus(403)->assertJsonPath('code', 'FORBIDDEN');
         }
 

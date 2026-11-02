@@ -211,6 +211,26 @@ return [
             'runtime' => ['select' => true, 'insert' => true],
         ],
 
+        // Inventory, the manual issue (SCHEMA section 5.7; TASK-023).
+        'manual_issues' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'manual_issue_lines' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+
+        // Costing, the issue allocation (SCHEMA section 5.8; ADR-008; TASK-023).
+        'issue_cost_allocations' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'issue_cost_allocation_projections' => [
+            'class' => 'P',
+            'runtime' => ['select' => true, 'insert' => true, 'update' => ['current_status', 'current_amount', 'publication_no', 'updated_at']],
+        ],
+
         // Costing (SCHEMA section 5.8; TASK-021).
         'acquisition_cost_evidence' => [
             'class' => 'F',

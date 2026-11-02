@@ -134,7 +134,7 @@ test('an Operations admin records a receiving with scans, a product made over th
     // UXP-404: the sub-navigation, then "Catat barang masuk".
     await page.goto('/stock/receivings');
     await expect(page.getByRole('heading', { level: 1, name: 'Barang masuk' })).toBeVisible();
-    await expect(page.getByRole('navigation', { name: 'Submenu Stok' }).getByRole('link')).toHaveText(['Stok', 'Riwayat stok', 'Barang masuk']);
+    await expect(page.getByRole('navigation', { name: 'Submenu Stok' }).getByRole('link')).toHaveText(['Stok', 'Riwayat stok', 'Barang masuk', 'Barang keluar']);
     await checked(page);
     await Promise.all([page.waitForURL((url) => url.pathname === '/stock/receivings/new'), page.getByRole('link', { name: 'Catat barang masuk' }).click()]);
 

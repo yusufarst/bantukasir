@@ -1,7 +1,7 @@
 import { leaveSignedInSession } from '@/lib/browserSession';
 import { quantityFromEntry, type ReadAnswer } from '@/lib/catalog/products';
 import { requestJson } from '@/lib/commands/client';
-import { formatQuantity } from '@/lib/format';
+import { formatDateTime, formatQuantity } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import type { AreaId, DestinationId, SubDestinationId } from '@/lib/navigation';
 import type { TranslationKey } from '@/types/translation-keys';
@@ -24,6 +24,10 @@ export const RECEIVINGS_PAGE = '/stock/receivings';
 
 export const NEW_RECEIVING_PAGE = '/stock/receivings/new';
 
+export const ISSUES_PAGE = '/stock/issues';
+
+export const NEW_ISSUE_PAGE = '/stock/issues/new';
+
 export const REQUESTS_PAGE = '/requests';
 
 export function movementPage(id: number): string {
@@ -34,6 +38,10 @@ export function receivingPage(id: number): string {
     return `${RECEIVINGS_PAGE}/${String(id)}`;
 }
 
+export function issuePage(id: number): string {
+    return `${ISSUES_PAGE}/${String(id)}`;
+}
+
 /** Where the stock pages stand in the shell (INFORMATION_ARCHITECTURE section 4). */
 export const STOCK_SHELL = { current: 'stock', area: 'stock', subCurrent: 'stock' } as const satisfies { current: DestinationId; area: AreaId; subCurrent: SubDestinationId };
 
@@ -41,11 +49,41 @@ export const HISTORY_SHELL = { current: 'stock', area: 'stock', subCurrent: 'his
 
 export const RECEIVINGS_SHELL = { current: 'stock', area: 'stock', subCurrent: 'receipts' } as const satisfies { current: DestinationId; area: AreaId; subCurrent: SubDestinationId };
 
+export const ISSUES_SHELL = { current: 'stock', area: 'stock', subCurrent: 'issues' } as const satisfies { current: DestinationId; area: AreaId; subCurrent: SubDestinationId };
+
 /** RC-07's family (INTERACTION_CONTRACTS section 1.4). */
 export const RECEIVING_COMMAND = { operation: 'receiving.confirm', family: 'stock_posting' } as const;
 
+/** RC-08's family (INTERACTION_CONTRACTS section 1.4), which it shares with RC-07. */
+export const ISSUE_COMMAND = { operation: 'manual_issue.confirm', family: 'stock_posting' } as const;
+
 /** The most lines of a receiving (TECHNICAL_RULES section 11.2). */
 export const MAX_RECEIVING_LINES = 500;
+
+/** The most lines of a manual issue (TECHNICAL_RULES section 11.2). */
+export const MAX_ISSUE_LINES = 200;
+
+export type IssueReason = 'DAMAGED' | 'INTERNAL_USE' | 'LOST' | 'SAMPLE' | 'OTHER';
+
+/** The reasons of BR-INV-19, in their order, with their words (COPY_DECK section 9.1). */
+export const ISSUE_REASONS: readonly { readonly reason: IssueReason; readonly label: TranslationKey }[] = [
+    { reason: 'DAMAGED', label: 'inventory.issue_reason.damaged' },
+    { reason: 'INTERNAL_USE', label: 'inventory.issue_reason.internal_use' },
+    { reason: 'LOST', label: 'inventory.issue_reason.lost' },
+    { reason: 'SAMPLE', label: 'inventory.issue_reason.sample' },
+    { reason: 'OTHER', label: 'inventory.issue_reason.other' },
+];
+
+export function reasonWord(reason: string): string {
+    const found = ISSUE_REASONS.find((entry) => entry.reason === reason);
+
+    return found === undefined ? reason : t(found.label);
+}
+
+/** A reason of the list, or null for any other text. */
+export function issueReasonOf(value: string): IssueReason | null {
+    return ISSUE_REASONS.find((entry) => entry.reason === value)?.reason ?? null;
+}
 
 /** The largest whole part of a quantity (TECHNICAL_RULES section 11.1): eight digits. */
 export const QUANTITY_DIGITS_MAX = 8;
@@ -150,11 +188,20 @@ export function signedQuantity(value: string, precision: number, unit: string): 
     return `${negative ? '−' : '+'}${formatQuantity(magnitude, precision, unit)}`;
 }
 
-/** A source of a movement within the viewer's scope (UXI-224); the receiving document is the one whose table exists. */
+/** A source of a movement within the viewer's scope (UXI-224): a receiving document, or a manual issue (TASK-023). */
 export interface MovementSource {
-    readonly kind: 'RECEIVING';
+    readonly kind: 'RECEIVING' | 'MANUAL_ISSUE';
     readonly id: number;
     readonly at: string;
+}
+
+/** The page of a movement's source and the words of its link (UXI-224; COPY_DECK section 9.4). */
+export function sourceLink(source: MovementSource): { readonly href: string; readonly label: string } {
+    const when = formatDateTime(source.at);
+
+    return source.kind === 'MANUAL_ISSUE'
+        ? { href: issuePage(source.id), label: t('inventory.movement.source_issue', { waktu: when }) }
+        : { href: receivingPage(source.id), label: t('inventory.movement.source_receipt', { waktu: when }) };
 }
 
 /** A row of RP-402 (App\Queries\Inventory\StockHistory). */
@@ -268,7 +315,100 @@ export function receivingsAddress(filters: ReceivingFilters, cursor: { readonly 
     return search === '' ? RECEIVINGS_PAGE : `${RECEIVINGS_PAGE}?${search}`;
 }
 
-/** A keyset page of a list (INTERACTION_CONTRACTS section 3.2). */
+/** An issue of RP-407 (App\Queries\Inventory\ManualIssueRecords). */
+export interface IssueRow {
+    readonly id: number;
+    readonly confirmedAt: string;
+    readonly reasonCode: IssueReason;
+    readonly lineCount: number;
+    readonly actorDisplayName: string;
+}
+
+/** The filters of UXP-407 (ROUTE_CONTRACTS RP-407). */
+export interface IssueFilters {
+    readonly from: string | null;
+    readonly to: string | null;
+    readonly reason: IssueReason | null;
+}
+
+export function issuesAddress(filters: IssueFilters, cursor: { readonly after?: string; readonly before?: string } = {}): string {
+    const query = new URLSearchParams();
+
+    if (filters.from !== null) {
+        query.set('from', filters.from);
+    }
+
+    if (filters.to !== null) {
+        query.set('to', filters.to);
+    }
+
+    if (filters.reason !== null) {
+        query.set('reason', filters.reason);
+    }
+
+    if (cursor.after !== undefined) {
+        query.set('after', cursor.after);
+    }
+
+    if (cursor.before !== undefined) {
+        query.set('before', cursor.before);
+    }
+
+    const search = query.toString();
+
+    return search === '' ? ISSUES_PAGE : `${ISSUES_PAGE}?${search}`;
+}
+
+/** Thousandths: a quantity has at most three decimals (BR-NUM-02). */
+const THOUSANDTHS = 1000n;
+
+/** A canonical non-negative quantity in thousandths, or null. */
+function thousandthsOf(text: string): bigint | null {
+    const match = /^([0-9]+)(?:\.([0-9]{1,3}))?$/.exec(text);
+
+    return match === null ? null : BigInt(match[1] ?? '0') * THOUSANDTHS + BigInt((match[2] ?? '').padEnd(3, '0'));
+}
+
+/** Thousandths as the shortest canonical quantity: 1500n is "1.5". */
+function quantityOfThousandths(value: bigint): string {
+    const fraction = (value % THOUSANDTHS).toString().padStart(3, '0').replace(/0+$/, '');
+
+    return `${(value / THOUSANDTHS).toString()}${fraction === '' ? '' : `.${fraction}`}`;
+}
+
+/** One line of the review of an issue: the stock before it and after it, or that the stock is short. */
+export interface IssueStep {
+    readonly before: string;
+    /** Null when the stock is short for the product's lines up to this one (UXS-31). */
+    readonly after: string | null;
+}
+
+/**
+ * The review of a draft of an issue, line by line (BR-INV-07, BR-INV-19): from the stock on hand
+ * that the search gave for the product, the lines of one product taken in their order, the stock
+ * before the line and after it, in exact digits; the stock after is null once the lines of the
+ * product ask for more than it holds, which the server refuses (BR-INV-20). A step is null for a
+ * line whose quantity is not one yet, or whose product's stock the search did not give.
+ */
+export function issueSteps(lines: readonly { readonly productId: number; readonly quantity: string | null; readonly onHand: string | null }[]): readonly (IssueStep | null)[] {
+    const left = new Map<number, bigint>();
+
+    return lines.map((line) => {
+        const known = left.get(line.productId);
+        const start = known ?? (line.onHand === null ? null : thousandthsOf(line.onHand));
+        const quantity = line.quantity === null ? null : thousandthsOf(line.quantity);
+
+        if (start === null || quantity === null) {
+            return null;
+        }
+
+        const after = start - quantity;
+
+        left.set(line.productId, after < 0n ? -1n : after);
+
+        return { before: quantityOfThousandths(start < 0n ? 0n : start), after: start < 0n || after < 0n ? null : quantityOfThousandths(after) };
+    });
+}
 export interface KeysetPage<Row> {
     readonly rows: readonly Row[];
     readonly nextCursor: string | null;

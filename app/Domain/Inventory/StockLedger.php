@@ -19,6 +19,8 @@ final class StockLedger
 {
     public const string RECEIPT = 'RECEIPT';
 
+    public const string MANUAL_ISSUE = 'MANUAL_ISSUE';
+
     /**
      * Whether the product has a movement, by the unique key of its sequence (BR-CAT-07).
      */
@@ -110,6 +112,35 @@ final class StockLedger
             'movement_type' => self::RECEIPT,
             'quantity' => $quantity->toCanonical(),
             'receiving_line_id' => $receivingLineId,
+            'line_quantity' => $quantity->toCanonical(),
+            'recorded_at' => $at,
+            'actor_user_id' => $actorUserId,
+            'command_id' => $commandId,
+        ]);
+    }
+
+    /**
+     * Appends the MANUAL_ISSUE of a manual issue line, the line's positive quantity taken out
+     * of stock, with the unit and precision of its guarded product, and returns its internal
+     * key. Its allocation is Costing's, in this transaction: the presence key refuses a commit
+     * without it (BR-INV-08; ADR-008 section 2).
+     */
+    public function appendManualIssue(GuardedProduct $product, int $sequence, Quantity $quantity, int $manualIssueLineId, int $actorUserId, int $commandId, string $at): int
+    {
+        self::requireTransaction();
+
+        if (! $quantity->isPositive()) {
+            throw new LogicException('A manual issue line takes a positive quantity out of stock.');
+        }
+
+        return DB::table('stock_movements')->insertGetId([
+            'product_id' => $product->id,
+            'base_unit' => $product->baseUnit,
+            'quantity_precision' => $product->quantityPrecision,
+            'product_sequence' => $sequence,
+            'movement_type' => self::MANUAL_ISSUE,
+            'quantity' => $quantity->negated()->toCanonical(),
+            'manual_issue_line_id' => $manualIssueLineId,
             'line_quantity' => $quantity->toCanonical(),
             'recorded_at' => $at,
             'actor_user_id' => $actorUserId,

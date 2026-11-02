@@ -646,16 +646,16 @@ final class ConfirmReceivingTest extends DatabaseTestCase
 
         // A scan of app/: the tables of the ledger, the valuation and the receiving are named by
         // their one writer and, besides it, only by the reads of app/Queries named here, each of
-        // which writes nothing (AC-021-01): RD-01's balance, and TASK-022's RD-02, RD-03 and the
-        // pages RP-402 to RP-406.
+        // which writes nothing (AC-021-01): RD-01's balance, TASK-022's RD-02, RD-03 and the
+        // pages RP-402 to RP-406, and TASK-023's pages RP-407 and RP-409.
         $this->assertSame(['Domain/Inventory/StockLedger.php', 'Queries/Inventory/ProductStock.php', 'Queries/Inventory/StockAttention.php'], self::filesNaming('stock_balances'));
-        $this->assertSame(['Domain/Inventory/StockLedger.php', 'Queries/Inventory/MovementDetail.php', 'Queries/Inventory/ReceivingDocuments.php', 'Queries/Inventory/StockHistory.php'], self::filesNaming('stock_movements'));
+        $this->assertSame(['Domain/Inventory/StockLedger.php', 'Queries/Inventory/ManualIssueRecords.php', 'Queries/Inventory/MovementDetail.php', 'Queries/Inventory/ReceivingDocuments.php', 'Queries/Inventory/StockHistory.php'], self::filesNaming('stock_movements'));
         $this->assertSame(['Domain/Costing/InventoryValuations.php'], self::filesNaming('inventory_valuations'));
         $this->assertSame(['Domain/Costing/CostEvidence.php', 'Queries/Inventory/MovementDetail.php', 'Queries/Inventory/ReceivingDocuments.php'], self::filesNaming('acquisition_cost_evidence'));
         $this->assertSame(['Domain/Inventory/Receivings.php', 'Queries/Inventory/MovementDetail.php', 'Queries/Inventory/ReceivingDocuments.php', 'Queries/Inventory/StockHistory.php'], self::filesNaming('receiving_documents'));
         $this->assertSame(['Domain/Inventory/Receivings.php', 'Queries/Inventory/MovementDetail.php', 'Queries/Inventory/ReceivingDocuments.php', 'Queries/Inventory/StockHistory.php'], self::filesNaming('receiving_lines'));
 
-        foreach (['MovementDetail', 'ProductStock', 'ReceivingDocuments', 'StockAttention', 'StockHistory'] as $read) {
+        foreach (['ManualIssueRecords', 'MovementDetail', 'ProductStock', 'ReceivingDocuments', 'StockAttention', 'StockHistory'] as $read) {
             $this->assertDoesNotMatchRegularExpression('/->(?:insert|insertGetId|update|upsert|delete|increment|decrement|truncate)\(/', (string) file_get_contents(app_path('Queries/Inventory/'.$read.'.php')), $read);
         }
     }

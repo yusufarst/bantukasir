@@ -15,8 +15,9 @@ use Illuminate\Support\Facades\DB;
  * one, otherwise by the server's time, then internal identifier — with keyset paging both
  * ways. Each row: the time, the product, the type, the signed quantity in the product's unit,
  * who recorded it and its source within the viewer's scope. Operational history carries no
- * cost (CAP-14, BR-INV-44). Of the sources, the receiving document is the one whose table
- * exists; the Tasks that create the other source tables add theirs here (EXC-44).
+ * cost (CAP-14, BR-INV-44). Of the sources, the receiving document and the manual issue
+ * (TASK-023) are those whose tables exist; the Tasks that create the other source tables add
+ * theirs here (EXC-44).
  */
 final class StockHistory
 {
@@ -31,6 +32,8 @@ final class StockHistory
     private const string RECORDED_AT = "to_char(m.recorded_at at time zone 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') as recorded_at";
 
     private const string DOCUMENT_AT = "to_char(d.confirmed_at at time zone 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') as document_at";
+
+    private const string ISSUE_AT = "to_char(i.confirmed_at at time zone 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') as issue_at";
 
     /**
      * @param  array{product: int|null, type: string|null, from: string|null, to: string|null, after: string|null, before: string|null, perPage: int}  $filters
@@ -107,9 +110,12 @@ final class StockHistory
             ->join('users as u', 'u.id', '=', 'm.actor_user_id')
             ->leftJoin('receiving_lines as l', 'l.id', '=', 'm.receiving_line_id')
             ->leftJoin('receiving_documents as d', 'd.id', '=', 'l.receiving_document_id')
-            ->select(['m.id', 'm.product_id', 'm.product_sequence', 'm.movement_type', 'm.quantity', 'm.quantity_precision', 'm.base_unit', 'p.name', 'p.sku', 'u.display_name', 'd.id as document_id'])
+            ->leftJoin('manual_issue_lines as il', 'il.id', '=', 'm.manual_issue_line_id')
+            ->leftJoin('manual_issues as i', 'i.id', '=', 'il.manual_issue_id')
+            ->select(['m.id', 'm.product_id', 'm.product_sequence', 'm.movement_type', 'm.quantity', 'm.quantity_precision', 'm.base_unit', 'p.name', 'p.sku', 'u.display_name', 'd.id as document_id', 'i.id as issue_id'])
             ->selectRaw(self::RECORDED_AT)
-            ->selectRaw(self::DOCUMENT_AT);
+            ->selectRaw(self::DOCUMENT_AT)
+            ->selectRaw(self::ISSUE_AT);
 
         if ($filters['product'] !== null) {
             $query->where('m.product_id', $filters['product']);
@@ -203,6 +209,7 @@ final class StockHistory
     {
         $precision = Read::int($values, 'quantity_precision');
         $document = Read::nullableInt($values, 'document_id');
+        $issue = Read::nullableInt($values, 'issue_id');
 
         return [
             'id' => Read::int($values, 'id'),
@@ -214,7 +221,11 @@ final class StockHistory
             'quantityPrecision' => $precision,
             'product' => ['id' => Read::int($values, 'product_id'), 'name' => Read::text($values, 'name'), 'sku' => Read::text($values, 'sku')],
             'actorDisplayName' => Read::text($values, 'display_name'),
-            'source' => $document === null ? null : ['kind' => 'RECEIVING', 'id' => $document, 'at' => Read::text($values, 'document_at')],
+            'source' => match (true) {
+                $document !== null => ['kind' => 'RECEIVING', 'id' => $document, 'at' => Read::text($values, 'document_at')],
+                $issue !== null => ['kind' => 'MANUAL_ISSUE', 'id' => $issue, 'at' => Read::text($values, 'issue_at')],
+                default => null,
+            },
         ];
     }
 }

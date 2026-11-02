@@ -245,6 +245,7 @@ final class SignInSessionTest extends DatabaseTestCase
                 'barcode_active_mappings' => 'token_id',
                 'stock_balances', 'inventory_valuations' => 'product_id',
                 'inventory_posting_block_reopenings' => 'block_id',
+                'issue_cost_allocation_projections' => 'allocation_id',
                 default => 'id',
             });
         }

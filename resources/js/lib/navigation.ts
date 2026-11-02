@@ -87,7 +87,8 @@ export const DESTINATIONS: Readonly<Partial<Record<DestinationId, DestinationEnt
 
 /**
  * The registered items of each sub-navigation: UXI-009 and UXI-010, from TASK-017; UXI-011,
- * from TASK-019; UXI-012 to UXI-014, from TASK-022.
+ * from TASK-019; UXI-012 to UXI-014, from TASK-022; UXI-015 "Barang keluar", the Owner's explicit
+ * entry of D-018, from TASK-023.
  */
 export const SUB_DESTINATIONS: Readonly<Record<AreaId, Readonly<Partial<Record<SubDestinationId, SubDestinationEntry>>>>> = {
     products: {
@@ -99,6 +100,7 @@ export const SUB_DESTINATIONS: Readonly<Record<AreaId, Readonly<Partial<Record<S
         stock: { label: 'inventory.stock.title', href: '/stock', capabilities: ['CAP-14'] },
         history: { label: 'inventory.history.title', href: '/stock/history', capabilities: ['CAP-14'] },
         receipts: { label: 'inventory.receipts.title', href: '/stock/receivings', capabilities: ['CAP-11'] },
+        issues: { label: 'inventory.issues.title', href: '/stock/issues', capabilities: ['CAP-13'] },
     },
     reports: {},
 };

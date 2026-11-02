@@ -297,6 +297,21 @@ final class CapabilityMatrixTest extends DatabaseTestCase
         'RP-406' => ['method' => 'GET', 'path' => '/stock/receivings/{document}', 'json' => true, 'answers' => [
             'guest' => [401, null], 'owner' => [404, null], 'ops' => [404, null], 'cashier' => [403, null], 'combined' => [404, null],
         ]],
+        // TASK-023: the manual issue for CAP-13, the Owner's and OPERATIONS_ADMIN's, without
+        // recent authentication: an empty envelope reaches its fields; the detail of an
+        // identifier that does not exist.
+        'RC-08' => ['method' => 'POST', 'path' => '/commands/manual_issue.confirm', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [422, null], 'ops' => [422, null], 'cashier' => [403, null], 'combined' => [422, null],
+        ]],
+        'RP-407' => ['method' => 'GET', 'path' => '/stock/issues', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [200, null], 'cashier' => [403, null], 'combined' => [200, null],
+        ]],
+        'RP-408' => ['method' => 'GET', 'path' => '/stock/issues/new', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [200, null], 'cashier' => [403, null], 'combined' => [200, null],
+        ]],
+        'RP-409' => ['method' => 'GET', 'path' => '/stock/issues/{issue}', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [404, null], 'ops' => [404, null], 'cashier' => [403, null], 'combined' => [404, null],
+        ]],
     ];
 
     /** @var array<string, array{id: int, email: string, password: string}> */

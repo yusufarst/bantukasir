@@ -17,9 +17,9 @@ import {
     historyAddress,
     MOVEMENT_TYPES,
     movementPage,
-    receivingPage,
     REQUESTS_PAGE,
     signedQuantity,
+    sourceLink,
     STOCK_PAGE,
     typeWord,
     type HistoryFilters,
@@ -36,7 +36,7 @@ import {
 // chosen through the shared Product Search in the context `stock`, whose Enter looks a scanned
 // code up and never runs a command (BR-CAT-32); the movement type; and the days from and to,
 // never in the wrong order (`ux.validation.date_order`). A row leads to its movement (UXI-220);
-// its source, a receiving document, to that document (UXI-224). The filters and the page stand
+// its source, a receiving document or a manual issue, to that page (UXI-224). The filters and the page stand
 // in the address (NC-10). "Kembali ke …" only when another page opened it (UXI-223), naming
 // that page. "Sesuaikan stok" (UXI-221) is TASK-024's. No cost (CAP-14).
 
@@ -119,12 +119,19 @@ function HistoryList({ title, filters, product, history, opener }: HistoryProps 
         {
             id: 'source',
             header: t('inventory.history.col_source'),
-            cell: (row) =>
-                row.source === null ? null : (
-                    <a className={'bk-table-link'} href={receivingPage(row.source.id)}>
-                        {t('inventory.movement.source_receipt', { waktu: formatDateTime(row.source.at) })}
+            cell: (row) => {
+                if (row.source === null) {
+                    return null;
+                }
+
+                const link = sourceLink(row.source);
+
+                return (
+                    <a className={'bk-table-link'} href={link.href}>
+                        {link.label}
                     </a>
-                ),
+                );
+            },
         },
     ];
 
