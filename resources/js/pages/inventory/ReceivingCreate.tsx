@@ -60,6 +60,10 @@ const QUANTITY_DIGITS_MAX = 8;
 
 const VALIDATION_FAILED = 'VALIDATION_FAILED';
 
+const INACTIVE_STATE: StateId = 'UXS-32-product';
+
+const FROZEN_STATE: StateId = 'UXS-27';
+
 const REFUSAL_STATES: Readonly<Record<string, StateId>> = {
     STALE_VERSION: 'UXS-17',
     ONBOARDING_FREEZE: 'UXS-27',
@@ -528,7 +532,7 @@ function ReceivingForm({ title, postingFrozen, zeroAllowed, categories }: Receiv
             {results.kind === 'searching' && <Loading lines={1} />}
             {results.kind === 'failed' && <LoadFailed onRetry={() => runSearch(results.text, results.exact)} />}
             {results.kind === 'unknown' && <UnknownCode code={results.code} action={<Button label={t('catalog.product_create.title')} variant={'secondary'} onClick={() => openCreate(results.code)} />} />}
-            {results.kind === 'inactive' && <StateNotice state={'UXS-32-product'} body={t('ux.state.inactive.product.body', { produk: results.product.name })} />}
+            {results.kind === 'inactive' && <StateNotice state={INACTIVE_STATE} body={t('ux.state.inactive.product.body', { produk: results.product.name })} />}
             {results.kind === 'rows' && results.rows.length > 0 && (
                 <ul className={'bk-stack'}>
                     {results.rows.map((row) => (
@@ -549,7 +553,7 @@ function ReceivingForm({ title, postingFrozen, zeroAllowed, categories }: Receiv
             <Notice tone={'neutral'} urgency={'none'}>
                 <p>{t('inventory.receipt_new.draft_note')}</p>
             </Notice>
-            {postingFrozen && <StateNotice state={'UXS-27'} />}
+            {postingFrozen && <StateNotice state={FROZEN_STATE} />}
             {invalid && <ErrorSummary errors={summary} />}
             {refusalState !== undefined && <StateNotice state={refusalState} {...(refusalBody === undefined ? {} : { body: refusalBody })} />}
             <Card>

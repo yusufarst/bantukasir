@@ -53,6 +53,11 @@ export default function Receiving({ document: receiving, lines }: { document: Do
     );
 }
 
+/** The name of a line's link to its movement (UXI-248), which names the line's product. */
+function movementLinkName(line: Line): string {
+    return `${t('inventory.movement.title')} ${line.product.name}`;
+}
+
 /** The way back of UXI-251. */
 function backOf(): { readonly href: string; readonly page: string } {
     const opener = openerOf(document.referrer, window.location.origin);
@@ -103,7 +108,7 @@ function ReceivingPage({ title, receiving, lines }: { title: string; receiving: 
             header: t('inventory.movement.title'),
             isAction: true,
             cell: (line) => (
-                <a className={'bk-table-link'} href={movementPage(line.movementId)} aria-label={`${t('inventory.movement.title')} ${line.product.name}`}>
+                <a className={'bk-table-link'} href={movementPage(line.movementId)} aria-label={movementLinkName(line)}>
                     {t('inventory.movement.title')}
                 </a>
             ),
