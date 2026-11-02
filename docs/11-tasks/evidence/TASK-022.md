@@ -179,7 +179,48 @@ CI run 41488829445 on `d0ad2ab` failed one test of `composer test:postgres`: `Co
 | Check | Where it ran | Time | Duration | Result |
 | --- | --- | --- | --- | --- |
 | Guard, preview on the working tree | Local | 3 November, 00:45 | under 1 min | `PASS`, no candidate |
-| `ConfirmReceivingTest`, now a test file the branch changes, with the PHP static checks and unit tests | Fast run 8 on the fix's commit | — | — | `NOT_RUN` at this writing; its result is in the executor's report |
-| The whole command contract — `test:postgres`, `test:race`, the npm steps, `build`, the browser suite with the new tests of P1, P2, R-03 and R-15 — and the image checks | CI on the pull request's new head | — | — | `NOT_RUN` at this writing (CE-41, D-117) |
+| `ConfirmReceivingTest`, now a test file the branch changes, with the PHP static checks and unit tests | Fast run 8, 41494553093 on `912c103` | 3 November, 00:48 to 01:00 | 12 min 28 s | `PASS` |
+| The image checks | CI run 41494562925 on `912c103` | 3 November, 00:48 to 00:55 | 7 min 4 s | `PASS` |
+| `composer validate`, `lint`, `analyse`, `test:unit` | Same run | 3 November, 00:51 | 40 s | `PASS` |
+| `composer test:postgres` | Same run | 3 November, 00:51 to 01:10 | 18 min 55 s | `PASS` |
+| `composer test:race` | Same run | 3 November, 01:10 to 01:12 | 1 min 53 s | `PASS` |
+| `npm run lint`, `typecheck`, `test:unit`, `build` | Same run | 3 November, 01:13 | 44 s | `PASS` |
+| `npm run test:e2e` | Same run | 3 November, 01:13 to 01:49 | 35 min 31 s | `FAIL`: the job's limit of 60 minutes ended it (section 11); tests 1 to 182 passed, 15 of tests 183 to 200 timed out, tests 201 to 288 did not run |
 
 Eight fast runs of the 10 that CE-46 allows.
+
+## 11. Fix cycle 3 on pull request #31 (CE-42, failure 2 of 3)
+
+CI run 41494562925 on `912c103` passed everything up to the browser suite, which the job's limit of 60 minutes cancelled. Every test that saves a new product through UXP-303 as its own page — `catalog.spec.ts` at lines 107 (three widths), 225, 315, 543, 642, 739, 793 and 844, and `correction.spec.ts` at lines 145 (three widths), 223 and 297 — waited for the product's page after "Simpan produk" until its timeout of 2 minutes; the tests that save no product passed. The browser suite had not run on this branch before: the earlier runs stopped at `composer test:postgres`.
+
+**Cause, a defect of this Task's change.** This branch moved UXP-303's unsaved-changes guard from `CreateFlow` to its parent `GuardedCreateFlow` (reading 8), which learnt `dirty` from a child effect through `onDirty`. In the commit where the command committed, React ran the child's effects first: `CreateFlow` visited the new product while the shell's guard (`AppShell`'s `router.on('before', …)`) still held `dirty`, so the guard prevented the visit and opened "Perubahan belum disimpan"; the address never changed. Before this branch the guard's hook stood in `CreateFlow`, declared before the visit, so the guard was cleared first.
+
+**Fix.** `pages/catalog/ProductCreate.tsx`: as its own page, `CreateFlow`'s success leaves the saved note and hands the new product's address to `onSaved`; `GuardedCreateFlow` visits it in its own effect, declared after its `useUnsavedChanges`, so the guard is cleared in the same commit before the visit. The path over a working page (UXP-405) is unchanged: its success adds the product to the draft and visits nothing, and UXP-405's own visit after RC-07 stands after its guard in the same component.
+
+**Regression test.** `catalog.spec.ts`'s first test, at three widths, waits for the product's page within `ACCESS_WAIT`, 15 seconds, and asserts no "Perubahan belum disimpan" after it; on the old code the address never changes, so it fails within 15 seconds. There is no component-test environment (Vitest runs in `node`). The same bound is on every other wait for a product's page after "Simpan produk" — `newProduct` and the corrected save of `catalog.spec.ts`, `correction.spec.ts`, `labels.spec.ts`, `stock.spec.ts`, `receiving.spec.ts` — so a return of the defect fails within 15 seconds each and cannot exhaust the job (R-19).
+
+**The rest of the browser suite, read before the push.** Tests 201 to 288 have never run: `commands/`, `configuration/`, `security/`, `shell/shell.spec.ts`, `shell/session.spec.ts`, `catalog/labels.spec.ts` and `import.spec.ts`, `inventory/`, maintenance. Each wait for `HOME` was checked against the person signed in: the probe's result is `/account` whatever the role, and the waits after a sign-in of Agus or Dewi use `homeOf` or visit `/account` first. `stock.spec.ts` was read against `Stock.tsx`, `History.tsx` and the copy: the first page comes with the page and every RD-02 read after it is a background read, the texts and labels are COPY_DECK's, RD-03's stub has `ShellIndicatorsData`'s fields. `receiving.spec.ts` uses UXP-303 over the page, which the fix does not change. No other defect was found by reading; they run first on the new head (D-117).
+
+**Targeted verification** (CE-42: the fix changes the production behaviour of a class-A Task), by `bk-reviewer-high` at High:
+
+| Round | Package | Verdict |
+| --- | --- | --- |
+| 5 | `review/TASK-022/r5`, head `912c103` with the fix uncommitted, tree `4a1f069`, previous `r4`; `--check` `UNCHANGED` | PASS: the failure's cause and its fix FIXED in code, subject to CI; no MUST-FIX; four NOTEs |
+
+| Finding | Severity | Outcome |
+| --- | --- | --- |
+| R-19: the other waits for a product's page had no bound of 15 seconds, so a return of the defect could again exhaust the job | NOTE | Fixed: the bound on each, as above |
+| R-20: the absence of the dialog is asserted after the address changed, so the bounded wait is the real check | NOTE | Recorded: the bounded wait is the regression test |
+| R-21: this record | NOTE | This section |
+| R-22: in step 1 of UXP-303 over UXP-405, the links to an exact match and to similar names are plain links without the guard, so following one loads the product and loses the receiving draft without UXS-45 | NOTE | Recorded, not changed: it predates this fix and is outside the failure that CE-42 lets this cycle fix (D-117); an open question for the Owner — hide those links over a working page, as the holder's link is, or route them through the guard, with a browser test, in this pull request or a later Task |
+
+**Checks of the cycle** (CE-45). The fix changes `ProductCreate.tsx` and six browser test files; no PHP, no PostgreSQL test and no unit test changes, so the PHP results, `test:postgres`, `test:race` and the image checks of run 41494562925 stay valid for what the fix does not touch, and the whole contract runs again on the new head.
+
+| Check | Where it ran | Time | Duration | Result |
+| --- | --- | --- | --- | --- |
+| `npm run typecheck` | Local | 3 November, 01:56 | — | `NOT_RUN`: `tsc` is not installed on this machine |
+| Guard, preview on the working tree | Local | 3 November, 02:03 | under 1 min | `PASS`, no candidate |
+| `npm run lint`, `typecheck`, `test:unit`; the PHP static checks and unit tests | Fast run 9 on the fix's commit | — | — | `NOT_RUN` at this writing; its result is in the executor's report |
+| The whole command contract with the browser suite, and the image checks | CI on the pull request's new head | — | — | `NOT_RUN` at this writing (CE-41, D-117) |
+
+Nine fast runs of the 10 that CE-46 allows, with this cycle's.

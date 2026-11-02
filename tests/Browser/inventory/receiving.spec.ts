@@ -82,7 +82,7 @@ async function newProduct(page: Page, category: string): Promise<{ id: number; n
     await page.getByRole('button', { name: 'Lanjut isi data' }).click();
     await page.getByLabel(/^Barcode pabrik/).fill(product.barcode);
     await fillAndSave(page, { sku: product.sku, category });
-    await page.waitForURL((url) => /^\/products\/\d+$/.test(url.pathname));
+    await page.waitForURL((url) => /^\/products\/\d+$/.test(url.pathname), { timeout: ACCESS_WAIT });
 
     return { id: Number(new URL(page.url()).pathname.split('/').pop()), ...product };
 }

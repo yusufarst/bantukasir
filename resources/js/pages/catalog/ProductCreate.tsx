@@ -84,13 +84,25 @@ export default function ProductCreate({ categories, code }: { categories: readon
     );
 }
 
-/** UXP-303 as its own page, with its unsaved-changes guard (UXS-45). */
+/**
+ * UXP-303 as its own page, with its unsaved-changes guard (UXS-45). The visit to the new
+ * product is made here, after the guard: the effects of one commit run child first, so a
+ * visit made by `CreateFlow` would reach the guard before it heard that nothing is left
+ * unsent, and the guard would hold the page on its dialog (CI run 41494562925).
+ */
 function GuardedCreateFlow({ title, categories, code }: { title: string; categories: readonly Category[]; code: string | null }) {
     const [dirty, setDirty] = useState(false);
+    const [saved, setSaved] = useState<string | null>(null);
 
     useUnsavedChanges(dirty);
 
-    return <CreateFlow title={title} categories={categories} code={code} onDirty={setDirty} />;
+    useEffect(() => {
+        if (saved !== null) {
+            router.visit(saved);
+        }
+    }, [saved]);
+
+    return <CreateFlow title={title} categories={categories} code={code} onDirty={setDirty} onSaved={setSaved} />;
 }
 
 /**
@@ -116,6 +128,7 @@ export function CreateFlow({
     categories,
     code,
     onDirty,
+    onSaved,
     over,
 }: {
     title: string;
@@ -123,6 +136,8 @@ export function CreateFlow({
     code: string | null;
     /** Whether data was entered and not sent, for the guard of the page that holds it. */
     onDirty: (dirty: boolean) => void;
+    /** As its own page: the address of the new product, which the page that holds the guard visits. */
+    onSaved?: (location: string) => void;
     over?: OverWorkingPage;
 }) {
     const control = useCommand(CATALOG_COMMANDS.createProduct);
@@ -188,7 +203,7 @@ export function CreateFlow({
         }
 
         leaveSavedNote(t('catalog.product_create.success', { produk: name.trim() }));
-        router.visit(location);
+        onSaved?.(location);
     }, [location]);
 
     const refusal = phase.kind === 'rejected' ? phase.refusal : null;

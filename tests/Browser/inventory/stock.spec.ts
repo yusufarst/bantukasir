@@ -67,7 +67,7 @@ async function newProduct(page: Page): Promise<string> {
     await page.getByLabel('Satuan', { exact: true }).fill('pcs');
     await page.getByLabel('Harga jual', { exact: true }).fill('7500');
     await page.getByRole('button', { name: 'Simpan produk' }).click();
-    await page.waitForURL((url) => /^\/products\/\d+$/.test(url.pathname));
+    await page.waitForURL((url) => /^\/products\/\d+$/.test(url.pathname), { timeout: ACCESS_WAIT });
 
     return name;
 }
