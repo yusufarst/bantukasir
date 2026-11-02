@@ -7,7 +7,7 @@
 | Executor | Agent `bk-executor-max`, model `claude-opus-5-5`, effort Max from the table of EXECUTION_CONTEXT section 19; review by `bk-reviewer-max`, verification by `bk-reviewer-xhigh` |
 | Branch and base | `task/TASK-021-ledger-receiving`, from `b363c634106cc29b06a7eb208349339b5542bdb3` (origin/develop) |
 | Preflight (EXC-20, EXC-21, EXC-23) | The tree clean but for `Claude outputs/` and `plan-p0-p11-review.patch`; the stash of D-030; TASK-016 `DONE`, no gate; PHP and `tsc` do not run on this machine, so every check runs in CI (D-108, D-117) |
-| Status of this file | **In progress.** Written at the Owner's stop of section 1; the sections that a close needs are listed in section 4 |
+| Status of this file | **In progress.** Written at the Owner's stop of section 1; resumed on 2 November 2026 at 15:33 (Asia/Jakarta), resume 1 of 3, on the Owner's note "Owner authorizes TASK-021 continuation from safe-shutdown checkpoint b531068." Section 4 lists what remains |
 
 ## 1. The Owner's stop
 
@@ -31,13 +31,11 @@ Times are Asia/Jakarta, 2 November 2026. PHP, PostgreSQL, the browser and every 
 
 | Check | Where it ran | Time | Duration | Result |
 | --- | --- | --- | --- | --- |
-| `composer validate`, `lint`, `analyse`, `test:unit` | — | — | — | `NOT_RUN` |
-| `npm run lint`, `typecheck`, `test:unit` | — | — | — | `NOT_RUN` |
-| `tests/Feature/Inventory/LedgerTablesTest.php` and the other changed test files | — | — | — | `NOT_RUN` |
-| The whole command contract and the image checks | CI on the pull request's final head | — | — | `NOT_RUN` (D-117) |
 | Guard, preview on the working tree | Local | 14:01 | under 1 min of scanning | `PASS`, after the candidate of section 2.1 was removed |
+| Fast run 1 of 10 (`fast-checks`): `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit`; the changed test files `RouteInventoryTest`, `SignInSessionTest`, `LedgerTablesTest` | CI run 41404230188 on `b531068` | 14:07 to 14:14 | 6 min 52 s (the job) | `PASS` |
+| The whole command contract and the image checks | CI on the pull request's final head | — | — | `NOT_RUN` (D-117) |
 
-The push of this checkpoint starts one fast run, the first of the 10 that CE-46 allows. By the Owner's order it was not awaited. Its result is not part of this file yet: read it on resume with `gh run list --branch task/TASK-021-ledger-receiving`. Expect it to be able to fail: this code has never met PHPStan, Pint or PostgreSQL, and `LedgerTablesTest` was never run. A failure there is the next thing to fix, not a surprise.
+The fast run of the checkpoint was not awaited at the stop; on resume it read green (`gh run view 41404230188`). It is evidence for the code of `b531068` only (CE-45): every later change to a file it covers runs again in the next fast run.
 
 ### 2.1 Publication guard
 

@@ -2,8 +2,13 @@
 
 namespace Tests\Feature\Catalog;
 
+use App\Domain\Access\Capabilities;
+use App\Domain\Access\Capability;
+use App\Domain\Access\Grant;
+use App\Models\User;
 use App\Queries\Catalog\ProductSearch;
 use App\Queries\Catalog\SearchFilters;
+use App\Queries\Inventory\ProductStock;
 use Illuminate\Testing\TestResponse;
 use PDO;
 use PDOStatement;
@@ -146,6 +151,8 @@ final class ProductSearchTest extends DatabaseTestCase
                     'active' => true,
                     'thumbnail' => null,
                     'activeBarcode' => false,
+                    // TASK-021: what CAP-14 gives these roles (section 3.1).
+                    'stock' => ['onHand' => '0', 'minimum' => '0', 'state' => 'OUT'],
                 ]],
                 'page' => 1,
                 'perPage' => 25,
@@ -156,6 +163,68 @@ final class ProductSearchTest extends DatabaseTestCase
                 $this->assertStringNotContainsStringIgnoringCase($word, (string) $response->getContent());
             }
         }
+    }
+
+    public function test_each_row_carries_the_stock_that_the_role_may_see_with_its_attention_state(): void
+    {
+        // TASK-021 scope item 5: INTERACTION_CONTRACTS section 3.1; CAP-14; BR-INV-40, BR-INV-43;
+        // INVENTORY section 10. Received through RC-07's Action (EXC-45).
+        $six = $this->product('STOK-6', 'Stok Enam', ['minimumStock' => '5']);
+        $five = $this->product('STOK-5', 'Stok Lima', ['minimumStock' => '5']);
+        $one = $this->product('STOK-1', 'Stok Satu', ['minimumStock' => '5']);
+        $none = $this->product('STOK-0', 'Stok Nol', ['minimumStock' => '5']);
+        $noMinimum = $this->product('STOK-M', 'Tanpa Minimum');
+        $empty = $this->product('STOK-E', 'Kosong');
+        $decimal = $this->product('STOK-D', 'Beras', ['baseUnit' => 'kg', 'quantityPrecision' => 3, 'minimumStock' => '1.5']);
+        $inactive = $this->product('STOK-X', 'Nonaktif', ['minimumStock' => '5']);
+
+        foreach ([[$six, '6'], [$five, '5'], [$one, '1'], [$noMinimum, '1'], [$decimal, '1.25'], [$inactive, '2']] as [$product, $quantity]) {
+            TokoContoh::stock($product, $quantity);
+        }
+
+        $this->as('Agus');
+        $this->postJson('/commands/product.deactivate', $this->envelopeFor('product.deactivate', ['productId' => $inactive], ['productVersion' => 1]))->assertStatus(201);
+
+        $expected = [
+            $six => ['onHand' => '6', 'minimum' => '5', 'state' => 'NORMAL'],
+            $five => ['onHand' => '5', 'minimum' => '5', 'state' => 'LOW'],
+            $one => ['onHand' => '1', 'minimum' => '5', 'state' => 'LOW'],
+            $none => ['onHand' => '0', 'minimum' => '5', 'state' => 'OUT'],
+            // A minimum of zero has no LOW interval.
+            $noMinimum => ['onHand' => '1', 'minimum' => '0', 'state' => 'NORMAL'],
+            $empty => ['onHand' => '0', 'minimum' => '0', 'state' => 'OUT'],
+            $decimal => ['onHand' => '1.25', 'minimum' => '1.5', 'state' => 'LOW'],
+            // An inactive product has no attention state (UXI-162).
+            $inactive => ['onHand' => '2', 'minimum' => '5', 'state' => null],
+        ];
+        ksort($expected);
+
+        foreach (['Hendra' => 'owner', 'Agus' => 'ops', 'Dewi' => 'combined'] as $person => $actor) {
+            $this->as($person);
+            $response = $this->search(['perPage' => '100'])->assertOk();
+            $this->assertJsonChannel($response, 'data.products.search', $actor);
+            $this->assertSame($expected, self::stocks($response), $actor);
+
+            foreach (['cost', 'valuation', 'margin', 'acquisition', 'value'] as $word) {
+                $this->assertStringNotContainsStringIgnoringCase($word, (string) $response->getContent(), $actor);
+            }
+
+            // The exact mode carries it too; RD-06 carries none.
+            $this->search(['mode' => 'exact', 'q' => 'STOK-D'])->assertOk()->assertJsonPath('rows.0.stock', $expected[$decimal]);
+            $this->assertArrayNotHasKey('stock', (array) $this->getJson(self::CHECK.'?sku=STOK-6')->assertOk()->assertJsonPath('sku.id', $six)->json('sku'), $actor);
+        }
+
+        // A cashier holds CAP-14 restricted, the stock needed at checkout: the quantity alone.
+        // The till's context opens with TASK-028, so the read proves it here.
+        $this->assertSame(Grant::Restricted, Capabilities::of(User::query()->findOrFail($this->people['Rina']['id']), Capability::Cap14));
+        $this->assertSame(Grant::Full, Capabilities::of(User::query()->findOrFail($this->people['Dewi']['id']), Capability::Cap14));
+        $page = ['rows' => [['id' => $six, 'active' => true], ['id' => $inactive, 'active' => false]], 'page' => 1, 'perPage' => 25, 'hasMore' => false];
+        $stock = app(ProductStock::class);
+        $this->assertSame([['id' => $six, 'active' => true, 'stock' => ['onHand' => '6']], ['id' => $inactive, 'active' => false, 'stock' => ['onHand' => '2']]], $stock->added($page, Grant::Restricted)['rows']);
+
+        // No grant, no stock; an empty page asks nothing.
+        $this->assertSame($page, $stock->added($page, Grant::None));
+        $this->assertSame(['rows' => [], 'page' => 9, 'perPage' => 25, 'hasMore' => false], $stock->added(['rows' => [], 'page' => 9, 'perPage' => 25, 'hasMore' => false], Grant::Full));
     }
 
     public function test_the_context_needs_its_capability_and_every_other_context_is_forbidden_until_its_task(): void
@@ -586,6 +655,27 @@ final class ProductSearchTest extends DatabaseTestCase
     private static function ids(TestResponse $response): array
     {
         return array_column((array) $response->json('rows'), 'id');
+    }
+
+    /**
+     * The stock of each row of a page, by the product's identifier, in key order.
+     *
+     * @param  TestResponse<Response>  $response
+     * @return array<int, mixed>
+     */
+    private static function stocks(TestResponse $response): array
+    {
+        $stocks = [];
+
+        foreach ((array) $response->json('rows') as $row) {
+            $values = is_array($row) ? $row : [];
+            $id = $values['id'] ?? null;
+            $stocks[is_int($id) ? $id : 0] = $values['stock'] ?? null;
+        }
+
+        ksort($stocks);
+
+        return $stocks;
     }
 
     /**

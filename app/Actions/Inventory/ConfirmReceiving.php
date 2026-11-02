@@ -33,7 +33,7 @@ use LogicException;
  * OPERATIONS_ADMIN confirm a reviewed document: each line posts one RECEIPT, with its cost
  * evidence, KNOWN or UNKNOWN. An explicit zero is the Owner's alone, with its evidence or
  * reason: no V1 page offers it to staff, who mark the cost unknown (BR-COST-04; REQ-INV-04;
- * INFORMATION_ARCHITECTURE section 6). A line of a product may repeat: each posts its own
+ * INFORMATION_ARCHITECTURE section 14). A line of a product may repeat: each posts its own
  * movement, in the order of the lines.
  *
  * The locks in the order of TR §7.1: the onboarding state, share (step 2.3); the products,

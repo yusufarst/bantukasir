@@ -779,9 +779,9 @@ The representation of issue-cost allocations, the replay and the rounding rule a
 | --- | --- | --- |
 | `id` | `bigint` | |
 | `movement_id` | `bigint` | Unique |
-| `product_id`, `movement_type`, `quantity` | | `movement_type IN ('OPENING', 'RECEIPT', 'ADJUSTMENT')`; `quantity > 0`; with `movement_id`, → `stock_movements (id, product_id, movement_type, quantity)`: the evidence belongs to one positive increase of that product and quantity |
+| `product_id`, `movement_type`, `quantity` | | `movement_type IN ('OPENING', 'RECEIPT', 'ADJUSTMENT')`; `quantity > 0 AND quantity <= 99999999.999`, the range of a movement (TECHNICAL_RULES section 11.1; TASK-021); with `movement_id`, → `stock_movements (id, product_id, movement_type, quantity)`: the evidence belongs to one positive increase of that product and quantity |
 | `cost_status`, `total_amount` | | Section 3.2 pattern with `numeric(18,6)`: the total landed acquisition amount, or UNKNOWN (BR-COST-02, BR-COST-03) |
-| `zero_cost_note` | `text` null | 1–1,000; `CHECK (total_amount IS DISTINCT FROM 0 OR zero_cost_note IS NOT NULL)`: an explicit zero carries its evidence or reason (BR-COST-04). How the Owner confirms a zero entered by OPERATIONS_ADMIN is a workflow step of RF-5 |
+| `zero_cost_note` | `text` null | 1–1,000; `CHECK (total_amount IS DISTINCT FROM 0 OR zero_cost_note IS NOT NULL)`: an explicit zero carries its evidence or reason (BR-COST-04). In V1 only the Owner enters an explicit zero, with its note: RC-07 refuses one from any other actor, who marks the cost unknown for the Owner to complete (INFORMATION_ARCHITECTURE section 14; INTERACTION_CONTRACTS RC-07; TASK-021) |
 | `reference` | `text` null | up to 100 |
 | `recorded_at`; `actor_user_id`, `actor_display_name`; `command_id` | | The Owner or OPERATIONS_ADMIN who entered it (BR-COST-05) |
 

@@ -139,6 +139,11 @@ final class CsvImportTest extends DatabaseTestCase
         $this->assertSame($categories, $this->watcher()->table('categories')->count());
         $this->assertSame(0, $this->watcher()->table('audit_events')->whereIn('action', ['PRODUCT_CREATE', 'PRICE_CHANGE'])->where('actor_user_id', $this->people['Agus']['id'])->count());
 
+        // TASK-021: an import posts no movement and records no cost or value (BR-CAT-03).
+        foreach (['stock_movements', 'stock_balances', 'receiving_documents', 'receiving_lines', 'acquisition_cost_evidence', 'inventory_valuations'] as $table) {
+            $this->assertSame(0, $this->watcher()->table($table)->count(), $table);
+        }
+
         // RP-301 keeps the filter, and RD-01 answers only the import's products.
         $page = $this->get($location)->assertOk();
         $this->assertPageChannel($page, 'ops');
@@ -148,6 +153,7 @@ final class CsvImportTest extends DatabaseTestCase
 
         $found = $this->getJson('/data/products/search?context=catalog&import='.$import)->assertOk();
         $this->assertSame(['BARU-02', 'BARU-01'], array_column(self::rowsOf($found), 'sku'), 'By name, the order of a search.');
+        $this->assertSame(array_fill(0, 2, ['onHand' => '0', 'minimum' => '0', 'state' => 'OUT']), array_column(self::rowsOf($found), 'stock'), 'Nothing on hand (BR-CAT-03).');
         $this->assertNotContains($other, array_column(self::rowsOf($found), 'id'));
         $this->assertSame([], self::rowsOf($this->getJson('/data/products/search?context=catalog&import=999999')->assertOk()));
 
