@@ -21,8 +21,8 @@ Every check ran in CI, on GitHub's hosted runner, with the local environment's c
 | Guard, preview on the working tree | Local | 14:01 | under 1 min of scanning | `PASS`, after the candidate of section 11 was removed |
 | Fast run 1 of 10 (`fast-checks`): `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit`; the changed test files `RouteInventoryTest`, `SignInSessionTest`, `LedgerTablesTest` | CI run 41404230188 on `b531068` | 14:07 to 14:14 | 6 min 52 s (the job) | `PASS`; read on resume, since the stop did not await it. Evidence for the code of `b531068` only (CE-45) |
 | Guard, preview and on the commit | Local, on `3296ca2` | 16:16 | under 1 min of scanning | `PASS`, no candidate |
-| Fast run 2: `composer validate`, `lint` | CI run 41419419566 on `3296ca2` | 16:17 | under 3 min | `PASS` |
-| Fast run 2: `composer analyse` | Same run | 16:20 | 9 s | `FAIL`: one PHPStan error, a `mixed` read of the database given to `Cost::fromDatabase()` in `ConfirmReceivingTest` (finding F-1); the run's later steps did not run |
+| Fast run 2: `composer validate`, `lint` | CI run 41419419566 on `3296ca2` | 16:20 | 18 s | `PASS` |
+| Fast run 2: `composer analyse` | Same run | 16:20 | 8 s | `FAIL`: one PHPStan error, a `mixed` read of the database given to `Cost::fromDatabase()` in `ConfirmReceivingTest` (finding F-1); the run's later steps did not run |
 | Guard, on the commit | Local, on `d6b1414` | 16:24 | under 1 min of scanning | `PASS`, no candidate |
 | Fast run 3: `composer validate`, `lint`, `analyse`, `test:unit` | CI run 41420476916 on `d6b1414` | 16:27 | 38 s | `PASS` |
 | Fast run 3: `npm run lint`, `typecheck`, `test:unit` | Same run | 16:29 | 40 s | `PASS` |
@@ -34,8 +34,24 @@ Every check ran in CI, on GitHub's hosted runner, with the local environment's c
 | `tests/Feature/Catalog/CatalogPagesTest.php` | Same run | 16:32 | 30 s | `PASS`, 9 tests, 24,714 assertions |
 | `tests/Feature/Catalog/CsvImportTest.php` | Same run | 16:33 | 1 min 12 s | `PASS`, 20 tests, 5,204 assertions |
 | `tests/Feature/Catalog/ProductSearchTest.php` | Same run | 16:34 | 52 s | `PASS`, 16 tests, 610 assertions |
-| `tests/Feature/Inventory/ConfirmReceivingTest.php` | Same run | 16:35 | 47 s | `FAIL`: 12 of 14 tests passed; two defects of the test (finding F-5); `LedgerTablesTest`, after it, did not run, and stands on fast run 1, its file and the code it exercises unchanged since (CE-45) |
-| The whole command contract and the image checks | CI on the pull request's final head | — | — | `NOT_RUN` (D-117) |
+| `tests/Feature/Inventory/ConfirmReceivingTest.php` | Same run | 16:35 | 47 s | `FAIL`: 12 of 14 tests passed; two defects of the test (finding F-5); `LedgerTablesTest`, after it, did not run |
+| Guard, on the commit | Local, on `e279dcc` | 16:41 | under 1 min of scanning | `PASS`, no candidate |
+| Fast run 4: `composer validate`, `lint`, `analyse`, `test:unit` (866 tests) | CI run 41422854985 on `e279dcc` | 16:46 | 1 min 6 s | `PASS` |
+| Fast run 4: `npm run lint`, `typecheck`, `test:unit` (21 files) | Same run | 16:47 | 1 min 0 s | `PASS` |
+| `tests/Concurrency/ReceivingRaceTest.php` | Same run | 16:49 | 11 s | `PASS`, 6 tests, 53 assertions |
+| `tests/Feature/Access/CapabilityMatrixTest.php` | Same run | 16:49 | 1 min 52 s | `PASS`, 7 tests, 2,499 assertions |
+| `tests/Feature/Access/RouteInventoryTest.php` | Same run | 16:51 | under 1 s | `PASS`, 8 tests, 937 assertions |
+| `tests/Feature/Access/SignInSessionTest.php` | Same run | 16:51 | 17 s | `PASS`, 10 tests, 198 assertions |
+| `tests/Feature/Catalog/CatalogCommandsTest.php` | Same run | 16:51 | 1 min 2 s | `PASS`, 16 tests, 647 assertions |
+| `tests/Feature/Catalog/CatalogPagesTest.php` | Same run | 16:52 | 35 s | `PASS`, 9 tests, 24,714 assertions |
+| `tests/Feature/Catalog/CsvImportTest.php` | Same run | 16:52 | 1 min 30 s | `PASS`, 20 tests, 5,204 assertions |
+| `tests/Feature/Catalog/ProductSearchTest.php` | Same run | 16:54 | 1 min 2 s | `PASS`, 16 tests, 610 assertions |
+| `tests/Feature/Inventory/ConfirmReceivingTest.php` | Same run | 16:55 | 56 s | `PASS`, 14 tests, 679 assertions |
+| `tests/Feature/Inventory/LedgerTablesTest.php` | Same run | 16:56 | 12 s | `PASS`, 19 tests, 717 assertions |
+| `composer lint`, `analyse` and `LedgerTablesTest` after the review's one change of code, the comment of R-06 (section 10) | The fast run of the final push and CI on the pull request's final head | — | — | `NOT_RUN` at this writing (CE-45) |
+| The whole command contract — `composer test:postgres`, `composer test:race`, `npm run build`, the browser suite — and the image checks | CI on the pull request's final head | — | — | `NOT_RUN` (D-117) |
+
+Fast run 4 is the run of the reviewed code: four fast runs of the 10 that CE-46 allows before the pull request.
 
 ## 3. What was built (contract section 4.1)
 
@@ -56,7 +72,7 @@ Each records what the code does and changes no business meaning:
 - INTERACTION_CONTRACTS section 3.1: the stock of a row is the object `stock`, with `onHand` for the cashier's restricted cell of CAP-14 and `onHand`, `minimum` and `state` for a full one; RD-06 carries none.
 - INTERACTION_CONTRACTS RC-07: UNKNOWN takes neither an amount nor `zeroEvidence`, and `zeroEvidence` goes with a zero alone; an explicit zero is the Owner's, refused from anyone else with `costing.field.zero_disabled` (INFORMATION_ARCHITECTURE section 14); `expected.products` is a list of `{productId, version}` naming each product of the lines once.
 - ROUTE_CONTRACTS RD-01: its handler adds the stock of `Queries\Inventory\ProductStock`.
-- SCHEMA section 5.8: the evidence's quantity is bounded above by a movement's range, as the migration checks; the sentence that left the confirmation of an Ops-entered zero to RF-5 now says that only the Owner enters one in V1.
+- SCHEMA section 5.8: the evidence's quantity is bounded above by a movement's range, as the migration checks; the sentence that left the confirmation of an Ops-entered zero to RF-5 now says that only the Owner enters one in V1, as INFORMATION_ARCHITECTURE section 14 says no V1 page offers it to staff. That section's own sentence on SCHEMA section 5.8 is now out of date; it is an approved artifact and stays (finding F-6).
 - `ConfirmReceiving`'s comment cites INFORMATION_ARCHITECTURE section 14, where the statement is, not section 6.
 
 ## 5. Readings and technical choices
@@ -67,7 +83,7 @@ Each records what the code does and changes no business meaning:
 4. COPY_DECK has no copy for a cost field (TASK-003 F-7). An amount reads `ux.validation.money` and `money_max`, as `CanonicalNumberInputTest` reads them; a balance past its range reuses `quantity_max`, a value past its range `money_max`. A document date that is not a date of the calendar is refused without a key of its field (finding F-2).
 5. The module boundary (STK-13, TASK-017 F-1): Catalog does not read Inventory. RD-01's stock and `unitLocked` come from `Queries\Inventory\ProductStock`, composed by the web layer, in one bounded statement more; RD-06 stays without stock. STK-11: Inventory does not call Costing; the Action calls both. `UpdateProduct` is an Action, which may call Inventory (STACK_AND_MODULES section 2). Costing may not use `CommandRefused`, so it throws the kernel's exceptions, which the Action converts. No dependency is new to STACK_AND_MODULES section 2.1.
 6. The attention state is null for an inactive product (INVENTORY section 10, UXI-162). CAP-14 `Full` gets the three fields; `Restricted` gets `onHand` alone. The cashier cannot reach RD-01 until TASK-028, so a test of the Query proves it.
-7. The publication number grows by one per movement, and `last_sequence` is the movement reflected: two lines of one product publish twice.
+7. The publication number grows by one per movement, and `last_sequence` is the movement reflected: two lines of one product publish twice, so a document of n lines of one product stores the number n higher and the numbers between are never stored. Every later writer of the valuation counts the same way (section 6, for TASK-023 and TASK-025).
 8. Balances and valuations are computed in memory first, then written, then the facts appended, so that a value past its range refuses the whole command before any write. A movement bumps no product version, so RC-18 reads `hasMovement` under its `FOR UPDATE`.
 9. One audit event per document, `RECEIVING_CONFIRM`, its costs in `owner_only_data` (BR-AUD-02). `product_id` is set only for a document of one product (finding F-4).
 10. `CommandIdentities::insertProcessCommand` serves the block fixture and SC-01 of TASK-036.
@@ -76,20 +92,24 @@ Each records what the code does and changes no business meaning:
 13. A document date is any date of the calendar (a pattern and `date`; the year 0000 refused), stored apart.
 14. The evidence's `reference` copies the document's reference.
 15. AC-021-07 is proven with a clock that stands still, bound after the sign-in, and the same instant as the web server's received time (`REQUEST_RECEIVED_AT`, TR-TIME-03), so that the hard end compares one time with itself. The sign-in session's limits read the same clock (`App\Http\Auth\SignInSession`), so the test keeps it bound to its end (finding F-5).
-16. Version-sensitive facts (EXC-03) are proven on PostgreSQL 18.6 by the tests, since the contract names no MCP server: a key with `ON UPDATE RESTRICT` answers SQLSTATE 23001 (`LedgerTablesTest`); `ORDER BY id FOR NO KEY UPDATE` locks the rows in that order, so a posting holds its lower product while it waits for the higher (`ReceivingRaceTest`); under READ COMMITTED a row lock that waited reads the row as the other command committed it (RACE-05's and RACE-24's tests).
+16. Version-sensitive facts (EXC-03) are proven on PostgreSQL 18.6 by the tests, since the contract names no MCP server and no documentation was fetched: a key with `ON UPDATE RESTRICT` answers SQLSTATE 23001, `restrict_violation` (`LedgerTablesTest`, whose comment no longer claims since which version; review finding R-06); `ORDER BY id FOR NO KEY UPDATE` locks the rows in that order, so a posting holds its lower product while it waits for the higher (`ReceivingRaceTest`); under READ COMMITTED a row lock that waited reads the row as the other command committed it (RACE-05's and RACE-24's tests).
+17. The test of a value at its limit publishes that value through the Costing module's own service (EXC-45) rather than through RC-07, which would need 1,000 lines at the largest cost, two documents of 500: the test database then holds a valuation that no fact yields, and the test checks no agreement of the valuation with the facts after it (review finding R-05).
 
 ## 6. Findings
 
 - **F-1.** PHPStan reads a value of the database as `mixed`, which `Cost::fromDatabase()` does not take; the test now passes it through `text()`. A fast run was spent on it.
-- **F-2, for the next change control of COPY_DECK:** no key names an invalid date of a document, nor a cost's own message (reading 4). TASK-022's date field is a date picker, so a page never sends one.
+- **F-2, for the next change control of COPY_DECK:** no key names an invalid date of a document, nor a cost's own message (reading 4). TASK-022's date field is a date picker, so a page never sends one. Two reused texts state another limit than the one passed (review finding R-02): a balance above 9,999,999,999.999 is refused at its line with `ux.validation.quantity_max`, which names the line's maximum 99.999.999,999, and a value above its maximum at the amount with `ux.validation.money_max`, which names Rp999.999.999.999. Neither is reachable by an ordinary shop.
 - **F-3, for TASK-022:** RT-12's JSON body of 1 MiB holds 500 lines of ordinary receipts many times over, but not 500 lines that each carry close to 1,000 characters of evidence outside ASCII: such a body is refused whole. Only the Owner enters such evidence; the page may warn before that.
 - **F-4, for TASK-042:** the audit's product filter finds a document of one product only (reading 9).
 - **F-5.** Fast run 3 failed two tests of `ConfirmReceivingTest`, both defects of the test: the audit writer reads the clock again after the facts, so its instant is not theirs (the test now asserts that it is not earlier); and the test of AC-021-07 bound the real clock again after its clock in the past, which `SignInSession` read as 16 days without activity, so the next request was signed out (401). A test that binds a clock keeps it to its end. A fast run was spent on them.
-- **For TASK-022:** the `receiving` and `stock` contexts, a row's stock state, RP-406's location `/stock/receivings/{document}`, RP-404's index; `unitLocked` is true on RP-302 and RP-304 from a product's first movement.
-- **For TASK-023:** `StockPosition::moved` takes a negative quantity; `ProductValuation::increased` starts a new pool at zero; the issue presence key.
+- **F-6, for the next change control of P7 (review finding R-01):** INFORMATION_ARCHITECTURE section 14 says that SCHEMA section 5.8 "allows for an Ops-entered zero that the Owner confirms and leaves that workflow to RF-5". RC-07 now refuses an explicit zero from staff at the server, and SCHEMA section 5.8 says so, as the same section 14 and UXI-236's `costing.field.zero_disabled` have it for the pages. No business meaning changes; the approved artifact is not edited by this Task.
+- **For TASK-022:** the `receiving` and `stock` contexts, a row's stock state, RP-406's location `/stock/receivings/{document}`, RP-404's index; `unitLocked` is true on RP-302 and RP-304 from a product's first movement. A staff zero sent without its evidence is refused by the FormRequest with `ux.validation.zero_evidence` before the Action's `costing.field.zero_disabled`; the page disables the zero for staff, so it never sends one (review finding R-07).
+- **For TASK-023:** `StockPosition::moved` takes a negative quantity; `ProductValuation::increased` starts a new pool at zero; the issue presence key; an allocation that records the valuation's publication number reads it as reading 7 counts it, one per movement (review finding R-03).
+- **For TASK-025:** a replay's publication counts one more on the number that the postings left, which grows by one per movement (reading 7; R-03).
 - **For TASK-028:** the cashier's stock through `Grant::Restricted`.
 - **For TASK-035:** G-10's race against a start of onboarding, through `OnboardingState::lockShared`.
-- **For TASK-036:** SC-01 through `insertProcessCommand`, RC-16, and RACE-24 with the real reconciliation.
+- **For TASK-036:** SC-01 through `insertProcessCommand`, RC-16, and RACE-24 with the real reconciliation. RC-16 takes the product guard, step 6, before `PostingBlocks::reopen`, as its comment requires; the fixture `TokoContoh::reopenPostings` does not, which sequential tests do not need (review finding R-04).
+- **For TASK-048:** RC-07's worst case for the budget of an ordinary command, 500 lines of 500 products: about 3,000 single-row statements and 1,000 deferred key checks at commit (review finding R-08).
 
 Earlier findings this Task closes: TASK-015 F-3 (RC-18's refusal at the field), TASK-017 F-2 (`unitLocked`, server side) and F-3 (a row's stock, ready for TASK-022); AC-019-03's stock tables now exist and `CsvImportTest` holds it.
 
@@ -135,11 +155,30 @@ The cases of issues, returns, the replay, the reversal and the rounding example 
 
 ## 10. Review (CE-40)
 
-Not run at this writing.
+**Self-review** of the whole change against the contract's scope items 1 to 7 and the rules it cites, before the isolated review: each item is built as section 3 says, nothing out of scope (no page, issue, reconciliation or reopening command), the lock order of TR §7.1 for the family of receiving (1; 2.1; 2.3; 6; 7; 8), and the standing obligations of EXECUTION_CONTEXT section 10 for the route, the eight tables, the command and the read. It found the first defect of F-5, the audit's instant, while fast run 3 ran; the run found the second.
+
+| Round | Agent, effort | Package | Verdict |
+| --- | --- | --- | --- |
+| 1, the adversarial review (class A) | `bk-reviewer-max`, Max | `review/TASK-021/r1`, head `e279dcc`, tree `52ff2cf`, with this file; `--check` `UNCHANGED` | PASS, no MUST-FIX; no test run asked for, every changed test file having passed on the reviewed head in fast run 41422854985 |
+
+No MUST-FIX, so no targeted verification (CE-40). The reviewer found every widened guard test of section 3 item 9 justified by what the Task adds, none weakening an assertion; it checked the lock order, RACE-05, the stock arithmetic, the valuation, the explicit zero, the FormRequest, the authorization, the schema, the failure injection and the module boundaries, and each acceptance criterion against its test.
+
+| Finding | Severity | Outcome |
+| --- | --- | --- |
+| R-01: INFORMATION_ARCHITECTURE section 14's sentence on SCHEMA section 5.8 is out of date since this Task's correction of SCHEMA | SHOULD-FIX | Recorded as finding F-6 for the next change control of P7, and in section 4; the approved artifact is not edited |
+| R-02: two reused texts state another limit than the one passed | NOTE | Recorded in F-2 |
+| R-03: the publication number per movement binds TASK-023 and TASK-025 | NOTE | Recorded in reading 7 and for both Tasks in section 6 |
+| R-04: the fixture's reopening takes no product guard | NOTE | Recorded for TASK-036, whose RC-16 takes it |
+| R-05: the test of a value at its limit writes the valuation through the Costing service | NOTE | Recorded as reading 17 |
+| R-06: the comment of SQLSTATE 23001 named a version without a source | NOTE | Fixed: the comment in `LedgerTablesTest` now says only what the test proves on 18.6 (reading 16); a comment, so no check's meaning changes, and the file runs again in CI on the final head |
+| R-07: a staff zero without evidence is refused for its evidence first | NOTE | Recorded for TASK-022 |
+| R-08: RC-07's worst case for the budget | NOTE | Recorded for TASK-048 |
+
+The reviewer's reminder: the unchanged suites that the change can affect — `CatalogRaceTest`, `BarcodeCorrectionTest`, `ProductPhotoTest`, `PrivilegeCheckTest` and the browser suite among them — run first in the whole command contract on the pull request's final head (D-117).
 
 ## 11. The guard's candidates (CE-31)
 
-The first preview, before the stop, gave one candidate of the kind `number16` in `LedgerTablesTest`: the 16-digit limit of a valuation's overflow case. It was synthetic, no real finding; the test builds the value with `str_repeat`, and the next preview passed with no candidate. `guard.sh` on `b531068`, `3296ca2` and `d6b1414`, and `guard.sh --preview` before each, list no candidate: no address, host, e-mail or home path.
+The first preview, before the stop, gave one candidate of the kind `number16` in `LedgerTablesTest`: the 16-digit limit of a valuation's overflow case. It was synthetic, no real finding; the test builds the value with `str_repeat`, and the next preview passed with no candidate. `guard.sh` on `b531068`, `3296ca2`, `d6b1414` and `e279dcc`, and `guard.sh --preview` before the first two and on this record, list no candidate: no address, host, e-mail or home path. The guard on the record's commit is reported with the pull request, because this file cannot name its own commit.
 
 ## 12. Operations (EXC-47)
 

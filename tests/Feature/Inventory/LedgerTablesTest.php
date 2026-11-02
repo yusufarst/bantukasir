@@ -449,7 +449,8 @@ final class LedgerTablesTest extends DatabaseTestCase
 
         TokoContoh::stock($this->product, '5');
 
-        // SQLSTATE 23001: since PostgreSQL 18 a RESTRICT action has its own code.
+        // SQLSTATE 23001, restrict_violation: what the pinned PostgreSQL 18.6 answers for the key's
+        // RESTRICT action, as this test proves (evidence reading 16).
         $this->assertWriteRefused(fn (Connection $c) => $c->table('products')->where('id', $this->product)->update(['base_unit' => 'kg']), '23001', 'stock_movements_product_unit_fk');
         $this->assertWriteRefused(fn (Connection $c) => $c->table('products')->where('id', $this->product)->update(['quantity_precision' => 2]), '23001', 'stock_movements_product_unit_fk');
 
