@@ -187,7 +187,7 @@ final class ConfirmReceivingTest extends DatabaseTestCase
 
         // The average, Rp12.000, is one division of the exact sums, rounded once.
         $value = $this->watcher()->table('inventory_valuations')->where('product_id', $this->pen)->value('value');
-        $this->assertSame('12000', Cost::quotient(Cost::fromDatabase($value, 'KNOWN')->amount(), BigDecimal::of('20'))->toCanonical());
+        $this->assertSame('12000', Cost::quotient(Cost::fromDatabase(self::text($value), 'KNOWN')->amount(), BigDecimal::of('20'))->toCanonical());
 
         // Stock with UNKNOWN cost makes the value UNKNOWN; a later KNOWN receipt leaves it so while
         // stock remains, since only stock at zero starts a new pool.

@@ -33,6 +33,9 @@ Times are Asia/Jakarta, 2 November 2026. PHP, PostgreSQL, the browser and every 
 | --- | --- | --- | --- | --- |
 | Guard, preview on the working tree | Local | 14:01 | under 1 min of scanning | `PASS`, after the candidate of section 2.1 was removed |
 | Fast run 1 of 10 (`fast-checks`): `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit`; the changed test files `RouteInventoryTest`, `SignInSessionTest`, `LedgerTablesTest` | CI run 41404230188 on `b531068` | 14:07 to 14:14 | 6 min 52 s (the job) | `PASS` |
+| Guard, preview and on the commit | Local, on `3296ca2` | 16:16 | under 1 min of scanning | `PASS`, no candidate |
+| Fast run 2 of 10: `composer validate`, `lint` | CI run 41419419566 on `3296ca2` | 16:17 | under 3 min | `PASS` |
+| Fast run 2: `composer analyse` | Same run | 16:20 | 9 s | `FAIL`: one PHPStan error, a `mixed` read of the database given to `Cost::fromDatabase()` in `ConfirmReceivingTest` (finding F-1); the run's later steps did not run |
 | The whole command contract and the image checks | CI on the pull request's final head | — | — | `NOT_RUN` (D-117) |
 
 The fast run of the checkpoint was not awaited at the stop; on resume it read green (`gh run view 41404230188`). It is evidence for the code of `b531068` only (CE-45): every later change to a file it covers runs again in the next fast run.
