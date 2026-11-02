@@ -33,10 +33,14 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | `composer validate`, `lint`, `analyse`, `test:unit` | Fast run 41479313079 on `8bda0e0` | 23:16 to 23:17 | 1 min 7 s | `PASS` |
 | `npm run lint`, `typecheck`, `test:unit` | Same run | 23:18 to 23:19 | 1 min 0 s | `PASS` |
 | The PostgreSQL test files that the branch changes, with the new cases of R-01 and R-02 in `StockAttentionTest`, `StockPagesTest` and `ReceivingPagesTest`, and the changed `ReceivingsController` | Same run | 23:19 to 23:24 | 4 min 33 s | `PASS` |
+| Guard (Gitleaks 8.30.1, the secret scan, identity, candidates) | Local, on `e269506`, the fix of R-11 (round 2) | 23:32 | under 1 min of scanning | `PASS`, no candidate |
+| `composer validate`, `lint`, `analyse`, `test:unit` | Fast run 41482579180 on `e269506` | 23:35 to 23:36 | 39 s | `PASS` |
+| `npm run lint`, `typecheck`, `test:unit` | Same run | 23:36 to 23:37 | 39 s | `PASS` |
+| The PostgreSQL test files that the branch changes, `StockAttentionTest` with the name of line separators among them | Same run | 23:37 to 23:41 | 3 min 50 s | `PASS` |
 | `npx tsc --noEmit`, `npx eslint` | Local | 22:05, 23:10 | — | `NOT_RUN`: neither is installed on this machine |
 | The whole command contract — `test:postgres`, `test:race`, `build`, the browser suite with `tests/Browser/inventory/` and the changed browser files — and the image checks | CI on the pull request's final head | — | — | `NOT_RUN` at this writing (CE-41, D-117) |
 
-Fast run 4, 41473137685 on `65bb79d`, is the run of the code to review; fast run 5, 41479313079 on `8bda0e0`, that of the review's fixes (section 7): five fast runs of the 10 that CE-46 allows. The new browser tests of R-03 and the changed `ReceivingCreate.tsx` run first in the browser suite on the pull request's final head.
+Fast run 4, 41473137685 on `65bb79d`, is the run of the code to review; fast run 5, 41479313079 on `8bda0e0`, that of the review's fixes (section 7), and fast run 6, 41482579180 on `e269506`, that of the fix of round 2's R-11: six fast runs of the 10 that CE-46 allows. The record's commit changes documents only. The new browser tests of R-03 and the changed `ReceivingCreate.tsx` run first in the browser suite on the pull request's final head.
 
 ## 2. What was built (contract section 4.1)
 
@@ -101,3 +105,31 @@ Fast run 4, 41473137685 on `65bb79d`, is the run of the code to review; fast run
 ## 7. Review (CE-40)
 
 **Self-review** of the whole change against the contract's scope items 1 to 4 and the rules it cites, before the isolated review: each item is built as section 2 says; nothing out of scope (no adjustment, reversal, cost correction, incident or migration); every route with its gate, the parameters of its row as allowlists and NOT_FOUND for a guessed identifier; no cost on a staff account's page but the purchase cost of RP-406 (CAP-12), and the cost evidence of RP-403 for the Owner alone; the draft of RP-405 in page memory only; the 37 controls of section 4.2 against TRACEABILITY section 9.2, with those of later Tasks absent (reading 13). It found the empty typed search of RP-405 shown as an unknown code, fixed before fast run 2 to UXS-03.
+
+| Round | Agent, effort | Package | Verdict |
+| --- | --- | --- | --- |
+| 1, the adversarial review (class A) | `bk-reviewer-high`, High | `review/TASK-022/r1`, head `65bb79d`, tree `d05e12e`, with this file; `--check` `UNCHANGED` | FAIL: three MUST-FIX, four SHOULD-FIX, five NOTEs |
+| 2, the targeted verification of the MUST-FIX | `bk-reviewer-high`, High | `review/TASK-022/r2`, head `8bda0e0`, tree `06eace9`, previous `r1`; `--check` `UNCHANGED` | PASS: R-01 to R-03 FIXED, no new MUST-FIX; one SHOULD-FIX, two NOTEs |
+
+The reviewer found the widened guard tests of section 2 item 7 justified by what the Task adds. Every fix of code has its regression test; the fixes of round 1 are in `8bda0e0`, run in fast run 5, and that of R-11 in `e269506`, run in fast run 6.
+
+| Finding | Severity | Outcome |
+| --- | --- | --- |
+| R-01: a cursor escaped every character outside ASCII and every slash, so a page past a long name in another script exceeded the cursor's limit of 400 and was refused | MUST-FIX | Fixed: `Keyset::encode` leaves them unescaped, and `Keyset::CURSOR`, of up to 1,400 characters, is the rule of `after` and `before` in the three requests; `StockAttentionTest` pages past two names of 198 four-byte characters. Verified FIXED |
+| R-02: a cursor with a day that does not exist, the year 0000, or a text with a control character reached PostgreSQL and gave a server error | MUST-FIX | Fixed: `Keyset::isInstant` reads the time back exactly, from the year 1, and a text refuses `\p{Cc}`; VALIDATION_FAILED cases on RD-02, RP-402 (both ways and in a product's order) and RP-404. Verified FIXED |
+| R-03: no browser test of UXP-405's uncertain answer or of its refusals | MUST-FIX | Fixed: two tests in `receiving.spec.ts`, the lost answer with the draft frozen and "Kirim ulang" sending the same request, which commits, and VALIDATION_FAILED, STALE_VERSION with the re-read, ONBOARDING_FREEZE, PRODUCT_INACTIVE and POSTING_BLOCKED with their line and message. Verified FIXED by reading; the tests run first on the pull request's final head (D-117) |
+| R-04: a refusal of the reference or the document date showed nowhere | SHOULD-FIX | Fixed: each at its field and in the error summary |
+| R-05: the re-read after STALE_VERSION searched only by the SKU as reviewed, which may itself have changed | SHOULD-FIX | Fixed: by the SKU, then by the name, matched by the product's key |
+| R-06: the widths of the browser tests, the Owner's view of UXI-225, RP-302's section "Stok" and UXI-056 have no browser test of their own | SHOULD-FIX | Recorded, not built: each is covered at L4 (`StockPagesTest`, `ProductSearchTest`, the channel allowlists) and the pages run at the widths named in `stock.spec.ts` and `receiving.spec.ts`; more browser tests would run first on the final head with no fast run to catch their defects, at the cost of a fix cycle (D-117) |
+| R-07: the evidence lacked the tables of the Definition of Done and the criteria, and its findings were out of order | SHOULD-FIX | Fixed: sections 4 to 6 |
+| R-08, R-09: the counts of a refresh past 100 rows; UXS-21 where UXS-22 is named | NOTE | Recorded as F-6 |
+| R-10: the zero's note of RP-406 shown by role, where RP-403 uses CAP-20 | NOTE | Fixed: `ReceivingsController::show` asks CAP-20; the Owner alone holds it, so nothing shown changes |
+| R-11 (round 1): no index for RP-402's and RP-404's orders | NOTE | Recorded as F-3, for TASK-048 |
+| R-12 (round 1): the badge's tests of RD-03 to be confirmed in the browser run | NOTE | Recorded: `stock.spec.ts` runs on the final head |
+| R-11 (round 2): U+2028 and U+2029, allowed in a name, were still escaped in six bytes each, so a name of many of them exceeded the limit | SHOULD-FIX | Fixed: `JSON_UNESCAPED_LINE_TERMINATORS`, and a third long name of them in the R-01 test |
+| R-12 (round 2): the refusal by index is tested with one line, and "Cek status" is not clicked | NOTE | Recorded: the index is the TASK-021 contract's, and "Cek status" is the command client's, tested in `tests/Browser/commands/` |
+| R-13 (round 2): a refusal of the document date has no message key on the server | NOTE | Recorded: the date field always sends `YYYY-MM-DD`, so the server refuses no well-formed date; for the next change of RC-07's request |
+
+## 8. The guard's candidates (CE-31)
+
+`guard.sh --preview` and `guard.sh` on every checkpoint, `7526324` to `e269506`, list no candidate: no address, host, e-mail or home path. The guard on the record's commit is reported with the pull request, because this file cannot name its own commit.
