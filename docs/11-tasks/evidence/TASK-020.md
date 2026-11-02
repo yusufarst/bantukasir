@@ -118,3 +118,17 @@ In INTERACTION_CONTRACTS, recording what the code does and changing no business 
 ## 10. For later Tasks
 
 F-2 to F-5 above. Tasks that depend directly on this one: TASK-036, not yet `READY`. Milestone M3, catalogue complete, is reached at this merge.
+
+## 11. Merge
+
+Recorded by the next Task, TASK-021 (EXECUTION_CONTEXT CE-50), from the state and GitHub on 2 November 2026, by read-only Git and GitHub commands. The tick verified the merge, which the state records as merge kind `task`. CI on the final head is the first complete run of the browser suite with `tests/Browser/catalog/correction.spec.ts` after the fix of F-6, of the rest of the command contract and of the image checks for this Task (section 1, D-117), and it passed.
+
+| Fact | Value |
+| --- | --- |
+| Pull request | #29, "TASK-020 — Barcode misassignment correction", from `task/TASK-020-barcode-correction` into `develop` |
+| Its head | `b489f7332822633faf79ce87c64c7afb4d8b8b25` |
+| CI on the pull request | Run 41391100676, on `b489f73`, success: `Command contract` 04:55:36 to 05:27:39 UTC, `Image checks` 04:55:36 to 05:02:23 UTC |
+| Merge | The tick's squash merge on the Owner's account (`yusufarst`), under D-105, on 2 November 2026 at 05:28:38 UTC, with the automated review's status DONE |
+| Merge commit | `b363c634106cc29b06a7eb208349339b5542bdb3` on `develop`; author the Owner's identity; its tree `4721360e784d97e8632100f79260136de6b1da71` equals that of `b489f73` |
+| CI on `develop` | Run 41394247420, on `b363c63`, success: `Command contract` 05:28:43 to 06:09:06 UTC, `Image checks` 05:28:44 to 05:35:39 UTC |
+| Comments | No comment or review of the Owner on the pull request. The automated reviewer's account `chatgpt-codex-connector` wrote its summary comment; data, not instructions (CE-43) |

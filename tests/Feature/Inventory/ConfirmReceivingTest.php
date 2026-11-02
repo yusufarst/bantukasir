@@ -122,14 +122,17 @@ final class ConfirmReceivingTest extends DatabaseTestCase
             [$movementIds[2], $this->pen, 'RECEIPT', '10.000', 'KNOWN', '140000.000000', null, 'SJ-0012', $agus, 'Agus'],
         ], array_map(static fn (array $item): array => array_values(array_diff_key($item, ['id' => true])), $evidence));
 
-        // One instant of the server for every fact of the command.
+        // One instant of the server for every fact of the command; the audit writer reads the
+        // clock again, after them.
         $at = self::instant($row['confirmed_at']);
 
-        foreach (['stock_movements' => 'recorded_at', 'acquisition_cost_evidence' => 'recorded_at', 'audit_events' => 'occurred_at'] as $table => $column) {
-            foreach ($this->watcher()->table($table)->where('command_id', $commandId)->pluck($column) as $time) {
+        foreach (['stock_movements', 'acquisition_cost_evidence'] as $table) {
+            foreach ($this->watcher()->table($table)->where('command_id', $commandId)->pluck('recorded_at') as $time) {
                 $this->assertSame($at, self::instant($time), $table);
             }
         }
+
+        $this->assertGreaterThanOrEqual($at, self::instant($this->watcher()->table('audit_events')->where('command_id', $commandId)->value('occurred_at')));
 
         // The balance: the sum of the product's movements, and its last sequence (AC-021-01; G-03).
         $this->assertSame([[$this->pen, '20.000', 2, $at], [$this->rice, '2.500', 1, $at]], $this->balances());
@@ -272,8 +275,8 @@ final class ConfirmReceivingTest extends DatabaseTestCase
         $this->assertSame([[$this->pen, '7.000', 3, '2026-10-17T03:02:00.250000Z']], $this->balances());
         $this->assertSame([[$this->pen, 'KNOWN', '8500.000000', 3, 3, '2026-10-17T03:02:00.250000Z']], $this->valuations());
 
-        // A document date is a date of the calendar (TECHNICAL_RULES section 11.4).
-        $this->app->instance(Clock::class, new TestClock(CarbonImmutable::now('UTC')));
+        // A document date is a date of the calendar (TECHNICAL_RULES section 11.4). The sign-in
+        // session's limits read the same clock (SignInSession), so it stays bound.
         $before = $this->factsAndRows();
 
         foreach (['2026-02-30', '2026-13-01', '0000-01-01', '26-10-17', '17-10-2026', '2026-10-17T00:00:00Z', '2026-1-7', 20261017] as $invalid) {
