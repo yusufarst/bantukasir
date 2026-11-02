@@ -256,6 +256,11 @@ test('a barcode retired as a misassignment is attached again; what cannot be cor
     // UXI-190, retired as a misassignment; the scan into "Produk yang benar" chooses by its code.
     await scanToken(page, wrong.barcode);
     await expect(page.getByText(`Dipensiunkan karena salah pasang dari ${wrong.name}`)).toBeVisible();
+
+    // The product it left is not offered either (G-09; review findings R-01, R-11).
+    await page.getByLabel('Produk yang benar', { exact: true }).fill(wrong.name);
+    await expect(page.getByText('Tidak ada hasil', { exact: false })).toBeVisible();
+
     await page.getByLabel('Produk yang benar', { exact: true }).fill(right.barcode);
     await page.getByLabel('Produk yang benar', { exact: true }).press('Enter');
     await expect(page.getByLabel('Produk yang benar', { exact: true })).toHaveValue(right.name);

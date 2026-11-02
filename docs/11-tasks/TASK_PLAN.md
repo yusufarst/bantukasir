@@ -87,7 +87,7 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-017](tasks/TASK-017-catalog-pages.md) | Catalogue pages | 4 | C | L | B | TASK-016 | — | `DONE` |
 | [TASK-018](tasks/TASK-018-photos-labels.md) | Product photos and barcode labels | 4 | C | M | A | TASK-017 | — | `DONE` |
 | [TASK-019](tasks/TASK-019-csv-import.md) | CSV product import | 4 | C | M | A | TASK-017 | — | `DONE` |
-| [TASK-020](tasks/TASK-020-barcode-correction.md) | Barcode misassignment correction | 4 | C | M | A | TASK-017 | — | `READY` |
+| [TASK-020](tasks/TASK-020-barcode-correction.md) | Barcode misassignment correction | 4 | C | M | A | TASK-017 | — | `DONE` |
 | [TASK-021](tasks/TASK-021-ledger-receiving.md) | Stock ledger, valuation and receiving (server) | 5 | I | XL | A | TASK-016 | — | `READY` |
 | [TASK-022](tasks/TASK-022-receiving-stock-pages.md) | Receiving, stock and history pages | 5 | I | L | A | TASK-021, TASK-017 | — | `TODO` |
 | [TASK-023](tasks/TASK-023-manual-issue.md) | Manual issue and issue-cost allocation | 5 | I | L | A | TASK-022 | — | `TODO` |
@@ -119,7 +119,7 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-049](tasks/TASK-049-release-readiness.md) | Release readiness: staging, UAT and first installation | 10 | R | L | V | TASK-045, TASK-047, TASK-048 | G1, G2, G3, G4, DEVICES, TARGET, GATE-PUBLISH | `TODO` |
 | [TASK-050](tasks/TASK-050-production-pilot.md) | Production release, cutover and pilot acceptance | 10 | R | L | V | TASK-049 | RELEASE, GATE-PUBLISH, G4 | `TODO` |
 
-Totals: `TODO` 28; `READY` 3; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 19; `SUPERSEDED` 0.
+Totals: `TODO` 28; `READY` 2; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 20; `SUPERSEDED` 0.
 
 ## 5. Implementation sequence
 

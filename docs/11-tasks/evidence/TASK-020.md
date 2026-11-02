@@ -10,49 +10,83 @@
 
 ## 1. Checks
 
-Every check ran in CI, on GitHub's hosted runner, with the local environment's containers and synthetic data, started by the executor's push (EXC-61, CE-44, CE-46). Times are Asia/Jakarta, 2 November 2026.
+Every check ran in CI, on GitHub's hosted runner, with the local environment's containers and synthetic data, started by the executor's push (EXC-61, CE-44, CE-46). Times are Asia/Jakarta, 2 November 2026. Three fast runs of the 10 that CE-46 allows.
 
 | Check | Where it ran | Time | Duration | Result |
 | --- | --- | --- | --- | --- |
 | `npm run lint` | Fast run 41381904592 on `3056a0f` | 10:18 | under 1 min | `FAIL` — two string literals inside JSX (finding F-1), fixed in `de0c0bc`; that run's later steps did not run |
-| `composer validate`, `composer lint` | Fast run 41382985417 on `de0c0bc` | 10:28 | 32 s | `PASS` |
-| `composer analyse` | Same run | 10:29 | 14 s | `PASS` |
-| `composer test:unit` | Same run | 10:29 | 20 s | `PASS`, 840 tests |
-| `npm run lint`, `typecheck`, `test:unit` | Same run | 10:30 | 1 min 3 s | `PASS` |
-| `tests/Concurrency/BarcodeCorrectionRaceTest.php` | Same run | 10:31 | 16 s | `PASS`, 10 tests, 138 assertions |
-| `tests/Feature/Catalog/BarcodeCorrectionTest.php` | Same run | 10:33 | 1 min 15 s | `PASS`, 18 tests, 1,741 assertions |
-| `tests/Feature/Access/CapabilityMatrixTest.php` | Same run | 10:31 | 1 min 56 s | `PASS`, 7 tests, 2,481 assertions |
-| `tests/Feature/Access/RouteInventoryTest.php` | Same run | 10:33 | 1 s | `PASS`, 8 tests, 925 assertions |
-| `tests/Feature/Catalog/ProductSearchTest.php` | Same run | 10:35 | 59 s | `PASS`, 15 tests, 545 assertions |
-| Guard (Gitleaks 8.30.1, the secret scan, identity, candidates) | Local, on `3056a0f` and `de0c0bc` | 10:13, 10:24 | under 1 min each | `PASS`, no candidate |
-| Browser suite, with `tests/Browser/catalog/correction.spec.ts` | CI on the pull request's final head | — | — | `NOT_RUN` until then (CE-44, D-117) |
-| `composer test:postgres`, `composer test:race`, `npm run build`, image checks | CI on the pull request's final head | — | — | `NOT_RUN` until then (CE-44, D-117) |
+| The static checks, unit tests and changed test files below | Fast run 41382985417 on `de0c0bc` | 10:25 | 11 min | `PASS`; the code the review read, invalidated in part by its fixes |
+| `composer validate`, `lint`, `analyse`, `test:unit` (840 tests) | Fast run 41385613322 on `a0f7444` | 10:58 | under 2 min | `PASS` |
+| `npm run lint`, `typecheck`, `test:unit` | Same run | 11:00 | about 1 min | `PASS` |
+| `tests/Concurrency/BarcodeCorrectionRaceTest.php` | Same run | 11:01 | 16 s | `PASS`, 10 tests, 138 assertions |
+| `tests/Feature/Catalog/BarcodeCorrectionTest.php`, with R-01's and R-06's tests | Same run | 11:03 | 1 min 20 s | `PASS`, 19 tests, 1,769 assertions |
+| `tests/Feature/Access/CapabilityMatrixTest.php` | Same run | 11:01 | 1 min 54 s | `PASS`, 7 tests, 2,481 assertions |
+| `tests/Feature/Access/RouteInventoryTest.php` | Same run | 11:03 | 1 s | `PASS`, 8 tests, 925 assertions |
+| `tests/Feature/Catalog/ProductSearchTest.php` | Same run | 11:04 | 59 s | `PASS`, 15 tests, 545 assertions |
+| Guard (Gitleaks 8.30.1, the secret scan, identity, candidates) | Local, on `3056a0f`, `de0c0bc`, `a0f7444` | 10:13, 10:24, 10:54 | under 1 min of scanning each | `PASS`, no candidate |
+| Browser suite, with `tests/Browser/catalog/correction.spec.ts` (R-02 to R-04's and R-11's cases among them) | CI on the pull request's final head | — | — | `NOT_RUN` at this writing (CE-44, D-117) |
+| `composer test:postgres`, `composer test:race`, `npm run build`, image checks | CI on the pull request's final head | — | — | `NOT_RUN` at this writing (CE-44, D-117) |
 
-## 2. Readings and technical choices
+## 2. What was built (contract section 4.1)
+
+1. **RD-05** (`TokenLookupController`, `TokenLookupRequest`, `Queries\Catalog\TokenMapping`, `TokenMappingData`) and **RD-01's context `correction`** (`ProductSearchRequest`, `SearchFilters::activeOnly`, `ProductSearch`).
+2. **RC-30** (`CorrectBarcodeMisassignment`, its FormRequest and controller; `CurrentMapping`; `Barcodes::currentMapping`, `insertCorrection`, `activateCorrection`, `notCorrectable`), with its line in `CommandActions::ACTIONS`.
+3. **RP-305** (`BarcodeCorrectionController`, `resources/js/pages/catalog/BarcodeCorrection.tsx`) with UXI-190 to UXI-198, and **UXI-174** on RP-302, by the prop `canCorrectBarcode` (CAP-07).
+
+## 3. Technical corrections of specifications (EXC-81)
+
+In INTERACTION_CONTRACTS, recording what the code does and changing no business meaning: RC-30's expected `mapping` names `productId` and `state`, and its token is one retired "from another product", as G-09 says; section 3.1, a code whose own product is inactive answers none in the context `correction`; section 3.5, the last mapping decides, and a token never mapped answers with `kind` null.
+
+## 4. Readings and technical choices
 
 1. **Only the token's last mapping decides.** A token's mappings form one chain, so an earlier retirement was already corrected, and a retirement for another reason after a correction ends what could be corrected (BR-CAT-19, BR-CAT-51; `CurrentMapping`).
 2. **The order of RC-30's checks** is its text's: `not_correctable`, then `STALE_VERSION`. A second correction to the same product finds the token active there and is `BARCODE_NOT_ELIGIBLE`; to another product, `STALE_VERSION`. RACE-17 names `DUPLICATE_BARCODE` or `BARCODE_NOT_ELIGIBLE` for "another attach", which an RC-27 or RC-17 is; two moves answer as RC-30 and WF-17 say.
-3. **A mapping other than the one read before the locks is `STALE_VERSION`**, even when it looks as reviewed: the token moved away and back, and its product's lock may not be held.
-4. **A correction always moves the token to a different product (G-09).** A token retired as a misassignment does not return to the product of its last mapping, which would reuse a retired token and correct nothing (BR-CAT-19, BR-CAT-51). RC-30's text now says so, a technical correction under EXC-81 (review finding R-01). An earlier product of the chain is a different product again, since only the last mapping decides.
+3. **A mapping other than the one read before the locks is `STALE_VERSION`**, even when it looks as reviewed: the token moved away and back during the command, and its product's lock may not be held. A move away and back before the command passes as reviewed (R-09, accepted).
+4. **A correction always moves the token to a different product (G-09).** A token retired as a misassignment does not return to the product of its last mapping, which would reuse a retired token and correct nothing (BR-CAT-19, BR-CAT-51; review finding R-01). An earlier product of the chain is a different product again, since only the last mapping decides.
 5. **An inactive target at the command.** RD-01's context offers active products only, and RC-30 lists no refusal for an inactive one; RC-27 lets an inactive product take a token (UXI-171). So a product deactivated after the search still takes the token, which a test pins. UXI-194's result states hold no UXS-32.
-6. **`correction` in the mode `exact`.** The active flag is judged on the code's own product after the read, never in the query, where it could pass over that product for another's SKU (TASK-016's reason for `exact` having no filter). Recorded in INTERACTION_CONTRACTS section 3.1.
-7. **RD-05's `mapping`** is the expected value of RC-30, with the product's name for the page: null when the token cannot be corrected. A token never mapped answers with `kind` null and no refusal, for UXS-33. Both recorded in INTERACTION_CONTRACTS, sections 3.5 and RC-30, with the names `productId` and `state`.
+6. **`correction` in the mode `exact`.** The active flag is judged on the code's own product after the read, never in the query, where it could pass over that product for another's SKU (TASK-016's reason for `exact` having no filter).
+7. **RD-05's `mapping`** is the expected value of RC-30, with the product's name for the page: null when the token cannot be corrected. A token never mapped answers with `kind` null and no refusal, for UXS-33.
 8. **`status` in another context** is refused, as TASK-015's finding F-5 asked of the first Task that adds a context.
-9. **No new copy.** A choice of product stands in the field and its SKU in the hint; the product that the token is on is left out of the results; "Kembali ubah" exists only in the review (UXI-195), since "Tinjau" starts a new request itself.
+9. **No new copy.** A choice of product stands in the field and its SKU in the hint; the product that the token was on is left out of the results; "Kembali ubah" exists only in the review (UXI-195), since "Tinjau" starts a new request itself.
 10. **Test widened, with its reason:** `ProductSearchTest`'s list of contexts forbidden until their Task no longer names `correction` for the Owner, because this Task opens it; Agus and Dewi stay refused.
 
-## 3. For later Tasks
+## 5. Findings
 
+- **F-1.** ESLint's rule on user-facing literals reads an array literal inside a JSX attribute as text, so a `key` or a `kind` there is refused. Both moved to a constant. A fast run was spent on it.
 - **F-2, for TASK-028:** RACE-18's Sale side, a cart line taken before a move keeps its product (the contract's section 12).
 - **F-3, for TASK-042:** the event `BARCODE_CORRECTION` holds the reason in `audit_events.reason` and `kind`, `fromProductId`, `toProductId`, `correctedMappingId` and `mappingId` in `change_data`; `audit.action.barcode_correction` is in COPY_DECK, not yet in `lang/id`.
 - **F-4, for the next change control of P7 (R-10):** UI_STATES' row of UXP-305 omits UXS-37, which RC-30's `DUPLICATE_BARCODE` needs, and UXS-22, which its reads need. The page shows both; UI_STATES is an approved artifact and stays.
-- **F-5, for TASK-044 or the next change control (R-07):** Enter on the code of the product the token is on shows UXS-33, and Enter on a typed name replaces listed results with UXS-33; after a re-read that puts the token on the chosen product, "Tinjau" says "Isi barcode, produk yang benar, dan alasan." while the field still shows it. No copy exists for a better text.
+- **F-5, for TASK-044 or the next change control (R-07, R-12):** Enter on the code of the product the token was on shows UXS-33, and Enter on a typed name replaces listed results with UXS-33; after a re-read that puts the token on the chosen product, "Tinjau" says "Isi barcode, produk yang benar, dan alasan." while the field still shows it. `not_correctable` says that a barcode retired as a misassignment can be attached, which does not explain the refusal of the product it left; the page cannot send that request. No copy exists for a better text.
 
-## 5. Review
+## 6. Definition of Done (TEST_STRATEGY section 10)
+
+| Dimension | Result | Reason |
+| --- | --- | --- |
+| Business | PASS | AC-020-01 to AC-020-04 below; REQ-CAT-13; WF-17 |
+| UI and UX | PASS, subject to the browser suite on the final head | The approved P7 artifacts; UXI-174 and UXI-190 to UXI-198; `correction.spec.ts` at three widths with axe |
+| Backend | PASS | FormRequest allowlists, the actor guard in the transaction, the DTO and its channel allowlist, L4 tests |
+| Database | N/A | No migration; the keys of TASK-016 are used as written |
+| Security | PASS | The Owner alone at the route and in the Action; recent authentication; the route inventory and the capability matrix; no secret; the static checks |
+| Data integrity | PASS | Append-only facts, the retirement and correction in one transaction with audit and result; identity, RACE-01, RACE-02, RACE-17 to RACE-19; failure injection after each of the 6 and 4 write steps |
+| Performance | PASS | One statement per lookup, at most 100 mappings, RD-01's paging; the budgets are measured at TASK-048 |
+| Operations | N/A | No backup, runbook or status impact: no new table or kind of file |
+| Verification | PASS, subject to CI on the final head | Self-review, the review of class A and its targeted check (section 7); a fast run green on the fixes (section 1); the whole command contract and the image checks run on the pull request's final head (CE-41, D-117) |
+
+## 7. Acceptance criteria
+
+| Criterion | Status | Where |
+| --- | --- | --- |
+| AC-020-01 | PASS on the fast run | `BarcodeCorrectionTest`: the roles at the route and in the Action, the reason, recent authentication; `CapabilityMatrixTest` |
+| AC-020-02 | PASS on the fast run | `BarcodeCorrectionTest`: the move, the re-attachment, every refused token |
+| AC-020-03 | PASS on the fast run | `BarcodeCorrectionRaceTest`: RACE-17, RACE-19, and RACE-18's lookups at every write step of a move and a re-attachment |
+| AC-020-04 | `NOT_RUN` until the final head | `tests/Browser/catalog/correction.spec.ts`; the page's L4 answer passes on the fast run |
+
+## 8. Review (CE-40)
 
 | Round | Agent, effort | Package | Verdict |
 | --- | --- | --- | --- |
-| 1, the adversarial review (class A) | `bk-reviewer-high`, High | `review/TASK-020/r1`, head `de0c0bc` with the evidence, `UNCHANGED` after it | FAIL, one MUST-FIX |
+| 1, the adversarial review (class A) | `bk-reviewer-high`, High | `review/TASK-020/r1`, head `de0c0bc` with the evidence; `--check` `UNCHANGED` | FAIL, one MUST-FIX |
+| 2, the targeted check of R-01 | `bk-reviewer-high`, High | `review/TASK-020/r2`, head `a0f7444`; `--check` `UNCHANGED` | PASS, R-01 FIXED, by reading |
 
 | Finding | Severity | Outcome |
 | --- | --- | --- |
@@ -66,7 +100,14 @@ Every check ran in CI, on GitHub's hosted runner, with the local environment's c
 | R-08: after UXS-17 the page shows the current mapping, not the one reviewed | NOTE | Recorded: the notice and the current mapping stand; the reviewed text is in the review just closed, and no key names an earlier mapping |
 | R-09: a token moved away and back between the lookup and the command passes as reviewed | NOTE | Accepted: `expected.mapping` is product and state, as RC-30 says, and the end state is what was reviewed |
 | R-10 | NOTE | Recorded as F-4 |
+| R-11: the exclusion browser-tested for an active token only | NOTE, round 2 | Fixed: one step on the retired path of `correction.spec.ts`, first run on the final head |
+| R-12 | NOTE, round 2 | Recorded in F-5 |
+| R-13: the order of this file | NOTE, round 2 | Fixed |
 
-## 4. Findings of the build
+## 9. The guard's candidates (CE-31)
 
-- **F-1.** ESLint's rule on user-facing literals reads an array literal inside a JSX attribute as text, so a `key` or a `kind` there is refused. Both moved to a constant. A fast run was spent on it.
+`guard.sh` on the three checkpoints and `guard.sh --preview` on this record list no candidate: no address, host, e-mail or home path.
+
+## 10. For later Tasks
+
+F-2 to F-5 above. Tasks that depend directly on this one: TASK-036, not yet `READY`. Milestone M3, catalogue complete, is reached at this merge.
