@@ -644,15 +644,20 @@ final class ConfirmReceivingTest extends DatabaseTestCase
 
         $this->assertSame(['POST /commands/receiving.confirm'], array_values(array_filter($routes, static fn (string $route): bool => str_contains($route, 'receiving') && ! str_starts_with($route, 'GET '))));
 
-        // A scan of app/: the tables of the ledger and the valuation are named only by their one
-        // writer, and the read of RD-01 that shows a balance writes nothing (AC-021-01).
-        $this->assertSame(['Domain/Inventory/StockLedger.php', 'Queries/Inventory/ProductStock.php'], self::filesNaming('stock_balances'));
-        $this->assertSame(['Domain/Inventory/StockLedger.php'], self::filesNaming('stock_movements'));
+        // A scan of app/: the tables of the ledger, the valuation and the receiving are named by
+        // their one writer and, besides it, only by the reads of app/Queries named here, each of
+        // which writes nothing (AC-021-01): RD-01's balance, and TASK-022's RD-02, RD-03 and the
+        // pages RP-402 to RP-406.
+        $this->assertSame(['Domain/Inventory/StockLedger.php', 'Queries/Inventory/ProductStock.php', 'Queries/Inventory/StockAttention.php'], self::filesNaming('stock_balances'));
+        $this->assertSame(['Domain/Inventory/StockLedger.php', 'Queries/Inventory/MovementDetail.php', 'Queries/Inventory/ReceivingDocuments.php', 'Queries/Inventory/StockHistory.php'], self::filesNaming('stock_movements'));
         $this->assertSame(['Domain/Costing/InventoryValuations.php'], self::filesNaming('inventory_valuations'));
-        $this->assertSame(['Domain/Costing/CostEvidence.php'], self::filesNaming('acquisition_cost_evidence'));
-        $this->assertSame(['Domain/Inventory/Receivings.php'], self::filesNaming('receiving_documents'));
-        $this->assertSame(['Domain/Inventory/Receivings.php'], self::filesNaming('receiving_lines'));
-        $this->assertDoesNotMatchRegularExpression('/->(?:insert|insertGetId|update|upsert|delete|increment|decrement|truncate)\(/', (string) file_get_contents(app_path('Queries/Inventory/ProductStock.php')));
+        $this->assertSame(['Domain/Costing/CostEvidence.php', 'Queries/Inventory/MovementDetail.php', 'Queries/Inventory/ReceivingDocuments.php'], self::filesNaming('acquisition_cost_evidence'));
+        $this->assertSame(['Domain/Inventory/Receivings.php', 'Queries/Inventory/MovementDetail.php', 'Queries/Inventory/ReceivingDocuments.php', 'Queries/Inventory/StockHistory.php'], self::filesNaming('receiving_documents'));
+        $this->assertSame(['Domain/Inventory/Receivings.php', 'Queries/Inventory/MovementDetail.php', 'Queries/Inventory/ReceivingDocuments.php', 'Queries/Inventory/StockHistory.php'], self::filesNaming('receiving_lines'));
+
+        foreach (['MovementDetail', 'ProductStock', 'ReceivingDocuments', 'StockAttention', 'StockHistory'] as $read) {
+            $this->assertDoesNotMatchRegularExpression('/->(?:insert|insertGetId|update|upsert|delete|increment|decrement|truncate)\(/', (string) file_get_contents(app_path('Queries/Inventory/'.$read.'.php')), $read);
+        }
     }
 
     /**

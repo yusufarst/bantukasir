@@ -166,5 +166,20 @@ Pull request #31 opened on `9b2af60`. The repository's automated reviewer left t
 | --- | --- | --- | --- | --- |
 | `npm run typecheck` | Local | 2 November, 23:56 | — | `NOT_RUN`: `tsc` is not installed on this machine |
 | Guard, preview on the working tree | Local | 3 November, 00:07 | under 1 min | `PASS`, no candidate |
-| `npm run lint`, `typecheck`, `test:unit` with `receivingDraft.test.ts`; the PHP static checks and unit tests | Fast run 7 on the fix's commit | — | — | `NOT_RUN` at this writing; its result is in the executor's report |
-| The browser suite with the new tests of P1, P2 and R-15, and the rest of the command contract and the image checks | CI on the pull request's new head | — | — | `NOT_RUN` at this writing (CE-41, D-117) |
+| `npm run lint`, `typecheck`, `test:unit` with `receivingDraft.test.ts`; the PHP static checks and unit tests | Fast run 7, 41488822328 on `d0ad2ab` | 3 November, 00:11 to 00:22 | 10 min 59 s | `PASS` |
+| The image checks | CI run 41488829445 on `d0ad2ab` | 3 November, 00:11 to 00:18 | 6 min 46 s | `PASS` |
+| The command contract | Same run | 3 November, 00:11 to 00:41 | 29 min 26 s | `FAIL` at `composer test:postgres`, one of 670 tests (section 10); `test:race`, the npm steps, the build and the browser suite did not run |
+
+## 10. Fix cycle 2 on pull request #31 (CE-42, failure 1 of 3)
+
+CI run 41488829445 on `d0ad2ab` failed one test of `composer test:postgres`: `ConfirmReceivingTest::test_no_draft_route_exists_and_each_projection_has_its_one_writer`, TASK-021's scan of `app/` for the files that name a table of the ledger, the valuation or the receiving. It listed `Domain/Inventory/StockLedger.php` and `Queries/Inventory/ProductStock.php` for `stock_balances`, and found `Queries/Inventory/StockAttention.php` (RD-03, RD-02's counts) besides. A defect of this Task's change: its new reads are not among the readers that the guard names, and the fast runs did not run the file, which the branch had not changed. Its later assertions stopped at the first, so the scan was checked for every table: `stock_movements`, `receiving_documents` and `receiving_lines` are also named by `StockHistory` (RP-402) and `MovementDetail` (RP-403) and by `ReceivingDocuments` (RP-404, RP-406), and `acquisition_cost_evidence` by `MovementDetail` and `ReceivingDocuments`. None of the five reads of `app/Queries/Inventory` writes: no insert, update, upsert, delete, increment, decrement, truncate, lock or raw statement.
+
+**Fix** (test only; no production behaviour changes, so no targeted verification under CE-42): the guard names, for each table, its one writer and the reads of `app/Queries/Inventory` that this Task adds, and asserts of each of the five reads, not only of `ProductStock`, that it writes nothing. A new writer of any table, or a write in any read, still fails it. No other test scans `app/` for these tables.
+
+| Check | Where it ran | Time | Duration | Result |
+| --- | --- | --- | --- | --- |
+| Guard, preview on the working tree | Local | 3 November, 00:45 | under 1 min | `PASS`, no candidate |
+| `ConfirmReceivingTest`, now a test file the branch changes, with the PHP static checks and unit tests | Fast run 8 on the fix's commit | — | — | `NOT_RUN` at this writing; its result is in the executor's report |
+| The whole command contract — `test:postgres`, `test:race`, the npm steps, `build`, the browser suite with the new tests of P1, P2, R-03 and R-15 — and the image checks | CI on the pull request's new head | — | — | `NOT_RUN` at this writing (CE-41, D-117) |
+
+Eight fast runs of the 10 that CE-46 allows.
