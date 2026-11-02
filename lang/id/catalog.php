@@ -4,8 +4,9 @@
 // products, categories, barcodes, labels, CSV import. Its keys are copied
 // verbatim from COPY_DECK by the first Task that uses them. TASK-017 adds those
 // of its pages (COPY_DECK sections 8.1 to 8.5 and 8.8), TASK-018 those of the
-// photo and the labels (COPY_DECK sections 8.3 and 8.7), and TASK-019 those of the
-// CSV import (COPY_DECK sections 8.9, 15 and 16.3).
+// photo and the labels (COPY_DECK sections 8.3 and 8.7), TASK-019 those of the
+// CSV import (COPY_DECK sections 8.9, 15 and 16.3), and TASK-020 those of the
+// misassignment correction (COPY_DECK sections 8.6 and 15).
 
 return [
     'field' => [
@@ -103,6 +104,21 @@ return [
         'reason_other' => 'Alasan lain',
         'reason_other_help' => 'Misalnya kemasan berganti atau barcode tidak dipakai lagi. Barcode ini tidak bisa dipakai lagi.',
         'retired' => 'Barcode dipensiunkan.',
+    ],
+    'barcode_correction' => [
+        'title' => 'Koreksi salah pasang barcode',
+        'intro' => 'Pindahkan barcode pabrik dari produk yang salah ke produk yang benar. Riwayatnya tetap tersimpan.',
+        'current_mapping' => 'Sekarang terpasang pada :produk',
+        'retired_mapping' => 'Dipensiunkan karena salah pasang dari :produk',
+        'correct_product' => 'Produk yang benar',
+        'reason' => 'Alasan',
+        'review_title' => 'Tinjau koreksi salah pasang barcode',
+        'review_body_move' => 'Barcode :kode dipindahkan dari :lama ke :baru. Penjualan sebelumnya tetap tercatat pada produk saat itu.',
+        'review_body_reattach' => 'Barcode :kode, yang dipensiunkan karena salah pasang dari :lama, dipasang ke :baru.',
+        'confirm' => 'Konfirmasi koreksi',
+        'success' => 'Barcode :kode sekarang terpasang pada :produk.',
+        'disabled' => 'Isi barcode, produk yang benar, dan alasan.',
+        'disabled_unresolved' => 'Ada koreksi barcode yang statusnya belum pasti. Cek statusnya dulu.',
     ],
     'product_create' => [
         'title' => 'Tambah produk',

@@ -94,8 +94,8 @@ final class Allowlists
         'access/UserEdit' => ['owner' => ['user', 'user.id', 'user.displayName', 'user.email', 'user.roles', 'user.roles.*', 'user.version']],
         'access/LinkHandover' => ['owner' => ['user', 'user.id', 'user.displayName']],
         // The catalogue pages (TASK-017), for every kind of account that CAP-04 opens
-        // them to: never a cost, a valuation or a margin (BR-CAT-26). TASK-020, TASK-022
-        // and TASK-025 add their sections to UXP-302.
+        // them to: never a cost, a valuation or a margin (BR-CAT-26). TASK-022 and TASK-025
+        // add their sections to UXP-302.
         'catalog/Products' => ['*' => ['filters', 'filters.q', 'filters.category', 'filters.brand', 'filters.status', 'filters.page', 'filters.import', ...self::CATEGORIES, 'canPrintLabels']],
         // UXP-308 (TASK-019): the column list of DC-04.
         'catalog/Import' => ['*' => ['columns', 'columns.*', 'columns.*.header', 'columns.*.required', 'canManageCategories']],
@@ -104,8 +104,10 @@ final class Allowlists
             ...self::PRODUCT,
             'priceHistory', 'priceHistory.*', 'priceHistory.*.amount', 'priceHistory.*.startedAt', 'priceHistory.*.actorDisplayName',
             'barcodes', 'barcodes.*', 'barcodes.*.mappingId', 'barcodes.*.token', 'barcodes.*.kind', 'barcodes.*.active', 'barcodes.*.reasonClass',
-            'canChangePhoto', 'canPrintLabels',
+            'canCorrectBarcode', 'canChangePhoto', 'canPrintLabels',
         ]],
+        // UXP-305, the Owner's alone (TASK-020): the product it opened from.
+        'catalog/BarcodeCorrection' => ['owner' => ['product', 'product.id', 'product.name']],
         // UXP-306 and its print view (TASK-018): a label is the code, the name and the
         // SKU, never a cost or a price (BR-CAT-35).
         'catalog/Labels' => ['*' => ['product', 'product.id', 'product.name', 'barcodes', 'barcodes.*', 'barcodes.*.mappingId', 'barcodes.*.token']],
@@ -166,6 +168,12 @@ final class Allowlists
             'ops' => self::CHECK_RESULT,
             'combined' => self::CHECK_RESULT,
         ],
+        // RD-05, the Owner's alone (TASK-020): the token moved once, so that it holds every field.
+        'data.barcodes.lookup' => ['owner' => [
+            'token', 'kind', 'activeProduct', 'activeProduct.id', 'activeProduct.name',
+            'retirements', 'retirements.*', 'retirements.*.productId', 'retirements.*.productName', 'retirements.*.reasonClass', 'retirements.*.retiredAt', 'retirements.*.actorDisplayName',
+            'mapping', 'mapping.productId', 'mapping.productName', 'mapping.state', 'correctable',
+        ]],
     ];
 
     /** One page of RD-01. */

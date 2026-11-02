@@ -35,9 +35,12 @@ export function CodeField({
     hint,
     error,
     optional = false,
+    required = false,
+    disabled = false,
     value,
     onValueChange,
     onEnter,
+    onBlur,
     inputRef,
 }: {
     id?: string;
@@ -45,9 +48,12 @@ export function CodeField({
     hint?: ReactNode;
     error?: ReactNode;
     optional?: boolean;
+    required?: boolean;
+    disabled?: boolean;
     value: string;
     onValueChange: (value: string) => void;
     onEnter?: () => void;
+    onBlur?: () => void;
     inputRef?: Ref<HTMLInputElement>;
 }) {
     const onKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
@@ -58,8 +64,8 @@ export function CodeField({
     };
 
     return (
-        <Field id={id} label={label} hint={hint} error={error} optional={optional}>
-            <TextInput ref={inputRef} icon={'scan'} type={'text'} autoComplete={'off'} enterKeyHint={'search'} spellCheck={false} maxLength={128} value={value} onChange={(event) => onValueChange(event.target.value)} onKeyDown={onKeyDown} />
+        <Field id={id} label={label} hint={hint} error={error} optional={optional} required={required}>
+            <TextInput ref={inputRef} icon={'scan'} type={'text'} autoComplete={'off'} enterKeyHint={'search'} spellCheck={false} maxLength={128} disabled={disabled} value={value} onChange={(event) => onValueChange(event.target.value)} onKeyDown={onKeyDown} onBlur={onBlur} />
         </Field>
     );
 }

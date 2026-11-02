@@ -12,6 +12,7 @@ use App\Actions\Access\UpdateOwnerDetails;
 use App\Actions\Access\UpdateStaffAccount;
 use App\Actions\Catalog\AddBarcode;
 use App\Actions\Catalog\ConfirmCsvImport;
+use App\Actions\Catalog\CorrectBarcodeMisassignment;
 use App\Actions\Catalog\CreateCategory;
 use App\Actions\Catalog\CreateProduct;
 use App\Actions\Catalog\DeactivateCategory;
@@ -75,6 +76,8 @@ final class CommandActions
         RecordLabelPrint::OPERATION => RecordLabelPrint::class,
         // RC-31 (TASK-019).
         ConfirmCsvImport::OPERATION => ConfirmCsvImport::class,
+        // RC-30 (TASK-020).
+        CorrectBarcodeMisassignment::OPERATION => CorrectBarcodeMisassignment::class,
     ];
 
     /**

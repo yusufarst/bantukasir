@@ -109,6 +109,10 @@ final class RouteInventoryTest extends TestCase
         'POST /products/import/preview' => ['products.import.preview', 'RR-01', 'CAP-10', [...self::SIGNED_IN, 'capability:CAP-10', 'throttle:csv']],
         'POST /products/import/{import}/cancel' => ['products.import.cancel', 'RR-02', 'CAP-10', [...self::SIGNED_IN, 'capability:CAP-10', 'input.allow']],
         'POST /commands/csv_import.confirm' => ['commands.csv_import.confirm', 'RC-31', 'CAP-10', [...self::SIGNED_IN, 'capability:CAP-10', 'throttle:command']],
+        // TASK-020: RP-305, RD-05 and RC-30.
+        'GET /products/{product}/barcode-correction' => ['products.barcode_correction', 'RP-305', 'CAP-07', [...self::SIGNED_IN, 'capability:CAP-07', 'input.allow']],
+        'GET /data/barcode-tokens/lookup' => ['data.barcodes.lookup', 'RD-05', 'CAP-07', [...self::SIGNED_IN, 'capability:CAP-07', 'throttle:search']],
+        'POST /commands/barcode.correct_misassignment' => ['commands.barcode.correct_misassignment', 'RC-30', 'CAP-07', [...self::SIGNED_IN, 'capability:CAP-07', 'throttle:command', 'password.confirm']],
     ];
 
     public function test_the_routes_are_exactly_those_listed_each_with_its_gate(): void

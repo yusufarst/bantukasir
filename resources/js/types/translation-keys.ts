@@ -127,6 +127,19 @@ export interface TranslationPlaceholders {
     'catalog.barcode.status_active': never;
     'catalog.barcode.status_retired': never;
     'catalog.barcode.token_help': never;
+    'catalog.barcode_correction.confirm': never;
+    'catalog.barcode_correction.correct_product': never;
+    'catalog.barcode_correction.current_mapping': 'produk';
+    'catalog.barcode_correction.disabled': never;
+    'catalog.barcode_correction.disabled_unresolved': never;
+    'catalog.barcode_correction.intro': never;
+    'catalog.barcode_correction.reason': never;
+    'catalog.barcode_correction.retired_mapping': 'produk';
+    'catalog.barcode_correction.review_body_move': 'baru' | 'kode' | 'lama';
+    'catalog.barcode_correction.review_body_reattach': 'baru' | 'kode' | 'lama';
+    'catalog.barcode_correction.review_title': never;
+    'catalog.barcode_correction.success': 'kode' | 'produk';
+    'catalog.barcode_correction.title': never;
     'catalog.categories.add': never;
     'catalog.categories.added': 'kategori';
     'catalog.categories.empty': never;
@@ -405,6 +418,7 @@ export interface TranslationPlaceholders {
     'ux.state.abandoned.body': never;
     'ux.state.abandoned.title': never;
     'ux.state.barcode_ineligible.check_digit': never;
+    'ux.state.barcode_ineligible.not_correctable': never;
     'ux.state.barcode_ineligible.reserved': never;
     'ux.state.barcode_ineligible.retired': never;
     'ux.state.barcode_ineligible.title': never;

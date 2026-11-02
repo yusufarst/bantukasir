@@ -23,6 +23,10 @@ use Throwable;
  * commits its violation is the refusal DUPLICATE_BARCODE, which ends the transaction
  * (TR-TX-08). A generated code that clashes is drawn again without ending it, because
  * ON CONFLICT raises nothing (BR-CAT-18).
+ *
+ * The Owner's correction (TASK-020; RC-30) adds a mapping of a token that exists, whose
+ * guarantees are the keys of SCHEMA section 5.6: a violation of one is the refusal
+ * DUPLICATE_BARCODE.
  */
 final class Barcodes
 {
@@ -30,11 +34,20 @@ final class Barcodes
 
     public const string INTERNAL = 'INTERNAL';
 
+    /** The reason class of a retirement that a correction may follow (BR-CAT-52). */
+    public const string MISASSIGNMENT = 'MISASSIGNMENT';
+
     /** How many codes a generation draws before it gives up; 80 random bits never come near. */
     public const int CODE_ATTEMPTS = 5;
 
     /** The index that holds a token's uniqueness (SCHEMA section 5.6). */
     private const array TOKEN_INDEX = ['barcode_tokens_token_unique'];
+
+    /** Each retirement is corrected once (SCHEMA section 5.6). */
+    private const array CORRECTED_ONCE = ['barcode_mappings_corrects_unique'];
+
+    /** A token is active on at most one product (BR-CAT-16). */
+    private const array ACTIVE_ONCE = ['barcode_active_mappings_pkey', 'barcode_active_mappings_mapping_unique'];
 
     public function __construct(
         private readonly Clock $clock,
@@ -175,6 +188,97 @@ final class Barcodes
     }
 
     /**
+     * The last mapping of the token as committed, or null when no such token exists:
+     * read before the locks to choose them, and again under them (RC-30). The token is
+     * compared exactly (BR-CAT-17).
+     */
+    public function currentMapping(string $token): ?CurrentMapping
+    {
+        $row = DB::table('barcode_tokens', 't')
+            ->join('barcode_mappings as m', 'm.token_id', '=', 't.id')
+            ->leftJoin('barcode_active_mappings as a', 'a.mapping_id', '=', 'm.id')
+            ->leftJoin('barcode_mapping_retirements as x', 'x.mapping_id', '=', 'm.id')
+            ->where('t.token', $token)
+            ->orderByDesc('m.id')
+            ->first(['t.id as token_id', 't.kind', 'm.id as mapping_id', 'm.product_id', 'a.mapping_id as active_mapping', 'x.reason_class']);
+
+        if ($row === null) {
+            return null;
+        }
+
+        $values = (array) $row;
+        $tokenId = $values['token_id'] ?? null;
+        $kind = $values['kind'] ?? null;
+        $mapping = $values['mapping_id'] ?? null;
+        $product = $values['product_id'] ?? null;
+        $reason = $values['reason_class'] ?? null;
+
+        if (! is_int($tokenId) || ! is_string($kind) || ! is_int($mapping) || ! is_int($product)) {
+            throw new LogicException('A barcode mapping holds its columns (SCHEMA section 5.6).');
+        }
+
+        return new CurrentMapping($tokenId, $kind, $mapping, $product, ($values['active_mapping'] ?? null) !== null, is_string($reason) ? $reason : null);
+    }
+
+    /**
+     * Adds a correction of a mapping retired as a misassignment, to the product whose lock
+     * the caller holds, with its reason and its actor's name frozen (D-051, D-052). The
+     * keys of SCHEMA section 5.6 hold that the token is a manufacturer's and that the
+     * mapping is of this token, retired so, and corrected once.
+     *
+     * @param  string  $field  the path of the request that holds the token
+     *
+     * @throws CommandRefused DUPLICATE_BARCODE when the retirement was already corrected
+     */
+    public function insertCorrection(int $tokenId, int $correctedMappingId, int $productId, string $reason, int $actorUserId, string $actorDisplayName, int $commandId, string $field): int
+    {
+        self::requireTransaction();
+
+        try {
+            return DB::table('barcode_mappings')->insertGetId([
+                'token_id' => $tokenId,
+                'token_kind' => self::MANUFACTURER,
+                'product_id' => $productId,
+                'attach_kind' => 'MISASSIGNMENT_CORRECTION',
+                'corrects_mapping_id' => $correctedMappingId,
+                'corrected_reason_class' => self::MISASSIGNMENT,
+                'reason' => $reason,
+                'attached_at' => $this->now(),
+                'actor_user_id' => $actorUserId,
+                'actor_display_name' => $actorDisplayName,
+                'command_id' => $commandId,
+            ]);
+        } catch (Throwable $failure) {
+            throw SqlState::uniqueOn($failure, self::CORRECTED_ONCE) ? self::duplicate($field) : $failure;
+        }
+    }
+
+    /**
+     * Makes a correction the active mapping of its token, whose primary key leaves at most
+     * one after the commit (BR-CAT-16; G-09).
+     *
+     * @param  string  $field  the path of the request that holds the token
+     *
+     * @throws CommandRefused DUPLICATE_BARCODE when the token is active already
+     */
+    public function activateCorrection(int $tokenId, int $mappingId, int $productId, string $field): void
+    {
+        try {
+            $this->activate($tokenId, $mappingId, $productId);
+        } catch (Throwable $failure) {
+            throw SqlState::uniqueOn($failure, self::ACTIVE_ONCE) ? self::duplicate($field) : $failure;
+        }
+    }
+
+    /**
+     * The refusal of a token that RC-30 cannot correct (COPY_DECK section 13.2).
+     */
+    public static function notCorrectable(string $field): CommandRefused
+    {
+        return self::notEligible('not_correctable', $field);
+    }
+
+    /**
      * Whether the mapping is the active one of its token, read under its product's
      * lock (G-09).
      */
@@ -217,7 +321,7 @@ final class Barcodes
     }
 
     /**
-     * @param  'retired'|'reserved'|'check_digit'  $reason  a reason of COPY_DECK section 13.2
+     * @param  'retired'|'reserved'|'check_digit'|'not_correctable'  $reason  a reason of COPY_DECK section 13.2
      */
     private static function notEligible(string $reason, string $field): CommandRefused
     {

@@ -23,6 +23,11 @@ use Illuminate\Support\Facades\DB;
  * The mode `exact` is the lookup of a scanned or typed code: the product a token is
  * active on, else the product of that exact SKU; at most one product, marked active
  * or not, and no other filter (TASK-016). A retired token leads to no product.
+ *
+ * The context `correction` answers active products only (INTERACTION_CONTRACTS section 3.1;
+ * TASK-020). In the mode `exact` that is judged on the code's own product, never in the
+ * query, where it could pass over that product for another's SKU: a code whose product is
+ * inactive answers none.
  */
 final class ProductSearch
 {
@@ -38,6 +43,11 @@ final class ProductSearch
     public function __invoke(SearchFilters $filters): array
     {
         $rows = $this->builder($filters)->get()->all();
+
+        if ($filters->exact && $filters->activeOnly) {
+            $rows = array_values(array_filter($rows, static fn (object $row): bool => (((array) $row)['active'] ?? null) === true));
+        }
+
         $perPage = $filters->exact ? 1 : $filters->perPage;
         $page = array_slice($rows, 0, $perPage);
 
@@ -85,6 +95,10 @@ final class ProductSearch
 
         if ($filters->status !== null) {
             $query->where('p.active', $filters->status === 'active');
+        }
+
+        if ($filters->activeOnly) {
+            $query->where('p.active', true);
         }
 
         // RC-31's location: the products of one import (TASK-019).

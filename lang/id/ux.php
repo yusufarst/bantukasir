@@ -346,13 +346,13 @@ return [
             ],
             'open' => 'Buka :produk',
         ],
-        // The reasons of COPY_DECK section 13.2 (TASK-016); `not_correctable` is
-        // TASK-020's.
+        // The reasons of COPY_DECK section 13.2 (TASK-016, TASK-020).
         'barcode_ineligible' => [
             'title' => 'Barcode tidak dapat dipakai',
             'retired' => 'Barcode ini sudah dipensiunkan dan tidak bisa dipakai lagi. Hanya barcode pabrik yang dipensiunkan karena salah pasang yang bisa dipasang Pemilik ke produk yang benar, dengan Koreksi salah pasang barcode. Tidak ada yang disimpan.',
             'reserved' => 'Kode yang diawali BK- hanya untuk barcode internal yang dibuat aplikasi. Tidak ada yang disimpan.',
             'check_digit' => 'Angka pemeriksa barcode ini tidak cocok. Periksa lagi kodenya. Tidak ada yang disimpan.',
+            'not_correctable' => 'Barcode ini tidak bisa dikoreksi. Hanya barcode pabrik yang terpasang pada produk lain, atau yang dipensiunkan karena salah pasang, yang bisa dipasang ke produk yang benar. Tidak ada yang disimpan.',
         ],
         'csv_invalid' => [
             'title' => 'Berkas CSV belum benar',

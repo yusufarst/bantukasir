@@ -22,7 +22,8 @@ use LogicException;
  * `page` and `perPage`, which `exact` refuses, because a filter could then pass over a
  * code's own product for another's SKU, and it answers at most one. Any
  * other parameter is refused, and so is any body: the read takes its parameters from
- * the query string alone (TASK-008 review finding R-01).
+ * the query string alone (TASK-008 review finding R-01). `status` is the context `catalog`'s
+ * alone; the context `correction` (TASK-020) answers active products only.
  *
  * The client's sequence number travels in the header SEQUENCE_HEADER, which the
  * answer repeats, so that a page applies only the answer to its newest request
@@ -43,7 +44,7 @@ final class ProductSearchRequest extends RefusingRequest
      *
      * @var array<string, Capability>
      */
-    private const array PROVIDED = ['catalog' => Capability::Cap04];
+    private const array PROVIDED = ['catalog' => Capability::Cap04, 'correction' => Capability::Cap07];
 
     private const string PLAIN_TEXT = '/\A[^\p{Cc}]*\z/u';
 
@@ -115,6 +116,7 @@ final class ProductSearchRequest extends RefusingRequest
                 if ($this->json()->all() !== [] || $this->request->all() !== [] || $this->files->all() !== []
                     || ($this->query->has('category') && ObjectScope::key($this->query('category')) === null)
                     || ($this->query->has('import') && (ObjectScope::key($this->query('import')) === null || $this->query('context') !== 'catalog'))
+                    || ($this->query->has('status') && $this->query('context') !== 'catalog')
                     || ($sequence !== null && preg_match('/^[0-9]{1,16}$/D', $sequence) !== 1)
                     || ($this->query('mode') === 'exact' && array_intersect(self::NOT_EXACT, array_keys($this->query->all())) !== [])) {
                     $validator->errors()->add('', '');
@@ -153,6 +155,7 @@ final class ProductSearchRequest extends RefusingRequest
             is_string($perPage) ? (int) $perPage : ProductSearch::PER_PAGE,
             ($validated['mode'] ?? null) === 'exact',
             is_string($import) ? ObjectScope::key($import) : null,
+            ($validated['context'] ?? null) === 'correction',
         );
     }
 
