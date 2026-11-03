@@ -84,6 +84,9 @@ final class HomeRedirectTest extends DatabaseTestCase
     public function test_a_sign_in_session_that_a_limit_ended_gets_the_note_at_the_home_too(): void
     {
         $rina = TokoContoh::person('Rina');
+        // T-37: the session lottery runs on every request, so that an expired
+        // session's row is always deleted before the answer is written.
+        config(['session.lottery' => [100, 100]]);
 
         foreach ([30, 31] as $minutes) {
             $session = $this->signInBrowser($rina['email'], $rina['password']);

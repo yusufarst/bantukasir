@@ -116,6 +116,9 @@ final class SignInSessionTest extends DatabaseTestCase
     public function test_an_ended_sign_in_session_leads_to_the_sign_in_page_with_its_note(): void
     {
         $session = $this->signInBrowser($this->rina['email'], $this->rina['password']);
+        // T-37: the session lottery runs on every request, so that an expired
+        // session's row is always deleted before the answer is written.
+        config(['session.lottery' => [100, 100]]);
 
         $this->travel(31)->minutes();
         $this->browse($session);
