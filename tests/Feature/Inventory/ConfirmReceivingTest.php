@@ -647,11 +647,13 @@ final class ConfirmReceivingTest extends DatabaseTestCase
         // A scan of app/: the tables of the ledger, the valuation and the receiving are named by
         // their one writer and, besides it, only by the reads of app/Queries named here, each of
         // which writes nothing (AC-021-01): RD-01's balance, TASK-022's RD-02, RD-03 and the
-        // pages RP-402 to RP-406, and TASK-023's pages RP-407 and RP-409.
-        $this->assertSame(['Domain/Inventory/StockLedger.php', 'Queries/Inventory/ProductStock.php', 'Queries/Inventory/StockAttention.php'], self::filesNaming('stock_balances'));
-        $this->assertSame(['Domain/Inventory/StockLedger.php', 'Queries/Inventory/ManualIssueRecords.php', 'Queries/Inventory/MovementDetail.php', 'Queries/Inventory/ReceivingDocuments.php', 'Queries/Inventory/StockHistory.php'], self::filesNaming('stock_movements'));
-        $this->assertSame(['Domain/Costing/InventoryValuations.php'], self::filesNaming('inventory_valuations'));
-        $this->assertSame(['Domain/Costing/CostEvidence.php', 'Queries/Inventory/MovementDetail.php', 'Queries/Inventory/ReceivingDocuments.php'], self::filesNaming('acquisition_cost_evidence'));
+        // pages RP-402 to RP-406, and TASK-023's pages RP-407 and RP-409; and TASK-025's reads of the
+        // cost correction — the replay's ledger, the cost source, RP-503 to RP-505 — none of which
+        // writes a movement, a balance or an evidence.
+        $this->assertSame(['Domain/Costing/Replay/ReplayLedger.php', 'Domain/Inventory/StockLedger.php', 'Queries/Costing/CostHistory.php', 'Queries/Inventory/ProductStock.php', 'Queries/Inventory/StockAttention.php'], self::filesNaming('stock_balances'));
+        $this->assertSame(['Domain/Costing/CostCorrections.php', 'Domain/Costing/Replay/ReplayLedger.php', 'Domain/Inventory/StockLedger.php', 'Queries/Costing/CostSources.php', 'Queries/Inventory/ManualIssueRecords.php', 'Queries/Inventory/MovementDetail.php', 'Queries/Inventory/ReceivingDocuments.php', 'Queries/Inventory/StockHistory.php'], self::filesNaming('stock_movements'));
+        $this->assertSame(['Domain/Costing/InventoryValuations.php', 'Queries/Costing/CostHistory.php'], self::filesNaming('inventory_valuations'));
+        $this->assertSame(['Domain/Costing/CostCorrections.php', 'Domain/Costing/CostEvidence.php', 'Domain/Costing/Replay/ReplayLedger.php', 'Queries/Costing/CostHistory.php', 'Queries/Costing/CostSources.php', 'Queries/Inventory/MovementDetail.php', 'Queries/Inventory/ReceivingDocuments.php', 'Queries/Reporting/CostWorklist.php'], self::filesNaming('acquisition_cost_evidence'));
         $this->assertSame(['Domain/Inventory/Receivings.php', 'Queries/Inventory/MovementDetail.php', 'Queries/Inventory/ReceivingDocuments.php', 'Queries/Inventory/StockHistory.php'], self::filesNaming('receiving_documents'));
         $this->assertSame(['Domain/Inventory/Receivings.php', 'Queries/Inventory/MovementDetail.php', 'Queries/Inventory/ReceivingDocuments.php', 'Queries/Inventory/StockHistory.php'], self::filesNaming('receiving_lines'));
 

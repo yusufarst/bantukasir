@@ -1,0 +1,65 @@
+# TASK-025 evidence — Cost correction, completion and bounded replay
+
+| | |
+| --- | --- |
+| Task | [TASK-025](../tasks/TASK-025-cost-correction.md), review class A |
+| Instruction | Continuous execution, D-101, as the delegation of the tick printed it (EXECUTION_CONTEXT CE-01) |
+| Executor | Agent `bk-executor-max`, model `claude-opus-5-5`, effort Max from the table of EXECUTION_CONTEXT section 19; review by `bk-reviewer-max`, verification by `bk-reviewer-xhigh` |
+| Branch and base | `task/TASK-025-cost-correction`, from `d92b13b9c85b7d87b7ebf8b37c39a3251fc64ca0` (origin/develop) |
+| Preflight (EXC-20, EXC-21, EXC-23) | The tree clean but for `Claude outputs/` and `plan-p0-p11-review.patch`; the stash of D-030; no branch or pull request of TASK-025; the executor state at `BUILD` for TASK-025 with this session's lock; TASK-024 `DONE`, merged as `d92b13b` (pull request #34), no gate; `tsc`, ESLint and PHP do not run on this machine, so every check runs in CI (D-108, D-117) |
+
+## 1. Checks
+
+Every check runs in CI, on GitHub's hosted runner, with the local environment's containers and synthetic data, started by the executor's push, except the guard, which runs natively (EXC-61, CE-31, CE-44, CE-46). Times are Asia/Jakarta, 4 November 2026.
+
+| Check | Where it ran | Time | Duration | Result |
+| --- | --- | --- | --- | --- |
+| `npm run typecheck`, `npx tsc --noEmit` | Local | — | — | `NOT_RUN`: `tsc` is not installed on this machine |
+| The whole command contract and the image checks | CI on the pull request's final head | — | — | `NOT_RUN` at this writing (CE-41, D-117); never on this machine (D-108) |
+
+## 2. What was built (contract section 4.1)
+
+1. **The three tables** (migration `2026_11_04_000001_create_cost_correction_tables`; SCHEMA section 5.8): `cost_corrections` (the correction number from 1 per evidence, the old status and amount — UNKNOWN without an amount — the new amount, always KNOWN, an explicit zero with its evidence or reason, the reason, the actor and the command; unique per evidence and number, per command, and `(id, evidence_id)`; the key `(evidence_id, product_id)` to the evidence), `cost_incomplete_marks` (the evidence, its product and movement under one key to the evidence; the refused operation and intent, unique together; `MOVEMENT_CAP`, `TIME_BUDGET` or `UNSAFE_HISTORY`; the corrections seen; no amount) and `cost_incomplete_mark_clearances` (one per mark, keyed by it; `LATER_CORRECTION` with its correction of the same evidence, `SOURCE_REVERSED` with a reversal, `RECOVERY_PROCEDURE`; the actor of a user or a process). The key of a clearance's reversal is TASK-026's (contract scope item 1). Checks, keys, indexes of SCHEMA section 11 and the grants of section 10 (`database/privileges.php`, class F, select and insert only).
+2. **RC-15 `cost_correction.confirm`** (`app/Actions/Costing/CorrectCost.php`, `RefusedCorrection`, `CorrectCostRequest`, `CorrectCostController`; `App\Domain\Costing\CostCorrections`, `CostIncompleteMarks`, `CostSource`, `StoredCorrection`): CAP-19, the Owner's alone, recent authentication at the route; the cost source, a new total — KNOWN, an explicit zero with its evidence or reason — and a reason; `expected.correctionNo`, the latest correction reviewed (G-15). Under the product's guard (step 6): STALE_VERSION when the latest correction is another, then POSTING_BLOCKED (G-11); then the valuation and the projections from the source's sequence (step 7). The correction holds the effective value before it as its old value; the original evidence never changes. One audit event `COST_CORRECTION`, the values and the reason in its Owner-only part; the result RP-505 of the product for a viewer of CAP-20. A bounded heavy command, never retried.
+3. **The replay** (`app/Domain/Costing/Replay/`): `ReplayLedger` reads the product's logical ledger — the state before the source from its last zero point, then each movement from the source's sequence with its effective cost or its projection; `ValuationReplay` recomputes it by the moving weighted average of ADR-008 sections 4.1 and 5 — a pool restarted at zero, an issue to zero taking the whole value, one rounding half-up per allocation, UNKNOWN never zero — over RECEIPT, the increases and decreases of ADJUSTMENT and MANUAL_ISSUE, the types whose writers exist; `ProductReplay` bounds it by the movement cap (`config/costing.php`, 10,000) and `ReplayBudget` by the heavy budget less a reserve for the publication (TR-TIME-01). The publication, all or nothing in the command's transaction: the valuation with the next publication number (`InventoryValuations::publish`) and only the projections whose status or amount changed (`IssueAllocations::republish`, one statement); facts are never written.
+4. **The mark** (`CorrectCost::refused()`, the hook `CommandAction::refused()`): a replay refused for the cap, the budget or an unsafe history answers REPLAY_REJECTED only after the mark and its audit event `COST_INCOMPLETE_MARK` commit in a transaction of their own — the actor (step 2.1), the product (step 6), one mark per refused intent — and SERVICE_BUSY when that transaction fails; a session that PostgreSQL ended at the budget gets its mark `TIME_BUDGET` on a new connection. No mark after STALE_VERSION, POSTING_BLOCKED or a lock wait. A later successful correction of the same source clears every active mark of it in its own transaction; a mark whose refused attempt saw fewer corrections than exist is written with its clearance by the latest (SCHEMA section 5.8).
+5. **The corrected cost of RP-406** (`ReceivingDocuments`; `Receiving.tsx`): for every holder of CAP-12, the cost now, "Dikoreksi Pemilik" (UXS-26) and the cost at confirmation, or "Saat dikonfirmasi: biaya belum diketahui"; for the Owner, the source and its correction number for "Koreksi biaya" or "Lengkapi biaya" (UXI-249) and the history with its reasons (D-047). RP-403 gives the Owner the cost source as it is now with its number of corrections and "Koreksi biaya" (UXI-226; `MovementDetail`, `Movement.tsx`).
+6. **The cost pages**: RP-503 "Biaya perlu dilengkapi" (`Reporting\CostWorklistController`, `CostWorklistRequest`, `App\Queries\Reporting\CostWorklist`, `reporting/CostWorklist.tsx`; UXI-313 to UXI-316), RP-504 "Lengkapi biaya" or "Koreksi biaya" (`CorrectionController`, `CorrectionPageRequest`, `CostSources`, `costing/Correction.tsx`; UXI-317 to UXI-323) and RP-505 "Riwayat biaya" (`CostHistoryController`, `CostHistoryPageRequest`, `CostHistory`, `costing/CostHistory.tsx`; UXI-324, UXI-325); `EffectiveCosts` reads the effective value of a source; their entries "Riwayat biaya" on RP-302 (UXI-176) and UXI-021 in the Laporan sub-navigation.
+7. **Copy** in `lang/id/costing.php`, verbatim from COPY_DECK sections 4.1, 9.4, 9.7, 10.4 to 10.6 and 15, and `resources/js/types/translation-keys.ts`.
+8. **Tests:** L1 `tests/Unit/Costing/ValuationReplayTest.php`, `costs.test.ts`; L2 and L4 `tests/Feature/Costing/CostCorrectionTablesTest.php`, `CorrectCostTest.php`, `CostPagesTest.php`; L3 `tests/Concurrency/CostCorrectionRaceTest.php`; L5 `tests/Browser/costing/costing.spec.ts`, in the project of the tests that sign in people (`playwright.config.ts`). The fixture `TokoContoh::correctCost()` goes through RC-15's Action.
+9. **Guard tests widened**, each for what this Task adds: `ConfirmReceivingTest` and `ConfirmManualIssueTest` (the files that name the ledger, evidence, valuation and allocation tables), `StockPagesTest`, `ReceivingPagesTest`, `SignInSessionTest` (the clearances' key), `OperationsTest`, `RouteInventoryTest`, `CapabilityMatrixTest`, `CopyDeckTest` (a page title's mode note of section 4.1), `navigation.test.ts`, `Tests\Harness\Channels\Allowlists`, `FailurePoints` (the own write `mark`), `UserCommandScenario` (the movement cap of a race).
+
+## 3. Readings and technical choices
+
+1. **The audit action of a mark.** SCHEMA section 5.8 named it `COST_CORRECTION_REFUSED`; INTERACTION_CONTRACTS section 8, the list of audit action codes, names `COST_INCOMPLETE_MARK`. The code uses the list's, and SCHEMA section 5.8 now says so (EXC-81: a name, no business meaning).
+2. **A session ended at the budget.** PostgreSQL's `transaction_timeout` ends the session; the command answers SERVICE_BUSY, and its mark `TIME_BUDGET` is written on a new connection before REPLAY_REJECTED is answered (TR-TIME-01). The test ends a session of one second during the replay.
+3. **The replay's start** is the state just before the source's sequence, read from the product's last zero point at or before it: the quantity, the increases at their effective cost and the projections of the issues since then, which is the moving average's own state (ADR-008 section 4.1). A refused history — an issue beyond the quantity at its point, an end that is not the stock on hand, a value out of range — is `UNSAFE_HISTORY`.
+4. **The budget** is the heavy transaction budget less a reserve of 5 seconds for the publication (`config/costing.php`), checked before each movement and before the publication.
+5. **The order of the refusals** under the guard is RC-15's: STALE_VERSION before POSTING_BLOCKED; neither starts the replay nor writes a mark (D-063).
+6. **The mark's audit event** has no command identity: the refused command's identity rolled back with its transaction, and the mark's transaction is not a command of its own.
+7. **STK-13.** RC-15 is the Costing module's first command, and its replay reads the balances and the posting blocks: STACK_AND_MODULES section 2 records Costing's dependency on Commands and its reads of Inventory.
+8. **UXI-021** "Biaya perlu dilengkapi" is registered in the Laporan sub-navigation; the shell shows it once the Laporan destination exists (TASK-041). Until then the worklist is reached from RP-505's "Data biaya belum lengkap" and by its address.
+9. **The worklist** lists each source whose effective cost is UNKNOWN and each with an active mark, newest first by the time the cost was recorded, keyset-paged; RP-505 bounds its sources and corrections to the newest 100 each, the older being reached through the stock history.
+10. **The measured replay time** (contract section 8) is written by two tests on their error stream: the recomputation alone of the reference cap, 10,000 movements (`ValuationReplayTest`), and a whole correction whose replay covers 200 movements (`CorrectCostTest`), each on the CI runner's containers, not a PERF01 pass (BR-COST-28). Section 5 records the figures.
+
+## 4. Findings
+
+- **F-1, for the Task that next touches UXP-006:** RC-15's result is RP-505 of the product, which RC-50 also gives; "Lihat hasil" of UXP-006 (UXI-056) is not among this Task's controls and is not extended to it.
+
+## 5. The ADR-008 cases and the backup impact (EXC-47)
+
+| Case | Test | Result |
+| --- | --- | --- |
+| A corrected receipt recomputes the issues after it, with the projections and the valuation, never a fact (L-15) | `ValuationReplayTest::test_a_corrected_receipt_recomputes_the_l_15_issues_after_it`; `CorrectCostTest::test_a_correction_replays_the_product_and_publishes_its_projections_and_valuation_never_a_fact` | Pending the fast run |
+| An UNKNOWN cost completed later completes what depended on it; a known pool after zero is not reached by it | `ValuationReplayTest::test_an_unknown_cost_completed_later_…`, `::test_a_known_pool_after_zero_…`; `CorrectCostTest::test_an_unknown_cost_completed_later_…` | Pending the fast run |
+| One rounding half-up where SQL would round twice; the issue to zero takes the rest | `ValuationReplayTest::test_an_allocation_is_rounded_once_…` | Pending the fast run |
+| The same input, the same result; the same correction twice rewrites nothing | `ValuationReplayTest::test_the_same_input_gives_the_same_result`; `CorrectCostTest::test_the_same_correction_again_…` | Pending the fast run |
+| An unsafe history or a value out of range is refused | `ValuationReplayTest::test_an_unsafe_history_or_a_value_out_of_range_is_refused` | Pending the fast run |
+| The movement cap and the time budget refuse with one mark per intent; SERVICE_BUSY when the mark fails | `CorrectCostTest::test_the_movement_cap_…`, `::test_the_time_budget_…`, `::test_a_mark_that_cannot_be_written_…`; `ValuationReplayTest::test_the_budget_is_asked_…` | Pending the fast run |
+| The publication is all or nothing | `CorrectCostTest::test_a_failure_after_every_write_step_…` | Pending the fast run |
+| RACE-11, and the mark against a later correction | `CostCorrectionRaceTest` | Pending the fast run |
+| REVERSAL, SALE_ISSUE, RETURN_RECEIPT and OPENING in the replay | TASK-026, TASK-028, TASK-033, TASK-035 | Not this Task's |
+
+**Measured replay time.** Pending the fast run's log.
+
+**Backup impact.** The three new class-F tables are in the manifest's counts through the privilege matrix (`BackupRunner::COUNTED_CLASSES`, BACKUP_RECOVERY section 5); the backup role reads them and the sequences `cost_corrections_id_seq` and `cost_incomplete_marks_id_seq` (a clearance is keyed by its mark). No stored file, runbook or status page changes.

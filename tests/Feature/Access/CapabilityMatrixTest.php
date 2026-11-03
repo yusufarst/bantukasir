@@ -320,6 +320,21 @@ final class CapabilityMatrixTest extends DatabaseTestCase
         'RP-410' => ['method' => 'GET', 'path' => '/stock/adjustments/new', 'json' => false, 'answers' => [
             'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
         ]],
+        // TASK-025: the cost correction for CAP-19 and the cost pages for CAP-20, the Owner's alone,
+        // RC-15 with recent authentication; every other role and the combined account refused
+        // (AC-025-02, THR-19); a cost source or a product that does not exist.
+        'RC-15' => ['method' => 'POST', 'path' => '/commands/cost_correction.confirm', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [423, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RP-503' => ['method' => 'GET', 'path' => '/reports/costs-to-complete', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RP-504' => ['method' => 'GET', 'path' => '/costs/{evidence}/correct', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [404, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RP-505' => ['method' => 'GET', 'path' => '/products/{product}/cost-history', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [404, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
     ];
 
     /** @var array<string, array{id: int, email: string, password: string}> */

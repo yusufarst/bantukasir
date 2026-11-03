@@ -129,13 +129,14 @@ final class Allowlists
             'history.rows.*.source.id', 'history.rows.*.source.at', 'history.nextCursor', 'history.previousCursor',
         ]],
         'inventory/Movement' => [
-            'owner' => [...self::MOVEMENT, 'costEvidence', 'costEvidence.status', 'costEvidence.total', 'costEvidence.zeroNote'],
+            'owner' => [...self::MOVEMENT, 'costEvidence', 'costEvidence.evidenceId', 'costEvidence.status', 'costEvidence.total', 'costEvidence.zeroNote', 'costEvidence.corrections'],
             'ops' => self::MOVEMENT,
             'combined' => self::MOVEMENT,
         ],
         // The receiving pages (TASK-022), for every kind of account that CAP-11 opens them to:
-        // the purchase cost of each line (CAP-12, D-033, D-047); a zero's evidence or reason for
-        // the Owner alone.
+        // the purchase cost of each line (CAP-12, D-033, D-047) — since TASK-025 as it is now, with
+        // the mark and the cost at confirmation; a zero's evidence or reason, the cost source and
+        // the correction history for the Owner alone.
         'inventory/Receivings' => ['*' => [
             'filters', 'filters.from', 'filters.to', 'filters.q', 'postingFrozen',
             'receivings', 'receivings.rows', 'receivings.rows.*', 'receivings.rows.*.id', 'receivings.rows.*.confirmedAt', 'receivings.rows.*.reference',
@@ -143,7 +144,11 @@ final class Allowlists
         ]],
         'inventory/ReceivingCreate' => ['*' => ['postingFrozen', 'zeroAllowed', ...self::CATEGORIES]],
         'inventory/Receiving' => [
-            'owner' => [...self::RECEIVING, 'lines.*.zeroNote'],
+            'owner' => [
+                ...self::RECEIVING, 'lines.*.zeroNote', 'lines.*.evidenceId', 'lines.*.correctionNo', 'lines.*.corrections', 'lines.*.corrections.*', 'lines.*.corrections.*.correctionNo',
+                'lines.*.corrections.*.oldAmount', 'lines.*.corrections.*.newAmount', 'lines.*.corrections.*.zeroNote', 'lines.*.corrections.*.reason', 'lines.*.corrections.*.recordedAt',
+                'lines.*.corrections.*.actorDisplayName',
+            ],
             'ops' => self::RECEIVING,
             'combined' => self::RECEIVING,
         ],
@@ -159,6 +164,30 @@ final class Allowlists
             'issue', 'issue.id', 'issue.confirmedAt', 'issue.reasonCode', 'issue.note', 'issue.lineCount', 'issue.actorDisplayName',
             'lines', 'lines.*', 'lines.*.lineNo', 'lines.*.product', 'lines.*.product.id', 'lines.*.product.name', 'lines.*.product.sku', 'lines.*.movementId',
             'lines.*.quantity', 'lines.*.baseUnit', 'lines.*.quantityPrecision',
+        ]],
+        // The cost pages, the Owner's alone (TASK-025; CAP-19, CAP-20): RP-503's worklist with the
+        // product of its filter, RP-504's cost source with its history, RP-505's valuation, cost
+        // sources and corrections. No other role opens them.
+        'reporting/CostWorklist' => ['owner' => [
+            'filters', 'filters.product', 'filters.perPage', 'product', 'product.id', 'product.name', 'product.sku',
+            'worklist', 'worklist.rows', 'worklist.rows.*', 'worklist.rows.*.evidenceId', 'worklist.rows.*.product', 'worklist.rows.*.product.id', 'worklist.rows.*.product.name',
+            'worklist.rows.*.product.sku', 'worklist.rows.*.sourceType', 'worklist.rows.*.recordedAt', 'worklist.rows.*.unknown', 'worklist.rows.*.marked', 'worklist.nextCursor',
+            'worklist.previousCursor',
+        ]],
+        'costing/Correction' => ['owner' => [
+            'source', 'source.evidenceId', 'source.product', 'source.product.id', 'source.product.name', 'source.product.sku', 'source.movementId', 'source.sourceType',
+            'source.recordedAt', 'source.quantity', 'source.baseUnit', 'source.quantityPrecision', 'source.cost', 'source.cost.status', 'source.cost.amount', 'source.zeroNote',
+            'source.confirmedCost', 'source.confirmedCost.status', 'source.confirmedCost.amount', 'source.correctionNo', 'source.marked',
+            'corrections', 'corrections.*', 'corrections.*.correctionNo', 'corrections.*.oldAmount', 'corrections.*.newAmount', 'corrections.*.zeroNote', 'corrections.*.reason',
+            'corrections.*.recordedAt', 'corrections.*.actorDisplayName', 'opener',
+        ]],
+        'costing/CostHistory' => ['owner' => [
+            'product', 'product.id', 'product.name', 'product.sku', 'product.baseUnit', 'product.quantityPrecision',
+            'valuation', 'valuation.status', 'valuation.value', 'valuation.averageCost', 'valuation.onHand', 'marked',
+            'evidence', 'evidence.*', 'evidence.*.evidenceId', 'evidence.*.movementId', 'evidence.*.sourceType', 'evidence.*.recordedAt', 'evidence.*.quantity', 'evidence.*.cost',
+            'evidence.*.cost.status', 'evidence.*.cost.amount', 'evidence.*.zeroNote', 'evidence.*.correctionNo', 'evidence.*.marked',
+            'corrections', 'corrections.*', 'corrections.*.evidenceId', 'corrections.*.correctionNo', 'corrections.*.sourceType', 'corrections.*.sourceRecordedAt',
+            'corrections.*.oldAmount', 'corrections.*.newAmount', 'corrections.*.zeroNote', 'corrections.*.reason', 'corrections.*.recordedAt', 'corrections.*.actorDisplayName', 'opener',
         ]],
         // UXP-410, the Owner's alone (TASK-024): the first line's product as RD-01 in the context
         // `adjustment` gives it, with its version and stock, never a cost.
@@ -193,6 +222,8 @@ final class Allowlists
         'document', 'document.id', 'document.confirmedAt', 'document.reference', 'document.documentDate', 'document.lineCount', 'document.actorDisplayName',
         'lines', 'lines.*', 'lines.*.lineNo', 'lines.*.product', 'lines.*.product.id', 'lines.*.product.name', 'lines.*.product.sku', 'lines.*.movementId',
         'lines.*.quantity', 'lines.*.baseUnit', 'lines.*.quantityPrecision', 'lines.*.cost', 'lines.*.cost.status', 'lines.*.cost.amount',
+        // After the Owner's correction (D-047; TASK-025).
+        'lines.*.corrected', 'lines.*.confirmedCost', 'lines.*.confirmedCost.status', 'lines.*.confirmedCost.amount',
     ];
 
     /** The categories of a catalogue page. */

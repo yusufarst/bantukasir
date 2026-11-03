@@ -11,7 +11,8 @@ use Illuminate\Container\Attributes\Bind;
  * Every command's Action calls them in that order. The command pipeline's
  * writes in transactions of their own — the request receipt, its marking,
  * the settlement of receipts and the stale-intent report (ADR-009; TASK-008)
- * — each call afterOwnWrite() before their transaction commits.
+ * — and the cost-incomplete mark of a refused cost correction (SCHEMA section
+ * 5.8; TASK-025) each call afterOwnWrite() before their transaction commits.
  *
  * The application resolves NoCommandPoints, which does nothing, in every
  * environment and build. Only the test harness in tests/Harness, which the
@@ -47,7 +48,7 @@ interface CommandPoints
     /**
      * After a write of the command pipeline that runs in a transaction of its
      * own, before that transaction commits: "receipt", "marking",
-     * "settlement" or "report".
+     * "settlement", "report" or "mark".
      */
     public function afterOwnWrite(string $write): void;
 }

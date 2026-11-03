@@ -4,8 +4,8 @@ namespace App\Queries\Inventory;
 
 use App\Policies\NotFound;
 use App\Policies\ObjectScope;
+use App\Queries\Costing\EffectiveCosts;
 use App\Queries\Inventory\Column as Read;
-use App\Support\Numbers\Cost;
 use App\Support\Numbers\Quantity;
 use Illuminate\Support\Facades\DB;
 
@@ -15,8 +15,8 @@ use Illuminate\Support\Facades\DB;
  * and its source — a receiving document, or a manual issue with its reason (TASK-023) — read in
  * one statement; a movement is the whole shop's, so a missing one is the
  * only NOT_FOUND (TR-ERR-03). The cost evidence of an OPENING, a RECEIPT or a positive ADJUSTMENT
- * is the Owner's alone (CAP-20; UXI-225), read only when the controller asks for it. Its
- * corrections come with TASK-025, which adds them here.
+ * is the Owner's alone (CAP-20; UXI-225), read only when the controller asks for it, as it is
+ * after the Owner's corrections (TASK-025).
  */
 final class MovementDetail
 {
@@ -81,30 +81,36 @@ final class MovementDetail
 
     /**
      * The movement's acquisition cost evidence, for the Owner (CAP-20): its status — KNOWN, a zero
-     * with its evidence or reason, or UNKNOWN — and its total; null for a movement that carries
-     * none (COSTING BR-COST-02 to BR-COST-04).
+     * with its evidence or reason, or UNKNOWN — and its total, both as they are now, after the
+     * Owner's corrections, with how many there were and the cost source for "Koreksi biaya"
+     * (UXI-225, UXI-226; TASK-025); null for a movement that carries none (COSTING BR-COST-02 to
+     * BR-COST-04, BR-COST-20).
      *
-     * @return array{status: string, total: string|null, zeroNote: string|null}|null
+     * @return array{evidenceId: int, status: string, total: string|null, zeroNote: string|null, corrections: int}|null
      */
     public function evidence(int $movementId): ?array
     {
-        $row = DB::table('acquisition_cost_evidence')
-            ->where('movement_id', $movementId)
-            ->first(['cost_status', 'total_amount', 'zero_cost_note']);
+        $row = DB::table('acquisition_cost_evidence as e')
+            ->where('e.movement_id', $movementId)
+            ->select(['e.id', 'e.cost_status', 'e.total_amount', 'e.zero_cost_note'])
+            ->selectRaw(EffectiveCosts::CORRECTED_AMOUNT)
+            ->selectRaw(EffectiveCosts::CORRECTED_NOTE)
+            ->selectRaw(EffectiveCosts::CORRECTION_NO)
+            ->first();
 
         if ($row === null) {
             return null;
         }
 
         $values = (array) $row;
-        $status = Read::text($values, 'cost_status');
-        $amount = Read::nullableText($values, 'total_amount');
-        $cost = Cost::fromDatabase($amount, $status);
+        $current = EffectiveCosts::current($values);
 
         return [
-            'status' => $status,
-            'total' => $cost->isKnown() ? $cost->toCanonical() : null,
-            'zeroNote' => Read::nullableText($values, 'zero_cost_note'),
+            'evidenceId' => Read::int($values, 'id'),
+            'status' => $current['status'],
+            'total' => $current['amount'],
+            'zeroNote' => EffectiveCosts::zeroNote($values),
+            'corrections' => EffectiveCosts::correctionNo($values),
         ];
     }
 }

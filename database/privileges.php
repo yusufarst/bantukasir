@@ -251,6 +251,20 @@ return [
             'runtime' => ['select' => true, 'insert' => true, 'update' => ['value_status', 'value', 'publication_no', 'last_sequence', 'published_at']],
         ],
 
+        // Costing, the cost correction and the cost-incomplete mark (SCHEMA section 5.8; TASK-025).
+        'cost_corrections' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'cost_incomplete_marks' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'cost_incomplete_mark_clearances' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+
         // Operations (SCHEMA section 5.12; TASK-013): written by the backup role
         // (SCH-42), read by the runtime role.
         'backup_runs' => [

@@ -192,9 +192,11 @@ final class StockPagesTest extends DatabaseTestCase
         $this->assertSame(['kind' => 'RECEIVING', 'id' => $this->documents[0], 'at' => '2026-11-02T03:00:00.000000Z'], $read['source']);
         $this->assertStringNotContainsString('30000', (string) json_encode($read), 'No cost in the movement of a staff account (CAP-14).');
 
+        // The evidence as it is after the Owner's corrections, with how many there were (TASK-025).
         $this->as('Hendra');
-        $this->assertSame(['status' => 'KNOWN', 'total' => '30000', 'zeroNote' => null], $this->propsOf($this->get('/stock/movements/'.$movement)->assertOk())['costEvidence'] ?? null);
-        $this->assertSame(['status' => 'UNKNOWN', 'total' => null, 'zeroNote' => null], $this->propsOf($this->get('/stock/movements/'.$this->movementOf($this->paper, 2))->assertOk())['costEvidence'] ?? null);
+        $unknown = $this->movementOf($this->paper, 2);
+        $this->assertSame(['evidenceId' => TokoContoh::evidenceOf($movement), 'status' => 'KNOWN', 'total' => '30000', 'zeroNote' => null, 'corrections' => 0], $this->propsOf($this->get('/stock/movements/'.$movement)->assertOk())['costEvidence'] ?? null);
+        $this->assertSame(['evidenceId' => TokoContoh::evidenceOf($unknown), 'status' => 'UNKNOWN', 'total' => null, 'zeroNote' => null, 'corrections' => 0], $this->propsOf($this->get('/stock/movements/'.$unknown)->assertOk())['costEvidence'] ?? null);
 
         foreach (['999999', 'abc', '0', '-1'] as $identifier) {
             $this->getJson('/stock/movements/'.$identifier)->assertStatus(404)->assertJsonPath('code', 'NOT_FOUND');

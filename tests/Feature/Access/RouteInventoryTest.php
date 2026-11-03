@@ -131,6 +131,11 @@ final class RouteInventoryTest extends TestCase
         // TASK-024: RC-09, with recent authentication, and RP-410.
         'POST /commands/adjustment.confirm' => ['commands.adjustment.confirm', 'RC-09', 'CAP-16', [...self::SIGNED_IN, 'capability:CAP-16', 'throttle:command', 'password.confirm']],
         'GET /stock/adjustments/new' => ['adjustments.create', 'RP-410', 'CAP-16', [...self::SIGNED_IN, 'capability:CAP-16', 'input.allow:product,from_page']],
+        // TASK-025: RC-15, with recent authentication, and RP-503 to RP-505.
+        'POST /commands/cost_correction.confirm' => ['commands.cost_correction.confirm', 'RC-15', 'CAP-19', [...self::SIGNED_IN, 'capability:CAP-19', 'throttle:command', 'password.confirm']],
+        'GET /costs/{evidence}/correct' => ['costs.correct', 'RP-504', 'CAP-19', [...self::SIGNED_IN, 'capability:CAP-19', 'input.allow:from_page']],
+        'GET /reports/costs-to-complete' => ['reports.costs', 'RP-503', 'CAP-20', [...self::SIGNED_IN, 'capability:CAP-20', 'input.allow:product,after,before,perPage']],
+        'GET /products/{product}/cost-history' => ['products.cost_history', 'RP-505', 'CAP-20', [...self::SIGNED_IN, 'capability:CAP-20', 'input.allow:from_page']],
     ];
 
     public function test_the_routes_are_exactly_those_listed_each_with_its_gate(): void

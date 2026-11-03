@@ -52,6 +52,13 @@ final class UserCommandScenario implements Scenario
             Storage::forgetDisk(CsvImportFiles::DISK);
         }
 
+        // RC-15's movement cap, lowered by a test of a refused replay (TASK-025).
+        $replayCap = $arguments['replayCap'] ?? null;
+
+        if (is_int($replayCap)) {
+            config(['costing.replay.movement_cap' => $replayCap]);
+        }
+
         $envelope = new Envelope(
             $operation,
             1,

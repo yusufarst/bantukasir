@@ -88,7 +88,8 @@ export const DESTINATIONS: Readonly<Partial<Record<DestinationId, DestinationEnt
 /**
  * The registered items of each sub-navigation: UXI-009 and UXI-010, from TASK-017; UXI-011,
  * from TASK-019; UXI-012 to UXI-014, from TASK-022; UXI-015 "Barang keluar", the Owner's explicit
- * entry of D-018, from TASK-023.
+ * entry of D-018, from TASK-023; UXI-021 "Biaya perlu dilengkapi" (CAP-20), from TASK-025, shown
+ * once the Laporan destination exists (TASK-041).
  */
 export const SUB_DESTINATIONS: Readonly<Record<AreaId, Readonly<Partial<Record<SubDestinationId, SubDestinationEntry>>>>> = {
     products: {
@@ -102,7 +103,9 @@ export const SUB_DESTINATIONS: Readonly<Record<AreaId, Readonly<Partial<Record<S
         receipts: { label: 'inventory.receipts.title', href: '/stock/receivings', capabilities: ['CAP-11'] },
         issues: { label: 'inventory.issues.title', href: '/stock/issues', capabilities: ['CAP-13'] },
     },
-    reports: {},
+    reports: {
+        worklist: { label: 'costing.worklist.title', href: '/reports/costs-to-complete', capabilities: ['CAP-20'] },
+    },
 };
 
 /** The kind of account of these roles; null without a role. SUPER_ADMIN is held alone (BR-USR-02). */

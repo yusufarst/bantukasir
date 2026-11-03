@@ -70,6 +70,17 @@ final class SqlState
     }
 
     /**
+     * Whether the transaction budget ended the session: the server's reason
+     * for 25P04, which pdo_pgsql reports in the message of the statement that
+     * met it (TASK-004). A transaction ended so has not committed.
+     */
+    public static function budgetEnded(Throwable $failure): bool
+    {
+        return ($failure instanceof QueryException || $failure instanceof PDOException)
+            && str_contains($failure->getMessage(), 'terminating connection due to transaction timeout');
+    }
+
+    /**
      * Whether the connection was lost: the session ended, also by its
      * transaction budget, or the server could not be reached.
      */

@@ -95,7 +95,9 @@ final class CopyDeckTest extends TestCase
 
                 $texts = count($keys) === 1 ? [$cells[$at + 1]] : explode('; ', $cells[$at + 1]);
                 $this->assertCount(count($keys), $texts, "COPY_DECK gives each key of {$cell} its copy.");
-                $copies[] = (string) preg_replace('/^[a-z][a-z ]*: /', '', trim($texts[$position]));
+                // A page title of section 4.1 may name its mode after it, in parentheses:
+                // "Lengkapi biaya (when the cost is UNKNOWN)", "Ubah laci kas (edit)" (TASK-025).
+                $copies[] = (string) preg_replace(['/^[a-z][a-z ]*: /', '/ \((?:when [^)]*|otherwise|new|edit)\)$/'], '', trim($texts[$position]));
             }
         }
 
