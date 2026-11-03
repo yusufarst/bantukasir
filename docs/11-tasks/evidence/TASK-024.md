@@ -26,9 +26,12 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | `composer validate`, `lint`, `analyse`, `test:unit` | Fast run 41646371938 on `aa93aad` | 20:43 to 20:44 | 1 min 11 s | `PASS` |
 | `npm run lint`, `typecheck`, `test:unit`, `adjustmentDraft.test.ts` among them | Same run | 20:45 to 20:46 | 1 min 51 s | `PASS` |
 | The PostgreSQL and concurrency test files that the branch changes: `AdjustmentRaceTest`, `CapabilityMatrixTest`, `RouteInventoryTest`, `ProductSearchTest`, `AdjustmentPagesTest`, `AdjustmentTablesTest`, `ConfirmAdjustmentTest`, `IssueTablesTest`, `LedgerTablesTest`, `StockPagesTest` | Same run | 20:46 to 20:51 | 5 min 18 s | `PASS` |
-| The whole command contract — `test:postgres`, `test:race`, `build`, the browser suite with `tests/Browser/inventory/adjustment.spec.ts` — and the image checks | CI on the pull request's final head | — | — | `NOT_RUN` at this writing (CE-41, D-117); never on this machine (D-108) |
+| Guard (Gitleaks 8.30.1, the secret scan, identity, candidates) | Local, on `fe3e595`, the review's fixes | 21:03 | under 1 min of scanning | `PASS`, no candidate |
+| `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint` (`Menu.tsx`), `typecheck`, `test:unit` | Fast run 41650066390 on `fe3e595`, the review's fixes | 21:07 to 21:10 | about 3 min | `PASS` |
+| The PostgreSQL and concurrency test files that the branch changes, `AdjustmentRaceTest` with its RACE-24 case among them | Same run | 21:10 to 21:16 | 5 min 43 s | `PASS` |
+| The whole command contract — `test:postgres`, `test:race`, `build`, the browser suite with `tests/Browser/inventory/adjustment.spec.ts` and its test of R-03 — and the image checks | CI on the pull request's final head | — | — | `NOT_RUN` at this writing (CE-41, D-117); never on this machine (D-108) |
 
-Fast run 4, 41646371938 on `aa93aad`, is the run of the code to review.
+Fast run 4, 41646371938 on `aa93aad`, is the run of the code to review; fast run 5, 41650066390 on `fe3e595`, that of the review's fixes. The record's commit changes documents only; its push starts fast run 6 of 10, which the executor does not wait for.
 
 ## 2. What was built (contract section 4.1)
 
@@ -51,3 +54,68 @@ Fast run 4, 41646371938 on `aa93aad`, is the run of the code to review.
 6. **The direction** is a segmented control of DESIGN_SYSTEM 8.4 whose legend is "Perubahan" (`inventory.line.change`), the review's word for the change; COPY_DECK names no other legend.
 7. **UXI-217 unavailable**: a menu item cannot hold a link, so the reason for an unresolved request is the item's text, and "Buka Permintaan belum pasti" is a second item of the same menu.
 8. **Not built here:** "Lihat hasil" of UXP-006 for an adjustment (UXI-056 is not among this Task's controls); a source link of an ADJUSTMENT on RP-402 and RP-403 (no page of an adjustment exists). The movement's cost evidence of a positive ADJUSTMENT already shows on RP-403 for the Owner (UXI-225).
+9. **No decision entry** for RP-402's list of products (review NOTE R-06): it carries out RC-09's own location and changes no business meaning; ROUTE_CONTRACTS, the authoritative document, records it (EXC-81).
+
+## 4. Findings
+
+- **F-1.** Three fast runs failed on defects of the new code's static form and of a new test, none of behaviour: PHPStan's nullable result reference, a needless `array_values`, a missing test helper and an assertion it judged always true (run 1); a template literal with letters inside JSX, which the copy rule of ADR-005 refuses (run 2); `?? 'absent'` on a prop that is null (run 3). Each was fixed in the next checkpoint.
+- **F-2, for the next change control of COPY_DECK:** UXI-269's direction control has no legend of its own; the page uses `inventory.line.change` "Perubahan" (reading 6).
+- **F-3, for TASK-026 and the Task that next touches UXP-006:** an ADJUSTMENT movement has no source link and UXP-006 has no "Lihat hasil" for `adjustment.confirm` (reading 8); RC-09's result is RP-402 filtered to its products, whose address RC-50 also gives.
+
+## 5. The ADR-008 cases and the backup impact (EXC-47)
+
+| Case | Test | Result |
+| --- | --- | --- |
+| A decrease takes the average before it, rounded once, half-up; an increase adds its cost | `ConfirmAdjustmentTest::test_an_adjustment_posts_each_signed_line_…` (1 of 13 pens worth Rp136.000 takes Rp10.461,538462) | `PASS`, fast run 41646371938 |
+| The decrease that takes stock to zero takes the whole remaining value; UNKNOWN never zero; a known pool after zero; an explicit zero with its evidence | `ConfirmAdjustmentTest::test_an_increase_carries_known_unknown_or_an_explicit_zero_and_a_decrease_follows_adr_008` | `PASS`, same run |
+| Postings of one product serialize on its guard: the decrease that waited takes the valuation the increase published | `AdjustmentRaceTest::test_an_increase_and_a_decrease_of_one_product_serialize_on_its_guard` | `PASS`, same run |
+| Corrections, the replay, reversal | TASK-025, TASK-026 | Not this Task's |
+
+**Backup impact.** The two new class-F tables, `adjustments` and `adjustment_lines`, are in the manifest's counts through the privilege matrix (`BackupRunner::COUNTED_CLASSES`, BACKUP_RECOVERY section 5); the backup role reads both tables and their sequences. No stored file, runbook or status page changes.
+
+## 6. Definition of Done (TEST_STRATEGY section 10)
+
+| Dimension | Result | Reason |
+| --- | --- | --- |
+| Business | PASS on the fast runs, the L5 criterion subject to CI on the final head | AC-024-01 to AC-024-04 below; REQ-INV-08, WF-22 |
+| UI and UX | PASS subject to CI on the final head | UXP-410 and its 11 controls against the approved P7 artifacts; COPY_DECK verbatim; F-2; the browser tests with axe, the widths and the 200 % zoom run first on the final head (D-117) |
+| Backend | PASS on the fast runs | The FormRequests' allowlists, NOT_FOUND for a guessed identifier, CAP-16 at the route and in the Action, recent authentication, the channel allowlists, L4 tests |
+| Database | PASS on the fast runs | The migration with its checks, keys, indexes and grants; the constraint, deferred, privilege and retention families (`AdjustmentTablesTest`); the key completed on `stock_movements` (EXC-44). The rehearsal on the benchmark dataset is TASK-043's (EXC-46) |
+| Security | PASS on the fast runs | OPERATIONS_ADMIN, the cashier, the combined account and a visitor refused on every route and in the Action; 423 without recent authentication; costs only in the audit's Owner-only part; no secret; the static checks |
+| Data integrity | PASS on the fast runs | Append-only facts; the evidence or allocation of every movement at commit; the audit and result in the transaction; identity and idempotency; RACE-01, RACE-02, RACE-24 and the last unit; the failure after every write step |
+| Performance | PASS | An adjustment holds at most 200 lines; RP-402's filter at most 200 keys; the budgets are measured at TASK-048 |
+| Operations | PASS | Section 5's backup impact; no runbook or status change |
+| Verification | PASS subject to CI on the final head | Self-review; the class-A review PASS with no MUST-FIX (section 8); the fast runs green on the reviewed code and on the review's fixes (section 1); the whole command contract and the image checks on the final head (CE-41, D-117) |
+
+## 7. Acceptance criteria
+
+| Criterion | Status | Where |
+| --- | --- | --- |
+| AC-024-01 | PASS on the fast run | `ConfirmAdjustmentTest` (the Owner alone, 423 without recent authentication, every field mandatory with its key), `CapabilityMatrixTest`, `AdjustmentPagesTest` |
+| AC-024-02 | PASS on the fast run | `ConfirmAdjustmentTest` (evidence of increases, allocations of decreases, INSUFFICIENT_STOCK for the decreases added together), `AdjustmentTablesTest` (both presence keys at commit), `AdjustmentRaceTest` (the last unit) |
+| AC-024-03 | PASS on the fast run | `ConfirmAdjustmentTest::test_a_failure_after_every_write_step_…` (16 steps), `AdjustmentRaceTest` (RACE-01, RACE-02, RACE-24) |
+| AC-024-04 | PASS subject to CI on the final head | `AdjustmentPagesTest` and `adjustmentDraft.test.ts` on the fast run; `adjustment.spec.ts`, its storage check and its widths, on the final head |
+
+## 8. Review (CE-40)
+
+**Self-review** of the whole change against the contract's scope items 1 to 3 and the rules it cites, before the isolated review: each item is built as section 2 says; nothing out of scope (no reversal or correction); every route with its gate, its parameters as allowlists and NOT_FOUND for a guessed identifier; the draft of RP-410 in page memory only; the 11 controls of contract section 4.2, UXI-056 and UXI-224 not extended (reading 8). It found nothing to change before the review.
+
+| Round | Agent, effort | Package | Verdict |
+| --- | --- | --- | --- |
+| 1, the adversarial review (class A) | `bk-reviewer-high`, High | `review/TASK-024/r1`, head `b6cb7de`; `--check` `UNCHANGED` | PASS: no MUST-FIX, four SHOULD-FIX, five NOTEs. No MUST-FIX, so no targeted verification (CE-40) |
+
+| Finding | Severity | Outcome |
+| --- | --- | --- |
+| R-01: RACE-24, which RC-09 and WF-22 name, not proven for RC-09 | SHOULD-FIX | Fixed: `AdjustmentRaceTest::test_race_24_a_posting_block_against_an_adjustment_…`, both orders |
+| R-02: the unavailable menu item looked active, and its reason entered its name | SHOULD-FIX | Fixed: `.bk-menu__item[aria-disabled='true']` in `components.css`, the item named by its label (`aria-labelledby`), the reason its description; tested by R-03's test |
+| R-03: no test of the unavailable entries UXI-217 and UXI-221 | SHOULD-FIX | Fixed: `adjustment.spec.ts`, "while an adjustment is uncertain, the entries … are unavailable with their reason", on the final head (D-117) |
+| R-04: the evidence lacked the findings, the backup impact, the criteria and the Definition of Done | SHOULD-FIX | Fixed: sections 4 to 8 |
+| R-05: decreases checked against the stock before the adjustment | NOTE | Recorded as reading 1 |
+| R-06: a decision entry for RP-402's list | NOTE | Recorded as reading 9 |
+| R-07: the fact and its projection are one write step | NOTE | Recorded; as TASK-023's reading 9 |
+| R-08: the storage check before the first send only | NOTE | No change: the references store no payload |
+| R-09: the heavy checks `NOT_RUN` | NOTE | They run on the pull request's final head (CE-41, D-117) |
+
+## 9. The guard's candidates (CE-31)
+
+`guard.sh --preview` and `guard.sh` on every checkpoint, `b75ac85` to `fe3e595`, list no candidate: no address, host, e-mail or home path. The guard on the record's commit is reported with the pull request, because this file cannot name its own commit.
