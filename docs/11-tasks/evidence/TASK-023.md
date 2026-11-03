@@ -211,3 +211,18 @@ CI run 41589075661 on the head `5cd4262` failed in `Command contract`, at its br
 - **Fix** (`tests/Browser/inventory/stock.spec.ts`, `quietShell()`, test only): when the main frame commits a new document — a `framenavigated` of the main frame after a navigation request of the main frame — the reads still out are discarded; they belong to the document before it, since the new document's scripts start only after the commit. A navigation within the document, as the chips' and the search's address changes, keeps them. A late `requestfinished` or `requestfailed` of a discarded read deletes nothing from the set, so the count of the new document can be neither stale nor negative; the new document's own reads are counted as before.
 - **The other users.** `quietShell()` is used only by the two clock-moving tests, lines 158 and 213 at fix cycle 3's head; in both it is set up before their one `page.goto('/stock')`, and every later `shellSettled()` follows navigations within the document or none, so each still waits for the shell's real reads before each jump. No assertion, timeout, test or production behaviour changes, and no test is skipped.
 - **Regression test.** The failed test itself, on the fix's head, its first run in CI (D-108); no production code changes, so no targeted verification (CE-40, CE-42), and no repeated review.
+
+## 14. Merge, the failure on `develop` and its recovery (CE-50, CE-61, D-119)
+
+This section was written on the `ops/` branch of D-119. Its last row is filled by the next Task (CE-50). TASK-023 counts as operationally verified only once green runs fill that row, under D-119's one-time exception to CE-61.
+
+| Fact | Value | Result |
+| --- | --- | --- |
+| Pull request | #32 into `develop`, head `938a229`, merged by the tick with a squash merge; automated review DONE | — |
+| CI on the head | Run 41595388181, both jobs: `Command contract`, with the browser suite, and `Image checks` | PASS |
+| Merge commit | `9688011`, tree `bb9f06c`, equal to the head's; author the Owner's no-reply identity; parent `0488397`, the base | PASS, read on 3 November 2026 |
+| **CI on `develop` at the merge** | **Run 41600342293: `Image checks` passed; `Command contract` failed at `composer test:postgres`, 1 of 697 tests, `SignInSessionTest::test_an_ended_sign_in_session_leads_to_the_sign_in_page_with_its_note`, "Failed asserting that null is identical to 'signed_out'"** | **FAIL; it stays red and on record** |
+| The tick's other checks of CE-61 | Base, content, author and fast-forward come before its CI check in `verify_merge`, which reached `DEVELOP_CI_RED` | PASS, by that order; nothing was recorded in the state for this merge |
+| The recovery (D-119) | Pull request #33, `ops/t37-signed-out-note`, into `develop`: its head, its CI run, its squash commit with tree and author, the Owner's merge (CE-82), and CI on `develop` at that commit. Run 41600342293 above stays a FAIL | To be filled by the next Task (CE-50) |
+
+**The failure.** It is OPEN_ITEMS T-37, met in a sibling of the test that recorded it. This Task's only change to `SignInSessionTest` is one line, which maps `issue_cost_allocation_projections` to its key in the retained-tables check. That line is far from the failed test and does not touch the session. The same test passed in CI on the pull request's head. The cause, the lost `signed_out` flash of an expired session whose row the session lottery deleted in the same request, is fixed by pull request #33.

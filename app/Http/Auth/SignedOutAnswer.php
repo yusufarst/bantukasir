@@ -40,6 +40,11 @@ final class SignedOutAnswer
         }
 
         if ($notice && $request->hasSession()) {
+            // T-37: a session that the framework's lifetime ended is read as
+            // existing, and the session lottery may delete its row before the
+            // answer is written, so that the write updates nothing and the
+            // note is lost. Under a new identifier the write inserts.
+            $request->session()->migrate(true);
             $request->session()->flash(SignInSession::NOTICE, SignInSession::SIGNED_OUT);
         }
 
