@@ -35,9 +35,12 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | `npm run typecheck`, `npx eslint` | Local | 06:40 | — | `NOT_RUN`: neither is installed on this machine |
 | The static checks and unit tests, `issueDraft.test.ts` with its new cases; the changed PostgreSQL and concurrency test files, unchanged since run 5 | Fast run 41547785979 on `a75d4a3`, fix cycle 1 | 06:45 to 06:58 | 12 min 38 s | `PASS` |
 | The same, after the fixes of the targeted verification | Fast run 41549728081 on `d6a2f00`, fix cycle 1 | 07:01 to 07:14 | 12 min 45 s | `PASS` |
-| The whole command contract — `test:postgres`, `test:race`, `build`, the browser suite with `tests/Browser/inventory/issue.spec.ts`, fix cycle 1's tests among them, and the changed browser files — and the image checks | CI on the pull request's final head | — | — | `NOT_RUN` at this writing (CE-41, D-117); the full runs on `b08bb81` (41546293008) and `a75d4a3` (41547793731) were cancelled by the next push, before a result |
+| The whole command contract and the image checks | CI run 41551718254 on the pull request's head `1562fbe` | 07:18 to 08:08 | browser suite 12.7 min | `FAIL`, failure 1 of 3 (CE-42): the browser suite 291 passed, 1 failed, 2 did not run; the failed test `issue.spec.ts:295`, its axe check `label-content-name-mismatch: .bk-btn--block` (section 11); the image checks passed |
+| `npx eslint` on `IssueCreate.tsx` | Local, fix cycle 2 | 12:10 | — | `NOT_RUN`: not installed on this machine |
+| Guard, preview and commit (Gitleaks 8.30.1, the secret scan, identity, candidates) | Local, fix cycle 2 | At the commit | under 1 min of scanning | Reported with the pull request, because this file cannot name its own commit |
+| The whole command contract — `test:postgres`, `test:race`, `build`, the browser suite with `tests/Browser/inventory/issue.spec.ts` and the changed browser files — and the image checks | CI on the pull request's final head, fix cycle 2 | — | — | `NOT_RUN` at this writing (CE-41, D-117); the fix's one push also starts fast run 8 of 10, which the executor does not wait for |
 
-Fast run 4, 41539530903 on `04c2599`, is the run of the code to review; fast run 5, 41543415444 on `5cc3d82`, that of the review's fixes (section 8); fast runs 6 and 7 those of fix cycle 1 (section 10): seven fast runs of the 10 that CE-46 allows. The record's commits change documents only. The browser tests, with the widths of R-01, run first in the browser suite on the pull request's final head.
+Fast run 4, 41539530903 on `04c2599`, is the run of the code to review; fast run 5, 41543415444 on `5cc3d82`, that of the review's fixes (section 8); fast runs 6 and 7 those of fix cycle 1 (section 10); the push of fix cycle 2 (section 11) starts fast run 8: eight fast runs of the 10 that CE-46 allows. The record's commits change documents only. The browser tests, with the widths of R-01, run first in the browser suite on the pull request's final head.
 
 ## 2. What was built (contract section 4.1)
 
@@ -165,3 +168,23 @@ The same two defects stand in UXP-405 of TASK-022, outside this Task's scope: OP
 | V-05: the clearing action of an empty result still empties the disabled field while frozen | NOTE | Recorded: the lines are untouched |
 | V-06 (round 4): the two calls of `endSearches()`, at the confirmation and at the freeze, guard the same path, and the test proves the pair, not each | NOTE | Recorded: both kept |
 | V-07 (round 4): the new browser test is verified by reading; it runs first on the final head | NOTE | Recorded: its result is CI's on the final head (D-117); a failure there is a new fix cycle |
+
+## 11. Fix cycle 2 on pull request #32 (CE-42, failure 1 of 3)
+
+CI run 41551718254 on the head `1562fbe` failed in `Command contract`: of 294 browser tests, 291 passed, 1 failed and 2 did not run; the image checks passed. The failed test, `issue.spec.ts:295`, met one violation at its axe check on line 334, after the lost answer, with a search result shown and frozen: `label-content-name-mismatch` on the result button (`.bk-btn--block`) of UXP-408. Its tags are those of every check of the file; no other rule failed on the Task's pages.
+
+- **Cause.** axe reads a button's visible text by joining its text nodes with no separator (`visibleVirtual`), so the label span and the SKU span read "<name><SKU>" as one word, which the accessible name "<name> <SKU>" does not contain (WCAG 2.5.3). An inactive row showed "Nonaktif" in place of the SKU while its name still ended in the SKU. Fix cycle 1's test was the first axe check with results on the page.
+- **Fix** (`resources/js/pages/inventory/IssueCreate.tsx`, the results list): the button's `rowName` is the text it shows, the SKU or `ux.state.inactive.label`, and a space separates the two spans. The space between flex items is not drawn, so the page looks as before; the active row's name stays "<name> <SKU>", which the test finds by its exact name; adding a line and the frozen state are unchanged. The axe check at `issue.spec.ts:334`, which failed on `1562fbe`, is its regression test.
+- **The other controls of the Task's pages** (`IssueCreate.tsx`, `Issues.tsx`, `Issue.tsx`, the changed parts of `Movement.tsx` and `History.tsx`): every aria-label holds its visible text ("Hapus baris <name>", "Detail mutasi stok <product>", "Tinjau" with its shortcut), and the other links and buttons have none.
+
+**Targeted verification** (CE-42, class A, production code changed) by `bk-reviewer-high`, High:
+
+| Round | Package | Verdict |
+| --- | --- | --- |
+| 5, the check of fix cycle 2 alone | `review/TASK-023/r5`, tree `24f8ff6` on `1562fbe`, previous `r4`; `--check` `UNCHANGED` | PASS: the defect FIXED, by reading, for active and inactive rows; nothing regressed; lint and TypeScript accept the change |
+
+| Finding | Severity | Outcome |
+| --- | --- | --- |
+| R-01 (round 5): no browser test shows an inactive result under axe; the `issue` context of RD-01 returns inactive products | NOTE | Recorded: the name and the visible text are built from the same string, so the rule holds whatever it is |
+| R-02 (round 5): the same latent mismatch in UXP-405's results (`ReceivingCreate.tsx`) and RP-402's product filter (`History.tsx`), outside this Task's diff and its axe checks | SHOULD-FIX | Recorded in OPEN_ITEMS T-40 (c); not fixed in TASK-023 |
+| R-03 (round 5): this section missing | NOTE | Fixed: this section |

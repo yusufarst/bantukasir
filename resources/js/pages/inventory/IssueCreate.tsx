@@ -517,13 +517,20 @@ function IssueForm({ title, postingFrozen }: IssueCreateProps & { title: string 
             {results.kind === 'inactive' && <StateNotice state={INACTIVE_STATE} body={t('ux.state.inactive.product.body', { produk: results.product.name })} />}
             {results.kind === 'rows' && results.rows.length > 0 && (
                 <ul className={'bk-stack'}>
-                    {results.rows.map((row) => (
-                        <li key={row.id}>
-                            <Button label={row.name} rowName={row.sku} variant={'secondary'} block={true} enterActivates={true} unavailable={frozen} onClick={() => add(row, false)}>
-                                <span className={'bk-meta'}>{row.active ? row.sku : t('ux.state.inactive.label')}</span>
-                            </Button>
-                        </li>
-                    ))}
+                    {results.rows.map((row) => {
+                        // The accessible name holds the visible text, in its order and with its
+                        // words apart: the name, then the SKU, or "Nonaktif" in its place (WCAG 2.5.3).
+                        const meta = row.active ? row.sku : t('ux.state.inactive.label');
+
+                        return (
+                            <li key={row.id}>
+                                <Button label={row.name} rowName={meta} variant={'secondary'} block={true} enterActivates={true} unavailable={frozen} onClick={() => add(row, false)}>
+                                    {' '}
+                                    <span className={'bk-meta'}>{meta}</span>
+                                </Button>
+                            </li>
+                        );
+                    })}
                 </ul>
             )}
             {results.kind === 'rows' && results.rows.length === 0 && <NoResults onClear={() => edited('')} />}
