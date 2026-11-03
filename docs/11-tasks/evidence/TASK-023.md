@@ -31,9 +31,13 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | `npm run lint`, `typecheck`, `test:unit`, with the changed `issue.spec.ts` | Same run | 06:16 to 06:17 | 1 min 51 s | `PASS` |
 | The PostgreSQL and concurrency test files that the branch changes, `ManualIssueRaceTest` with its reworded comment among them | Same run | 06:17 to 06:23 | 6 min 5 s | `PASS` |
 | `npx tsc --noEmit`, `npx eslint` | Local | 04:58 | — | `NOT_RUN`: neither is installed on this machine |
-| The whole command contract — `test:postgres`, `test:race`, `build`, the browser suite with `tests/Browser/inventory/issue.spec.ts` and the changed browser files — and the image checks | CI on the pull request's final head | — | — | `NOT_RUN` at this writing (CE-41, D-117) |
+| Guard, preview and commits (Gitleaks 8.30.1, the secret scan, identity, candidates) | Local, on `a75d4a3` and `d6a2f00`, fix cycle 1 | 06:44, 07:00 | under 1 min of scanning each | `PASS`, no candidate |
+| `npm run typecheck`, `npx eslint` | Local | 06:40 | — | `NOT_RUN`: neither is installed on this machine |
+| The static checks and unit tests, `issueDraft.test.ts` with its new cases; the changed PostgreSQL and concurrency test files, unchanged since run 5 | Fast run 41547785979 on `a75d4a3`, fix cycle 1 | 06:45 to 06:58 | 12 min 38 s | `PASS` |
+| The same, after the fixes of the targeted verification | Fast run 41549728081 on `d6a2f00`, fix cycle 1 | 07:01 to 07:14 | 12 min 45 s | `PASS` |
+| The whole command contract — `test:postgres`, `test:race`, `build`, the browser suite with `tests/Browser/inventory/issue.spec.ts`, fix cycle 1's tests among them, and the changed browser files — and the image checks | CI on the pull request's final head | — | — | `NOT_RUN` at this writing (CE-41, D-117); the full runs on `b08bb81` (41546293008) and `a75d4a3` (41547793731) were cancelled by the next push, before a result |
 
-Fast run 4, 41539530903 on `04c2599`, is the run of the code to review; fast run 5, 41543415444 on `5cc3d82`, that of the review's fixes (section 8): five fast runs of the 10 that CE-46 allows. The record's commit changes documents only. The browser tests, with the widths of R-01, run first in the browser suite on the pull request's final head.
+Fast run 4, 41539530903 on `04c2599`, is the run of the code to review; fast run 5, 41543415444 on `5cc3d82`, that of the review's fixes (section 8); fast runs 6 and 7 those of fix cycle 1 (section 10): seven fast runs of the 10 that CE-46 allows. The record's commits change documents only. The browser tests, with the widths of R-01, run first in the browser suite on the pull request's final head.
 
 ## 2. What was built (contract section 4.1)
 
@@ -133,3 +137,31 @@ The reviewer found the widened guard tests of section 2 item 9 justified and non
 ## 9. The guard's candidates (CE-31)
 
 `guard.sh --preview` and `guard.sh` on every checkpoint, `f15c1b7` to `5cc3d82`, list no candidate: no address, host, e-mail or home path. The guard on the record's commit is reported with the pull request, because this file cannot name its own commit.
+
+## 10. Fix cycle 1 on pull request #32 (CE-43)
+
+The repository's automated reviewer raised two P2 findings on the head `b08bb81`, read as change requests; the executor checked each against the code, and both held. Its other output, a summary comment and a review receipt, is no finding.
+
+| Finding | Check against the code | Outcome |
+| --- | --- | --- |
+| P2-a: the payload sends the quantity as typed, not the normalized one the review shows | Held: `confirm()` sent `quantityFromEntry()` — "01", or "1.0" of a whole unit — while the page's check and the review read `draftQuantity()`; `QuantityRule` refuses a quantity that is not canonical and counts its decimals as written, so a reviewed confirmation got VALIDATION_FAILED | Fixed: `sentQuantity()` in `resources/js/lib/inventory/stock.ts`, the review's canonical quantity, sent by `IssueCreate.tsx`. Regression tests: `issueDraft.test.ts` "the quantity that a line sends"; `issue.spec.ts`, the test of the lost answer, now drafts "1,0" and asserts the payload's "1" and the commit after "Kirim ulang" |
+| P2-b: the search results stay active while the request is frozen | Held: the result buttons had no `unavailable`, and a search still out could add a line from its answer after the freeze, a line that "Kirim ulang" would not send | Fixed: the results `unavailable` while frozen; `add()` and `runSearch()` do nothing then; the confirmation and the freeze end every search still out. Regression tests: `issue.spec.ts`, the result button disabled after the lost answer, and the new test of a scan still out when the request is sent (review finding V-01) |
+
+The same two defects stand in UXP-405 of TASK-022, outside this Task's scope: OPEN_ITEMS T-40.
+
+**Targeted verification** (CE-43, class A, production behaviour changed) by `bk-reviewer-high`, High:
+
+| Round | Package | Verdict |
+| --- | --- | --- |
+| 3 | `review/TASK-023/r3`, head `a75d4a3`, previous `r2`; `--check` `UNCHANGED` | FAIL: P2-a FIXED; P2-b FIXED in code, its regression test partial (V-01, MUST-FIX); two SHOULD-FIX, two NOTEs |
+| 4, the check of V-01's fix alone | `review/TASK-023/r4`, head `d6a2f00`, previous `r3`; `--check` `UNCHANGED` | PASS: V-01, V-02 and V-03 FIXED, by reading, none regressed; two NOTEs (V-06, V-07) |
+
+| Finding | Severity | Outcome |
+| --- | --- | --- |
+| V-01: no regression test of a search still out at the confirmation, whose answer would add to a frozen line | MUST-FIX | Fixed: the new browser test holds the scan's search, sends the request and loses its answer, then releases the search: one line, its quantity "1", the field its code, and "Kirim ulang" sends the same payload |
+| V-02: a search ended by the confirmation or the freeze left its loading state on | SHOULD-FIX | Fixed: `endSearches()` turns a loading or failed search into none, and leaves the results shown; the new test asserts the loading state gone |
+| V-03: "Coba lagi" of a failed search looked available while frozen and did nothing | SHOULD-FIX | Fixed: not shown while frozen, and ended with the freeze |
+| V-04: for a freeze adopted from another tab, the search ends in an effect after the render, a short window | NOTE | Recorded: harmless, because an adopted request has no "Kirim ulang" of this draft |
+| V-05: the clearing action of an empty result still empties the disabled field while frozen | NOTE | Recorded: the lines are untouched |
+| V-06 (round 4): the two calls of `endSearches()`, at the confirmation and at the freeze, guard the same path, and the test proves the pair, not each | NOTE | Recorded: both kept |
+| V-07 (round 4): the new browser test is verified by reading; it runs first on the final head | NOTE | Recorded: its result is CI's on the final head (D-117); a failure there is a new fix cycle |
