@@ -23,9 +23,9 @@ export type MenuEntry =
       }
     | { readonly kind: 'separator' };
 
-/** The id of an unavailable item's reason, within its menu. */
-function reasonIdOf(menuId: string, index: number): string {
-    return `${menuId}-reason-${String(index)}`;
+/** The ids of an unavailable item's label and reason, within its menu. */
+function idsOf(menuId: string, index: number): { readonly label: string; readonly reason: string } {
+    return { label: `${menuId}-label-${String(index)}`, reason: `${menuId}-reason-${String(index)}` };
 }
 
 /**
@@ -78,14 +78,15 @@ export function Menu({
                         }
 
                         if (item.kind === 'unavailable') {
-                            const reasonId = reasonIdOf(menuId, index);
+                            const { label: labelId, reason: reasonId } = idsOf(menuId, index);
 
+                            // Named by its label alone, with the reason as its description (DESIGN_SYSTEM 8.7; review finding R-02).
                             return (
-                                <DropdownMenu.Item key={index} className={'bk-menu__item'} aria-disabled={true} aria-describedby={reasonId} data-unavailable={true} onSelect={(event) => event.preventDefault()}>
+                                <DropdownMenu.Item key={index} className={'bk-menu__item'} aria-disabled={true} aria-labelledby={labelId} aria-describedby={reasonId} data-unavailable={true} onSelect={(event) => event.preventDefault()}>
                                     {item.icon !== undefined && <Icon name={item.icon} />}
                                     <span className={'bk-stack'}>
-                                        <span>{item.label}</span>
-                                        <span className={'bk-meta'} id={reasonId}>
+                                        <span id={labelId}>{item.label}</span>
+                                        <span className={'bk-menu__reason'} id={reasonId}>
                                             {item.reason}
                                         </span>
                                     </span>

@@ -208,6 +208,60 @@ test('the Owner adjusts stock from a row of Stok and from Riwayat stok, with a r
     await context.close();
 });
 
+test('while an adjustment is uncertain, the entries of UXP-401 and UXP-402 are unavailable with their reason', async ({ browser }) => {
+    // UXI-217, UXI-221: disabled with the reason (UXS-13) while this user holds an unresolved
+    // receiving, manual issue or adjustment request, with the way to UXP-006 (NC-13; review finding R-03).
+    const context = await contextAt(browser, WIDTHS[0]!);
+    const page = await context.newPage();
+    const watched = await watch(page);
+
+    const password = await signedIn(context, page, 'Hendra');
+    const product = await newProduct(page);
+    await received(page, product, '3');
+
+    // An adjustment whose answer is lost: UXS-14, its reference kept in this browser.
+    await page.goto(`/stock/adjustments/new?product=${String(product.id)}&from_page=stock`);
+    await line(page, product.name).getByRole('radio', { name: 'Kurangi' }).click();
+    await line(page, product.name).getByLabel('Jumlah', { exact: true }).fill('1');
+    await fields(page);
+    await page.route(CONFIRM_ROUTE, (route) => route.abort('failed'));
+    await page.getByRole('button', { name: 'Tinjau' }).click();
+    await page.getByRole('dialog', { name: 'Tinjau penyesuaian stok' }).getByRole('button', { name: /^Konfirmasi penyesuaian/ }).click();
+    await confirmPassword(page, password);
+    await expect(page.getByText('Status belum pasti', { exact: true })).toBeVisible();
+
+    // In another tab of the same browser: the row's overflow says why, and leads to UXP-006.
+    const other = await context.newPage();
+    const otherWatched = await watch(other);
+    await other.goto(`/stock?q=${product.sku}`);
+    await other.getByRole('button', { name: `Tindakan lain ${product.name}` }).click();
+    const item = other.getByRole('menuitem', { name: 'Sesuaikan stok', exact: true });
+    await expect(item).toHaveAttribute('aria-disabled', 'true');
+    await expect(item).toHaveAccessibleDescription('Ada barang masuk, barang keluar, atau penyesuaian yang statusnya belum pasti. Cek statusnya dulu.');
+    await expect(other.getByRole('menuitem', { name: 'Buka Permintaan belum pasti' })).toHaveAttribute('href', '/requests');
+    await item.click();
+    expect(new URL(other.url()).pathname).toBe('/stock');
+    await checked(other);
+    await other.keyboard.press('Escape');
+
+    // UXP-402 filtered to the product: "Sesuaikan stok" disabled with its reason and the link.
+    await other.goto(`/stock/history?product=${String(product.id)}`);
+    const button = other.getByRole('button', { name: 'Sesuaikan stok' });
+    await expect(button).toHaveAttribute('aria-disabled', 'true');
+    await expect(other.getByRole('link', { name: 'Buka Permintaan belum pasti' })).toBeVisible();
+    await checked(other);
+
+    // Resolved by "Kirim ulang", the entries open UXP-410 again.
+    await page.unroute(CONFIRM_ROUTE);
+    await Promise.all([page.waitForURL((url) => url.pathname === '/stock/history'), page.getByRole('button', { name: 'Kirim ulang' }).click()]);
+    await other.reload();
+    await expect(other.getByRole('link', { name: 'Sesuaikan stok' })).toHaveAttribute('href', `/stock/adjustments/new?product=${String(product.id)}&from_page=history`);
+
+    expect(injected(watched.problems)).toEqual([]);
+    expect(injected(otherWatched.problems)).toEqual([]);
+    await context.close();
+});
+
 test('Operations sees no entry to an adjustment and its page is refused', async ({ browser }) => {
     const context = await contextAt(browser, WIDTHS[1] ?? WIDTHS[0]!);
     const page = await context.newPage();

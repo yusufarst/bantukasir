@@ -7,6 +7,7 @@ use Illuminate\Support\Str;
 use Tests\Harness\Access\UserCommandScenario;
 use Tests\Harness\DatabaseTestCase;
 use Tests\Harness\Fixtures\TokoContoh;
+use Tests\Harness\Inventory\PostingBlockScenario;
 use Tests\Harness\Race\Worker;
 
 /**
@@ -19,7 +20,8 @@ use Tests\Harness\Race\Worker;
  * - a decrease and a manual issue for the last unit serialize on the product's guard: exactly one
  *   succeeds, the other is refused INSUFFICIENT_STOCK, and stock is never negative (BR-INV-33);
  * - an increase and a decrease of one product serialize on its guard: the decrease that waited
- *   takes its allocation from the valuation the increase published (ADR-008 section 4.2).
+ *   takes its allocation from the valuation the increase published (ADR-008 section 4.2);
+ * - RACE-24: a posting block against an adjustment, in both orders (review finding R-01).
  */
 final class AdjustmentRaceTest extends DatabaseTestCase
 {
@@ -148,6 +150,61 @@ final class AdjustmentRaceTest extends DatabaseTestCase
         $this->assertSame(['10.000', '10.000', '-5.000'], $this->quantities());
         $this->assertSame([['KNOWN', '10000.000000', 2]], $this->watcher()->table('issue_cost_allocations')->get(['at_commit_status', 'at_commit_amount', 'based_on_publication_no'])->map(static fn (object $row): array => array_values((array) $row))->all());
         $this->assertSame(['KNOWN', '30000.000000', 3], array_values((array) $this->watcher()->table('inventory_valuations')->where('product_id', $this->product)->first(['value_status', 'value', 'publication_no'])));
+    }
+
+    public function test_race_24_a_posting_block_against_an_adjustment_each_sees_the_others_result(): void
+    {
+        // RC-09 "Tests: RACE-24"; BR-INV-45, G-11: both hold the product guard. The block first:
+        // the adjustment waits for it, then is refused and writes nothing (review finding R-01).
+        TokoContoh::stock($this->product, '5', '5000');
+        $block = $this->startBlock(['after_lock:6']);
+        $refused = $this->decrease('2');
+        $adjustment = $this->start($refused);
+        Worker::ready($block, $adjustment);
+
+        $block->run()->awaitBarrier('after_lock:6');
+        $adjustment->run()->awaitBlocked($this->watcher());
+        $block->release();
+
+        $this->assertIsInt(($block->finish()->result ?? [])['block'] ?? null);
+        $this->assertSame(['refused' => 'POSTING_BLOCKED'], $adjustment->finish()->result);
+        $this->assertSame(0, $this->watcher()->table('command_identities')->where('source_intent_id', $refused['intent'])->count());
+        $this->assertSame(['5.000', 1], $this->balanceOf());
+        $this->assertSame(0, $this->watcher()->table('adjustments')->count());
+
+        // The adjustment first: the block waits, both commit, and the next adjustment is refused.
+        $this->product = TokoContoh::product('RACE-P2', ['categoryId' => TokoContoh::category('Kedua'), 'name' => 'Produk Dua']);
+        TokoContoh::stock($this->product, '5', '5000');
+        $first = $this->start($this->decrease('2'), ['after_lock:6']);
+        $block = $this->startBlock();
+        Worker::ready($first, $block);
+
+        $first->run()->awaitBarrier('after_lock:6');
+        $block->run()->awaitBlocked($this->watcher());
+        $first->release();
+
+        $this->assertSame('COMMITTED', ($first->finish()->result ?? [])['outcome'] ?? null);
+        $this->assertIsInt(($block->finish()->result ?? [])['block'] ?? null);
+        $this->assertSame(['3.000', 2], $this->balanceOf());
+
+        $late = $this->start($this->command(self::OPERATION, $this->payload([['productId' => $this->product, 'direction' => 'INCREASE', 'quantity' => '1', 'cost' => ['status' => 'UNKNOWN']]])));
+        Worker::ready($late);
+        $late->run();
+        $this->assertSame(['refused' => 'POSTING_BLOCKED'], $late->finish()->result);
+        $this->assertSame(['3.000', 2], $this->balanceOf());
+    }
+
+    /**
+     * A posting block of the product, as the reconciliation will write it (PostingBlockScenario).
+     *
+     * @param  list<string>  $barriers
+     */
+    private function startBlock(array $barriers = []): Worker
+    {
+        $worker = Worker::start(PostingBlockScenario::class, ['product' => $this->product, 'epoch' => $this->epoch], $barriers);
+        $this->workers[] = $worker;
+
+        return $worker;
     }
 
     /**
