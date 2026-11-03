@@ -32,10 +32,12 @@ import {
     historyAddress,
     MAX_ADJUSTMENT_LINES,
     QUANTITY_DIGITS_MAX,
+    reviewedVersions,
     sentQuantity,
     signedQuantity,
     STOCK_PAGE,
     STOCK_SHELL,
+    withSnapshot,
     type AdjustmentOpener,
 } from '@/lib/inventory/stock';
 
@@ -359,7 +361,11 @@ function AdjustmentForm({ title, postingFrozen, product, opener }: AdjustmentCre
         setResults({ kind: 'none' });
         setSearch('');
         setChecked(false);
-        setLines((current) => {
+        // The draft changed: a review shown before it is reviewed again.
+        setReview(false);
+        setLines((before) => {
+            // This read of the product is the latest: every line of it takes it (pull request #34's review).
+            const current = withSnapshot(before, chosen);
             const latestLine = scanned ? [...current].reverse().find((line) => line.product.id === chosen.id) : undefined;
 
             if (latestLine === undefined) {
@@ -500,10 +506,13 @@ function AdjustmentForm({ title, postingFrozen, product, opener }: AdjustmentCre
     };
 
     const confirm = (): void => {
-        const products = new Map<number, number>();
+        const products = reviewedVersions(lines);
 
-        for (const line of lines) {
-            products.set(line.product.id, line.product.version);
+        // Lines of one product with different versions are never sent: the draft is reviewed again.
+        if (products === null) {
+            setReview(false);
+
+            return;
         }
 
         // No search still out may add to the lines once they are sent.
@@ -522,7 +531,7 @@ function AdjustmentForm({ title, postingFrozen, product, opener }: AdjustmentCre
                     ...(isIncrease(line) ? { cost: line.unknown ? { status: 'UNKNOWN' } : { status: 'KNOWN', amount: line.amount, ...(isZero(line) ? { zeroEvidence: line.zeroEvidence.trim() } : {}) } } : {}),
                 })),
             },
-            { products: [...products.entries()].map(([productId, version]) => ({ productId, version })) },
+            { products },
         );
     };
 

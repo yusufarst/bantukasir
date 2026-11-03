@@ -29,7 +29,11 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Guard (Gitleaks 8.30.1, the secret scan, identity, candidates) | Local, on `fe3e595`, the review's fixes | 21:03 | under 1 min of scanning | `PASS`, no candidate |
 | `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint` (`Menu.tsx`), `typecheck`, `test:unit` | Fast run 41650066390 on `fe3e595`, the review's fixes | 21:07 to 21:10 | about 3 min | `PASS` |
 | The PostgreSQL and concurrency test files that the branch changes, `AdjustmentRaceTest` with its RACE-24 case among them | Same run | 21:10 to 21:16 | 5 min 43 s | `PASS` |
-| The whole command contract — `test:postgres`, `test:race`, `build`, the browser suite with `tests/Browser/inventory/adjustment.spec.ts` and its test of R-03 — and the image checks | CI on the pull request's final head | — | — | `NOT_RUN` at this writing (CE-41, D-117); never on this machine (D-108) |
+| `fast-checks` on the record's commit | Fast run 41652888572 on `9bf90f5` | 21:21 to 21:32 | 11 min 3 s | `PASS` |
+| Image checks | CI run 41652982248 on `9bf90f5`, pull request #34 | 21:22 to 21:29 | 7 min 7 s | `PASS`; invalidated by fix cycle 1 (it changes the bundle), so it runs again on the next head |
+| The whole command contract: static checks, unit, `test:postgres`, `test:race`, `build`, the browser suite | Same CI run | 21:22 to 22:18 | 56 min 19 s | `FAIL` at `npm run test:e2e`: 292 passed, 6 failed, 2 did not run; the six all in `adjustment.spec.ts` (fix cycle 1, section 10) |
+| `npm run typecheck` | Local, fix cycle 1 | 4 Nov 00:49 | — | `NOT_RUN`: `tsc` is not installed on this machine |
+| The whole command contract and the image checks, after fix cycle 1 | CI on the pull request's next head | — | — | `NOT_RUN` at this writing (CE-41, D-117); never on this machine (D-108) |
 
 Fast run 4, 41646371938 on `aa93aad`, is the run of the code to review; fast run 5, 41650066390 on `fe3e595`, that of the review's fixes. The record's commit changes documents only; its push starts fast run 6 of 10, which the executor does not wait for.
 
@@ -117,5 +121,30 @@ Fast run 4, 41646371938 on `aa93aad`, is the run of the code to review; fast run
 | R-09: the heavy checks `NOT_RUN` | NOTE | They run on the pull request's final head (CE-41, D-117) |
 
 ## 9. The guard's candidates (CE-31)
+
+The guard of fix cycle 1 (section 10) is reported with its push; `guard.sh --preview` on its working tree lists no candidate.
+
+## 10. Fix cycle 1 (CE-42, CE-43)
+
+Its inputs: the red CI run 41652982248 on `9bf90f5`, and the automated reviewer's P2 finding, review comment 4455969386 on pull request #34, checked against the code and found to hold. The session that began it was cut off by a power loss before any change; this one resumed it with no work to recover.
+
+| Input | Cause | Fix | Regression test |
+| --- | --- | --- | --- |
+| P2: lines of one product added before and after it changed elsewhere kept two snapshots, and `confirm` sent the last line's version for both, so a line reviewed in an old unit could post in the new one | `confirm` collected the versions in a map that overwrote | `withSnapshot` and `reviewedVersions` in `lib/inventory/stock.ts`: a product read again replaces the product of every line of it, which closes an open review; lines of one product with different versions are never sent | `adjustmentDraft.test.ts`, "one snapshot of a product in a draft" |
+| CI: "Stok disesuaikan." absent on RP-402 after a success (4 tests) | `History.tsx` never took the note that UXP-410 leaves | RP-402 takes the note once and shows it, as the pages of a receiving and of a manual issue do | The 4 browser tests themselves |
+| CI: the click on the unavailable menu item timed out | Playwright waits for an enabled element, and the item is `aria-disabled` | The spec forces that click, as `labels.spec.ts` does; on RP-402 it checks the button's description and the first link to UXP-006 within `main`, the banner of UXI-029 carrying one too | The test itself |
+| CI: Operations' test saw a console error | The browser reports its own 403 page load, which the test asserts | The spec filters `status of 403`, as `import.spec.ts` and `correction.spec.ts` do | The test itself |
+
+The fix changes production behaviour of a class-A Task, so `bk-reviewer-high` made one targeted verification (CE-42, CE-43) of package `review/TASK-024/r2` (the working tree on `9bf90f5`); `--check` `UNCHANGED`.
+
+| Finding | Severity | Outcome |
+| --- | --- | --- |
+| A, B1 to B3: the four inputs above | — | FIXED, no new MUST-FIX |
+| V-01: the unit tests prove the helpers, not that the page calls them | SHOULD-FIX | Recorded, not fixed: no test drives a React page outside the browser suite, and a browser case would change a product's unit in a second tab, a flow first run on the final head, whose failure would cost a fix cycle; the page's two calls were read by the verification |
+| V-02: the first link to UXP-006 within `main` may be the banner's | NOTE | Kept: the button's description proves the reason, as `catalog.spec.ts` does |
+| V-03: the URL is read at once after the forced click | NOTE | No change: the item has no address or handler that navigates |
+| V-04: the re-read after a refusal does not close an open review | NOTE | Existing behaviour, one snapshot either way; no change |
+| V-05: the note stays while RP-402 is filtered after the success | NOTE | As on the product list; no change |
+| V-06: the 403 filter covers the whole test | NOTE | As the precedents; the 403 itself is asserted |
 
 `guard.sh --preview` and `guard.sh` on every checkpoint, `b75ac85` to `fe3e595`, list no candidate: no address, host, e-mail or home path. The guard on the record's commit is reported with the pull request, because this file cannot name its own commit.

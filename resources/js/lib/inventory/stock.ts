@@ -478,6 +478,37 @@ export function adjustmentSteps(lines: readonly { readonly productId: number; re
     });
 }
 
+/**
+ * One snapshot of a product in a draft of an adjustment (pull request #34's review): a product read
+ * again — a later search or scan, after it was changed elsewhere — replaces the product of every line
+ * of it, so that every line shows, and the review reviews, the unit, precision, stock and version
+ * that RC-09 sends.
+ */
+export function withSnapshot<Line extends { readonly product: { readonly id: number } }>(lines: readonly Line[], product: Line['product']): readonly Line[] {
+    return lines.map((line) => (line.product.id === product.id ? { ...line, product } : line));
+}
+
+/**
+ * The version of each product that RC-09 sends, as reviewed, in the order of its first line; null
+ * when the lines of one product hold different versions, which is never sent, rather than one of
+ * them overwriting the others (pull request #34's review).
+ */
+export function reviewedVersions(lines: readonly { readonly product: { readonly id: number; readonly version: number } }[]): readonly { readonly productId: number; readonly version: number }[] | null {
+    const versions = new Map<number, number>();
+
+    for (const line of lines) {
+        const known = versions.get(line.product.id);
+
+        if (known !== undefined && known !== line.product.version) {
+            return null;
+        }
+
+        versions.set(line.product.id, line.product.version);
+    }
+
+    return [...versions.entries()].map(([productId, version]) => ({ productId, version }));
+}
+
 export interface KeysetPage<Row> {
     readonly rows: readonly Row[];
     readonly nextCursor: string | null;

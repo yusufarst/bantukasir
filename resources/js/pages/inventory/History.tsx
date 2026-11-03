@@ -3,9 +3,10 @@ import { useEffect, useRef, useState } from 'react';
 import { Button, ButtonLink } from '@/components/ui/Button';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Field, SelectInput, TextInput } from '@/components/ui/Field';
-import { EmptyState, LoadFailed, Loading, NoResults, UnknownCode } from '@/components/ui/States';
+import { Committed, EmptyState, LoadFailed, Loading, NoResults, UnknownCode } from '@/components/ui/States';
 import { AppShell } from '@/layouts/AppShell';
 import { ListLayout, PageHeader } from '@/layouts/Page';
+import { takeSavedNote } from '@/lib/access/users';
 import { CodeField } from '@/lib/catalog/Parts';
 import { catalogFieldMessage, productPage, searchProducts, type ProductRow } from '@/lib/catalog/products';
 import { blockingRequest } from '@/lib/commands/families';
@@ -99,6 +100,8 @@ function HistoryList({ title, filters, products, history, opener, postingFrozen 
     const [day, setDay] = useState(filters.from ?? '');
     const [visiting, setVisiting] = useState(false);
     const [back] = useState(() => backOf(opener, filters.products));
+    // "Stok disesuaikan." after the success of UXP-410, which leads here (UXS-04).
+    const [note] = useState(takeSavedNote);
     const owner = usePage<SharedProps>().props.auth.user.capabilities.includes(ADJUST_CAPABILITY);
     const unresolved = useUnresolved();
     const one = products.length === 1 ? (products[0] ?? null) : null;
@@ -207,6 +210,7 @@ function HistoryList({ title, filters, products, history, opener, postingFrozen 
             }
         >
             <div className={'bk-stack'}>
+                {note !== null && <Committed message={note} />}
                 {history.rows.length > 0 && <DataTable caption={title} columns={columns} rows={history.rows} rowKey={(row) => String(row.id)} wide={true} />}
                 {history.rows.length === 0 && filtered && <NoResults onClear={clear} />}
                 {history.rows.length === 0 && !filtered && <EmptyState body={t('inventory.history.empty')} />}

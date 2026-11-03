@@ -239,7 +239,8 @@ test('while an adjustment is uncertain, the entries of UXP-401 and UXP-402 are u
     await expect(item).toHaveAttribute('aria-disabled', 'true');
     await expect(item).toHaveAccessibleDescription('Ada barang masuk, barang keluar, atau penyesuaian yang statusnya belum pasti. Cek statusnya dulu.');
     await expect(other.getByRole('menuitem', { name: 'Buka Permintaan belum pasti' })).toHaveAttribute('href', '/requests');
-    await item.click();
+    // Unavailable, so the click is forced past the check of an enabled element: it does nothing.
+    await item.click({ force: true });
     expect(new URL(other.url()).pathname).toBe('/stock');
     await checked(other);
     await other.keyboard.press('Escape');
@@ -248,7 +249,9 @@ test('while an adjustment is uncertain, the entries of UXP-401 and UXP-402 are u
     await other.goto(`/stock/history?product=${String(product.id)}`);
     const button = other.getByRole('button', { name: 'Sesuaikan stok' });
     await expect(button).toHaveAttribute('aria-disabled', 'true');
-    await expect(other.getByRole('link', { name: 'Buka Permintaan belum pasti' })).toBeVisible();
+    await expect(button).toHaveAccessibleDescription(/Cek statusnya dulu\. Buka Permintaan belum pasti$/);
+    // The reason's link, and the banner's of UXI-029 beside it.
+    await expect(other.getByRole('main').getByRole('link', { name: 'Buka Permintaan belum pasti' }).first()).toBeVisible();
     await checked(other);
 
     // Resolved by "Kirim ulang", the entries open UXP-410 again.
@@ -282,7 +285,8 @@ test('Operations sees no entry to an adjustment and its page is refused', async 
     const refused = await page.goto(`/stock/adjustments/new?product=${String(product.id)}`);
     expect(refused?.status()).toBe(403);
 
-    expect(injected(watched.problems)).toEqual([]);
+    // The refusal itself is the one problem the browser reports.
+    expect(injected(watched.problems).filter((problem) => !problem.includes('status of 403'))).toEqual([]);
     await context.close();
 });
 

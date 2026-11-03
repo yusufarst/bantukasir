@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ADJUSTMENT_COMMAND, adjustmentPage, adjustmentSteps, historyAddress, productHistory } from '@/lib/inventory/stock';
+import { ADJUSTMENT_COMMAND, adjustmentPage, adjustmentSteps, historyAddress, productHistory, reviewedVersions, withSnapshot } from '@/lib/inventory/stock';
 
 // The review of a draft of an adjustment on UXP-410, its entries and its result (TASK-024 scope
 // item 3; BR-INV-31 to BR-INV-33; COPY_DECK section 9.11; NAVIGATION_CONTRACTS UXP-410): the stock
@@ -46,6 +46,44 @@ describe('the review of an adjustment', () => {
                 { productId: 2, increase: false, quantity: '1', onHand: null },
             ]),
         ).toEqual([null, null]);
+    });
+});
+
+// Pull request #34's review: a product changed in another tab between two lines of it — its base
+// unit, while it has no movement — must not leave the first line showing and reviewing the old
+// snapshot while the version of the second is sent for both.
+describe('one snapshot of a product in a draft', () => {
+    const before = { id: 1, baseUnit: 'pcs', version: 1 };
+    const after = { id: 1, baseUnit: 'kg', version: 2 };
+    const other = { id: 2, baseUnit: 'pcs', version: 5 };
+
+    it('gives a product read again to every line of it, and leaves the other products alone', () => {
+        const lines = [
+            { key: 1, quantity: '2', product: before },
+            { key: 2, quantity: '1', product: other },
+        ];
+
+        expect(withSnapshot(lines, after)).toEqual([
+            { key: 1, quantity: '2', product: after },
+            { key: 2, quantity: '1', product: other },
+        ]);
+    });
+
+    it('sends each product once with the version its lines were reviewed in', () => {
+        expect(
+            reviewedVersions([
+                { product: after },
+                { product: other },
+                { product: after },
+            ]),
+        ).toEqual([
+            { productId: 1, version: 2 },
+            { productId: 2, version: 5 },
+        ]);
+    });
+
+    it('sends nothing when the lines of one product hold different versions, rather than the last overwriting the first', () => {
+        expect(reviewedVersions([{ product: before }, { product: other }, { product: after }])).toBeNull();
     });
 });
 
