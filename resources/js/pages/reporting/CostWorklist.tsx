@@ -123,7 +123,8 @@ function WorklistPage({ title, filters, product, worklist }: CostWorklistProps &
                 <Notice tone={'neutral'} urgency={'none'}>
                     <p>{t('costing.worklist.intro')}</p>
                 </Notice>
-                {worklist.rows.length > 0 && <DataTable caption={title} columns={columns} rows={worklist.rows} rowKey={(row) => String(row.evidenceId)} wide={true} />}
+                {/* Its rows become cards on a narrow screen (NAVIGATION_CONTRACTS UXP-503; UXA-12 names no worklist among the wide tables). */}
+                {worklist.rows.length > 0 && <DataTable caption={title} columns={columns} rows={worklist.rows} rowKey={(row) => String(row.evidenceId)} />}
                 {worklist.rows.length === 0 && filters.product !== null && <NoResults onClear={() => visit(null)} />}
                 {worklist.rows.length === 0 && filters.product === null && <EmptyState body={t('costing.worklist.empty')} />}
             </div>

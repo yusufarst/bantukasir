@@ -81,6 +81,17 @@ final class SqlState
     }
 
     /**
+     * Whether a statement met the role's statement timeout (57014, with the
+     * server's reason; config/database.php): the statement was cancelled and
+     * its transaction can only roll back. A cancel for another reason is not
+     * one.
+     */
+    public static function statementTimedOut(Throwable $failure): bool
+    {
+        return self::of($failure) === self::QUERY_CANCELED && str_contains($failure->getMessage(), 'statement timeout');
+    }
+
+    /**
      * Whether the connection was lost: the session ended, also by its
      * transaction budget, or the server could not be reached.
      */

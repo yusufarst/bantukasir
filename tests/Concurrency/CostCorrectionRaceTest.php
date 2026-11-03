@@ -10,9 +10,10 @@ use Tests\Harness\Fixtures\TokoContoh;
 use Tests\Harness\Race\Worker;
 
 /**
- * The races of RC-15 (AC-025-03, AC-025-04; TECHNICAL_RULES section 8, RACE-11; ADR-008 section 7;
- * SCHEMA section 5.8; BR-COST-26, BR-COST-27; G-21; TASK-025 section 7, L3; suite FIN03), each with
- * processes of their own connections under barrier control:
+ * The races of RC-15 (AC-025-03, AC-025-04; TECHNICAL_RULES section 8, RACE-01, RACE-02 and
+ * RACE-11; ADR-008 section 7; SCHEMA section 5.8; BR-COST-26, BR-COST-27; G-21; D-063; TASK-025
+ * section 7, L3; suites FIN03 and CMD01), each with processes of their own connections under
+ * barrier control:
  *
  * - RACE-11, the replay first: a posting of the product waits for the product's guard, which the
  *   replay holds to its commit, then takes its allocation from the corrected valuation;
@@ -20,7 +21,11 @@ use Tests\Harness\Race\Worker;
  *   allocation — its projection, never its fact;
  * - the mark against a later correction: a correction refused at the movement cap, whose mark's own
  *   transaction finds that a correction of the same source committed meanwhile, writes its mark
- *   together with its clearance by that correction.
+ *   together with its clearance by that correction;
+ * - RACE-01 and RACE-02: the same key, or another key of the same intent, runs once, and another
+ *   payload under either is held, never run; a refused correction and its repeat write one mark;
+ * - a correction that waits for the product's guard beyond the lock timeout answers SERVICE_BUSY and
+ *   writes no mark (D-063).
  */
 final class CostCorrectionRaceTest extends DatabaseTestCase
 {
@@ -132,6 +137,103 @@ final class CostCorrectionRaceTest extends DatabaseTestCase
             ->get(['clearing_kind', 'clearing_correction_id', 'actor_kind', 'actor_user_id', 'command_id'])->map(static fn (object $row): array => array_values((array) $row))->all());
     }
 
+    public function test_race_01_and_race_02_a_correction_runs_once_for_the_same_key_or_the_same_intent(): void
+    {
+        // EXECUTION_CONTEXT section 10, a command; TECHNICAL_RULES section 8: the second request waits
+        // on the first's identity, then answers its result; another payload under either is held,
+        // never run (review finding R-01).
+        $seen = 0;
+
+        foreach (['same key' => true, 'another key' => false] as $case => $sameKey) {
+            $intent = (string) Str::uuid();
+            $key = (string) Str::uuid();
+            $original = $this->start($this->correction('150000', null, $seen, $intent, $key), ['after_identity']);
+            $repeat = $this->start($this->correction('150000', null, $seen, $intent, $sameKey ? $key : (string) Str::uuid()));
+            Worker::ready($original, $repeat);
+
+            $original->run()->awaitBarrier('after_identity');
+            $repeat->run()->awaitBlocked($this->watcher());
+            $original->release();
+
+            $committed = $original->finish()->result ?? [];
+            $this->assertSame(['COMMITTED', false], [$committed['outcome'] ?? null, $committed['repeated'] ?? null], $case);
+            $this->assertSame(['outcome' => 'COMMITTED', 'repeated' => true, 'commandId' => $committed['commandId'] ?? null], $repeat->finish()->result, $case);
+            $this->assertSame(1, $this->watcher()->table('cost_corrections')->where('command_id', $committed['commandId'] ?? null)->count(), $case);
+            $seen++;
+        }
+
+        foreach (['same key' => true, 'another key' => false] as $case => $sameKey) {
+            $intent = (string) Str::uuid();
+            $key = (string) Str::uuid();
+            $original = $this->start($this->correction('150000', null, $seen, $intent, $key), ['after_identity']);
+            $other = $this->start($this->correction('170000', null, $seen, $intent, $sameKey ? $key : (string) Str::uuid()));
+            Worker::ready($original, $other);
+
+            $original->run()->awaitBarrier('after_identity');
+            $other->run()->awaitBlocked($this->watcher());
+            $original->release();
+
+            $this->assertSame('COMMITTED', ($original->finish()->result ?? [])['outcome'] ?? null, $case);
+            $this->assertSame(['refused' => 'IDEMPOTENCY_CONFLICT'], $other->finish()->result, $case);
+            $seen++;
+        }
+
+        // Four corrections, numbered 1 to 4, each the one reviewed; the other payload never ran.
+        $this->assertSame([1, 2, 3, 4], array_values($this->watcher()->table('cost_corrections')->where('evidence_id', $this->evidence)->orderBy('correction_no')->pluck('correction_no')->all()));
+        $this->assertSame(0, $this->watcher()->table('cost_corrections')->where('new_amount', '170000')->count());
+    }
+
+    public function test_race_01_a_refused_correction_and_its_repeat_write_one_mark(): void
+    {
+        // AC-025-04, SCHEMA section 5.8: the repeat waits on the refused attempt's identity, which the
+        // refusal rolls back; it runs the replay itself and is refused too, and the intent's mark is
+        // written once, whichever mark's transaction takes the product's guard first (review finding R-01).
+        TokoContoh::issue([['productId' => $this->product, 'quantity' => '1']]);
+        $intent = (string) Str::uuid();
+        $key = (string) Str::uuid();
+        $original = $this->start($this->correction('150000', 1, 0, $intent, $key), ['after_identity']);
+        $repeat = $this->start($this->correction('150000', 1, 0, $intent, $key));
+        Worker::ready($original, $repeat);
+
+        $original->run()->awaitBarrier('after_identity');
+        $repeat->run()->awaitBlocked($this->watcher());
+        $original->release();
+
+        $this->assertSame(['refused' => 'REPLAY_REJECTED'], $original->finish()->result);
+        $this->assertSame(['refused' => 'REPLAY_REJECTED'], $repeat->finish()->result);
+        $this->assertSame([[$intent, 'MOVEMENT_CAP']], $this->watcher()->table('cost_incomplete_marks')->get(['rejected_source_intent_id', 'rejection_code'])->map(static fn (object $row): array => array_values((array) $row))->all());
+        $this->assertSame(1, $this->watcher()->table('audit_events')->where('action', 'COST_INCOMPLETE_MARK')->count());
+        $this->assertSame([0, 0], [$this->watcher()->table('cost_corrections')->count(), $this->watcher()->table('command_identities')->where('source_intent_id', $intent)->count()]);
+    }
+
+    public function test_a_correction_that_waits_beyond_the_lock_timeout_answers_service_busy_and_writes_no_mark(): void
+    {
+        // AC-025-04, D-063, TR-TIME-01: a manual issue holds the product's guard; the correction cannot
+        // take it within the lock timeout, so its replay never started: SERVICE_BUSY, its identity
+        // rolled back, and no correction, mark, clearance or mark's audit event (review finding R-02).
+        $issue = $this->start($this->issue('5'), ['after_lock:7']);
+        $waiting = $this->correction('160000');
+        $correction = $this->start($waiting);
+        Worker::ready($issue, $correction);
+
+        $issue->run()->awaitBarrier('after_lock:7');
+        $correction->run();
+
+        $this->assertSame(['refused' => 'SERVICE_BUSY'], $correction->finish()->result);
+        $issue->release();
+        $this->assertSame('COMMITTED', ($issue->finish()->result ?? [])['outcome'] ?? null);
+
+        $this->assertSame(0, $this->watcher()->table('command_identities')->where('source_intent_id', $waiting['intent'])->count());
+
+        foreach (['cost_corrections', 'cost_incomplete_marks', 'cost_incomplete_mark_clearances'] as $table) {
+            $this->assertSame(0, $this->watcher()->table($table)->count(), $table);
+        }
+
+        $this->assertSame(0, $this->watcher()->table('audit_events')->where('action', 'COST_INCOMPLETE_MARK')->count());
+        // The issue took its allocation from the valuation as it was: 5 of 20 worth Rp240.000.
+        $this->assertSame([['KNOWN', '60000.000000', 2, 'KNOWN', '60000.000000']], $this->allocations());
+    }
+
     /**
      * The product's allocations: the fact's status, amount and publication, the projection's status and amount.
      *
@@ -156,20 +258,20 @@ final class CostCorrectionRaceTest extends DatabaseTestCase
     }
 
     /**
-     * RC-15 of the second receipt's evidence, as the first correction, by the Owner; with a movement
-     * cap for the worker when given.
+     * RC-15 of the second receipt's evidence by the Owner, reviewing the correction of this number (0
+     * for none), under a new intent and key unless given; with a movement cap for the worker when given.
      *
      * @return array<string, mixed>
      */
-    private function correction(string $amount, ?int $cap = null): array
+    private function correction(string $amount, ?int $cap = null, int $seen = 0, ?string $intent = null, ?string $key = null): array
     {
         return [
             'operation' => self::OPERATION,
             'actor' => $this->owner,
-            'intent' => (string) Str::uuid(),
-            'key' => (string) Str::uuid(),
+            'intent' => $intent ?? (string) Str::uuid(),
+            'key' => $key ?? (string) Str::uuid(),
             'epoch' => $this->epoch,
-            'expected' => ['correctionNo' => 0],
+            'expected' => ['correctionNo' => $seen],
             'payload' => ['evidenceId' => $this->evidence, 'newCost' => ['amount' => $amount], 'reason' => 'Nota pemasok'],
             ...($cap === null ? [] : ['replayCap' => $cap]),
         ];

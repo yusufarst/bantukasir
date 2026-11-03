@@ -56,9 +56,10 @@ use Throwable;
  * value out of range — refuses the correction REPLAY_REJECTED with nothing written; after the
  * rollback, the mark and its audit event are written in a transaction of their own, once per refused
  * intent, and only once it has committed is REPLAY_REJECTED answered, SERVICE_BUSY otherwise
- * (TR-TIME-01; refused()). So is a transaction that PostgreSQL ended with its session at the budget,
- * whose mark is written on a new connection. No mark follows STALE_VERSION, POSTING_BLOCKED or a
- * lock wait (SERVICE_BUSY): none of them started the replay (D-063).
+ * (TR-TIME-01; refused()). So is a statement of the replay or of its publication that met the
+ * statement timeout, and a transaction that PostgreSQL ended with its session at the budget, whose
+ * mark is written on a new connection: each is TIME_BUDGET. No mark follows STALE_VERSION,
+ * POSTING_BLOCKED or a lock wait (SERVICE_BUSY): none of them started the replay (D-063).
  *
  * Write steps (TEST_STRATEGY TS-21): the correction, the valuation, the projections rewritten, the
  * clearances, the audit event, then the result.
@@ -174,6 +175,15 @@ final class CorrectCost extends CommandAction
 
             throw new CommandRefused(ErrorCode::ReplayRejected, messageKey: self::REPLAY_REJECTED);
         } catch (Throwable $failure) {
+            // A statement of the replay or of its publication that met the statement timeout is a
+            // timeout of the replay, TIME_BUDGET (SCHEMA section 5.8; TR-TIME-01): the transaction
+            // rolls back, and the mark follows (review finding R-04).
+            if (SqlState::statementTimedOut($failure)) {
+                $this->refusedReplay = $underWay;
+
+                throw new CommandRefused(ErrorCode::ReplayRejected, messageKey: self::REPLAY_REJECTED);
+            }
+
             // A session that the budget ended has not committed (TR-TIME-01).
             $this->budgetEnded = SqlState::budgetEnded($failure);
 

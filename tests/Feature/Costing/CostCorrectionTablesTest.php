@@ -159,6 +159,9 @@ final class CostCorrectionTablesTest extends DatabaseTestCase
 
         $this->assertWriteRefused(fn (Connection $c) => $this->insertClearance($c, $this->insertMark($c), ['actor_process' => 'Cost Recovery']), '23514', 'cost_incomplete_mark_clearances_actor_process_format');
         $this->assertWriteRefused(fn (Connection $c) => $this->insertClearance($c, $this->insertMark($c), ['actor_display_name' => '']), '23514', 'cost_incomplete_mark_clearances_actor_display_name_length');
+        // Only the kinds of SCHEMA section 3.4 that can act here, and a user that exists (review finding R-05).
+        $this->assertWriteRefused(fn (Connection $c) => $this->insertClearance($c, $this->insertMark($c), ['actor_kind' => 'ANONYMOUS']), '23514', 'cost_incomplete_mark_clearances_actor_kind_allowed');
+        $this->assertWriteRefused(fn (Connection $c) => $this->insertClearance($c, $this->insertMark($c), ['actor_kind' => 'USER', 'actor_user_id' => 999999, 'actor_process' => null]), '23503', 'cost_incomplete_mark_clearances_actor_user_fk');
 
         // The clearance belongs to its mark's source; a correction that clears it is one of that source.
         $this->assertWriteRefused(fn (Connection $c) => $this->insertClearance($c, 999999), '23503', 'cost_incomplete_mark_clearances_mark_fk');

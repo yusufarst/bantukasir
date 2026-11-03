@@ -302,6 +302,9 @@ for (const width of [WIDTHS[4], WIDTHS[7]]) {
         await received(page, product, '3', null);
         const completion = await completionOf(page, product);
         await expect(page.getByRole('heading', { level: 1, name: 'Biaya perlu dilengkapi' })).toBeVisible();
+        // Its rows are cards here, never a table that scrolls sideways in a region of its own (UXA-12; review finding R-03).
+        await expect(page.getByRole('region', { name: 'Biaya perlu dilengkapi', exact: true })).toHaveCount(0);
+        expect(await page.getByRole('main').locator('table').evaluate((table) => table.scrollWidth <= table.clientWidth)).toBe(true);
         await checked(page);
 
         await page.goto(completion);

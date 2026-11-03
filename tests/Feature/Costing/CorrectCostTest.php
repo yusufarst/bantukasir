@@ -33,10 +33,10 @@ use Tests\Harness\Race\FailurePoints;
  * UNKNOWN cost completed later completes what depended on it, and a known pool after zero is not
  * reached by it; G-15's number and old value; the refusals that write no mark; the movement cap and
  * the time budget, which refuse REPLAY_REJECTED with one mark per refused intent, also when the
- * budget ended the session, and SERVICE_BUSY when the mark cannot be written; a later correction of
- * the same source clearing the marks, another source's not; the same correction twice giving the
- * same result; the failure after every write step; the measured time of a longer replay; the roles,
- * recent authentication and the fields.
+ * budget ended the session or a statement met its timeout, and SERVICE_BUSY when the mark cannot be
+ * written; a later correction of the same source clearing the marks, another source's not; the same
+ * correction twice giving the same result; the failure after every write step; the measured time of
+ * a longer replay; the roles, recent authentication and the fields.
  */
 final class CorrectCostTest extends DatabaseTestCase
 {
@@ -200,6 +200,8 @@ final class CorrectCostTest extends DatabaseTestCase
 
         $this->correct($this->envelopeOf($evidence, '160000', 0))->assertStatus(422)->assertJsonPath('code', 'POSTING_BLOCKED');
         $this->correct($this->envelopeOf(999999, '1', 0))->assertStatus(404)->assertJsonPath('code', 'NOT_FOUND');
+        // RC-15's order under the guard: a stale number is STALE_VERSION before the block (review finding R-11).
+        $this->correct($this->envelopeOf($evidence, '160000', 1))->assertStatus(409)->assertJsonPath('code', 'STALE_VERSION');
         $this->assertSame($before, $this->factsAndRows());
 
         TokoContoh::reopenPostings($block);
@@ -293,6 +295,36 @@ final class CorrectCostTest extends DatabaseTestCase
         $this->assertSame(['TIME_BUDGET', 'TIME_BUDGET'], $this->watcher()->table('cost_incomplete_marks')->orderBy('id')->pluck('rejection_code')->all());
         $this->assertSame($envelope->sourceIntentId, $this->watcher()->table('cost_incomplete_marks')->orderByDesc('id')->value('rejected_source_intent_id'));
         $this->assertSame(0, $this->watcher()->table('cost_corrections')->count());
+    }
+
+    public function test_a_statement_timeout_of_the_replay_refuses_with_its_mark_time_budget(): void
+    {
+        // SCHEMA section 5.8, "a timeout of the replay is TIME_BUDGET"; TR-TIME-01: a statement after
+        // the locks of step 7 meets the statement timeout, here 200 ms; nothing of the correction
+        // commits, its mark is written, and REPLAY_REJECTED is answered (review finding R-04).
+        $evidence = $this->history($this->pen);
+        $rows = $this->rows();
+        $this->app->instance(CommandPoints::class, self::atStepSeven(static function (): void {
+            DB::select('select pg_catalog.pg_sleep(0.5)');
+        }));
+        $envelope = new Envelope(CorrectCost::OPERATION, Operations::VERSION, (string) Str::uuid(), (string) Str::uuid(), $this->epoch, ['correctionNo' => 0], ['evidenceId' => $evidence, 'newCost' => ['amount' => '170000'], 'reason' => 'Nota pemasok']);
+        DB::statement("set statement_timeout = '200ms'");
+
+        try {
+            app(CorrectCost::class)->execute(new CommandContext($this->people['Hendra']['id'], $envelope, app(Clock::class)->now()));
+            $this->fail('The statement timeout ends the correction.');
+        } catch (CommandRefused $refusal) {
+            $this->assertSame('REPLAY_REJECTED', $refusal->error->value);
+        } finally {
+            DB::statement('reset statement_timeout');
+            $this->app->instance(CommandPoints::class, new FailurePoints);
+        }
+
+        $this->assertSame($rows, $this->rows());
+        $this->assertSame(0, $this->watcher()->table('cost_corrections')->count());
+        $mark = (array) $this->watcher()->table('cost_incomplete_marks')->sole();
+        $this->assertSame(['TIME_BUDGET', $envelope->sourceIntentId, 0], [$mark['rejection_code'], $mark['rejected_source_intent_id'], $mark['corrections_seen']]);
+        $this->assertSame(0, $this->watcher()->table('command_identities')->where('source_intent_id', $envelope->sourceIntentId)->count());
     }
 
     public function test_a_mark_that_cannot_be_written_answers_service_busy_and_a_repeat_writes_it_once(): void
