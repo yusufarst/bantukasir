@@ -15,6 +15,20 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Check | Where it ran | Time | Duration | Result |
 | --- | --- | --- | --- | --- |
 | `npm run typecheck`, `npx tsc --noEmit` | Local | 20:23 | — | `NOT_RUN`: `tsc` is not installed on this machine |
+| Guard (Gitleaks 8.30.1, the secret scan, identity, candidates) | Local, on `b75ac85`, `1662fc3`, `142a2c3`, `aa93aad` | 20:12, 20:19, 20:27, 20:39 | under 1 min of scanning each | `PASS`, no candidate |
+| `composer validate`, `lint` | Fast run 41642332926 on `b75ac85` | 20:16 | 36 s | `PASS` |
+| `composer analyse` | Same run | 20:16 | 12 s | `FAIL`: 8 PHPStan errors — a nullable result reference, a needless `array_values`, a helper missing from a test, an assertion PHPStan judged always true (finding F-1); the later steps did not run |
+| `composer validate`, `lint`, `analyse`, `test:unit` | Fast run 41643442045 on `1662fc3` | 20:23 to 20:24 | about 1 min | `PASS` |
+| `npm run lint` | Same run | 20:24 | 4 s | `FAIL`: one template literal with letters inside JSX, an id of `Menu.tsx` (finding F-1); the later steps did not run |
+| `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit` | Fast run 41644529667 on `142a2c3` | 20:30 to 20:33 | about 3 min | `PASS` |
+| `AdjustmentRaceTest`, `CapabilityMatrixTest`, `RouteInventoryTest`, `ProductSearchTest` | Same run | 20:33 to 20:36 | 3 min 8 s | `PASS` |
+| `AdjustmentPagesTest` | Same run | 20:36 | 12 s | `FAIL`: 1 of 3, a defect of the test, `?? 'absent'` on a prop that is null (finding F-1); the later files did not run |
+| `composer validate`, `lint`, `analyse`, `test:unit` | Fast run 41646371938 on `aa93aad` | 20:43 to 20:44 | 1 min 11 s | `PASS` |
+| `npm run lint`, `typecheck`, `test:unit`, `adjustmentDraft.test.ts` among them | Same run | 20:45 to 20:46 | 1 min 51 s | `PASS` |
+| The PostgreSQL and concurrency test files that the branch changes: `AdjustmentRaceTest`, `CapabilityMatrixTest`, `RouteInventoryTest`, `ProductSearchTest`, `AdjustmentPagesTest`, `AdjustmentTablesTest`, `ConfirmAdjustmentTest`, `IssueTablesTest`, `LedgerTablesTest`, `StockPagesTest` | Same run | 20:46 to 20:51 | 5 min 18 s | `PASS` |
+| The whole command contract — `test:postgres`, `test:race`, `build`, the browser suite with `tests/Browser/inventory/adjustment.spec.ts` — and the image checks | CI on the pull request's final head | — | — | `NOT_RUN` at this writing (CE-41, D-117); never on this machine (D-108) |
+
+Fast run 4, 41646371938 on `aa93aad`, is the run of the code to review.
 
 ## 2. What was built (contract section 4.1)
 
