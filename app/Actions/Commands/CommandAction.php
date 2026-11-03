@@ -182,8 +182,6 @@ abstract class CommandAction
      * SERVICE_BUSY when that transaction fails, so that no refusal is answered without it — the
      * mark of a cost correction refused REPLAY_REJECTED (SCHEMA section 5.8; TECHNICAL_RULES
      * TR-TIME-01; TASK-025). By default the refusal stands and nothing is written.
-     *
-     * @throws CommandRefused
      */
     protected function refused(CommandContext $context, CommandRefused $refusal): CommandRefused
     {

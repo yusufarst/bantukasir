@@ -82,14 +82,6 @@ final class CostIncompleteMarks
     }
 
     /**
-     * Whether the product carries an active mark (BR-COST-38).
-     */
-    public function productMarked(int $productId): bool
-    {
-        return self::active()->where('k.product_id', $productId)->exists();
-    }
-
-    /**
      * Clears these marks of the cost source by its later correction, in the transaction that wrote
      * that correction or in the mark's own, with that transaction's actor and command, if any.
      *

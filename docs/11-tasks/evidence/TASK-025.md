@@ -19,6 +19,12 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | `composer analyse` | Same run | 05:23 to 05:24 | 12 s | `PASS` |
 | `composer test:unit` | Same run | 05:24 | 14 s | `FAIL`: 880 of 881 passed; `PrivilegeMatrixTest` listed the tables of the matrix without the three new ones (finding F-2); the later steps did not run |
 | `npm run typecheck` | Local | 05:31 | — | `NOT_RUN`: `tsc` is not installed on this machine |
+| `composer validate`, `lint`, `analyse`, `test:unit` | Fast run 41731304531 on `c3e58a1` | 05:33 | 51 s | `PASS` |
+| `npm run lint` | Same run | 05:34 | 5 s | `FAIL`: three template literals as the value of `aria-label` and `key`, which `react/jsx-no-literals` refuses in an attribute (finding F-3); the later steps did not run |
+| Guard | Local, on `49d39ee` | 05:37 | under 1 min of scanning | `PASS`, no candidate |
+| `composer validate`, `lint`, `analyse`, `test:unit` | Fast run 41732519118 on `49d39ee` | 05:41 to 05:42 | 1 min 14 s | `PASS`; `ValuationReplayTest` among them |
+| `npm run lint`, `typecheck`, `test:unit`, `costs.test.ts` and `navigation.test.ts` among them | Same run | 05:43 to 05:44 | 1 min 3 s | `PASS` |
+| The PostgreSQL and concurrency test files that the branch changes: `CostCorrectionRaceTest`, `CapabilityMatrixTest`, `RouteInventoryTest`, `SignInSessionTest`, `CorrectCostTest`, `CostCorrectionTablesTest`, `CostPagesTest`, `ConfirmManualIssueTest`, `ConfirmReceivingTest`, `ReceivingPagesTest`, `StockPagesTest` | Same run | 05:44 to 05:51 | 6 min 50 s | `PASS`, 11 files, 88 tests |
 | The whole command contract and the image checks | CI on the pull request's final head | — | — | `NOT_RUN` at this writing (CE-41, D-117); never on this machine (D-108) |
 
 ## 2. What was built (contract section 4.1)
@@ -44,27 +50,29 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 7. **STK-13.** RC-15 is the Costing module's first command, and its replay reads the balances and the posting blocks: STACK_AND_MODULES section 2 records Costing's dependency on Commands and its reads of Inventory.
 8. **UXI-021** "Biaya perlu dilengkapi" is registered in the Laporan sub-navigation; the shell shows it once the Laporan destination exists (TASK-041). Until then the worklist is reached from RP-505's "Data biaya belum lengkap" and by its address.
 9. **The worklist** ("UNKNOWN cost sources and marked products", ROUTE_CONTRACTS RP-503) lists each source whose effective cost is UNKNOWN and each source with an active mark, so that a marked product appears by the sources that carry its marks, each row naming its product and leading to its correction and to the product's RP-505; newest first by the time the cost was recorded, keyset-paged. RP-505 bounds its sources and corrections to the newest 100 each, the older being reached through the stock history.
-10. **The measured replay time** (contract section 8) is written by two tests on their error stream: the recomputation alone of the reference cap, 10,000 movements (`ValuationReplayTest`), and a whole correction whose replay covers 200 movements (`CorrectCostTest`), each on the CI runner's containers, not a PERF01 pass (BR-COST-28). Section 5 records the figures.
+10. **Without an opener.** NAVIGATION_CONTRACTS names the openers of UXP-504 (UXP-503, UXP-505, UXP-406, UXP-403) and of UXP-505 (UXP-302, UXP-503, UXP-006), which `from_page` carries; a page opened by its bare address goes back, and UXP-504 leads after its success, to the first of them, UXP-503 or UXP-302, whose RP-505 is also RC-15's result location.
+11. **The measured replay time** (contract section 8) is written by two tests on their error stream: the recomputation alone of the reference cap, 10,000 movements (`ValuationReplayTest`), and a whole correction whose replay covers 200 movements (`CorrectCostTest`), each on the CI runner's containers, not a PERF01 pass (BR-COST-28). Section 5 records the figures.
 
 ## 4. Findings
 
 - **F-1, for the Task that next touches UXP-006:** RC-15's result is RP-505 of the product, which RC-50 also gives; "Lihat hasil" of UXP-006 (UXI-056) is not among this Task's controls and is not extended to it.
 - **F-2.** Fast run 1 failed on a guard test not widened for the new tables: `PrivilegeMatrixTest` lists every table of the matrix. It now lists the three and asserts their privileges (select and insert, no update column, the backup role's select); fixed in the next checkpoint.
+- **F-3.** Fast run 2 failed on the static form of three links' names and a list's key, template literals in attributes, which ADR-005's lint refuses there; each is now built by a function outside the markup (`rowLinkName`, `correctionKey`), as `movementLinkName` of RP-406 is; fixed in the next checkpoint.
 
 ## 5. The ADR-008 cases and the backup impact (EXC-47)
 
 | Case | Test | Result |
 | --- | --- | --- |
-| A corrected receipt recomputes the issues after it, with the projections and the valuation, never a fact (L-15) | `ValuationReplayTest::test_a_corrected_receipt_recomputes_the_l_15_issues_after_it`; `CorrectCostTest::test_a_correction_replays_the_product_and_publishes_its_projections_and_valuation_never_a_fact` | Pending the fast run |
-| An UNKNOWN cost completed later completes what depended on it; a known pool after zero is not reached by it | `ValuationReplayTest::test_an_unknown_cost_completed_later_…`, `::test_a_known_pool_after_zero_…`; `CorrectCostTest::test_an_unknown_cost_completed_later_…` | Pending the fast run |
-| One rounding half-up where SQL would round twice; the issue to zero takes the rest | `ValuationReplayTest::test_an_allocation_is_rounded_once_…` | Pending the fast run |
-| The same input, the same result; the same correction twice rewrites nothing | `ValuationReplayTest::test_the_same_input_gives_the_same_result`; `CorrectCostTest::test_the_same_correction_again_…` | Pending the fast run |
-| An unsafe history or a value out of range is refused | `ValuationReplayTest::test_an_unsafe_history_or_a_value_out_of_range_is_refused` | Pending the fast run |
-| The movement cap and the time budget refuse with one mark per intent; SERVICE_BUSY when the mark fails | `CorrectCostTest::test_the_movement_cap_…`, `::test_the_time_budget_…`, `::test_a_mark_that_cannot_be_written_…`; `ValuationReplayTest::test_the_budget_is_asked_…` | Pending the fast run |
-| The publication is all or nothing | `CorrectCostTest::test_a_failure_after_every_write_step_…` | Pending the fast run |
-| RACE-11, and the mark against a later correction | `CostCorrectionRaceTest` | Pending the fast run |
+| A corrected receipt recomputes the issues after it, with the projections and the valuation, never a fact (L-15: Rp140.000 corrected to Rp160.000, 3 out at Rp39.000, 2 at Rp26.000) | `ValuationReplayTest::test_a_corrected_receipt_recomputes_the_l_15_issues_after_it`; `CorrectCostTest::test_a_correction_replays_the_product_and_publishes_its_projections_and_valuation_never_a_fact` | `PASS`, fast run 41732519118 |
+| An UNKNOWN cost completed later completes what depended on it; a known pool after zero is not reached by it | `ValuationReplayTest::test_an_unknown_cost_completed_later_…`, `::test_a_known_pool_after_zero_…`; `CorrectCostTest::test_an_unknown_cost_completed_later_…` | `PASS`, same run |
+| One rounding half-up where SQL would round twice; the issue to zero takes the rest | `ValuationReplayTest::test_an_allocation_is_rounded_once_…` | `PASS`, same run |
+| The same input, the same result; the same correction twice rewrites nothing | `ValuationReplayTest::test_the_same_input_gives_the_same_result`; `CorrectCostTest::test_the_same_correction_again_…` | `PASS`, same run |
+| An unsafe history or a value out of range is refused | `ValuationReplayTest::test_an_unsafe_history_or_a_value_out_of_range_is_refused` | `PASS`, same run |
+| The movement cap and the time budget refuse with one mark per intent, also when the budget ended the session; SERVICE_BUSY when the mark fails | `CorrectCostTest::test_the_movement_cap_…`, `::test_the_time_budget_…`, `::test_a_mark_that_cannot_be_written_…`; `ValuationReplayTest::test_the_budget_is_asked_…` | `PASS`, same run |
+| The publication is all or nothing: a failure after each of the six write steps changes nothing | `CorrectCostTest::test_a_failure_after_every_write_step_…` | `PASS`, same run |
+| RACE-11 in both orders, and the mark against a later correction of the same source | `CostCorrectionRaceTest` | `PASS`, same run |
 | REVERSAL, SALE_ISSUE, RETURN_RECEIPT and OPENING in the replay | TASK-026, TASK-028, TASK-033, TASK-035 | Not this Task's |
 
-**Measured replay time.** Pending the fast run's log.
+**Measured replay time** (reading 11; not a PERF01 pass, BR-COST-28), on GitHub's hosted runner with the local environment's containers: the recomputation alone of 10,000 movements took 72 ms (fast run 41729942769) and 113 ms (fast run 41732519118); a whole correction whose replay covers 200 movements of one product — the product's guard, the replay's reads, the publication of the valuation and of 100 projections, the audit event and the commit — took 29 ms (fast run 41732519118). The reference cap of 10,000 movements on the database, with the read before the start, is PERF01's on the intended server (TASK-043, TASK-048).
 
 **Backup impact.** The three new class-F tables are in the manifest's counts through the privilege matrix (`BackupRunner::COUNTED_CLASSES`, BACKUP_RECOVERY section 5); the backup role reads them and the sequences `cost_corrections_id_seq` and `cost_incomplete_marks_id_seq` (a clearance is keyed by its mark). No stored file, runbook or status page changes.

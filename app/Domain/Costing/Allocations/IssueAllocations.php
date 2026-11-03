@@ -13,10 +13,9 @@ use LogicException;
  * (STK-12). Each issue movement has exactly one fact, the allocation as it was computed at
  * commit, never changed, and one projection, inserted in the same transaction with the same
  * status and amount; afterwards only a replay publication writes the projection (republish(),
- * TASK-025). The
- * posting Action calls it beside the Inventory module, in its transaction (STK-11), after the
- * movement: the presence key of the movement refuses a commit without its fact, and the fact's
- * key refuses one without its projection (BR-INV-08).
+ * TASK-025). The posting Action calls it beside the Inventory module, in its transaction
+ * (STK-11), after the movement: the presence key of the movement refuses a commit without its
+ * fact, and the fact's key refuses one without its projection (BR-INV-08).
  *
  * A SALE_ISSUE allocation names its SaleLine, whose key to sale_lines TASK-028 completes; until
  * then no allocation of a Sale is written (EXECUTION_CONTEXT EXC-44).
