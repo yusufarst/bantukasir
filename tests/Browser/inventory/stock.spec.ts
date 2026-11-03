@@ -77,18 +77,30 @@ async function newProduct(page: Page): Promise<string> {
  * that moves the page's clock; it returns a wait for none of these reads to be out. Each read waits
  * 30 seconds for its answer, so a jump of the clock while one is out ends it as failed, and the
  * shell then shows its own "Data belum diperbarui" beside the list's (CI run 41583276625). Set up
- * before the page opens, so that every read of the page is counted.
+ * before the page opens, so that every read of the page is counted. A read of the document before
+ * a new one may never end with an event once its document is gone, so the reads still out are
+ * discarded when the main frame commits a new document; a navigation within the document keeps
+ * them, and a late end of a discarded read changes nothing (CI run 41589075661).
  */
 async function quietShell(page: Page): Promise<() => Promise<void>> {
     const out = new Set<Request>();
+    let newDocument = false;
     const isShell = (request: Request): boolean => new URL(request.url()).pathname === '/data/shell';
     const ended = (request: Request): void => {
         out.delete(request);
     };
 
     page.on('request', (request) => {
-        if (isShell(request)) {
+        if (request.isNavigationRequest() && request.frame() === page.mainFrame()) {
+            newDocument = true;
+        } else if (isShell(request)) {
             out.add(request);
+        }
+    });
+    page.on('framenavigated', (frame) => {
+        if (frame === page.mainFrame() && newDocument) {
+            newDocument = false;
+            out.clear();
         }
     });
     page.on('requestfinished', ended);
