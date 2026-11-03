@@ -106,6 +106,15 @@ final class AdjustmentPagesTest extends DatabaseTestCase
     }
 
     /**
+     * @param  TestResponse<Response>  $response
+     * @return array<array-key, mixed>
+     */
+    private function propsOf(TestResponse $response): array
+    {
+        return (array) ($this->inertiaPage($response)['props'] ?? []);
+    }
+
+    /**
      * Another command with its envelope.
      *
      * @param  array<string, mixed>  $payload

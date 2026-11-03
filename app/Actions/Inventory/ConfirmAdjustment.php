@@ -95,7 +95,8 @@ final class ConfirmAdjustment extends CommandAction
             return null;
         }
 
-        $products = array_map(static fn (int $id): string => (string) $id, $this->adjustments->productsOf($result->ref));
+        $adjustment = $result->ref ?? throw new LogicException('An adjustment result names its adjustment.');
+        $products = array_map(static fn (int $id): string => (string) $id, $this->adjustments->productsOf($adjustment));
 
         return ['type' => $result->type, 'id' => $result->ref, 'location' => self::HISTORY_PAGE.implode(',', $products)];
     }

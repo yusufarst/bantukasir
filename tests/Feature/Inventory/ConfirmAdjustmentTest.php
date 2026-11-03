@@ -237,9 +237,8 @@ final class ConfirmAdjustmentTest extends DatabaseTestCase
             'payload.lines.0.quantity' => [['key' => 'ux.validation.quantity_whole', 'params' => []]],
             'payload.lines.1.quantity' => [['key' => 'ux.validation.quantity_decimals', 'params' => ['desimal' => '2']]],
         ], $precision->json('fields'));
-        $this->assertSame($before, $this->factsAndRows());
 
-        // The onboarding freeze, before every product (G-10).
+        // The onboarding freeze, before every product (G-10); nothing of any refusal was written.
         $this->runtime()->table('onboarding_state')->where('id', 1)->update(['state' => 'ACTIVE', 'version' => 2]);
         $this->confirm($this->envelopeOf([self::decrease($this->pen, '1')]))->assertStatus(422)->assertJsonPath('code', 'ONBOARDING_FREEZE');
         $this->runtime()->table('onboarding_state')->where('id', 1)->update(['state' => 'NOT_STARTED', 'version' => 3]);

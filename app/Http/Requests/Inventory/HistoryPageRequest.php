@@ -133,7 +133,7 @@ final class HistoryPageRequest extends RefusingRequest
 
         sort($keys);
 
-        return array_values($keys);
+        return $keys;
     }
 
     /**
