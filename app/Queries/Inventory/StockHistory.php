@@ -12,7 +12,8 @@ use Illuminate\Support\Facades\DB;
  * RP-402, the stock history (ROUTE_CONTRACTS RP-402; INTERACTION_CONTRACTS section 3.2;
  * BR-INV-02, BR-INV-44; TECHNICAL_RULES TR-PAGE-01, TR-PAGE-02; TASK-022 scope item 2): the
  * movements, newest first — in posting order within a product when the list is filtered to
- * one, otherwise by the server's time, then internal identifier — with keyset paging both
+ * one, otherwise, also when filtered to the products of an adjustment (TASK-024), by the
+ * server's time, then internal identifier — with keyset paging both
  * ways. Each row: the time, the product, the type, the signed quantity in the product's unit,
  * who recorded it and its source within the viewer's scope. Operational history carries no
  * cost (CAP-14, BR-INV-44). Of the sources, the receiving document and the manual issue
@@ -36,12 +37,12 @@ final class StockHistory
     private const string ISSUE_AT = "to_char(i.confirmed_at at time zone 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') as issue_at";
 
     /**
-     * @param  array{product: int|null, type: string|null, from: string|null, to: string|null, after: string|null, before: string|null, perPage: int}  $filters
+     * @param  array{products: list<int>, type: string|null, from: string|null, to: string|null, after: string|null, before: string|null, perPage: int}  $filters
      * @return array{rows: list<array<string, mixed>>, nextCursor: string|null, previousCursor: string|null}
      */
     public function __invoke(array $filters): array
     {
-        $byProduct = $filters['product'] !== null;
+        $byProduct = count($filters['products']) === 1;
         $backwards = $filters['before'] !== null;
         $cursor = $filters['before'] ?? $filters['after'];
         $query = $this->scoped($filters);
@@ -78,30 +79,37 @@ final class StockHistory
     }
 
     /**
-     * The product that the list is filtered to, named by the filter; a product that does not
-     * exist is NOT_FOUND, never an empty history (TR-ERR-03).
+     * The products that the list is filtered to, named by the filter, in its order; a product that
+     * does not exist is NOT_FOUND, never an empty history (TR-ERR-03).
      *
-     * @return array{id: int, name: string, sku: string}
+     * @param  list<int>  $ids
+     * @return list<array{id: int, name: string, sku: string}>
      *
      * @throws NotFound
      */
-    public function product(int $id): array
+    public function products(array $ids): array
     {
-        $row = DB::table('products')->where('id', $id)->first(['id', 'name', 'sku']);
+        $found = [];
 
-        if ($row === null) {
-            throw new NotFound;
+        foreach (DB::table('products')->whereIn('id', $ids)->get(['id', 'name', 'sku']) as $row) {
+            $values = (array) $row;
+            $id = Read::int($values, 'id');
+            $found[$id] = ['id' => $id, 'name' => Read::text($values, 'name'), 'sku' => Read::text($values, 'sku')];
         }
 
-        $values = (array) $row;
+        $products = [];
 
-        return ['id' => Read::int($values, 'id'), 'name' => Read::text($values, 'name'), 'sku' => Read::text($values, 'sku')];
+        foreach ($ids as $id) {
+            $products[] = $found[$id] ?? throw new NotFound;
+        }
+
+        return $products;
     }
 
     /**
      * The movements that the filters keep, with what a row shows.
      *
-     * @param  array{product: int|null, type: string|null, from: string|null, to: string|null, after: string|null, before: string|null, perPage: int}  $filters
+     * @param  array{products: list<int>, type: string|null, from: string|null, to: string|null, after: string|null, before: string|null, perPage: int}  $filters
      */
     private function scoped(array $filters): Builder
     {
@@ -117,8 +125,8 @@ final class StockHistory
             ->selectRaw(self::DOCUMENT_AT)
             ->selectRaw(self::ISSUE_AT);
 
-        if ($filters['product'] !== null) {
-            $query->where('m.product_id', $filters['product']);
+        if ($filters['products'] !== []) {
+            $query->whereIn('m.product_id', $filters['products']);
         }
 
         if ($filters['type'] !== null) {
@@ -175,7 +183,7 @@ final class StockHistory
     /**
      * Whether a movement that the filters keep lies beyond the position.
      *
-     * @param  array{product: int|null, type: string|null, from: string|null, to: string|null, after: string|null, before: string|null, perPage: int}  $filters
+     * @param  array{products: list<int>, type: string|null, from: string|null, to: string|null, after: string|null, before: string|null, perPage: int}  $filters
      * @param  list<int|string>  $position
      */
     private function exists(array $filters, bool $byProduct, array $position, string $direction): bool

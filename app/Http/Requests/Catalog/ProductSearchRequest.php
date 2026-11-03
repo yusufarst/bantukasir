@@ -25,8 +25,9 @@ use LogicException;
  * the query string alone (TASK-008 review finding R-01). `status` is the context `catalog`'s
  * alone; the context `correction` (TASK-020) answers active products only. The context
  * `receiving` (TASK-022, CAP-11) adds each product's version, which RC-07 expects as reviewed,
- * and so does the context `issue` (TASK-023, CAP-13) for RC-08; the context `stock` (TASK-022,
- * CAP-14) is the product filter of RP-402. A cashier's restricted cell of CAP-14 opens neither.
+ * and so does the context `issue` (TASK-023, CAP-13) for RC-08, and the context `adjustment`
+ * (TASK-024, CAP-16, the Owner's alone) for RC-09; the context `stock` (TASK-022, CAP-14) is the
+ * product filter of RP-402. A cashier's restricted cell of CAP-14 opens neither.
  *
  * The client's sequence number travels in the header SEQUENCE_HEADER, which the
  * answer repeats, so that a page applies only the answer to its newest request
@@ -47,10 +48,10 @@ final class ProductSearchRequest extends RefusingRequest
      *
      * @var array<string, Capability>
      */
-    private const array PROVIDED = ['catalog' => Capability::Cap04, 'correction' => Capability::Cap07, 'receiving' => Capability::Cap11, 'issue' => Capability::Cap13, 'stock' => Capability::Cap14];
+    private const array PROVIDED = ['catalog' => Capability::Cap04, 'correction' => Capability::Cap07, 'receiving' => Capability::Cap11, 'issue' => Capability::Cap13, 'adjustment' => Capability::Cap16, 'stock' => Capability::Cap14];
 
     /** The contexts whose rows carry each product's version, which their command expects as reviewed. */
-    private const array VERSIONED = ['receiving', 'issue'];
+    private const array VERSIONED = ['receiving', 'issue', 'adjustment'];
 
     private const string PLAIN_TEXT = '/\A[^\p{Cc}]*\z/u';
 

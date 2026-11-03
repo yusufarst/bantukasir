@@ -128,6 +128,9 @@ final class RouteInventoryTest extends TestCase
         'GET /stock/issues' => ['issues.index', 'RP-407', 'CAP-13', [...self::SIGNED_IN, 'capability:CAP-13', 'input.allow:from,to,reason,after,before,perPage']],
         'GET /stock/issues/new' => ['issues.create', 'RP-408', 'CAP-13', [...self::SIGNED_IN, 'capability:CAP-13', 'input.allow']],
         'GET /stock/issues/{issue}' => ['issues.show', 'RP-409', 'CAP-13', [...self::SIGNED_IN, 'capability:CAP-13', 'input.allow']],
+        // TASK-024: RC-09, with recent authentication, and RP-410.
+        'POST /commands/adjustment.confirm' => ['commands.adjustment.confirm', 'RC-09', 'CAP-16', [...self::SIGNED_IN, 'capability:CAP-16', 'throttle:command', 'password.confirm']],
+        'GET /stock/adjustments/new' => ['adjustments.create', 'RP-410', 'CAP-16', [...self::SIGNED_IN, 'capability:CAP-16', 'input.allow:product,from_page']],
     ];
 
     public function test_the_routes_are_exactly_those_listed_each_with_its_gate(): void

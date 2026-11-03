@@ -27,6 +27,7 @@ use App\Actions\Catalog\SetProductPhoto;
 use App\Actions\Catalog\UpdateProduct;
 use App\Actions\Configuration\ChangeBusinessProfile;
 use App\Actions\Documents\RecordLabelPrint;
+use App\Actions\Inventory\ConfirmAdjustment;
 use App\Actions\Inventory\ConfirmManualIssue;
 use App\Actions\Inventory\ConfirmReceiving;
 use App\Domain\Commands\Operations;
@@ -84,6 +85,8 @@ final class CommandActions
         ConfirmReceiving::OPERATION => ConfirmReceiving::class,
         // RC-08 (TASK-023).
         ConfirmManualIssue::OPERATION => ConfirmManualIssue::class,
+        // RC-09 (TASK-024).
+        ConfirmAdjustment::OPERATION => ConfirmAdjustment::class,
     ];
 
     /**

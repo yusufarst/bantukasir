@@ -1,6 +1,6 @@
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
-import { Button } from '@/components/ui/Button';
+import { Button, ButtonLink } from '@/components/ui/Button';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Field, SelectInput, TextInput } from '@/components/ui/Field';
 import { EmptyState, LoadFailed, Loading, NoResults, UnknownCode } from '@/components/ui/States';
@@ -8,9 +8,15 @@ import { AppShell } from '@/layouts/AppShell';
 import { ListLayout, PageHeader } from '@/layouts/Page';
 import { CodeField } from '@/lib/catalog/Parts';
 import { catalogFieldMessage, productPage, searchProducts, type ProductRow } from '@/lib/catalog/products';
+import { blockingRequest } from '@/lib/commands/families';
+import { useUnresolved } from '@/lib/commands/unresolved';
 import { formatDateTime } from '@/lib/format';
 import { t } from '@/lib/i18n';
+import { postingBlockedReason } from '@/lib/inventory/Parts';
 import {
+    ADJUST_CAPABILITY,
+    ADJUSTMENT_COMMAND,
+    adjustmentPage,
     backFrom,
     datesOutOfOrder,
     HISTORY_SHELL,
@@ -38,7 +44,11 @@ import {
 // never in the wrong order (`ux.validation.date_order`). A row leads to its movement (UXI-220);
 // its source, a receiving document or a manual issue, to that page (UXI-224). The filters and the page stand
 // in the address (NC-10). "Kembali ke …" only when another page opened it (UXI-223), naming
-// that page. "Sesuaikan stok" (UXI-221) is TASK-024's. No cost (CAP-14).
+// that page. The list may also be filtered to the products of an adjustment, RC-09's location
+// (TASK-024), shown by their names in the filter. "Sesuaikan stok" (UXI-221; TASK-024), the
+// Owner's alone, with one product filtered, opens UXP-410 with it; it is disabled with its reason
+// while the onboarding freeze is on or an unresolved receiving, manual issue or adjustment of the
+// user stands (UXS-13, UXS-27; NC-13). No cost (CAP-14).
 
 const STOCK_CONTEXT = 'stock';
 
@@ -47,9 +57,16 @@ const TYPING_MS = 300;
 
 interface HistoryProps {
     readonly filters: HistoryFilters;
-    readonly product: { readonly id: number; readonly name: string; readonly sku: string } | null;
+    readonly products: readonly { readonly id: number; readonly name: string; readonly sku: string }[];
     readonly history: KeysetPage<HistoryRow>;
     readonly opener: HistoryOpener | null;
+    readonly postingFrozen: boolean;
+}
+
+/** The signed-in user that every page shares (TASK-007). */
+interface SharedProps {
+    readonly auth: { readonly user: { readonly capabilities: readonly string[] } };
+    readonly [key: string]: unknown;
 }
 
 export default function History(props: HistoryProps) {
@@ -63,7 +80,9 @@ export default function History(props: HistoryProps) {
 }
 
 /** The way back of UXI-223: the page that opened this one, with its filters, and its title. */
-function backOf(opener: HistoryOpener | null, product: number | null): { readonly href: string; readonly page: string } | undefined {
+function backOf(opener: HistoryOpener | null, products: readonly number[]): { readonly href: string; readonly page: string } | undefined {
+    const product = products.length === 1 ? (products[0] ?? null) : null;
+
     switch (opener) {
         case 'stock':
             return { href: backFrom(document.referrer, window.location.origin, (path) => path === STOCK_PAGE, STOCK_PAGE), page: t('inventory.stock.title') };
@@ -76,10 +95,13 @@ function backOf(opener: HistoryOpener | null, product: number | null): { readonl
     }
 }
 
-function HistoryList({ title, filters, product, history, opener }: HistoryProps & { title: string }) {
+function HistoryList({ title, filters, products, history, opener, postingFrozen }: HistoryProps & { title: string }) {
     const [day, setDay] = useState(filters.from ?? '');
     const [visiting, setVisiting] = useState(false);
-    const [back] = useState(() => backOf(opener, filters.product));
+    const [back] = useState(() => backOf(opener, filters.products));
+    const owner = usePage<SharedProps>().props.auth.user.capabilities.includes(ADJUST_CAPABILITY);
+    const unresolved = useUnresolved();
+    const one = products.length === 1 ? (products[0] ?? null) : null;
     // A range comes only from an address; the field chooses one day, from and to alike.
     const outOfOrder = datesOutOfOrder(filters.from, filters.to);
 
@@ -135,18 +157,31 @@ function HistoryList({ title, filters, product, history, opener }: HistoryProps 
         },
     ];
 
-    const filtered = filters.product !== null || filters.type !== null || filters.from !== null || filters.to !== null;
+    const filtered = filters.products.length > 0 || filters.type !== null || filters.from !== null || filters.to !== null;
     const clear = (): void => {
         setDay('');
-        visit({ product: null, type: null, from: null, to: null });
+        visit({ products: [], type: null, from: null, to: null });
     };
+
+    // UXI-221: the Owner's alone, with one product filtered (INTERACTION_INVENTORY UXP-402).
+    const adjustReason = postingBlockedReason(postingFrozen, blockingRequest(unresolved.union, ADJUSTMENT_COMMAND.operation, ADJUSTMENT_COMMAND.family) !== null);
+    const adjustLabel = t('inventory.adjustment.title');
+    const adjust =
+        owner && one !== null ? (
+            adjustReason === undefined ? (
+                <ButtonLink href={adjustmentPage(one.id, 'history')} label={adjustLabel} variant={'secondary'} />
+            ) : (
+                <Button label={adjustLabel} variant={'secondary'} enterActivates={false} disabledReason={adjustReason} />
+            )
+        ) : undefined;
+    const chosen = products.length === 0 ? null : { name: products.map((product) => product.name).join(', ') };
 
     return (
         <ListLayout
-            header={<PageHeader title={title} {...(back === undefined ? {} : { back })} />}
+            header={<PageHeader title={title} {...(back === undefined ? {} : { back })} {...(adjust === undefined ? {} : { actions: adjust })} />}
             toolbar={
                 <>
-                    <ProductFilter key={filters.product ?? 'none'} chosen={product} onChoose={(chosen) => apply({ product: chosen?.id ?? null })} />
+                    <ProductFilter key={filters.products.join(',')} chosen={chosen} onChoose={(picked) => apply({ products: picked === null ? [] : [picked.id] })} />
                     <Field label={t('inventory.history.filter_type')}>
                         <SelectInput value={filters.type ?? ''} onChange={(event) => apply({ type: MOVEMENT_TYPES.find((entry) => entry.type === event.target.value)?.type ?? null })}>
                             <option value={''} />
@@ -193,7 +228,7 @@ type Results =
  * product; a newer read supersedes an older one (TR-PAGE-04). A choice applies the filter; an
  * emptied field removes it.
  */
-function ProductFilter({ chosen, onChoose }: { chosen: { readonly id: number; readonly name: string } | null; onChoose: (product: { readonly id: number } | null) => void }) {
+function ProductFilter({ chosen, onChoose }: { chosen: { readonly name: string } | null; onChoose: (product: { readonly id: number } | null) => void }) {
     const [text, setText] = useState(chosen?.name ?? '');
     const [results, setResults] = useState<Results>({ kind: 'none' });
     const latest = useRef(0);

@@ -1,9 +1,10 @@
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FilterChip, FilterChips } from '@/components/ui/Choices';
 import { LoadMore, RefreshLine } from '@/components/ui/Data';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Field, SelectInput } from '@/components/ui/Field';
+import { Menu, type MenuEntry } from '@/components/ui/Menu';
 import type { StateId } from '@/components/ui/stateCatalogue';
 import { EmptyState, LoadFailed, NoResults, StaleRead, StateNotice, UnknownCode } from '@/components/ui/States';
 import { StatusWord } from '@/components/ui/Status';
@@ -13,14 +14,19 @@ import { categoryOption, CodeField } from '@/lib/catalog/Parts';
 import { catalogFieldMessage, type Category } from '@/lib/catalog/products';
 import { useScanCapture } from '@/lib/catalog/scanCapture';
 import { SETTLED_EVENT } from '@/lib/commands/client';
-import { setStockAttention, SHELL_REFRESH_MS } from '@/lib/commands/unresolved';
+import { blockingRequest } from '@/lib/commands/families';
+import { setStockAttention, SHELL_REFRESH_MS, useUnresolved } from '@/lib/commands/unresolved';
 import { formatDateTime, formatQuantity } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import {
+    ADJUST_CAPABILITY,
+    ADJUSTMENT_COMMAND,
+    adjustmentPage,
     MAX_PER_PAGE,
     productHistory,
     readStock,
     readStockRows,
+    REQUESTS_PAGE,
     STOCK_PER_PAGE,
     STOCK_SHELL,
     STOCK_STATES,
@@ -42,11 +48,38 @@ import {
 // agree (BR-INV-41). A failed refresh keeps the last rows with their time (UXS-21), never an empty
 // list, a zero or "Normal" of its own. The Enter that ends a scanned code searches for it, and an
 // unknown code stays in the field (UXS-33). A row leads to the product's history (UXI-216). The
-// filters and how many rows were shown stand in the address and props (NC-10). "Sesuaikan stok"
-// (UXI-217) is TASK-024's. No cost is ever shown (CAP-14).
+// filters and how many rows were shown stand in the address and props (NC-10). The Owner's row
+// overflow "Sesuaikan stok" (UXI-217; TASK-024) opens UXP-410 with the row's product; it is
+// unavailable with its reason while the onboarding freeze is on or an unresolved receiving, manual
+// issue or adjustment of the user stands, with the way to UXP-006 beside it (UXS-13, UXS-27;
+// NC-13). No cost is ever shown (CAP-14).
 
 /** The wait after the last key before a typed search runs. */
 const TYPING_MS = 300;
+
+/** The signed-in user that every page shares (TASK-007). */
+interface SharedProps {
+    readonly auth: { readonly user: { readonly capabilities: readonly string[] } };
+    readonly [key: string]: unknown;
+}
+
+/** The row's overflow (UXI-217): UXP-410 with the product, or why it cannot open now. */
+function adjustEntries(product: number, postingFrozen: boolean, blocked: boolean): MenuEntry[] {
+    const label = t('inventory.adjustment.title');
+
+    if (postingFrozen) {
+        return [{ kind: 'unavailable', label, reason: t('ux.disabled.onboarding') }];
+    }
+
+    if (blocked) {
+        return [
+            { kind: 'unavailable', label, reason: t('inventory.disabled_unresolved_posting') },
+            { kind: 'link', label: t('ux.action.open_unresolved'), href: REQUESTS_PAGE },
+        ];
+    }
+
+    return [{ kind: 'link', label, href: adjustmentPage(product, 'stock') }];
+}
 
 const INVALID_STATE: StateId = 'UXS-05';
 
@@ -60,17 +93,20 @@ interface Shown {
     readonly unknownCode: string | null;
 }
 
-export default function Stock({ filters, categories, stock }: { filters: StockFilters; categories: readonly Category[]; stock: StockPage }) {
+export default function Stock({ filters, categories, stock, postingFrozen }: { filters: StockFilters; categories: readonly Category[]; stock: StockPage; postingFrozen: boolean }) {
     const title = t('inventory.stock.title');
 
     return (
         <AppShell title={title} {...STOCK_SHELL}>
-            <StockList title={title} filters={filters} categories={categories} stock={stock} />
+            <StockList title={title} filters={filters} categories={categories} stock={stock} postingFrozen={postingFrozen} />
         </AppShell>
     );
 }
 
-function StockList({ title, filters, categories, stock }: { title: string; filters: StockFilters; categories: readonly Category[]; stock: StockPage }) {
+function StockList({ title, filters, categories, stock, postingFrozen }: { title: string; filters: StockFilters; categories: readonly Category[]; stock: StockPage; postingFrozen: boolean }) {
+    const owner = usePage<SharedProps>().props.auth.user.capabilities.includes(ADJUST_CAPABILITY);
+    const unresolved = useUnresolved();
+    const adjustBlocked = blockingRequest(unresolved.union, ADJUSTMENT_COMMAND.operation, ADJUSTMENT_COMMAND.family) !== null;
     const [applied, setApplied] = useState(filters);
     const [q, setQ] = useState(filters.q);
     const [shown, setShown] = useState<Shown>({ page: stock, filters, unknownCode: null });
@@ -295,6 +331,17 @@ function StockList({ title, filters, categories, stock }: { title: string; filte
                 return <StatusWord tone={word.tone} label={t(word.label)} />;
             },
         },
+        // UXI-217: the row's overflow "Sesuaikan stok", the Owner's alone (TASK-024).
+        ...(owner
+            ? [
+                  {
+                      id: 'actions',
+                      header: t('ux.action.more_actions'),
+                      isAction: true,
+                      cell: (row: StockRow) => <Menu label={t('ux.action.more_actions')} rowName={row.name} items={adjustEntries(row.id, postingFrozen, adjustBlocked)} />,
+                  },
+              ]
+            : []),
     ];
 
     const filtered = applied.q !== '' || applied.state !== null || applied.category !== null;

@@ -197,11 +197,13 @@ final class LedgerTablesTest extends DatabaseTestCase
         try {
             // SCHEMA section 3.7. Within this one transaction the deferred keys wait, and it
             // rolls back; the keys of the other presence columns follow their tables (EXC-44).
+            $adjustment = $this->insertAdjustmentLines($runtime);
             $presences = [
                 'RECEIPT' => $this->presenceOf($runtime, $this->insertReceipt($runtime)),
                 'OPENING' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('OPENING', '1', ['opening_line_id' => 7, 'line_quantity' => '1', 'opening_replacement' => true, 'product_sequence' => 2]))),
-                'an increase' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('ADJUSTMENT', '1', ['adjustment_line_id' => 7, 'line_quantity' => '1', 'product_sequence' => 3]))),
-                'a decrease' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('ADJUSTMENT', '-1', ['adjustment_line_id' => 8, 'line_quantity' => '-1', 'product_sequence' => 4]))),
+                // TASK-024 completed the key of an adjustment line, so the movements name real ones.
+                'an increase' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('ADJUSTMENT', '1', ['adjustment_line_id' => $adjustment[0], 'line_quantity' => '1', 'product_sequence' => 3]))),
+                'a decrease' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('ADJUSTMENT', '-1', ['adjustment_line_id' => $adjustment[1], 'line_quantity' => '-1', 'product_sequence' => 4]))),
                 'SALE_ISSUE' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('SALE_ISSUE', '-1', ['sale_line_id' => 7, 'line_quantity' => '1', 'product_sequence' => 5]))),
                 // TASK-023 completed the key of a manual issue line, so the movement names a real one.
                 'MANUAL_ISSUE' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('MANUAL_ISSUE', '-1', ['manual_issue_line_id' => $this->insertIssueLine($runtime), 'line_quantity' => '1', 'product_sequence' => 6]))),
@@ -416,13 +418,10 @@ final class LedgerTablesTest extends DatabaseTestCase
         // AC-021-08, BR-INV-08: every statement is accepted, and the commit refuses them.
         $this->assertFailsAtCommit(fn (Connection $c) => $this->insertReceipt($c), 'stock_movements_cost_evidence_presence_fk', ['receiving_documents', 'receiving_lines', 'stock_movements']);
 
-        // An OPENING and an increase need theirs too (SCHEMA section 5.7).
-        foreach ([
-            $this->movementOf('OPENING', '1', ['opening_line_id' => 7, 'line_quantity' => '1', 'opening_replacement' => false]),
-            $this->movementOf('ADJUSTMENT', '1', ['adjustment_line_id' => 7, 'line_quantity' => '1']),
-        ] as $values) {
-            $this->assertFailsAtCommit(fn (Connection $c) => $this->insertMovement($c, $values), 'stock_movements_cost_evidence_presence_fk', ['stock_movements']);
-        }
+        // An OPENING needs its evidence too (SCHEMA section 5.7); an increase, now that its line's
+        // key exists, is AdjustmentTablesTest's (TASK-024).
+        $opening = $this->movementOf('OPENING', '1', ['opening_line_id' => 7, 'line_quantity' => '1', 'opening_replacement' => false]);
+        $this->assertFailsAtCommit(fn (Connection $c) => $this->insertMovement($c, $opening), 'stock_movements_cost_evidence_presence_fk', ['stock_movements']);
     }
 
     public function test_a_receiving_line_without_its_movement_fails_at_commit_and_leaves_nothing(): void
@@ -638,6 +637,25 @@ final class LedgerTablesTest extends DatabaseTestCase
         ]);
 
         return $c->table('manual_issue_lines')->insertGetId(['manual_issue_id' => $issue, 'line_no' => 1, 'product_id' => $this->product, 'quantity' => '1']);
+    }
+
+    /**
+     * An adjustment of the product with an increase and a decrease of one unit, written directly
+     * (TASK-024): the two lines' keys.
+     *
+     * @return array{0: int, 1: int}
+     */
+    private function insertAdjustmentLines(Connection $c): array
+    {
+        $adjustment = $c->table('adjustments')->insertGetId([
+            'reason' => 'Hitung ulang', 'count_reference' => 'HIT-1', 'reference' => 'REF-1', 'line_count' => 2, 'confirmed_at' => now(), 'actor_user_id' => $this->owner,
+            'actor_display_name' => 'Hendra', 'command_id' => $this->command,
+        ]);
+
+        return [
+            $c->table('adjustment_lines')->insertGetId(['adjustment_id' => $adjustment, 'line_no' => 1, 'product_id' => $this->product, 'quantity' => '1']),
+            $c->table('adjustment_lines')->insertGetId(['adjustment_id' => $adjustment, 'line_no' => 2, 'product_id' => $this->product, 'quantity' => '-1']),
+        ];
     }
 
     /**

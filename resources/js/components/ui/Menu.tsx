@@ -1,5 +1,5 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import type { MouseEvent, ReactNode } from 'react';
+import { useId, type MouseEvent, type ReactNode } from 'react';
 import { Button, type ButtonVariant } from './Button';
 import { Icon } from './Icon';
 import type { IconName } from './icons';
@@ -13,6 +13,13 @@ export type MenuEntry =
           readonly href: string;
           /** A guard before the page is left, such as the unsaved-changes dialog (UXS-45; TASK-007). */
           readonly onNavigate?: (event: MouseEvent<HTMLAnchorElement>) => void;
+      }
+    | {
+          /** UXS-13 in a menu: the item keeps its place and focus, does nothing, and says why, tied to it (TASK-024, UXI-217). */
+          readonly kind: 'unavailable';
+          readonly label: string;
+          readonly icon?: IconName;
+          readonly reason: string;
       }
     | { readonly kind: 'separator' };
 
@@ -50,6 +57,8 @@ export function Menu({
     triggerClassName?: string;
     children?: ReactNode;
 }) {
+    const menuId = useId();
+
     return (
         <DropdownMenu.Root modal={false}>
             <DropdownMenu.Trigger asChild={true}>
@@ -61,6 +70,22 @@ export function Menu({
                     {items.map((item, index) => {
                         if (item.kind === 'separator') {
                             return <DropdownMenu.Separator key={index} className={'bk-menu__sep'} />;
+                        }
+
+                        if (item.kind === 'unavailable') {
+                            const reasonId = `${menuId}-reason-${String(index)}`;
+
+                            return (
+                                <DropdownMenu.Item key={index} className={'bk-menu__item'} aria-disabled={true} aria-describedby={reasonId} data-unavailable={true} onSelect={(event) => event.preventDefault()}>
+                                    {item.icon !== undefined && <Icon name={item.icon} />}
+                                    <span className={'bk-stack'}>
+                                        <span>{item.label}</span>
+                                        <span className={'bk-meta'} id={reasonId}>
+                                            {item.reason}
+                                        </span>
+                                    </span>
+                                </DropdownMenu.Item>
+                            );
                         }
 
                         if (item.kind === 'link') {

@@ -103,7 +103,15 @@ final class StockPagesTest extends DatabaseTestCase
 
         $pen = $this->history('/stock/history?product='.$this->pen);
         $this->assertSame([[$this->pen, 2], [$this->pen, 1]], self::keys($pen['rows']));
-        $this->assertSame(['id' => $this->pen, 'name' => 'Pulpen Hitam', 'sku' => 'PEN-01'], $this->propsOf($this->get('/stock/history?product='.$this->pen))['product'] ?? null);
+        $this->assertSame([['id' => $this->pen, 'name' => 'Pulpen Hitam', 'sku' => 'PEN-01']], $this->propsOf($this->get('/stock/history?product='.$this->pen))['products'] ?? null);
+
+        // The products of an adjustment, RC-09's location (TASK-024): each once, ascending, by
+        // time; a repeated key counts once, and one that does not exist is NOT_FOUND.
+        $both = $this->propsOf($this->get('/stock/history?product='.$this->paper.','.$this->pen.','.$this->paper));
+        $this->assertSame(['products' => [min($this->pen, $this->paper), max($this->pen, $this->paper)], 'type' => null, 'from' => null, 'to' => null], $both['filters'] ?? null);
+        $this->assertSame([[$this->paper, 2], [$this->pen, 2], [$this->paper, 1], [$this->pen, 1]], self::keys($this->history('/stock/history?product='.$this->pen.','.$this->paper)['rows']));
+        $this->getJson('/stock/history?product='.$this->pen.',999999')->assertStatus(404)->assertJsonPath('code', 'NOT_FOUND');
+        $this->getJson('/stock/history?product='.implode(',', range(1, 201)))->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
 
         $this->assertSame(4, count($this->history('/stock/history?type=RECEIPT')['rows']));
         $this->assertSame([], $this->history('/stock/history?type=MANUAL_ISSUE')['rows']);
@@ -155,7 +163,7 @@ final class StockPagesTest extends DatabaseTestCase
         $refused = $this->getJson('/stock/history?from=2026-11-03&to=2026-11-01')->assertStatus(422);
         $this->assertSame([['key' => 'ux.validation.date_order', 'params' => []]], $refused->json('fields.to'));
 
-        foreach (['product=abc', 'product=0', 'type=SALE', 'from=2026-02-30', 'to=02-11-2026', 'perPage=0', 'after=x&before=y', 'from_page=lain', 'sort=time', 'after=***'] as $query) {
+        foreach (['product=abc', 'product=0', 'product=1,', 'product=,1', 'product=1,0', 'product=1;2', 'type=SALE', 'from=2026-02-30', 'to=02-11-2026', 'perPage=0', 'after=x&before=y', 'from_page=lain', 'sort=time', 'after=***'] as $query) {
             $this->getJson('/stock/history?'.$query)->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
         }
 
