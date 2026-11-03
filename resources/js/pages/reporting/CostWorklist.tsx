@@ -10,7 +10,7 @@ import { takeSavedNote } from '@/lib/access/users';
 import { CodeField } from '@/lib/catalog/Parts';
 import { catalogFieldMessage, searchProducts, type ProductRow } from '@/lib/catalog/products';
 import { costHistoryPage, WORKLIST_SHELL, worklistAddress, type CostValue } from '@/lib/costing/costs';
-import { CorrectionButton } from '@/lib/costing/Parts';
+import { CorrectionButton, rowLinkName } from '@/lib/costing/Parts';
 import { formatDateTime } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import { typeWord, type MovementType } from '@/lib/inventory/stock';
@@ -98,7 +98,7 @@ function WorklistPage({ title, filters, product, worklist }: CostWorklistProps &
             header: t('costing.history.title'),
             isAction: true,
             cell: (row) => (
-                <a className={'bk-table-link'} href={costHistoryPage(row.product.id, OPENER)} aria-label={`${t('costing.history.title')} ${row.product.name}`}>
+                <a className={'bk-table-link'} href={costHistoryPage(row.product.id, OPENER)} aria-label={rowLinkName(t('costing.history.title'), row.product.name)}>
                     {t('costing.history.title')}
                 </a>
             ),

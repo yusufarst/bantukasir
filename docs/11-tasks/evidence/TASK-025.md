@@ -14,7 +14,11 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 
 | Check | Where it ran | Time | Duration | Result |
 | --- | --- | --- | --- | --- |
-| `npm run typecheck`, `npx tsc --noEmit` | Local | — | — | `NOT_RUN`: `tsc` is not installed on this machine |
+| Guard (Gitleaks 8.30.1, the secret scan, identity, candidates) | Local, on `6588137` and `c3e58a1` | 05:20, 05:29 | under 1 min of scanning each | `PASS`, no candidate |
+| `composer validate`, `lint` | Fast run 41729942769 on `6588137` | 05:23 | 30 s | `PASS` |
+| `composer analyse` | Same run | 05:23 to 05:24 | 12 s | `PASS` |
+| `composer test:unit` | Same run | 05:24 | 14 s | `FAIL`: 880 of 881 passed; `PrivilegeMatrixTest` listed the tables of the matrix without the three new ones (finding F-2); the later steps did not run |
+| `npm run typecheck` | Local | 05:31 | — | `NOT_RUN`: `tsc` is not installed on this machine |
 | The whole command contract and the image checks | CI on the pull request's final head | — | — | `NOT_RUN` at this writing (CE-41, D-117); never on this machine (D-108) |
 
 ## 2. What was built (contract section 4.1)
@@ -45,6 +49,7 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 ## 4. Findings
 
 - **F-1, for the Task that next touches UXP-006:** RC-15's result is RP-505 of the product, which RC-50 also gives; "Lihat hasil" of UXP-006 (UXI-056) is not among this Task's controls and is not extended to it.
+- **F-2.** Fast run 1 failed on a guard test not widened for the new tables: `PrivilegeMatrixTest` lists every table of the matrix. It now lists the three and asserts their privileges (select and insert, no update column, the backup role's select); fixed in the next checkpoint.
 
 ## 5. The ADR-008 cases and the backup impact (EXC-47)
 

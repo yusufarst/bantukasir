@@ -22,6 +22,11 @@ export function unresolvedCorrectionReason(): ReactNode {
     );
 }
 
+/** The name of a row's link: its visible text, then the row it acts on (WCAG 2.5.3). */
+export function rowLinkName(label: string, rowName: string): string {
+    return `${label} ${rowName}`;
+}
+
 /**
  * "Koreksi biaya", or "Lengkapi biaya" while the cost is UNKNOWN, which opens UXP-504 for the cost
  * source with the page that opened it (UXI-226, UXI-249, UXI-314, UXI-324): the Owner's alone, and
@@ -40,7 +45,7 @@ export function CorrectionButton({ evidenceId, cost, opener, rowName, variant = 
     // A row's link names its row after its visible text (WCAG 2.5.3).
     if (rowName !== undefined) {
         return (
-            <a className={'bk-table-link'} href={correctionPage(evidenceId, opener)} aria-label={`${label} ${rowName}`}>
+            <a className={'bk-table-link'} href={correctionPage(evidenceId, opener)} aria-label={rowLinkName(label, rowName)}>
                 {label}
             </a>
         );

@@ -75,6 +75,11 @@ function backOf(opener: HistoryOpener | null, product: number): { readonly href:
     }
 }
 
+/** The key of a correction in the product's list: its cost source and its number. */
+function correctionKey(entry: ProductCorrection): string {
+    return `${String(entry.evidenceId)}-${String(entry.correctionNo)}`;
+}
+
 /** A value, or the words of UXS-24 in its place, never Rp0 (BR-COST-03). */
 function costOf(amount: string | null) {
     return amount === null ? <StateMark kind={'cost_unknown'} /> : <span className={'bk-num'}>{formatCost(amount)}</span>;
@@ -142,7 +147,7 @@ function HistoryPage({ title, product, valuation, marked, evidence, corrections,
                     <Section title={t('costing.history.corrections')}>
                         <ul className={'bk-stack'}>
                             {corrections.map((entry) => (
-                                <li key={`${String(entry.evidenceId)}-${String(entry.correctionNo)}`}>
+                                <li key={correctionKey(entry)}>
                                     <p>{t('costing.worklist.source_entry', { jenis: typeWord(entry.sourceType), waktu: formatDateTime(entry.sourceRecordedAt) })}</p>
                                     <p className={'bk-meta'}>{correctionText(entry)}</p>
                                 </li>
