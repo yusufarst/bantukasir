@@ -33,7 +33,9 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Image checks | CI run 41652982248 on `9bf90f5`, pull request #34 | 21:22 to 21:29 | 7 min 7 s | `PASS`; invalidated by fix cycle 1 (it changes the bundle), so it runs again on the next head |
 | The whole command contract: static checks, unit, `test:postgres`, `test:race`, `build`, the browser suite | Same CI run | 21:22 to 22:18 | 56 min 19 s | `FAIL` at `npm run test:e2e`: 292 passed, 6 failed, 2 did not run; the six all in `adjustment.spec.ts` (fix cycle 1, section 10) |
 | `npm run typecheck` | Local, fix cycle 1 | 4 Nov 00:49 | — | `NOT_RUN`: `tsc` is not installed on this machine |
-| The whole command contract and the image checks, after fix cycle 1 | CI on the pull request's next head | — | — | `NOT_RUN` at this writing (CE-41, D-117); never on this machine (D-108) |
+| Image checks, after fix cycle 1 | CI run 41689038370 on `1486ba3`, pull request #34 | 4 Nov 00:56 to 01:03 | 7 min 16 s | `PASS`; still valid after fix cycle 2, which changes one PHP test only |
+| The whole command contract, after fix cycle 1 | Same CI run | 4 Nov 00:56 to 01:24 | 27 min 39 s | `FAIL` at `composer test:postgres`: 716 of 717 passed, one error in `ChangeBusinessProfileTest` (fix cycle 2, section 11); validate, lint, analyse and `test:unit` passed; `test:race` and every npm step did not run |
+| The whole command contract, after fix cycle 2 | CI on the pull request's next head | — | — | `NOT_RUN` at this writing (CE-41, D-117); never on this machine (D-108) |
 
 Fast run 4, 41646371938 on `aa93aad`, is the run of the code to review; fast run 5, 41650066390 on `fe3e595`, that of the review's fixes. The record's commit changes documents only; its push starts fast run 6 of 10, which the executor does not wait for.
 
@@ -148,3 +150,17 @@ The fix changes production behaviour of a class-A Task, so `bk-reviewer-high` ma
 | V-06: the 403 filter covers the whole test | NOTE | As the precedents; the 403 itself is asserted |
 
 `guard.sh --preview` and `guard.sh` on every checkpoint, `b75ac85` to `fe3e595`, list no candidate: no address, host, e-mail or home path. The guard on the record's commit is reported with the pull request, because this file cannot name its own commit.
+
+## 11. Fix cycle 2 (CE-42)
+
+Its input: the red CI run 41689038370 on `1486ba3`, failure 1 of 3 of CE-42.
+
+| Input | Cause | Fix | Regression test |
+| --- | --- | --- | --- |
+| CI: `ChangeBusinessProfileTest::test_a_logo_at_the_limits_of_its_purpose_is_accepted_within_the_memory_of_a_request` (TASK-010), `ErrorException: Failed to set memory limit to 134217728 bytes (Current memory usage is 135266304 bytes)` at its second `ini_set('memory_limit', '128M')` | The test set an absolute 128 MiB limit inside a PHPUnit process that holds the memory of every earlier test of the suite; PHP refuses a limit below the memory in use. The suite's peak was already 133 MB on `develop` (run 41618363878) and is 135 MB with this Task's code, so the margin of about 1 MB was crossed by the suite's growth, not by a defect of the Task's code: no production file of the image path changes, and TASK-024 adds no static state that tests accumulate | The test starts each request at 128 MiB, or at 16 MiB above the memory in use when the runner already holds more (`startRequestMemory`). Either stays far below what a 16-megapixel image needs (13 bytes a pixel and 64 MiB, `ImageNormalizer::reserveMemory`), so the reservation is still required and proven; no assertion changes | The test itself, on the next head's `test:postgres` |
+
+No production behaviour changes, so no targeted verification (CE-42). The same pattern in `ProductPhotoTest::test_a_photo_at_its_limits_is_accepted_within_the_memory_of_a_request` passes, earlier in the suite with less memory held; it is left as it is (finding F-4).
+
+- **F-4, for the Task that next touches the media tests:** `ProductPhotoTest` sets an absolute 128 MiB limit as `ChangeBusinessProfileTest` did, and will fail the same way when the suite's memory before it passes 128 MiB; `startRequestMemory` is the pattern to reuse.
+
+Checks of fix cycle 2: the changed test runs in `fast-checks` on the push (a PostgreSQL file the branch changes) and in `test:postgres` on the pull request's next head; `composer lint` and `analyse` cover the file there. Nothing runs on this machine: no PHP (D-108). The guard of fix cycle 2 is reported with its push.

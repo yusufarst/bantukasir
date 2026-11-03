@@ -302,7 +302,7 @@ final class ChangeBusinessProfileTest extends DatabaseTestCase
 
         try {
             $png = TestImages::flatPng(4000, 4000);
-            ini_set('memory_limit', '128M');
+            self::startRequestMemory();
             $first = $this->postLogo(UploadedFile::fake()->createWithContent('logo.png', $png))->assertStatus(201);
             $this->assertSame(['image/png', 4000, 4000], $this->dimensionsOf($this->logoOf(self::idOf($first))));
 
@@ -310,7 +310,7 @@ final class ChangeBusinessProfileTest extends DatabaseTestCase
             ini_set('memory_limit', '1G');
             $jpeg = TestImages::jpegWithMetadata(4000, 4000, 6, 'Lokasi rahasia');
             gc_collect_cycles();
-            ini_set('memory_limit', '128M');
+            self::startRequestMemory();
             $second = $this->postLogo(UploadedFile::fake()->createWithContent('logo.jpg', $jpeg), self::idOf($first))->assertStatus(201);
             $this->assertSame(['image/jpeg', 4000, 4000], $this->dimensionsOf($this->logoOf(self::idOf($second))));
         } finally {
@@ -459,6 +459,22 @@ final class ChangeBusinessProfileTest extends DatabaseTestCase
         }
 
         return $counts;
+    }
+
+    /**
+     * Sets the memory limit that a request starts with: the default 128 MiB, or, when the test
+     * runner already holds more than that from the earlier tests of its process, 16 MiB above the
+     * memory in use. Either is far below what a 16-megapixel image needs (ImageNormalizer reserves
+     * 13 bytes a pixel and 64 MiB more), so the normalization still has to reserve its memory; a
+     * limit below the memory in use would be refused by PHP itself.
+     */
+    private static function startRequestMemory(): void
+    {
+        $limit = max(128 * 1024 * 1024, memory_get_usage() + 16 * 1024 * 1024);
+
+        if (ini_set('memory_limit', (string) $limit) === false) {
+            self::fail('The memory limit of a request is set.');
+        }
     }
 
     /**
