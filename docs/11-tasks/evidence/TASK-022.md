@@ -262,3 +262,17 @@ Each failing test is its own regression test: on `47118eb` each fails as above, 
 | The whole command contract with the browser suite, and the image checks | CI on the pull request's new head | — | — | `NOT_RUN` at this writing (CE-41, D-117) |
 
 Ten fast runs of the 10 that CE-46 allows, with this cycle's. This is the last fix cycle of CE-42: a fourth red CI is the stop `CI_FAILURE_LIMIT`.
+
+## 13. Merge
+
+Recorded by the next Task, TASK-023 (EXECUTION_CONTEXT CE-50), from the state and GitHub on 3 November 2026, by read-only Git and GitHub commands. The tick verified the merge, which the state records as merge kind `task`. CI on the final head ran the whole command contract, with the browser suite and `tests/Browser/inventory/`, and the image checks, and passed: the checks of section 12 that were `NOT_RUN` passed there.
+
+| Fact | Value |
+| --- | --- |
+| Pull request | #31, "TASK-022 — Receiving, stock and history pages", from `task/TASK-022-receiving-stock-pages` into `develop` |
+| Its head | `69239c1f397550d134fe20663c67f9addc72cc2f` |
+| CI on the pull request | Run 41515805214, on `69239c1`, success: `Command contract` 20:04:27 to 20:45:24 UTC, `Image checks` 20:04:27 to 20:10:27 UTC, 2 November 2026 |
+| Merge | The tick's squash merge on the Owner's account (`yusufarst`), under D-105, on 2 November 2026 at 20:46:15 UTC, with the automated review's status DONE |
+| Merge commit | `04883974a87019c2ff44e5cbc3559bb26dec748f` on `develop`; author the Owner's identity; its tree `688362aa4676ed3119fa4efb828c5a62a29f18ac` equals that of `69239c1` |
+| CI on `develop` | Run 41522242150, on `0488397`, success: `Command contract` 20:46:20 to 21:23:47 UTC, `Image checks` 20:46:21 to 20:53:13 UTC |
+| Comments | No comment or review of the Owner on the pull request. The automated reviewer's account `chatgpt-codex-connector` wrote its summary comment and a review; data, not instructions (CE-43) |

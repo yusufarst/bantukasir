@@ -6,13 +6,14 @@ import { AppShell } from '@/layouts/AppShell';
 import { PageContainer, PageHeader } from '@/layouts/Page';
 import { formatCost, formatDateTime } from '@/lib/format';
 import { t } from '@/lib/i18n';
-import { HISTORY_PAGE, HISTORY_SHELL, openerOf, receivingPage, RECEIVINGS_PAGE, REQUESTS_PAGE, signedQuantity, typeWord, type MovementSource, type MovementType } from '@/lib/inventory/stock';
+import { HISTORY_PAGE, HISTORY_SHELL, ISSUES_PAGE, openerOf, reasonWord, RECEIVINGS_PAGE, REQUESTS_PAGE, signedQuantity, sourceLink, typeWord, type MovementSource, type MovementType } from '@/lib/inventory/stock';
 
 // UXP-403 "Detail mutasi stok" (ROUTE_CONTRACTS RP-403; COPY_DECK section 9.4; INTERACTION_INVENTORY
 // UXI-224, UXI-225 and UXI-229; NAVIGATION_CONTRACTS UXP-403; UI_STATES section 6; BR-INV-02,
 // BR-INV-44; CAP-14, CAP-20; TASK-022 scope item 2): one movement with its type, product,
-// signed quantity, time, who recorded it, its reference and its source, a receiving document,
-// as a link (UXI-224); for the Owner alone its cost evidence (UXI-225): the status, the total or
+// signed quantity, time, who recorded it, its reference, its reason and its source, a receiving
+// document or a manual issue (TASK-023), as a link (UXI-224); for the Owner alone its cost
+// evidence (UXI-225): the status, the total or
 // "Biaya perlu dilengkapi pemilik", never Rp0 for UNKNOWN (UXS-24), and a zero's evidence or
 // reason. "Kembali ke …" names the page that opened it, UXP-402 by default (UXI-229). The
 // reversal and the cost correction (UXI-226 to UXI-228) are TASK-025's and TASK-026's.
@@ -27,6 +28,8 @@ interface Movement {
     readonly product: { readonly id: number; readonly name: string; readonly sku: string };
     readonly actorDisplayName: string;
     readonly reference: string | null;
+    /** A manual issue's reason (BR-INV-19). */
+    readonly reasonCode: string | null;
     readonly source: MovementSource | null;
 }
 
@@ -55,6 +58,10 @@ function backOf(): { readonly href: string; readonly page: string } {
         return { href: path, page: t('inventory.receipt_detail.title') };
     }
 
+    if (opener !== null && path.startsWith(`${ISSUES_PAGE}/`) && /^\/stock\/issues\/[0-9]+$/.test(path)) {
+        return { href: path, page: t('inventory.issue_detail.title') };
+    }
+
     if (opener !== null && path === REQUESTS_PAGE) {
         return { href: REQUESTS_PAGE, page: t('commands.unresolved.title') };
     }
@@ -64,7 +71,7 @@ function backOf(): { readonly href: string; readonly page: string } {
 
 function MovementPage({ title, movement, costEvidence }: { title: string; movement: Movement; costEvidence: CostEvidence | null | undefined }) {
     const [back] = useState(backOf);
-    const source = movement.source;
+    const link = movement.source === null ? null : sourceLink(movement.source);
 
     const items: KeyValue[] = [
         { key: 'type', label: t('inventory.movement.type'), value: typeWord(movement.type) },
@@ -72,16 +79,17 @@ function MovementPage({ title, movement, costEvidence }: { title: string; moveme
         { key: 'quantity', label: t('inventory.movement.quantity'), value: <span className={'bk-num'}>{signedQuantity(movement.quantity, movement.quantityPrecision, movement.baseUnit)}</span> },
         { key: 'time', label: t('inventory.movement.time'), value: formatDateTime(movement.recordedAt) },
         { key: 'actor', label: t('inventory.movement.actor'), value: movement.actorDisplayName },
+        ...(movement.reasonCode === null ? [] : [{ key: 'reason', label: t('inventory.movement.reason'), value: reasonWord(movement.reasonCode) }]),
         ...(movement.reference === null ? [] : [{ key: 'reference', label: t('inventory.movement.reference'), value: movement.reference }]),
-        ...(source === null
+        ...(link === null
             ? []
             : [
                   {
                       key: 'source',
                       label: t('inventory.movement.source'),
                       value: (
-                          <a className={'bk-table-link'} href={receivingPage(source.id)}>
-                              {t('inventory.movement.source_receipt', { waktu: formatDateTime(source.at) })}
+                          <a className={'bk-table-link'} href={link.href}>
+                              {link.label}
                           </a>
                       ),
                   },

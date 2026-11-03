@@ -90,8 +90,8 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-020](tasks/TASK-020-barcode-correction.md) | Barcode misassignment correction | 4 | C | M | A | TASK-017 | — | `DONE` |
 | [TASK-021](tasks/TASK-021-ledger-receiving.md) | Stock ledger, valuation and receiving (server) | 5 | I | XL | A | TASK-016 | — | `DONE` |
 | [TASK-022](tasks/TASK-022-receiving-stock-pages.md) | Receiving, stock and history pages | 5 | I | L | A | TASK-021, TASK-017 | — | `DONE` |
-| [TASK-023](tasks/TASK-023-manual-issue.md) | Manual issue and issue-cost allocation | 5 | I | L | A | TASK-022 | — | `READY` |
-| [TASK-024](tasks/TASK-024-stock-adjustment.md) | Stock adjustment | 5 | I | M | A | TASK-023 | — | `TODO` |
+| [TASK-023](tasks/TASK-023-manual-issue.md) | Manual issue and issue-cost allocation | 5 | I | L | A | TASK-022 | — | `DONE` |
+| [TASK-024](tasks/TASK-024-stock-adjustment.md) | Stock adjustment | 5 | I | M | A | TASK-023 | — | `READY` |
 | [TASK-025](tasks/TASK-025-cost-correction.md) | Cost correction, completion and bounded replay | 5 | I | XL | A | TASK-024 | — | `TODO` |
 | [TASK-026](tasks/TASK-026-reversal.md) | Reversal of movements | 5 | I | L | A | TASK-025 | — | `TODO` |
 | [TASK-027](tasks/TASK-027-registers-session-open.md) | Cash registers and cash session open | 6 | S | M | A | TASK-011, TASK-022 | — | `READY` |
@@ -119,7 +119,7 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-049](tasks/TASK-049-release-readiness.md) | Release readiness: staging, UAT and first installation | 10 | R | L | V | TASK-045, TASK-047, TASK-048 | G1, G2, G3, G4, DEVICES, TARGET, GATE-PUBLISH | `TODO` |
 | [TASK-050](tasks/TASK-050-production-pilot.md) | Production release, cutover and pilot acceptance | 10 | R | L | V | TASK-049 | RELEASE, GATE-PUBLISH, G4 | `TODO` |
 
-Totals: `TODO` 25; `READY` 3; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 22; `SUPERSEDED` 0.
+Totals: `TODO` 24; `READY` 3; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 23; `SUPERSEDED` 0.
 
 ## 5. Implementation sequence
 

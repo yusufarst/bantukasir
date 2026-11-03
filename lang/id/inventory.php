@@ -4,7 +4,9 @@
 // stock, history, receiving, manual issue, adjustment, reversal, onboarding,
 // incidents. Its keys are copied verbatim from COPY_DECK by the first Task
 // that uses them; TASK-003 adds none. TASK-022 adds those of the stock and
-// receiving pages (COPY_DECK sections 4.1, 9.1 to 9.7 and 15).
+// receiving pages (COPY_DECK sections 4.1, 9.1 to 9.7 and 15), TASK-023 those
+// of the manual issue pages (COPY_DECK sections 4.1, 9.1, 9.4, 9.8 to 9.10
+// and 15).
 
 return [
     'state' => [
@@ -21,9 +23,19 @@ return [
         'reversal' => 'Pembatalan',
         'return_receipt' => 'Retur masuk stok',
     ],
+    'issue_reason' => [
+        'damaged' => 'Rusak',
+        'internal_use' => 'Pemakaian internal',
+        'lost' => 'Hilang',
+        'sample' => 'Sampel',
+        'other' => 'Lainnya',
+    ],
     'line' => [
         'product' => 'Produk',
         'quantity' => 'Jumlah',
+        'stock_before' => 'Stok sebelum',
+        'change' => 'Perubahan',
+        'stock_after' => 'Stok sesudah',
         'search' => 'Cari atau scan produk',
         'search_hint' => 'Scan barcode, atau ketik nama atau SKU',
     ],
@@ -57,9 +69,11 @@ return [
         'quantity' => 'Jumlah',
         'time' => 'Waktu',
         'actor' => 'Oleh',
+        'reason' => 'Alasan',
         'reference' => 'Referensi',
         'source' => 'Sumber',
         'source_receipt' => 'Barang masuk :waktu',
+        'source_issue' => 'Barang keluar :waktu',
     ],
     'receipts' => [
         'title' => 'Barang masuk',
@@ -87,6 +101,29 @@ return [
     'receipt_detail' => [
         'title' => 'Detail barang masuk',
         'subtitle' => 'Barang masuk :waktu',
+    ],
+    'issues' => [
+        'title' => 'Barang keluar',
+        'filter_date' => 'Tanggal',
+        'filter_reason' => 'Alasan',
+        'col_time' => 'Waktu',
+        'col_reason' => 'Alasan',
+        'col_lines' => 'Baris',
+        'col_actor' => 'Oleh',
+        'empty' => 'Belum ada barang keluar.',
+    ],
+    'issue_new' => [
+        'title' => 'Catat barang keluar',
+        'intro' => 'Catat barang yang keluar bukan karena penjualan.',
+        'note' => 'Catatan',
+        'review_title' => 'Tinjau barang keluar',
+        'confirm' => 'Konfirmasi barang keluar',
+        'success' => 'Barang keluar tercatat.',
+        'disabled' => 'Tambahkan minimal satu baris yang lengkap dan pilih alasan. Paling banyak 200 baris.',
+    ],
+    'issue_detail' => [
+        'title' => 'Detail barang keluar',
+        'subtitle' => 'Barang keluar :waktu',
     ],
     'disabled_unresolved_posting' => 'Ada barang masuk, barang keluar, atau penyesuaian yang statusnya belum pasti. Cek statusnya dulu.',
 ];

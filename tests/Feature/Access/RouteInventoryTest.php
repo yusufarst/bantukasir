@@ -123,6 +123,11 @@ final class RouteInventoryTest extends TestCase
         'GET /stock/receivings' => ['receivings.index', 'RP-404', 'CAP-11', [...self::SIGNED_IN, 'capability:CAP-11', 'input.allow:from,to,q,after,before,perPage']],
         'GET /stock/receivings/new' => ['receivings.create', 'RP-405', 'CAP-11', [...self::SIGNED_IN, 'capability:CAP-11', 'input.allow']],
         'GET /stock/receivings/{document}' => ['receivings.show', 'RP-406', 'CAP-11', [...self::SIGNED_IN, 'capability:CAP-11', 'input.allow']],
+        // TASK-023: RC-08 and the manual issue pages.
+        'POST /commands/manual_issue.confirm' => ['commands.manual_issue.confirm', 'RC-08', 'CAP-13', [...self::SIGNED_IN, 'capability:CAP-13', 'throttle:command']],
+        'GET /stock/issues' => ['issues.index', 'RP-407', 'CAP-13', [...self::SIGNED_IN, 'capability:CAP-13', 'input.allow:from,to,reason,after,before,perPage']],
+        'GET /stock/issues/new' => ['issues.create', 'RP-408', 'CAP-13', [...self::SIGNED_IN, 'capability:CAP-13', 'input.allow']],
+        'GET /stock/issues/{issue}' => ['issues.show', 'RP-409', 'CAP-13', [...self::SIGNED_IN, 'capability:CAP-13', 'input.allow']],
     ];
 
     public function test_the_routes_are_exactly_those_listed_each_with_its_gate(): void

@@ -203,7 +203,8 @@ final class LedgerTablesTest extends DatabaseTestCase
                 'an increase' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('ADJUSTMENT', '1', ['adjustment_line_id' => 7, 'line_quantity' => '1', 'product_sequence' => 3]))),
                 'a decrease' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('ADJUSTMENT', '-1', ['adjustment_line_id' => 8, 'line_quantity' => '-1', 'product_sequence' => 4]))),
                 'SALE_ISSUE' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('SALE_ISSUE', '-1', ['sale_line_id' => 7, 'line_quantity' => '1', 'product_sequence' => 5]))),
-                'MANUAL_ISSUE' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('MANUAL_ISSUE', '-1', ['manual_issue_line_id' => 7, 'line_quantity' => '1', 'product_sequence' => 6]))),
+                // TASK-023 completed the key of a manual issue line, so the movement names a real one.
+                'MANUAL_ISSUE' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('MANUAL_ISSUE', '-1', ['manual_issue_line_id' => $this->insertIssueLine($runtime), 'line_quantity' => '1', 'product_sequence' => 6]))),
                 'RETURN_RECEIPT' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('RETURN_RECEIPT', '1', ['return_line_id' => 7, 'line_quantity' => '1', 'return_condition' => 'SALEABLE', 'product_sequence' => 7]))),
                 'REVERSAL' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('REVERSAL', '1', ['reversal_id' => 7, 'product_sequence' => 8]))),
             ];
@@ -623,6 +624,20 @@ final class LedgerTablesTest extends DatabaseTestCase
     private function insertLine(Connection $c, int $document, array $values = []): int
     {
         return $c->table('receiving_lines')->insertGetId(['receiving_document_id' => $document, 'line_no' => 1, 'product_id' => $this->product, 'quantity' => '5', ...$values]);
+    }
+
+    /**
+     * A manual issue of one line of one unit of the product, written directly (TASK-023): the
+     * line's key.
+     */
+    private function insertIssueLine(Connection $c): int
+    {
+        $issue = $c->table('manual_issues')->insertGetId([
+            'reason_code' => 'DAMAGED', 'note' => null, 'line_count' => 1, 'confirmed_at' => now(), 'actor_user_id' => $this->owner, 'actor_display_name' => 'Hendra',
+            'command_id' => $this->command,
+        ]);
+
+        return $c->table('manual_issue_lines')->insertGetId(['manual_issue_id' => $issue, 'line_no' => 1, 'product_id' => $this->product, 'quantity' => '1']);
     }
 
     /**

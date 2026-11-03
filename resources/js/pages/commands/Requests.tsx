@@ -30,7 +30,8 @@ import { t } from '@/lib/i18n';
 // the check after 3, 6 and 12 seconds and then every 15 seconds; a check
 // without an answer leaves the request as it was. A request resolved as
 // committed says so here, with "Lihat hasil" (UXI-056) to its result page
-// where one exists: RP-406 of a receiving (TASK-022); the Tasks of the other
+// where one exists: RP-406 of a receiving (TASK-022), RP-409 of a manual issue
+// (TASK-023); the Tasks of the other
 // result pages add their operations to RESULT_PAGES. The result page is
 // authorized again when it opens (SEC-AZ-06).
 
@@ -44,7 +45,7 @@ interface SharedProps {
 const HOME = '/';
 
 /** The operations whose result page exists (UXI-056; INTERACTION_CONTRACTS section 9). */
-const RESULT_PAGES: readonly string[] = ['receiving.confirm'];
+const RESULT_PAGES: readonly string[] = ['receiving.confirm', 'manual_issue.confirm'];
 
 /** The result page of a committed request, from its answer's location, or null. */
 function resultPageOf(operation: string, result: CommandResult | null): string | null {

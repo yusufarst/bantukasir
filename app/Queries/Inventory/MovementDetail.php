@@ -12,7 +12,8 @@ use Illuminate\Support\Facades\DB;
 /**
  * RP-403, one movement (ROUTE_CONTRACTS RP-403; BR-INV-02, BR-INV-44; CAP-14, CAP-20; TASK-022
  * scope item 2): its type, product, signed quantity, server time, who recorded it, its reference
- * and its source, read in one statement; a movement is the whole shop's, so a missing one is the
+ * and its source — a receiving document, or a manual issue with its reason (TASK-023) — read in
+ * one statement; a movement is the whole shop's, so a missing one is the
  * only NOT_FOUND (TR-ERR-03). The cost evidence of an OPENING, a RECEIPT or a positive ADJUSTMENT
  * is the Owner's alone (CAP-20; UXI-225), read only when the controller asks for it. Its
  * corrections come with TASK-025, which adds them here.
@@ -23,8 +24,13 @@ final class MovementDetail
 
     private const string DOCUMENT_AT = "to_char(d.confirmed_at at time zone 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') as document_at";
 
+    private const string ISSUE_AT = "to_char(i.confirmed_at at time zone 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') as issue_at";
+
     /**
-     * @return array{id: int, type: string, quantity: string, baseUnit: string, quantityPrecision: int, recordedAt: string, product: array{id: int, name: string, sku: string}, actorDisplayName: string, reference: string|null, source: array{kind: string, id: int, at: string}|null}
+     * The movement; a MANUAL_ISSUE's source is its issue, and its reason that of the issue
+     * (BR-INV-19; TASK-023).
+     *
+     * @return array{id: int, type: string, quantity: string, baseUnit: string, quantityPrecision: int, recordedAt: string, product: array{id: int, name: string, sku: string}, actorDisplayName: string, reference: string|null, reasonCode: string|null, source: array{kind: string, id: int, at: string}|null}
      *
      * @throws NotFound
      */
@@ -36,10 +42,13 @@ final class MovementDetail
             ->join('users as u', 'u.id', '=', 'm.actor_user_id')
             ->leftJoin('receiving_lines as l', 'l.id', '=', 'm.receiving_line_id')
             ->leftJoin('receiving_documents as d', 'd.id', '=', 'l.receiving_document_id')
+            ->leftJoin('manual_issue_lines as il', 'il.id', '=', 'm.manual_issue_line_id')
+            ->leftJoin('manual_issues as i', 'i.id', '=', 'il.manual_issue_id')
             ->where('m.id', $key)
-            ->select(['m.id', 'm.product_id', 'm.movement_type', 'm.quantity', 'm.quantity_precision', 'm.base_unit', 'p.name', 'p.sku', 'u.display_name', 'd.id as document_id', 'd.reference'])
+            ->select(['m.id', 'm.product_id', 'm.movement_type', 'm.quantity', 'm.quantity_precision', 'm.base_unit', 'p.name', 'p.sku', 'u.display_name', 'd.id as document_id', 'd.reference', 'i.id as issue_id', 'i.reason_code'])
             ->selectRaw(self::RECORDED_AT)
             ->selectRaw(self::DOCUMENT_AT)
+            ->selectRaw(self::ISSUE_AT)
             ->first();
 
         if ($row === null) {
@@ -49,6 +58,7 @@ final class MovementDetail
         $values = (array) $row;
         $precision = Read::int($values, 'quantity_precision');
         $document = Read::nullableInt($values, 'document_id');
+        $issue = Read::nullableInt($values, 'issue_id');
 
         return [
             'id' => Read::int($values, 'id'),
@@ -60,7 +70,12 @@ final class MovementDetail
             'product' => ['id' => Read::int($values, 'product_id'), 'name' => Read::text($values, 'name'), 'sku' => Read::text($values, 'sku')],
             'actorDisplayName' => Read::text($values, 'display_name'),
             'reference' => Read::nullableText($values, 'reference'),
-            'source' => $document === null ? null : ['kind' => 'RECEIVING', 'id' => $document, 'at' => Read::text($values, 'document_at')],
+            'reasonCode' => Read::nullableText($values, 'reason_code'),
+            'source' => match (true) {
+                $document !== null => ['kind' => 'RECEIVING', 'id' => $document, 'at' => Read::text($values, 'document_at')],
+                $issue !== null => ['kind' => 'MANUAL_ISSUE', 'id' => $issue, 'at' => Read::text($values, 'issue_at')],
+                default => null,
+            },
         ];
     }
 

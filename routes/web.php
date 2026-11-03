@@ -50,8 +50,10 @@ use App\Http\Controllers\Configuration\ChangeBusinessProfileController;
 use App\Http\Controllers\Configuration\ProfileController;
 use App\Http\Controllers\Documents\LabelPrintController;
 use App\Http\Controllers\Documents\RecordLabelPrintController;
+use App\Http\Controllers\Inventory\ConfirmManualIssueController;
 use App\Http\Controllers\Inventory\ConfirmReceivingController;
 use App\Http\Controllers\Inventory\HistoryController;
+use App\Http\Controllers\Inventory\IssuesController;
 use App\Http\Controllers\Inventory\MovementsController;
 use App\Http\Controllers\Inventory\ReceivingsController;
 use App\Http\Controllers\Inventory\StockController;
@@ -249,6 +251,16 @@ Route::middleware(['auth', 'signin.session', 'throttle:authenticated', 'cache.he
         Route::get('/stock/receivings', [ReceivingsController::class, 'index'])->middleware('input.allow:from,to,q,after,before,perPage')->name('receivings.index');
         Route::get('/stock/receivings/new', [ReceivingsController::class, 'create'])->middleware('input.allow')->name('receivings.create');
         Route::get('/stock/receivings/{document}', [ReceivingsController::class, 'show'])->middleware('input.allow')->name('receivings.show');
+    });
+
+    // The manual issue (TASK-023): RC-08 in the bucket of every command, and RP-407 to RP-409
+    // for CAP-13; RP-408 before RP-409, whose path would take it.
+    Route::post('/commands/manual_issue.confirm', ConfirmManualIssueController::class)->middleware(['capability:CAP-13', 'throttle:command'])->name('commands.manual_issue.confirm');
+
+    Route::middleware('capability:CAP-13')->group(function (): void {
+        Route::get('/stock/issues', [IssuesController::class, 'index'])->middleware('input.allow:from,to,reason,after,before,perPage')->name('issues.index');
+        Route::get('/stock/issues/new', [IssuesController::class, 'create'])->middleware('input.allow')->name('issues.create');
+        Route::get('/stock/issues/{issue}', [IssuesController::class, 'show'])->middleware('input.allow')->name('issues.show');
     });
 });
 

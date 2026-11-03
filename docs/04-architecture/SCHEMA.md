@@ -822,11 +822,11 @@ Inserted with the product's first movement; changed by every posting and by ever
 | --- | --- | --- |
 | `id` | `bigint` | |
 | `movement_id` | `bigint` | Unique |
-| `product_id`, `issue_type`, `movement_quantity`, `product_sequence` | | `issue_type IN ('SALE_ISSUE', 'MANUAL_ISSUE', 'ADJUSTMENT')`; `movement_quantity < 0`; with `movement_id`, → `stock_movements (id, product_id, movement_type, quantity, product_sequence)`: the copied type, quantity and position are those of the movement |
+| `product_id`, `issue_type`, `movement_quantity`, `product_sequence` | | `issue_type IN ('SALE_ISSUE', 'MANUAL_ISSUE', 'ADJUSTMENT')`; `movement_quantity < 0 AND movement_quantity >= -99999999.999`, the range of a movement (TECHNICAL_RULES section 11.1; TASK-023); with `movement_id`, → `stock_movements (id, product_id, movement_type, quantity, product_sequence)`: the copied type, quantity and position are those of the movement |
 | `issued_quantity` | `numeric(13,3)` | `= -movement_quantity` |
 | `sale_line_id` | `bigint` null | Set exactly for `SALE_ISSUE`; `(movement_id, sale_line_id)` → `stock_movements (id, sale_line_id)` and `(sale_line_id, issued_quantity)` → `sale_lines (id, quantity)` |
 | `at_commit_status`, `at_commit_amount` | | Section 3.2 pattern with `numeric(21,6)`: the allocation as it was when the issue committed, or UNKNOWN (BR-COST-16) |
-| `based_on_publication_no` | `bigint` | The valuation publication the allocation was computed from: the cost-evidence state it depended on |
+| `based_on_publication_no` | `bigint` | `>= 1`: the valuation publication the allocation was computed from, the cost-evidence state it depended on; an issue needs stock, so a valuation was published before it (TASK-023) |
 | `recorded_at` | `timestamptz` | |
 
 `UNIQUE (id, issue_type)` and `UNIQUE (id, sale_line_id, product_id)` are composite-key targets. `FOREIGN KEY (id) REFERENCES issue_cost_allocation_projections (allocation_id) DEFERRABLE INITIALLY DEFERRED`: every fact has its projection. Runtime privileges: `SELECT`, `INSERT`.
@@ -839,7 +839,7 @@ Inserted with the product's first movement; changed by every posting and by ever
 | `issue_type` | `text` | With `allocation_id`, → `issue_cost_allocations (id, issue_type)` |
 | `current_status` | `text` | `KNOWN`, `UNKNOWN` or `CANCELLED`; `CHECK (current_status <> 'CANCELLED' OR issue_type = 'MANUAL_ISSUE')` — only a manual issue can be logically cancelled by a reversal (BR-COST-32, BR-INV-36) |
 | `current_amount` | `numeric(21,6)` null | `BETWEEN 0 AND 999999999999999.999999`; `CHECK ((current_status = 'KNOWN') = (current_amount IS NOT NULL))` |
-| `publication_no` | `bigint` | The publication that last wrote it |
+| `publication_no` | `bigint` | `>= 1`; the publication that last wrote it: at a posting, the valuation's publication after the issue (TASK-023) |
 | `updated_at` | `timestamptz` | |
 
 Inserted with its fact and equal to it (G-14); afterwards written only by a replay publication (ADR-008 section 4.3). Owner reports read it (ARC-24). Runtime privileges: `SELECT`, `INSERT`; `UPDATE` of `current_status`, `current_amount`, `publication_no`, `updated_at`.

@@ -12,6 +12,7 @@ use App\Actions\Catalog\CreateProduct;
 use App\Actions\Catalog\RetireBarcode;
 use App\Actions\Commands\CommandAction;
 use App\Actions\Commands\CommandContext;
+use App\Actions\Inventory\ConfirmManualIssue;
 use App\Actions\Inventory\ConfirmReceiving;
 use App\Database\DatabaseRefused;
 use App\Database\EnvironmentMarker;
@@ -367,6 +368,27 @@ final class TokoContoh
     public static function stock(int $product, string $quantity, string $amount = '1000'): int
     {
         return self::receive([['productId' => $product, 'quantity' => $quantity, 'cost' => ['status' => 'KNOWN', 'amount' => $amount]]]);
+    }
+
+    /**
+     * A manual issue of the shop, confirmed by the Owner through RC-08's Action (TASK-023;
+     * EXECUTION_CONTEXT EXC-45), at the versions its products stand at: its internal
+     * key.
+     *
+     * @param  list<array{productId: int, quantity: string}>  $lines
+     *
+     * @throws DatabaseRefused
+     */
+    public static function issue(array $lines, string $reasonCode = 'DAMAGED', ?string $note = null): int
+    {
+        $versions = [];
+
+        foreach ($lines as $line) {
+            $version = DB::table('products')->where('id', $line['productId'])->value('version');
+            $versions[$line['productId']] = ['productId' => $line['productId'], 'version' => is_int($version) ? $version : 0];
+        }
+
+        return self::asOwner(ConfirmManualIssue::class, ConfirmManualIssue::OPERATION, ['reasonCode' => $reasonCode, 'note' => $note, 'lines' => $lines], ['products' => array_values($versions)]);
     }
 
     /**

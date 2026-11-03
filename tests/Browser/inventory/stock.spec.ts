@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect as baseExpect, test, type BrowserContext, type Page } from '@playwright/test';
+import { expect as baseExpect, test, type BrowserContext, type Page, type Request } from '@playwright/test';
 import { ACCESS_TIMEOUT, ACCESS_WAIT, HOME, resetPeople, SECURE_LOCAL_ORIGIN, signIn, type Person } from '../support/access';
 import { injected, prepareCommands } from '../support/commands';
 import { measure } from '../support/measure';
@@ -70,6 +70,46 @@ async function newProduct(page: Page): Promise<string> {
     await page.waitForURL((url) => /^\/products\/\d+$/.test(url.pathname), { timeout: ACCESS_WAIT });
 
     return name;
+}
+
+/**
+ * The shell's own read of RD-03, answered at once with no request and no attention, for a test
+ * that moves the page's clock; it returns a wait for none of these reads to be out. Each read waits
+ * 30 seconds for its answer, so a jump of the clock while one is out ends it as failed, and the
+ * shell then shows its own "Data belum diperbarui" beside the list's (CI run 41583276625). Set up
+ * before the page opens, so that every read of the page is counted. A read of the document before
+ * a new one may never end with an event once its document is gone, so the reads still out are
+ * discarded when the main frame commits a new document; a navigation within the document keeps
+ * them, and a late end of a discarded read changes nothing (CI run 41589075661).
+ */
+async function quietShell(page: Page): Promise<() => Promise<void>> {
+    const out = new Set<Request>();
+    let newDocument = false;
+    const isShell = (request: Request): boolean => new URL(request.url()).pathname === '/data/shell';
+    const ended = (request: Request): void => {
+        out.delete(request);
+    };
+
+    page.on('request', (request) => {
+        if (request.isNavigationRequest() && request.frame() === page.mainFrame()) {
+            newDocument = true;
+        } else if (isShell(request)) {
+            out.add(request);
+        }
+    });
+    page.on('framenavigated', (frame) => {
+        if (frame === page.mainFrame() && newDocument) {
+            newDocument = false;
+            out.clear();
+        }
+    });
+    page.on('requestfinished', ended);
+    page.on('requestfailed', ended);
+    await page.route(SHELL_DATA, (route) => route.fulfill({ json: { unresolvedRequests: 0, stockAttention: 0, asOf: '2026-11-02T03:00:00.000000Z' } }));
+
+    return async () => {
+        await expect.poll(() => out.size).toBe(0);
+    };
 }
 
 /** A stock row of RD-02 for a stubbed answer. */
@@ -143,6 +183,7 @@ test('the list refreshes in the background every 30 seconds and on focus, and a 
     await page.route(STOCK_DATA, (route) =>
         route.fulfill({ json: { rows: [stubRow(1, 'OUT'), stubRow(2, 'LOW'), stubRow(3, 'NORMAL')], outCount: 1, lowCount: 1, asOf: '2026-11-02T03:00:00.000000Z', nextCursor: null } }),
     );
+    const shellSettled = await quietShell(page);
     await page.goto('/stock');
     const rows = page.getByRole('main').getByRole('table').locator('tbody tr');
     await expect(rows).toHaveCount(3);
@@ -152,6 +193,7 @@ test('the list refreshes in the background every 30 seconds and on focus, and a 
 
     // Every 30 seconds while visible, and on focus: background reads (RT-10).
     const opened = reads.length;
+    await shellSettled();
     await page.clock.fastForward(30_000);
     await expect.poll(() => reads.length).toBeGreaterThan(opened);
     const timed = reads.length;
@@ -162,6 +204,7 @@ test('the list refreshes in the background every 30 seconds and on focus, and a 
     // A failed refresh: the rows stay, with "Data belum diperbarui" and the last time; never empty or zero.
     await page.unroute(STOCK_DATA);
     await page.route(STOCK_DATA, (route) => route.fulfill({ status: 503, json: { code: 'SERVICE_BUSY' } }));
+    await shellSettled();
     await page.clock.fastForward(30_000);
     await expect(page.getByText('Data belum diperbarui')).toBeVisible();
     await expect(page.getByText('Data terakhir diperbarui 02 November 2026, 10.00.00 dan mungkin sudah berubah.')).toBeVisible();
@@ -212,6 +255,7 @@ test('a refresh while a filter is being read never brings back the filters shown
 
         await route.fulfill({ json: { rows: [stubRow(1, 'OUT'), stubRow(2, 'LOW'), stubRow(3, 'NORMAL')], outCount: 1, lowCount: 1, asOf: '2026-11-02T03:00:00.000000Z', nextCursor: null } });
     });
+    const shellSettled = await quietShell(page);
     await page.goto('/stock');
     const rows = page.getByRole('main').getByRole('table').locator('tbody tr');
     await expect(rows).toHaveCount(3);
@@ -219,11 +263,13 @@ test('a refresh while a filter is being read never brings back the filters shown
     // "Habis", its read out; then the focus and the 30 seconds' refresh, which wait for it. The
     // clock goes 20 seconds before the click and 15 after it, so that the refresh falls due while
     // the read is out and the read's own wait of 30 seconds does not (review finding R-14).
+    await shellSettled();
     await page.clock.fastForward(20_000);
     await page.getByRole('button', { name: 'Habis', exact: true }).click();
     await expect.poll(() => reads.some((read) => read.state === 'OUT' && !read.background)).toBe(true);
     const chosen = reads.length;
     await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+    await shellSettled();
     await page.clock.fastForward(15_000);
     release();
 
@@ -236,6 +282,7 @@ test('a refresh while a filter is being read never brings back the filters shown
 
     // A later refresh reads the filter asked for.
     const settled = reads.length;
+    await shellSettled();
     await page.clock.fastForward(30_000);
     await expect.poll(() => reads.length).toBeGreaterThan(settled);
     expect(reads.slice(settled)).toEqual(reads.slice(settled).map(() => ({ state: 'OUT', background: true })));

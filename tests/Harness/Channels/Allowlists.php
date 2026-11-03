@@ -146,6 +146,19 @@ final class Allowlists
             'ops' => self::RECEIVING,
             'combined' => self::RECEIVING,
         ],
+        // The manual issue pages (TASK-023), for every kind of account that CAP-13 opens them to:
+        // no cost, since an allocation is the Owner's figure of the reports (ADR-008 section 6).
+        'inventory/Issues' => ['*' => [
+            'filters', 'filters.from', 'filters.to', 'filters.reason', 'postingFrozen',
+            'issues', 'issues.rows', 'issues.rows.*', 'issues.rows.*.id', 'issues.rows.*.confirmedAt', 'issues.rows.*.reasonCode',
+            'issues.rows.*.lineCount', 'issues.rows.*.actorDisplayName', 'issues.nextCursor', 'issues.previousCursor',
+        ]],
+        'inventory/IssueCreate' => ['*' => ['postingFrozen']],
+        'inventory/Issue' => ['*' => [
+            'issue', 'issue.id', 'issue.confirmedAt', 'issue.reasonCode', 'issue.note', 'issue.lineCount', 'issue.actorDisplayName',
+            'lines', 'lines.*', 'lines.*.lineNo', 'lines.*.product', 'lines.*.product.id', 'lines.*.product.name', 'lines.*.product.sku', 'lines.*.movementId',
+            'lines.*.quantity', 'lines.*.baseUnit', 'lines.*.quantityPrecision',
+        ]],
     ];
 
     /** RD-02's answer, and the prop `stock` of RP-401 that holds its first page. */
@@ -163,7 +176,7 @@ final class Allowlists
     private const array MOVEMENT = [
         'movement', 'movement.id', 'movement.type', 'movement.quantity', 'movement.baseUnit', 'movement.quantityPrecision', 'movement.recordedAt',
         'movement.product', 'movement.product.id', 'movement.product.name', 'movement.product.sku', 'movement.actorDisplayName', 'movement.reference',
-        'movement.source', 'movement.source.kind', 'movement.source.id', 'movement.source.at',
+        'movement.reasonCode', 'movement.source', 'movement.source.kind', 'movement.source.id', 'movement.source.at',
     ];
 
     /** One document of RP-406 with its lines and their purchase cost. */
@@ -207,6 +220,9 @@ final class Allowlists
         // The refusal of a posting with the lines it concerns, each by its product (RT-07;
         // TASK-021).
         'commands.refused.lines' => ['*' => ['outcome', 'code', 'messageKey', 'params', 'fields', 'lines', 'lines.*', 'lines.*.productId']],
+        // INSUFFICIENT_STOCK with each line concerned by its product and the stock available
+        // (INTERACTION_CONTRACTS section 1.6; TASK-023).
+        'commands.refused.stock' => ['*' => ['outcome', 'code', 'messageKey', 'params', 'fields', 'lines', 'lines.*', 'lines.*.productId', 'lines.*.available']],
         // RD-03, the shell's indicators (TASK-009), with the stock-attention count of the
         // badge, null for a cashier (TASK-022).
         'data.shell' => ['*' => ['unresolvedRequests', 'stockAttention', 'asOf']],
@@ -219,6 +235,12 @@ final class Allowlists
         // RD-01 in the context `receiving` (TASK-022): each row with its product's version, for
         // RC-07's expected versions.
         'data.products.search.receiving' => [
+            'owner' => [...self::SEARCH_RESULT, 'rows.*.version'],
+            'ops' => [...self::SEARCH_RESULT, 'rows.*.version'],
+            'combined' => [...self::SEARCH_RESULT, 'rows.*.version'],
+        ],
+        // RD-01 in the context `issue` (TASK-023): the same, for RC-08's expected versions.
+        'data.products.search.issue' => [
             'owner' => [...self::SEARCH_RESULT, 'rows.*.version'],
             'ops' => [...self::SEARCH_RESULT, 'rows.*.version'],
             'combined' => [...self::SEARCH_RESULT, 'rows.*.version'],
