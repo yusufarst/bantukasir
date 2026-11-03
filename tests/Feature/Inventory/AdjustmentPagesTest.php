@@ -68,7 +68,7 @@ final class AdjustmentPagesTest extends DatabaseTestCase
 
         // No product: an empty draft; the freeze is off.
         $empty = $this->propsOf($this->get('/stock/adjustments/new')->assertOk());
-        $this->assertSame([false, null, null], [$empty['postingFrozen'] ?? null, $empty['product'] ?? 'absent', $empty['opener'] ?? 'absent']);
+        $this->assertSame(['postingFrozen' => false, 'product' => null, 'opener' => null], array_intersect_key($empty, ['postingFrozen' => true, 'product' => true, 'opener' => true]));
 
         // The product as RD-01 in the context `adjustment` reads it: its version and its stock, never a cost.
         $props = $this->propsOf($this->get('/stock/adjustments/new?product='.$this->pen.'&from_page=history')->assertOk());
