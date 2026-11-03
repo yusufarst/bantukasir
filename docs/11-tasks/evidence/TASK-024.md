@@ -35,7 +35,11 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | `npm run typecheck` | Local, fix cycle 1 | 4 Nov 00:49 | — | `NOT_RUN`: `tsc` is not installed on this machine |
 | Image checks, after fix cycle 1 | CI run 41689038370 on `1486ba3`, pull request #34 | 4 Nov 00:56 to 01:03 | 7 min 16 s | `PASS`; still valid after fix cycle 2, which changes one PHP test only |
 | The whole command contract, after fix cycle 1 | Same CI run | 4 Nov 00:56 to 01:24 | 27 min 39 s | `FAIL` at `composer test:postgres`: 716 of 717 passed, one error in `ChangeBusinessProfileTest` (fix cycle 2, section 11); validate, lint, analyse and `test:unit` passed; `test:race` and every npm step did not run |
-| The whole command contract, after fix cycle 2 | CI on the pull request's next head | — | — | `NOT_RUN` at this writing (CE-41, D-117); never on this machine (D-108) |
+| `fast-checks`, after fix cycle 2 | Fast run 41694550182 on `d53692f` | 4 Nov 01:31 to 01:44 | 13 min 7 s | `PASS` |
+| Image checks, after fix cycle 2 | CI run 41694559859 on `d53692f`, pull request #34 | 4 Nov 01:31 to 01:38 | 6 min 44 s | `PASS`; fix cycle 3 changes the bundle, so it runs again on the next head |
+| The whole command contract, after fix cycle 2 | Same CI run | 4 Nov 01:31 to 02:15 | 44 min 22 s | `FAIL` at `npm run test:e2e`: 297 passed, 1 failed, 2 did not run; the failure an axe violation in `adjustment.spec.ts` (fix cycle 3, section 12); every step before it passed, `test:postgres` and `test:race` among them |
+| `npm run typecheck`, `npx eslint` on the changed files | Local, fix cycle 3 | 4 Nov 02:20 | — | `NOT_RUN`: neither `tsc` nor ESLint is installed on this machine |
+| The whole command contract and the image checks, after fix cycle 3 | CI on the pull request's next head | — | — | `NOT_RUN` at this writing (CE-41, D-117); never on this machine (D-108) |
 
 Fast run 4, 41646371938 on `aa93aad`, is the run of the code to review; fast run 5, 41650066390 on `fe3e595`, that of the review's fixes. The record's commit changes documents only; its push starts fast run 6 of 10, which the executor does not wait for.
 
@@ -164,3 +168,22 @@ No production behaviour changes, so no targeted verification (CE-42). The same p
 - **F-4, for the Task that next touches the media tests:** `ProductPhotoTest` sets an absolute 128 MiB limit as `ChangeBusinessProfileTest` did, and will fail the same way when the suite's memory before it passes 128 MiB; `startRequestMemory` is the pattern to reuse.
 
 Checks of fix cycle 2: the changed test runs in `fast-checks` on the push (a PostgreSQL file the branch changes) and in `test:postgres` on the pull request's next head; `composer lint` and `analyse` cover the file there. Nothing runs on this machine: no PHP (D-108). The guard of fix cycle 2 is reported with its push.
+
+Fix cycle 2 held: `test:postgres` and `test:race` passed on `d53692f` (CI run 41694559859).
+
+## 12. Fix cycle 3 (CE-42)
+
+Its input: the red CI run 41694559859 on `d53692f`, failure 2 of 3 of CE-42.
+
+| Input | Cause | Fix | Regression test |
+| --- | --- | --- | --- |
+| CI: `adjustment.spec.ts`, "while an adjustment is uncertain, the entries … are unavailable with their reason", axe `label-content-name-mismatch` on the unavailable item of the row's overflow menu, at its first axe check (the test had never run that far before) | The unavailable item of `Menu.tsx` was named by `aria-labelledby` (its label) while its content also held its visible reason, so its visible text was not within its name (WCAG 2.5.3). axe compares the text shown on screen, so hiding the reason from the accessibility tree would not answer it | The item holds its label only and is named by it; its reason is a `div.bk-menu__reason` right under it, outside it and inside the menu, still its description through `aria-describedby` (DESIGN_SYSTEM 8.7: the reason sits under the control, tied to it; review finding R-02 kept). `components.css` styles the reason on its own, in the secondary text colour on the menu's surface | The same test asserts the item's text is exactly "Sesuaikan stok" and its reason is visible in the menu, before its unchanged axe check; no assertion weakened, nothing skipped |
+
+The fix changes production behaviour of a class-A Task, so `bk-reviewer-high` made one targeted verification (CE-42) of package `review/TASK-024/r3` (the working tree on `d53692f`); `--check` `UNCHANGED`. Verdict PASS: the violation FIXED; no new axe violation (a plain `div` in a `menu` is no unallowed child, axe giving it no role), contrast and targets unchanged, Radix's keyboard unchanged, the test strengthened, nothing that TypeScript or the ESLint rules refuse, by reading.
+
+| Finding | Severity | Outcome |
+| --- | --- | --- |
+| V3-01: the evidence did not yet record run 41694559859 and this cycle | NOTE | Fixed: section 1 and this section |
+| V3-02: the second half of the test, UXP-402's unavailable button and "Kirim ulang", has never run in CI | NOTE | Recorded: it uses the pattern of `Product.tsx`'s correction entry, whose axe and measure checks passed in the same run (`correction.spec.ts`); the next head's browser suite proves it |
+
+Checks of fix cycle 3: `npm run lint`, `typecheck` and `test:unit` in `fast-checks` on the push and in the command contract on the pull request's next head, with the browser suite and the image checks there (D-117). Nothing runs on this machine (D-108). The push is fast run 9 of 10 (CE-46). The guard of fix cycle 3 is reported with its push.

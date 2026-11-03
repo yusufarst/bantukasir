@@ -1387,9 +1387,12 @@
         cursor: not-allowed;
     }
 
-    .bk-menu__item[aria-disabled='true'] .bk-menu__reason {
+    /* Its reason, right under the item and outside it, so that the item's visible text is its name. */
+    .bk-menu__reason {
+        padding: 0 12px 10px;
         color: var(--color-text-secondary);
         font-weight: var(--weight-regular);
+        overflow-wrap: anywhere;
     }
 
     .bk-menu__sep {

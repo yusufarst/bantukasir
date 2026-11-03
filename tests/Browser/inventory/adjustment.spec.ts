@@ -238,6 +238,9 @@ test('while an adjustment is uncertain, the entries of UXP-401 and UXP-402 are u
     const item = other.getByRole('menuitem', { name: 'Sesuaikan stok', exact: true });
     await expect(item).toHaveAttribute('aria-disabled', 'true');
     await expect(item).toHaveAccessibleDescription('Ada barang masuk, barang keluar, atau penyesuaian yang statusnya belum pasti. Cek statusnya dulu.');
+    // Its visible text is its name, and the reason stays visible beside it (WCAG 2.5.3; axe label-content-name-mismatch).
+    await expect(item).toHaveText('Sesuaikan stok');
+    await expect(other.getByRole('menu').getByText('Ada barang masuk, barang keluar, atau penyesuaian yang statusnya belum pasti. Cek statusnya dulu.', { exact: true })).toBeVisible();
     await expect(other.getByRole('menuitem', { name: 'Buka Permintaan belum pasti' })).toHaveAttribute('href', '/requests');
     // Unavailable, so the click is forced past the check of an enabled element: it does nothing.
     await item.click({ force: true });

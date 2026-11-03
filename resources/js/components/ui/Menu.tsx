@@ -1,5 +1,5 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { useId, type MouseEvent, type ReactNode } from 'react';
+import { Fragment, useId, type MouseEvent, type ReactNode } from 'react';
 import { Button, type ButtonVariant } from './Button';
 import { Icon } from './Icon';
 import type { IconName } from './icons';
@@ -23,9 +23,9 @@ export type MenuEntry =
       }
     | { readonly kind: 'separator' };
 
-/** The ids of an unavailable item's label and reason, within its menu. */
-function idsOf(menuId: string, index: number): { readonly label: string; readonly reason: string } {
-    return { label: `${menuId}-label-${String(index)}`, reason: `${menuId}-reason-${String(index)}` };
+/** The id of an unavailable item's reason, within its menu. */
+function reasonIdOf(menuId: string, index: number): string {
+    return `${menuId}-reason-${String(index)}`;
 }
 
 /**
@@ -78,19 +78,21 @@ export function Menu({
                         }
 
                         if (item.kind === 'unavailable') {
-                            const { label: labelId, reason: reasonId } = idsOf(menuId, index);
+                            const reasonId = reasonIdOf(menuId, index);
 
                             // Named by its label alone, with the reason as its description (DESIGN_SYSTEM 8.7; review finding R-02).
+                            // The reason stands right under the item, outside it, so that the item's visible text is
+                            // its name (WCAG 2.5.3, axe label-content-name-mismatch; TASK-024 CI).
                             return (
-                                <DropdownMenu.Item key={index} className={'bk-menu__item'} aria-disabled={true} aria-labelledby={labelId} aria-describedby={reasonId} data-unavailable={true} onSelect={(event) => event.preventDefault()}>
-                                    {item.icon !== undefined && <Icon name={item.icon} />}
-                                    <span className={'bk-stack'}>
-                                        <span id={labelId}>{item.label}</span>
-                                        <span className={'bk-menu__reason'} id={reasonId}>
-                                            {item.reason}
-                                        </span>
-                                    </span>
-                                </DropdownMenu.Item>
+                                <Fragment key={index}>
+                                    <DropdownMenu.Item className={'bk-menu__item'} aria-disabled={true} aria-describedby={reasonId} data-unavailable={true} onSelect={(event) => event.preventDefault()}>
+                                        {item.icon !== undefined && <Icon name={item.icon} />}
+                                        <span>{item.label}</span>
+                                    </DropdownMenu.Item>
+                                    <div className={'bk-menu__reason'} id={reasonId}>
+                                        {item.reason}
+                                    </div>
+                                </Fragment>
                             );
                         }
 
