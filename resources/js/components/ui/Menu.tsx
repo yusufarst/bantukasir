@@ -23,6 +23,11 @@ export type MenuEntry =
       }
     | { readonly kind: 'separator' };
 
+/** The id of an unavailable item's reason, within its menu. */
+function reasonIdOf(menuId: string, index: number): string {
+    return `${menuId}-reason-${String(index)}`;
+}
+
 /**
  * A menu of DESIGN_SYSTEM 8.9 — the account menu, an overflow of further
  * actions — built on the Radix dropdown menu of shadcn/ui: the button carries
@@ -73,7 +78,7 @@ export function Menu({
                         }
 
                         if (item.kind === 'unavailable') {
-                            const reasonId = `${menuId}-reason-${String(index)}`;
+                            const reasonId = reasonIdOf(menuId, index);
 
                             return (
                                 <DropdownMenu.Item key={index} className={'bk-menu__item'} aria-disabled={true} aria-describedby={reasonId} data-unavailable={true} onSelect={(event) => event.preventDefault()}>
