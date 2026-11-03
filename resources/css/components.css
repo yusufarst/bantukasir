@@ -1381,6 +1381,20 @@
         color: var(--color-danger-fg);
     }
 
+    /* UXS-13 in a menu (TASK-024): the item looks disabled, keeps its focus, and its reason stays readable. */
+    .bk-menu__item[aria-disabled='true'] {
+        color: var(--color-text-disabled);
+        cursor: not-allowed;
+    }
+
+    /* Its reason, right under the item and outside it, so that the item's visible text is its name. */
+    .bk-menu__reason {
+        padding: 0 12px 10px;
+        color: var(--color-text-secondary);
+        font-weight: var(--weight-regular);
+        overflow-wrap: anywhere;
+    }
+
     .bk-menu__sep {
         height: 1px;
         margin: 4px 0;

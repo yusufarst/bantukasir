@@ -50,6 +50,8 @@ use App\Http\Controllers\Configuration\ChangeBusinessProfileController;
 use App\Http\Controllers\Configuration\ProfileController;
 use App\Http\Controllers\Documents\LabelPrintController;
 use App\Http\Controllers\Documents\RecordLabelPrintController;
+use App\Http\Controllers\Inventory\AdjustmentsController;
+use App\Http\Controllers\Inventory\ConfirmAdjustmentController;
 use App\Http\Controllers\Inventory\ConfirmManualIssueController;
 use App\Http\Controllers\Inventory\ConfirmReceivingController;
 use App\Http\Controllers\Inventory\HistoryController;
@@ -261,6 +263,14 @@ Route::middleware(['auth', 'signin.session', 'throttle:authenticated', 'cache.he
         Route::get('/stock/issues', [IssuesController::class, 'index'])->middleware('input.allow:from,to,reason,after,before,perPage')->name('issues.index');
         Route::get('/stock/issues/new', [IssuesController::class, 'create'])->middleware('input.allow')->name('issues.create');
         Route::get('/stock/issues/{issue}', [IssuesController::class, 'show'])->middleware('input.allow')->name('issues.show');
+    });
+
+    // The stock adjustment (TASK-024), the Owner's alone: RC-09 in the bucket of every command,
+    // with recent authentication, and RP-410 for CAP-16, which takes only its parameters of
+    // ROUTE_CONTRACTS.
+    Route::middleware('capability:CAP-16')->group(function (): void {
+        Route::post('/commands/adjustment.confirm', ConfirmAdjustmentController::class)->middleware(['throttle:command', 'password.confirm'])->name('commands.adjustment.confirm');
+        Route::get('/stock/adjustments/new', [AdjustmentsController::class, 'create'])->middleware('input.allow:product,from_page')->name('adjustments.create');
     });
 });
 

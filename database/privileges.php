@@ -221,6 +221,16 @@ return [
             'runtime' => ['select' => true, 'insert' => true],
         ],
 
+        // Inventory, the adjustment (SCHEMA section 5.7; TASK-024).
+        'adjustments' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'adjustment_lines' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+
         // Costing, the issue allocation (SCHEMA section 5.8; ADR-008; TASK-023).
         'issue_cost_allocations' => [
             'class' => 'F',

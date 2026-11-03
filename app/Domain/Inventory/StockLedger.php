@@ -21,6 +21,8 @@ final class StockLedger
 
     public const string MANUAL_ISSUE = 'MANUAL_ISSUE';
 
+    public const string ADJUSTMENT = 'ADJUSTMENT';
+
     /**
      * Whether the product has a movement, by the unique key of its sequence (BR-CAT-07).
      */
@@ -142,6 +144,35 @@ final class StockLedger
             'quantity' => $quantity->negated()->toCanonical(),
             'manual_issue_line_id' => $manualIssueLineId,
             'line_quantity' => $quantity->toCanonical(),
+            'recorded_at' => $at,
+            'actor_user_id' => $actorUserId,
+            'command_id' => $commandId,
+        ]);
+    }
+
+    /**
+     * Appends the ADJUSTMENT of an adjustment line, the line's signed quantity, with the unit and
+     * precision of its guarded product, and returns its internal key. A positive one's cost
+     * evidence, or a negative one's allocation, is Costing's, in this transaction: the presence
+     * keys refuse a commit without it (BR-INV-08, BR-INV-32).
+     */
+    public function appendAdjustment(GuardedProduct $product, int $sequence, Quantity $signed, int $adjustmentLineId, int $actorUserId, int $commandId, string $at): int
+    {
+        self::requireTransaction();
+
+        if ($signed->isZero()) {
+            throw new LogicException('An adjustment line moves stock (SCHEMA section 5.7).');
+        }
+
+        return DB::table('stock_movements')->insertGetId([
+            'product_id' => $product->id,
+            'base_unit' => $product->baseUnit,
+            'quantity_precision' => $product->quantityPrecision,
+            'product_sequence' => $sequence,
+            'movement_type' => self::ADJUSTMENT,
+            'quantity' => $signed->toCanonical(),
+            'adjustment_line_id' => $adjustmentLineId,
+            'line_quantity' => $signed->toCanonical(),
             'recorded_at' => $at,
             'actor_user_id' => $actorUserId,
             'command_id' => $commandId,

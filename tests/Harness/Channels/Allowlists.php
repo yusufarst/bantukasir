@@ -119,9 +119,10 @@ final class Allowlists
         // The stock pages (TASK-022), for every kind of account that CAP-14 opens them to: no
         // cost in the list, the history or a movement; the movement's cost evidence for the
         // Owner alone (CAP-20).
-        'inventory/Stock' => ['*' => ['filters', 'filters.q', 'filters.state', 'filters.category', 'filters.perPage', ...self::CATEGORIES, ...self::STOCK_LIST_PROP]],
+        'inventory/Stock' => ['*' => ['filters', 'filters.q', 'filters.state', 'filters.category', 'filters.perPage', ...self::CATEGORIES, ...self::STOCK_LIST_PROP, 'postingFrozen']],
         'inventory/History' => ['*' => [
-            'filters', 'filters.product', 'filters.type', 'filters.from', 'filters.to', 'product', 'product.id', 'product.name', 'product.sku', 'opener',
+            'filters', 'filters.products', 'filters.products.*', 'filters.type', 'filters.from', 'filters.to', 'products', 'products.*', 'products.*.id', 'products.*.name',
+            'products.*.sku', 'opener', 'postingFrozen',
             'history', 'history.rows', 'history.rows.*', 'history.rows.*.id', 'history.rows.*.productSequence', 'history.rows.*.recordedAt', 'history.rows.*.type',
             'history.rows.*.quantity', 'history.rows.*.baseUnit', 'history.rows.*.quantityPrecision', 'history.rows.*.product', 'history.rows.*.product.id',
             'history.rows.*.product.name', 'history.rows.*.product.sku', 'history.rows.*.actorDisplayName', 'history.rows.*.source', 'history.rows.*.source.kind',
@@ -158,6 +159,14 @@ final class Allowlists
             'issue', 'issue.id', 'issue.confirmedAt', 'issue.reasonCode', 'issue.note', 'issue.lineCount', 'issue.actorDisplayName',
             'lines', 'lines.*', 'lines.*.lineNo', 'lines.*.product', 'lines.*.product.id', 'lines.*.product.name', 'lines.*.product.sku', 'lines.*.movementId',
             'lines.*.quantity', 'lines.*.baseUnit', 'lines.*.quantityPrecision',
+        ]],
+        // UXP-410, the Owner's alone (TASK-024): the first line's product as RD-01 in the context
+        // `adjustment` gives it, with its version and stock, never a cost.
+        'inventory/AdjustmentCreate' => ['owner' => [
+            'postingFrozen', 'opener',
+            'product', 'product.id', 'product.name', 'product.sku', 'product.baseUnit', 'product.quantityPrecision', 'product.price', 'product.price.amount',
+            'product.price.revisionId', 'product.active', 'product.thumbnail', 'product.activeBarcode', 'product.version', 'product.stock', 'product.stock.onHand',
+            'product.stock.minimum', 'product.stock.state',
         ]],
     ];
 
@@ -245,6 +254,9 @@ final class Allowlists
             'ops' => [...self::SEARCH_RESULT, 'rows.*.version'],
             'combined' => [...self::SEARCH_RESULT, 'rows.*.version'],
         ],
+        // RD-01 in the context `adjustment`, the Owner's alone (TASK-024): the same, for RC-09's
+        // expected versions.
+        'data.products.search.adjustment' => ['owner' => [...self::SEARCH_RESULT, 'rows.*.version']],
         // RD-01 in the catalog context and RD-06 (TASK-015): the Owner's, the
         // Operations admin's and the combined account's, never a cost, a
         // valuation or a margin (BR-CAT-26). RD-01 carries the stock per role

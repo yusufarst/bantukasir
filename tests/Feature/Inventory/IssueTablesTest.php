@@ -235,13 +235,10 @@ final class IssueTablesTest extends DatabaseTestCase
         // AC-023-04, BR-INV-08, G-13: every statement is accepted, and the commit refuses them.
         $this->assertFailsAtCommit(fn (Connection $c) => $this->issueMovement($c), 'stock_movements_issue_allocation_presence_fk', ['manual_issues', 'manual_issue_lines', 'stock_movements']);
 
-        // A SALE_ISSUE and a negative ADJUSTMENT need theirs too (SCHEMA section 3.7).
-        foreach ([
-            ['movement_type' => 'SALE_ISSUE', 'quantity' => '-1', 'sale_line_id' => 7, 'line_quantity' => '1'],
-            ['movement_type' => 'ADJUSTMENT', 'quantity' => '-1', 'adjustment_line_id' => 7, 'line_quantity' => '-1'],
-        ] as $values) {
-            $this->assertFailsAtCommit(fn (Connection $c) => $this->insertMovement($c, $values), 'stock_movements_issue_allocation_presence_fk', ['stock_movements']);
-        }
+        // A SALE_ISSUE needs its allocation too (SCHEMA section 3.7); a negative ADJUSTMENT, now
+        // that its line's key exists, is AdjustmentTablesTest's (TASK-024).
+        $sale = ['movement_type' => 'SALE_ISSUE', 'quantity' => '-1', 'sale_line_id' => 7, 'line_quantity' => '1'];
+        $this->assertFailsAtCommit(fn (Connection $c) => $this->insertMovement($c, $sale), 'stock_movements_issue_allocation_presence_fk', ['stock_movements']);
     }
 
     public function test_an_allocation_without_its_projection_and_a_line_without_its_movement_fail_at_commit(): void

@@ -1,5 +1,5 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import type { MouseEvent, ReactNode } from 'react';
+import { Fragment, useId, type MouseEvent, type ReactNode } from 'react';
 import { Button, type ButtonVariant } from './Button';
 import { Icon } from './Icon';
 import type { IconName } from './icons';
@@ -14,7 +14,19 @@ export type MenuEntry =
           /** A guard before the page is left, such as the unsaved-changes dialog (UXS-45; TASK-007). */
           readonly onNavigate?: (event: MouseEvent<HTMLAnchorElement>) => void;
       }
+    | {
+          /** UXS-13 in a menu: the item keeps its place and focus, does nothing, and says why, tied to it (TASK-024, UXI-217). */
+          readonly kind: 'unavailable';
+          readonly label: string;
+          readonly icon?: IconName;
+          readonly reason: string;
+      }
     | { readonly kind: 'separator' };
+
+/** The id of an unavailable item's reason, within its menu. */
+function reasonIdOf(menuId: string, index: number): string {
+    return `${menuId}-reason-${String(index)}`;
+}
 
 /**
  * A menu of DESIGN_SYSTEM 8.9 — the account menu, an overflow of further
@@ -50,6 +62,8 @@ export function Menu({
     triggerClassName?: string;
     children?: ReactNode;
 }) {
+    const menuId = useId();
+
     return (
         <DropdownMenu.Root modal={false}>
             <DropdownMenu.Trigger asChild={true}>
@@ -61,6 +75,25 @@ export function Menu({
                     {items.map((item, index) => {
                         if (item.kind === 'separator') {
                             return <DropdownMenu.Separator key={index} className={'bk-menu__sep'} />;
+                        }
+
+                        if (item.kind === 'unavailable') {
+                            const reasonId = reasonIdOf(menuId, index);
+
+                            // Named by its label alone, with the reason as its description (DESIGN_SYSTEM 8.7; review finding R-02).
+                            // The reason stands right under the item, outside it, so that the item's visible text is
+                            // its name (WCAG 2.5.3, axe label-content-name-mismatch; TASK-024 CI).
+                            return (
+                                <Fragment key={index}>
+                                    <DropdownMenu.Item className={'bk-menu__item'} aria-disabled={true} aria-describedby={reasonId} data-unavailable={true} onSelect={(event) => event.preventDefault()}>
+                                        {item.icon !== undefined && <Icon name={item.icon} />}
+                                        <span>{item.label}</span>
+                                    </DropdownMenu.Item>
+                                    <div className={'bk-menu__reason'} id={reasonId}>
+                                        {item.reason}
+                                    </div>
+                                </Fragment>
+                            );
                         }
 
                         if (item.kind === 'link') {

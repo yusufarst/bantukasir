@@ -6,7 +6,8 @@
 // that uses them; TASK-003 adds none. TASK-022 adds those of the stock and
 // receiving pages (COPY_DECK sections 4.1, 9.1 to 9.7 and 15), TASK-023 those
 // of the manual issue pages (COPY_DECK sections 4.1, 9.1, 9.4, 9.8 to 9.10
-// and 15).
+// and 15), TASK-024 those of the adjustment (COPY_DECK sections 4.1, 9.2,
+// 9.3, 9.11 and 15).
 
 return [
     'state' => [
@@ -124,6 +125,21 @@ return [
     'issue_detail' => [
         'title' => 'Detail barang keluar',
         'subtitle' => 'Barang keluar :waktu',
+    ],
+    'adjustment' => [
+        'title' => 'Sesuaikan stok',
+        'intro' => 'Samakan stok tercatat dengan hasil hitung fisik.',
+        'add' => 'Tambah',
+        'subtract' => 'Kurangi',
+        'reason' => 'Alasan',
+        'count_reference' => 'Referensi hitung',
+        'reference' => 'Referensi',
+        'count_reference_help' => 'Catatan hitung fisiknya, misalnya nomor lembar hitung.',
+        'reference_help' => 'Nomor dokumen pendukung.',
+        'review_title' => 'Tinjau penyesuaian stok',
+        'confirm' => 'Konfirmasi penyesuaian',
+        'success' => 'Stok disesuaikan.',
+        'disabled' => 'Lengkapi baris, alasan, referensi hitung, dan referensi. Paling banyak 200 baris.',
     ],
     'disabled_unresolved_posting' => 'Ada barang masuk, barang keluar, atau penyesuaian yang statusnya belum pasti. Cek statusnya dulu.',
 ];

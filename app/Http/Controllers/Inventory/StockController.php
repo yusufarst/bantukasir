@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Inventory;
 
+use App\Domain\Inventory\OnboardingState;
 use App\DTO\Catalog\CategoryRowData;
 use App\Http\Requests\Inventory\StockListRequest;
 use App\Queries\Catalog\CategoryRows;
@@ -14,11 +15,12 @@ use Inertia\Response;
  * scope item 2): the stock attention of the active products with its filters, the categories
  * to filter by and the first page of RD-02, whose later refreshes the page reads itself
  * (INTERACTION_CONTRACTS section 3.3). Owner, OPERATIONS_ADMIN and the combined account, by the
- * route's gate of CAP-14; never a cost.
+ * route's gate of CAP-14; never a cost. It says whether the onboarding freeze stops an
+ * adjustment, for the rows' "Sesuaikan stok" (UXI-217, UXS-27; TASK-024).
  */
 final class StockController
 {
-    public function index(StockListRequest $request, StockList $stock, CategoryRows $categories): Response
+    public function index(StockListRequest $request, StockList $stock, CategoryRows $categories, OnboardingState $onboarding): Response
     {
         $filters = $request->filters();
 
@@ -26,6 +28,7 @@ final class StockController
             'filters' => ['q' => $filters['q'], 'state' => $filters['state'], 'category' => $filters['category'], 'perPage' => $filters['perPage']],
             'categories' => array_map(static fn (CategoryRowData $row): array => $row->toArray(), $categories->list()),
             'stock' => $stock($filters['q'], $filters['state'], $filters['category'], $filters['after'], $filters['perPage']),
+            'postingFrozen' => $onboarding->current() === OnboardingState::ACTIVE,
         ]);
     }
 }

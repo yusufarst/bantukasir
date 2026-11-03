@@ -31,7 +31,7 @@ final class PrivilegeMatrixTest extends TestCase
     {
         $matrix = PrivilegeMatrix::load();
 
-        $this->assertSame(['acquisition_cost_evidence', 'audit_events', 'backup_runs', 'barcode_active_mappings', 'barcode_mapping_retirements', 'barcode_mappings', 'barcode_tokens', 'business_profile_current', 'business_profile_revisions', 'cache', 'cache_locks', 'categories', 'command_identities', 'command_request_receipts', 'command_results', 'csv_product_imports', 'intent_reconciliations', 'inventory_posting_block_reopenings', 'inventory_posting_blocks', 'inventory_valuations', 'issue_cost_allocation_projections', 'issue_cost_allocations', 'manual_issue_lines', 'manual_issues', 'migrations', 'onboarding_releases', 'onboarding_state', 'password_reset_tokens', 'products', 'receiving_documents', 'receiving_lines', 'recovery_epoch', 'security_log_entries', 'selling_price_revisions', 'sessions', 'stale_intent_reports', 'stock_balances', 'stock_movements', 'stored_files', 'users'], array_keys($matrix->tables()));
+        $this->assertSame(['acquisition_cost_evidence', 'adjustment_lines', 'adjustments', 'audit_events', 'backup_runs', 'barcode_active_mappings', 'barcode_mapping_retirements', 'barcode_mappings', 'barcode_tokens', 'business_profile_current', 'business_profile_revisions', 'cache', 'cache_locks', 'categories', 'command_identities', 'command_request_receipts', 'command_results', 'csv_product_imports', 'intent_reconciliations', 'inventory_posting_block_reopenings', 'inventory_posting_blocks', 'inventory_valuations', 'issue_cost_allocation_projections', 'issue_cost_allocations', 'manual_issue_lines', 'manual_issues', 'migrations', 'onboarding_releases', 'onboarding_state', 'password_reset_tokens', 'products', 'receiving_documents', 'receiving_lines', 'recovery_epoch', 'security_log_entries', 'selling_price_revisions', 'sessions', 'stale_intent_reports', 'stock_balances', 'stock_movements', 'stored_files', 'users'], array_keys($matrix->tables()));
         $this->assertSame(['SELECT', 'INSERT', 'UPDATE', 'DELETE'], $matrix->tablePrivileges('cache', 'runtime'));
         $this->assertSame(['SELECT', 'INSERT', 'UPDATE', 'DELETE'], $matrix->tablePrivileges('cache_locks', 'runtime'));
         $this->assertSame([], $matrix->tablePrivileges('migrations', 'runtime'));
@@ -99,6 +99,13 @@ final class PrivilegeMatrixTest extends TestCase
 
         $this->assertSame(['SELECT', 'INSERT'], $matrix->tablePrivileges('issue_cost_allocation_projections', 'runtime'));
         $this->assertSame(['current_status', 'current_amount', 'publication_no', 'updated_at'], $matrix->updateColumns('issue_cost_allocation_projections'));
+
+        // TASK-024 (SCHEMA section 10).
+        foreach (['adjustments', 'adjustment_lines'] as $table) {
+            $this->assertSame(['SELECT', 'INSERT'], $matrix->tablePrivileges($table, 'runtime'), $table);
+            $this->assertSame([], $matrix->updateColumns($table), $table);
+            $this->assertSame(['SELECT'], $matrix->tablePrivileges($table, 'backup'), $table);
+        }
 
         foreach (array_keys($matrix->tables()) as $table) {
             $this->assertSame($table === 'security_log_entries', $matrix->policies($table) !== [], $table);

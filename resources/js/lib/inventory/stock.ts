@@ -28,6 +28,8 @@ export const ISSUES_PAGE = '/stock/issues';
 
 export const NEW_ISSUE_PAGE = '/stock/issues/new';
 
+export const NEW_ADJUSTMENT_PAGE = '/stock/adjustments/new';
+
 export const REQUESTS_PAGE = '/requests';
 
 export function movementPage(id: number): string {
@@ -56,6 +58,12 @@ export const RECEIVING_COMMAND = { operation: 'receiving.confirm', family: 'stoc
 
 /** RC-08's family (INTERACTION_CONTRACTS section 1.4), which it shares with RC-07. */
 export const ISSUE_COMMAND = { operation: 'manual_issue.confirm', family: 'stock_posting' } as const;
+
+/** RC-09's family (INTERACTION_CONTRACTS section 1.4), which it shares with RC-07 and RC-08; it needs recent authentication (section 1.5). */
+export const ADJUSTMENT_COMMAND = { operation: 'adjustment.confirm', family: 'stock_posting', recentAuth: true } as const;
+
+/** The most lines of an adjustment (TECHNICAL_RULES section 11.2). */
+export const MAX_ADJUSTMENT_LINES = 200;
 
 /** The most lines of a receiving (TECHNICAL_RULES section 11.2). */
 export const MAX_RECEIVING_LINES = 500;
@@ -228,9 +236,9 @@ export interface HistoryRow {
     readonly source: MovementSource | null;
 }
 
-/** The filters of UXP-402 (ROUTE_CONTRACTS RP-402). */
+/** The filters of UXP-402 (ROUTE_CONTRACTS RP-402): one product, or those of an adjustment (TASK-024), or none. */
 export interface HistoryFilters {
-    readonly product: number | null;
+    readonly products: readonly number[];
     readonly type: MovementType | null;
     readonly from: string | null;
     readonly to: string | null;
@@ -243,8 +251,8 @@ export type HistoryOpener = 'stock' | 'product' | 'requests';
 export function historyAddress(filters: HistoryFilters, cursor: { readonly after?: string; readonly before?: string } = {}, opener: HistoryOpener | null = null): string {
     const query = new URLSearchParams();
 
-    if (filters.product !== null) {
-        query.set('product', String(filters.product));
+    if (filters.products.length > 0) {
+        query.set('product', filters.products.map(String).join(','));
     }
 
     if (filters.type !== null) {
@@ -278,7 +286,18 @@ export function historyAddress(filters: HistoryFilters, cursor: { readonly after
 
 /** The history of one product, opened from a page that names itself (UXI-167, UXI-216). */
 export function productHistory(product: number, opener: HistoryOpener): string {
-    return historyAddress({ product, type: null, from: null, to: null }, {}, opener);
+    return historyAddress({ products: [product], type: null, from: null, to: null }, {}, opener);
+}
+
+/** The capability of the stock adjustment, the Owner's alone (SECURITY_MODEL section 6): it shows "Sesuaikan stok" (UXI-217, UXI-221). */
+export const ADJUST_CAPABILITY = 'CAP-16';
+
+/** The pages that open UXP-410 for its way back and its "Batal" (NAVIGATION_CONTRACTS UXP-410). */
+export type AdjustmentOpener = 'stock' | 'history';
+
+/** UXP-410 with this product as its first line, opened from this page (UXI-217, UXI-221). */
+export function adjustmentPage(product: number, opener: AdjustmentOpener): string {
+    return `${NEW_ADJUSTMENT_PAGE}?${new URLSearchParams({ product: String(product), from_page: opener }).toString()}`;
 }
 
 /** A document of RP-404 (App\Queries\Inventory\ReceivingDocuments). */
@@ -419,6 +438,77 @@ export function issueSteps(lines: readonly { readonly productId: number; readonl
         return { before: quantityOfThousandths(start < 0n ? 0n : start), after: start < 0n || after < 0n ? null : quantityOfThousandths(after) };
     });
 }
+
+/**
+ * The review of a draft of an adjustment, line by line (UXI-272; BR-INV-31, BR-INV-33): from the
+ * stock on hand that the search gave for the product, the lines of one product taken in their
+ * order, an increase adding and a decrease taking, the stock before the line and after it, in exact
+ * digits. The server checks the decreases of a product added together against the stock before the
+ * adjustment, whatever increases of it the adjustment holds, so the stock after a decrease is null
+ * once the product's decreases up to it ask for more than that stock (UXS-31). A step is null for a
+ * line whose quantity is not one yet, or whose product's stock the search did not give.
+ */
+export function adjustmentSteps(lines: readonly { readonly productId: number; readonly increase: boolean; readonly quantity: string | null; readonly onHand: string | null }[]): readonly (IssueStep | null)[] {
+    const running = new Map<number, bigint>();
+    const taken = new Map<number, bigint>();
+
+    return lines.map((line) => {
+        const start = line.onHand === null ? null : thousandthsOf(line.onHand);
+        const quantity = line.quantity === null ? null : thousandthsOf(line.quantity);
+
+        if (start === null || quantity === null) {
+            return null;
+        }
+
+        const before = running.get(line.productId) ?? start;
+
+        if (line.increase) {
+            running.set(line.productId, before + quantity);
+
+            return { before: quantityOfThousandths(before < 0n ? 0n : before), after: before + quantity < 0n ? null : quantityOfThousandths(before + quantity) };
+        }
+
+        const decreased = (taken.get(line.productId) ?? 0n) + quantity;
+        const after = before - quantity;
+
+        taken.set(line.productId, decreased);
+        running.set(line.productId, after);
+
+        return { before: quantityOfThousandths(before < 0n ? 0n : before), after: decreased > start || after < 0n ? null : quantityOfThousandths(after) };
+    });
+}
+
+/**
+ * One snapshot of a product in a draft of an adjustment (pull request #34's review): a product read
+ * again — a later search or scan, after it was changed elsewhere — replaces the product of every line
+ * of it, so that every line shows, and the review reviews, the unit, precision, stock and version
+ * that RC-09 sends.
+ */
+export function withSnapshot<Line extends { readonly product: { readonly id: number } }>(lines: readonly Line[], product: Line['product']): readonly Line[] {
+    return lines.map((line) => (line.product.id === product.id ? { ...line, product } : line));
+}
+
+/**
+ * The version of each product that RC-09 sends, as reviewed, in the order of its first line; null
+ * when the lines of one product hold different versions, which is never sent, rather than one of
+ * them overwriting the others (pull request #34's review).
+ */
+export function reviewedVersions(lines: readonly { readonly product: { readonly id: number; readonly version: number } }[]): readonly { readonly productId: number; readonly version: number }[] | null {
+    const versions = new Map<number, number>();
+
+    for (const line of lines) {
+        const known = versions.get(line.product.id);
+
+        if (known !== undefined && known !== line.product.version) {
+            return null;
+        }
+
+        versions.set(line.product.id, line.product.version);
+    }
+
+    return [...versions.entries()].map(([productId, version]) => ({ productId, version }));
+}
+
 export interface KeysetPage<Row> {
     readonly rows: readonly Row[];
     readonly nextCursor: string | null;

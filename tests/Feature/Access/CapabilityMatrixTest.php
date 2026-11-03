@@ -312,6 +312,14 @@ final class CapabilityMatrixTest extends DatabaseTestCase
         'RP-409' => ['method' => 'GET', 'path' => '/stock/issues/{issue}', 'json' => true, 'answers' => [
             'guest' => [401, null], 'owner' => [404, null], 'ops' => [404, null], 'cashier' => [403, null], 'combined' => [404, null],
         ]],
+        // TASK-024: the adjustment for CAP-16, the Owner's alone, with recent authentication; its
+        // page, every other role and the combined account refused (AC-024-01).
+        'RC-09' => ['method' => 'POST', 'path' => '/commands/adjustment.confirm', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [423, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RP-410' => ['method' => 'GET', 'path' => '/stock/adjustments/new', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
     ];
 
     /** @var array<string, array{id: int, email: string, password: string}> */

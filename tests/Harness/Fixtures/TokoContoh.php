@@ -12,6 +12,7 @@ use App\Actions\Catalog\CreateProduct;
 use App\Actions\Catalog\RetireBarcode;
 use App\Actions\Commands\CommandAction;
 use App\Actions\Commands\CommandContext;
+use App\Actions\Inventory\ConfirmAdjustment;
 use App\Actions\Inventory\ConfirmManualIssue;
 use App\Actions\Inventory\ConfirmReceiving;
 use App\Database\DatabaseRefused;
@@ -389,6 +390,27 @@ final class TokoContoh
         }
 
         return self::asOwner(ConfirmManualIssue::class, ConfirmManualIssue::OPERATION, ['reasonCode' => $reasonCode, 'note' => $note, 'lines' => $lines], ['products' => array_values($versions)]);
+    }
+
+    /**
+     * A stock adjustment of the shop, confirmed by the Owner through RC-09's Action (TASK-024;
+     * EXECUTION_CONTEXT EXC-45), at the versions its products stand at: its internal key. The
+     * recent authentication of RC-09 is its route's, which this fixture does not pass through.
+     *
+     * @param  list<array{productId: int, direction: string, quantity: string, cost?: array<string, string>}>  $lines
+     *
+     * @throws DatabaseRefused
+     */
+    public static function adjust(array $lines, string $reason = 'Hitung fisik bulanan', string $countReference = 'HIT-01', string $reference = 'REF-01'): int
+    {
+        $versions = [];
+
+        foreach ($lines as $line) {
+            $version = DB::table('products')->where('id', $line['productId'])->value('version');
+            $versions[$line['productId']] = ['productId' => $line['productId'], 'version' => is_int($version) ? $version : 0];
+        }
+
+        return self::asOwner(ConfirmAdjustment::class, ConfirmAdjustment::OPERATION, ['reason' => $reason, 'countReference' => $countReference, 'reference' => $reference, 'lines' => $lines], ['products' => array_values($versions)]);
     }
 
     /**
