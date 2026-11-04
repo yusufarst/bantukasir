@@ -72,7 +72,10 @@ final class SqlState
     /**
      * Whether the transaction budget ended the session: the server's reason
      * for 25P04, which pdo_pgsql reports in the message of the statement that
-     * met it (TASK-004). A transaction ended so has not committed.
+     * met it (TASK-004). A transaction ended so during one of its statements
+     * has not committed; met at its commit, the reason alone does not prove
+     * that, so a caller that must know reads the committed records under the
+     * locks the transaction held (CorrectCost::mark()).
      */
     public static function budgetEnded(Throwable $failure): bool
     {

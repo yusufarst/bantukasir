@@ -33,8 +33,9 @@ use Tests\Harness\Race\FailurePoints;
  * UNKNOWN cost completed later completes what depended on it, and a known pool after zero is not
  * reached by it; G-15's number and old value; the refusals that write no mark; the movement cap and
  * the time budget, which refuse REPLAY_REJECTED with one mark per refused intent, also when the
- * budget ended the session or a statement met its timeout, and SERVICE_BUSY when the mark cannot be
- * written; a later correction of the same source clearing the marks, another source's not; the same
+ * budget ended the session — during the replay, at the result's write or at the commit — or a
+ * statement met its timeout, and SERVICE_BUSY when the mark cannot be written or the session ended
+ * otherwise; a later correction of the same source clearing the marks, another source's not; the same
  * correction twice giving the same result; the failure after every write step; the measured time of
  * a longer replay; the roles, recent authentication and the fields.
  */
@@ -327,6 +328,82 @@ final class CorrectCostTest extends DatabaseTestCase
         $this->assertSame(0, $this->watcher()->table('command_identities')->where('source_intent_id', $envelope->sourceIntentId)->count());
     }
 
+    public function test_the_budget_that_ends_the_session_after_the_work_returned_still_refuses_with_its_mark(): void
+    {
+        // The automated review's P2 on pull request #35; TR-TIME-01, ADR-008 section 4.3, SCHEMA
+        // section 5.8: PostgreSQL ends the session at the budget, here one second, once the replay and
+        // its publication have returned — at a statement after the result's write, and with the
+        // session idle before the commit, which then meets the ended session. Neither committed, and
+        // each gets its mark TIME_BUDGET on a new connection before REPLAY_REJECTED is answered.
+        $evidence = $this->history($this->pen);
+        $rows = $this->rows();
+        $intents = [];
+        $phases = [
+            'at the result' => [false, static function (): void {
+                DB::select('select pg_catalog.pg_sleep(1.5)');
+            }],
+            'at the commit' => [true, static function (): void {
+                usleep(1_500_000);
+            }],
+        ];
+
+        foreach ($phases as $case => [$atCommit, $then]) {
+            $this->app->instance(CommandPoints::class, self::afterTheWork($atCommit, $then));
+            $envelope = new Envelope(CorrectCost::OPERATION, Operations::VERSION, (string) Str::uuid(), (string) Str::uuid(), $this->epoch, ['correctionNo' => 0], ['evidenceId' => $evidence, 'newCost' => ['amount' => '170000'], 'reason' => 'Nota pemasok']);
+            $intents[] = $envelope->sourceIntentId;
+            DB::statement("set transaction_timeout = '1s'");
+
+            try {
+                app(CorrectCost::class)->execute(new CommandContext($this->people['Hendra']['id'], $envelope, app(Clock::class)->now()));
+                $this->fail('The budget ends the correction '.$case.'.');
+            } catch (CommandRefused $refusal) {
+                $this->assertSame('REPLAY_REJECTED', $refusal->error->value, $case);
+            } finally {
+                $this->app->instance(CommandPoints::class, new FailurePoints);
+                DB::statement('reset transaction_timeout');
+            }
+        }
+
+        $this->assertSame($rows, $this->rows());
+        $this->assertSame(0, $this->watcher()->table('cost_corrections')->count());
+        $this->assertSame(0, $this->watcher()->table('command_identities')->whereIn('source_intent_id', $intents)->count());
+        $this->assertSame(array_map(static fn (string $intent): array => [$intent, 'TIME_BUDGET', 0], $intents), $this->watcher()->table('cost_incomplete_marks')->orderBy('id')
+            ->get(['rejected_source_intent_id', 'rejection_code', 'corrections_seen'])->map(static fn (object $row): array => array_values((array) $row))->all());
+        $this->assertSame(2, $this->watcher()->table('audit_events')->where('action', 'COST_INCOMPLETE_MARK')->count());
+    }
+
+    public function test_a_session_ended_otherwise_at_the_commit_answers_service_busy_with_no_mark(): void
+    {
+        // TR-RETRY-03: only the budget's own end of the session is read as the replay's refusal. A
+        // session that another one ends before its commit — pg_terminate_backend, the server's
+        // "administrator command" — is a lost connection whose commit the server does not guess:
+        // SERVICE_BUSY with no mark, the client stays uncertain, and its repeat of the same request
+        // then commits it (pull request #35).
+        $evidence = $this->history($this->pen);
+        $rows = $this->rows();
+        $watcher = $this->watcher();
+        $this->app->instance(CommandPoints::class, self::afterTheWork(true, static function () use ($watcher): void {
+            $watcher->select('select pg_catalog.pg_terminate_backend(?, 5000)', [DB::scalar('select pg_catalog.pg_backend_pid()')]);
+        }));
+        $envelope = new Envelope(CorrectCost::OPERATION, Operations::VERSION, (string) Str::uuid(), (string) Str::uuid(), $this->epoch, ['correctionNo' => 0], ['evidenceId' => $evidence, 'newCost' => ['amount' => '170000'], 'reason' => 'Nota pemasok']);
+
+        try {
+            app(CorrectCost::class)->execute(new CommandContext($this->people['Hendra']['id'], $envelope, app(Clock::class)->now()));
+            $this->fail('The ended session ends the correction.');
+        } catch (CommandRefused $refusal) {
+            $this->assertSame('SERVICE_BUSY', $refusal->error->value);
+        } finally {
+            $this->app->instance(CommandPoints::class, new FailurePoints);
+        }
+
+        $this->assertSame($rows, $this->rows());
+        $this->assertSame([0, 0, 0], [$watcher->table('cost_corrections')->count(), $watcher->table('cost_incomplete_marks')->count(), $watcher->table('command_identities')->where('source_intent_id', $envelope->sourceIntentId)->count()]);
+
+        $outcome = app(CorrectCost::class)->execute(new CommandContext($this->people['Hendra']['id'], $envelope, app(Clock::class)->now()));
+        $this->assertFalse($outcome->repeated);
+        $this->assertSame([1, 0], [$watcher->table('cost_corrections')->count(), $watcher->table('cost_incomplete_marks')->count()]);
+    }
+
     public function test_a_mark_that_cannot_be_written_answers_service_busy_and_a_repeat_writes_it_once(): void
     {
         // SCHEMA section 5.8, TR-TIME-01: a refused correction is never reported without its mark.
@@ -546,6 +623,43 @@ final class CorrectCostTest extends DatabaseTestCase
             public function afterWrite(int $step): void {}
 
             public function beforeCommit(): void {}
+
+            public function afterOwnWrite(string $write): void {}
+        };
+    }
+
+    /**
+     * Command points that run this once the work has returned — after write step 6, the result's
+     * write, or immediately before the commit — and nothing else.
+     *
+     * @param  Closure(): void  $then
+     */
+    private static function afterTheWork(bool $atCommit, Closure $then): CommandPoints
+    {
+        return new class($atCommit, $then) implements CommandPoints
+        {
+            /**
+             * @param  Closure(): void  $then
+             */
+            public function __construct(private readonly bool $atCommit, private readonly Closure $then) {}
+
+            public function afterIdentity(): void {}
+
+            public function afterLock(string $step): void {}
+
+            public function afterWrite(int $step): void
+            {
+                if ($step === 6 && ! $this->atCommit) {
+                    ($this->then)();
+                }
+            }
+
+            public function beforeCommit(): void
+            {
+                if ($this->atCommit) {
+                    ($this->then)();
+                }
+            }
 
             public function afterOwnWrite(string $write): void {}
         };

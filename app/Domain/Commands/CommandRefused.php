@@ -4,6 +4,7 @@ namespace App\Domain\Commands;
 
 use InvalidArgumentException;
 use RuntimeException;
+use Throwable;
 
 /**
  * A definite refusal of a command, a status check or a read with one of the
@@ -13,7 +14,9 @@ use RuntimeException;
  * `params`, `fields` and `lines` carry only safe values (TR-ERR-02): `fields`
  * maps a path of the request to its message keys, each with its parameters;
  * `lines` maps a line index to safe values (INTERACTION_CONTRACTS section
- * 1.6). The message key is the code's, or one of its variants.
+ * 1.6). The message key is the code's, or one of its variants. `previous` is
+ * the failure that a SERVICE_BUSY stands for, such as the lost connection of
+ * CommandTransaction, for the server's own reading only; no answer carries it.
  */
 final class CommandRefused extends RuntimeException
 {
@@ -30,6 +33,7 @@ final class CommandRefused extends RuntimeException
         public readonly array $fields = [],
         public readonly array $lines = [],
         ?string $messageKey = null,
+        ?Throwable $previous = null,
     ) {
         $messageKey ??= $error->messageKey();
 
@@ -39,7 +43,7 @@ final class CommandRefused extends RuntimeException
 
         $this->messageKey = $messageKey;
 
-        parent::__construct(sprintf('Refused %s.', $error->value));
+        parent::__construct(sprintf('Refused %s.', $error->value), 0, $previous);
     }
 
     public static function of(ErrorCode $code): self

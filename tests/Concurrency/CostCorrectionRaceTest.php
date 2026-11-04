@@ -22,6 +22,9 @@ use Tests\Harness\Race\Worker;
  * - the mark against a later correction: a correction refused at the movement cap, whose mark's own
  *   transaction finds that a correction of the same source committed meanwhile, writes its mark
  *   together with its clearance by that correction;
+ * - the mark against the same intent committed: a refused correction whose repeat, the same intent
+ *   and key, commits before its mark's transaction locks the product writes no mark and answers
+ *   SERVICE_BUSY, so that the client reads the committed outcome (TR-RETRY-03);
  * - RACE-01 and RACE-02: the same key, or another key of the same intent, runs once, and another
  *   payload under either is held, never run; a refused correction and its repeat write one mark;
  * - a correction that waits for the product's guard beyond the lock timeout answers SERVICE_BUSY and
@@ -135,6 +138,34 @@ final class CostCorrectionRaceTest extends DatabaseTestCase
         $correction = $this->watcher()->table('cost_corrections')->where('command_id', $committed['commandId'] ?? null)->value('id');
         $this->assertSame([['LATER_CORRECTION', $correction, 'USER', $this->owner, null]], $this->watcher()->table('cost_incomplete_mark_clearances')->where('mark_id', $mark['id'])
             ->get(['clearing_kind', 'clearing_correction_id', 'actor_kind', 'actor_user_id', 'command_id'])->map(static fn (object $row): array => array_values((array) $row))->all());
+    }
+
+    public function test_a_refused_correction_whose_intent_committed_meanwhile_writes_no_mark(): void
+    {
+        // SCHEMA section 5.8, a mark only for a refused intent; TR-RETRY-03, ADR-007 section 3 (pull
+        // request #35): the refused correction stops before its mark's transaction locks the product;
+        // its repeat, the same intent and key with the movement cap of the server, commits meanwhile;
+        // the mark's transaction then finds the intent's identity, writes nothing and answers
+        // SERVICE_BUSY, never REPLAY_REJECTED for an intent that committed.
+        TokoContoh::issue([['productId' => $this->product, 'quantity' => '1']]);
+        $intent = (string) Str::uuid();
+        $key = (string) Str::uuid();
+        $refused = $this->start($this->correction('150000', 1, 0, $intent, $key), ['after_lock:2.1']);
+        $repeat = $this->start($this->correction('150000', null, 0, $intent, $key));
+        Worker::ready($refused, $repeat);
+
+        // Its own transaction's actor guard first, then the mark's, after the refusal.
+        $refused->run()->awaitBarrier('after_lock:2.1');
+        $refused->release();
+        $refused->awaitBarrier('after_lock:2.1');
+        $repeat->run();
+        $committed = $repeat->finish()->result ?? [];
+        $this->assertSame(['COMMITTED', false], [$committed['outcome'] ?? null, $committed['repeated'] ?? null]);
+        $refused->release();
+
+        $this->assertSame(['refused' => 'SERVICE_BUSY'], $refused->finish()->result);
+        $this->assertSame([0, 0], [$this->watcher()->table('cost_incomplete_marks')->count(), $this->watcher()->table('audit_events')->where('action', 'COST_INCOMPLETE_MARK')->count()]);
+        $this->assertSame([1, 1], [$this->watcher()->table('cost_corrections')->where('command_id', $committed['commandId'] ?? null)->count(), $this->watcher()->table('command_identities')->where('source_intent_id', $intent)->count()]);
     }
 
     public function test_race_01_and_race_02_a_correction_runs_once_for_the_same_key_or_the_same_intent(): void

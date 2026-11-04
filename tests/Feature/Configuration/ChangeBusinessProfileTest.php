@@ -464,13 +464,14 @@ final class ChangeBusinessProfileTest extends DatabaseTestCase
     /**
      * Sets the memory limit that a request starts with: the default 128 MiB, or, when the test
      * runner already holds more than that from the earlier tests of its process, 16 MiB above the
-     * memory in use. Either is far below what a 16-megapixel image needs (ImageNormalizer reserves
-     * 13 bytes a pixel and 64 MiB more), so the normalization still has to reserve its memory; a
-     * limit below the memory in use would be refused by PHP itself.
+     * memory it holds. Either is far below what a 16-megapixel image needs (ImageNormalizer reserves
+     * 13 bytes a pixel and 64 MiB more), so the normalization still has to reserve its memory. PHP
+     * refuses a limit below the memory the process holds from the system, memory_get_usage(true),
+     * which can exceed the memory in use by many megabytes (TASK-025 fix cycle 1).
      */
     private static function startRequestMemory(): void
     {
-        $limit = max(128 * 1024 * 1024, memory_get_usage() + 16 * 1024 * 1024);
+        $limit = max(128 * 1024 * 1024, memory_get_usage(true) + 16 * 1024 * 1024);
 
         if (ini_set('memory_limit', (string) $limit) === false) {
             self::fail('The memory limit of a request is set.');

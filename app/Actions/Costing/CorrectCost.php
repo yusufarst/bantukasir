@@ -57,8 +57,11 @@ use Throwable;
  * rollback, the mark and its audit event are written in a transaction of their own, once per refused
  * intent, and only once it has committed is REPLAY_REJECTED answered, SERVICE_BUSY otherwise
  * (TR-TIME-01; refused()). So is a statement of the replay or of its publication that met the
- * statement timeout, and a transaction that PostgreSQL ended with its session at the budget, whose
- * mark is written on a new connection: each is TIME_BUDGET. No mark follows STALE_VERSION,
+ * statement timeout, and a transaction that PostgreSQL ended with its session at the budget after
+ * the product's guard was held — during the replay, the publication, the result's write or the
+ * commit — whose mark is written on a new connection: each is TIME_BUDGET. Any other lost connection
+ * stays SERVICE_BUSY with no mark, since its commit may be unknown (TR-RETRY-03), and an intent whose
+ * identity the mark's transaction finds committed is never marked. No mark follows STALE_VERSION,
  * POSTING_BLOCKED or a lock wait (SERVICE_BUSY): none of them started the replay (D-063).
  *
  * Write steps (TEST_STRATEGY TS-21): the correction, the valuation, the projections rewritten, the
@@ -81,8 +84,6 @@ final class CorrectCost extends CommandAction
 
     /** The correction under way, whose mark refused() writes if the budget ended its session. */
     private ?RefusedCorrection $underWay = null;
-
-    private bool $budgetEnded = false;
 
     public function __construct(
         CommandServices $services,
@@ -132,7 +133,6 @@ final class CorrectCost extends CommandAction
     {
         $this->refusedReplay = null;
         $this->underWay = null;
-        $this->budgetEnded = false;
         $budget = ReplayBudget::startingNow($this->services->clock);
         $payload = $context->envelope->payload;
         $evidenceId = $payload['evidenceId'] ?? null;
@@ -184,25 +184,30 @@ final class CorrectCost extends CommandAction
                 throw new CommandRefused(ErrorCode::ReplayRejected, messageKey: self::REPLAY_REJECTED);
             }
 
-            // A session that the budget ended has not committed (TR-TIME-01).
-            $this->budgetEnded = SqlState::budgetEnded($failure);
-
+            // A session that the budget ended reaches refused() as SERVICE_BUSY, from here as from the
+            // result's write or the commit after this returned (CommandTransaction).
             throw $failure;
         }
     }
 
     /**
-     * After a refusal: a correction whose replay was refused, or whose session the budget ended
-     * during the replay, gets its mark and the mark's audit event in a transaction of their own, on
-     * a new connection if the budget ended the old one, once per refused intent; REPLAY_REJECTED is
-     * answered only once that transaction has committed, and SERVICE_BUSY if it fails, so that the
-     * client stays uncertain and repeats the same request (SCHEMA section 5.8; TR-TIME-01).
+     * After a refusal: a correction whose replay was refused, or whose transaction the budget ended
+     * with its session once the product's guard was held — during the replay or its publication, or
+     * after the work returned, at the result's write or the commit (CommandTransaction keeps that
+     * failure as the SERVICE_BUSY's previous) — gets its mark and the mark's audit event in a
+     * transaction of their own, on a new connection if the budget ended the old one, once per refused
+     * intent; REPLAY_REJECTED is answered only once that transaction has committed, and SERVICE_BUSY
+     * if it fails, so that the client stays uncertain and repeats the same request (SCHEMA section
+     * 5.8; TR-TIME-01). Any other lost connection stays SERVICE_BUSY with no mark, because its commit
+     * may be unknown (TR-RETRY-03); and so does a refused intent whose identity the mark's transaction
+     * finds (mark()).
      */
     protected function refused(CommandContext $context, CommandRefused $refusal): CommandRefused
     {
+        $cause = $refusal->getPrevious();
         $refused = match (true) {
             $refusal->error === ErrorCode::ReplayRejected => $this->refusedReplay,
-            $refusal->error === ErrorCode::ServiceBusy && $this->budgetEnded => $this->underWay,
+            $refusal->error === ErrorCode::ServiceBusy && $cause !== null && SqlState::budgetEnded($cause) => $this->underWay,
             default => null,
         };
 
@@ -211,16 +216,14 @@ final class CorrectCost extends CommandAction
         }
 
         try {
-            CommandTransaction::run(function () use ($context, $refused): void {
-                $this->mark($context, $refused);
-            });
+            $marked = CommandTransaction::run(fn (): bool => $this->mark($context, $refused));
         } catch (Throwable $failure) {
             report($failure);
 
             return CommandRefused::of(ErrorCode::ServiceBusy);
         }
 
-        return new CommandRefused(ErrorCode::ReplayRejected, messageKey: self::REPLAY_REJECTED);
+        return $marked ? new CommandRefused(ErrorCode::ReplayRejected, messageKey: self::REPLAY_REJECTED) : CommandRefused::of(ErrorCode::ServiceBusy);
     }
 
     /**
@@ -284,12 +287,17 @@ final class CorrectCost extends CommandAction
 
     /**
      * The mark of a refused correction, in its own transaction: the actor (step 2.1, share) and the
-     * product (step 6, update), then the mark if the refused intent has none. A correction of the
-     * same source that committed after the refused attempt saw the corrections published newer
-     * evidence, so the mark is written with its clearance by that correction; a reversal of the
-     * source's movement clears it the same way once reversals exist (TASK-026).
+     * product (step 6, update), then the mark if the refused intent has none; true once the intent
+     * has its mark. The refused attempt held the product's guard, so under it here that attempt has
+     * ended: an identity of its intent means the intent committed after all — which a session ended
+     * at its commit could hide — or was fenced since, and it is not marked; false then, so that the
+     * answer stays SERVICE_BUSY and the client reads the outcome by repeating the same request
+     * (TR-RETRY-03; ADR-007 sections 3 and 4). A correction of the same source that committed after
+     * the refused attempt saw the corrections published newer evidence, so the mark is written with
+     * its clearance by that correction; a reversal of the source's movement clears it the same way
+     * once reversals exist (TASK-026).
      */
-    private function mark(CommandContext $context, RefusedCorrection $refused): void
+    private function mark(CommandContext $context, RefusedCorrection $refused): bool
     {
         $actor = $this->services->actorGuard->hold($context->actorId, $this->capabilities());
         $this->services->points->afterLock('2.1');
@@ -300,8 +308,12 @@ final class CorrectCost extends CommandAction
         $operation = $context->envelope->operation;
         $intent = $context->envelope->sourceIntentId;
 
+        if ($this->services->identities->byIntent($operation, $intent) !== null) {
+            return false;
+        }
+
         if ($this->marks->existsFor($operation, $intent)) {
-            return;
+            return true;
         }
 
         $at = $this->services->clock->now()->format('Y-m-d H:i:s.uP');
@@ -324,6 +336,8 @@ final class CorrectCost extends CommandAction
             productId: $source->productId,
         );
         $this->services->points->afterOwnWrite('mark');
+
+        return true;
     }
 
     /**
