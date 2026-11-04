@@ -29,7 +29,14 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | `composer validate`, `lint`, `analyse`, `test:unit` | Fast run 41735204131 on `33cc1c0`, the reviewed head | 06:01 to 06:02 | 1 min 15 s | `PASS` |
 | `npm run lint`, `typecheck`, `test:unit` | Same run | 06:03 to 06:04 | 1 min 5 s | `PASS` |
 | The PostgreSQL and concurrency test files that the branch changes, the same 11 | Same run | 06:04 to 06:11 | 7 min 4 s | `PASS` |
+| Guard | Local, on `090a7cc`, the review's fixes | 06:46 | under 1 min of scanning | `PASS`, no candidate |
+| `composer validate`, `lint`, `analyse`, `test:unit` | Fast run 41741871293 on `090a7cc`, the review's fixes | 06:50 to 06:51 | 56 s | `PASS` |
+| `npm run lint`, `typecheck`, `test:unit` | Same run | 06:52 | 53 s | `PASS` |
+| The PostgreSQL and concurrency test files that the branch changes, the same 11, with the review's new cases (`CostCorrectionRaceTest` 6 tests, `CorrectCostTest` 13, `CostCorrectionTablesTest` 6) | Same run | 06:52 to 06:59 | 6 min 23 s | `PASS`, 92 tests |
+| Guard preview of the record | Local, the working tree against origin/develop | 07:10 | under 1 min | `PASS`, no candidate |
 | The whole command contract and the image checks | CI on the pull request's final head | — | — | `NOT_RUN` at this writing (CE-41, D-117); never on this machine (D-108) |
+
+Fast run 4, 41735204131 on `33cc1c0`, is the run of the reviewed code; fast run 5, 41741871293 on `090a7cc`, that of the review's fixes. The record's commit changes documents only; its push starts fast run 6 of 10, which the executor does not wait for.
 
 ## 2. What was built (contract section 4.1)
 
@@ -75,12 +82,12 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | The same input, the same result; the same correction twice rewrites nothing | `ValuationReplayTest::test_the_same_input_gives_the_same_result`; `CorrectCostTest::test_the_same_correction_again_…` | `PASS`, same runs |
 | An unsafe history or a value out of range is refused | `ValuationReplayTest::test_an_unsafe_history_or_a_value_out_of_range_is_refused` | `PASS`, same runs |
 | The movement cap and the time budget refuse with one mark per intent, also when the budget ended the session; SERVICE_BUSY when the mark fails | `CorrectCostTest::test_the_movement_cap_…`, `::test_the_time_budget_…`, `::test_a_mark_that_cannot_be_written_…`; `ValuationReplayTest::test_the_budget_is_asked_…` | `PASS`, same runs |
-| A statement timeout of the replay is its time budget, with its mark; a lock wait beyond the lock timeout and its SERVICE_BUSY write no mark; a refused correction and its concurrent repeat write one mark (the review's R-01, R-02, R-04) | `CorrectCostTest::test_a_statement_timeout_of_the_replay_…`; `CostCorrectionRaceTest::test_a_correction_that_waits_beyond_the_lock_timeout_…`, `::test_race_01_a_refused_correction_…` | Pending the fast run of the review's fixes |
+| A statement timeout of the replay is its time budget, with its mark; a lock wait beyond the lock timeout and its SERVICE_BUSY write no mark; a refused correction and its concurrent repeat write one mark (the review's R-01, R-02, R-04) | `CorrectCostTest::test_a_statement_timeout_of_the_replay_…`; `CostCorrectionRaceTest::test_a_correction_that_waits_beyond_the_lock_timeout_…`, `::test_race_01_a_refused_correction_…` | `PASS`, fast run 41741871293 on `090a7cc` |
 | The publication is all or nothing: a failure after each of the six write steps changes nothing | `CorrectCostTest::test_a_failure_after_every_write_step_…` | `PASS`, same runs |
 | RACE-11 in both orders, and the mark against a later correction of the same source | `CostCorrectionRaceTest` | `PASS`, same runs |
 | REVERSAL, SALE_ISSUE, RETURN_RECEIPT and OPENING in the replay | TASK-026, TASK-028, TASK-033, TASK-035 | Not this Task's |
 
-**Measured replay time** (reading 11; not a PERF01 pass, BR-COST-28), on GitHub's hosted runner with the local environment's containers: the recomputation alone of 10,000 movements took 72 ms (fast run 41729942769) and 113 ms (fast run 41732519118); a whole correction whose replay covers 200 movements of one product — the product's guard, the replay's reads, the publication of the valuation and of 100 projections, the audit event and the commit — took 29 ms (fast run 41732519118). The reference cap of 10,000 movements on the database, with the read before the start, is PERF01's on the intended server (TASK-043, TASK-048).
+**Measured replay time** (reading 11; not a PERF01 pass, BR-COST-28), on GitHub's hosted runner with the local environment's containers: the recomputation alone of 10,000 movements took 72 ms (fast run 41729942769), 113 ms (fast run 41732519118) and 71 ms (fast run 41741871293); a whole correction whose replay covers 200 movements of one product — the product's guard, the replay's reads, the publication of the valuation and of 100 projections, the audit event and the commit — took 29 ms (fast run 41732519118) and 21 ms (fast run 41741871293). The reference cap of 10,000 movements on the database, with the read before the start, is PERF01's on the intended server (TASK-043, TASK-048).
 
 **Backup impact.** The three new class-F tables are in the manifest's counts through the privilege matrix (`BackupRunner::COUNTED_CLASSES`, BACKUP_RECOVERY section 5); the backup role reads them and the sequences `cost_corrections_id_seq` and `cost_incomplete_marks_id_seq` (a clearance is keyed by its mark). No stored file, runbook or status page changes.
 
@@ -93,12 +100,14 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Backend | PASS on the fast runs | The FormRequests' allowlists, NOT_FOUND for a guessed identifier, CAP-19 and CAP-20 at the routes and CAP-19 in the Action, recent authentication, the channel allowlists, L4 tests |
 | Database | PASS on the fast runs | The migration with its checks, keys, indexes and grants; the constraint, privilege and retention families (`CostCorrectionTablesTest`); the clearance's key to reversals is TASK-026's (contract scope item 1). The rehearsal on the benchmark dataset is TASK-043's (EXC-46) |
 | Security | PASS on the fast runs | OPERATIONS_ADMIN, the cashier, the combined account and a visitor refused on every route and in the Action (THR-19); 423 without recent authentication; the reason, a zero's evidence and the history only to the Owner, in the pages and in the audit's Owner-only part (D-047); no secret; the static checks |
-| Data integrity | PASS on the fast runs | Append-only facts; the replay publishes the valuation and the changed projections all or nothing and writes no fact (G-07); G-15's number and old value under the product's guard; the mark once per refused intent in its own transaction (G-21); the audit and result in the transaction; identity and idempotency; RACE-11 and the mark's race; the failure after every write step |
+| Data integrity | PASS on the fast runs | Append-only facts; the replay publishes the valuation and the changed projections all or nothing and writes no fact (G-07); G-15's number and old value under the product's guard; the mark once per refused intent in its own transaction (G-21), also for a concurrent repeat; the audit and result in the transaction; identity and idempotency, RACE-01 and RACE-02; RACE-11 and the mark's race; the failure after every write step |
 | Performance | PASS | The replay bounded by the movement cap and the time budget (section 5's measurements); the worklist keyset-paged, at most 100 rows a page; RP-505 at most 100 sources and 100 corrections; the budgets are measured at TASK-048 |
 | Operations | PASS | Section 5's backup impact; no runbook or status change |
-| Verification | Pending the review | Self-review (section 8); the class-A review; the fast runs green on the reviewed code (section 1); the whole command contract and the image checks on the final head (CE-41, D-117) |
+| Verification | PASS subject to CI on the final head | Self-review; the class-A review FAIL with three MUST-FIX, each fixed with its regression test and verified FIXED in round 2, PASS (section 8); the fast runs green on the reviewed code (41735204131 on `33cc1c0`) and on the review's fixes (41741871293 on `090a7cc`); the whole command contract and the image checks on the final head (CE-41, D-117) |
 
 ## 7. Acceptance criteria
+
+"The fast run" below is fast run 41741871293 on `090a7cc`, the head of the review's fixes, which ran every test named here but the browser's; the reviewed head's run 41735204131 on `33cc1c0` ran all of them but the review's new cases.
 
 | Criterion | Status | Where |
 | --- | --- | --- |
@@ -137,4 +146,19 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | R-15: the history of RP-406 is capped at 1,000 corrections in all | NOTE | Recorded; bounded, no change |
 | R-16: the worklist's condition over every evidence row | NOTE | Recorded as finding F-5, for PERF01 |
 
-The review raised MUST-FIX, so the fixes are verified in round 2 by `bk-reviewer-xhigh` (CE-40).
+The review raised MUST-FIX, so the fixes were verified in round 2 (CE-40).
+
+| Round | Agent, effort | Package | Verdict |
+| --- | --- | --- | --- |
+| 2, the targeted verification of the MUST-FIX fixes | `bk-reviewer-xhigh`, XHigh | `review/TASK-025/r2`, head `090a7cc`, tree `705bece`, against round 1's tree `ec02359`; `--check` `UNCHANGED` | PASS: R-01, R-02 and R-03 FIXED; R-04, R-05, R-06, R-07, R-10, R-11 and R-14 FIXED; no new MUST-FIX, one SHOULD-FIX and three NOTEs. No MUST-FIX remained, so no round 3 |
+
+| Finding | Severity | Outcome |
+| --- | --- | --- |
+| V-01: the evidence written with the fixes said PASS for the new cases while section 5 still said pending, named no run in section 7, and lacked the run and guard of `090a7cc` | SHOULD-FIX | Fixed: section 1 records the guard and fast run 41741871293 on `090a7cc`; section 5 gives that run's result; section 7 names its run |
+| V-02: the lock-wait test does not observe the wait itself | NOTE | Recorded, no change: the cause follows from its setup — the same product lock, and the lock timeout the only source of SERVICE_BUSY there — and a change of the verified test would need another run before the final head |
+| V-03: RACE-01's "nothing written" is asserted through the corrections only; the order of the two marks' transactions is not fixed | NOTE | Recorded, no change: the numbers 1 to 4 and the absent amount show each intent ran once, and the refused variant's assertions hold in either order |
+| V-04: `statementTimedOut` reads PostgreSQL's English message, as `budgetEnded` does | NOTE | Recorded: TASK-008's NOTE R-11 (the message language); under another language it falls back to an unclassified failure and never writes a wrong mark |
+
+## 9. The guard's candidates (CE-31)
+
+`guard.sh` on every checkpoint, `6588137` to `090a7cc`, and `guard.sh --preview` on the working tree of the record list no candidate: no address, host, e-mail or home path. The guard on the record's commit is reported with the pull request, because this file cannot name its own commit.
