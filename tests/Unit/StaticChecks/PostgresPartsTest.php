@@ -3,6 +3,7 @@
 namespace Tests\Unit\StaticChecks;
 
 use DOMDocument;
+use DOMElement;
 use DOMXPath;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -216,21 +217,27 @@ final class PostgresPartsTest extends TestCase
 
     /**
      * The paths that a suite of the configuration names in its elements of
-     * one kind, directory or exclude.
+     * one kind, directory or exclude. A query that cannot be evaluated, or a
+     * node that is not such an element, fails the test.
      *
      * @return list<string>
      */
     private static function paths(DOMXPath $xpath, string $suite, string $element): array
     {
-        $nodes = $xpath->query(sprintf('/phpunit/testsuites/testsuite[@name="%s"]/%s', $suite, $element));
+        $query = sprintf('/phpunit/testsuites/testsuite[@name="%s"]/%s', $suite, $element);
+        $nodes = $xpath->query($query);
 
         if ($nodes === false) {
-            return [];
+            self::fail('phpunit.xml could not be read with the query '.$query.'.');
         }
 
         $paths = [];
 
         foreach ($nodes as $node) {
+            if (! $node instanceof DOMElement) {
+                self::fail(sprintf('The suite %s of phpunit.xml holds a %s where an element %s belongs.', $suite, $node::class, $element));
+            }
+
             $paths[] = trim($node->textContent);
         }
 
