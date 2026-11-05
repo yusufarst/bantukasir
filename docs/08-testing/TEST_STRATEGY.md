@@ -90,6 +90,7 @@ How BantuKasir is proven. Rules are numbered `TS-nn`; identifiers are permanent.
 | Translation keys | A key used in code is missing from `lang/id`, or a literal user-facing string exists | REQ-NFR-01 |
 | Migration review | A migration contains `DROP`, `TRUNCATE`, `DELETE` or `UPDATE` of retained data, or is marked `Class: destructive`, without the approval line `// REL-06 approval: D-NNN` naming a decision of DECISIONS; or its comment lacks the metadata of REL-20: `Class:` one of RELEASE_PROCESS section 5, `Expected duration:`, `Lock impact:` and `Verification (REL-20):` (`scripts/checks/migration-review.php`, TASK-014) | PDS §1, REL-06, REL-20 |
 | Release workflows | The release workflow can run for anything but a release or candidate tag, names a secret other than the workflow's own token or an environment, has no check against a fork, or its dry run could publish (`scripts/checks/release-workflow.php`, TASK-014) | ADR-011 items 4 and 5 |
+| PostgreSQL parts | By PHPUnit's own list of the tests, the suites `Postgres1` and `Postgres2` of `phpunit.xml` do not together hold exactly the tests of the suite `Postgres`, each once, or one of them is empty (`scripts/checks/postgres-parts.sh`, D-120) | Section 7, D-120 |
 | Secret scan | A secret-looking value is in the tree or the history being pushed | SEC-SECRET-01, D-076 |
 | Dependency audit | `composer audit` or `npm audit` reports a high or critical advisory that is not recorded as accepted for a stated reason | THR-14 |
 
@@ -98,6 +99,8 @@ Each check is proven on a deliberately violating sample. The samples of the secr
 ## 7. CI gates
 
 The `ci` workflow (ADR-011 item 4) runs the command contract that the foundation Task creates: `composer validate`, `composer lint`, `composer analyse`, `composer test:unit`, `composer test:postgres`, `composer test:race`, `npm run lint`, `npm run typecheck`, `npm run test:unit`, `npm run build` and `npm run test:e2e`.
+
+It runs `composer test:postgres` as its two parts, `composer test:postgres:1` and `composer test:postgres:2`, in the jobs `PostgreSQL (1/2)` and `PostgreSQL (2/2)`, each on its own runner with its own local environment and test database; the job `Command contract` runs every other command of the contract (D-120). No job has a condition. The last step of `Command contract` waits for both parts and passes only when each finished with success in the same run (`scripts/checks/required-jobs.sh`), so that a part that is skipped, cancelled or missing fails the required job. The parts are the suites `Postgres1` and `Postgres2` of `phpunit.xml`: `Postgres2` names directories of `tests/Feature`, and `Postgres1` is `tests/Feature` without them, so that a new directory joins `Postgres1`; `composer lint` proves that together they hold every test of `Postgres` once (section 6). A directory moves between the parts to balance their times. Locally, `composer test:postgres` stays the whole suite.
 
 | Event | Required | Blocks |
 | --- | --- | --- |

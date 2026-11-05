@@ -7,6 +7,19 @@
     audit that need Packagist's advisories; composer lint runs it after the
     audit itself. A test is never retried until it passes (TS-08).
 
+    CI runs the suite Postgres as its two parts, each in its own job on its
+    own runner and test database (D-120): Postgres1 (composer
+    test:postgres:1) is tests/Feature without the directories that Postgres2
+    (composer test:postgres:2) names, so that a new directory joins
+    Postgres1. scripts/checks/postgres-parts.sh proves with PHPUnit's own
+    list that together they hold every test of Postgres once; locally,
+    composer test:postgres stays the whole suite. To balance the parts, a
+    directory moves from one part to the other: it is added to Postgres2's
+    directories and to Postgres1's exclusions, or removed from both. A run
+    that names no suite takes the four suites of defaultTestSuite, as before
+    the parts, so that no file is offered to two suites of one run, which
+    PHPUnit refuses with a warning.
+
     The tests on PostgreSQL use the test database bantukasir_test (marker
     "test"), which database/setup/local.sh creates beside the local database,
     with the local roles of that script and no password (TASK-004): the
@@ -25,6 +38,7 @@
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
          bootstrap="vendor/autoload.php"
          cacheDirectory=".phpunit.cache"
+         defaultTestSuite="Unit,Postgres,Concurrency,Network"
          colors="true"
          beStrictAboutOutputDuringTests="true"
          displayDetailsOnTestsThatTriggerWarnings="true"
@@ -37,6 +51,17 @@
         </testsuite>
         <testsuite name="Postgres">
             <directory>tests/Feature</directory>
+        </testsuite>
+        <testsuite name="Postgres1">
+            <directory>tests/Feature</directory>
+            <exclude>tests/Feature/Access</exclude>
+            <exclude>tests/Feature/Audit</exclude>
+            <exclude>tests/Feature/Catalog</exclude>
+        </testsuite>
+        <testsuite name="Postgres2">
+            <directory>tests/Feature/Access</directory>
+            <directory>tests/Feature/Audit</directory>
+            <directory>tests/Feature/Catalog</directory>
         </testsuite>
         <testsuite name="Concurrency">
             <directory>tests/Concurrency</directory>
