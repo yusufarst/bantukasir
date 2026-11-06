@@ -40,10 +40,32 @@ function digits(): string {
     return Array.from(crypto.getRandomValues(new Uint8Array(12)), (byte) => String(byte % 10)).join('');
 }
 
+/**
+ * Waits until no transition or animation of a finite length runs in the page, so that axe and the
+ * measurements read the colours that each control settles in, never a step between two of its looks.
+ * A button that leaves its disabled look — "Tinjau" once a refusal ends its request — moves its text
+ * and its fill for --dur-hover (140 ms), and the contrast of those steps is not one the page shows at
+ * rest (D-124). The endless animations of a spinner and a skeleton have no end and are not waited for.
+ */
+async function settled(page: Page): Promise<void> {
+    await page.waitForFunction(
+        () =>
+            document.getAnimations().every((animation) => {
+                const end = animation.effect?.getComputedTiming().endTime;
+
+                return animation.playState !== 'running' || typeof end !== 'number' || end === Infinity;
+            }),
+        undefined,
+        { timeout: ACCESS_WAIT },
+    );
+}
+
 async function checked(page: Page): Promise<void> {
+    await settled(page);
     const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
 
-    expect(results.violations.map((violation) => `${violation.id}: ${violation.nodes.map((node) => node.target.join(' ')).join(', ')}`)).toEqual([]);
+    // Each violation with axe's own summary, which for a contrast gives the colours and the ratio it measured (D-124).
+    expect(results.violations.map((violation) => `${violation.id}: ${violation.nodes.map((node) => `${node.target.join(' ')} ${node.failureSummary ?? ''}`).join(', ')}`)).toEqual([]);
 
     const measured = await measure(page);
 
@@ -326,6 +348,8 @@ for (const width of [WIDTHS[4], WIDTHS[7]]) {
         await expect(page.getByText('Koreksi tidak dapat dihitung ulang', { exact: true })).toBeVisible();
         await expect(page.getByLabel('Alasan', { exact: true })).toHaveValue('Barang hadiah');
         expect(new URL(page.url()).pathname).toMatch(/^\/costs\/\d+\/correct$/);
+        // The refusal ended the request, so "Tinjau" is available again; it leaves its disabled look before the check (D-124).
+        await expect(page.getByRole('button', { name: 'Tinjau' })).toBeEnabled();
         await checked(page);
 
         // Sent again to the server, it commits and leads back to the worklist.

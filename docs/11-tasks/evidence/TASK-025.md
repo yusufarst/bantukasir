@@ -54,8 +54,19 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | `scripts/checks/image-scan-gate-test.sh` with D-123's counts and record | Local | 7 November | — | `NOT_RUN`: `jq` is absent on this machine (TASK-012 finding F-5); its first run is the job `Image checks` on fix cycle 3's head (section 12.3) |
 | Guard preview of fix cycle 3 | Local, the working tree on `d090e79` against origin/develop | 7 November, 01:43 | under 1 min | `PASS`, no candidate |
 | Fast run 9 — the static checks with `composer lint`, which reads DECISIONS and scans the tree for secrets, the unit tests and the same 12 PostgreSQL and concurrency files — and the whole command contract with the image checks, the gate's 52 cases first among them | Fix cycle 3's head: `fast-checks`, and CI on the pull request's fourth head, all four jobs | — | — | `NOT_RUN` at this writing (CE-41, D-117); never on this machine (D-108). Under D-122 a red head here is the stop `CI_FAILURE_LIMIT` |
+| Fast run 9 | Fast run 42273860819 on `d1da616`, fix cycle 3's head | 7 November, 01:47 to 01:49 | 2 min 15 s | `FAIL` at the start of the local environment, before any check: the build's download of the PostgreSQL archive's key was cut short (section 13.1; OPEN_ITEMS T-41). The static checks, the unit tests and the 12 files did not run |
+| `composer test:postgres:1`, the job `PostgreSQL (1/2)` | CI run 42273873708 on `d1da616`, the pull request's fourth head | 7 November, 01:47 to 02:01 | 13 min 44 s of the job | `PASS` |
+| `composer test:postgres:2`, the job `PostgreSQL (2/2)` | Same run | 7 November, 01:47 to 02:02 | 14 min 52 s of the job | `PASS` |
+| `composer validate`, `lint`, `analyse`, `test:unit` and `test:race`; `npm run lint`, `typecheck`, `test:unit` and `build` | Same run, job `Command contract` | 7 November, 01:47 to 01:57 | — | `PASS` |
+| `npm run test:e2e` | Same run, job `Command contract` | 7 November, 01:57 to 02:11 | 13 min 40 s | `FAIL`: 301 of 304 passed. `costing.spec.ts:295` at 640x400 failed axe's `color-contrast` on `.bk-btn--primary > span:nth-child(1)` at its check of line 329 of `d1da616`; the two tests of maintenance mode did not run after it; the same test at 320x640 passed. The cause is the check's timing (section 13.2): red head 4, the stop of D-122 |
+| Image checks | Same run, job `Image checks` | 7 November, 01:47 to 01:54 | 6 min 31 s | `FAIL`: 371 passed, 1 failed — the rebuild without a cache, at the download of the archives' keys (exit code 2; T-41). `Scan gate tests` 52 passed; the scan gate accepted 142 findings, D-123's among them, and refused none |
+| Release dry run, on the push | Run 42273860746 on `d1da616` | 7 November, 01:47 to 01:56 | 9 min 12 s | `FAIL`: 374 passed, 1 failed — the same rebuild step (T-41); the scan gate refused none |
+| Release dry run, on the pull request | Run 42273873697 on `d1da616` | 7 November, 01:47 to 01:54 | 6 min 57 s | `PASS`, the rebuild without a cache included |
+| `npm run typecheck`, then `npx tsc --noEmit`; ESLint | Local, fix cycle 4's working tree | 7 November, 02:37 | — | `NOT_RUN`: `node_modules/.bin` is absent on this machine, so neither finds `tsc`, and ESLint cannot run either (D-108). The change was checked by reading against the installed definitions: TypeScript 6.0.3's `getAnimations()` and `ComputedEffectTiming.endTime` (`number` or `CSSNumericValue`), Playwright 1.64.1's `waitForFunction` and `toBeEnabled`, axe-core 4.14.0's `NodeResult.failureSummary` |
+| Guard preview of fix cycle 4 | Local, the working tree on `d1da616` against origin/develop | 7 November, 03:03 | under 1 min | `PASS`, no candidate |
+| Fast run 10, and the whole command contract with the image checks and the pull request's release dry run, `costing.spec.ts` with the fix among them | Fix cycle 4's head: `fast-checks`, and CI on the pull request's fifth head | — | — | `NOT_RUN` at this writing (CE-41, D-117); never on this machine (D-108). A red head here is the stop for the Owner's decision (D-124) |
 
-Fast run 4, 41735204131 on `33cc1c0`, is the run of the reviewed code; fast run 5, 41741871293 on `090a7cc`, that of the review's fixes; fast run 6, 41745602396 on `4d8f99c`, that of the record. The push of fix cycle 1 (section 10) is fast run 7 of 10, the push of fix cycle 2 (section 11) fast run 8 of 10, and the push of fix cycle 3 (section 12) fast run 9 of 10. The stopped first run of fix cycle 3 pushed nothing (section 12.2).
+Fast run 4, 41735204131 on `33cc1c0`, is the run of the reviewed code; fast run 5, 41741871293 on `090a7cc`, that of the review's fixes; fast run 6, 41745602396 on `4d8f99c`, that of the record. The push of fix cycle 1 (section 10) is fast run 7 of 10, the push of fix cycle 2 (section 11) fast run 8 of 10, the push of fix cycle 3 (section 12) fast run 9 of 10, and the push of fix cycle 4 (section 13, D-124) fast run 10 of 10. The stopped first run of fix cycle 3 pushed nothing (section 12.2), nor did the stopped run of 7 November at 02:16 (section 13).
 
 ## 2. What was built (contract section 4.1)
 
@@ -129,7 +140,7 @@ Each "PASS on the fast runs" below rests, for the tests that fix cycle 1 reaches
 | Data integrity | PASS on the fast runs | Append-only facts; the replay publishes the valuation and the changed projections all or nothing and writes no fact (G-07); G-15's number and old value under the product's guard; the mark once per refused intent in its own transaction (G-21), also for a concurrent repeat; the audit and result in the transaction; identity and idempotency, RACE-01 and RACE-02; RACE-11 and the mark's race; the failure after every write step |
 | Performance | PASS | The replay bounded by the movement cap and the time budget (section 5's measurements); the worklist keyset-paged, at most 100 rows a page; RP-505 at most 100 sources and 100 corrections; the budgets are measured at TASK-048 |
 | Operations | PASS | Section 5's backup impact; no runbook or status change |
-| Verification | PASS subject to CI on the final head | Self-review; the class-A review FAIL with three MUST-FIX, each fixed with its regression test and verified FIXED in round 2, PASS (section 8); fix cycle 1's targeted verification, round 3, PASS (section 10); fix cycle 2 changes no file of the Task (section 11), nor does fix cycle 3, which adds D-123's entry to the accepted list of the image scan and its test (section 12); the fast runs green on the reviewed code (41735204131 on `33cc1c0`) and on the review's fixes (41741871293 on `090a7cc`); the whole command contract and the image checks on the final head (CE-41, D-117) |
+| Verification | PASS subject to CI on the final head | Self-review; the class-A review FAIL with three MUST-FIX, each fixed with its regression test and verified FIXED in round 2, PASS (section 8); fix cycle 1's targeted verification, round 3, PASS (section 10); fix cycle 2 changes no file of the Task (section 11), nor does fix cycle 3, which adds D-123's entry to the accepted list of the image scan and its test (section 12); fix cycle 4, under D-124, changes only how `costing.spec.ts` waits before its checks and what its axe assertion prints, no assertion removed, and its targeted verification, round 4, PASS (section 13); the fast runs green on the reviewed code (41735204131 on `33cc1c0`) and on the review's fixes (41741871293 on `090a7cc`); the whole command contract and the image checks on the final head (CE-41, D-117) |
 
 ## 7. Acceptance criteria
 
@@ -187,7 +198,7 @@ The review raised MUST-FIX, so the fixes were verified in round 2 (CE-40).
 
 ## 9. The guard's candidates (CE-31)
 
-`guard.sh` on every checkpoint, `6588137` to `090a7cc`, and `guard.sh --preview` on the working tree of the record list no candidate: no address, host, e-mail or home path. The guard on the record's commit is reported with the pull request, because this file cannot name its own commit. The same holds for each fix cycle: `guard.sh` passed on `4d8f99c` and `5fad9e5` with no candidate, and `guard.sh --preview` on fix cycle 2's working tree, the records over the merge `ad9882e`, lists none (section 1); the guard on that cycle's commits is reported with its push. `guard.sh --preview` on fix cycle 3's working tree, the accepted list, the gate's tests and the records, lists none either: no address, host, e-mail or home path (section 1); the guard on its commit is reported with its push.
+`guard.sh` on every checkpoint, `6588137` to `090a7cc`, and `guard.sh --preview` on the working tree of the record list no candidate: no address, host, e-mail or home path. The guard on the record's commit is reported with the pull request, because this file cannot name its own commit. The same holds for each fix cycle: `guard.sh` passed on `4d8f99c` and `5fad9e5` with no candidate, and `guard.sh --preview` on fix cycle 2's working tree, the records over the merge `ad9882e`, lists none (section 1); the guard on that cycle's commits is reported with its push. `guard.sh --preview` on fix cycle 3's working tree, the accepted list, the gate's tests and the records, lists none either: no address, host, e-mail or home path (section 1); the guard on its commit is reported with its push. Fix cycle 4's judgments are in section 13.4.
 
 ## 10. Fix cycle 1 (CE-42, CE-43)
 
@@ -222,8 +233,10 @@ Its input: CI run 41752787270 on `5fad9e5`, fix cycle 1's head, red in both atte
 | `5fad9e5`, CI run 41752787270, attempts 1 and 2 | Composer's `process-timeout` of 1,800 s ended `composer test:postgres` after 630 and 567 of 743 tests, each of them passed: no defect of the Task | 2 of 3 | "failure 1 of 3" (`ci.failures=1`) | The one rerun of CE-42 at 08:59; the stop `CI_TIMEOUT` at 09:16; this cycle |
 | `d090e79`, CI run 42198711153 | The scan gate refused CVE-2026-76844, a new entry of Grype's database in `zlib1g`, a package that the Task does not change; every other job passed (section 1) | 3 of 3 | "failure 2 of 3" (`ci.failures=2`) | The stop `OWNER_DECISION` at 17:24, the Owner's D-123 and fix cycle 3, the last (section 12) |
 | The red head after it | — | 4: the stop | "failure 3 of 3" | No fix: `bash scripts/executor/state.sh stop CI_FAILURE_LIMIT --token <token>`, nothing else changed, and the report |
+| `d1da616`, CI run 42273873708, with release dry run 42273860746 and fast run 42273860819 | A check of contrast made during a 140 ms transition in `costing.spec.ts`, and the image builds' download of the PostgreSQL archive's key cut short (section 13) | 4: the stop | "failure 3 of 3" (`ci.failures=3`) | The stop `CI_FAILURE_LIMIT` at 02:16 on 7 November, with no fix; the Owner's D-124 and fix cycle 4, for the tests only (section 13) |
+| D-124's push, the fifth head | — | Beyond the limit, by D-124's one exception | The tick may name it "failure 4" | Green: the Owner decides the merge (D-124's hold). Red, for any cause: the stop for the Owner's decision, with no fix and no rerun |
 
-The state's `ci.failures` and `ci.failedHead` are not edited (D-122): an executor of this Task handed "failure 3 of 3" stops as the last row says.
+The state's `ci.failures` and `ci.failedHead` are not edited (D-122, D-124): an executor of this Task handed "failure 3 of 3" stops as the last row but two says, and one handed the fifth head red stops as the last row says.
 
 **Why the suite timed out** (D-120). `composer test:postgres` outgrew Composer's limit of 1,800 seconds per script on GitHub's slower runners. Green, it took 12 minutes on 1 November (run 41317797195 on `develop`), 24.6 to 28.5 minutes on 3 November (runs 41711940101 and 41703516068) and 23 min 50 s for 741 tests on `4d8f99c` (section 1). On the runner of run 41752787270, steps that do not depend on the code ran 1.6 to 1.8 times as long. The rerun, started at 08:59, outlasted the tick's 60 minutes from the push at 08:15 (CE-41).
 
@@ -294,3 +307,71 @@ The Owner answered the stop in the host session on 7 November, "Saya beri izin e
 The counts were checked against the list by counting its identifiers (60, each once), its packages (142, each of type `deb`) and each decision's entries (D-112 43, D-115 13, D-118 3, D-123 1). Nothing of the gate's logic, the scan, the image, the application or its tests changes, so no targeted verification (CE-42) and no review again.
 
 **Checks of fix cycle 3** (section 1). The gate's tests cannot run on this machine, which has no `jq` (TASK-012 finding F-5), and PHP, Composer, `tsc` and ESLint do not run here either (D-108): their first run is CI on the cycle's head, the gate's tests in the job `Image checks` before the scan. Only the guard's preview runs natively. One push, fast run 9 of 10, and CI on the pull request's fourth head in its four jobs. Under D-122 a green head goes on to the automated review's window and the tick's merge, and a red head is the stop `CI_FAILURE_LIMIT`, with no fix. `5fad9e5` and `d090e79` are not run again.
+
+## 13. Fix cycle 4: a check of contrast during a transition (CE-42, CE-72; D-124)
+
+Its input: CI run 42273873708 on `d1da616`, fix cycle 3's head, red in `Command contract` and `Image checks`, with the push's release dry run 42273860746 and fast run 9, 42273860819, red too (section 1). It is the fourth red head, the stop of D-122, which the tick named "failure 3 of 3". The tick handed it over at 02:11 on 7 November, and that run stopped at 02:16 with `CI_FAILURE_LIMIT`, making no fix. The Owner resumed the Task at 02:25 with "Ya, D-124", then gave D-124 in full through the host session (DECISIONS D-124): one more fix cycle, for the tests only, with one push and nothing reset. This run resumed at 02:26 in the phase `CI`, holding the lock, resume 1 of 3. The working tree held only `Claude outputs/` and `plan-p0-p11-review.patch`, as before.
+
+### 13.1 What failed on `d1da616`
+
+| Job | Failure | Cause | Kind |
+| --- | --- | --- | --- |
+| `Command contract`, `npm run test:e2e` | `costing.spec.ts:295` at 640x400: axe's `color-contrast` on `.bk-btn--primary > span:nth-child(1)`, at the check of line 329 of `d1da616`, after REPLAY_REJECTED | The check read "Tinjau" during its 140 ms transition out of the disabled look (13.2) | The test's synchronization |
+| `Image checks`; release dry run 42273860746 | "the rebuild without a cache succeeds", exit code 2, in the build step that downloads the archives' keys | The same download as below, cut short | The network (OPEN_ITEMS T-41) |
+| Fast run 9, 42273860819 | The start of the local environment, before any check | `curl: (56) OpenSSL SSL_read: OpenSSL/3.5.7: error:0A000126:SSL routines::unexpected eof while reading`, then `gpg: no valid OpenPGP data found.`, at the download of the PostgreSQL archive's key from www.postgresql.org | The network (T-41) |
+
+Everything else passed: `PostgreSQL (1/2)` and `PostgreSQL (2/2)`; every step of `Command contract` before the browser suite; 301 of the 304 browser tests, the two of maintenance mode not run after the failure; and, in `Image checks`, the gate's 52 cases and the scan gate, which accepted 142 findings, D-123's among them, and refused none. The pull request's own release dry run, 42273873697, passed on the same head, its rebuild included.
+
+### 13.2 The cause, proven before any change
+
+The run kept no trace: `playwright.config.ts` sets `trace: 'off'`, the workflow uploads no artifact, and the run has none. The assertion printed only the rule and the element, not the colours. The proof therefore rests on the run's log, the code and the CSS, each read in this run.
+
+1. **Not the code.** The same test passed at the same width on `d090e79`, in run 42198711153, with the other three of `costing.spec.ts`. Between `d090e79` and `d1da616` no application code, style or browser test changed: only the records — DECISIONS, OPEN_ITEMS, this file and CURRENT_HANDOFF — and the image scan's accepted list and gate tests. In the failing run the same test passed at 320x640.
+2. **The element.** At the check of line 329 of `d1da616` — line 353 after the fix — UXP-504 shows the refusal's notice, the draft and its actions, and the review dialog has closed. Its one primary button whose first child is its label is "Tinjau": `Correction.tsx` renders it with no icon, so its label's span comes first and the shortcut's keycap after. axe names an element by a selector that matches it alone.
+3. **The moment.** While the request is frozen — the password, then the send — "Tinjau" is `unavailable`: `aria-disabled="true"`, with the disabled look. axe-core 4.14.0, the version of `package-lock.json`, skips the text of a control so disabled (`colorContrastMatches` calls `isDisabled`), so the button can be flagged only once it is enabled. REPLAY_REJECTED sets the phase `rejected` in one render. That render shows the notice the test waits for at line 326 of `d1da616`, and it takes `aria-disabled` off "Tinjau". Lines 327 and 328 take a few milliseconds, then axe runs.
+4. **The transition.** `.bk-btn` moves `color` and `background-color` over `--dur-hover`, 140 ms, with `--ease-standard`, `cubic-bezier(0.42, 0, 0.58, 1)`. Out of the disabled look the label goes from `#9b9da1` on `#f2f3ee` to `#ffffff` on `#116949`, each colour mixed in sRGB as the transition advances. The contrasts below are computed with WCAG's formula:
+
+   | Time | Text | Fill | Contrast |
+   | --- | --- | --- | --- |
+   | 0 ms | `#9b9da1` | `#f2f3ee` | 2.44:1 |
+   | 35 ms | about `#a8aaad` | about `#d5e1d9` | about 1.7:1 |
+   | about 57 ms | — | — | about 1:1, the text and the fill equally light |
+   | 70 ms | about `#cdced0` | about `#82ae9c` | about 1.6:1 |
+   | about 104 ms | — | — | 4.5:1 |
+   | 140 ms | `#ffffff` | `#116949` | 6.69:1 |
+
+   A check within about 104 ms of the refusal finds the label below 4.5:1, which axe reports as `color-contrast`; a check after that finds 6.69:1. That is the failure of the log, and the check's timing is why the same test passed on `d090e79` and at 320x640.
+5. **At rest the contrast passes**, so D-124's item 4 does not hold. White on each accent's primary, computed with WCAG's formula in this run, is 6.69:1 on green `#116949`, the default, 7.31:1 on teal `#0f5f6c`, 7.55:1 on blue `#215497`, 8.84:1 on purple `#583a88` and 11.80:1 on graphite `#34383d`. The hover and press fills of each accent are darker, so their contrast is higher. The label is 15 or 16 px semibold, normal text, held to 4.5:1. `tokens.css` has one theme and no `prefers-color-scheme` rule, so there is no dark theme to check. The disabled look, 2.44:1, belongs to an inactive control, which WCAG 1.4.3 exempts, and which axe and `measure()` skip.
+
+### 13.3 The fix: `tests/Browser/costing/costing.spec.ts` only
+
+| Change | Why |
+| --- | --- |
+| A new `settled(page)`: `page.waitForFunction`, polled each frame and bounded at `ACCESS_WAIT`, 15 s, until every animation of `document.getAnimations()` is either not running or has no finite end; `checked()` calls it before axe and `measure()` | Every check of the file reads the colours the page settles in. The wait ends as soon as the last transition ends — about 140 ms here — and fails with its own timeout if the page never settles. The endless animations of a spinner and a skeleton are not waited for. `getAnimations()` brings the styles up to date first, so it also sees a transition that the last render just started |
+| Before that check, line 329 of `d1da616`, `expect(page.getByRole('button', { name: 'Tinjau' })).toBeEnabled()` | The check runs on the state it is about: the refusal ended the request, and the review is available again with the draft kept (UXS-40). Playwright's `toBeEnabled` reads `aria-disabled` |
+| The assertion lists each violating element with axe's `failureSummary` | A failure of contrast now prints the colours and the ratio that axe measured, which this run's log lacked. The expected value, no violation, is unchanged |
+
+Not changed: every assertion, axe's tags, `measure()` and its thresholds, the widths and the 200 % zoom, the browser contexts' motion setting (`reducedMotion: 'no-preference'`), every other test, the application, its CSS and every production file. No fixed pause is added. The 18 other browser test files that run axe carry the same exposure, outside this cycle: OPEN_ITEMS T-42.
+
+### 13.4 Verification
+
+- **By reading.** `tsc` and ESLint cannot run on this machine (section 1), so the change was checked against the installed type definitions, and its JavaScript against the recommended rules that `eslint.config.js` applies to `tests/`.
+- **The guard's preview** of this cycle's working tree, at 03:03: `PASS`, with no candidate — no address, host, e-mail or home path (CE-31). The guard on the commit is reported with its push.
+- **The targeted verification** that D-124's item 6 asks for, by `bk-reviewer-xhigh`, round 4, of package `review/TASK-025/r4`: tree `65c26bc` on HEAD `d1da616`, against round 3's tree `397da24`; `--check` `UNCHANGED`. CE-42 asks for none for a fix of the tests only, so this round is the Owner's. Verdict PASS, by reading, with no MUST-FIX:
+  - the cause holds: the selector matches "Tinjau" alone, its enabling and the notice share one render, and axe skips it while it is disabled. At rest every accent passes, with hover and press. The table is plausible, and no other explanation fits the log;
+  - the fix holds: it is a bounded wait for a condition, which in these four tests can neither pass early nor hang, and it weakens nothing;
+  - neither the typecheck nor ESLint should refuse it.
+
+  | Finding | Severity | Outcome |
+  | --- | --- | --- |
+  | R-01: `waitForFunction` evaluates its predicate with `eval` once, inside the protocol call, under a policy without `'unsafe-eval'`, which cannot be confirmed here | NOTE | Holds, with no change. Playwright's `page.evaluate` runs its function through the same `eval` inside the protocol call (`UtilityScript.evaluate`, `this.global.eval(expression)`), and `measure()` does so in every check of these pages, under the same policy, with no violation in `watch()`. The first predicate runs synchronously within that call, and the later polls reuse the function it made |
+  | R-02: section 13.4 and section 1 lacked the guard's preview and this verdict | NOTE | Fixed: section 1 and this section |
+  | R-03: "no code, style or test changed", though the gate's tests changed; section 6 left out the message; the line numbers are those of `d1da616` | NOTE | Fixed: "no application code, style or browser test"; section 6 names the message; the line numbers say `d1da616` |
+  | R-04: the 18 other browser test files keep the exposure | NOTE | Recorded as OPEN_ITEMS T-42: widening the fix to them would exceed "its tests only" |
+- **CI.** Fast run 10 of 10 on the push, then the whole command contract, the image checks and the pull request's release dry run on the fifth head, which is the first run of the fix. Its regression test is `costing.spec.ts` there, whose four tests make 19 checks: the race cannot be run on this machine (D-108).
+
+### 13.5 After the push
+
+- One push, fast run 10 of 10. `d1da616` and the earlier heads are not run again.
+- A red fifth head is the stop for the Owner's decision, whatever its cause — the test, the network of T-41 or anything else — with no fix and no rerun (D-124's limit). The tick may name it "failure 4".
+- A green fifth head: no agent merges pull request #35 (D-124's hold); the Owner decides.
