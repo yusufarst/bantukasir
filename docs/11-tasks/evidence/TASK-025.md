@@ -5,12 +5,12 @@
 | Task | [TASK-025](../tasks/TASK-025-cost-correction.md), review class A |
 | Instruction | Continuous execution, D-101, as the delegation of the tick printed it (EXECUTION_CONTEXT CE-01) |
 | Executor | Agent `bk-executor-max`, model `claude-opus-5-5`, effort Max from the table of EXECUTION_CONTEXT section 19; review by `bk-reviewer-max`, verification by `bk-reviewer-xhigh` |
-| Branch and base | `task/TASK-025-cost-correction`, from `d92b13b9c85b7d87b7ebf8b37c39a3251fc64ca0` (origin/develop) |
+| Branch and base | `task/TASK-025-cost-correction`, from `d92b13b9c85b7d87b7ebf8b37c39a3251fc64ca0` (origin/develop); `develop` at `79223c3` merged in by the merge commit `ad9882e` in fix cycle 2 (EXC-36, section 11) |
 | Preflight (EXC-20, EXC-21, EXC-23) | The tree clean but for `Claude outputs/` and `plan-p0-p11-review.patch`; the stash of D-030; no branch or pull request of TASK-025; the executor state at `BUILD` for TASK-025 with this session's lock; TASK-024 `DONE`, merged as `d92b13b` (pull request #34), no gate; `tsc`, ESLint and PHP do not run on this machine, so every check runs in CI (D-108, D-117) |
 
 ## 1. Checks
 
-Every check runs in CI, on GitHub's hosted runner, with the local environment's containers and synthetic data, started by the executor's push, except the guard, which runs natively (EXC-61, CE-31, CE-44, CE-46). Times are Asia/Jakarta, 4 November 2026.
+Every check runs in CI, on GitHub's hosted runner, with the local environment's containers and synthetic data, started by the executor's push, except the guard, which runs natively (EXC-61, CE-31, CE-44, CE-46). Times are Asia/Jakarta, 4 November 2026, unless a row names 6 November.
 
 | Check | Where it ran | Time | Duration | Result |
 | --- | --- | --- | --- | --- |
@@ -39,9 +39,17 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | `composer validate`, `lint`, `analyse`, `test:unit` | Same run, job `Command contract` | 07:17 to 07:20 | — | `PASS` |
 | `composer test:postgres` | Same run | 07:20 to 07:44 | 23 min 50 s | `FAIL`: 740 of 741 passed; `ChangeBusinessProfileTest` (TASK-010) could not set its memory limit, failure 1 of 3 of CE-42 (fix cycle 1, section 10); `test:race`, the npm checks, the build and the browser suite did not run |
 | Guard preview of fix cycle 1 | Local, the working tree against origin/develop | 08:11 | under 1 min | `PASS`, no candidate |
-| The whole command contract and the image checks, with fix cycle 1's new cases | CI on the pull request's final head, after fix cycle 1's fast run | — | — | `NOT_RUN` at this writing (CE-41, D-117); never on this machine (D-108) |
+| `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit`; the 12 PostgreSQL and concurrency files that the branch changes, `CorrectCostTest` and `CostCorrectionRaceTest` with fix cycle 1's cases and `ChangeBusinessProfileTest` among them | Fast run 7, 41752776996 on `5fad9e5`, fix cycle 1's head | 08:15 to 08:30 | 14 min 51 s, of which the 12 files 8 min 11 s | `PASS` |
+| Image checks | CI run 41752787270 on `5fad9e5`, the pull request's second head, attempt 1 | 08:15 to 08:22 | 6 min 57 s | `PASS`, kept by attempt 2 |
+| `composer validate`, `lint`, `analyse`, `test:unit` | Same run, attempt 1, job `Command contract` | 08:18 to 08:20 | 1 min 14 s | `PASS` |
+| `composer test:postgres` | Same run, attempt 1 | 08:20 to 08:50 | 30 min 1 s | `FAIL`: Composer's `process-timeout` of 1,800 s ended it after 630 of 743 tests, each of them passed (D-120); `test:race`, the npm checks, the build and the browser suite did not run (section 11) |
+| `composer validate`, `lint`, `analyse`, `test:unit` | Same run, attempt 2, the one rerun of CE-42, of the failed job only | 09:03 to 09:04 | 1 min 15 s | `PASS` |
+| `composer test:postgres` | Same run, attempt 2 | 09:04 to 09:34 | 30 min 0 s | `FAIL`: the same timeout, after 567 of 743 tests, each of them passed (D-120); the tick had stopped at `CI_TIMEOUT` at 09:16, 60 minutes after the push (section 11) |
+| Guard preview of fix cycle 2 | Local, the working tree on `ad9882e` against origin/develop at `79223c3` | 6 November, 16:49 | 3 s | `PASS`, no candidate |
+| `composer validate`, `lint` with `postgres-parts.sh`, `analyse`, `test:unit` with `PostgresPartsTest` and `RequiredJobsTest`; `npm run lint`, `typecheck`, `test:unit`; the same 12 PostgreSQL and concurrency files | Fast run 8 on fix cycle 2's head | — | — | `NOT_RUN` at this writing (CE-46) |
+| The whole command contract — the jobs `PostgreSQL (1/2)` and `PostgreSQL (2/2)`, then `test:race`, the npm checks, the build and the browser suite with `costing.spec.ts` in `Command contract` — and the image checks | CI on the pull request's next head, fix cycle 2's | — | — | `NOT_RUN` at this writing (CE-41, D-117); never on this machine (D-108) |
 
-Fast run 4, 41735204131 on `33cc1c0`, is the run of the reviewed code; fast run 5, 41741871293 on `090a7cc`, that of the review's fixes; fast run 6, 41745602396 on `4d8f99c`, that of the record. The push of fix cycle 1 (section 10) is fast run 7 of 10.
+Fast run 4, 41735204131 on `33cc1c0`, is the run of the reviewed code; fast run 5, 41741871293 on `090a7cc`, that of the review's fixes; fast run 6, 41745602396 on `4d8f99c`, that of the record. The push of fix cycle 1 (section 10) is fast run 7 of 10, and the push of fix cycle 2 (section 11) fast run 8 of 10.
 
 ## 2. What was built (contract section 4.1)
 
@@ -81,7 +89,7 @@ Fast run 4, 41735204131 on `33cc1c0`, is the run of the reviewed code; fast run 
 
 ## 5. The ADR-008 cases and the backup impact (EXC-47)
 
-Fix cycle 1 (section 10) changed `CommandRefused`, `CommandTransaction::run()` and `CorrectCost::refused()` and `mark()`, which every case of `CorrectCostTest` and `CostCorrectionRaceTest` reaches, as does nearly every other PostgreSQL and concurrency test through the commands of its fixtures: the results below that name runs before that cycle are invalidated for those tests (CE-45, verification finding V3-01) and run again in the cycle's fast run and on the pull request's next head. Those of `ValuationReplayTest`, which reaches none of those files, stay valid.
+Fix cycle 1 (section 10) changed `CommandRefused`, `CommandTransaction::run()` and `CorrectCost::refused()` and `mark()`, which every case of `CorrectCostTest` and `CostCorrectionRaceTest` reaches, as does nearly every other PostgreSQL and concurrency test through the commands of its fixtures: the results below that name runs before that cycle are invalidated for those tests (CE-45, verification finding V3-01) and run again in the cycle's fast run and on the pull request's next head. Those of `ValuationReplayTest`, which reaches none of those files, stay valid. Fast run 7, 41752776996 on `5fad9e5`, passed every file that the branch changes again; fix cycle 2's merge changes `composer.lock`, so on the merged head each PHP result holds once fast run 8 and the pull request's CI pass it (section 11; CE-45).
 
 | Case | Test | Result |
 | --- | --- | --- |
@@ -92,7 +100,7 @@ Fix cycle 1 (section 10) changed `CommandRefused`, `CommandTransaction::run()` a
 | An unsafe history or a value out of range is refused | `ValuationReplayTest::test_an_unsafe_history_or_a_value_out_of_range_is_refused` | `PASS`, same runs |
 | The movement cap and the time budget refuse with one mark per intent, also when the budget ended the session; SERVICE_BUSY when the mark fails | `CorrectCostTest::test_the_movement_cap_…`, `::test_the_time_budget_…`, `::test_a_mark_that_cannot_be_written_…`; `ValuationReplayTest::test_the_budget_is_asked_…` | `PASS`, same runs |
 | A statement timeout of the replay is its time budget, with its mark; a lock wait beyond the lock timeout and its SERVICE_BUSY write no mark; a refused correction and its concurrent repeat write one mark (the review's R-01, R-02, R-04) | `CorrectCostTest::test_a_statement_timeout_of_the_replay_…`; `CostCorrectionRaceTest::test_a_correction_that_waits_beyond_the_lock_timeout_…`, `::test_race_01_a_refused_correction_…` | `PASS`, fast run 41741871293 on `090a7cc` |
-| The budget that ends the session after the work returned — at a statement after the result's write, and idle before the commit — refuses with its mark; a session ended otherwise before the commit answers SERVICE_BUSY with no mark, and the repeat commits; a refused correction whose intent committed meanwhile writes no mark (fix cycle 1) | `CorrectCostTest::test_the_budget_that_ends_the_session_after_the_work_returned_…`, `::test_a_session_ended_otherwise_at_the_commit_…`; `CostCorrectionRaceTest::test_a_refused_correction_whose_intent_committed_meanwhile_…` | `NOT_RUN` at this writing: first in fix cycle 1's fast run and on the pull request's next head (section 10) |
+| The budget that ends the session after the work returned — at a statement after the result's write, and idle before the commit — refuses with its mark; a session ended otherwise before the commit answers SERVICE_BUSY with no mark, and the repeat commits; a refused correction whose intent committed meanwhile writes no mark (fix cycle 1) | `CorrectCostTest::test_the_budget_that_ends_the_session_after_the_work_returned_…`, `::test_a_session_ended_otherwise_at_the_commit_…`; `CostCorrectionRaceTest::test_a_refused_correction_whose_intent_committed_meanwhile_…` | `PASS`, fast run 41752776996 on `5fad9e5` (section 1); in the whole suites on fix cycle 2's head (section 11) |
 | The publication is all or nothing: a failure after each of the six write steps changes nothing | `CorrectCostTest::test_a_failure_after_every_write_step_…` | `PASS`, same runs |
 | RACE-11 in both orders, and the mark against a later correction of the same source | `CostCorrectionRaceTest` | `PASS`, same runs |
 | REVERSAL, SALE_ISSUE, RETURN_RECEIPT and OPENING in the replay | TASK-026, TASK-028, TASK-033, TASK-035 | Not this Task's |
@@ -103,7 +111,7 @@ Fix cycle 1 (section 10) changed `CommandRefused`, `CommandTransaction::run()` a
 
 ## 6. Definition of Done (TEST_STRATEGY section 10)
 
-Each "PASS on the fast runs" below rests, for the tests that fix cycle 1 reaches, on runs whose results that cycle invalidated (section 5; CE-45): it holds again only once they pass on the pull request's next head.
+Each "PASS on the fast runs" below rests, for the tests that fix cycle 1 reaches, on runs whose results that cycle invalidated (section 5; CE-45): fast run 7 on `5fad9e5` passed them again, and after fix cycle 2's merge of `composer.lock` each holds again only once it passes on the pull request's next head (section 11).
 
 | Dimension | Result | Reason |
 | --- | --- | --- |
@@ -115,11 +123,11 @@ Each "PASS on the fast runs" below rests, for the tests that fix cycle 1 reaches
 | Data integrity | PASS on the fast runs | Append-only facts; the replay publishes the valuation and the changed projections all or nothing and writes no fact (G-07); G-15's number and old value under the product's guard; the mark once per refused intent in its own transaction (G-21), also for a concurrent repeat; the audit and result in the transaction; identity and idempotency, RACE-01 and RACE-02; RACE-11 and the mark's race; the failure after every write step |
 | Performance | PASS | The replay bounded by the movement cap and the time budget (section 5's measurements); the worklist keyset-paged, at most 100 rows a page; RP-505 at most 100 sources and 100 corrections; the budgets are measured at TASK-048 |
 | Operations | PASS | Section 5's backup impact; no runbook or status change |
-| Verification | PASS subject to CI on the final head | Self-review; the class-A review FAIL with three MUST-FIX, each fixed with its regression test and verified FIXED in round 2, PASS (section 8); fix cycle 1's targeted verification, round 3, PASS (section 10); the fast runs green on the reviewed code (41735204131 on `33cc1c0`) and on the review's fixes (41741871293 on `090a7cc`); the whole command contract and the image checks on the final head (CE-41, D-117) |
+| Verification | PASS subject to CI on the final head | Self-review; the class-A review FAIL with three MUST-FIX, each fixed with its regression test and verified FIXED in round 2, PASS (section 8); fix cycle 1's targeted verification, round 3, PASS (section 10); fix cycle 2 changes no file of the Task (section 11); the fast runs green on the reviewed code (41735204131 on `33cc1c0`) and on the review's fixes (41741871293 on `090a7cc`); the whole command contract and the image checks on the final head (CE-41, D-117) |
 
 ## 7. Acceptance criteria
 
-"The fast run" below is fast run 41741871293 on `090a7cc`, the head of the review's fixes, which ran every test named here but the browser's; the reviewed head's run 41735204131 on `33cc1c0` ran all of them but the review's new cases. Fix cycle 1 invalidated those results for every test here that runs a command, `ValuationReplayTest` aside (section 5; CE-45): they run again in that cycle's fast run and on the pull request's next head.
+"The fast run" below is fast run 41741871293 on `090a7cc`, the head of the review's fixes, which ran every test named here but the browser's; the reviewed head's run 41735204131 on `33cc1c0` ran all of them but the review's new cases. Fix cycle 1 invalidated those results for every test here that runs a command, `ValuationReplayTest` aside (section 5; CE-45): they run again in that cycle's fast run and on the pull request's next head. Fast run 7 on `5fad9e5` passed them; after fix cycle 2's merge of `composer.lock` they hold for the merged head once its CI passes them (section 11).
 
 | Criterion | Status | Where |
 | --- | --- | --- |
@@ -173,7 +181,7 @@ The review raised MUST-FIX, so the fixes were verified in round 2 (CE-40).
 
 ## 9. The guard's candidates (CE-31)
 
-`guard.sh` on every checkpoint, `6588137` to `090a7cc`, and `guard.sh --preview` on the working tree of the record list no candidate: no address, host, e-mail or home path. The guard on the record's commit is reported with the pull request, because this file cannot name its own commit.
+`guard.sh` on every checkpoint, `6588137` to `090a7cc`, and `guard.sh --preview` on the working tree of the record list no candidate: no address, host, e-mail or home path. The guard on the record's commit is reported with the pull request, because this file cannot name its own commit. The same holds for each fix cycle: `guard.sh` passed on `4d8f99c` and `5fad9e5` with no candidate, and `guard.sh --preview` on fix cycle 2's working tree, the records over the merge `ad9882e`, lists none (section 1); the guard on that cycle's commits is reported with its push.
 
 ## 10. Fix cycle 1 (CE-42, CE-43)
 
@@ -197,3 +205,40 @@ The fix changes production behaviour of a class-A Task, so `bk-reviewer-xhigh` m
 Its remark outside the cycle, the formatted message that `SqlState` reads, is finding F-6. The fix of the red CI changes a test only, and came after this round with the comment of V3-03: neither changes production behaviour, so neither is verified again (CE-42).
 
 Checks of fix cycle 1: `composer lint`, `analyse` and `test:unit`, `npm run lint`, `typecheck` and `test:unit`, and the PostgreSQL and concurrency files that the branch changes — `CorrectCostTest` and `CostCorrectionRaceTest` with this cycle's cases, and `ChangeBusinessProfileTest`, among them — in `fast-checks` on the push, fast run 7 of 10 (CE-46); the whole command contract, `test:postgres` and `test:race` with `CommandPipelineTest`, `ResolveIntentTest` and every other user of `CommandTransaction` among them, the browser suite and the image checks on the pull request's next head (D-117). Nothing runs on this machine: no PHP, `tsc` or ESLint (D-108). `guard.sh --preview` on the cycle's working tree lists no candidate: no address, host, e-mail or home path; the guard on its commit is reported with its push.
+
+## 11. Fix cycle 2: the stop `CI_TIMEOUT` and its recovery (CE-42, CE-72; D-120 to D-122)
+
+Its input: CI run 41752787270 on `5fad9e5`, fix cycle 1's head, red in both attempts, and the Owner's resume of 6 November 2026 after the stop `CI_TIMEOUT`, with his answer to OPEN_ITEMS question 38 (D-122). The tick handed the cycle over as "failure 1 of 3" (CE-42); `pr.sh comments` lists no comment by another account.
+
+| Red head of pull request #35 | Cause | Count that binds (D-122) | The tick's count | What was done |
+| --- | --- | --- | --- | --- |
+| `4d8f99c`, CI run 41745619327 | `ChangeBusinessProfileTest` (TASK-010) could not set its memory limit within the whole `test:postgres` | 1 of 3 | Not read: fix cycle 1 had begun for the automated reviewer's P2, and its push moved the head | Fixed in fix cycle 1 (section 10) |
+| `5fad9e5`, CI run 41752787270, attempts 1 and 2 | Composer's `process-timeout` of 1,800 s ended `composer test:postgres` after 630 and 567 of 743 tests, each of them passed: no defect of the Task | 2 of 3 | "failure 1 of 3" (`ci.failures=1`) | The one rerun of CE-42 at 08:59; the stop `CI_TIMEOUT` at 09:16; this cycle |
+| Fix cycle 2's head, if red | — | 3 of 3 | "failure 2 of 3" | Fix cycle 3, the last |
+| The red head after it | — | 4: the stop | "failure 3 of 3" | No fix: `bash scripts/executor/state.sh stop CI_FAILURE_LIMIT --token <token>`, nothing else changed, and the report |
+
+The state's `ci.failures` and `ci.failedHead` are not edited (D-122): an executor of this Task handed "failure 3 of 3" stops as the last row says.
+
+**Why the suite timed out** (D-120). `composer test:postgres` outgrew Composer's limit of 1,800 seconds per script on GitHub's slower runners. Green, it took 12 minutes on 1 November (run 41317797195 on `develop`), 24.6 to 28.5 minutes on 3 November (runs 41711940101 and 41703516068) and 23 min 50 s for 741 tests on `4d8f99c` (section 1). On the runner of run 41752787270, steps that do not depend on the code ran 1.6 to 1.8 times as long. The rerun, started at 08:59, outlasted the tick's 60 minutes from the push at 08:15 (CE-41).
+
+**The recovery.** The Owner's `ops/` pull request #36 (`ops/d120-postgres-parts`, head `ce47e1f`, CI run 42096515988 passed) carries D-120 and D-121:
+
+- D-120 runs `composer test:postgres` as two parts, the jobs `PostgreSQL (1/2)` and `PostgreSQL (2/2)`, each with its own runner and test database; `Command contract` passes only after both.
+- D-121 moves `symfony/http-foundation`, `http-kernel`, `routing` and `serializer` from v8.1.9 to v8.1.11; without it, `composer audit --locked` refuses every head with the old lock since the advisories of 4 November 2026.
+
+He squash-merged it as `79223c3` on 6 November 2026 at 11:49: its tree equals the head's, its author is his no-reply identity, and its parent is `d92b13b`. CI on `develop`, run 42164777829, passed in its four jobs: `PostgreSQL (1/2)` 12 min 54 s, `PostgreSQL (2/2)` 18 min 41 s, `Command contract` 23 min 36 s and `Image checks` 5 min 27 s. It was not adopted (D-120's exception to CE-23), so the executor state still names #34 as the last merge verified.
+
+This cycle merged `origin/develop` at `79223c3` into the branch with `git merge --no-ff --no-commit` and committed the merge through `commit.sh`: the merge commit `ad9882e`, with the parents `5fad9e5` and `79223c3` (EXC-36). There was no conflict. The merge brings the 13 files of `79223c3`, each as `develop` has it; STACK_AND_MODULES, the only file that both sides change, differs on separate lines, and each side's line is kept. The records followed: D-122 in DECISIONS, OPEN_ITEMS question 38 answered, sections 1, 5 to 7, 9 and this one, and CURRENT_HANDOFF.
+
+**What the merge changes for the Task.**
+
+- No file of the Task changes, and no production behaviour: no targeted verification is needed (CE-42), and rounds 1 to 3 of the review stand (sections 8 and 10).
+- The Task's new directory `tests/Feature/Costing` joins `Postgres1`, which is `tests/Feature` without `Access`, `Audit` and `Catalog`. Its changed Access tests are in `Postgres2`. `postgres-parts.sh` in `composer lint` and `PostgresPartsTest` check the split on the merged tree.
+- `composer.lock` changes four packages that the framework's HTTP layer uses. So every PHP result before the merge is cited for the code of `5fad9e5` only; on the merged head it holds once fast run 8 and the pull request's CI pass it (CE-45). The TypeScript results are not touched.
+
+**Checks of fix cycle 2** (section 1).
+
+- Only the guard's preview runs on this machine: there is no PHP, Composer, `tsc` or ESLint (D-108).
+- Fast run 8 runs on the push.
+- The whole command contract and the image checks run on the pull request's next head. That run is the first on this pull request of `test:postgres` to its end, of `test:race`, of the npm checks and the build, and of the browser suite with `costing.spec.ts` (CE-41, D-117).
+- `5fad9e5` is not run again (D-122).
