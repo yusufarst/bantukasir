@@ -12,6 +12,18 @@
 # fast-checks workflow instead (EXECUTION_CONTEXT CE-46, D-117), so that this whole
 # run is the pull request's and develop's; a newer push of a pull request cancels
 # the run of its older head, and a run on develop or main is never cancelled.
+#
+# `composer test:postgres` runs as its two parts, the jobs PostgreSQL (1/2) and
+# PostgreSQL (2/2), each on its own runner with its own local environment and
+# test database, beside Command contract, which runs every other command of the
+# contract (D-120). No job of this workflow has a condition. Command contract's
+# last step waits for both parts and passes only when each finished with success
+# in this run (scripts/checks/required-jobs.sh): the tick reads a head as green
+# only when Command contract passed (scripts/executor/lib.sh), and a part that is
+# skipped or missing would fail no check run of its own. That step reads the
+# run's jobs with the workflow's token, which is why Command contract alone may
+# read actions. composer lint proves that the parts hold every test of the suite
+# once (scripts/checks/postgres-parts.sh).
 name: ci
 
 on:
@@ -33,6 +45,9 @@ jobs:
         name: Command contract
         runs-on: ubuntu-24.04
         timeout-minutes: 60
+        permissions:
+            contents: read
+            actions: read
         steps:
             - name: Check out the repository with its history
               uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -78,9 +93,6 @@ jobs:
             - name: composer test:unit
               run: docker compose exec -T app composer test:unit
 
-            - name: composer test:postgres
-              run: docker compose exec -T app composer test:postgres
-
             - name: composer test:race
               run: docker compose exec -T app composer test:race
 
@@ -104,6 +116,57 @@ jobs:
 
             - name: npm run test:e2e
               run: docker compose run --rm playwright npm run test:e2e
+
+            - name: Stop the local environment
+              if: always()
+              run: docker compose down
+
+            - name: Both parts of composer test:postgres passed in this run
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: bash scripts/checks/required-jobs.sh "PostgreSQL (1/2)" "PostgreSQL (2/2)"
+
+    # The first part of composer test:postgres (D-120): tests/Feature without the
+    # directories of the second part, on its own runner and test database.
+    postgres-1:
+        name: PostgreSQL (1/2)
+        runs-on: ubuntu-24.04
+        timeout-minutes: 45
+        steps:
+            - name: Check out the repository with its history
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  fetch-depth: 0
+                  persist-credentials: false
+
+            - name: Start the local environment (one command)
+              run: docker compose up -d --build --wait
+
+            - name: composer test:postgres:1
+              run: docker compose exec -T app composer test:postgres:1
+
+            - name: Stop the local environment
+              if: always()
+              run: docker compose down
+
+    # The second part of composer test:postgres (D-120): the directories that
+    # the suite Postgres2 of phpunit.xml names, on its own runner and test database.
+    postgres-2:
+        name: PostgreSQL (2/2)
+        runs-on: ubuntu-24.04
+        timeout-minutes: 45
+        steps:
+            - name: Check out the repository with its history
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  fetch-depth: 0
+                  persist-credentials: false
+
+            - name: Start the local environment (one command)
+              run: docker compose up -d --build --wait
+
+            - name: composer test:postgres:2
+              run: docker compose exec -T app composer test:postgres:2
 
             - name: Stop the local environment
               if: always()
