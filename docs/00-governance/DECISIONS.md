@@ -4,7 +4,7 @@ The single log of decisions for BantuKasir. A decision made in conversation does
 
 ## 1. How to use this log
 
-- Identifiers are permanent and continue the original numbering. The next free identifier is **D-119**.
+- Identifiers are permanent and continue the original numbering. The next free identifier is **D-122**.
 - "Source" says who decided: **Owner**, or **Planner** (a planning agent acting on its own authority under the rules of the time).
 - "Status" says whether the decision is in force today. `REVALIDATION PENDING` means the decision still applies but the Owner has been asked to re-confirm it; the item number refers to [OPEN_ITEMS](OPEN_ITEMS.md).
 - D-001 to D-018 were recorded on 2 and 3 October 2026 in the former register, now [legacy/10-DECISIONS.md](legacy/10-DECISIONS.md). The table below summarizes them in English. For the exact meaning of D-001 to D-018 the original Indonesian wording governs; for whether a decision is in force, this log governs.
@@ -139,6 +139,8 @@ All by the Owner (Asia/Jakarta). D-019 to D-025 answer the questions of the [re-
 | D-117 | 1 November 2026, FAST BUILD: a push of a `task/` branch runs only the workflow `fast-checks` — static checks, unit tests and the PostgreSQL and concurrency test files the branch changes — and the whole command contract with the image checks runs on the pull request's final head and on `develop`. The limit of CE-46 becomes 10 fast runs. Independent reviews, targeted verification of MUST-FIX fixes, three fix cycles, the merge's block on any red check, the vulnerability gate and every safeguard stay. | Governance, the Owner's `ops/` instruction (CE-82). No business rule, gate or production permission changes. Terms in section 6. |
 | D-118 | TASK-021, 2 November 2026: temporary, development-only acceptance of exactly the three High CVEs that CI run 41430015401 found on `c5a99fd`, the head of pull request #30 — CVE-2026-119373, CVE-2026-119374 and CVE-2026-119379, in `libsqlite3-0` 3.46.1-7+deb13u2 at that exact version — after Debian's fix status, the runtime exposure and the absence of known exploitation were verified from the sources the Task's run could reach. No other CVE is accepted, the gate's logic and Grype are unchanged, and no staging or production deployment or production risk acceptance is authorized. | Accepted risk, recorded by TASK-021 as the Owner's answer to its stop `OWNER_DECISION` in fix cycle 1 (CE-72). OPEN_ITEMS T-37 stays outside TASK-021: the Access module and `HomeRedirectTest` are unchanged and their failure in that run stays a failure. No full review is repeated and no stock ledger code changes; at most three fix cycles (CE-42); the merge only when every check of CI on the final head is green, with CE-61. OPEN_ITEMS T-38. Terms in section 6. |
 | D-119 | 3 November 2026: OPEN_ITEMS T-37 is fixed by the `ops/` pull request #33, in which `SignedOutAnswer` moves an ended session to a new identifier before it flashes the note, and its two tests reproduce the loss with the session lottery at `[100, 100]`. A one-time recovery exception to CE-61 for pull request #32, on the precedent of D-115. Its develop CI, run 41600342293, failed, and that failure stands. The adoption of pull request #33 moves the check to its merge. TASK-023 may be treated as operationally verified after green CI on that pull request and on its merge, merged by the Owner, with the original merge's identity and content verified. | Governance, the Owner's answers to the stop `DEVELOP_CI_RED` (CE-72, CE-82). CE-61 and CE-82 stand for every other merge and `ops/` change. No assertion is weakened. Terms in section 6. |
+| D-120 | 6 November 2026: CI runs `composer test:postgres` as two parts, the jobs `PostgreSQL (1/2)` and `PostgreSQL (2/2)`, each on its own runner and test database, beside `Command contract`, which runs every other command of the contract and passes only when both parts passed in its run. The parts are the suites `Postgres1` and `Postgres2` of `phpunit.xml`; `composer lint` proves with PHPUnit's own list that together they hold every test of `Postgres` once; locally `composer test:postgres` stays the whole suite. No timeout is raised. One exception to CE-23: this `ops/` pull request may be open beside pull request #35 until it is merged or closed, and it is not adopted. | Governance, the Owner's `ops/` instruction (CE-82) after TASK-025's stop `CI_TIMEOUT`. No executor script, `.claude/` file, application code, business rule, hashing or test assertion changes, and no test is removed. OPEN_ITEMS question 38 stays open. Terms in section 6. |
+| D-121 | 6 November 2026: the security update of exactly four Symfony packages, from v8.1.9 to v8.1.11 — `symfony/http-foundation`, `symfony/http-kernel`, `symfony/routing` and `symfony/serializer` — for the nine advisories of 4 November 2026 that failed `composer audit --locked` on pull request #36, in that same pull request. A one-time exception to D-108: the pinned image `composer:2.10.3` ran once on the separate clone to update `composer.lock`. Only those four entries of the lock change; `composer.json`, the platform and every other package stay as they were. No advisory is accepted or ignored. | Security and toolchain, the Owner's answer to the blocker of CI run 42082077344 (CE-82). The audit, its policy and every test are unchanged; D-108 stands for every other case. Terms in section 6. |
 
 ## 4. Facts supplied by the Owner
 
@@ -2033,3 +2035,90 @@ The host session then opened pull request #33, `ops/t37-signed-out-note`. It off
 
     The last condition is met: tree equal to the head's, the Owner's no-reply author, parent the base. The next Task records the rest in TASK-023 evidence section 14 (CE-50).
 - **Unchanged:** CE-61 for every other merge, and CE-82 for every other `ops/` change. Also unchanged: the guard, the independent review, the merge rules of D-105 and D-109, the Owner's merge of `ops/` pull requests, and every safeguard of production data, security, cost and destructive operations. No deployment to staging or production is authorized.
+
+### D-120 — The PostgreSQL suite in two parts, each its own job of CI
+
+The Owner gave this decision on 6 November 2026, after the read-only inspection of TASK-025's recovery. Pull request #35 had stopped at `CI_TIMEOUT` (CE-41), and the inspection had compared three ways out: splitting the suite into jobs, running it in parallel on one runner, or raising the timeouts. His words, in Bahasa Indonesia, one local path left out:
+
+> OWNER DECISION: Saya menyetujui Opsi A sebagai perubahan operasional D-120 untuk mengatasi timeout PostgreSQL yang berulang pada TASK-025.
+> AUTHORIZATION:
+> Implementasikan perubahan melalui branch `ops/` dari clone terpisah […], setelah memverifikasi identitas dan kondisi clone. Jangan mengubah working tree utama […] atau branch TASK-025.
+> Izinkan satu pengecualian CE-23: tepat satu PR `ops/` ini boleh terbuka bersamaan dengan PR #35 selama pemulihan CI. Pengecualian berakhir ketika PR `ops/` di-merge atau ditutup. Jangan adopt PR `ops/` ke state executor TASK-025.
+> GOAL:
+> Ubah CI menjadi tiga job independen:
+>
+> * `Command contract`: seluruh pemeriksaan yang ada selain eksekusi PostgreSQL penuh.
+> * `PostgreSQL (1/2)`: bagian pertama suite PostgreSQL pada runner dan database test tersendiri.
+> * `PostgreSQL (2/2)`: bagian kedua suite PostgreSQL pada runner dan database test tersendiri.
+>
+> Pertahankan command `composer test:postgres` sebagai perintah lengkap untuk lingkungan lokal.
+
+His requirements followed: a deterministic, complete split without overlap; no job that can be skipped or go missing without failing the gate; a check that `ci_result` cannot pass without both parts; every other check kept; the isolation of the test database kept; no change to business logic, hashing, TASK-025's application or the executor scripts; no timeout raised; this decision recorded, with the next free identifier corrected.
+
+- **Why.** `composer test:postgres` outgrew its budget.
+  - On green runs it took 12 minutes on 1 November (run 41317797195 on `develop`) and 24.6 to 28.5 minutes on 3 November (runs 41711940101 and 41703516068). Their whole job `Command contract` took 23, then 44 to 53 minutes.
+  - GitHub's runners differ: on the slower ones, steps that do not depend on the code ran 1.6 to 1.8 times as long.
+  - On TASK-025's head `5fad9e5`, run 41752787270 hit Composer's `process-timeout` of 1800 seconds in both attempts, after 630 and 567 of 743 tests. Every test run until then passed.
+  - The job's own 60 minutes and the tick's 60 minutes from a push (CE-41) were close as well.
+- **How it is carried out.**
+  - `phpunit.xml`: the suites `Postgres1`, which is `tests/Feature` without `Access`, `Audit` and `Catalog`, and `Postgres2`, which is those three directories. `Postgres` is unchanged. A new directory joins `Postgres1`. From the times of run 41752787270, the three directories take an estimated 45 to 50 percent of the suite's time; the parts' measured times are in the pull request. The attribute `defaultTestSuite` names the four suites of before, so that a run that names no suite stays as it was: PHPUnit refuses, with a warning, a file offered to two suites of one run.
+  - `composer.json`: the scripts `test:postgres:1` and `test:postgres:2`. `test:postgres` is unchanged. `composer lint` runs `scripts/checks/postgres-parts.sh`, which proves with PHPUnit's own list of the tests that the two parts hold exactly the tests of `Postgres`, each in one part and once, and that neither is empty.
+  - `.github/workflows/ci.yml`: the jobs `PostgreSQL (1/2)` and `PostgreSQL (2/2)`. Each checks out the repository with its history, starts the local environment with the one command, runs its part and stops the environment. `Command contract` no longer runs `composer test:postgres`. Its last step, after it stopped its own environment, runs `scripts/checks/required-jobs.sh` with the names of both parts. Only that job may read the run's jobs (`actions: read`).
+  - The tests `PostgresPartsTest` and `RequiredJobsTest` prove both scripts on the real configuration and on deliberately violating samples, as TEST_STRATEGY section 6 asks. They also hold the configuration, the Composer scripts and the workflow to this decision.
+  - TEST_STRATEGY sections 6 and 7, STACK_AND_MODULES, EXECUTION_CONTEXT CE-41, OPEN_ITEMS question 38 and this log follow. The log's next free identifier had stayed at D-119 when D-119 was recorded.
+- **Why `ci_result` cannot pass without both parts.** `ci_result` of `scripts/executor/lib.sh` passes a head only when `Command contract` completed with success and no other check run failed. It would take a skipped part for a passed one, and it cannot see a part that is missing. So `Command contract` itself passes only when both parts finished with success in its run, each in its latest attempt. A part that is skipped, cancelled, failed or missing fails it at once; a part still running after 30 minutes of waiting fails it too. A red `Command contract` is a red CI, and a missing one stays pending. No executor script changes.
+- **What it does not change.**
+  - No timeout is raised: Composer's 1800 seconds per script, the 60 minutes of `Command contract` and the tick's 60 minutes stand. Each part's job has 45.
+  - No test is removed, skipped or weakened, and every test of `tests/Feature` runs once in each run.
+  - The harness, its checks of the marker before every reset, and the isolation of the test database are unchanged. Each part has its own runner, PostgreSQL container and test database.
+  - The image checks, `composer test:race`, the frontend checks, the build, the browser suite, the static and security checks and `Fast checks` run as before.
+  - No executor script, `.claude/` file, application code, business rule or hashing changes.
+- **The exception to CE-23.** This `ops/` pull request may be open beside pull request #35 while CI is recovered. The exception ends when it is merged or closed. It is not adopted (CE-82): it holds nothing of TASK-025's state, and its merge is the Owner's.
+- **What it leaves to TASK-025.**
+  - TASK-025's branch takes this change by merging `develop` (EXC-36) in its next fix cycle, after the Owner's resume (CE-72). Its next head then runs in the two parts.
+  - CURRENT_HANDOFF is not changed here, because TASK-025's branch rewrites it; TASK-025 records D-120 in it.
+  - OPEN_ITEMS question 38, which count of red heads binds TASK-025, is the Owner's to answer before that resume. It is not settled here.
+- **Cost and limits.**
+  - Three jobs start the environment instead of one. GitHub's standard runners are free for a public repository (TOOLCHAIN).
+  - The split is by directory, so the parts' times drift as the suite grows. A directory then moves between the parts, or a later decision adds a third part.
+  - What makes each test slow is not settled here. Likely causes are the production cost of Argon2id in every test and the reset of every table before each test; a change to either is a separate decision.
+
+### D-121 — The security update of four Symfony packages in pull request #36
+
+CI run 42082077344 on pull request #36 (`f6846f4`) failed at `composer audit --locked`, after `POSTGRES_PARTS_COMPLETE Postgres1 451 + Postgres2 266 = Postgres 717`. It found nine advisories, published on 4 November 2026, against four packages locked at v8.1.9. The host session's read-only review recommended updating them to v8.1.11 as a second commit of pull request #36, and asked how the lock should be made. The Owner answered "Ya, di PR #36", chose the container of the pinned Composer image, and then gave this decision. His words, in Bahasa Indonesia, one local path left out:
+
+> OWNER DECISION:
+> Saya menyetujui pembaruan keamanan empat paket Symfony yang terkena sembilan advisory dalam PR #36 yang sama, sebagai D-121.
+> Target tepat v8.1.11 untuk:
+>
+> * symfony/http-foundation
+> * symfony/http-kernel
+> * symfony/routing
+> * symfony/serializer
+>
+> Saya mengizinkan pengecualian D-108 satu kali, khusus untuk menjalankan image `composer:2.10.3` yang telah diverifikasi, untuk memperbarui `composer.lock` pada clone terpisah […].
+
+- **Why.** Composer's report gave none of the nine a severity, so the policy of THR-14 and TEST_STRATEGY section 6, which ignores low and medium, did not apply. Symfony's own pages rate GHSA-pxj9-jh84-vhm5 High; GHSA-xg2q-4rrq-657q, GHSA-5mx8-mwrp-5693, GHSA-wg5q-m2ww-f3c9 and GHSA-hqp2-7rr8-hf26 Moderate; GHSA-3h27-hjv7-fqjx Low; and CVE-2026-118514, CVE-2026-118515 and CVE-2026-118516 not at all. Every one is fixed in v8.1.11 of its package, released on 4 November 2026. The failure was not D-120's, and it would have stopped every head with this lock.
+  - `symfony/http-foundation`: CVE-2026-118514, GHSA-3h27-hjv7-fqjx, GHSA-xg2q-4rrq-657q and GHSA-5mx8-mwrp-5693.
+  - `symfony/http-kernel`: GHSA-wg5q-m2ww-f3c9.
+  - `symfony/routing`: CVE-2026-118516.
+  - `symfony/serializer`: CVE-2026-118515, GHSA-pxj9-jh84-vhm5 and GHSA-hqp2-7rr8-hf26.
+- **Exposure, as read before the update.** The review found no use of what the advisories need, so the update removes a weakness that this configuration does not reach:
+  - No method matcher of Symfony and no SecurityBundle; Laravel runs the same middleware for HEAD as for GET.
+  - No access rule for application paths in nginx: its path rules refuse files on disk and set the body limits of three routes, and the middleware authorizes.
+  - Trusted proxies only as numeric addresses or ranges, which the release's start enforces (`RequiredSettings`); never the keyword `private_ranges`.
+  - The document root `public/` and a fixed `SCRIPT_NAME` of `/index.php`.
+  - No inline fragment of Symfony.
+  - No route with a host, although the release's start caches the routes.
+  - No use of the Symfony Serializer. Its only user, `web-auth/webauthn-lib` through `laravel/fortify` and `laravel/passkeys`, is out of reach: passkeys are off, and no passkey route exists.
+- **The exception to D-108, and what it was.** The image `composer:2.10.3@sha256:af98f42dfff7c68ba8d53c2164fd9fde1087b7d449514baa38c418b1f6bc4bac` is the one that `docker/app/Dockerfile` pins and TOOLCHAIN verifies. It was already on the machine, with that digest; its own report gave Composer 2.10.3 and PHP 8.5.11, the platform that `composer.json` sets.
+  - It ran once for the version, without network, and once for the update, as a temporary container removed at its end. The update's container mounted only the clone's `composer.json`, read-only, and its `composer.lock`. It received no secret, environment file or credential, and started no database, no application and no other container.
+  - The command was `composer update symfony/http-foundation symfony/http-kernel symfony/routing symfony/serializer --no-install --no-scripts --no-plugins --no-interaction`. No option ignored a platform requirement.
+  - The machine's Docker was not installed, restarted or reconfigured. D-108 stands for every other case.
+- **The result.**
+  - Composer reported "0 installs, 4 updates, 0 removals": the four packages from v8.1.9 to v8.1.11 and nothing else.
+  - In `composer.lock` only those four entries change: their version, the commit of the source and of the archive, the link to the source and the release time. Their requirements and conflicts, the content hash and every other entry are unchanged. `composer.json` is unchanged.
+  - The new requirements are met by the packages already locked, and Laravel 13.37.0 allows the four at `^7.4.0 || ^8.0.0`.
+  - Composer's own count after the update was one advisory affecting one package. Of what CI had listed, only the medium CVE-2026-45070 of `symfony/mime` remains outside the four packages, and the existing policy already ignores it; D-121 does not touch it. The audit in CI on the new head confirms which advisory is left.
+  - CI on the new head proves the lock, the audit and every suite; the pull request records the run.
+- **Unchanged:** the audit and its policy, with no advisory accepted, ignored or suppressed; D-120 and its tests; every test, the executor scripts and the timeouts; TOOLCHAIN, which names no Symfony component. TASK-025's branch takes this lock with D-120 when it merges `develop` (EXC-36). No deployment to staging or production is authorized.
