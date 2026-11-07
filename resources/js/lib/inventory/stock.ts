@@ -62,6 +62,23 @@ export const ISSUE_COMMAND = { operation: 'manual_issue.confirm', family: 'stock
 /** RC-09's family (INTERACTION_CONTRACTS section 1.4), which it shares with RC-07 and RC-08; it needs recent authentication (section 1.5). */
 export const ADJUSTMENT_COMMAND = { operation: 'adjustment.confirm', family: 'stock_posting', recentAuth: true } as const;
 
+/** RC-10's family (INTERACTION_CONTRACTS section 1.4); it needs recent authentication (section 1.5). */
+export const REVERSAL_COMMAND = { operation: 'reversal.confirm', family: 'reversal', recentAuth: true } as const;
+
+/** CAP-17, the Owner's reversal of a movement (SECURITY_MODEL section 6). */
+export const REVERSE_CAPABILITY = 'CAP-17';
+
+/** The pages that open UXP-411 (NAVIGATION_CONTRACTS UXP-411; RP-411 `from_page`). */
+export type ReversalOpener = 'movement' | 'receiving' | 'issue';
+
+/** The movement types that a reversal may cancel (BR-INV-34, BR-INV-36). */
+export const REVERSIBLE_TYPES: readonly string[] = ['OPENING', 'RECEIPT', 'MANUAL_ISSUE'];
+
+/** RP-411: the movement to reverse, with the page that opened it. */
+export function reversalPage(movementId: number, opener: ReversalOpener): string {
+    return `/stock/movements/${String(movementId)}/reverse?from_page=${opener}`;
+}
+
 /** The most lines of an adjustment (TECHNICAL_RULES section 11.2). */
 export const MAX_ADJUSTMENT_LINES = 200;
 

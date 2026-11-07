@@ -517,13 +517,15 @@ final class ConfirmManualIssueTest extends DatabaseTestCase
         // writer and its reads; the allocation's by the Costing module's writer alone, which inserts
         // the projection with its fact and rewrites it only in a replay's publication, and by the
         // replay's read of the ledger (TASK-025); nothing else updates a projection (ADR-008 section 4.3).
+        // RP-411's read of a reversal's source names the issue's lines for its document (TASK-026).
         $this->assertSame(['Domain/Inventory/ManualIssues.php', 'Queries/Inventory/ManualIssueRecords.php', 'Queries/Inventory/MovementDetail.php', 'Queries/Inventory/StockHistory.php'], self::filesNaming('manual_issues'));
-        $this->assertSame(['Domain/Inventory/ManualIssues.php', 'Queries/Inventory/ManualIssueRecords.php', 'Queries/Inventory/MovementDetail.php', 'Queries/Inventory/StockHistory.php'], self::filesNaming('manual_issue_lines'));
+        $this->assertSame(['Domain/Inventory/ManualIssues.php', 'Queries/Inventory/ManualIssueRecords.php', 'Queries/Inventory/MovementDetail.php', 'Queries/Inventory/Reversibility.php', 'Queries/Inventory/StockHistory.php'], self::filesNaming('manual_issue_lines'));
         $this->assertSame(['Domain/Costing/Allocations/IssueAllocations.php', 'Domain/Costing/Replay/ReplayLedger.php'], self::filesNaming('issue_cost_allocations'));
         $this->assertSame(['Domain/Costing/Allocations/IssueAllocations.php', 'Domain/Costing/Replay/ReplayLedger.php'], self::filesNaming('issue_cost_allocation_projections'));
         $this->assertDoesNotMatchRegularExpression('/->(?:insert|insertGetId|update|upsert|delete|increment|decrement|truncate)\(/', (string) file_get_contents(app_path('Domain/Costing/Replay/ReplayLedger.php')));
         $this->assertDoesNotMatchRegularExpression('/->(?:update|upsert|delete|increment|decrement|truncate)\(/', (string) file_get_contents(app_path('Domain/Costing/Allocations/IssueAllocations.php')));
         $this->assertDoesNotMatchRegularExpression('/->(?:insert|insertGetId|update|upsert|delete|increment|decrement|truncate)\(/', (string) file_get_contents(app_path('Queries/Inventory/ManualIssueRecords.php')));
+        $this->assertDoesNotMatchRegularExpression('/->(?:insert|insertGetId|update|upsert|delete|increment|decrement|truncate)\(/', (string) file_get_contents(app_path('Queries/Inventory/Reversibility.php')));
         $this->assertSame([ConfirmManualIssue::OPERATION], array_values(array_filter(array_keys(Operations::FAMILIES), static fn (string $operation): bool => str_starts_with($operation, 'manual_issue'))));
     }
 

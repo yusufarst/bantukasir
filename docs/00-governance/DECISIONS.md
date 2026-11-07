@@ -4,7 +4,7 @@ The single log of decisions for BantuKasir. A decision made in conversation does
 
 ## 1. How to use this log
 
-- Identifiers are permanent and continue the original numbering. The next free identifier is **D-125**.
+- Identifiers are permanent and continue the original numbering. The next free identifier is **D-126**.
 - "Source" says who decided: **Owner**, or **Planner** (a planning agent acting on its own authority under the rules of the time).
 - "Status" says whether the decision is in force today. `REVALIDATION PENDING` means the decision still applies but the Owner has been asked to re-confirm it; the item number refers to [OPEN_ITEMS](OPEN_ITEMS.md).
 - D-001 to D-018 were recorded on 2 and 3 October 2026 in the former register, now [legacy/10-DECISIONS.md](legacy/10-DECISIONS.md). The table below summarizes them in English. For the exact meaning of D-001 to D-018 the original Indonesian wording governs; for whether a decision is in force, this log governs.
@@ -144,6 +144,7 @@ All by the Owner (Asia/Jakarta). D-019 to D-025 answer the questions of the [re-
 | D-122 | 6 November 2026: OPEN_ITEMS question 38 answered with option B, the evidence's count binds. TASK-025's two red heads before its resume count — CI run 41745619327 on `4d8f99c` and run 41752787270 on `5fad9e5` — so the next red head of pull request #35 is failure 3 of 3 of CE-42 and gets the last fix cycle, and the red head after it is the stop `CI_FAILURE_LIMIT`. Nothing in the executor state is edited by hand: the tick, which counts one red head before the resume, names those two "failure 2 of 3" and "failure 3 of 3", and on the second the executor stops by itself with `state.sh stop CI_FAILURE_LIMIT`, changing nothing. | Governance, recorded by TASK-025 as the Owner's answer to question 38 in his resume after the stop `CI_TIMEOUT` (CE-72). CE-42 stands for every other Task; no script, counter or timeout changes; `5fad9e5` is not run again. Terms in section 6. |
 | D-123 | TASK-025, 6 November 2026: temporary, development-only acceptance of exactly CVE-2026-76844, High, in `zlib1g` 1:1.3.dfsg+really1.3.1-1+b1 (source package `zlib`) at that exact version, the one finding that the image checks of CI run 42198711153 on `d090e79`, the head of pull request #35, refused — conditional on the Owner's four items: Debian 13's status and a supported fix verified again; the public proof of concept recorded, with Grype's `exploited=no` taken as no guarantee that nobody exploits the flaw; the path to `gz_write` checked through the application and the image's runtime dependencies; and a stop without change had the flaw been materially reachable, known to be exploited, curable by a safer supported fix, or not assessable. No other CVE is accepted; Grype, the gate's logic and its regression tests are kept; no staging or production deployment or production risk acceptance is authorized, and the whole risk is reassessed at gate RELEASE and when Debian publishes a fix. D-122 is unchanged: `d090e79` is red head 3 of 3, and the next red head of pull request #35 is the stop `CI_FAILURE_LIMIT`. | Accepted risk, recorded by TASK-025 as the Owner's answer to its stop `OWNER_DECISION` in fix cycle 3 (CE-72), with his permission of 7 November 2026 for the edits of the accepted list and its test after the stop `PERMISSION_DENIED`. The implementation, tests, review, branch and pull request #35 are kept; no test is weakened, no business logic changes, no earlier head runs again, and TASK-026 waits for TASK-025's merge and its verification (CE-61). OPEN_ITEMS T-38. Terms in section 6. |
 | D-124 | TASK-025, 7 November 2026: a one-time exception to D-122's limit — exactly one more fix cycle for pull request #35, for its tests only, after the stop `CI_FAILURE_LIMIT` on `d1da616`, whose CI run 42273873708 failed axe's `color-contrast` on "Tinjau" in `costing.spec.ts`, checked before the button's colours had finished their transition, and whose image builds lost the download of the PostgreSQL archive's key. The cause is proven from the code, the CSS and the run's logs before any change; a contrast that fails at rest would have been a stop for a fix of the interface, never hidden by a test. The fix waits deterministically — no assertion removed, axe kept, no fixed pause. Nothing is reset: the red heads stay recorded and the state's counter is not edited. One push; a red head after it is a stop for the Owner's decision, never another cycle. | Governance, recorded by TASK-025 as the Owner's answer to its stop `CI_FAILURE_LIMIT` (CE-70, CE-72). D-122 and CE-42 stand for every other head and Task; D-123 and TASK-025's implementation are kept. No agent merges pull request #35, TASK-026 does not start, no executor script changes and no destructive database operation is made until the Owner decides. The network failure is OPEN_ITEMS T-41. Terms in section 6. |
+| D-125 | 7 November 2026: the Owner lifts D-124's hold on the merge of pull request #35 and resumes continuous execution under D-101 and D-105: the tick squash-merged pull request #35 (head `2ecdb50`, CI run 42285980444) as `139f99d`, whose CI on `develop`, run 42325162601, passed, and TASK-026 started. Nothing else of D-124 changes, nor any CI, review, security or database-safety rule or failure limit; TASK-049, TASK-050, destructive operations and production deployment still need his own approval. | Governance, given in the host session and recorded by TASK-026 (EXC-35). Terms in section 6. |
 
 ## 4. Facts supplied by the Owner
 
@@ -2232,3 +2233,28 @@ The Owner gave this decision on 7 November 2026, as his answer to TASK-025's sto
 - **The network failure, separate.** The image builds of `Image checks`, the release dry run and fast run 9 each lost the download of the PostgreSQL archive's key from www.postgresql.org (`curl: (56) … unexpected eof while reading`, exit code 2), a fault of the network, not of the Task. It is OPEN_ITEMS T-41, for an `ops/` change; it is not fixed in this cycle.
 - **Hold.** No agent merges pull request #35: the tick's merge of D-105 (CE-60) does not apply to it until the Owner decides after the next head's CI. TASK-026 does not start, no executor script changes and no destructive database operation is made.
 - **Unchanged:** D-122 and CE-42 for every other head and Task; D-123 and its entry; TASK-025's implementation and every production file; the review and its rounds; every job of CI, the image checks and the release dry run. No earlier head is run again. No deployment to staging or production is authorized.
+
+### D-125 — The lift of D-124's merge hold of pull request #35, and continuous execution resumed
+
+The Owner gave this decision on 7 November 2026, in the host session of CE-03, which relayed his words verbatim to TASK-026's executor to be recorded in this Task's first record (EXC-35: the next free identifier on `develop`). His words, in Bahasa Indonesia:
+
+> OWNER AUTHORIZATION — AUTO-MERGE TASK-025 AND CONTINUE
+> Saya mencabut HOLD manual merge PR #35 dari instruksi D-124.
+> Saya mengizinkan autonomous executor melanjutkan mekanisme D-101/D-105 secara otomatis.
+> PR #35 pada head `2ecdb50` telah lulus seluruh CI wajib, fast checks, dan release dry run.
+> Instruksi:
+>
+> 1. Verifikasi ulang state, head, CI, dan review gate.
+> 2. Jalankan tick resmi sesuai CE-03.
+> 3. Jika seluruh syarat CE-41/CE-60 terpenuhi, lakukan squash-merge PR #35 secara otomatis.
+> 4. Verifikasi merge dan CI `develop` melalui CE-61.
+> 5. Setelah TASK-025 dinyatakan DONE, lanjutkan TASK-026 dan Task berikutnya sesuai TASK_PLAN tanpa menunggu instruksi manual tambahan.
+> 6. Aktifkan kembali satu watcher resmi dan pertahankan continuous execution.
+> 7. Catat perubahan otorisasi HOLD sesuai aturan repository.
+>
+> Jangan bypass CI, review, keamanan, database safety, atau batas kegagalan D-124. Jika terdapat blocker nyata, STOP dan laporkan.
+> Saya menginginkan pengerjaan otomatis sampai release-ready. TASK-049/TASK-050, operasi destruktif, dan deployment production tetap memerlukan persetujuan khusus sesuai aturan repository.
+> Jangan mengulang implementasi atau review yang masih valid.
+
+- **What it changes.** D-124's hold — that no agent merges pull request #35 and TASK-026 does not start until the Owner decides — is lifted. Pull request #35 was merged by the tick under D-105 (CE-60): head `2ecdb505fce37e7364d3b2ff340c8e764320473f`, CI run 42285980444 with all four jobs green, the fast run 42285972289 and the pull request's release dry run 42285980764 green, the automated review DONE; squash commit `139f99d8d29a3191df96334edfa0e7b3a271d2d0` on `develop`, whose CI run 42325162601 passed, verified by CE-61. The loop then selected TASK-026 (CE-10).
+- **Unchanged.** D-124 for what it decided beyond the hold — its one test-only cycle, the red heads kept as recorded; D-101, D-105, D-107, D-108, D-109 and D-117; CI, the review, the security checks, database safety and every failure limit of CE-42 and CE-46. TASK-049 and TASK-050, every destructive operation and every deployment to staging or production still need the Owner's own approval.

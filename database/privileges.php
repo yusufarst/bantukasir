@@ -231,6 +231,12 @@ return [
             'runtime' => ['select' => true, 'insert' => true],
         ],
 
+        // Inventory, the reversal (SCHEMA section 5.7; TASK-026).
+        'reversals' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+
         // Costing, the issue allocation (SCHEMA section 5.8; ADR-008; TASK-023).
         'issue_cost_allocations' => [
             'class' => 'F',

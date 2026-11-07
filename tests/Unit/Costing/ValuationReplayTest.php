@@ -43,6 +43,22 @@ final class ValuationReplayTest extends TestCase
         $this->assertSame([[31, '39000'], [32, '26000']], self::changes($result));
     }
 
+    public function test_the_reversal_fixture_of_costing_section_8_on_the_logical_ledger(): void
+    {
+        // AC-026-02, L1 (TASK-026): OPENING 10 at 100 (a RECEIPT until TASK-035), RECEIPT 10 at 200,
+        // an issue of 5 (75). Reversing the RECEIPT leaves it and its REVERSAL out of the logical
+        // ledger (ReplayLedger): from the start, the opening's state, then the issue alone: quantity
+        // 5, value 50, the issue's projection 50 (BR-COST-32; ADR-008 section 4.1).
+        $result = ValuationReplay::recompute(new ReplayStart(self::units('10'), Cost::of('100')), [LedgerEntry::issue(3, self::units('-5'), 90, Cost::of('75'))], self::units('5'), self::always());
+
+        $this->assertSame(['50', 1], [$result->value->toCanonical(), $result->movements]);
+        $this->assertSame([[90, '50']], self::changes($result));
+
+        // The invalid history: RECEIPT 10, ISSUE 10, RECEIPT 20; cancelling the first leaves the issue
+        // of 10 without stock at its point: refused, even though 10 would remain (BR-INV-37).
+        $this->assertRefused('UNSAFE_HISTORY', new ReplayStart(self::units('0'), Cost::of('0')), [LedgerEntry::issue(2, self::units('-10'), 91, Cost::of('100')), LedgerEntry::increase(3, self::units('20'), Cost::of('400'))], self::units('10'));
+    }
+
     public function test_an_unknown_cost_completed_later_completes_the_allocations_that_depended_on_it(): void
     {
         // BR-COST-13, BR-COST-22: a receipt of 4 at UNKNOWN made a later issue UNKNOWN; completed to

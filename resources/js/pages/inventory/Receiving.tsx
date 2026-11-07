@@ -11,7 +11,8 @@ import { CORRECT_CAPABILITY, type CorrectionEntry, type CostValue } from '@/lib/
 import { CorrectionButton, CorrectionHistory } from '@/lib/costing/Parts';
 import { formatCost, formatDate, formatDateTime, formatQuantity } from '@/lib/format';
 import { t } from '@/lib/i18n';
-import { movementPage, openerOf, RECEIVINGS_PAGE, RECEIVINGS_SHELL, REQUESTS_PAGE } from '@/lib/inventory/stock';
+import { ReversalButton } from '@/lib/inventory/Reversal';
+import { movementPage, openerOf, RECEIVINGS_PAGE, RECEIVINGS_SHELL, REQUESTS_PAGE, REVERSE_CAPABILITY } from '@/lib/inventory/stock';
 
 // UXP-406 "Detail barang masuk" (ROUTE_CONTRACTS RP-406; COPY_DECK section 9.7; INTERACTION_INVENTORY
 // UXI-246 to UXI-249 and UXI-251; NAVIGATION_CONTRACTS UXP-406; UI_STATES section 6; BR-INV-14,
@@ -22,11 +23,12 @@ import { movementPage, openerOf, RECEIVINGS_PAGE, RECEIVINGS_SHELL, REQUESTS_PAG
 // evidence or reason only for the Owner. After the Owner's correction or completion every holder
 // sees the current cost, "Dikoreksi Pemilik" and the cost at confirmation, never the reason or the
 // history (UXS-26; D-047); the Owner also sees the correction history (UXI-247) and "Koreksi biaya"
-// or "Lengkapi biaya" per line (UXI-249; TASK-025). "Batalkan mutasi" (UXI-250) comes with
-// TASK-026. "Kembali ke …" names the page that opened it when that is UXP-403 or UXP-006,
+// or "Lengkapi biaya" per line (UXI-249; TASK-025), and "Batalkan mutasi" per line (UXI-250;
+// TASK-026), disabled with its reason when the line's RECEIPT is reversed, while a reversal of the
+// user is uncertain or while the onboarding freeze is on. "Kembali ke …" names the page that opened it when that is UXP-403 or UXP-006,
 // otherwise UXP-404 with its filters; after the success of UXP-405, UXP-404 (UXI-251).
 
-/** UXP-504 returns here. */
+/** UXP-504 and UXP-411 return here. */
 const OPENER = 'receiving';
 
 /** The signed-in user that every page shares (TASK-007). */
@@ -61,14 +63,16 @@ interface Line {
     readonly evidenceId?: number;
     readonly correctionNo?: number;
     readonly corrections?: readonly CorrectionEntry[];
+    /** The Owner's (CAP-17; TASK-026): whether the line's RECEIPT is reversed. */
+    readonly reversed?: boolean;
 }
 
-export default function Receiving({ document: receiving, lines }: { document: Document; lines: readonly Line[] }) {
+export default function Receiving({ document: receiving, lines, postingFrozen }: { document: Document; lines: readonly Line[]; postingFrozen?: boolean }) {
     const title = t('inventory.receipt_detail.title');
 
     return (
         <AppShell title={title} {...RECEIVINGS_SHELL}>
-            <ReceivingPage title={title} receiving={receiving} lines={lines} />
+            <ReceivingPage title={title} receiving={receiving} lines={lines} postingFrozen={postingFrozen ?? false} />
         </AppShell>
     );
 }
@@ -120,11 +124,14 @@ function CostCell({ line }: { line: Line }) {
     );
 }
 
-function ReceivingPage({ title, receiving, lines }: { title: string; receiving: Document; lines: readonly Line[] }) {
+function ReceivingPage({ title, receiving, lines, postingFrozen }: { title: string; receiving: Document; lines: readonly Line[]; postingFrozen: boolean }) {
     const [back] = useState(backOf);
     const [note] = useState(takeSavedNote);
+    const capabilities = usePage<SharedProps>().props.auth.user.capabilities;
     // UXI-249, the Owner's: "Koreksi biaya" or "Lengkapi biaya" per line (CAP-19).
-    const corrects = usePage<SharedProps>().props.auth.user.capabilities.includes(CORRECT_CAPABILITY) && lines.some((line) => line.evidenceId !== undefined);
+    const corrects = capabilities.includes(CORRECT_CAPABILITY) && lines.some((line) => line.evidenceId !== undefined);
+    // UXI-250, the Owner's: "Batalkan mutasi" per line (CAP-17; TASK-026).
+    const reverses = capabilities.includes(REVERSE_CAPABILITY) && lines.some((line) => line.reversed !== undefined);
     const corrected = lines.filter((line) => (line.corrections?.length ?? 0) > 0);
 
     const items: KeyValue[] = [
@@ -159,6 +166,16 @@ function ReceivingPage({ title, receiving, lines }: { title: string; receiving: 
                       header: t('costing.correction.title_correct'),
                       isAction: true,
                       cell: (line: Line) => (line.evidenceId === undefined ? null : <CorrectionButton evidenceId={line.evidenceId} cost={line.cost} opener={OPENER} rowName={line.product.name} />),
+                  },
+              ]
+            : []),
+        ...(reverses
+            ? [
+                  {
+                      id: 'reverse',
+                      header: t('inventory.reversal.title'),
+                      isAction: true,
+                      cell: (line: Line) => <ReversalButton movementId={line.movementId} type={'RECEIPT'} reversed={line.reversed === true} frozen={postingFrozen} opener={OPENER} rowName={line.product.name} />,
                   },
               ]
             : []),

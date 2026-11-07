@@ -27,6 +27,7 @@ use App\Domain\Costing\Replay\ProductReplay;
 use App\Domain\Costing\Replay\ReplayBudget;
 use App\Domain\Costing\Replay\ReplayRefused;
 use App\Domain\Inventory\PostingBlocks;
+use App\Domain\Inventory\Reversals;
 use App\Models\User;
 use App\Support\Numbers\Cost;
 use LogicException;
@@ -94,6 +95,7 @@ final class CorrectCost extends CommandAction
         private readonly InventoryValuations $valuations,
         private readonly IssueAllocations $allocations,
         private readonly ProductReplay $replay,
+        private readonly Reversals $reversals,
     ) {
         parent::__construct($services);
     }
@@ -294,8 +296,9 @@ final class CorrectCost extends CommandAction
      * answer stays SERVICE_BUSY and the client reads the outcome by repeating the same request
      * (TR-RETRY-03; ADR-007 sections 3 and 4). A correction of the same source that committed after
      * the refused attempt saw the corrections published newer evidence, so the mark is written with
-     * its clearance by that correction; a reversal of the source's movement clears it the same way
-     * once reversals exist (TASK-026).
+     * its clearance by that correction; otherwise a reversal of the source's movement, before or
+     * after the refused attempt, clears it the same way, because that source no longer counts in any
+     * figure (SCHEMA section 5.8; BR-COST-32; TASK-026).
      */
     private function mark(CommandContext $context, RefusedCorrection $refused): bool
     {
@@ -319,10 +322,14 @@ final class CorrectCost extends CommandAction
         $at = $this->services->clock->now()->format('Y-m-d H:i:s.uP');
         $mark = $this->marks->insert($source, $operation, $intent, $refused->rejection, $refused->correctionsSeen, $actor->id, $actor->display_name, $at);
         $latest = $this->corrections->latest($source->evidenceId);
-        $cleared = $latest !== null && $latest->correctionNo > $refused->correctionsSeen;
+        $corrected = $latest !== null && $latest->correctionNo > $refused->correctionsSeen;
+        $reversal = $corrected ? null : $this->reversals->of($source->movementId);
+        $cleared = $corrected || $reversal !== null;
 
-        if ($latest !== null && $cleared) {
+        if ($latest !== null && $corrected) {
             $this->marks->clearByCorrection([$mark], $source, $latest->id, Actor::user($actor->id, $actor->display_name), null, $at);
+        } elseif ($reversal !== null) {
+            $this->marks->clearByReversal([['mark' => $mark, 'evidence' => $source->evidenceId]], $source->movementId, $reversal, Actor::user($actor->id, $actor->display_name), null, $at);
         }
 
         // The value attempted and its reason are the Owner's alone (BR-AUD-02); a mark carries no amount.

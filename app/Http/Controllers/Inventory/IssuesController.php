@@ -2,10 +2,15 @@
 
 namespace App\Http\Controllers\Inventory;
 
+use App\Domain\Access\Capabilities;
+use App\Domain\Access\Capability;
 use App\Domain\Inventory\OnboardingState;
 use App\Http\Requests\Inventory\IssuesPageRequest;
+use App\Models\User;
 use App\Policies\NotFound;
 use App\Queries\Inventory\ManualIssueRecords;
+use App\Queries\Inventory\Reversibility;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -15,7 +20,9 @@ use Inertia\Response;
  * whether the onboarding freeze stops a new one (UXI-253, UXS-27); it is the Owner's explicit
  * "Barang keluar" entry, as it is every holder's of CAP-13 (D-018). RP-408 is an empty draft in
  * page memory: nothing is read from the server but whether the freeze is on. RP-409 shows one
- * issue with its lines and their movements, with no cost; its reversal entries are TASK-026's.
+ * issue with its lines and their movements, with no cost; to the Owner also whether each line's
+ * MANUAL_ISSUE is reversed and whether the freeze is on, for "Batalkan mutasi" (UXI-266; CAP-17;
+ * TASK-026).
  */
 final class IssuesController
 {
@@ -40,8 +47,20 @@ final class IssuesController
     /**
      * @throws NotFound
      */
-    public function show(string $issue, ManualIssueRecords $issues): Response
+    public function show(Request $request, string $issue, ManualIssueRecords $issues, Reversibility $reversibility, OnboardingState $onboarding): Response
     {
-        return Inertia::render('inventory/Issue', $issues->detail($issue));
+        $read = $issues->detail($issue);
+        $viewer = $request->user();
+
+        // "Batalkan mutasi" per line, the Owner's (UXI-266; CAP-17; TASK-026).
+        if ($viewer instanceof User && Capabilities::allows($viewer, Capability::Cap17)) {
+            return Inertia::render('inventory/Issue', [
+                ...$read,
+                'lines' => $reversibility->withReversed($read['lines']),
+                'postingFrozen' => $onboarding->current() === OnboardingState::ACTIVE,
+            ]);
+        }
+
+        return Inertia::render('inventory/Issue', $read);
     }
 }

@@ -31,6 +31,7 @@ use App\Actions\Documents\RecordLabelPrint;
 use App\Actions\Inventory\ConfirmAdjustment;
 use App\Actions\Inventory\ConfirmManualIssue;
 use App\Actions\Inventory\ConfirmReceiving;
+use App\Actions\Inventory\ConfirmReversal;
 use App\Domain\Commands\Operations;
 use LogicException;
 
@@ -90,6 +91,8 @@ final class CommandActions
         ConfirmAdjustment::OPERATION => ConfirmAdjustment::class,
         // RC-15 (TASK-025).
         CorrectCost::OPERATION => CorrectCost::class,
+        // RC-10 (TASK-026).
+        ConfirmReversal::OPERATION => ConfirmReversal::class,
     ];
 
     /**

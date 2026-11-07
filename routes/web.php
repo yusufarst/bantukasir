@@ -57,10 +57,12 @@ use App\Http\Controllers\Inventory\AdjustmentsController;
 use App\Http\Controllers\Inventory\ConfirmAdjustmentController;
 use App\Http\Controllers\Inventory\ConfirmManualIssueController;
 use App\Http\Controllers\Inventory\ConfirmReceivingController;
+use App\Http\Controllers\Inventory\ConfirmReversalController;
 use App\Http\Controllers\Inventory\HistoryController;
 use App\Http\Controllers\Inventory\IssuesController;
 use App\Http\Controllers\Inventory\MovementsController;
 use App\Http\Controllers\Inventory\ReceivingsController;
+use App\Http\Controllers\Inventory\ReversalsController;
 use App\Http\Controllers\Inventory\StockController;
 use App\Http\Controllers\Inventory\StockDataController;
 use App\Http\Controllers\Media\MediaController;
@@ -275,6 +277,13 @@ Route::middleware(['auth', 'signin.session', 'throttle:authenticated', 'cache.he
     Route::middleware('capability:CAP-16')->group(function (): void {
         Route::post('/commands/adjustment.confirm', ConfirmAdjustmentController::class)->middleware(['throttle:command', 'password.confirm'])->name('commands.adjustment.confirm');
         Route::get('/stock/adjustments/new', [AdjustmentsController::class, 'create'])->middleware('input.allow:product,from_page')->name('adjustments.create');
+    });
+
+    // The reversal (TASK-026), the Owner's alone: RC-10 in the bucket of every command, with recent
+    // authentication, and RP-411 for CAP-17, which takes only its parameter of ROUTE_CONTRACTS.
+    Route::middleware('capability:CAP-17')->group(function (): void {
+        Route::post('/commands/reversal.confirm', ConfirmReversalController::class)->middleware(['throttle:command', 'password.confirm'])->name('commands.reversal.confirm');
+        Route::get('/stock/movements/{movement}/reverse', [ReversalsController::class, 'create'])->middleware('input.allow:from_page')->name('stock.reverse');
     });
 
     // The cost correction (TASK-025), the Owner's alone: RC-15 in the bucket of every command, with

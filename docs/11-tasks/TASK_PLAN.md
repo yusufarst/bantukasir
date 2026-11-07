@@ -93,7 +93,7 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-023](tasks/TASK-023-manual-issue.md) | Manual issue and issue-cost allocation | 5 | I | L | A | TASK-022 | — | `DONE` |
 | [TASK-024](tasks/TASK-024-stock-adjustment.md) | Stock adjustment | 5 | I | M | A | TASK-023 | — | `DONE` |
 | [TASK-025](tasks/TASK-025-cost-correction.md) | Cost correction, completion and bounded replay | 5 | I | XL | A | TASK-024 | — | `DONE` |
-| [TASK-026](tasks/TASK-026-reversal.md) | Reversal of movements | 5 | I | L | A | TASK-025 | — | `READY` |
+| [TASK-026](tasks/TASK-026-reversal.md) | Reversal of movements | 5 | I | L | A | TASK-025 | — | `DONE` |
 | [TASK-027](tasks/TASK-027-registers-session-open.md) | Cash registers and cash session open | 6 | S | M | A | TASK-011, TASK-022 | — | `READY` |
 | [TASK-028](tasks/TASK-028-checkout.md) | Sale checkout (server) | 6 | S | XL | A | TASK-027, TASK-023, TASK-025, TASK-026, TASK-016 | — | `TODO` |
 | [TASK-029](tasks/TASK-029-till-pages.md) | Till, payment and receipt pages | 6 | S | L | A | TASK-028, TASK-017 | — | `TODO` |
@@ -119,7 +119,7 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-049](tasks/TASK-049-release-readiness.md) | Release readiness: staging, UAT and first installation | 10 | R | L | V | TASK-045, TASK-047, TASK-048 | G1, G2, G3, G4, DEVICES, TARGET, GATE-PUBLISH | `TODO` |
 | [TASK-050](tasks/TASK-050-production-pilot.md) | Production release, cutover and pilot acceptance | 10 | R | L | V | TASK-049 | RELEASE, GATE-PUBLISH, G4 | `TODO` |
 
-Totals: `TODO` 22; `READY` 3; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 25; `SUPERSEDED` 0.
+Totals: `TODO` 22; `READY` 2; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 26; `SUPERSEDED` 0.
 
 ## 5. Implementation sequence
 

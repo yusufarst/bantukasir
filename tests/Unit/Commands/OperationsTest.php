@@ -32,6 +32,7 @@ use App\Actions\Documents\RecordLabelPrint;
 use App\Actions\Inventory\ConfirmAdjustment;
 use App\Actions\Inventory\ConfirmManualIssue;
 use App\Actions\Inventory\ConfirmReceiving;
+use App\Actions\Inventory\ConfirmReversal;
 use App\Domain\Commands\Operations;
 use LogicException;
 use Tests\Harness\Commands\Probe;
@@ -101,7 +102,7 @@ final class OperationsTest extends TestCase
         // The commands built so far, each a known operation (TASK-010: RC-32;
         // TASK-011: RC-35 to RC-42; TASK-015: RC-17 to RC-24; TASK-016: RC-27 to
         // RC-29; TASK-018: RC-25, RC-26 and RC-47; TASK-019: RC-31; TASK-020: RC-30;
-        // TASK-021: RC-07; TASK-023: RC-08; TASK-024: RC-09; TASK-025: RC-15).
+        // TASK-021: RC-07; TASK-023: RC-08; TASK-024: RC-09; TASK-025: RC-15; TASK-026: RC-10).
         $this->assertSame([
             'business_profile.change' => ChangeBusinessProfile::class,
             'user.create' => CreateStaffAccount::class,
@@ -132,6 +133,7 @@ final class OperationsTest extends TestCase
             'manual_issue.confirm' => ConfirmManualIssue::class,
             'adjustment.confirm' => ConfirmAdjustment::class,
             'cost_correction.confirm' => CorrectCost::class,
+            'reversal.confirm' => ConfirmReversal::class,
         ], CommandActions::built());
     }
 

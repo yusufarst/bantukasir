@@ -106,9 +106,10 @@ final class IssueAllocations
 
         foreach ($changes as $change) {
             $ids[] = (string) $change->allocationId;
-            $statuses[] = $change->amount->isKnown() ? 'KNOWN' : 'UNKNOWN';
-            // UNKNOWN has no amount, never a zero (BR-COST-03): an element NULL of the array.
-            $amounts[] = $change->amount->isKnown() ? $change->amount->toCanonical() : 'NULL';
+            // A manual issue that a reversal cancelled is CANCELLED (ADR-008 section 2; TASK-026).
+            $statuses[] = $change->cancelled ? 'CANCELLED' : ($change->amount->isKnown() ? 'KNOWN' : 'UNKNOWN');
+            // UNKNOWN and CANCELLED have no amount, never a zero (BR-COST-03): an element NULL of the array.
+            $amounts[] = ! $change->cancelled && $change->amount->isKnown() ? $change->amount->toCanonical() : 'NULL';
         }
 
         $changed = DB::update(<<<'SQL'

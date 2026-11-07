@@ -27,6 +27,8 @@ final class CostIncompleteMarks
 
     public const string LATER_CORRECTION = 'LATER_CORRECTION';
 
+    public const string SOURCE_REVERSED = 'SOURCE_REVERSED';
+
     /**
      * Whether the refused intent already has its mark, so that a repeat of it writes none.
      */
@@ -98,6 +100,59 @@ final class CostIncompleteMarks
                 'evidence_movement_id' => $source->movementId,
                 'clearing_kind' => self::LATER_CORRECTION,
                 'clearing_correction_id' => $correctionId,
+                'cleared_at' => $at,
+                'actor_kind' => $actor->kind,
+                'actor_user_id' => $actor->userId,
+                'actor_process' => $actor->process,
+                'actor_display_name' => $actor->displayName,
+                'command_id' => $commandId,
+            ]);
+        }
+    }
+
+    /**
+     * The active marks of the cost evidence of a movement — the source of a reversal — in ascending
+     * order, each with its evidence (TASK-026).
+     *
+     * @return list<array{mark: int, evidence: int}>
+     */
+    public function activeOfMovement(int $movementId): array
+    {
+        $marks = [];
+
+        foreach (self::active()->where('k.evidence_movement_id', $movementId)->orderBy('k.id')->get(['k.id', 'k.evidence_id']) as $row) {
+            $values = (array) $row;
+            $mark = $values['id'] ?? null;
+            $evidence = $values['evidence_id'] ?? null;
+
+            if (! is_int($mark) || ! is_int($evidence)) {
+                throw new LogicException('A mark has its key and its evidence.');
+            }
+
+            $marks[] = ['mark' => $mark, 'evidence' => $evidence];
+        }
+
+        return $marks;
+    }
+
+    /**
+     * Clears these marks of the evidence of a movement by that movement's reversal, in the transaction
+     * that wrote the reversal or in the mark's own, with that transaction's actor and command, if any
+     * (SCHEMA section 5.8: the source no longer counts, BR-COST-32).
+     *
+     * @param  list<array{mark: int, evidence: int}>  $marks
+     */
+    public function clearByReversal(array $marks, int $movementId, int $reversalId, Actor $actor, ?int $commandId, string $at): void
+    {
+        self::requireTransaction();
+
+        foreach ($marks as $mark) {
+            DB::table('cost_incomplete_mark_clearances')->insert([
+                'mark_id' => $mark['mark'],
+                'evidence_id' => $mark['evidence'],
+                'evidence_movement_id' => $movementId,
+                'clearing_kind' => self::SOURCE_REVERSED,
+                'clearing_reversal_id' => $reversalId,
                 'cleared_at' => $at,
                 'actor_kind' => $actor->kind,
                 'actor_user_id' => $actor->userId,

@@ -649,17 +649,25 @@ final class ConfirmReceivingTest extends DatabaseTestCase
         // which writes nothing (AC-021-01): RD-01's balance, TASK-022's RD-02, RD-03 and the
         // pages RP-402 to RP-406, and TASK-023's pages RP-407 and RP-409; and TASK-025's reads of the
         // cost correction — the replay's ledger, the cost source, RP-503 to RP-505 — none of which
-        // writes a movement, a balance or an evidence.
-        $this->assertSame(['Domain/Costing/Replay/ReplayLedger.php', 'Domain/Inventory/StockLedger.php', 'Queries/Costing/CostHistory.php', 'Queries/Inventory/ProductStock.php', 'Queries/Inventory/StockAttention.php'], self::filesNaming('stock_balances'));
-        $this->assertSame(['Domain/Costing/CostCorrections.php', 'Domain/Costing/Replay/ReplayLedger.php', 'Domain/Inventory/StockLedger.php', 'Queries/Costing/CostSources.php', 'Queries/Inventory/ManualIssueRecords.php', 'Queries/Inventory/MovementDetail.php', 'Queries/Inventory/ReceivingDocuments.php', 'Queries/Inventory/StockHistory.php'], self::filesNaming('stock_movements'));
+        // writes a movement, a balance or an evidence; and TASK-026's reads of the reversal — the
+        // reversal writer's read of its source and of its REVERSAL, which writes only `reversals`, and
+        // the pages' read RP-411 with the links of RP-403 — neither of which writes a movement or a
+        // balance: the REVERSAL itself posts through the ledger's writer (BR-INV-34).
+        $this->assertSame(['Domain/Costing/Replay/ReplayLedger.php', 'Domain/Inventory/StockLedger.php', 'Queries/Costing/CostHistory.php', 'Queries/Inventory/ProductStock.php', 'Queries/Inventory/Reversibility.php', 'Queries/Inventory/StockAttention.php'], self::filesNaming('stock_balances'));
+        $this->assertSame(['Domain/Costing/CostCorrections.php', 'Domain/Costing/Replay/ReplayLedger.php', 'Domain/Inventory/Reversals.php', 'Domain/Inventory/StockLedger.php', 'Queries/Costing/CostSources.php', 'Queries/Inventory/ManualIssueRecords.php', 'Queries/Inventory/MovementDetail.php', 'Queries/Inventory/ReceivingDocuments.php', 'Queries/Inventory/Reversibility.php', 'Queries/Inventory/StockHistory.php'], self::filesNaming('stock_movements'));
         $this->assertSame(['Domain/Costing/InventoryValuations.php', 'Queries/Costing/CostHistory.php'], self::filesNaming('inventory_valuations'));
         $this->assertSame(['Domain/Costing/CostCorrections.php', 'Domain/Costing/CostEvidence.php', 'Domain/Costing/Replay/ReplayLedger.php', 'Queries/Costing/CostHistory.php', 'Queries/Costing/CostSources.php', 'Queries/Inventory/MovementDetail.php', 'Queries/Inventory/ReceivingDocuments.php', 'Queries/Reporting/CostWorklist.php'], self::filesNaming('acquisition_cost_evidence'));
         $this->assertSame(['Domain/Inventory/Receivings.php', 'Queries/Inventory/MovementDetail.php', 'Queries/Inventory/ReceivingDocuments.php', 'Queries/Inventory/StockHistory.php'], self::filesNaming('receiving_documents'));
-        $this->assertSame(['Domain/Inventory/Receivings.php', 'Queries/Inventory/MovementDetail.php', 'Queries/Inventory/ReceivingDocuments.php', 'Queries/Inventory/StockHistory.php'], self::filesNaming('receiving_lines'));
+        $this->assertSame(['Domain/Inventory/Receivings.php', 'Queries/Inventory/MovementDetail.php', 'Queries/Inventory/ReceivingDocuments.php', 'Queries/Inventory/Reversibility.php', 'Queries/Inventory/StockHistory.php'], self::filesNaming('receiving_lines'));
 
-        foreach (['ManualIssueRecords', 'MovementDetail', 'ProductStock', 'ReceivingDocuments', 'StockAttention', 'StockHistory'] as $read) {
+        foreach (['ManualIssueRecords', 'MovementDetail', 'ProductStock', 'ReceivingDocuments', 'Reversibility', 'StockAttention', 'StockHistory'] as $read) {
             $this->assertDoesNotMatchRegularExpression('/->(?:insert|insertGetId|update|upsert|delete|increment|decrement|truncate)\(/', (string) file_get_contents(app_path('Queries/Inventory/'.$read.'.php')), $read);
         }
+
+        // The reversal writer's one write is its own row of `reversals` (STK-12).
+        $reversals = (string) file_get_contents(app_path('Domain/Inventory/Reversals.php'));
+        $this->assertSame(1, preg_match_all('/->(?:insert|insertGetId|update|upsert|delete|increment|decrement|truncate)\(/', $reversals));
+        $this->assertStringContainsString("DB::table('reversals')->insertGetId(", $reversals);
     }
 
     /**
