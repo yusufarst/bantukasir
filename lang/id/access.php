@@ -53,6 +53,8 @@ return [
         ],
         'anonymized_name' => 'Pengguna dianonimkan :nomor',
         'anonymized_email' => 'Tidak ada (akun dianonimkan)',
+        // The mark of an OPEN cash session on UXP-602 (UXI-334; TASK-027; COPY_DECK section 3).
+        'holds_session' => 'Memegang sesi kas',
         'deactivate_confirm' => [
             'title' => 'Nonaktifkan :nama?',
             'body' => 'Akun ini tidak bisa masuk sampai diaktifkan kembali. Semua sesi masuk dan tautannya berakhir sekarang.',

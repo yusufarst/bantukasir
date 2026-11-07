@@ -262,7 +262,8 @@ test('every other role has no settings in its navigation and is refused the page
     const { Rina: rina } = await resetPeople(context, ['Rina']);
 
     await signIn(page, rina);
-    await expect(page).toHaveTitle('Akun saya — Toko Contoh');
+    // Rina's home is Buka sesi kas (TASK-027).
+    await expect(page).toHaveTitle('Buka sesi kas — Toko Contoh');
     await expect(page.getByRole('link', { name: 'Pengaturan' })).toHaveCount(0);
 
     const refused = await page.goto('/settings/business-profile');

@@ -10,8 +10,9 @@ use Tests\Harness\Http\Browsers;
  * RN-01, the home redirect (AC-007-02; ROUTE_CONTRACTS RN-01;
  * NAVIGATION_CONTRACTS NC-12, UXP-001; INFORMATION_ARCHITECTURE section 4;
  * TASK-007 scope item 7): Operations and the combined account without an
- * OPEN session are sent to Stok (RP-401, TASK-022); the Owner and a cashier
- * to Akun saya (RP-003), until TASK-027, TASK-029 and TASK-041 switch them;
+ * OPEN session are sent to Stok (RP-401, TASK-022); a cashier without an OPEN
+ * session to Buka sesi kas (RP-104, TASK-027); the Owner to Akun saya
+ * (RP-003), until TASK-029 and TASK-041 switch the others;
  * a first visit is sent to the
  * sign-in page without the note that a sign-in session ended, and a browser
  * whose sign-in session a limit ended gets it — by the application's limit
@@ -32,9 +33,10 @@ final class HomeRedirectTest extends DatabaseTestCase
 
     public function test_every_role_and_the_combined_account_go_to_their_home(): void
     {
-        // TASK-022: Operations and the combined account, which has no OPEN cash session
-        // before TASK-027, go to Stok (RP-401).
-        foreach (['Hendra' => '/account', 'Agus' => '/stock', 'Rina' => '/account', 'Dewi' => '/stock'] as $person => $home) {
+        // TASK-022: Operations and the combined account go to Stok (RP-401); TASK-027: a
+        // cashier without an OPEN cash session to Buka sesi kas (RP-104). The homes with an
+        // OPEN session are CashPagesTest's.
+        foreach (['Hendra' => '/account', 'Agus' => '/stock', 'Rina' => '/till/open-session', 'Dewi' => '/stock'] as $person => $home) {
             $account = TokoContoh::person($person);
             $this->browse($this->signInBrowser($account['email'], $account['password']));
 
@@ -66,7 +68,7 @@ final class HomeRedirectTest extends DatabaseTestCase
             ->assertRedirect('/');
 
         $this->browse($this->sessionOf($signedIn));
-        $this->withHeader('Referer', 'https://evil.example/')->get('/?next=https://evil.example/')->assertRedirect('/account');
+        $this->withHeader('Referer', 'https://evil.example/')->get('/?next=https://evil.example/')->assertRedirect('/till/open-session');
     }
 
     public function test_a_visitor_without_a_sign_in_session_goes_to_the_sign_in_page_without_the_note(): void

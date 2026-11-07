@@ -48,7 +48,8 @@ final class SettingsPagesTest extends DatabaseTestCase
 
         $settings = $this->get('/settings')->assertOk();
         $this->assertSame('access/Settings', $this->inertiaPage($settings)['component'] ?? null);
-        $this->assertSame([['id' => 'users', 'href' => '/settings/users'], ['id' => 'profile', 'href' => '/settings/business-profile']], $this->propsOf($settings)['entries'] ?? null);
+        // TASK-027 adds UXI-328 "Laci kas" after "Profil usaha" (COPY_DECK section 11.1).
+        $this->assertSame([['id' => 'users', 'href' => '/settings/users'], ['id' => 'profile', 'href' => '/settings/business-profile'], ['id' => 'registers', 'href' => '/settings/cash-registers']], $this->propsOf($settings)['entries'] ?? null);
         $this->assertPageChannel($settings, 'owner', $secrets);
 
         $profile = $this->get('/settings/business-profile')->assertOk();

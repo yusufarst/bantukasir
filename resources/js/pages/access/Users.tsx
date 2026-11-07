@@ -4,6 +4,7 @@ import { ButtonLink } from '@/components/ui/Button';
 import { FilterChip, FilterChips } from '@/components/ui/Choices';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { EmptyState, NoResults } from '@/components/ui/States';
+import { Pill } from '@/components/ui/Status';
 import { AppShell } from '@/layouts/AppShell';
 import { ListLayout, PageHeader } from '@/layouts/Page';
 import { rememberUsersFilters, rolesText, statusText, userPage, USERS_PAGE, type RoleCode, type StatusCode } from '@/lib/access/users';
@@ -15,8 +16,9 @@ import type { TranslationKey } from '@/types/translation-keys';
 // INTERACTION_INVENTORY UXI-332 to UXI-335; NAVIGATION_CONTRACTS UXP-602; TASK-011
 // scope item 4): every account with its roles and status, its row leading to UXP-604;
 // the filters are the page's address (`status`, `role`), which its child pages' way back
-// returns to (NC-10); "Tambah pengguna" leads to UXP-603. TASK-027 adds the mark of an OPEN
-// cash session. An account's row becomes a card on a phone (DataTable).
+// returns to (NC-10); "Tambah pengguna" leads to UXP-603. The mark "Memegang sesi kas" of an
+// account that holds an OPEN cash session (TASK-027). An account's row becomes a card on a phone
+// (DataTable).
 
 const DESTINATION: DestinationId = 'settings';
 
@@ -30,6 +32,8 @@ interface Row {
     readonly email: string | null;
     readonly roles: readonly RoleCode[];
     readonly status: StatusCode;
+    /** UXI-334: the account holds an OPEN cash session (TASK-027). */
+    readonly holdsSession: boolean;
 }
 
 interface Filters {
@@ -70,7 +74,19 @@ export default function Users({ users, filters }: { users: readonly Row[]; filte
         { id: 'name', header: t('access.users.col_name'), isHead: true, cell: (row) => <a className={'bk-table-link'} href={userPage(row.id)}>{row.displayName}</a> },
         { id: 'email', header: t('access.users.col_email'), cell: (row) => row.email ?? t('access.user.anonymized_email') },
         { id: 'roles', header: t('access.users.col_roles'), cell: (row) => rolesText(row.roles) },
-        { id: 'status', header: t('access.users.col_status'), cell: (row) => statusText(row.status) },
+        {
+            id: 'status',
+            header: t('access.users.col_status'),
+            cell: (row) =>
+                row.holdsSession ? (
+                    <span className={'bk-stack'}>
+                        <span>{statusText(row.status)}</span>
+                        <Pill tone={'info'} icon={'drawer'} label={t('access.user.holds_session')} />
+                    </span>
+                ) : (
+                    statusText(row.status)
+                ),
+        },
     ];
     const noStaff = !filtered && users.every((row) => row.roles.includes('SUPER_ADMIN'));
 

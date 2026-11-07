@@ -12,6 +12,8 @@ return [
         'title' => 'Pengaturan',
         'users_desc' => 'Akun staf, peran, dan tautan kata sandi.',
         'profile_desc' => 'Nama toko, logo, dan teks pada struk dan dokumen.',
+        // UXI-328 "Laci kas" (TASK-027).
+        'registers_desc' => 'Laci kas yang dipakai untuk sesi kas.',
     ],
     'profile' => [
         'title' => 'Profil usaha',

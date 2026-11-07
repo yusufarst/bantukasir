@@ -23,9 +23,10 @@ final class UserAccounts
     public function __construct(private readonly OneTimeLinks $links) {}
 
     /**
+     * @param  list<int>  $sessionHolders  the accounts that hold an OPEN cash session, which the Cash module reads (TASK-027)
      * @return list<UserRowData>
      */
-    public function list(?string $status, ?string $role): array
+    public function list(?string $status, ?string $role, array $sessionHolders = []): array
     {
         $query = User::query()->orderBy('display_name')->orderBy('id')->limit(self::LIST_BOUND);
 
@@ -44,7 +45,7 @@ final class UserAccounts
         $rows = [];
 
         foreach ($query->get() as $user) {
-            $rows[] = new UserRowData($user->id, $user->display_name, self::shownEmail($user), self::roleCodes($user), self::statusCode($user));
+            $rows[] = new UserRowData($user->id, $user->display_name, self::shownEmail($user), self::roleCodes($user), self::statusCode($user), in_array($user->id, $sessionHolders, true));
         }
 
         return $rows;

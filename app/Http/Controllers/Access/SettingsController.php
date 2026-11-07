@@ -32,6 +32,8 @@ final class SettingsController
         ['id' => 'users', 'href' => '/settings/users', 'capability' => Capability::Cap25],
         // UXI-327 "Profil usaha" (TASK-010).
         ['id' => 'profile', 'href' => '/settings/business-profile', 'capability' => Capability::Cap30],
+        // UXI-328 "Laci kas" (TASK-027).
+        ['id' => 'registers', 'href' => '/settings/cash-registers', 'capability' => Capability::Cap31],
     ];
 
     public function index(Request $request): Response

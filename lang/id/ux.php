@@ -46,6 +46,11 @@ return [
         'money' => 'Isi jumlah rupiah yang benar, tanpa angka di belakang koma.',
         'money_min' => 'Tidak boleh kurang dari Rp0.',
         'money_max' => 'Paling banyak Rp999.999.999.999.',
+        // The opening cash and the cash registers (TASK-027; COPY_DECK section 16.1).
+        'money_blank' => 'Isi jumlahnya. Rp0 boleh.',
+        'register_taken' => 'Laci kas ini baru saja dipakai sesi kas lain. Pilih laci kas lain.',
+        'register_in_use' => 'Sesi kas baru saja dibuka di laci kas ini, jadi laci kas ini tidak bisa diubah sekarang.',
+        'register_code_taken' => 'Kode ini sudah dipakai laci kas lain.',
         'quantity_positive' => 'Isi jumlah lebih dari 0.',
         'quantity_decimals' => 'Paling banyak :desimal angka di belakang koma untuk produk ini.',
         'quantity_whole' => 'Produk ini dihitung utuh. Isi tanpa koma.',

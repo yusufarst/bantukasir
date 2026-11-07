@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect as baseExpect, test, type Page } from '@playwright/test';
-import { ACCESS_TIMEOUT, ACCESS_WAIT, HOME, homeOf, resetPeople, SECURE_LOCAL_ORIGIN, signIn, unexpected, type Person } from '../support/access';
+import { ACCESS_TIMEOUT, ACCESS_WAIT, HOME, homeOf, OPEN_SESSION_HOME, resetPeople, SECURE_LOCAL_ORIGIN, signIn, unexpected, type Person } from '../support/access';
 import { measure } from '../support/measure';
 import { contextAt, watch, WIDTHS } from '../support/specimen';
 
@@ -47,9 +47,10 @@ for (const persona of Object.keys(PEOPLE) as (keyof typeof PEOPLE)[]) {
             const accounts = await resetPeople(context, [person]);
 
             await signIn(page, accounts[person]);
-            // Operations and the combined account land on Stok (TASK-022), the others on Akun saya.
+            // Operations and the combined account land on Stok (TASK-022), a cashier without an
+            // OPEN session on Buka sesi kas (TASK-027), the Owner on Akun saya.
             const home = homeOf(person);
-            const landing = home === HOME ? 'Akun saya' : 'Stok';
+            const landing = home === HOME ? 'Akun saya' : home === OPEN_SESSION_HOME ? 'Buka sesi kas' : 'Stok';
 
             expect(new URL(page.url()).pathname).toBe(home);
             // The document title names the shop (UXA-13; TASK-010).
@@ -58,17 +59,21 @@ for (const persona of Object.keys(PEOPLE) as (keyof typeof PEOPLE)[]) {
             await expect(page.getByRole('banner')).toHaveCount(1);
             await expect(page.getByRole('main')).toHaveCount(1);
 
-            // The destinations that exist are "Stok" (TASK-022), with its badge when products
-            // need attention, "Produk" (TASK-017) and the Owner's "Pengaturan" (TASK-010; EXC-52):
-            // in the side navigation, or the drawer at compact width; a cashier has none yet.
-            if (persona !== 'cashier' && width === WIDTHS[7]) {
+            // The destinations that exist are "Kasir" (TASK-027), "Stok" (TASK-022), with its badge
+            // when products need attention, "Produk" (TASK-017) and the Owner's "Pengaturan"
+            // (TASK-010; EXC-52): in the side navigation, or the drawer at compact width.
+            const destinations: Readonly<Record<keyof typeof PEOPLE, readonly (string | RegExp)[]>> = {
+                owner: ['Kasir', /^Stok/, 'Produk', 'Pengaturan'],
+                ops: [/^Stok/, 'Produk'],
+                cashier: ['Kasir'],
+                combined: ['Kasir', /^Stok/, 'Produk'],
+            };
+
+            if (width === WIDTHS[7]) {
                 await expect(page.getByRole('button', { name: 'Buka menu' })).toHaveCount(1);
-            } else if (persona !== 'cashier') {
-                await expect(page.getByRole('navigation', { name: 'Menu utama' }).getByRole('link')).toHaveText(persona === 'owner' ? [/^Stok/, 'Produk', 'Pengaturan'] : [/^Stok/, 'Produk']);
-                await expect(page.getByRole('banner').getByText('Toko Contoh')).toBeVisible();
             } else {
-                await expect(page.getByRole('navigation')).toHaveCount(0);
-                await expect(page.getByRole('button', { name: 'Buka menu' })).toHaveCount(0);
+                await expect(page.getByRole('navigation', { name: 'Menu utama' }).getByRole('link')).toHaveText([...destinations[persona]]);
+                await expect(page.getByRole('banner').getByText('Toko Contoh')).toBeVisible();
             }
 
             await checked(page);
@@ -130,7 +135,7 @@ test('a path that does not exist is the page of UXS-08, whose way back is the ho
     expect(signedIn?.status()).toBe(404);
     await expect(page.getByRole('heading', { level: 1, name: 'Tidak ditemukan' })).toBeVisible();
     await expect(page.getByText(rina.email)).toHaveCount(0);
-    await Promise.all([page.waitForURL((url) => url.pathname === HOME), page.getByRole('link', { name: 'Kembali ke halaman awal' }).click()]);
+    await Promise.all([page.waitForURL((url) => url.pathname === homeOf('Rina')), page.getByRole('link', { name: 'Kembali ke halaman awal' }).click()]);
     await expect(page.getByRole('button', { name: 'Menu akun Rina' })).toBeVisible();
 
     expect(unexpected(watched.problems).filter((problem) => !problem.includes('404'))).toEqual([]);
