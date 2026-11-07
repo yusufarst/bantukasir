@@ -148,11 +148,11 @@ final class CashPagesTest extends DatabaseTestCase
         $operations = array_keys(Operations::FAMILIES);
 
         foreach (['shared', 'transfer', 'handover', 'paid_in', 'paid_out', 'pickup', 'expense', 'cash_in', 'cash_out'] as $word) {
-            $this->assertSame([], array_values(array_filter($paths, static fn (string $path): bool => str_contains(strtolower($path), $word))), $word);
+            $this->assertSame([], array_values(array_filter($paths, static fn (int|string $path): bool => str_contains(strtolower((string) $path), $word))), $word);
             $this->assertSame([], array_values(array_filter($operations, static fn (string $operation): bool => str_starts_with($operation, 'cash') && str_contains($operation, $word))), $word);
         }
 
-        $this->assertSame(['cash_session.open', 'cash_session.close', 'cash_session.close_assisted', 'cash_register.create', 'cash_register.update'],array_values(array_filter($operations, static fn (string $operation): bool => str_starts_with($operation, 'cash'))));
+        $this->assertSame(['cash_session.open', 'cash_session.close', 'cash_session.close_assisted', 'cash_register.create', 'cash_register.update'], array_values(array_filter($operations, static fn (string $operation): bool => str_starts_with($operation, 'cash'))));
     }
 
     /**
