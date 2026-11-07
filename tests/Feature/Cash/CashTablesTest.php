@@ -94,12 +94,6 @@ final class CashTablesTest extends DatabaseTestCase
             }
         }
 
-        // A counter past six digits takes more digits, never fewer (SCH-22).
-        $this->runtime()->transaction(function (Connection $c): void {
-            $this->insertSession($c, ['session_number_seq' => 1234567, 'session_number' => '20261107-1234567']);
-        });
-        $this->assertSame(1, $this->observer()->table('cash_sessions')->where('session_number', '20261107-1234567')->count());
-
         foreach (['register_id' => 'cash_sessions_register_fk', 'responsible_user_id' => 'cash_sessions_responsible_user_fk', 'open_command_id' => 'cash_sessions_open_command_fk'] as $column => $key) {
             $this->assertWriteRefused(fn (Connection $c) => $this->insertSession($c, [$column => 999999]), '23503', $key);
         }
@@ -126,6 +120,13 @@ final class CashTablesTest extends DatabaseTestCase
             $this->insertSession($c);
             $this->insertSession($c, ['session_number_seq' => 4, 'session_number' => '20261107-000004', 'status' => 'CLOSED']);
         }, '23505', 'cash_sessions_open_command_unique');
+
+        // A counter past six digits takes more digits, never fewer (SCH-22). Committed last, so that
+        // its opening command and its OPEN state do not answer the refusals above first.
+        $this->runtime()->transaction(function (Connection $c): void {
+            $this->insertSession($c, ['session_number_seq' => 1234567, 'session_number' => '20261107-1234567']);
+        });
+        $this->assertSame(1, $this->observer()->table('cash_sessions')->where('session_number', '20261107-1234567')->count());
     }
 
     public function test_one_open_session_per_register_and_per_user_and_any_number_closed(): void
