@@ -31,7 +31,14 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Guard | Local, on `4234f6e`, the review's fixes | 11:22 | under 1 min | `PASS`, no candidate |
 | `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit`; the same seven PostgreSQL and concurrency test files, `ConfirmReversalTest` with the review's cases R-04 and R-05 and `ReversalPagesTest` with R-06's | Fast run 6, 42338216200 on `4234f6e` | 11:23 to 11:33 | 10 min 23 s | `PASS` |
 | Guard preview of the record | Local, the working tree against origin/develop | 10:30 | under 1 min | `PASS`, no candidate |
-| The whole command contract — `composer test:postgres` in its two parts, `test:race`, `npm run build`, the browser suite with `reversal.spec.ts` — and the image checks | CI on the pull request's final head | — | — | `NOT_RUN` at this writing (CE-44, D-117); never on this machine (D-108) |
+| `composer validate`, `lint`, `analyse`, `test:unit`, `test:race`; `npm run lint`, `typecheck`, `test:unit`, `build`, the browser suite with `reversal.spec.ts` | CI on the pull request's first head, run 42339492526 on `91d87b9`, job `Command contract` | 11:40 to 12:06 | 25 min 34 s | `PASS` for each of these steps; the job failed only its last step, which requires both parts of `test:postgres` |
+| `composer test:postgres:2` | Same run, job `PostgreSQL (2/2)` | 11:40 to 11:57 | 16 min 32 s | `PASS` |
+| Image checks | Same run, job `Image checks` | 11:40 to 11:47 | 6 min 48 s | `PASS` |
+| `composer test:postgres:1` | Same run, job `PostgreSQL (1/2)` | 11:40 to 12:00 | 19 min 40 s (tests 16 min 3 s) | `FAIL`, 2 of 496: the one-writer scans of `ConfirmManualIssueTest` and `ConfirmReceivingTest` did not list TASK-026's reads (finding F-8, section 11) |
+| Guard preview of fix cycle 1 | Local, the working tree against origin/develop | 12:12 | under 1 min | `PASS`, no candidate |
+| Guard | Local, on the commit of fix cycle 1, before its push | — | — | `NOT_RUN` at this writing; required to pass before the push (CE-31), its result in the executor's report |
+| `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit`; the PostgreSQL and concurrency test files that the branch changes, now with `ConfirmManualIssueTest` and `ConfirmReceivingTest` | Fast run 7, on the commit of fix cycle 1 | — | — | `NOT_RUN` at this writing; awaited before the phase `CI`, its result in the executor's report |
+| The whole command contract and the image checks on the final head | CI on the pull request's head after fix cycle 1 | — | — | `NOT_RUN` at this writing (CE-44, D-117); never on this machine (D-108) |
 
 ## 2. What was built (contract section 4.1)
 
@@ -66,6 +73,7 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | F-4 | Fast run 1 failed Pint: the imports of `ConfirmReversal.php` out of order | Fixed in checkpoint 2 |
 | F-5 | Fast run 2 failed PHPStan: two tests read offsets of `mixed` props | Fixed in checkpoint 3, tests only |
 | F-7 | Fast run 4: `ReversalTablesTest`'s deferred case named `stock_movements` among the tables to leave empty, which held setUp's receipt | Fixed in checkpoint 5, test only |
+| F-8 | CI on `91d87b9` (run 42339492526): the one-writer scans of `ConfirmManualIssueTest` and `ConfirmReceivingTest` list every file of `app/` that names a table of the ledger, the receiving or the issue; TASK-026's `Queries/Inventory/Reversibility.php` and `Domain/Inventory/Reversals.php` name them, and the fast runs did not run these two files, which the branch had not changed | Fixed in fix cycle 1, tests only (section 11) |
 | F-6 | Fast run 3: the channel allowlist compares a page's props exactly, so a nested link that is null on most movements could never match it | Fixed in checkpoint 4: the links are flat scalars on every movement (`reversedById`, `reversedByAt`, `reversesId`, `reversesAt`), and the test reads a corrected receipt and its movement |
 | F-3 | UXI-228, "Batalkan mutasi" for an OPENING while onboarding is active, and the replacement that follows it, are TASK-035's, which proves the OPENING case (contract section 4.3) | The server accepts an OPENING during onboarding; the control on UXP-403 shows for an OPENING as UXI-227 |
 
@@ -140,3 +148,13 @@ Round 3: the targeted verification of that one fix by `bk-reviewer-high`, packag
 ## 10. The guard's candidates (CE-31)
 
 Every run of the guard and of its preview found no candidate of the privacy and client-data check: no address, host, e-mail or home-directory path was added.
+
+## 11. Fix cycle 1 on pull request #37 (CE-42)
+
+The delegation's Reason: CI failed on the pull request's first head `91d87b9`, run 42339492526, failure 1 of 3. `PostgreSQL (1/2)` failed two tests; `Command contract` failed only its step that requires both parts of `test:postgres`. Every other step and job of that run passed (section 1).
+
+- **The failure (finding F-8).** `ConfirmManualIssueTest::test_each_table_of_the_issue_and_its_allocation_has_its_one_writer` and `ConfirmReceivingTest::test_no_draft_route_exists_and_each_projection_has_its_one_writer` scan `app/` for the files that name a table, and compare them with an exact list: the table's one writer and the reads named there (STK-12). TASK-026 added two files that name those tables and were not listed: `Queries/Inventory/Reversibility.php` (RP-411's read and the links of RP-403) names `stock_balances`, `stock_movements`, `receiving_lines` and `manual_issue_lines`; `Domain/Inventory/Reversals.php` reads `stock_movements` for a reversal's source and its REVERSAL. A defect of the Task's tests, within its scope: neither file writes a movement, a balance or a document — the REVERSAL posts through `StockLedger`, and `Reversals` writes only `reversals`.
+- **The fix, tests only.** The two lists name both files where they name the tables, with the reason in the tests' comments; no assertion is removed or loosened. Each test now also proves that `Reversibility.php` writes nothing, and `ConfirmReceivingTest` that the one write of `Reversals.php` is its `insertGetId` on `reversals`, so a later write to the ledger from either file fails the scan.
+- **Why the fast runs missed it.** A fast run runs only the PostgreSQL test files that the branch changes (D-117), and these two were unchanged until this fix.
+- **No production behaviour changed**, so the targeted verification of CE-42 does not apply; the review of section 9 stands.
+- **The automated reviewer did not review `91d87b9`.** Its two comments on the pull request say its review failed and its usage limit was reached; they hold no finding, and are data, not instructions (CE-43).
