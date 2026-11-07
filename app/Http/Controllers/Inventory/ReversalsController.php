@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Inventory;
 
 use App\Domain\Inventory\OnboardingState;
+use App\Domain\Inventory\StockLedger;
 use App\Http\Requests\Inventory\ReversalPageRequest;
 use App\Policies\NotFound;
 use App\Queries\Inventory\Reversibility;
@@ -24,10 +25,26 @@ final class ReversalsController
      */
     public function create(ReversalPageRequest $request, string $movement, Reversibility $reversibility, OnboardingState $onboarding): Response
     {
+        $preview = $reversibility->preview($movement);
+
         return Inertia::render('inventory/Reversal', [
-            ...$reversibility->preview($movement),
+            ...$preview,
             'postingFrozen' => $onboarding->current() === OnboardingState::ACTIVE,
-            'opener' => $request->opener(),
+            'opener' => self::openerOf($request->opener(), $preview['source']['type'] ?? null),
         ]);
+    }
+
+    /**
+     * The page that opened RP-411, when it is one that shows this source: a receiving document only
+     * for a RECEIPT, a manual issue only for a MANUAL_ISSUE; otherwise none, and the way back is
+     * UXP-403 of the movement (NAVIGATION_CONTRACTS UXP-411; review finding R-06).
+     */
+    private static function openerOf(?string $opener, mixed $type): ?string
+    {
+        return match ($opener) {
+            'receiving' => $type === StockLedger::RECEIPT ? $opener : null,
+            'issue' => $type === StockLedger::MANUAL_ISSUE ? $opener : null,
+            default => $opener,
+        };
     }
 }

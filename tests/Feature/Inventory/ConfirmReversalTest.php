@@ -6,12 +6,15 @@ use App\Actions\Commands\CommandContext;
 use App\Actions\Inventory\ConfirmReversal;
 use App\Database\CommandPoints;
 use App\Domain\Access\ActorNotAllowed;
+use App\Domain\Commands\CommandRefused;
 use App\Domain\Commands\Envelope;
 use App\Domain\Commands\Operations;
 use App\Domain\Inventory\ReversalSource;
 use App\Support\Numbers\Quantity;
 use App\Support\Time\Clock;
+use Closure;
 use Illuminate\Database\Connection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -280,11 +283,18 @@ final class ConfirmReversalTest extends DatabaseTestCase
     public function test_a_failure_after_every_write_step_leaves_no_fact_projection_or_valuation_changed(): void
     {
         // AC-026-04, TS-21: eight steps — the reversal, its REVERSAL, the balance, the valuation, the
-        // projections, the clearances, the audit event, the result.
+        // projections, the clearances, the audit event, the result. The source carries an active mark,
+        // so that the clearances write a row, which every failure rolls back with the reversal (review
+        // finding R-04).
         TokoContoh::stock($this->pen, '10', '100');
         $source = TokoContoh::movementOf(TokoContoh::stock($this->pen, '10', '200'));
         TokoContoh::issue([['productId' => $this->pen, 'quantity' => '5']]);
         $this->owner();
+        config(['costing.replay.movement_cap' => 0]);
+        $this->postJson('/commands/cost_correction.confirm', $this->envelope(['evidenceId' => TokoContoh::evidenceOf($source), 'newCost' => ['amount' => '250'], 'reason' => 'Nota pemasok'], ['operation' => 'cost_correction.confirm', 'expected' => ['correctionNo' => 0]]))
+            ->assertStatus(422)->assertJsonPath('code', 'REPLAY_REJECTED');
+        config(['costing.replay.movement_cap' => 10000]);
+        $this->assertSame([1, 0], [$this->watcher()->table('cost_incomplete_marks')->count(), $this->watcher()->table('cost_incomplete_mark_clearances')->count()]);
 
         for ($step = 1; $step <= 8; $step++) {
             $this->app->instance(CommandPoints::class, new FailurePoints($step));
@@ -302,6 +312,45 @@ final class ConfirmReversalTest extends DatabaseTestCase
         $this->assertSame(['after_lock:2.1', 'after_lock:2.3', 'after_lock:6', 'after_lock:7', ...array_map(static fn (int $step): string => 'after_write:'.$step, range(1, 8))], array_values(array_filter($points->passed, static fn (string $point): bool => str_starts_with($point, 'after_lock:') || str_starts_with($point, 'after_write:'))));
         $this->app->instance(CommandPoints::class, new FailurePoints);
         $this->assertSame('KNOWN|50.000000|4|4', $this->valuationOf($this->pen));
+        $this->assertSame(['SOURCE_REVERSED'], array_column($this->clearances(), 3));
+    }
+
+    public function test_the_time_budget_and_a_statement_timeout_refuse_the_reversal_with_nothing_written_and_no_mark(): void
+    {
+        // G-07, TR-TIME-01 (review finding R-05): after the REVERSAL and the balance are written, the
+        // clock moves 26 seconds, past the heavy budget less its reserve, so the replay refuses; then a
+        // statement meets its timeout of 200 ms at the same point. Each is REPLAY_REJECTED with the
+        // reversal's message, nothing commits, and a refused reversal writes no mark.
+        TokoContoh::stock($this->pen, '10', '100');
+        $source = TokoContoh::movementOf(TokoContoh::stock($this->pen, '10', '200'));
+        TokoContoh::issue([['productId' => $this->pen, 'quantity' => '5']]);
+        $this->owner();
+        $before = $this->factsAndRows();
+
+        $this->app->instance(CommandPoints::class, self::afterWriteStep(3, function (): void {
+            $this->travel(26)->seconds();
+        }));
+        $this->reverse($this->envelopeOf($source))->assertStatus(422)->assertJsonPath('code', 'REPLAY_REJECTED')->assertJsonPath('messageKey', 'ux.state.replay_rejected.reversal');
+        $this->assertSame($before, $this->factsAndRows());
+
+        $this->app->instance(CommandPoints::class, self::afterWriteStep(3, static function (): void {
+            DB::select('select pg_catalog.pg_sleep(0.5)');
+        }));
+        $envelope = new Envelope(ConfirmReversal::OPERATION, Operations::VERSION, (string) Str::uuid(), (string) Str::uuid(), $this->epoch, [], ['movementId' => $source, 'reason' => 'Salah catat']);
+        DB::statement("set statement_timeout = '200ms'");
+
+        try {
+            app(ConfirmReversal::class)->execute(new CommandContext($this->people['Hendra']['id'], $envelope, app(Clock::class)->now()));
+            $this->fail('The statement timeout ends the reversal.');
+        } catch (CommandRefused $refusal) {
+            $this->assertSame(['REPLAY_REJECTED', 'ux.state.replay_rejected.reversal'], [$refusal->error->value, $refusal->messageKey]);
+        } finally {
+            DB::statement('reset statement_timeout');
+            $this->app->instance(CommandPoints::class, new FailurePoints);
+        }
+
+        $this->assertSame($before, $this->factsAndRows());
+        $this->assertSame(0, $this->watcher()->table('command_identities')->where('source_intent_id', $envelope->sourceIntentId)->count());
     }
 
     public function test_only_the_owner_with_recent_authentication_reverses_a_movement(): void
@@ -370,6 +419,37 @@ final class ConfirmReversalTest extends DatabaseTestCase
 
         $this->reverse($this->envelope($base, ['operation' => ConfirmReversal::OPERATION, 'expected' => ['version' => 1]]))->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
         $this->assertSame($before, $this->factsAndRows());
+    }
+
+    /**
+     * Command points that run this after write step $step, and nothing else.
+     *
+     * @param  Closure(): void  $then
+     */
+    private static function afterWriteStep(int $step, Closure $then): CommandPoints
+    {
+        return new class($step, $then) implements CommandPoints
+        {
+            /**
+             * @param  Closure(): void  $then
+             */
+            public function __construct(private readonly int $step, private readonly Closure $then) {}
+
+            public function afterIdentity(): void {}
+
+            public function afterLock(string $step): void {}
+
+            public function afterWrite(int $step): void
+            {
+                if ($step === $this->step) {
+                    ($this->then)();
+                }
+            }
+
+            public function beforeCommit(): void {}
+
+            public function afterOwnWrite(string $write): void {}
+        };
     }
 
     /** The Owner, with the recent authentication of RC-10 (INTERACTION_CONTRACTS section 1.5). */

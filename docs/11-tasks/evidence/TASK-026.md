@@ -26,6 +26,10 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Guard | Local, on `cf97f49` | 10:39 | about 3 min | `PASS`, no candidate |
 | `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit` | Fast run 4, 42335070523 on `cf97f49` | 10:43 to 10:47 | about 4 min | `PASS` |
 | The PostgreSQL and concurrency test files that the branch changes | Same run | 10:47 to 10:51 | 4 min 6 s | `FAIL` in `ReversalTablesTest`, 5 of 6: its deferred case (finding F-7); `ReversalRaceTest` 3, `CapabilityMatrixTest` 7, `RouteInventoryTest` 8, `ConfirmReversalTest` 9, `LedgerTablesTest` 19 and `ReversalPagesTest` 3 tests passed |
+| Guard | Local, on `a93236e` | 10:54 | under 1 min | `PASS`, no candidate |
+| `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit`; the seven PostgreSQL and concurrency test files that the branch changes — `ReversalRaceTest` (3 tests), `CapabilityMatrixTest` (7), `RouteInventoryTest` (8), `ConfirmReversalTest` (9), `LedgerTablesTest` (19), `ReversalPagesTest` (3) and `ReversalTablesTest` (6). TASK-025's `CorrectCostTest`, `CostCorrectionRaceTest` and `CostPagesTest`, which cover the changed `CorrectCost::mark()` and `ReplayLedger`, are not among them: they run in `test:postgres` on the final head (review note R-07) | Fast run 5, 42336113311 on `a93236e`, the reviewed head | 10:55 to 11:05 | 10 min 27 s | `PASS` |
+| Guard preview of the record | Local, the working tree against origin/develop | 10:30 | under 1 min | `PASS`, no candidate |
+| The whole command contract — `composer test:postgres` in its two parts, `test:race`, `npm run build`, the browser suite with `reversal.spec.ts` — and the image checks | CI on the pull request's final head | — | — | `NOT_RUN` at this writing (CE-44, D-117); never on this machine (D-108) |
 
 ## 2. What was built (contract section 4.1)
 
@@ -48,12 +52,14 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | The REVERSAL movement's source on UXP-403 is the link `inventory.movement.reverses`, and the source's the link `inventory.movement.reversed_by`; UXP-411 names the source with `inventory.movement.source_pair` | COPY_DECK section 9.4 |
 | Costing reads `reversals` for the logical ledger | STACK_AND_MODULES section 2.1, Costing's row amended |
 | Success leads to UXP-403 of the REVERSAL, whatever the opener | NAVIGATION_CONTRACTS UXP-411, RC-10's location |
+| On UXP-403 the link of a REVERSAL to its source stands under the label "Sumber" (`inventory.movement.source`), and the link of a source to its REVERSAL under "Pembatalan" (`inventory.type.reversal`) | COPY_DECK section 9.4 names the links' texts only (review note R-09) |
+| RP-411 keeps `from_page=receiving` only for a RECEIPT and `issue` only for a MANUAL_ISSUE; otherwise the way back is UXP-403 of the movement | NAVIGATION_CONTRACTS UXP-411, "the page that opened it" (review finding R-06) |
 
 ## 4. Findings
 
 | ID | Finding | Outcome |
 | --- | --- | --- |
-| F-1 | RP-503, the worklist of TASK-025, still lists an UNKNOWN cost source whose movement was reversed, though after its reversal the source no longer counts in any figure (BR-COST-32; SCHEMA section 5.8) | Recorded for the next change of RP-503 or TASK-040: changing the worklist is outside TASK-026's scope. A completion of such a source changes no figure |
+| F-1 | RP-503, the worklist of TASK-025, still lists an UNKNOWN cost source whose movement was reversed, though after its reversal the source no longer counts in any figure (BR-COST-32; SCHEMA section 5.8) | Recorded for the next change of RP-503 or RP-504, or TASK-040: changing the worklist is outside TASK-026's scope. A completion of such a source changes no figure; so does a correction, which RP-403 and RP-406 still offer on a reversed source's line (review note R-11; SCHEMA section 5.8 anticipates such an attempt) |
 | F-2 | `tsc`, ESLint and PHP do not run on this machine, so every static check is met first in CI (TASK-011 F-5) | As recorded since TASK-011; the fast runs cover them |
 | F-4 | Fast run 1 failed Pint: the imports of `ConfirmReversal.php` out of order | Fixed in checkpoint 2 |
 | F-5 | Fast run 2 failed PHPStan: two tests read offsets of `mixed` props | Fixed in checkpoint 3, tests only |
@@ -82,6 +88,44 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | AC-026-04 The source's active marks cleared in the reversal's transaction | `ConfirmReversalTest` (the clearance with the reversal's command; a later refused correction's mark cleared at once; the failure after each write step) | As above |
 | AC-026-05 RP-411 follows the approved artifacts | `ReversalPagesTest` (L4), `reversal.spec.ts` (L5, axe at every width) | The browser suite runs on the final head (D-117) |
 
-## 7. Backup impact (EXC-47)
+## 7. Definition of Done (TEST_STRATEGY section 10)
+
+| Dimension | Result | Reason |
+| --- | --- | --- |
+| Business | `PASS` | AC-026-01 to AC-026-04 proven by the L1 to L4 tests of the reviewed head's fast run; REQ-INV-09, REQ-COST-08 |
+| UI and UX | `BLOCKED` until the final head | RP-411 and its entries follow COPY_DECK 9.4 and 9.12, INTERACTION_INVENTORY and NAVIGATION_CONTRACTS UXP-411; the L4 page tests passed; the browser suite with `reversal.spec.ts` (axe at every width) runs first on the pull request's final head (D-117) |
+| Backend | `PASS` | FormRequest allowlist, CAP-17 at the route and in the transaction, NOT_FOUND by object scope, the L4 tests |
+| Database | `PASS` for the families run; `test:postgres` whole on the final head | `reversals` with its keys, the constraint, deferred, privilege, retention and index families (`ReversalTablesTest`); forward and additive migration with class, duration, lock impact and verification (EXC-46; its rehearsal on the benchmark dataset waits for TASK-043) |
+| Security | `PASS` | The capability matrix and route inventory, the refusals of the other roles and the combined account, recent authentication, the channel allowlists per role, no secret (the guard) |
+| Data integrity | `PASS` | Append-only facts, the exact inverse by keys, once per source, atomic audit and result, RACE-10, RACE-01, RACE-02, the failure after each of the eight write steps with the clearance rolled back |
+| Performance | `N/A` | Bounded by the movement cap and the heavy budget (TR-TIME-01), both refusing REPLAY_REJECTED in tests; the budgets are measured at TASK-048 |
+| Operations | `PASS` | `reversals` in the manifest's counts (section 8); no runbook or status change |
+| Verification | `BLOCKED` until the final head | Self-review and the class-A review (section 9); the fast run 42336113311 on the reviewed head passed; the whole command contract and the image checks are `NOT_RUN` until the pull request's final head |
+
+## 8. Backup impact (EXC-47)
 
 `reversals` holds retained facts, class F in `database/privileges.php`, so it is in the manifest's counts, which `backup:run` takes for every table of the matrix of a counted class (`BackupRunner::COUNTED_CLASSES`; TASK-013), with the backup role's `SELECT` on the table and its sequence. No new kind of stored file. No runbook or status change.
+
+## 9. Review (CE-40)
+
+Self-review of the whole diff against the contract before the review; the reviewed head `a93236e`, whose fast run 42336113311 passed. Round 1: the class-A adversarial review by `bk-reviewer-high`, effort High, of package `review/TASK-026/r1` (tree `4a97d91`, HEAD `a93236e`); `--check` `UNCHANGED`. Verdict FAIL, with two MUST-FIX, both in the records; no MUST-FIX in the code, the migration, the concurrency, the authorization or the replay.
+
+| Finding | Severity | Outcome |
+| --- | --- | --- |
+| R-01: CURRENT_HANDOFF sections 1, 1.1, 1.2, "Exact next action" and the TESTS line still described TASK-025's pull request under D-124's hold and TASK-026 as `READY` | MUST-FIX | Fixed: those parts now state TASK-025 merged as `139f99d`, TASK-026 `DONE` at its merge, TASK-027 and TASK-038 `READY`, M4 with TASK-026, TASK-026's pull request in CI then TASK-027, and TASK-025's green final head and TASK-026's checks in the TESTS line |
+| R-02: DECISIONS and CURRENT_HANDOFF named D-125 as the next free identifier, which this change records | MUST-FIX | Fixed: D-126 in both |
+| R-03: no Definition of Done table | SHOULD-FIX | Fixed: section 7 |
+| R-04: the failure injection had no cost mark, so a clearance's rollback with the reversal was unproven | SHOULD-FIX | Fixed: `ConfirmReversalTest`'s failure case seeds an active mark first; each failed step leaves it without a clearance, the passing run clears it `SOURCE_REVERSED` |
+| R-05: no RC-10 test of the time budget or of a statement timeout | SHOULD-FIX | Fixed: `test_the_time_budget_and_a_statement_timeout_refuse_the_reversal_with_nothing_written_and_no_mark` |
+| R-06: RP-411 accepted `from_page=receiving` for a manual issue's movement, leading back to an unrelated document | SHOULD-FIX | Fixed: `ReversalsController` keeps the opener only for the source's own kind, UXP-403 otherwise; regression cases in `ReversalPagesTest` |
+| R-07: the evidence's count of test files | NOTE | Fixed in section 1; TASK-025's costing suites run in `test:postgres` on the final head |
+| R-08: only UXS-40 rendered at L5 | NOTE | Recorded: UXS-17, UXS-27, UXS-28 and UXS-31 are proven at L4 by their refusals, and their notices are TASK-005's components; the browser suite runs once on the final head |
+| R-09: the labels of the reversal links an unrecorded reading | NOTE | Recorded in section 3 |
+| R-10: untested edges — a reversal of a manual issue past the range of stock, two refusals at once, onboarding RELEASED | NOTE | Recorded: the code's order is RC-10's by reading; no change |
+| R-11: corrections still offered on a reversed source's line | NOTE | F-1 extended |
+
+The fixes touch the records, two test files and `ReversalsController`; they run in fast run 6. The targeted verification of the MUST-FIX fixes follows (round 2).
+
+## 10. The guard's candidates (CE-31)
+
+Every run of the guard and of its preview found no candidate of the privacy and client-data check: no address, host, e-mail or home-directory path was added.

@@ -93,6 +93,12 @@ final class ReversalPagesTest extends DatabaseTestCase
             $this->getJson('/stock/movements/'.$this->receipt.'/reverse?'.$query)->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
         }
 
+        // The opener names a page that shows the source, else none, so that the way back is UXP-403 of
+        // the movement (review finding R-06).
+        foreach ([[$this->receipt, 'receiving', 'receiving'], [$this->receipt, 'issue', null], [$this->issue, 'receiving', null], [$this->issue, 'issue', 'issue'], [$this->issue, 'movement', 'movement']] as [$movement, $opener, $expected]) {
+            $this->assertSame($expected, $this->propsOf($this->get('/stock/movements/'.$movement.'/reverse?from_page='.$opener)->assertOk())['opener'] ?? null, $opener);
+        }
+
         // A reversed source still opens, and says that it is reversed (UXS-13).
         $source = (array) ($this->propsOf($this->get('/stock/movements/'.$this->issue.'/reverse')->assertOk())['source'] ?? []);
         $this->assertTrue($source['reversed'] ?? null);
