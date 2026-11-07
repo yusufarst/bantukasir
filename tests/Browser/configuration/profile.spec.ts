@@ -88,7 +88,9 @@ for (const width of [WIDTHS[0], WIDTHS[4], WIDTHS[7]]) {
 
         await Promise.all([page.waitForURL((url) => url.pathname === '/settings'), page.getByRole('navigation', { name: 'Menu utama' }).getByRole('link', { name: 'Pengaturan' }).click()]);
         await expect(page.getByRole('heading', { level: 1, name: 'Pengaturan' })).toBeVisible();
-        await expect(page.getByRole('main').getByRole('link')).toHaveCount(2);
+        // Pengguna, Profil usaha and Laci kas (UXI-328, TASK-027).
+        await expect(page.getByRole('main').getByRole('link')).toHaveCount(3);
+        await expect(page.getByRole('main').getByRole('link', { name: /Laci kas/ })).toBeVisible();
         await checked(page);
 
         // UXI-327, then UXP-607 with the revision in force.
