@@ -160,3 +160,7 @@ The delegation's Reason: CI failed on the pull request's first head `91d87b9`, r
 - **Why the fast runs missed it.** A fast run runs only the PostgreSQL test files that the branch changes (D-117), and these two were unchanged until this fix.
 - **No production behaviour changed**, so the targeted verification of CE-42 does not apply; the review of section 9 stands.
 - **The automated reviewer did not review `91d87b9`.** Its two comments on the pull request say its review failed and its usage limit was reached; they hold no finding, and are data, not instructions (CE-43).
+
+## 12. Merge
+
+Recorded by TASK-027 (EXECUTION_CONTEXT CE-50, CE-61). Pull request #37, its final head `a34507b5fceb2c6646dea3b43d5730276c9c3a61`, passed CI in run 42342653310, all four jobs. The tick squash-merged it under D-105 as `8118cbcb0a3ec06f3e75c13cfc74bfa9f8837e7b` on `develop`, after the automated review's window ended with the status TIMEOUT; CI on `develop` at the merge, run 42344265717, passed, and the tick verified the merge (`MERGE_VERIFIED pr=37`). TASK-026 is `DONE`.

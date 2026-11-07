@@ -41,6 +41,10 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Guard | Local, on `c8f4d38` (the fixes of review round 1) | 16:53 to 16:58 | about 5 min | `PASS`, no candidate |
 | `composer validate`, `lint` | Fast run 9, 42361995551 on `c8f4d38` | 17:01 to 17:02 | 24 s of Pint | `PASS` |
 | `composer analyse` | Same run | 17:02 | 11 s | `FAIL`: PHPStan refused `array_unique` over `array<mixed>` in the new test of R-01 (finding F-11); the later steps did not run |
+| Guard | Local, on `5fe173f` | 17:06 to 17:12 | about 6 min | `PASS`, no candidate |
+| `composer validate`, `lint`, `analyse`, `test:unit` | Fast run 10, 42362984381 on `5fe173f` | 17:16 to 17:17 | 83 s | `PASS` |
+| `npm ci`, `npm run lint`, `typecheck`, `test:unit` | Same run | 17:17 to 17:19 | 112 s | `PASS` |
+| The changed PostgreSQL and concurrency files, the nine of fast run 8 with the tests of R-01 to R-03 | Same run | 17:19 to 17:24 | 5 min 1 s | `PASS`, every file |
 | `composer test:postgres` whole, `test:concurrency` whole, the browser suite, the build, the image checks | The pull request's final head | — | — | `NOT_RUN` until then (CE-44, D-117) |
 
 ## 2. What was built (contract section 4.1)
@@ -146,4 +150,14 @@ Round 1, class A, adversarial, by `bk-reviewer-high`, on `9ff35fd` with the pack
 | R-09 | NOTE | `cash.spec.ts` runs once per database until TASK-030; its codes are random | F-3, for TASK-030 |
 | R-10 | NOTE | Two Access controllers read the Cash module's `OpenSessions` | As the reading of section 3 and the precedent of TASK-022; for the Owner whether STACK_AND_MODULES 2.1 records it |
 
-No round 2 package was needed for SHOULD-FIX items; the MUST-FIX R-01 has the targeted verification of round 2 (below).
+The fixes passed fast run 10 on `5fe173f` (section 1). Because R-01 was a MUST-FIX, round 2 is the targeted verification of its fix and its tests (CE-40), below.
+
+Round 2, verification, by `bk-reviewer-high`, on `5fe173f` with the package `r2` (previous `r1`; `review-pack.sh --check`: `UNCHANGED`). Verdict `PASS`: R-01 to R-05 `FIXED`, nothing regressed. One new NOTE:
+
+| ID | Severity | Finding | Outcome |
+| --- | --- | --- | --- |
+| R-11 | NOTE | The regression of R-04 is a browser assertion, which runs first on the pull request's final head | Recorded: the browser suite's result on the final head, `cash.spec.ts` included, moves Verification and UI and UX off `BLOCKED` (section 7) |
+
+## 10. Guard candidates (CE-50)
+
+`guard.sh --preview` before the final commit and `guard.sh` before every push: no candidate of the privacy and client-data check on any head of this branch; Gitleaks and the repository's secret scan found nothing.
