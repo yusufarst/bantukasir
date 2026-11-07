@@ -7,7 +7,7 @@ import { ReviewDialog } from '@/components/ui/Dialog';
 import { CommandForm, Field, MoneyInput, SelectInput } from '@/components/ui/Field';
 import type { StateId } from '@/components/ui/stateCatalogue';
 import { ErrorSummary, StateNotice, type FieldError } from '@/components/ui/States';
-import { AppShell, useLeaveGuard, useUnsavedChanges } from '@/layouts/AppShell';
+import { AppShell, useLeaveGuard, useUnsavedChanges, type ShellLayout } from '@/layouts/AppShell';
 import { CommandLayout, PageHeader } from '@/layouts/Page';
 import { leaveSavedNote } from '@/lib/access/users';
 import { cashFieldMessage, OPEN_SESSION_COMMAND, registerName, type AvailableRegister } from '@/lib/cash/registers';
@@ -34,6 +34,9 @@ import { personaOf, type DestinationId, type RoleCode } from '@/lib/navigation';
 
 const DESTINATION: DestinationId = 'till';
 
+/** On the till's pages the side navigation is the icon rail (UXA-03; KS-06). */
+const TILL_LAYOUT: ShellLayout = 'rail';
+
 const NO_REGISTER: StateId = 'UXS-48';
 
 const VALIDATION_FAILED = 'VALIDATION_FAILED';
@@ -48,6 +51,9 @@ const STOCK_HOME = '/stock';
 
 const HOME = '/';
 
+/** The amount the review names while none is entered, which the review never shows: it opens only with an amount. */
+const NO_AMOUNT = '0';
+
 interface SharedProps {
     readonly auth: { readonly user: { readonly roles: readonly RoleCode[] } } | null;
     readonly [key: string]: unknown;
@@ -57,7 +63,7 @@ export default function OpenSession({ registers }: { registers: readonly Availab
     const title = t('cash.open.title');
 
     return (
-        <AppShell title={title} current={DESTINATION}>
+        <AppShell title={title} current={DESTINATION} layout={TILL_LAYOUT}>
             <OpenForm title={title} registers={registers} />
         </AppShell>
     );
@@ -207,7 +213,7 @@ function OpenForm({ title, registers }: { title: string; registers: readonly Ava
                 </CommandForm>
             </Card>
             <ReviewDialog open={review && (phase.kind === 'idle' || busy || throttled)} onOpenChange={setReview} title={t('cash.open.review_title')} confirmLabel={t('cash.open.confirm')} busy={busy} onConfirm={confirm}>
-                <p>{t('cash.open.review_body', { laci: register === undefined ? '' : registerName(register), uang: formatMoney(amount ?? '0') })}</p>
+                <p>{t('cash.open.review_body', { laci: register === undefined ? '' : registerName(register), uang: formatMoney(amount ?? NO_AMOUNT) })}</p>
             </ReviewDialog>
             {!invalid && <CommandPanels control={control} {...(committed ? { committed: t('cash.open.success', { nomor: number }) } : {})} />}
         </CommandLayout>

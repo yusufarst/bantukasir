@@ -25,6 +25,9 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Guard | Local, on `bd5addb` | 14:29 to 14:33 | about 4 min | `PASS`, no candidate |
 | `composer validate`, `lint`, `analyse` | Fast run 4, 42351772127 on `bd5addb` | 14:36 to 14:37 | about 5 min | `PASS` |
 | `composer test:unit` | Same run | 14:37 to 14:38 | 23 s | `FAIL`, 1 of 906: `PrivilegeMatrixTest` (finding F-7); the later steps did not run |
+| Guard | Local, on `2146161` | 14:42 to 14:45 | about 3 min | `PASS`, no candidate |
+| `composer validate`, `lint`, `analyse`, `test:unit` | Fast run 5, 42352646178 on `2146161` | 14:49 to 14:50 | about 6 min | `PASS` |
+| `npm run lint` | Same run | 14:50 | 4 s | `FAIL`: ESLint's rule of ADR-005 refused the literal `'0'` inside the review's text on UXP-104 (finding F-8); the later steps did not run |
 
 ## 2. What was built (contract section 4.1)
 
@@ -63,6 +66,7 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | F-5 | Fast run 2 failed PHPStan on two lines of tests | Fixed in checkpoint 3, tests only |
 | F-6 | Fast run 3 failed Pint on those two lines: a space dropped after a comma and after `??` | Fixed in checkpoint 4, tests only |
 | F-7 | Fast run 4 failed one unit test: `PrivilegeMatrixTest` read a column-level `UPDATE` as a table privilege, which `tablePrivileges()` lists only for an update of every column | Fixed in checkpoint 5, test only |
+| F-8 | Fast run 5 failed `npm run lint`: ESLint's rule of ADR-005 refused the literal `'0'` that the review's text on UXP-104 formats while no amount is entered. The same checkpoint gives RP-104 the till's icon rail (UXA-03, KS-06), which `shell.spec.ts` now reads: the banner names no shop there | Fixed in checkpoint 6: a named constant; the rail; the browser test |
 | F-3 | For TASK-030: the browser suite opens the Owner's session once, so `tests/Browser/cash/cash.spec.ts` needs a database without it, as CI's fresh one is; and the key of `close_presence` to `cash_session_closes` comes with that table | TASK-030 adds the key and lets the browser fixtures close the Owner's session first |
 
 ## 5. Tests (contract section 7)

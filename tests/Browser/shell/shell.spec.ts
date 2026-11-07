@@ -69,11 +69,16 @@ for (const persona of Object.keys(PEOPLE) as (keyof typeof PEOPLE)[]) {
                 combined: ['Kasir', /^Stok/, 'Produk'],
             };
 
+            // Buka sesi kas is a page of the till, whose side navigation is the icon rail without the
+            // shop's name (UXA-03, KS-06); the name stays in the document title.
             if (width === WIDTHS[7]) {
                 await expect(page.getByRole('button', { name: 'Buka menu' })).toHaveCount(1);
             } else {
                 await expect(page.getByRole('navigation', { name: 'Menu utama' }).getByRole('link')).toHaveText([...destinations[persona]]);
-                await expect(page.getByRole('banner').getByText('Toko Contoh')).toBeVisible();
+
+                if (home !== OPEN_SESSION_HOME) {
+                    await expect(page.getByRole('banner').getByText('Toko Contoh')).toBeVisible();
+                }
             }
 
             await checked(page);
