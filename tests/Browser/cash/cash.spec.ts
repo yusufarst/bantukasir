@@ -141,6 +141,9 @@ test('the Owner adds and changes a register from the settings, with the password
     await Promise.all([page.waitForURL((url) => url.pathname.endsWith('/edit')), page.getByRole('link', { name: `Ubah laci kas ${first.code} · ${first.label}` }).click()]);
     await expect(page.getByRole('heading', { level: 1, name: 'Ubah laci kas' })).toBeVisible();
     await expect(page.getByText('Belum ada perubahan.')).toBeVisible();
+    // Outer spaces alone change nothing, since what is sent is trimmed (review finding R-04).
+    await page.getByLabel('Label', { exact: true }).fill(`  ${first.label}  `);
+    await expect(page.getByText('Belum ada perubahan.')).toBeVisible();
     const label = `Laci ${letters(6)}`;
     await page.getByLabel('Label', { exact: true }).fill(label);
     await Promise.all([page.waitForURL((url) => url.pathname === REGISTERS), page.getByRole('button', { name: 'Simpan', exact: true }).click()]);

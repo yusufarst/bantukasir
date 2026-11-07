@@ -34,6 +34,11 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Guard | Local, on `80c9865` | 15:58 to 16:03 | about 5 min | `PASS`, no candidate |
 | Static checks and unit tests, as in fast run 6 | Fast run 7, 42358123531 on `80c9865` | 16:04 to 16:09 | about 5 min | `PASS` |
 | The changed PostgreSQL and concurrency files | Same run | 16:09 to 16:12 | about 3.5 min | `CashSessionRaceTest`, `CapabilityMatrixTest`, `HomeRedirectTest`, `RouteInventoryTest` (8), `CashPagesTest` (5), `CashRegisterCommandsTest` (6) `PASS`; `CashTablesTest` `FAIL`, 1 of 8 (finding F-10); `OpenCashSessionTest` and `SettingsPagesTest` did not run |
+| Guard | Local, on `9ff35fd` | 16:16 to 16:21 | about 5 min | `PASS`, no candidate |
+| `composer validate`, `lint`, `analyse`, `test:unit` | Fast run 8, 42359433420 on `9ff35fd` | 16:25 to 16:26 | 81 s | `PASS` |
+| `npm ci`, `npm run lint`, `typecheck`, `test:unit` | Same run | 16:26 to 16:28 | 112 s | `PASS` |
+| The changed PostgreSQL and concurrency files: `CashSessionRaceTest`, `CapabilityMatrixTest`, `HomeRedirectTest`, `RouteInventoryTest`, `CashPagesTest`, `CashRegisterCommandsTest`, `CashTablesTest`, `OpenCashSessionTest`, `SettingsPagesTest` | Same run | 16:28 to 16:33 | 4 min 44 s | `PASS`, every file |
+| `composer test:postgres` whole, `test:concurrency` whole, the browser suite, the build, the image checks | The pull request's final head | — | — | `NOT_RUN` until then (CE-44, D-117) |
 
 ## 2. What was built (contract section 4.1)
 
@@ -82,9 +87,9 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Test | Where |
 | --- | --- |
 | L2 families of `cash_registers`, `cash_sessions` and `cash_session_number_seq` (constraint, presence key, privilege, retention, numbering, indexes; the key of `audit_events`) | `tests/Feature/Cash/CashTablesTest.php`; `PrivilegeMatrixTest` extended |
-| L3 RACE-07 (one register, one user), RACE-26 (both orders), RACE-01, RACE-02, the numbering family (no wait for a number, allocation order) | `tests/Concurrency/CashSessionRaceTest.php` |
-| L4 RC-02: Rp0, the number and business date, its audit event and result, no movement, a repeat; a blank or malformed amount; an inactive register, one in use, an actor with a session; the roles without recent authentication; the allowlist; the failure after each write step and the gap it leaves; the numbers across Asia/Jakarta midnight; G-23 | `tests/Feature/Cash/OpenCashSessionTest.php` |
-| L4 RC-33 and RC-34: create and change with audit; the code in any letter case; a change refused while a session is OPEN, at a stale version and when it changes nothing; the fields; the roles and recent authentication; the failure after each write step | `tests/Feature/Cash/CashRegisterCommandsTest.php` |
+| L3 RACE-07 (one register, one user), RACE-26 (both orders), RACE-04 (a role change against a running open, both orders), RACE-01 and RACE-02 for RC-02, RC-33 and RC-34 (the same key, another key of the same intent, another payload under one key), the numbering family (no wait for a number, allocation order) | `tests/Concurrency/CashSessionRaceTest.php` |
+| L4 RC-02: Rp0, the number and business date, its audit event and result, no movement, a repeat; a blank or malformed amount; an inactive register, one in use, an actor with a session, none of which takes a number; the roles without recent authentication; the allowlist; the failure after each write step and the gap it leaves; the numbers across Asia/Jakarta midnight; G-23 | `tests/Feature/Cash/OpenCashSessionTest.php` |
+| L4 RC-33 and RC-34: create and change with audit; a repeat and a status check answering the original result, with the receipt COMMITTED; the code in any letter case; a change refused while a session is OPEN, at a stale version and when it changes nothing; the fields; the roles and recent authentication; the failure after each write step | `tests/Feature/Cash/CashRegisterCommandsTest.php` |
 | L4 the pages, their channels per role, RN-01, UXP-602's mark, no shared drawer, transfer, paid-in, paid-out or pickup | `tests/Feature/Cash/CashPagesTest.php`, `CapabilityMatrixTest`, `RouteInventoryTest`, `HomeRedirectTest`, `SettingsPagesTest`, `tests/Harness/Channels/Allowlists.php`, `OperationsTest` |
 | L5 KS-06 (`default`, `review`, `no-register`), RP-609 at every width, RP-610, with axe | `tests/Browser/cash/cash.spec.ts`; the cashier's new home in `sign-in.spec.ts`, `session.spec.ts`, `shell.spec.ts`, `requests.spec.ts`, `profile.spec.ts` and `support/access.ts` |
 | L1 the navigation's "Kasir" | `tests/Unit/Shell/navigation.test.ts` |
@@ -109,11 +114,32 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Backend | `PASS` | FormRequest allowlists, CAP-21 and CAP-31 at the route and in the transaction, the responsible user always the actor, NOT_FOUND by object scope, the L4 tests |
 | Database | `PASS` for the families run; `test:postgres` whole on the final head | The two tables and the sequence with the constraint, presence-key, privilege, retention, numbering and index families (`CashTablesTest`); forward and additive migration with class, duration, lock impact and verification (EXC-46; its rehearsal on the benchmark dataset waits for TASK-043) |
 | Security | `PASS` | The capability matrix and route inventory, the refusals of the other roles and the combined account, recent authentication of RC-33 and RC-34, the channel allowlists per role, no secret (the guard) |
-| Data integrity | `PASS` | Retained sessions with state columns only, the number held by a check, one OPEN session per register and per user by the database, atomic audit and result, RACE-07, RACE-26, RACE-01, RACE-02, the failure after every write step |
-| Performance | `N/A` | Bounded lists (500 registers, the holders of OPEN sessions); no counter row or lock for numbering (SCH-25); the budgets are measured at TASK-048 |
+| Data integrity | `PASS` | Retained sessions with state columns only, the number held by a check, one OPEN session per register and per user by the database, atomic audit and result, RACE-07, RACE-26, RACE-04, RACE-01 and RACE-02 for each of the three commands, the failure after every write step |
+| Performance | `PASS` | Bounded lists (500 registers, the holders of OPEN sessions); no counter row or lock for numbering (SCH-25); the budgets are measured at TASK-048 |
 | Operations | `PASS` | Both tables in the manifest's counts and the sequence in the backup role's reads (section 8); no runbook or status change |
 | Verification | `BLOCKED` until the final head | Self-review and the class-A review (section 9); the fast runs of section 1; the whole command contract and the image checks are `NOT_RUN` until the pull request's final head |
 
 ## 8. Backup impact (EXC-47)
 
 `cash_registers` (class M) and `cash_sessions` (class FS) hold retained data, so they are in the manifest's counts, which `backup:run` takes for every table of the matrix of a counted class (`BackupRunner::COUNTED_CLASSES`; TASK-013), with the backup role's `SELECT` on both tables, their identity sequences and `cash_session_number_seq`. After a restore, the runbook advances `cash_session_number_seq` with the migration role (SCH-28, BACKUP_RECOVERY RB-01 step 13), unchanged. No new kind of stored file. No status change.
+
+## 9. Review (EXECUTION_CONTEXT section 12, CE-40)
+
+Self-review before the review, on `9ff35fd`: the Actions, the domain classes, the request, the controllers, the migration, the race tests and the browser test against the contract; no defect found.
+
+Round 1, class A, adversarial, by `bk-reviewer-high`, on `9ff35fd` with the package `r1` (`review-pack.sh --check`: `UNCHANGED`). Verdict `FAIL`, one MUST-FIX. The production code held under attack: the register lock and RACE-07/RACE-26, the numbering at step 8, the grants, authorization and atomicity.
+
+| ID | Severity | Finding | Outcome |
+| --- | --- | --- | --- |
+| R-01 | MUST-FIX | RACE-01 and RACE-02, the COMMITTED receipt and the recovery of the result were proven for RC-02 only, not for RC-33 and RC-34 (EXECUTION_CONTEXT section 10, a command) | Fixed, tests only: `CashSessionRaceTest::test_race_01_and_race_02_a_register_command_runs_once_for_the_same_key_or_the_same_intent` (the same key, another key of the same intent, `IDEMPOTENCY_CONFLICT` for another payload, for both operations); `CashRegisterCommandsTest::test_a_repeat_and_a_status_check_answer_the_original_result_and_the_receipt_is_committed` |
+| R-02 | SHOULD-FIX | RACE-04, to which the contract says the Task contributes, was not proven for RC-02 | Fixed, test only: `CashSessionRaceTest::test_race_04_a_role_change_against_a_running_open_in_both_orders`; mapped in sections 5 and 7 |
+| R-03 | SHOULD-FIX | Nothing proved that a definite refusal takes no number (SCH-21, TR-TX-10) | Fixed, tests only: after the FormRequest refusals, an inactive register, one in use, NOT_FOUND and an actor with a session, the next open takes the next counter (`OpenCashSessionTest`) |
+| R-04 | SHOULD-FIX | On UXP-610, outer spaces alone enabled "Simpan", whose trimmed request was refused without a reason shown | Fixed: `RegisterForm.tsx` compares the trimmed values, so the button says `ux.disabled.no_change`; regression in `cash.spec.ts` |
+| R-05 | SHOULD-FIX | Performance recorded `N/A` with a reason of checked bounds | Fixed: `PASS` (section 7); the budgets stay TASK-048's |
+| R-06 | NOTE | The contract's "Keys completed: —" omits the key of `audit_events` that the migration completes | Kept as the reading of section 3 (EXC-44, EXC-81); the contract is not changed by its own Task |
+| R-07 | NOTE | `no-register` in the browser comes from rewriting the server's response; `CashPagesTest` proves the server sends `[]` | Accepted as recorded |
+| R-08 | NOTE | An inactive register is refused with the text of a register in use | For the Owner: a COPY_DECK change-control item for a text of its own; COPY_DECK 16.1 names one text today |
+| R-09 | NOTE | `cash.spec.ts` runs once per database until TASK-030; its codes are random | F-3, for TASK-030 |
+| R-10 | NOTE | Two Access controllers read the Cash module's `OpenSessions` | As the reading of section 3 and the precedent of TASK-022; for the Owner whether STACK_AND_MODULES 2.1 records it |
+
+No round 2 package was needed for SHOULD-FIX items; the MUST-FIX R-01 has the targeted verification of round 2 (below).

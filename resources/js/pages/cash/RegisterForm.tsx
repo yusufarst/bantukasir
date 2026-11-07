@@ -74,7 +74,8 @@ function Form({ title, register }: { title: string; register: RegisterRow | null
     const location = phase.kind === 'committed' && control.ownRequest ? phase.result?.location : undefined;
     const frozen = busy || committed || phase.kind === 'recent_auth' || phase.kind === 'uncertain' || phase.kind === 'held' || phase.kind === 'reload';
     const inUse = register !== null && register.openBy !== null;
-    const changed = register === null ? code.trim() !== '' || label.trim() !== '' || !active : code !== register.code || label !== register.label || active !== register.active;
+    // What is sent is trimmed, so outer spaces alone change nothing (UXS-13; review finding R-04).
+    const changed = register === null ? code.trim() !== '' || label.trim() !== '' || !active : code.trim() !== register.code || label.trim() !== register.label || active !== register.active;
 
     useUnsavedChanges(changed && !committed, t('ux.state.unsaved.body'));
 

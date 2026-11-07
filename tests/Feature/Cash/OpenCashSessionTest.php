@@ -104,6 +104,7 @@ final class OpenCashSessionTest extends DatabaseTestCase
     {
         // BR-CASH-04; TR-VAL-06; COPY_DECK section 16.1: a blank amount has its own key; a number,
         // a decimal, a separator, a sign or a value above the limit is refused, never repaired.
+        $owner = TokoContoh::openSession('Hendra', TokoContoh::register('LACI-O', 'Laci Owner'));
         $this->as('Rina');
         $before = $this->facts();
 
@@ -139,9 +140,11 @@ final class OpenCashSessionTest extends DatabaseTestCase
         $this->open($this->envelopeOf($this->register, '0', ['version' => 1]))->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
         $this->assertSame($before, $this->facts());
 
-        // A valid amount is kept exactly, as whole rupiah.
-        $this->open($this->envelopeOf($this->register, '250000'))->assertStatus(201);
-        $this->assertSame(250000, $this->watcher()->table('cash_sessions')->value('opening_cash'));
+        // A valid amount is kept exactly, as whole rupiah; the refusals took no number (SCH-21,
+        // TR-TX-10): it is the next after the Owner's.
+        $kept = self::number($this->open($this->envelopeOf($this->register, '250000'))->assertStatus(201)->json('result.id'));
+        $this->assertSame(250000, $this->watcher()->table('cash_sessions')->where('id', $kept)->value('opening_cash'));
+        $this->assertSame($this->counterOf($owner) + 1, $this->counterOf($kept));
     }
 
     public function test_an_inactive_register_one_in_use_or_an_actor_with_a_session_is_refused(): void
@@ -151,7 +154,7 @@ final class OpenCashSessionTest extends DatabaseTestCase
         // exist is not found.
         $inactive = TokoContoh::register('LACI-X', 'Laci nonaktif', false);
         $second = TokoContoh::register('LACI-2', 'Laci 2');
-        TokoContoh::openSession('Dewi', $second);
+        $dewi = TokoContoh::openSession('Dewi', $second);
         $this->as('Rina');
         $before = $this->facts();
 
@@ -163,11 +166,24 @@ final class OpenCashSessionTest extends DatabaseTestCase
         $this->open($this->envelopeOf(999999, '0'))->assertStatus(404)->assertJsonPath('code', 'NOT_FOUND');
         $this->assertSame($before, $this->facts());
 
-        $this->open($this->envelopeOf($this->register, '0'))->assertStatus(201);
+        // The definite refusals took no number (SCH-21, TR-TX-10): the next open is the next after Dewi's.
+        $rina = self::number($this->open($this->envelopeOf($this->register, '0'))->assertStatus(201)->json('result.id'));
+        $this->assertSame($this->counterOf($dewi) + 1, $this->counterOf($rina));
         $third = TokoContoh::register('LACI-3', 'Laci 3');
         $after = $this->facts();
         $this->open($this->envelopeOf($third, '0'))->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED')->assertJsonPath('fields', []);
         $this->assertSame($after, $this->facts());
+
+        // Neither did the refusal of an actor who holds a session.
+        $this->as('Hendra');
+        $hendra = self::number($this->open($this->envelopeOf($third, '0'))->assertStatus(201)->json('result.id'));
+        $this->assertSame($this->counterOf($rina) + 1, $this->counterOf($hendra));
+    }
+
+    /** The counter of a session's number. */
+    private function counterOf(int $session): int
+    {
+        return self::number($this->watcher()->table('cash_sessions')->where('id', $session)->value('session_number_seq'));
     }
 
     public function test_the_owner_the_cashier_and_the_combined_account_open_as_themselves_and_operations_never(): void

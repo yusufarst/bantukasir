@@ -2,6 +2,7 @@
 
 namespace Tests\Concurrency;
 
+use App\Models\User;
 use Illuminate\Database\Connection;
 use Illuminate\Support\Str;
 use Tests\Harness\Access\UserCommandScenario;
@@ -21,7 +22,10 @@ use Tests\Harness\Race\Worker;
  *   user's OPEN session, then is refused; one session exists in each case;
  * - RACE-26, an open against a configuration change, in both orders: they never interleave, and the
  *   change that holds the lock first is in force for the other;
- * - RACE-01 and RACE-02: the same key, or another key of the same intent, runs once;
+ * - RACE-01 and RACE-02 for RC-02, RC-33 and RC-34: the same key, or another key of the same intent,
+ *   runs once, and another payload under the same key is refused;
+ * - RACE-04: a role change against a running open, in both orders: the one that holds the actor's
+ *   row first is in force;
  * - the numbering family: two opens on two registers do not wait on each other for a number, and
  *   the counter follows allocation order, not commit order.
  */
@@ -169,6 +173,70 @@ final class CashSessionRaceTest extends DatabaseTestCase
         $this->assertSame([0], $this->watcher()->table('cash_sessions')->where('register_id', $register)->pluck('opening_cash')->all());
     }
 
+    public function test_race_01_and_race_02_a_register_command_runs_once_for_the_same_key_or_the_same_intent(): void
+    {
+        // RC-33 and RC-34 (EXECUTION_CONTEXT section 10, a command): the second request waits on the
+        // first's identity, then answers its result; another payload under the same key is refused.
+        foreach (['cash_register.create', 'cash_register.update'] as $operation) {
+            foreach (['same key', 'another key', 'another payload'] as $case) {
+                [$payload, $expected] = $this->registerCommand($operation);
+                $intent = (string) Str::uuid();
+                $key = (string) Str::uuid();
+                $other = $case === 'another payload' ? [...$payload, 'label' => 'Laci lain'] : $payload;
+                $first = $this->start($this->owner($operation, $payload, $expected, $intent, $key), ['after_identity']);
+                $second = $this->start($this->owner($operation, $other, $expected, $intent, $case === 'another key' ? (string) Str::uuid() : $key));
+                Worker::ready($first, $second);
+
+                $first->run()->awaitBarrier('after_identity');
+                $second->run()->awaitBlocked($this->watcher());
+                $first->release();
+
+                $original = $first->finish()->result ?? [];
+                $this->assertSame(['COMMITTED', false], [$original['outcome'] ?? null, $original['repeated'] ?? null], $operation.' '.$case);
+                $this->assertSame(
+                    $case === 'another payload' ? ['refused' => 'IDEMPOTENCY_CONFLICT'] : ['outcome' => 'COMMITTED', 'repeated' => true, 'commandId' => $original['commandId'] ?? null],
+                    $second->finish()->result,
+                    $operation.' '.$case,
+                );
+                $this->assertSame(1, $this->watcher()->table('command_identities')->where('source_intent_id', $intent)->count(), $operation.' '.$case);
+                $this->assertSame(0, $this->watcher()->table('cash_registers')->where('label', 'Laci lain')->count(), $operation.' '.$case);
+            }
+        }
+    }
+
+    public function test_race_04_a_role_change_against_a_running_open_in_both_orders(): void
+    {
+        // The open holds the actor's row first (step 2.1): it commits, then the change, and the
+        // session stays OPEN (D-069 (d)).
+        $staff = TokoContoh::staff('Satu');
+        $open = $this->start([...$this->open('Rina', $this->register), 'actor' => $staff['id']], ['after_lock:2.1']);
+        $change = $this->start($this->roleChange($staff['id'], $staff['email'], 'Satu'));
+        Worker::ready($open, $change);
+
+        $open->run()->awaitBarrier('after_lock:2.1');
+        $change->run()->awaitBlocked($this->watcher());
+        $open->release();
+
+        $this->assertSame('COMMITTED', ($open->finish()->result ?? [])['outcome'] ?? null);
+        $this->assertSame('COMMITTED', ($change->finish()->result ?? [])['outcome'] ?? null);
+        $this->assertSame(['OPEN'], $this->watcher()->table('cash_sessions')->where('responsible_user_id', $staff['id'])->pluck('status')->all());
+
+        // The change holds the actor's row first: the open is refused before any fact.
+        $staff = TokoContoh::staff('Dua');
+        $other = TokoContoh::register('LACI-2', 'Laci 2');
+        $change = $this->start($this->roleChange($staff['id'], $staff['email'], 'Dua'), ['after_lock:2.2']);
+        $open = $this->start([...$this->open('Rina', $other), 'actor' => $staff['id']]);
+        Worker::ready($change, $open);
+
+        $change->run()->awaitBarrier('after_lock:2.2');
+        $open->run()->awaitBlocked($this->watcher());
+        $change->release();
+
+        $this->assertSame('COMMITTED', ($change->finish()->result ?? [])['outcome'] ?? null);
+        $this->assertSame(['refused' => 'FORBIDDEN'], $open->finish()->result);
+        $this->assertSame(0, $this->watcher()->table('cash_sessions')->where('responsible_user_id', $staff['id'])->count());
+    }
+
     public function test_opens_on_two_registers_do_not_wait_for_a_number_and_follow_allocation_order(): void
     {
         // SCH-25, the numbering family: the first takes its number and holds before its commit; the
@@ -229,6 +297,46 @@ final class CashSessionRaceTest extends DatabaseTestCase
             'expected' => ['registerVersion' => $version],
             'payload' => ['registerId' => $register, 'code' => is_string($code) ? $code : '', 'label' => 'Laci diubah', 'active' => $active],
         ];
+    }
+
+    /**
+     * The payload and the expected versions of RC-33 or RC-34 on a new register of its own.
+     *
+     * @return array{0: array<string, mixed>, 1: array<string, mixed>}
+     */
+    private function registerCommand(string $operation): array
+    {
+        $code = 'LACI-'.Str::upper(Str::random(8));
+
+        if ($operation === 'cash_register.create') {
+            return [['code' => $code, 'label' => 'Laci baru', 'active' => true], []];
+        }
+
+        return [['registerId' => TokoContoh::register($code, 'Laci'), 'code' => $code, 'label' => 'Laci diubah', 'active' => true], ['registerVersion' => 1]];
+    }
+
+    /**
+     * A command by the Owner.
+     *
+     * @param  array<string, mixed>  $payload
+     * @param  array<string, mixed>  $expected
+     * @return array<string, mixed>
+     */
+    private function owner(string $operation, array $payload, array $expected, string $intent, string $key): array
+    {
+        return ['operation' => $operation, 'actor' => $this->people['Hendra'], 'intent' => $intent, 'key' => $key, 'epoch' => $this->epoch, 'expected' => $expected, 'payload' => $payload];
+    }
+
+    /**
+     * `user.update` by the Owner: the account becomes Operations, which holds no CAP-21 (RACE-04).
+     *
+     * @return array<string, mixed>
+     */
+    private function roleChange(int $id, string $email, string $name): array
+    {
+        $user = User::query()->findOrFail($id);
+
+        return $this->owner('user.update', ['userId' => $id, 'displayName' => $name, 'email' => $email, 'roles' => ['operationsAdmin']], ['userVersion' => $user->version], (string) Str::uuid(), (string) Str::uuid());
     }
 
     /**

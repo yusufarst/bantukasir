@@ -65,6 +65,29 @@ final class CashRegisterCommandsTest extends DatabaseTestCase
         $this->assertSame([self::number($created->json('commandId')), self::number($changed->json('commandId'))], array_column($events, 'command_id'));
     }
 
+    public function test_a_repeat_and_a_status_check_answer_the_original_result_and_the_receipt_is_committed(): void
+    {
+        // EXECUTION_CONTEXT section 10, a command; G-25; RC-50: the same request again answers the
+        // original result without running again, a status check rebuilds it with its location, and
+        // the request's receipt is COMMITTED.
+        $this->owner();
+        $created = $this->envelope(['code' => 'LACI-1', 'label' => 'Laci depan', 'active' => true], ['operation' => CreateCashRegister::OPERATION]);
+        $register = self::number($this->postJson('/commands/'.CreateCashRegister::OPERATION, $created)->assertStatus(201)->json('result.id'));
+        $changed = $this->envelope(['registerId' => $register, 'code' => 'LACI-1', 'label' => 'Laci kiri', 'active' => true], ['operation' => UpdateCashRegister::OPERATION, 'expected' => (object) ['registerVersion' => 1]]);
+        $this->postJson('/commands/'.UpdateCashRegister::OPERATION, $changed)->assertStatus(201);
+        $result = ['type' => 'cash_register', 'id' => $register, 'location' => '/settings/cash-registers'];
+
+        foreach ([CreateCashRegister::OPERATION => $created, UpdateCashRegister::OPERATION => $changed] as $operation => $envelope) {
+            $this->postJson('/commands/'.$operation, $envelope)->assertStatus(200)->assertJsonPath('repeated', true)->assertJsonPath('result', $result);
+            $this->check($envelope)->assertOk()->assertJsonPath('outcome', 'COMMITTED')->assertJsonPath('result', $result);
+            $this->assertSame(['COMMITTED'], array_values(array_unique($this->watcher()->table('command_request_receipts')->where('operation', $operation)->pluck('outcome')->all())), $operation);
+        }
+
+        $this->assertSame(1, $this->watcher()->table('cash_registers')->count());
+        $this->assertSame(['LACI-1', 'Laci kiri', true, 2], $this->registerOf($register));
+        $this->assertSame(2, $this->watcher()->table('audit_events')->whereIn('action', ['REGISTER_CREATE', 'REGISTER_CHANGE'])->count());
+    }
+
     public function test_a_code_held_by_another_register_in_any_letter_case_is_refused_at_its_field(): void
     {
         // SCH-14: the unique index alone decides, also for a change; the label is not unique.
