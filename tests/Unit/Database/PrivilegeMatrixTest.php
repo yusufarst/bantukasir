@@ -122,9 +122,9 @@ final class PrivilegeMatrixTest extends TestCase
 
         // TASK-027 (SCHEMA section 10): the registers' listed columns, and the sessions' state
         // columns alone.
-        $this->assertSame(['SELECT', 'INSERT', 'UPDATE'], $matrix->tablePrivileges('cash_registers', 'runtime'));
+        $this->assertSame(['SELECT', 'INSERT'], $matrix->tablePrivileges('cash_registers', 'runtime'));
         $this->assertSame(['code', 'label', 'active', 'version', 'updated_at'], $matrix->updateColumns('cash_registers'));
-        $this->assertSame(['SELECT', 'INSERT', 'UPDATE'], $matrix->tablePrivileges('cash_sessions', 'runtime'));
+        $this->assertSame(['SELECT', 'INSERT'], $matrix->tablePrivileges('cash_sessions', 'runtime'));
         $this->assertSame(['status', 'activity_version', 'updated_at'], $matrix->updateColumns('cash_sessions'));
 
         foreach (array_keys($matrix->tables()) as $table) {

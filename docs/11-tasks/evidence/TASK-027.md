@@ -22,6 +22,9 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | `composer analyse` | Same run | 14:15 | 19 s | `FAIL`: two findings of PHPStan in tests — a check already narrowed in `CashSessionRaceTest` and a nullsafe access in `TokoContoh::openSession` (finding F-5); none in `app/`; the later steps did not run |
 | Guard | Local, on `430aed3` | 14:18 to 14:22 | about 4 min | `PASS`, no candidate |
 | `composer validate`, `lint` | Fast run 3, 42351035341 on `430aed3` | 14:26 | 28 s of Pint | `FAIL`: Pint's `method_argument_space` and `unary_operator_spaces` on the two lines of the fixes of F-5, whose spaces after a comma and after `??` the edit had dropped (finding F-6); the later steps did not run |
+| Guard | Local, on `bd5addb` | 14:29 to 14:33 | about 4 min | `PASS`, no candidate |
+| `composer validate`, `lint`, `analyse` | Fast run 4, 42351772127 on `bd5addb` | 14:36 to 14:37 | about 5 min | `PASS` |
+| `composer test:unit` | Same run | 14:37 to 14:38 | 23 s | `FAIL`, 1 of 906: `PrivilegeMatrixTest` (finding F-7); the later steps did not run |
 
 ## 2. What was built (contract section 4.1)
 
@@ -59,6 +62,7 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | F-4 | Fast run 1 failed Pint: a missing space after a comma in `CashPagesTest` | Fixed in checkpoint 2 |
 | F-5 | Fast run 2 failed PHPStan on two lines of tests | Fixed in checkpoint 3, tests only |
 | F-6 | Fast run 3 failed Pint on those two lines: a space dropped after a comma and after `??` | Fixed in checkpoint 4, tests only |
+| F-7 | Fast run 4 failed one unit test: `PrivilegeMatrixTest` read a column-level `UPDATE` as a table privilege, which `tablePrivileges()` lists only for an update of every column | Fixed in checkpoint 5, test only |
 | F-3 | For TASK-030: the browser suite opens the Owner's session once, so `tests/Browser/cash/cash.spec.ts` needs a database without it, as CI's fresh one is; and the key of `close_presence` to `cash_session_closes` comes with that table | TASK-030 adds the key and lets the browser fixtures close the Owner's session first |
 
 ## 5. Tests (contract section 7)
