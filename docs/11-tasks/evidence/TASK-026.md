@@ -28,6 +28,8 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | The PostgreSQL and concurrency test files that the branch changes | Same run | 10:47 to 10:51 | 4 min 6 s | `FAIL` in `ReversalTablesTest`, 5 of 6: its deferred case (finding F-7); `ReversalRaceTest` 3, `CapabilityMatrixTest` 7, `RouteInventoryTest` 8, `ConfirmReversalTest` 9, `LedgerTablesTest` 19 and `ReversalPagesTest` 3 tests passed |
 | Guard | Local, on `a93236e` | 10:54 | under 1 min | `PASS`, no candidate |
 | `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit`; the seven PostgreSQL and concurrency test files that the branch changes — `ReversalRaceTest` (3 tests), `CapabilityMatrixTest` (7), `RouteInventoryTest` (8), `ConfirmReversalTest` (9), `LedgerTablesTest` (19), `ReversalPagesTest` (3) and `ReversalTablesTest` (6). TASK-025's `CorrectCostTest`, `CostCorrectionRaceTest` and `CostPagesTest`, which cover the changed `CorrectCost::mark()` and `ReplayLedger`, are not among them: they run in `test:postgres` on the final head (review note R-07) | Fast run 5, 42336113311 on `a93236e`, the reviewed head | 10:55 to 11:05 | 10 min 27 s | `PASS` |
+| Guard | Local, on `4234f6e`, the review's fixes | 11:22 | under 1 min | `PASS`, no candidate |
+| `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit`; the same seven PostgreSQL and concurrency test files, `ConfirmReversalTest` with the review's cases R-04 and R-05 and `ReversalPagesTest` with R-06's | Fast run 6, 42338216200 on `4234f6e` | 11:23 to 11:33 | 10 min 23 s | `PASS` |
 | Guard preview of the record | Local, the working tree against origin/develop | 10:30 | under 1 min | `PASS`, no candidate |
 | The whole command contract — `composer test:postgres` in its two parts, `test:race`, `npm run build`, the browser suite with `reversal.spec.ts` — and the image checks | CI on the pull request's final head | — | — | `NOT_RUN` at this writing (CE-44, D-117); never on this machine (D-108) |
 
@@ -92,15 +94,15 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 
 | Dimension | Result | Reason |
 | --- | --- | --- |
-| Business | `PASS` | AC-026-01 to AC-026-04 proven by the L1 to L4 tests of the reviewed head's fast run; REQ-INV-09, REQ-COST-08 |
+| Business | `PASS` | AC-026-01 to AC-026-04 proven by the L1 to L4 tests of fast run 5 on the reviewed head and fast run 6 on the review's fixes; REQ-INV-09, REQ-COST-08 |
 | UI and UX | `BLOCKED` until the final head | RP-411 and its entries follow COPY_DECK 9.4 and 9.12, INTERACTION_INVENTORY and NAVIGATION_CONTRACTS UXP-411; the L4 page tests passed; the browser suite with `reversal.spec.ts` (axe at every width) runs first on the pull request's final head (D-117) |
 | Backend | `PASS` | FormRequest allowlist, CAP-17 at the route and in the transaction, NOT_FOUND by object scope, the L4 tests |
 | Database | `PASS` for the families run; `test:postgres` whole on the final head | `reversals` with its keys, the constraint, deferred, privilege, retention and index families (`ReversalTablesTest`); forward and additive migration with class, duration, lock impact and verification (EXC-46; its rehearsal on the benchmark dataset waits for TASK-043) |
 | Security | `PASS` | The capability matrix and route inventory, the refusals of the other roles and the combined account, recent authentication, the channel allowlists per role, no secret (the guard) |
-| Data integrity | `PASS` | Append-only facts, the exact inverse by keys, once per source, atomic audit and result, RACE-10, RACE-01, RACE-02, the failure after each of the eight write steps with the clearance rolled back |
-| Performance | `N/A` | Bounded by the movement cap and the heavy budget (TR-TIME-01), both refusing REPLAY_REJECTED in tests; the budgets are measured at TASK-048 |
+| Data integrity | `PASS` | Append-only facts, the exact inverse by keys, once per source, atomic audit and result, RACE-10, RACE-01, RACE-02, the failure after each of the eight write steps with the clearance rolled back (fast run 6) |
+| Performance | `N/A` | Bounded by the movement cap and the heavy budget (TR-TIME-01), both refusing REPLAY_REJECTED in tests (fast run 6); the budgets are measured at TASK-048 |
 | Operations | `PASS` | `reversals` in the manifest's counts (section 8); no runbook or status change |
-| Verification | `BLOCKED` until the final head | Self-review and the class-A review (section 9); the fast run 42336113311 on the reviewed head passed; the whole command contract and the image checks are `NOT_RUN` until the pull request's final head |
+| Verification | `BLOCKED` until the final head | Self-review, the class-A review and its targeted verifications, PASS at round 3 (section 9); fast run 5, 42336113311 on the reviewed head, and fast run 6, 42338216200 on the review's fixes, passed; the whole command contract and the image checks are `NOT_RUN` until the pull request's final head |
 
 ## 8. Backup impact (EXC-47)
 
@@ -124,7 +126,16 @@ Self-review of the whole diff against the contract before the review; the review
 | R-10: untested edges — a reversal of a manual issue past the range of stock, two refusals at once, onboarding RELEASED | NOTE | Recorded: the code's order is RC-10's by reading; no change |
 | R-11: corrections still offered on a reversed source's line | NOTE | F-1 extended |
 
-The fixes touch the records, two test files and `ReversalsController`; they run in fast run 6. The targeted verification of the MUST-FIX fixes follows (round 2).
+The fixes touch the records, two test files and `ReversalsController`; fast run 6, 42338216200 on `4234f6e`, passed them.
+
+Round 2: the targeted verification of R-01 and R-02 by `bk-reviewer-high`, package `review/TASK-026/r2` (tree `9c51477`, HEAD `4234f6e`); `--check` `UNCHANGED`. Verdict FAIL: R-02 FIXED; R-01 NOT FIXED at one more place, section 5's "Decisions pending", which still named the merge of pull request #35 as held for the Owner (D-124). No MUST-FIX introduced by the fixes; R-06's, R-05's and R-04's fixes read as sound.
+
+| Finding | Severity | Outcome |
+| --- | --- | --- |
+| R-01, the rest: section 5's "Decisions pending" | MUST-FIX | Fixed: the held merge removed from the list |
+| R-12: the Definition of Done rows that rest on the review's new tests cited a run that did not include them | SHOULD-FIX | Fixed: fast run 6 recorded in section 1 and cited by those rows |
+
+Round 3: the targeted verification of that one fix by `bk-reviewer-high`, package `review/TASK-026/r3` (tree `f8e52e6`, HEAD `4234f6e`); `--check` `UNCHANGED`. Verdict PASS: R-01 FIXED, no other sentence of CURRENT_HANDOFF states the hold as current, no finding introduced; its remark that two places cited fast run 5 alone is taken in the record. No MUST-FIX remains.
 
 ## 10. The guard's candidates (CE-31)
 

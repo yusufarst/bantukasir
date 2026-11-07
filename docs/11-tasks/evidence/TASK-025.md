@@ -375,3 +375,16 @@ Not changed: every assertion, axe's tags, `measure()` and its thresholds, the wi
 - One push, fast run 10 of 10. `d1da616` and the earlier heads are not run again.
 - A red fifth head is the stop for the Owner's decision, whatever its cause — the test, the network of T-41 or anything else — with no fix and no rerun (D-124's limit). The tick may name it "failure 4".
 - A green fifth head: no agent merges pull request #35 (D-124's hold); the Owner decides.
+
+## 14. Merge
+
+Recorded by the next Task, TASK-026 (EXECUTION_CONTEXT CE-50), from the state and GitHub on 7 November 2026, by read-only Git and GitHub commands. The fifth head, `2ecdb50`, was green: the Owner then lifted D-124's hold (D-125), and the tick merged and verified the pull request, which the state records as merge kind `task`. CI on the final head ran the whole command contract, both PostgreSQL parts, the browser suite with `costing.spec.ts` and its fix, and the image checks, and passed: the checks of section 1 that were `NOT_RUN` passed there, and fix cycle 4 held.
+
+| Fact | Value |
+| --- | --- |
+| Pull request | #35, "TASK-025 — Cost correction, completion and bounded replay", from `task/TASK-025-cost-correction` into `develop` |
+| Its head | `2ecdb505fce37e7364d3b2ff340c8e764320473f` |
+| CI on the pull request | Run 42285980444, on `2ecdb50`, success, all four jobs, 6 November 2026 20:09:55 to 20:34:59 UTC; the fast run 42285972289 and the pull request's release dry run 42285980764 green |
+| Merge | The tick's squash merge on the Owner's account (`yusufarst`), under D-105 after D-125, on 7 November 2026 at 01:38:35 UTC, with the automated review's status DONE |
+| Merge commit | `139f99d8d29a3191df96334edfa0e7b3a271d2d0` on `develop`; its tree `77c07b897b063c3a328efa5346cb99d4db6ae550` equals that of `2ecdb50` |
+| CI on `develop` | Run 42325162601, on `139f99d`, success, 01:38:38 to 02:00:03 UTC |
