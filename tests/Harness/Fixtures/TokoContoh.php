@@ -467,7 +467,7 @@ final class TokoContoh
         self::shop();
 
         // The person's account as it is, its password and sign-in sessions kept; created on first use.
-        $actor = app(Accounts::class)->findByEmail(self::email($person))?->id ?? self::person($person)['id'];
+        $actor = app(Accounts::class)->findByEmail(self::email($person))->id ??self::person($person)['id'];
         $envelope = new Envelope(OpenCashSession::OPERATION, Operations::VERSION, (string) Str::uuid(), (string) Str::uuid(), self::recoveryEpoch(), [], ['registerId' => $register, 'openingCash' => $openingCash]);
         $id = app(OpenCashSession::class)->execute(new CommandContext($actor, $envelope, app(Clock::class)->now()))->result['id'] ?? null;
 

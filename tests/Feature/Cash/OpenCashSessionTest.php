@@ -94,6 +94,10 @@ final class OpenCashSessionTest extends DatabaseTestCase
         $repeat = $this->open($envelope);
         $repeat->assertStatus(200)->assertJsonPath('repeated', true)->assertJsonPath('result.id', $session);
         $this->assertSame(1, $this->watcher()->table('cash_sessions')->count());
+
+        // A status check rebuilds the same result with its number (RC-50; ADR-007 section 3).
+        $resolved = $this->check($envelope)->assertOk()->assertJsonPath('outcome', 'COMMITTED')->assertJsonPath('result.number', $row['session_number']);
+        $this->assertJsonChannel($resolved, 'commands.resolve.number', 'cashier');
     }
 
     public function test_a_blank_or_malformed_amount_is_refused_and_a_valid_one_is_kept_exactly(): void

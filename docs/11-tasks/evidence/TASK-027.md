@@ -15,6 +15,11 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Check | Where it ran | Time | Duration | Result |
 | --- | --- | --- | --- | --- |
 | `npm run typecheck` | Local | 13:45 | — | `NOT_RUN`: `tsc` is not installed on this machine |
+| Guard (Gitleaks 8.30.1, the secret scan, identity, candidates) | Local, on `b4db100` | 13:58 to 14:01 | about 3 min | `PASS`, no candidate |
+| `composer validate`, `lint` | Fast run 1, 42349574943 on `b4db100` | 14:02 to 14:05 | 19 s of Pint | `FAIL`: Pint's `method_argument_space` in `CashPagesTest` (finding F-4); the later steps did not run |
+| Guard | Local, on `a26be3d` | 14:07 to 14:10 | about 3 min | `PASS`, no candidate |
+| `composer validate`, `lint` (Pint, the translation keys and types, the migration review, the parts of `test:postgres`, the secret scan, the audits) | Fast run 2, 42350181420 on `a26be3d` | 14:11 to 14:15 | about 4 min | `PASS` |
+| `composer analyse` | Same run | 14:15 | 19 s | `FAIL`: two findings of PHPStan in tests — a check already narrowed in `CashSessionRaceTest` and a nullsafe access in `TokoContoh::openSession` (finding F-5); none in `app/`; the later steps did not run |
 
 ## 2. What was built (contract section 4.1)
 
@@ -49,6 +54,8 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | --- | --- | --- |
 | F-1 | `tsc`, ESLint and PHP do not run on this machine, so every static check is met first in CI (TASK-011 F-5) | As recorded since TASK-011; the fast runs cover them |
 | F-2 | For TASK-029: RC-02's location and RP-104's redirect with a session are RN-01 until RP-101 exists; UXI-002 leads to RP-104; `Homes` sends a cashier with an OPEN session to Akun saya and the combined account to Stok | TASK-029 switches them to RP-101 (`OpenCashSession::LOCATION`, `OpenSessionController::WITH_SESSION`, `DESTINATIONS.till`, `Homes::of`) |
+| F-4 | Fast run 1 failed Pint: a missing space after a comma in `CashPagesTest` | Fixed in checkpoint 2 |
+| F-5 | Fast run 2 failed PHPStan on two lines of tests | Fixed in checkpoint 3, tests only |
 | F-3 | For TASK-030: the browser suite opens the Owner's session once, so `tests/Browser/cash/cash.spec.ts` needs a database without it, as CI's fresh one is; and the key of `close_presence` to `cash_session_closes` comes with that table | TASK-030 adds the key and lets the browser fixtures close the Owner's session first |
 
 ## 5. Tests (contract section 7)
@@ -73,6 +80,20 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | AC-027-04 Registers are created and changed with recent authentication and audit; a change is refused while a session is OPEN, also against a concurrent open (RACE-26); codes are unique without regard to letter case | `CashRegisterCommandsTest`, `CashSessionRaceTest` (RACE-26), `CashTablesTest` (`cash_registers_code_ci_uniq`) | See section 1 |
 | AC-027-05 Session numbers follow allocation order, do not wait on each other, leave a gap after a rollback and carry the right date part across Asia/Jakarta midnight | `OpenCashSessionTest` (the gap, midnight), `CashSessionRaceTest` (no wait, allocation order), `CashTablesTest` (the format and the sequence) | See section 1 |
 | AC-027-06 KS-06 is reproduced with its states; the pages pass the accessibility checks | `cash.spec.ts` (axe at every width), `CashPagesTest` | The browser suite runs on the final head (D-117) |
+
+## 7. Definition of Done (TEST_STRATEGY section 10)
+
+| Dimension | Result | Reason |
+| --- | --- | --- |
+| Business | `PASS` | AC-027-01 to AC-027-05 proven by the L2 to L4 tests of the fast runs (section 1); REQ-CASH-01 to REQ-CASH-03, REQ-CFG-04 |
+| UI and UX | `BLOCKED` until the final head | RP-104, RP-609 and RP-610 follow COPY_DECK 7.4, 11.9 and 11.10, KS-06, INTERACTION_INVENTORY and NAVIGATION_CONTRACTS; the L4 page tests passed; the browser suite with `cash.spec.ts` (axe at every width) runs first on the pull request's final head (D-117) |
+| Backend | `PASS` | FormRequest allowlists, CAP-21 and CAP-31 at the route and in the transaction, the responsible user always the actor, NOT_FOUND by object scope, the L4 tests |
+| Database | `PASS` for the families run; `test:postgres` whole on the final head | The two tables and the sequence with the constraint, presence-key, privilege, retention, numbering and index families (`CashTablesTest`); forward and additive migration with class, duration, lock impact and verification (EXC-46; its rehearsal on the benchmark dataset waits for TASK-043) |
+| Security | `PASS` | The capability matrix and route inventory, the refusals of the other roles and the combined account, recent authentication of RC-33 and RC-34, the channel allowlists per role, no secret (the guard) |
+| Data integrity | `PASS` | Retained sessions with state columns only, the number held by a check, one OPEN session per register and per user by the database, atomic audit and result, RACE-07, RACE-26, RACE-01, RACE-02, the failure after every write step |
+| Performance | `N/A` | Bounded lists (500 registers, the holders of OPEN sessions); no counter row or lock for numbering (SCH-25); the budgets are measured at TASK-048 |
+| Operations | `PASS` | Both tables in the manifest's counts and the sequence in the backup role's reads (section 8); no runbook or status change |
+| Verification | `BLOCKED` until the final head | Self-review and the class-A review (section 9); the fast runs of section 1; the whole command contract and the image checks are `NOT_RUN` until the pull request's final head |
 
 ## 8. Backup impact (EXC-47)
 

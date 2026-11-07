@@ -190,7 +190,7 @@ final class CashSessionRaceTest extends DatabaseTestCase
         $byRegister = array_column($counters, 1, 0);
         $earlier = $byRegister[$this->register] ?? null;
         $this->assertIsInt($earlier);
-        $this->assertSame((is_int($earlier) ? $earlier : 0) + 1, $byRegister[$other] ?? null, 'The second open took the next number while the first held its own.');
+        $this->assertSame($earlier + 1, $byRegister[$other] ?? null,'The second open took the next number while the first held its own.');
     }
 
     /**
