@@ -75,12 +75,12 @@ final class CashRegisterCommandsTest extends DatabaseTestCase
         $register = self::number($this->postJson('/commands/'.CreateCashRegister::OPERATION, $created)->assertStatus(201)->json('result.id'));
         $changed = $this->envelope(['registerId' => $register, 'code' => 'LACI-1', 'label' => 'Laci kiri', 'active' => true], ['operation' => UpdateCashRegister::OPERATION, 'expected' => (object) ['registerVersion' => 1]]);
         $this->postJson('/commands/'.UpdateCashRegister::OPERATION, $changed)->assertStatus(201);
-        $result = ['type' => 'cash_register', 'id' => $register, 'location' => '/settings/cash-registers'];
-
         foreach ([CreateCashRegister::OPERATION => $created, UpdateCashRegister::OPERATION => $changed] as $operation => $envelope) {
-            $this->postJson('/commands/'.$operation, $envelope)->assertStatus(200)->assertJsonPath('repeated', true)->assertJsonPath('result', $result);
-            $this->check($envelope)->assertOk()->assertJsonPath('outcome', 'COMMITTED')->assertJsonPath('result', $result);
-            $this->assertSame(['COMMITTED'], array_values(array_unique($this->watcher()->table('command_request_receipts')->where('operation', $operation)->pluck('outcome')->all())), $operation);
+            $this->postJson('/commands/'.$operation, $envelope)->assertStatus(200)->assertJsonPath('repeated', true)
+                ->assertJsonPath('result.type', 'cash_register')->assertJsonPath('result.id', $register)->assertJsonPath('result.location', '/settings/cash-registers');
+            $this->assertSame(['COMMITTED', 'COMMITTED'], $this->outcomesOf($envelope), $operation);
+            $this->check($envelope)->assertOk()->assertJsonPath('outcome', 'COMMITTED')
+                ->assertJsonPath('result.type', 'cash_register')->assertJsonPath('result.id', $register)->assertJsonPath('result.location', '/settings/cash-registers');
         }
 
         $this->assertSame(1, $this->watcher()->table('cash_registers')->count());

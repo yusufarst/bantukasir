@@ -180,12 +180,6 @@ final class OpenCashSessionTest extends DatabaseTestCase
         $this->assertSame($this->counterOf($rina) + 1, $this->counterOf($hendra));
     }
 
-    /** The counter of a session's number. */
-    private function counterOf(int $session): int
-    {
-        return self::number($this->watcher()->table('cash_sessions')->where('id', $session)->value('session_number_seq'));
-    }
-
     public function test_the_owner_the_cashier_and_the_combined_account_open_as_themselves_and_operations_never(): void
     {
         // CAP-21 for the Owner, a cashier and the combined account, each on their own session; no
@@ -352,5 +346,11 @@ final class OpenCashSessionTest extends DatabaseTestCase
     private function watcher(): Connection
     {
         return $this->watcher ??= $this->observer();
+    }
+
+    /** The counter of a session's number. */
+    private function counterOf(int $session): int
+    {
+        return self::number($this->watcher()->table('cash_sessions')->where('id', $session)->value('session_number_seq'));
     }
 }

@@ -38,6 +38,9 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | `composer validate`, `lint`, `analyse`, `test:unit` | Fast run 8, 42359433420 on `9ff35fd` | 16:25 to 16:26 | 81 s | `PASS` |
 | `npm ci`, `npm run lint`, `typecheck`, `test:unit` | Same run | 16:26 to 16:28 | 112 s | `PASS` |
 | The changed PostgreSQL and concurrency files: `CashSessionRaceTest`, `CapabilityMatrixTest`, `HomeRedirectTest`, `RouteInventoryTest`, `CashPagesTest`, `CashRegisterCommandsTest`, `CashTablesTest`, `OpenCashSessionTest`, `SettingsPagesTest` | Same run | 16:28 to 16:33 | 4 min 44 s | `PASS`, every file |
+| Guard | Local, on `c8f4d38` (the fixes of review round 1) | 16:53 to 16:58 | about 5 min | `PASS`, no candidate |
+| `composer validate`, `lint` | Fast run 9, 42361995551 on `c8f4d38` | 17:01 to 17:02 | 24 s of Pint | `PASS` |
+| `composer analyse` | Same run | 17:02 | 11 s | `FAIL`: PHPStan refused `array_unique` over `array<mixed>` in the new test of R-01 (finding F-11); the later steps did not run |
 | `composer test:postgres` whole, `test:concurrency` whole, the browser suite, the build, the image checks | The pull request's final head | — | — | `NOT_RUN` until then (CE-44, D-117) |
 
 ## 2. What was built (contract section 4.1)
@@ -80,6 +83,7 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | F-8 | Fast run 5 failed `npm run lint`: ESLint's rule of ADR-005 refused the literal `'0'` that the review's text on UXP-104 formats while no amount is entered. The same checkpoint gives RP-104 the till's icon rail (UXA-03, KS-06), which `shell.spec.ts` now reads: the banner names no shop there | Fixed in checkpoint 6: a named constant; the rail; the browser test |
 | F-9 | Fast run 6 failed `RouteInventoryTest::test_no_route_of_a_disabled_feature_exists`: its fragment `register`, meant for Fortify's registration route, matched RP-609's contractual path `settings/cash-registers` anywhere in the path | Fixed in checkpoint 7, test only: a fragment is refused at the start of any segment of a path, and the test now proves that Fortify's paths are still caught and the registers' paths are not; every fragment that matched no path before still matches none |
 | F-10 | Fast run 7 failed `CashTablesTest::test_each_check_and_key_of_a_session_refuses_its_violation`: the session with a seven-digit counter, committed in the middle of the test with the default opening command, made the later refusals answer `cash_sessions_open_command_unique` before the keys they test | Fixed in checkpoint 8, test only: that session is committed last, after every refusal; no assertion changed |
+| F-11 | Fast run 9 failed PHPStan on one line of the new test of R-01: `array_unique` over the receipts' outcomes, typed `array<mixed>` | Fixed in checkpoint 10, test only: the harness's `outcomesOf()`, which asserts both receipts, the original's and the repeat's, `COMMITTED`, before the status check; the result's paths one by one |
 | F-3 | For TASK-030: the browser suite opens the Owner's session once, so `tests/Browser/cash/cash.spec.ts` needs a database without it, as CI's fresh one is; and the key of `close_presence` to `cash_session_closes` comes with that table | TASK-030 adds the key and lets the browser fixtures close the Owner's session first |
 
 ## 5. Tests (contract section 7)
