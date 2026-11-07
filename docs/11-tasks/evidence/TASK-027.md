@@ -28,6 +28,9 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Guard | Local, on `2146161` | 14:42 to 14:45 | about 3 min | `PASS`, no candidate |
 | `composer validate`, `lint`, `analyse`, `test:unit` | Fast run 5, 42352646178 on `2146161` | 14:49 to 14:50 | about 6 min | `PASS` |
 | `npm run lint` | Same run | 14:50 | 4 s | `FAIL`: ESLint's rule of ADR-005 refused the literal `'0'` inside the review's text on UXP-104 (finding F-8); the later steps did not run |
+| Guard | Local, on `10dabc5` | 15:41 to 15:47 | about 6 min | `PASS`, no candidate |
+| `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit` | Fast run 6, 42356955703 on `10dabc5` | 15:47 to 15:53 | about 6 min | `PASS` |
+| The changed PostgreSQL and concurrency files | Same run | 15:53 to 15:56 | about 3 min | `CashSessionRaceTest` (5 tests), `CapabilityMatrixTest` (7), `HomeRedirectTest` (4) `PASS`; `RouteInventoryTest` `FAIL`, 1 of 8 (finding F-9); the later files did not run |
 
 ## 2. What was built (contract section 4.1)
 
@@ -67,6 +70,7 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | F-6 | Fast run 3 failed Pint on those two lines: a space dropped after a comma and after `??` | Fixed in checkpoint 4, tests only |
 | F-7 | Fast run 4 failed one unit test: `PrivilegeMatrixTest` read a column-level `UPDATE` as a table privilege, which `tablePrivileges()` lists only for an update of every column | Fixed in checkpoint 5, test only |
 | F-8 | Fast run 5 failed `npm run lint`: ESLint's rule of ADR-005 refused the literal `'0'` that the review's text on UXP-104 formats while no amount is entered. The same checkpoint gives RP-104 the till's icon rail (UXA-03, KS-06), which `shell.spec.ts` now reads: the banner names no shop there | Fixed in checkpoint 6: a named constant; the rail; the browser test |
+| F-9 | Fast run 6 failed `RouteInventoryTest::test_no_route_of_a_disabled_feature_exists`: its fragment `register`, meant for Fortify's registration route, matched RP-609's contractual path `settings/cash-registers` anywhere in the path | Fixed in checkpoint 7, test only: a fragment is refused at the start of any segment of a path, and the test now proves that Fortify's paths are still caught and the registers' paths are not; every fragment that matched no path before still matches none |
 | F-3 | For TASK-030: the browser suite opens the Owner's session once, so `tests/Browser/cash/cash.spec.ts` needs a database without it, as CI's fresh one is; and the key of `close_presence` to `cash_session_closes` comes with that table | TASK-030 adds the key and lets the browser fixtures close the Owner's session first |
 
 ## 5. Tests (contract section 7)

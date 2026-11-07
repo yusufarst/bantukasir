@@ -234,10 +234,17 @@ final class RouteInventoryTest extends TestCase
             $this->assertNotContains('DELETE', $route->methods(), $route->uri());
         }
 
-        foreach (['register', 'forgot-password', 'reset-password', 'email', 'verify', 'two-factor', 'passkey', 'profile-information', 'recovery-codes'] as $fragment) {
-            foreach ($paths as $path) {
-                $this->assertStringNotContainsString($fragment, $path);
-            }
+        // A fragment of a disabled feature's path is refused at the start of any segment, so that
+        // Fortify's `register` is caught and RP-609's `settings/cash-registers` is not (TASK-027).
+        foreach (['register', 'forgot-password', 'reset-password', 'email/verify', 'email', 'verify', 'user/two-factor-recovery-codes', 'two-factor-challenge', 'user/passkeys', 'user/profile-information'] as $fortify) {
+            $this->assertTrue(self::disabledFeature($fortify), $fortify);
+        }
+
+        $this->assertFalse(self::disabledFeature('settings/cash-registers'));
+        $this->assertFalse(self::disabledFeature('commands/cash_register.create'));
+
+        foreach ($paths as $path) {
+            $this->assertFalse(self::disabledFeature($path), $path);
         }
 
         $this->assertSame([Features::updatePasswords()], config('fortify.features'));
@@ -249,6 +256,23 @@ final class RouteInventoryTest extends TestCase
         $this->assertFalse(Features::enabled(Features::passkeys()));
         $this->assertFalse(Features::enabled(Features::updateProfileInformation()));
         $this->assertTrue(Features::enabled(Features::updatePasswords()));
+    }
+
+    /**
+     * Whether a path names a disabled feature of Fortify: one of its fragments at the start of a
+     * segment of the path.
+     */
+    private static function disabledFeature(string $path): bool
+    {
+        foreach (['register', 'forgot-password', 'reset-password', 'email', 'verify', 'two-factor', 'passkey', 'profile-information', 'recovery-codes'] as $fragment) {
+            foreach (explode('/', $path) as $segment) {
+                if (str_starts_with($segment, $fragment)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     public function test_no_mail_transport_is_configured_and_nothing_can_be_sent(): void
