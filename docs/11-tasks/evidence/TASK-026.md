@@ -20,6 +20,9 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Guard | Local, on `e0a3745` | 10:19 | under 1 min | `PASS`, no candidate |
 | `composer validate`, `lint` | Fast run 2, 42333476278 on `e0a3745` | 10:22 | — | `PASS` |
 | `composer analyse` | Same run | 10:22 | 11 s | `FAIL`: five offsets read on `mixed` in `ConfirmReversalTest` and `ReversalPagesTest` (finding F-5); the later steps did not run |
+| Guard | Local, on `1b334cc` | 10:26 | under 1 min | `PASS`, no candidate |
+| `composer validate`, `lint`, `analyse`, `test:unit` (with `ValuationReplayTest`, `OperationsTest`, `PrivilegeMatrixTest`); `npm run lint`, `typecheck`, `test:unit` | Fast run 3, 42334013917 on `1b334cc` | 10:27 to 10:31 | about 4 min | `PASS` |
+| The PostgreSQL and concurrency test files that the branch changes | Same run | 10:31 to 10:34 | 3 min 3 s | `FAIL` in `ReversalPagesTest`: the receiving page of an uncorrected receipt holds no correction, so its props could not equal the Owner's allowlist, and the reversal links, nested and null where absent, could never equal it (finding F-6); `ReversalRaceTest` 3, `CapabilityMatrixTest` 7, `RouteInventoryTest` 8, `ConfirmReversalTest` 9 and `LedgerTablesTest` 19 tests passed before it; `ReversalTablesTest` did not run |
 
 ## 2. What was built (contract section 4.1)
 
@@ -51,6 +54,7 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | F-2 | `tsc`, ESLint and PHP do not run on this machine, so every static check is met first in CI (TASK-011 F-5) | As recorded since TASK-011; the fast runs cover them |
 | F-4 | Fast run 1 failed Pint: the imports of `ConfirmReversal.php` out of order | Fixed in checkpoint 2 |
 | F-5 | Fast run 2 failed PHPStan: two tests read offsets of `mixed` props | Fixed in checkpoint 3, tests only |
+| F-6 | Fast run 3: the channel allowlist compares a page's props exactly, so a nested link that is null on most movements could never match it | Fixed in checkpoint 4: the links are flat scalars on every movement (`reversedById`, `reversedByAt`, `reversesId`, `reversesAt`), and the test reads a corrected receipt and its movement |
 | F-3 | UXI-228, "Batalkan mutasi" for an OPENING while onboarding is active, and the replacement that follows it, are TASK-035's, which proves the OPENING case (contract section 4.3) | The server accepts an OPENING during onboarding; the control on UXP-403 shows for an OPENING as UXI-227 |
 
 ## 5. Tests (contract section 7)
@@ -64,6 +68,16 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | L4 RC-10: the envelope's fields, its receipt, the roles and the combined account, recent authentication, the failure after each of the eight write steps, its audit event and durable result, recovery by repeat and status check; RP-411 and the entries per role with the channel allowlists | `ConfirmReversalTest`, `tests/Feature/Inventory/ReversalPagesTest.php`, `CapabilityMatrixTest`, `RouteInventoryTest`, `tests/Harness/Channels/Allowlists.php` |
 | L5 RP-411 at every width of KEY_SCREENS section 4 and 1440 px, with axe | `tests/Browser/inventory/reversal.spec.ts` |
 
-## 6. Backup impact (EXC-47)
+## 6. Acceptance criteria
+
+| Criterion | Proof | Result |
+| --- | --- | --- |
+| AC-026-01 The exact inverse of one eligible source, once; two concurrent reversals give one success (RACE-10) | `ConfirmReversalTest` (the fixture, the second reversal STALE_VERSION, a repeat under the same intent), `ReversalRaceTest` (RACE-10, RACE-01, RACE-02), `ReversalTablesTest` (the key to the source, the unique source) | `PASS` in the fast run of the reviewed head where it ran; the whole suites on the final head |
+| AC-026-02 COSTING section 8: 5, 50 and 50; the invalid history refused with no movement; SALE_ISSUE and RETURN_RECEIPT not reversible | `ValuationReplayTest` (L1), `ConfirmReversalTest` (L2, through the Actions), `ReversalTablesTest` (`reversals_original_type_allowed`) | As above |
+| AC-026-03 A RECEIPT or MANUAL_ISSUE only while onboarding is not active; a blocked product refuses | `ConfirmReversalTest` | As above |
+| AC-026-04 The source's active marks cleared in the reversal's transaction | `ConfirmReversalTest` (the clearance with the reversal's command; a later refused correction's mark cleared at once; the failure after each write step) | As above |
+| AC-026-05 RP-411 follows the approved artifacts | `ReversalPagesTest` (L4), `reversal.spec.ts` (L5, axe at every width) | The browser suite runs on the final head (D-117) |
+
+## 7. Backup impact (EXC-47)
 
 `reversals` holds retained facts, class F in `database/privileges.php`, so it is in the manifest's counts, which `backup:run` takes for every table of the matrix of a counted class (`BackupRunner::COUNTED_CLASSES`; TASK-013), with the backup role's `SELECT` on the table and its sequence. No new kind of stored file. No runbook or status change.

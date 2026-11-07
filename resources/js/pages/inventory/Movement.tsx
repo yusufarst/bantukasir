@@ -67,15 +67,12 @@ interface Movement {
     /** A manual issue's reason (BR-INV-19). */
     readonly reasonCode: string | null;
     readonly source: MovementSource | null;
-    /** The REVERSAL that cancelled this movement (TASK-026). */
-    readonly reversedBy: MovementLink | null;
-    /** The movement that this REVERSAL cancels (TASK-026). */
-    readonly reverses: MovementLink | null;
-}
-
-interface MovementLink {
-    readonly id: number;
-    readonly at: string;
+    /** The REVERSAL that cancelled this movement, and its time (TASK-026). */
+    readonly reversedById: number | null;
+    readonly reversedByAt: string | null;
+    /** The movement that this REVERSAL cancels, and its time (TASK-026). */
+    readonly reversesId: number | null;
+    readonly reversesAt: string | null;
 }
 
 interface CostEvidence {
@@ -98,9 +95,9 @@ export default function Movement({ movement, costEvidence, postingFrozen }: { mo
 }
 
 /** A link to the other movement of a reversal pair, with its words (COPY_DECK section 9.4). */
-function pairLink(link: MovementLink, text: string) {
+function pairLink(id: number, text: string) {
     return (
-        <a className={'bk-table-link'} href={movementPage(link.id)}>
+        <a className={'bk-table-link'} href={movementPage(id)}>
             {text}
         </a>
     );
@@ -157,8 +154,12 @@ function MovementPage({ title, movement, costEvidence, postingFrozen }: { title:
                       ),
                   },
               ]),
-        ...(movement.reverses === null ? [] : [{ key: 'reverses', label: t('inventory.movement.source'), value: pairLink(movement.reverses, t('inventory.movement.reverses', { waktu: formatDateTime(movement.reverses.at) })) }]),
-        ...(movement.reversedBy === null ? [] : [{ key: 'reversed', label: t('inventory.type.reversal'), value: pairLink(movement.reversedBy, t('inventory.movement.reversed_by', { waktu: formatDateTime(movement.reversedBy.at) })) }]),
+        ...(movement.reversesId === null || movement.reversesAt === null
+            ? []
+            : [{ key: 'reverses', label: t('inventory.movement.source'), value: pairLink(movement.reversesId, t('inventory.movement.reverses', { waktu: formatDateTime(movement.reversesAt) })) }]),
+        ...(movement.reversedById === null || movement.reversedByAt === null
+            ? []
+            : [{ key: 'reversed', label: t('inventory.type.reversal'), value: pairLink(movement.reversedById, t('inventory.movement.reversed_by', { waktu: formatDateTime(movement.reversedByAt) })) }]),
     ];
 
     return (
@@ -171,7 +172,7 @@ function MovementPage({ title, movement, costEvidence, postingFrozen }: { title:
                         <KeyValueList items={items} />
                         {reverses && (
                             <div className={'bk-actions'}>
-                                <ReversalButton movementId={movement.id} type={movement.type} reversed={movement.reversedBy !== null} frozen={postingFrozen} opener={OPENER} />
+                                <ReversalButton movementId={movement.id} type={movement.type} reversed={movement.reversedById !== null} frozen={postingFrozen} opener={OPENER} />
                             </div>
                         )}
                     </div>

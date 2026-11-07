@@ -105,6 +105,8 @@ final class ReversalPagesTest extends DatabaseTestCase
         TokoContoh::reverse($this->issue);
         $reversal = self::number($this->observer()->table('stock_movements')->where('movement_type', 'REVERSAL')->value('id'));
         $secrets = array_values(array_map(static fn (array $one): string => $one['password'], $this->people));
+        // A corrected receipt, so that the Owner's page holds every allowlisted prop (D-047; TASK-025).
+        TokoContoh::correctCost(TokoContoh::evidenceOf($this->receipt), '110000');
 
         foreach (['Hendra' => 'owner', 'Agus' => 'ops', 'Dewi' => 'combined'] as $person => $kind) {
             $this->as($person);
@@ -112,21 +114,22 @@ final class ReversalPagesTest extends DatabaseTestCase
             $this->assertPageChannel($issue, $kind, $secrets);
             $receiving = $this->get('/stock/receivings/'.$this->document)->assertOk();
             $this->assertPageChannel($receiving, $kind, $secrets);
-            $source = $this->get('/stock/movements/'.$this->issue)->assertOk();
-            $this->assertPageChannel($source, $kind, $secrets);
-            $this->assertPageChannel($this->get('/stock/movements/'.$reversal)->assertOk(), $kind, $secrets);
+            // The receipt's movement holds every allowlisted prop: its source and, for the Owner, its evidence.
+            $receipt = $this->get('/stock/movements/'.$this->receipt)->assertOk();
+            $this->assertPageChannel($receipt, $kind, $secrets);
 
             $owner = $kind === 'owner';
             $this->assertSame($owner ? [true] : [null], array_map(static fn (mixed $line): mixed => is_array($line) ? $line['reversed'] ?? null : null, (array) ($this->propsOf($issue)['lines'] ?? [])), $person);
             $this->assertSame($owner ? [false] : [null], array_map(static fn (mixed $line): mixed => is_array($line) ? $line['reversed'] ?? null : null, (array) ($this->propsOf($receiving)['lines'] ?? [])), $person);
-            $this->assertSame($owner, array_key_exists('postingFrozen', $this->propsOf($source)), $person);
-            $movement = (array) ($this->propsOf($source)['movement'] ?? []);
-            $this->assertSame($reversal, ((array) ($movement['reversedBy'] ?? []))['id'] ?? null, $person);
+            $this->assertSame($owner, array_key_exists('postingFrozen', $this->propsOf($receipt)), $person);
+            $this->assertSame([null, null, null, null], array_values(array_intersect_key((array) ($this->propsOf($receipt)['movement'] ?? []), array_flip(['reversedById', 'reversedByAt', 'reversesId', 'reversesAt']))), $person);
+            $source = (array) ($this->propsOf($this->get('/stock/movements/'.$this->issue)->assertOk())['movement'] ?? []);
+            $this->assertSame([$reversal, null], [$source['reversedById'] ?? null, $source['reversesId'] ?? null], $person);
         }
 
         $this->as('Hendra');
         $links = (array) ($this->propsOf($this->get('/stock/movements/'.$reversal))['movement'] ?? []);
-        $this->assertSame([$this->issue, null, null], [((array) ($links['reverses'] ?? []))['id'] ?? null, $links['reversedBy'] ?? null, $links['source'] ?? null]);
+        $this->assertSame([$this->issue, null, null], [$links['reversesId'] ?? null, $links['reversedById'] ?? null, $links['source'] ?? null]);
     }
 
     /**

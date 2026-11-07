@@ -227,7 +227,7 @@ final class Allowlists
         'movement.product', 'movement.product.id', 'movement.product.name', 'movement.product.sku', 'movement.actorDisplayName', 'movement.reference',
         'movement.reasonCode', 'movement.source', 'movement.source.kind', 'movement.source.id', 'movement.source.at',
         // The reversal links (COPY_DECK section 9.4; TASK-026).
-        'movement.reversedBy', 'movement.reversedBy.id', 'movement.reversedBy.at', 'movement.reverses', 'movement.reverses.id', 'movement.reverses.at',
+        'movement.reversedById', 'movement.reversedByAt', 'movement.reversesId', 'movement.reversesAt',
     ];
 
     /** One manual issue of RP-409 with its lines, never a cost. */

@@ -66,16 +66,17 @@ final class Reversibility
     /**
      * The links of UXP-403 (COPY_DECK section 9.4, `inventory.movement.reversed_by` and
      * `inventory.movement.reverses`): the REVERSAL that cancelled this movement, and the movement that
-     * this REVERSAL cancels, each with its time.
+     * this REVERSAL cancels, each with its time; flat, so that every movement carries the same props,
+     * null where there is no link (SEC-CH-01).
      *
-     * @return array{reversedBy: array{id: int, at: string}|null, reverses: array{id: int, at: string}|null}
+     * @return array{reversedById: int|null, reversedByAt: string|null, reversesId: int|null, reversesAt: string|null}
      */
     public function links(int $movementId): array
     {
-        $reversedBy = DB::table('reversals as r')->join('stock_movements as m', 'm.reversal_id', '=', 'r.id')->where('r.original_movement_id', $movementId)->select(['m.id'])->selectRaw(self::RECORDED_AT)->first();
-        $reverses = DB::table('stock_movements as v')->join('reversals as r', 'r.id', '=', 'v.reversal_id')->join('stock_movements as m', 'm.id', '=', 'r.original_movement_id')->where('v.id', $movementId)->select(['m.id'])->selectRaw(self::RECORDED_AT)->first();
+        $reversedBy = self::link(DB::table('reversals as r')->join('stock_movements as m', 'm.reversal_id', '=', 'r.id')->where('r.original_movement_id', $movementId)->select(['m.id'])->selectRaw(self::RECORDED_AT)->first());
+        $reverses = self::link(DB::table('stock_movements as v')->join('reversals as r', 'r.id', '=', 'v.reversal_id')->join('stock_movements as m', 'm.id', '=', 'r.original_movement_id')->where('v.id', $movementId)->select(['m.id'])->selectRaw(self::RECORDED_AT)->first());
 
-        return ['reversedBy' => self::link($reversedBy), 'reverses' => self::link($reverses)];
+        return ['reversedById' => $reversedBy['id'] ?? null, 'reversedByAt' => $reversedBy['at'] ?? null, 'reversesId' => $reverses['id'] ?? null, 'reversesAt' => $reverses['at'] ?? null];
     }
 
     /**
