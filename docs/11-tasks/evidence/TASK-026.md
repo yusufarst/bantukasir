@@ -17,6 +17,9 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | `npm run typecheck` | Local | 09:40 | — | `NOT_RUN`: `tsc` is not installed on this machine |
 | Guard (Gitleaks 8.30.1, the secret scan, identity, candidates) | Local, on `4bd8cd8` | 10:10 | under 4 min | `PASS`, no candidate |
 | `composer validate`, `lint` | Fast run 1, 42332801319 on `4bd8cd8` | 10:14 to 10:15 | 29 s of `lint` | `FAIL`: Pint's `ordered_imports` in `ConfirmReversal.php`, `Reversals` before `ReversalSource` (finding F-4); the later steps did not run |
+| Guard | Local, on `e0a3745` | 10:19 | under 1 min | `PASS`, no candidate |
+| `composer validate`, `lint` | Fast run 2, 42333476278 on `e0a3745` | 10:22 | — | `PASS` |
+| `composer analyse` | Same run | 10:22 | 11 s | `FAIL`: five offsets read on `mixed` in `ConfirmReversalTest` and `ReversalPagesTest` (finding F-5); the later steps did not run |
 
 ## 2. What was built (contract section 4.1)
 
@@ -47,6 +50,7 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | F-1 | RP-503, the worklist of TASK-025, still lists an UNKNOWN cost source whose movement was reversed, though after its reversal the source no longer counts in any figure (BR-COST-32; SCHEMA section 5.8) | Recorded for the next change of RP-503 or TASK-040: changing the worklist is outside TASK-026's scope. A completion of such a source changes no figure |
 | F-2 | `tsc`, ESLint and PHP do not run on this machine, so every static check is met first in CI (TASK-011 F-5) | As recorded since TASK-011; the fast runs cover them |
 | F-4 | Fast run 1 failed Pint: the imports of `ConfirmReversal.php` out of order | Fixed in checkpoint 2 |
+| F-5 | Fast run 2 failed PHPStan: two tests read offsets of `mixed` props | Fixed in checkpoint 3, tests only |
 | F-3 | UXI-228, "Batalkan mutasi" for an OPENING while onboarding is active, and the replacement that follows it, are TASK-035's, which proves the OPENING case (contract section 4.3) | The server accepts an OPENING during onboarding; the control on UXP-403 shows for an OPENING as UXI-227 |
 
 ## 5. Tests (contract section 7)

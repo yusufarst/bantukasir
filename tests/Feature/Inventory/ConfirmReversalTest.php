@@ -216,6 +216,8 @@ final class ConfirmReversalTest extends DatabaseTestCase
             $this->reverse($this->envelopeOf($movement))->assertStatus(404)->assertJsonPath('code', 'NOT_FOUND');
         }
 
+        $this->assertSame($before, $this->factsAndRows());
+
         foreach (['SALE_ISSUE', 'RETURN_RECEIPT', 'ADJUSTMENT', 'REVERSAL'] as $type) {
             $this->assertFalse((new ReversalSource(1, $this->pen, $type, Quantity::of('1', 0), 1))->eligible(), $type);
         }
@@ -235,7 +237,7 @@ final class ConfirmReversalTest extends DatabaseTestCase
         $blocked = $this->factsAndRows();
         $this->reverse($this->envelopeOf($receipt))->assertStatus(422)->assertJsonPath('code', 'POSTING_BLOCKED');
         $this->assertSame($blocked, $this->factsAndRows());
-        $this->assertSame($before['facts']['reversals'], $blocked['facts']['reversals']);
+        $this->assertSame(0, $this->watcher()->table('reversals')->count());
 
         // Reopened, the product takes the reversal of its manual issue: 8 on hand become 9.
         TokoContoh::reopenPostings($block);

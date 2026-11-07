@@ -94,7 +94,8 @@ final class ReversalPagesTest extends DatabaseTestCase
         }
 
         // A reversed source still opens, and says that it is reversed (UXS-13).
-        $this->assertTrue((bool) ($this->propsOf($this->get('/stock/movements/'.$this->issue.'/reverse')->assertOk())['source']['reversed'] ?? false));
+        $source = (array) ($this->propsOf($this->get('/stock/movements/'.$this->issue.'/reverse')->assertOk())['source'] ?? []);
+        $this->assertTrue($source['reversed'] ?? null);
     }
 
     public function test_the_entries_and_the_reversal_links_of_the_movement_receiving_and_issue_pages(): void
@@ -119,12 +120,13 @@ final class ReversalPagesTest extends DatabaseTestCase
             $this->assertSame($owner ? [true] : [null], array_map(static fn (mixed $line): mixed => is_array($line) ? $line['reversed'] ?? null : null, (array) ($this->propsOf($issue)['lines'] ?? [])), $person);
             $this->assertSame($owner ? [false] : [null], array_map(static fn (mixed $line): mixed => is_array($line) ? $line['reversed'] ?? null : null, (array) ($this->propsOf($receiving)['lines'] ?? [])), $person);
             $this->assertSame($owner, array_key_exists('postingFrozen', $this->propsOf($source)), $person);
-            $this->assertSame($reversal, ((array) ($this->propsOf($source)['movement'] ?? []))['reversedBy']['id'] ?? null, $person);
+            $movement = (array) ($this->propsOf($source)['movement'] ?? []);
+            $this->assertSame($reversal, ((array) ($movement['reversedBy'] ?? []))['id'] ?? null, $person);
         }
 
         $this->as('Hendra');
         $links = (array) ($this->propsOf($this->get('/stock/movements/'.$reversal))['movement'] ?? []);
-        $this->assertSame([$this->issue, null, null], [$links['reverses']['id'] ?? null, $links['reversedBy'] ?? null, $links['source'] ?? null]);
+        $this->assertSame([$this->issue, null, null], [((array) ($links['reverses'] ?? []))['id'] ?? null, $links['reversedBy'] ?? null, $links['source'] ?? null]);
     }
 
     /**
