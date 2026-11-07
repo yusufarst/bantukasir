@@ -18,6 +18,11 @@ use App\Http\Controllers\Access\SignInController;
 use App\Http\Controllers\Access\UpdateOwnerDetailsController;
 use App\Http\Controllers\Access\UpdateStaffAccountController;
 use App\Http\Controllers\Access\UsersController;
+use App\Http\Controllers\Cash\CreateCashRegisterController;
+use App\Http\Controllers\Cash\OpenCashSessionController;
+use App\Http\Controllers\Cash\OpenSessionController;
+use App\Http\Controllers\Cash\RegistersController;
+use App\Http\Controllers\Cash\UpdateCashRegisterController;
 use App\Http\Controllers\Catalog\AddBarcodeController;
 use App\Http\Controllers\Catalog\BarcodeCorrectionController;
 use App\Http\Controllers\Catalog\CategoriesController;
@@ -297,6 +302,23 @@ Route::middleware(['auth', 'signin.session', 'throttle:authenticated', 'cache.he
     Route::middleware('capability:CAP-20')->group(function (): void {
         Route::get('/reports/costs-to-complete', [CostWorklistController::class, 'index'])->middleware('input.allow:product,after,before,perPage')->name('reports.costs');
         Route::get('/products/{product}/cost-history', [CostHistoryController::class, 'show'])->middleware('input.allow:from_page')->name('products.cost_history');
+    });
+
+    // The cash registers (TASK-027), the Owner's alone: RP-609 and RP-610 for CAP-31, each taking only
+    // its path, and RC-33 and RC-34 in the bucket of every command, with recent authentication.
+    Route::middleware('capability:CAP-31')->group(function (): void {
+        Route::get('/settings/cash-registers', [RegistersController::class, 'index'])->middleware('input.allow')->name('registers.index');
+        Route::get('/settings/cash-registers/new', [RegistersController::class, 'create'])->middleware('input.allow')->name('registers.create');
+        Route::get('/settings/cash-registers/{register}/edit', [RegistersController::class, 'edit'])->middleware('input.allow')->name('registers.edit');
+        Route::post('/commands/cash_register.create', CreateCashRegisterController::class)->middleware(['throttle:command', 'password.confirm'])->name('commands.cash_register.create');
+        Route::post('/commands/cash_register.update', UpdateCashRegisterController::class)->middleware(['throttle:command', 'password.confirm'])->name('commands.cash_register.update');
+    });
+
+    // The cash session open (TASK-027): RP-104 and RC-02 for CAP-21, each holder on its own session —
+    // the responsible user is always the actor (TR-VAL-03); RC-02 in the bucket of every command.
+    Route::middleware('capability:CAP-21')->group(function (): void {
+        Route::get('/till/open-session', [OpenSessionController::class, 'show'])->middleware('input.allow')->name('till.open');
+        Route::post('/commands/cash_session.open', OpenCashSessionController::class)->middleware('throttle:command')->name('commands.cash_session.open');
     });
 });
 

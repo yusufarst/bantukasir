@@ -7,7 +7,8 @@ use App\DTO\PageData;
 /**
  * A row of UXP-602 "Pengguna" (ROUTE_CONTRACTS RP-602): the Owner's list of
  * accounts. The placeholder address of an anonymized account is never shown
- * (COPY_DECK section 3): its email is null. TASK-027 adds the OPEN-session mark.
+ * (COPY_DECK section 3): its email is null. Whether the account holds an OPEN
+ * cash session is its mark "Memegang sesi kas" (UXI-334; TASK-027).
  */
 final readonly class UserRowData implements PageData
 {
@@ -21,10 +22,11 @@ final readonly class UserRowData implements PageData
         public ?string $email,
         public array $roles,
         public string $status,
+        public bool $holdsSession,
     ) {}
 
     /**
-     * @return array{id: int, displayName: string, email: string|null, roles: list<'SUPER_ADMIN'|'OPERATIONS_ADMIN'|'CASHIER'>, status: 'ACTIVE'|'DEACTIVATED'|'ANONYMIZED'}
+     * @return array{id: int, displayName: string, email: string|null, roles: list<'SUPER_ADMIN'|'OPERATIONS_ADMIN'|'CASHIER'>, status: 'ACTIVE'|'DEACTIVATED'|'ANONYMIZED', holdsSession: bool}
      */
     public function toArray(): array
     {
@@ -34,6 +36,7 @@ final readonly class UserRowData implements PageData
             'email' => $this->email,
             'roles' => $this->roles,
             'status' => $this->status,
+            'holdsSession' => $this->holdsSession,
         ];
     }
 }

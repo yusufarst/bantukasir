@@ -43,7 +43,7 @@ final class CapabilityMatrixTest extends DatabaseTestCase
      */
     private const array ROUTES = [
         'RN-01' => ['method' => 'GET', 'path' => '/', 'json' => false, 'answers' => [
-            'guest' => [302, '/login'], 'owner' => [302, '/account'], 'ops' => [302, '/stock'], 'cashier' => [302, '/account'], 'combined' => [302, '/stock'],
+            'guest' => [302, '/login'], 'owner' => [302, '/account'], 'ops' => [302, '/stock'], 'cashier' => [302, '/till/open-session'], 'combined' => [302, '/stock'],
         ]],
         'RP-001' => ['method' => 'GET', 'path' => '/login', 'json' => false, 'answers' => [
             'guest' => [200, null], 'owner' => [302, '/'], 'ops' => [302, '/'], 'cashier' => [302, '/'], 'combined' => [302, '/'],
@@ -342,6 +342,30 @@ final class CapabilityMatrixTest extends DatabaseTestCase
         ]],
         'RP-411' => ['method' => 'GET', 'path' => '/stock/movements/{movement}/reverse', 'json' => true, 'answers' => [
             'guest' => [401, null], 'owner' => [404, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        // TASK-027: the cash registers for CAP-31, the Owner's alone, RC-33 and RC-34 with recent
+        // authentication, the form of a register that does not exist; RP-104 and RC-02 for CAP-21,
+        // each holder on its own session, without recent authentication, Operations refused.
+        'RP-609' => ['method' => 'GET', 'path' => '/settings/cash-registers', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RP-610' => ['method' => 'GET', 'path' => '/settings/cash-registers/new', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RP-610 edit' => ['method' => 'GET', 'path' => '/settings/cash-registers/{register}/edit', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [404, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RC-33' => ['method' => 'POST', 'path' => '/commands/cash_register.create', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [423, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RC-34' => ['method' => 'POST', 'path' => '/commands/cash_register.update', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [423, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RP-104' => ['method' => 'GET', 'path' => '/till/open-session', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [403, null], 'cashier' => [200, null], 'combined' => [200, null],
+        ]],
+        'RC-02' => ['method' => 'POST', 'path' => '/commands/cash_session.open', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [422, null], 'ops' => [403, null], 'cashier' => [422, null], 'combined' => [422, null],
         ]],
     ];
 

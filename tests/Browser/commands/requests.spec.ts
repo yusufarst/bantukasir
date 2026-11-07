@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect as baseExpect, test, type Page } from '@playwright/test';
-import { ACCESS_TIMEOUT, ACCESS_WAIT, HOME, resetPeople, SECURE_LOCAL_ORIGIN, signIn } from '../support/access';
+import { ACCESS_TIMEOUT, ACCESS_WAIT, homeOf, resetPeople, SECURE_LOCAL_ORIGIN, signIn } from '../support/access';
 import { COMMAND_SPECIMEN, injected, prepareCommands, PROBE_ROUTE, receiptOf, REQUESTS_PAGE, storedReferences } from '../support/commands';
 import { measure } from '../support/measure';
 import { contextAt, watch, WIDTHS } from '../support/specimen';
@@ -78,7 +78,7 @@ test('a cashier sees a request of another device in the banner, the account menu
     await page.keyboard.press('Escape');
 
     // UXI-057: back to the role's home.
-    await Promise.all([page.waitForURL((url) => url.pathname === HOME), main(page).getByRole('link', { name: 'Kembali ke halaman awal' }).click()]);
+    await Promise.all([page.waitForURL((url) => url.pathname === homeOf('Rina')), main(page).getByRole('link', { name: 'Kembali ke halaman awal' }).click()]);
     await expect(page.getByText('Ada permintaan yang statusnya belum pasti.', { exact: true })).toHaveCount(0);
     expect(injected(watched.problems)).toEqual([]);
 });

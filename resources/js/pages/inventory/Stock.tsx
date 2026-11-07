@@ -6,10 +6,11 @@ import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Field, SelectInput } from '@/components/ui/Field';
 import { Menu, type MenuEntry } from '@/components/ui/Menu';
 import type { StateId } from '@/components/ui/stateCatalogue';
-import { EmptyState, LoadFailed, NoResults, StaleRead, StateNotice, UnknownCode } from '@/components/ui/States';
+import { Committed, EmptyState, LoadFailed, NoResults, StaleRead, StateNotice, UnknownCode } from '@/components/ui/States';
 import { StatusWord } from '@/components/ui/Status';
 import { AppShell } from '@/layouts/AppShell';
 import { ListLayout, PageHeader } from '@/layouts/Page';
+import { takeSavedNote } from '@/lib/access/users';
 import { categoryOption, CodeField } from '@/lib/catalog/Parts';
 import { catalogFieldMessage, type Category } from '@/lib/catalog/products';
 import { useScanCapture } from '@/lib/catalog/scanCapture';
@@ -114,6 +115,7 @@ function StockList({ title, filters, categories, stock, postingFrozen }: { title
     const [fieldErrors, setFieldErrors] = useState<Readonly<Record<string, unknown>>>({});
     const [loadingMore, setLoadingMore] = useState(false);
     const [reading, setReading] = useState(false);
+    const [note] = useState(takeSavedNote);
     const latest = useRef(0);
     // The read that the user asked for and that is still out, by its number: a refresh in the
     // background waits for it and never supersedes it (pull request #31, finding P2).
@@ -376,6 +378,8 @@ function StockList({ title, filters, categories, stock, postingFrozen }: { title
             more={shown.page.nextCursor !== null && sameFilters ? <LoadMore onLoad={loadMore} busy={loadingMore || reading} /> : undefined}
         >
             <div className={'bk-stack'}>
+                {/* The note of the page before: the combined account's session just opened on UXP-104 (TASK-027). */}
+                {note !== null && <Committed message={note} />}
                 {problem === 'invalid' && <StateNotice state={INVALID_STATE} />}
                 {problem === 'failed' && rows.length > 0 && <StaleRead at={formatDateTime(shown.page.asOf)} onReload={reload} />}
                 {rows.length > 0 && <DataTable caption={title} columns={columns} rows={rows} rowKey={(row) => String(row.id)} />}

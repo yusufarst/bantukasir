@@ -6,6 +6,8 @@ use App\Actions\Access\BootstrapInput;
 use App\Actions\Access\BootstrapInstallation;
 use App\Actions\Access\ConsumeLink;
 use App\Actions\Access\CreateStaffAccount;
+use App\Actions\Cash\CreateCashRegister;
+use App\Actions\Cash\OpenCashSession;
 use App\Actions\Catalog\AddBarcode;
 use App\Actions\Catalog\CreateCategory;
 use App\Actions\Catalog\CreateProduct;
@@ -439,6 +441,37 @@ final class TokoContoh
     public static function reverse(int $movement, string $reason = 'Salah catat'): int
     {
         return self::asOwner(ConfirmReversal::class, ConfirmReversal::OPERATION, ['movementId' => $movement, 'reason' => $reason]);
+    }
+
+    /**
+     * A cash register of the shop, created by the Owner through RC-33's Action (TASK-027;
+     * EXECUTION_CONTEXT EXC-45): its internal key. The recent authentication of RC-33 is its
+     * route's, which this fixture does not pass through.
+     *
+     * @throws DatabaseRefused
+     */
+    public static function register(string $code = 'LACI-1', string $label = 'Laci 1', bool $active = true): int
+    {
+        return self::asOwner(CreateCashRegister::class, CreateCashRegister::OPERATION, ['code' => $code, 'label' => $label, 'active' => $active]);
+    }
+
+    /**
+     * A cash session opened by a person of Toko Contoh as themselves through RC-02's Action (TASK-027;
+     * EXECUTION_CONTEXT EXC-45): its internal key.
+     *
+     * @throws DatabaseRefused
+     */
+    public static function openSession(string $person, int $register, string $openingCash = '0'): int
+    {
+        self::build(DB::connection());
+        self::shop();
+
+        // The person's account as it is, its password and sign-in sessions kept; created on first use.
+        $actor = app(Accounts::class)->findByEmail(self::email($person))->id ?? self::person($person)['id'];
+        $envelope = new Envelope(OpenCashSession::OPERATION, Operations::VERSION, (string) Str::uuid(), (string) Str::uuid(), self::recoveryEpoch(), [], ['registerId' => $register, 'openingCash' => $openingCash]);
+        $id = app(OpenCashSession::class)->execute(new CommandContext($actor, $envelope, app(Clock::class)->now()))->result['id'] ?? null;
+
+        return is_int($id) ? $id : throw new LogicException('The fixture session was not opened.');
     }
 
     /**

@@ -24,7 +24,8 @@ test('the sign-in-ending dialog warns before the idle limit and "Tetap masuk" ke
 
     await page.clock.install();
     await signIn(page, rina);
-    await expect(page.getByRole('heading', { level: 1, name: 'Akun saya' })).toBeVisible();
+    // Rina's home is Buka sesi kas (TASK-027).
+    await expect(page.getByRole('heading', { level: 1, name: 'Buka sesi kas' })).toBeVisible();
 
     await page.clock.fastForward('27:00');
     await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -53,7 +54,7 @@ test('at the idle limit the browser clears the history key and its storage and l
     await page.clock.install();
     await signIn(page, rina);
     // The shell's timers start when it has rendered the home; the clock moves only then.
-    await expect(page.getByRole('heading', { level: 1, name: 'Akun saya' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Buka sesi kas' })).toBeVisible();
     await page.evaluate(() => window.localStorage.setItem('bk-test', 'x'));
 
     // The application's address, which the server answers with the sign-in
@@ -65,8 +66,8 @@ test('at the idle limit the browser clears the history key and its storage and l
     // The server's sign-in session is still alive by its own clock, so it
     // sends the browser home again; what matters here is what the browser
     // cleared before it asked.
-    await page.waitForURL((url) => url.pathname === HOME);
-    await expect(page.getByRole('heading', { level: 1, name: 'Akun saya' })).toBeVisible();
+    await page.waitForURL((url) => url.pathname === homeOf('Rina'));
+    await expect(page.getByRole('heading', { level: 1, name: 'Buka sesi kas' })).toBeVisible();
     expect(await page.evaluate(() => window.localStorage.getItem('bk-test'))).toBeNull();
 });
 
@@ -75,7 +76,7 @@ test('"Keluar" in the sign-in-ending dialog signs out', async ({ page, context }
 
     await page.clock.install();
     await signIn(page, rina);
-    await expect(page.getByRole('heading', { level: 1, name: 'Akun saya' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Buka sesi kas' })).toBeVisible();
     await page.clock.fastForward('28:01');
     await Promise.all([
         page.waitForURL((url) => url.pathname === '/login'),
@@ -122,6 +123,8 @@ test('after a sign-out, the next user sees nothing of the first through Back, Fo
     await page.getByRole('button', { name: 'Menu akun Agus' }).click();
     await Promise.all([page.waitForURL((url) => url.pathname === '/login'), page.getByRole('menuitem', { name: 'Keluar' }).click()]);
     await signIn(page, rina);
+    // Rina lands on Buka sesi kas (TASK-027); her email is on Akun saya.
+    await page.goto(HOME);
     await expect(page.getByText(rina.email)).toBeVisible();
 
     for (const step of ['back', 'back', 'back', 'forward', 'reload'] as const) {
@@ -298,7 +301,7 @@ async function signInWithoutTab(context: BrowserContext, account: Account): Prom
     const token = decodeURIComponent((await context.cookies()).find((cookie) => cookie.name === 'XSRF-TOKEN')?.value ?? '');
     const answer = await context.request.post('/login', { form: { email: account.email, password: account.password }, headers: { 'X-XSRF-TOKEN': token } });
 
-    expect(new URL(answer.url()).pathname).toBe(HOME);
+    expect([HOME, homeOf('Rina')]).toContain(new URL(answer.url()).pathname);
 }
 
 test("another user's sign-in in another tab ends the page of a user whose sign-in session ended on the server (review finding R-27)", async ({ browser, context }) => {
@@ -312,6 +315,7 @@ test("another user's sign-in in another tab ends the page of a user whose sign-i
     await endOnServer(browser, 'Agus');
     const second = await context.newPage();
     await signIn(second, rina);
+    await second.goto(HOME);
     await expect(second.getByText(rina.email)).toBeVisible();
 
     // Without any action in the first tab, nothing of Agus stays there: it

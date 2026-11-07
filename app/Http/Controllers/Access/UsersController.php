@@ -6,6 +6,7 @@ use App\DTO\Access\UserRowData;
 use App\Http\Requests\Access\UsersListRequest;
 use App\Models\User;
 use App\Queries\Access\UserAccounts;
+use App\Queries\Cash\OpenSessions;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -19,13 +20,14 @@ use Inertia\Response;
  */
 final class UsersController
 {
-    public function index(UsersListRequest $request, UserAccounts $accounts): Response
+    public function index(UsersListRequest $request, UserAccounts $accounts, OpenSessions $sessions): Response
     {
         $status = $request->status();
         $role = $request->role();
 
         return Inertia::render('access/Users', [
-            'users' => array_map(static fn (UserRowData $row): array => $row->toArray(), $accounts->list($status, $role)),
+            // The mark of an OPEN cash session, from the Cash module (UXI-334; TASK-027).
+            'users' => array_map(static fn (UserRowData $row): array => $row->toArray(), $accounts->list($status, $role, $sessions->holders())),
             'filters' => ['status' => $status, 'role' => $role],
         ]);
     }
