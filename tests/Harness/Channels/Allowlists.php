@@ -129,7 +129,8 @@ final class Allowlists
             'history.rows.*.source.id', 'history.rows.*.source.at', 'history.nextCursor', 'history.previousCursor',
         ]],
         'inventory/Movement' => [
-            'owner' => [...self::MOVEMENT, 'costEvidence', 'costEvidence.evidenceId', 'costEvidence.status', 'costEvidence.total', 'costEvidence.zeroNote', 'costEvidence.corrections'],
+            // The Owner's: whether the onboarding freeze is on, for "Batalkan mutasi" (UXI-227; TASK-026).
+            'owner' => [...self::MOVEMENT, 'costEvidence', 'costEvidence.evidenceId', 'costEvidence.status', 'costEvidence.total', 'costEvidence.zeroNote', 'costEvidence.corrections', 'postingFrozen'],
             'ops' => self::MOVEMENT,
             'combined' => self::MOVEMENT,
         ],
@@ -148,6 +149,8 @@ final class Allowlists
                 ...self::RECEIVING, 'lines.*.zeroNote', 'lines.*.evidenceId', 'lines.*.correctionNo', 'lines.*.corrections', 'lines.*.corrections.*', 'lines.*.corrections.*.correctionNo',
                 'lines.*.corrections.*.oldAmount', 'lines.*.corrections.*.newAmount', 'lines.*.corrections.*.zeroNote', 'lines.*.corrections.*.reason', 'lines.*.corrections.*.recordedAt',
                 'lines.*.corrections.*.actorDisplayName',
+                // "Batalkan mutasi" per line (UXI-250; TASK-026).
+                'lines.*.reversed', 'postingFrozen',
             ],
             'ops' => self::RECEIVING,
             'combined' => self::RECEIVING,
@@ -160,10 +163,18 @@ final class Allowlists
             'issues.rows.*.lineCount', 'issues.rows.*.actorDisplayName', 'issues.nextCursor', 'issues.previousCursor',
         ]],
         'inventory/IssueCreate' => ['*' => ['postingFrozen']],
-        'inventory/Issue' => ['*' => [
-            'issue', 'issue.id', 'issue.confirmedAt', 'issue.reasonCode', 'issue.note', 'issue.lineCount', 'issue.actorDisplayName',
-            'lines', 'lines.*', 'lines.*.lineNo', 'lines.*.product', 'lines.*.product.id', 'lines.*.product.name', 'lines.*.product.sku', 'lines.*.movementId',
-            'lines.*.quantity', 'lines.*.baseUnit', 'lines.*.quantityPrecision',
+        // The Owner's also: "Batalkan mutasi" per line (UXI-266; TASK-026).
+        'inventory/Issue' => [
+            'owner' => [...self::ISSUE, 'lines.*.reversed', 'postingFrozen'],
+            'ops' => self::ISSUE,
+            'combined' => self::ISSUE,
+        ],
+        // UXP-411, the Owner's alone (TASK-026): the movement to reverse, its exact inverse and the
+        // stock now and after, never a cost.
+        'inventory/Reversal' => ['owner' => [
+            'source', 'source.movementId', 'source.type', 'source.quantity', 'source.inverse', 'source.baseUnit', 'source.quantityPrecision', 'source.recordedAt',
+            'source.product', 'source.product.id', 'source.product.name', 'source.product.sku', 'source.documentId', 'source.stockNow', 'source.stockAfter',
+            'source.reversed', 'postingFrozen', 'opener',
         ]],
         // The cost pages, the Owner's alone (TASK-025; CAP-19, CAP-20): RP-503's worklist with the
         // product of its filter, RP-504's cost source with its history, RP-505's valuation, cost
@@ -215,6 +226,15 @@ final class Allowlists
         'movement', 'movement.id', 'movement.type', 'movement.quantity', 'movement.baseUnit', 'movement.quantityPrecision', 'movement.recordedAt',
         'movement.product', 'movement.product.id', 'movement.product.name', 'movement.product.sku', 'movement.actorDisplayName', 'movement.reference',
         'movement.reasonCode', 'movement.source', 'movement.source.kind', 'movement.source.id', 'movement.source.at',
+        // The reversal links (COPY_DECK section 9.4; TASK-026).
+        'movement.reversedBy', 'movement.reversedBy.id', 'movement.reversedBy.at', 'movement.reverses', 'movement.reverses.id', 'movement.reverses.at',
+    ];
+
+    /** One manual issue of RP-409 with its lines, never a cost. */
+    private const array ISSUE = [
+        'issue', 'issue.id', 'issue.confirmedAt', 'issue.reasonCode', 'issue.note', 'issue.lineCount', 'issue.actorDisplayName',
+        'lines', 'lines.*', 'lines.*.lineNo', 'lines.*.product', 'lines.*.product.id', 'lines.*.product.name', 'lines.*.product.sku', 'lines.*.movementId',
+        'lines.*.quantity', 'lines.*.baseUnit', 'lines.*.quantityPrecision',
     ];
 
     /** One document of RP-406 with its lines and their purchase cost. */

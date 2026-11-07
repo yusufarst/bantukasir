@@ -7,7 +7,8 @@
 // receiving pages (COPY_DECK sections 4.1, 9.1 to 9.7 and 15), TASK-023 those
 // of the manual issue pages (COPY_DECK sections 4.1, 9.1, 9.4, 9.8 to 9.10
 // and 15), TASK-024 those of the adjustment (COPY_DECK sections 4.1, 9.2,
-// 9.3, 9.11 and 15).
+// 9.3, 9.11 and 15), TASK-026 those of the reversal (COPY_DECK sections 4.1,
+// 9.4, 9.12 and 15).
 
 return [
     'state' => [
@@ -72,9 +73,12 @@ return [
         'actor' => 'Oleh',
         'reason' => 'Alasan',
         'reference' => 'Referensi',
+        'reversed_by' => 'Dibatalkan oleh mutasi :waktu',
+        'reverses' => 'Membatalkan mutasi :waktu',
         'source' => 'Sumber',
         'source_receipt' => 'Barang masuk :waktu',
         'source_issue' => 'Barang keluar :waktu',
+        'source_pair' => ':jenis :waktu',
     ],
     'receipts' => [
         'title' => 'Barang masuk',
@@ -140,6 +144,21 @@ return [
         'confirm' => 'Konfirmasi penyesuaian',
         'success' => 'Stok disesuaikan.',
         'disabled' => 'Lengkapi baris, alasan, referensi hitung, dan referensi. Paling banyak 200 baris.',
+    ],
+    'reversal' => [
+        'title' => 'Batalkan mutasi',
+        'source' => 'Mutasi yang dibatalkan',
+        'inverse' => 'Mutasi kebalikannya',
+        'stock_now' => 'Stok sekarang',
+        'stock_after' => 'Stok sesudah',
+        'explanation' => 'Pembatalan mencatat mutasi kebalikan dengan jumlah yang sama persis. Mutasi asli tetap tercatat. Satu mutasi hanya bisa dibatalkan sekali.',
+        'reason' => 'Alasan',
+        'review_title' => 'Tinjau pembatalan mutasi',
+        'confirm' => 'Konfirmasi pembatalan',
+        'success' => 'Mutasi dibatalkan.',
+        'disabled' => 'Isi alasan.',
+        'disabled_done' => 'Mutasi ini sudah dibatalkan.',
+        'disabled_unresolved' => 'Ada pembatalan mutasi yang statusnya belum pasti. Cek statusnya dulu.',
     ],
     'disabled_unresolved_posting' => 'Ada barang masuk, barang keluar, atau penyesuaian yang statusnya belum pasti. Cek statusnya dulu.',
 ];

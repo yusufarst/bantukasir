@@ -15,10 +15,14 @@ use LogicException;
  * Costing reads the ledger), under the product's guard, which every writer of its movements, cost
  * evidence, corrections and projections holds, so that what it reads cannot change meanwhile.
  *
- * The movement types whose writers exist are RECEIPT, MANUAL_ISSUE and ADJUSTMENT (TASK-021 to
- * TASK-024). TASK-026, TASK-028, TASK-033 and TASK-035 extend the replay with REVERSAL — leaving
- * every logically cancelled pair out of the logical ledger — SALE_ISSUE, RETURN_RECEIPT with its
- * linked return projections, and OPENING; until then a movement of another type is a defect.
+ * The movement types whose writers exist are RECEIPT, MANUAL_ISSUE, ADJUSTMENT and REVERSAL (TASK-021
+ * to TASK-024, TASK-026). The ledger read is the logical ledger (ADR-008 section 4.1): every pair of an
+ * OPENING, RECEIPT or MANUAL_ISSUE with the REVERSAL of its reversal is left out — of the zero point,
+ * of the state before the start and of the movements from it — and only the valuation skips them; the
+ * physical ledger keeps both (BR-COST-32). A cancelled pair sums to zero, so the logical quantity at
+ * the end is still the stock on hand. TASK-028, TASK-033 and TASK-035 extend the replay with
+ * SALE_ISSUE, RETURN_RECEIPT with its linked return projections, and OPENING; until then a logical
+ * movement of another type is a defect.
  *
  * The cost values are sums and differences of stored values only, which PostgreSQL's numeric adds
  * exactly; every value computed by multiplication or division is the application's (ADR-008
@@ -36,6 +40,12 @@ final class ReplayLedger
     private const string CORRECTED = '(select c.new_amount from cost_corrections c where c.evidence_id = e.id order by c.correction_no desc limit 1)';
 
     /**
+     * The movements of the logical ledger: neither a REVERSAL nor a movement that a reversal cancelled
+     * (ADR-008 section 4.1; BR-COST-32).
+     */
+    private const string LOGICAL = "m.movement_type <> 'REVERSAL' and not exists (select 1 from reversals r where r.original_movement_id = m.id)";
+
+    /**
      * The state before the start position (ADR-008 section 4.3): Q is the sum of the movements since
      * the last point before the start at which the running quantity became zero — or since the
      * product's first movement — V the sum of their increases' effective costs less the sum of their
@@ -47,15 +57,15 @@ final class ReplayLedger
      */
     public function before(int $productId, int $precision, int $startSequence): ReplayStart
     {
-        $zero = DB::selectOne(<<<'SQL'
-            select coalesce(max(r.product_sequence), 0) as zero_point
+        $zero = DB::selectOne('
+            select coalesce(max(z.product_sequence), 0) as zero_point
             from (
                 select m.product_sequence, sum(m.quantity) over (order by m.product_sequence) as running
                 from stock_movements m
-                where m.product_id = ? and m.product_sequence < ?
-            ) r
-            where r.running = 0
-            SQL, [$productId, $startSequence]);
+                where m.product_id = ? and m.product_sequence < ? and '.self::LOGICAL.'
+            ) z
+            where z.running = 0
+            ', [$productId, $startSequence]);
         $zeroPoint = self::field($zero, 'zero_point');
 
         if (! is_int($zeroPoint)) {
@@ -63,8 +73,8 @@ final class ReplayLedger
         }
 
         $window = [$productId, $zeroPoint, $startSequence];
-        $quantity = self::field(DB::selectOne('select coalesce(sum(m.quantity), 0) as quantity from stock_movements m where m.product_id = ? and m.product_sequence > ? and m.product_sequence < ?', $window), 'quantity');
-        $increases = DB::selectOne(<<<'SQL'
+        $quantity = self::field(DB::selectOne('select coalesce(sum(m.quantity), 0) as quantity from stock_movements m where m.product_id = ? and m.product_sequence > ? and m.product_sequence < ? and '.self::LOGICAL, $window), 'quantity');
+        $increases = DB::selectOne("
             select count(*) filter (where c.status = 'UNKNOWN') as unknown, coalesce(sum(c.amount) filter (where c.status = 'KNOWN'), 0) as total
             from (
                 select case when lc.new_amount is not null then 'KNOWN' else e.cost_status end as status, coalesce(lc.new_amount, e.total_amount) as amount
@@ -73,16 +83,15 @@ final class ReplayLedger
                 left join lateral (
                     select k.new_amount from cost_corrections k where k.evidence_id = e.id order by k.correction_no desc limit 1
                 ) lc on true
-                where m.product_id = ? and m.product_sequence > ? and m.product_sequence < ?
+                where m.product_id = ? and m.product_sequence > ? and m.product_sequence < ? and ".self::LOGICAL.'
             ) c
-            SQL, $window);
-        $issues = DB::selectOne(<<<'SQL'
+            ', $window);
+        $issues = DB::selectOne("
             select count(*) filter (where p.current_status = 'UNKNOWN') as unknown, coalesce(sum(p.current_amount) filter (where p.current_status = 'KNOWN'), 0) as total
             from stock_movements m
             join issue_cost_allocations a on a.movement_id = m.id
             join issue_cost_allocation_projections p on p.allocation_id = a.id
-            where m.product_id = ? and m.product_sequence > ? and m.product_sequence < ?
-            SQL, $window);
+            where m.product_id = ? and m.product_sequence > ? and m.product_sequence < ? and ".self::LOGICAL, $window);
 
         $unknownIncreases = self::field($increases, 'unknown');
         $unknownIssues = self::field($issues, 'unknown');
@@ -107,7 +116,8 @@ final class ReplayLedger
 
     /**
      * The logical movements from the start position to the end, in the order of the sequence, at
-     * most $limit of them: the caller reads one more than the cap to know that the cap is passed.
+     * most $limit of them: the caller reads one more than the cap to know that the cap is passed. A
+     * cancelled pair is not among them, and does not count against the cap (TR-TIME-01).
      *
      * @return list<LedgerEntry>
      */
@@ -119,6 +129,7 @@ final class ReplayLedger
             ->leftJoin('issue_cost_allocation_projections as p', 'p.allocation_id', '=', 'a.id')
             ->where('m.product_id', $productId)
             ->where('m.product_sequence', '>=', $startSequence)
+            ->whereRaw(self::LOGICAL)
             ->orderBy('m.product_sequence')
             ->limit($limit)
             ->select(['m.product_sequence', 'm.movement_type', 'm.quantity', 'e.id as evidence_id', 'e.cost_status', 'e.total_amount', 'a.id as allocation_id', 'p.current_status', 'p.current_amount'])
@@ -131,6 +142,34 @@ final class ReplayLedger
         }
 
         return $entries;
+    }
+
+    /**
+     * The allocations of the manual issues from the start position on that a reversal cancelled and
+     * whose projection is not yet CANCELLED: a cancelled issue reduces no value (ADR-008 section 2;
+     * BR-COST-32). Every reversal publishes its source's, so this is at most the source of the reversal
+     * under way; its fact stays as it was committed (D-060).
+     *
+     * @return list<int>
+     */
+    public function cancelledIssues(int $productId, int $startSequence): array
+    {
+        $ids = DB::table('stock_movements as m')
+            ->join('reversals as r', 'r.original_movement_id', '=', 'm.id')
+            ->join('issue_cost_allocations as a', 'a.movement_id', '=', 'm.id')
+            ->join('issue_cost_allocation_projections as p', 'p.allocation_id', '=', 'a.id')
+            ->where('m.product_id', $productId)
+            ->where('m.product_sequence', '>=', $startSequence)
+            ->where('p.current_status', '<>', 'CANCELLED')
+            ->orderBy('m.product_sequence')
+            ->pluck('a.id');
+        $allocations = [];
+
+        foreach ($ids as $id) {
+            $allocations[] = is_int($id) ? $id : throw new LogicException('An allocation has its key.');
+        }
+
+        return $allocations;
     }
 
     /**

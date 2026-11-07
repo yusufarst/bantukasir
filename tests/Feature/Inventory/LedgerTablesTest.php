@@ -198,8 +198,14 @@ final class LedgerTablesTest extends DatabaseTestCase
             // SCHEMA section 3.7. Within this one transaction the deferred keys wait, and it
             // rolls back; the keys of the other presence columns follow their tables (EXC-44).
             $adjustment = $this->insertAdjustmentLines($runtime);
+            $receipt = $this->insertReceipt($runtime);
+            // TASK-026 completed the key of a reversal, so the REVERSAL names a real one: the receipt's.
+            $reversal = $runtime->table('reversals')->insertGetId([
+                'original_movement_id' => $receipt, 'product_id' => $this->product, 'original_type' => 'RECEIPT', 'original_quantity' => '5', 'inverse_quantity' => '-5',
+                'reason' => 'Salah catat', 'recorded_at' => now(), 'actor_user_id' => $this->owner, 'actor_display_name' => 'Hendra', 'command_id' => $this->command,
+            ]);
             $presences = [
-                'RECEIPT' => $this->presenceOf($runtime, $this->insertReceipt($runtime)),
+                'RECEIPT' => $this->presenceOf($runtime, $receipt),
                 'OPENING' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('OPENING', '1', ['opening_line_id' => 7, 'line_quantity' => '1', 'opening_replacement' => true, 'product_sequence' => 2]))),
                 // TASK-024 completed the key of an adjustment line, so the movements name real ones.
                 'an increase' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('ADJUSTMENT', '1', ['adjustment_line_id' => $adjustment[0], 'line_quantity' => '1', 'product_sequence' => 3]))),
@@ -208,7 +214,7 @@ final class LedgerTablesTest extends DatabaseTestCase
                 // TASK-023 completed the key of a manual issue line, so the movement names a real one.
                 'MANUAL_ISSUE' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('MANUAL_ISSUE', '-1', ['manual_issue_line_id' => $this->insertIssueLine($runtime), 'line_quantity' => '1', 'product_sequence' => 6]))),
                 'RETURN_RECEIPT' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('RETURN_RECEIPT', '1', ['return_line_id' => 7, 'line_quantity' => '1', 'return_condition' => 'SALEABLE', 'product_sequence' => 7]))),
-                'REVERSAL' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('REVERSAL', '1', ['reversal_id' => 7, 'product_sequence' => 8]))),
+                'REVERSAL' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('REVERSAL', '-5', ['reversal_id' => $reversal, 'product_sequence' => 8]))),
             ];
         } finally {
             $runtime->rollBack();

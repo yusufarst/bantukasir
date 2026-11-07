@@ -335,6 +335,14 @@ final class CapabilityMatrixTest extends DatabaseTestCase
         'RP-505' => ['method' => 'GET', 'path' => '/products/{product}/cost-history', 'json' => true, 'answers' => [
             'guest' => [401, null], 'owner' => [404, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
         ]],
+        // TASK-026: the reversal for CAP-17, the Owner's alone, RC-10 with recent authentication; every
+        // other role and the combined account refused; a movement that does not exist.
+        'RC-10' => ['method' => 'POST', 'path' => '/commands/reversal.confirm', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [423, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RP-411' => ['method' => 'GET', 'path' => '/stock/movements/{movement}/reverse', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [404, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
     ];
 
     /** @var array<string, array{id: int, email: string, password: string}> */

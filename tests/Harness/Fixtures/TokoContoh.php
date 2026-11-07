@@ -16,6 +16,7 @@ use App\Actions\Costing\CorrectCost;
 use App\Actions\Inventory\ConfirmAdjustment;
 use App\Actions\Inventory\ConfirmManualIssue;
 use App\Actions\Inventory\ConfirmReceiving;
+use App\Actions\Inventory\ConfirmReversal;
 use App\Database\DatabaseRefused;
 use App\Database\EnvironmentMarker;
 use App\Domain\Access\Accounts;
@@ -426,6 +427,31 @@ final class TokoContoh
         $latest = DB::table('cost_corrections')->where('evidence_id', $evidence)->max('correction_no');
 
         return self::asOwner(CorrectCost::class, CorrectCost::OPERATION, ['evidenceId' => $evidence, 'newCost' => ['amount' => $amount, ...($zeroEvidence === null ? [] : ['zeroEvidence' => $zeroEvidence])], 'reason' => $reason], ['correctionNo' => is_int($latest) ? $latest : 0]);
+    }
+
+    /**
+     * The Owner's reversal of one movement through RC-10's Action (TASK-026; EXECUTION_CONTEXT
+     * EXC-45): its internal key. The recent authentication of RC-10 is its route's, which this
+     * fixture does not pass through.
+     *
+     * @throws DatabaseRefused
+     */
+    public static function reverse(int $movement, string $reason = 'Salah catat'): int
+    {
+        return self::asOwner(ConfirmReversal::class, ConfirmReversal::OPERATION, ['movementId' => $movement, 'reason' => $reason]);
+    }
+
+    /**
+     * The movement of a receiving document's first line, or of a manual issue's (TASK-026): its
+     * internal key.
+     */
+    public static function movementOf(int $document, string $kind = 'RECEIPT'): int
+    {
+        $movement = $kind === 'RECEIPT'
+            ? DB::table('stock_movements as m')->join('receiving_lines as l', 'l.id', '=', 'm.receiving_line_id')->where('l.receiving_document_id', $document)->orderBy('l.line_no')->value('m.id')
+            : DB::table('stock_movements as m')->join('manual_issue_lines as l', 'l.id', '=', 'm.manual_issue_line_id')->where('l.manual_issue_id', $document)->orderBy('l.line_no')->value('m.id');
+
+        return is_int($movement) ? $movement : throw new LogicException('The document posted its movement.');
     }
 
     /**

@@ -9,6 +9,10 @@ namespace App\Domain\Costing\Replay;
  * movement from the start position to the end, at most the movement cap of them, recomputed within
  * the time budget. It writes nothing: the caller publishes the result in its own transaction, all
  * of it or nothing (BR-COST-25), and a refusal leaves everything as it was.
+ *
+ * The ledger is the logical one (ADR-008 section 4.1): a reversal, written before its replay in the
+ * same transaction, starts it at its source, which with its REVERSAL the replay skips, and the source's
+ * allocation, if it is a manual issue's, becomes CANCELLED in the same publication (BR-COST-32; TASK-026).
  */
 final class ProductReplay
 {
@@ -30,6 +34,9 @@ final class ProductReplay
             throw ReplayRefused::movementCap();
         }
 
-        return ValuationReplay::recompute($start, $entries, $this->ledger->onHand($productId, $precision), $budget->checker());
+        $result = ValuationReplay::recompute($start, $entries, $this->ledger->onHand($productId, $precision), $budget->checker());
+        $cancelled = array_map(static fn (int $allocation): ProjectionChange => ProjectionChange::cancelled($allocation), $this->ledger->cancelledIssues($productId, $startSequence));
+
+        return $cancelled === [] ? $result : new ReplayResult($result->value, [...$cancelled, ...$result->changes], $result->movements);
     }
 }

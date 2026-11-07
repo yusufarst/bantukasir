@@ -17,11 +17,15 @@ use LogicException;
  */
 final class StockLedger
 {
+    public const string OPENING = 'OPENING';
+
     public const string RECEIPT = 'RECEIPT';
 
     public const string MANUAL_ISSUE = 'MANUAL_ISSUE';
 
     public const string ADJUSTMENT = 'ADJUSTMENT';
+
+    public const string REVERSAL = 'REVERSAL';
 
     /**
      * Whether the product has a movement, by the unique key of its sequence (BR-CAT-07).
@@ -173,6 +177,34 @@ final class StockLedger
             'quantity' => $signed->toCanonical(),
             'adjustment_line_id' => $adjustmentLineId,
             'line_quantity' => $signed->toCanonical(),
+            'recorded_at' => $at,
+            'actor_user_id' => $actorUserId,
+            'command_id' => $commandId,
+        ]);
+    }
+
+    /**
+     * Appends the REVERSAL of a reversal, the exact inverse of its source's quantity, with the unit
+     * and precision of its guarded product, and returns its internal key. It carries no cost record:
+     * the replay treats it, cancelling its source logically (SCHEMA section 5.7; ADR-008 section 4.1).
+     */
+    public function appendReversal(GuardedProduct $product, int $sequence, Quantity $inverse, int $reversalId, int $actorUserId, int $commandId, string $at): int
+    {
+        self::requireTransaction();
+
+        if ($inverse->isZero()) {
+            throw new LogicException('A reversal moves stock (SCHEMA section 5.7).');
+        }
+
+        return DB::table('stock_movements')->insertGetId([
+            'product_id' => $product->id,
+            'base_unit' => $product->baseUnit,
+            'quantity_precision' => $product->quantityPrecision,
+            'product_sequence' => $sequence,
+            'movement_type' => self::REVERSAL,
+            'quantity' => $inverse->toCanonical(),
+            'reversal_id' => $reversalId,
+            'line_quantity' => null,
             'recorded_at' => $at,
             'actor_user_id' => $actorUserId,
             'command_id' => $commandId,

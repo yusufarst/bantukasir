@@ -10,7 +10,24 @@ import { CORRECT_CAPABILITY } from '@/lib/costing/costs';
 import { CorrectionButton } from '@/lib/costing/Parts';
 import { formatCost, formatCount, formatDateTime } from '@/lib/format';
 import { t } from '@/lib/i18n';
-import { HISTORY_PAGE, HISTORY_SHELL, ISSUES_PAGE, openerOf, reasonWord, RECEIVINGS_PAGE, REQUESTS_PAGE, signedQuantity, sourceLink, typeWord, type MovementSource, type MovementType } from '@/lib/inventory/stock';
+import { ReversalButton } from '@/lib/inventory/Reversal';
+import {
+    HISTORY_PAGE,
+    HISTORY_SHELL,
+    ISSUES_PAGE,
+    movementPage,
+    openerOf,
+    reasonWord,
+    RECEIVINGS_PAGE,
+    REQUESTS_PAGE,
+    REVERSE_CAPABILITY,
+    REVERSIBLE_TYPES,
+    signedQuantity,
+    sourceLink,
+    typeWord,
+    type MovementSource,
+    type MovementType,
+} from '@/lib/inventory/stock';
 
 // UXP-403 "Detail mutasi stok" (ROUTE_CONTRACTS RP-403; COPY_DECK section 9.4; INTERACTION_INVENTORY
 // UXI-224, UXI-225 and UXI-229; NAVIGATION_CONTRACTS UXP-403; UI_STATES section 6; BR-INV-02,
@@ -22,7 +39,11 @@ import { HISTORY_PAGE, HISTORY_SHELL, ISSUES_PAGE, openerOf, reasonWord, RECEIVI
 // reason, as it is after the Owner's corrections, with how many there were, and "Koreksi biaya" or
 // "Lengkapi biaya" (UXI-226; TASK-025), disabled with its reason while a cost correction of the
 // user is uncertain (UXS-13; NC-13). "Kembali ke …" names the page that opened it, UXP-402 by
-// default (UXI-229). The reversal (UXI-227, UXI-228) is TASK-026's.
+// default (UXI-229). Its reversal links: the REVERSAL that cancelled it, or the movement a REVERSAL
+// cancels (COPY_DECK section 9.4); and for the Owner "Batalkan mutasi" (UXI-227; TASK-026) for an
+// OPENING, a RECEIPT or a MANUAL_ISSUE, disabled with its reason when it is reversed, while a
+// reversal of the user is uncertain, or for a RECEIPT or a MANUAL_ISSUE while the onboarding freeze
+// is on. UXI-228, its OPENING during onboarding followed by the replacement, comes with TASK-035.
 
 /** UXP-504 returns here. */
 const OPENER = 'movement';
@@ -46,6 +67,15 @@ interface Movement {
     /** A manual issue's reason (BR-INV-19). */
     readonly reasonCode: string | null;
     readonly source: MovementSource | null;
+    /** The REVERSAL that cancelled this movement (TASK-026). */
+    readonly reversedBy: MovementLink | null;
+    /** The movement that this REVERSAL cancels (TASK-026). */
+    readonly reverses: MovementLink | null;
+}
+
+interface MovementLink {
+    readonly id: number;
+    readonly at: string;
 }
 
 interface CostEvidence {
@@ -57,13 +87,22 @@ interface CostEvidence {
     readonly corrections: number;
 }
 
-export default function Movement({ movement, costEvidence }: { movement: Movement; costEvidence?: CostEvidence | null }) {
+export default function Movement({ movement, costEvidence, postingFrozen }: { movement: Movement; costEvidence?: CostEvidence | null; postingFrozen?: boolean }) {
     const title = t('inventory.movement.title');
 
     return (
         <AppShell title={title} {...HISTORY_SHELL}>
-            <MovementPage title={title} movement={movement} costEvidence={costEvidence} />
+            <MovementPage title={title} movement={movement} costEvidence={costEvidence} postingFrozen={postingFrozen ?? false} />
         </AppShell>
+    );
+}
+
+/** A link to the other movement of a reversal pair, with its words (COPY_DECK section 9.4). */
+function pairLink(link: MovementLink, key: 'inventory.movement.reversed_by' | 'inventory.movement.reverses') {
+    return (
+        <a className={'bk-table-link'} href={movementPage(link.id)}>
+            {t(key, { waktu: formatDateTime(link.at) })}
+        </a>
     );
 }
 
@@ -87,11 +126,14 @@ function backOf(): { readonly href: string; readonly page: string } {
     return { href: opener !== null && path === HISTORY_PAGE ? `${path}${opener.search}` : HISTORY_PAGE, page: t('inventory.history.title') };
 }
 
-function MovementPage({ title, movement, costEvidence }: { title: string; movement: Movement; costEvidence: CostEvidence | null | undefined }) {
+function MovementPage({ title, movement, costEvidence, postingFrozen }: { title: string; movement: Movement; costEvidence: CostEvidence | null | undefined; postingFrozen: boolean }) {
     const [back] = useState(backOf);
-    // "Biaya disimpan. Laporan sudah dihitung ulang." after the success of UXP-504, which leads here (UXS-04).
+    // "Biaya disimpan. Laporan sudah dihitung ulang." after the success of UXP-504, and "Mutasi dibatalkan." after UXP-411, which lead here (UXS-04).
     const [note] = useState(takeSavedNote);
-    const corrects = usePage<SharedProps>().props.auth.user.capabilities.includes(CORRECT_CAPABILITY);
+    const capabilities = usePage<SharedProps>().props.auth.user.capabilities;
+    const corrects = capabilities.includes(CORRECT_CAPABILITY);
+    // UXI-227, the Owner's: shown for an OPENING, a RECEIPT or a MANUAL_ISSUE only (BR-INV-36).
+    const reverses = capabilities.includes(REVERSE_CAPABILITY) && REVERSIBLE_TYPES.includes(movement.type);
     const link = movement.source === null ? null : sourceLink(movement.source);
 
     const items: KeyValue[] = [
@@ -115,6 +157,8 @@ function MovementPage({ title, movement, costEvidence }: { title: string; moveme
                       ),
                   },
               ]),
+        ...(movement.reverses === null ? [] : [{ key: 'reverses', label: t('inventory.movement.source'), value: pairLink(movement.reverses, 'inventory.movement.reverses') }]),
+        ...(movement.reversedBy === null ? [] : [{ key: 'reversed', label: t('inventory.type.reversal'), value: pairLink(movement.reversedBy, 'inventory.movement.reversed_by') }]),
     ];
 
     return (
@@ -123,7 +167,14 @@ function MovementPage({ title, movement, costEvidence }: { title: string; moveme
             <div className={'bk-stack'}>
                 {note !== null && <Committed message={note} />}
                 <Section title={title} titleHidden={true}>
-                    <KeyValueList items={items} />
+                    <div className={'bk-stack'}>
+                        <KeyValueList items={items} />
+                        {reverses && (
+                            <div className={'bk-actions'}>
+                                <ReversalButton movementId={movement.id} type={movement.type} reversed={movement.reversedBy !== null} frozen={postingFrozen} opener={OPENER} />
+                            </div>
+                        )}
+                    </div>
                 </Section>
                 {costEvidence !== undefined && costEvidence !== null && <EvidenceSection evidence={costEvidence} corrects={corrects} />}
             </div>

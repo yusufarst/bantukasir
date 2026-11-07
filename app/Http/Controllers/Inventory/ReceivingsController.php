@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Policies\NotFound;
 use App\Queries\Catalog\CategoryRows;
 use App\Queries\Inventory\ReceivingDocuments;
+use App\Queries\Inventory\Reversibility;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -24,7 +25,9 @@ use Inertia\Response;
  * freeze is on, whether an explicit zero cost is the viewer's to enter (the Owner's alone,
  * BR-COST-04) and the categories that "Tambah produk" over the page offers (UXI-235, NC-11);
  * every holder of CAP-11 holds CAP-04. RP-406 shows one document with its purchase cost, which
- * every holder of CAP-11 may see (CAP-12), and a zero's evidence or reason only to the Owner.
+ * every holder of CAP-11 may see (CAP-12), and a zero's evidence or reason only to the Owner; to
+ * the Owner also whether each line's RECEIPT is reversed and whether the onboarding freeze is on, for
+ * "Batalkan mutasi" (UXI-250; CAP-17; TASK-026).
  */
 final class ReceivingsController
 {
@@ -51,11 +54,20 @@ final class ReceivingsController
     /**
      * @throws NotFound
      */
-    public function show(Request $request, string $document, ReceivingDocuments $documents): Response
+    public function show(Request $request, string $document, ReceivingDocuments $documents, Reversibility $reversibility, OnboardingState $onboarding): Response
     {
         // A zero's evidence or reason is cost evidence, CAP-20's, as on UXP-403 (review finding R-10).
         $viewer = $request->user();
         $read = $documents->detail($document, $viewer instanceof User && Capabilities::allows($viewer, Capability::Cap20));
+
+        // "Batalkan mutasi" per line, the Owner's (UXI-250; CAP-17; TASK-026).
+        if ($viewer instanceof User && Capabilities::allows($viewer, Capability::Cap17)) {
+            return Inertia::render('inventory/Receiving', [
+                ...$read,
+                'lines' => $reversibility->withReversed($read['lines']),
+                'postingFrozen' => $onboarding->current() === OnboardingState::ACTIVE,
+            ]);
+        }
 
         return Inertia::render('inventory/Receiving', $read);
     }
