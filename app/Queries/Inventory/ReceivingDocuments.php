@@ -5,8 +5,8 @@ namespace App\Queries\Inventory;
 use App\Policies\NotFound;
 use App\Policies\ObjectScope;
 use App\Queries\Catalog\ProductRows;
+use App\Queries\Costing\EffectiveCosts;
 use App\Queries\Inventory\Column as Read;
-use App\Support\Numbers\Cost;
 use App\Support\Numbers\Quantity;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
@@ -19,8 +19,9 @@ use Illuminate\Support\Facades\DB;
  * SKU or name, without regard to letter case (SCH-14). There is no draft: a document exists
  * only once it is confirmed. RP-406 reads one document and its lines, each with its movement
  * and its purchase cost, which the Owner, OPERATIONS_ADMIN and the combined account may see
- * (CAP-12); a zero's evidence or reason is the Owner's (CAP-20). The cost shown is the evidence
- * as confirmed: the corrections of TASK-025 add the current cost, the mark and the history.
+ * (CAP-12); a zero's evidence or reason is the Owner's (CAP-20). Since TASK-025 the cost shown is
+ * the current one, with the cost at confirmation and the Owner's mark after a correction (D-047),
+ * and, for the Owner alone, the correction history.
  */
 final class ReceivingDocuments
 {
@@ -86,8 +87,11 @@ final class ReceivingDocuments
     }
 
     /**
-     * One document with its lines, in their order; `withZeroNotes` adds the evidence or reason
-     * of an explicit zero, the Owner's (CAP-20).
+     * One document with its lines, in their order, each with its purchase cost as it is now and as
+     * it was at confirmation, and whether the Owner corrected or completed it (D-047; BR-INV-15;
+     * TASK-025); `withZeroNotes` adds, for the Owner (CAP-20), a zero's evidence or reason, the cost
+     * source and its number of corrections for "Koreksi biaya" (UXI-249), and its correction history
+     * (UXI-247), which no other role sees.
      *
      * @return array{document: array{id: int, confirmedAt: string, reference: string|null, documentDate: string|null, lineCount: int, actorDisplayName: string}, lines: list<array<string, mixed>>}
      *
@@ -115,8 +119,13 @@ final class ReceivingDocuments
             ->where('l.receiving_document_id', Read::int($values, 'id'))
             ->orderBy('l.line_no')
             ->limit(self::MAX_LINES)
-            ->get(['l.line_no', 'l.product_id', 'p.name', 'p.sku', 'm.id as movement_id', 'm.quantity', 'm.quantity_precision', 'm.base_unit', 'e.cost_status', 'e.total_amount', 'e.zero_cost_note'])
+            ->select(['l.line_no', 'l.product_id', 'p.name', 'p.sku', 'm.id as movement_id', 'm.quantity', 'm.quantity_precision', 'm.base_unit', 'e.id as evidence_id', 'e.cost_status', 'e.total_amount', 'e.zero_cost_note'])
+            ->selectRaw(EffectiveCosts::CORRECTED_AMOUNT)
+            ->selectRaw(EffectiveCosts::CORRECTED_NOTE)
+            ->selectRaw(EffectiveCosts::CORRECTION_NO)
+            ->get()
             ->all();
+        $history = $withZeroNotes ? EffectiveCosts::history(array_values(array_map(static fn (object $line): int => Read::int((array) $line, 'evidence_id'), $lines))) : [];
 
         return [
             'document' => [
@@ -127,19 +136,23 @@ final class ReceivingDocuments
                 'lineCount' => Read::int($values, 'line_count'),
                 'actorDisplayName' => Read::text($values, 'actor_display_name'),
             ],
-            'lines' => array_values(array_map(static fn (object $line): array => self::line((array) $line, $withZeroNotes), $lines)),
+            'lines' => array_values(array_map(static fn (object $line): array => self::line((array) $line, $withZeroNotes, $history), $lines)),
         ];
     }
 
     /**
+     * A line with its purchase cost as it is now — the Owner's correction or completion, if any —
+     * and at confirmation, both for every holder of CAP-12; the rest for the Owner alone.
+     *
      * @param  array<array-key, mixed>  $values
+     * @param  array<int, list<array<string, mixed>>>  $history
      * @return array<string, mixed>
      */
-    private static function line(array $values, bool $withZeroNotes): array
+    private static function line(array $values, bool $withZeroNotes, array $history): array
     {
         $precision = Read::int($values, 'quantity_precision');
-        $status = Read::text($values, 'cost_status');
-        $cost = Cost::fromDatabase(Read::nullableText($values, 'total_amount'), $status);
+        $evidence = Read::int($values, 'evidence_id');
+        $correctionNo = EffectiveCosts::correctionNo($values);
         $line = [
             'lineNo' => Read::int($values, 'line_no'),
             'product' => ['id' => Read::int($values, 'product_id'), 'name' => Read::text($values, 'name'), 'sku' => Read::text($values, 'sku')],
@@ -147,11 +160,16 @@ final class ReceivingDocuments
             'quantity' => Quantity::fromDatabase(Read::text($values, 'quantity'), $precision)->toCanonical(),
             'baseUnit' => Read::text($values, 'base_unit'),
             'quantityPrecision' => $precision,
-            'cost' => ['status' => $status, 'amount' => $cost->isKnown() ? $cost->toCanonical() : null],
+            'cost' => EffectiveCosts::current($values),
+            'corrected' => $correctionNo > 0,
+            'confirmedCost' => EffectiveCosts::confirmed($values),
         ];
 
         if ($withZeroNotes) {
-            $line['zeroNote'] = Read::nullableText($values, 'zero_cost_note');
+            $line['zeroNote'] = EffectiveCosts::zeroNote($values);
+            $line['evidenceId'] = $evidence;
+            $line['correctionNo'] = $correctionNo;
+            $line['corrections'] = $history[$evidence] ?? [];
         }
 
         return $line;

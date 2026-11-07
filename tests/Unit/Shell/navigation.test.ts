@@ -80,7 +80,11 @@ describe('the primary navigation of each role', () => {
         expect(Object.keys(SUB_DESTINATIONS.stock)).toEqual(['stock', 'history', 'receipts', 'issues']);
         expect(SUB_DESTINATIONS.stock.receipts).toEqual({ label: 'inventory.receipts.title', href: '/stock/receivings', capabilities: ['CAP-11'] });
         expect(SUB_DESTINATIONS.stock.issues).toEqual({ label: 'inventory.issues.title', href: '/stock/issues', capabilities: ['CAP-13'] });
-        expect(Object.keys(SUB_DESTINATIONS.reports)).toEqual([]);
+        // UXI-021 "Biaya perlu dilengkapi", TASK-025's, which the Laporan destination shows once it exists (TASK-041).
+        expect(Object.keys(SUB_DESTINATIONS.reports)).toEqual(['worklist']);
+        expect(SUB_DESTINATIONS.reports.worklist).toEqual({ label: 'costing.worklist.title', href: '/reports/costs-to-complete', capabilities: ['CAP-20'] });
+        expect(subNavigationFor('reports', ['SUPER_ADMIN'], FLAGS.owner, SUB_DESTINATIONS.reports).map((item) => item.id)).toEqual(['worklist']);
+        expect(subNavigationFor('reports', ['OPERATIONS_ADMIN'], FLAGS.ops, SUB_DESTINATIONS.reports)).toEqual([]);
         expect(navigationFor(['SUPER_ADMIN'], FLAGS.owner, DESTINATIONS).map((item) => item.id)).toEqual(['stock', 'products', 'settings']);
         expect(navigationFor(['CASHIER', 'OPERATIONS_ADMIN'], FLAGS.combined, DESTINATIONS).map((item) => item.id)).toEqual(['stock', 'products']);
         expect(navigationFor(['OPERATIONS_ADMIN'], FLAGS.ops, DESTINATIONS).map((item) => item.id)).toEqual(['stock', 'products']);

@@ -12,6 +12,7 @@ use App\Actions\Catalog\CreateProduct;
 use App\Actions\Catalog\RetireBarcode;
 use App\Actions\Commands\CommandAction;
 use App\Actions\Commands\CommandContext;
+use App\Actions\Costing\CorrectCost;
 use App\Actions\Inventory\ConfirmAdjustment;
 use App\Actions\Inventory\ConfirmManualIssue;
 use App\Actions\Inventory\ConfirmReceiving;
@@ -411,6 +412,31 @@ final class TokoContoh
         }
 
         return self::asOwner(ConfirmAdjustment::class, ConfirmAdjustment::OPERATION, ['reason' => $reason, 'countReference' => $countReference, 'reference' => $reference, 'lines' => $lines], ['products' => array_values($versions)]);
+    }
+
+    /**
+     * The Owner's correction or completion of a cost source through RC-15's Action (TASK-025;
+     * EXECUTION_CONTEXT EXC-45), as the latest correction of the source stands: its internal key. The
+     * recent authentication of RC-15 is its route's, which this fixture does not pass through.
+     *
+     * @throws DatabaseRefused
+     */
+    public static function correctCost(int $evidence, string $amount, string $reason = 'Nota pemasok', ?string $zeroEvidence = null): int
+    {
+        $latest = DB::table('cost_corrections')->where('evidence_id', $evidence)->max('correction_no');
+
+        return self::asOwner(CorrectCost::class, CorrectCost::OPERATION, ['evidenceId' => $evidence, 'newCost' => ['amount' => $amount, ...($zeroEvidence === null ? [] : ['zeroEvidence' => $zeroEvidence])], 'reason' => $reason], ['correctionNo' => is_int($latest) ? $latest : 0]);
+    }
+
+    /**
+     * The cost source of a movement, the evidence of an OPENING, a RECEIPT or a positive ADJUSTMENT
+     * (TASK-025): its internal key.
+     */
+    public static function evidenceOf(int $movement): int
+    {
+        $evidence = DB::table('acquisition_cost_evidence')->where('movement_id', $movement)->value('id');
+
+        return is_int($evidence) ? $evidence : throw new LogicException('The movement carries cost evidence.');
     }
 
     /**

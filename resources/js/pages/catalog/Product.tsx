@@ -1,4 +1,4 @@
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { useEffect, useId, useRef, useState, type ChangeEvent } from 'react';
 import { Button, ButtonLink } from '@/components/ui/Button';
 import { Section } from '@/components/ui/Card';
@@ -22,6 +22,7 @@ import { committedText } from '@/lib/commands/families';
 import { CommandPanels } from '@/lib/commands/Panels';
 import { useUnresolved } from '@/lib/commands/unresolved';
 import { useCommand } from '@/lib/commands/useCommand';
+import { COST_HISTORY_CAPABILITY, costHistoryPage } from '@/lib/costing/costs';
 import { formatDateTime, formatMoney, formatQuantity } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import { productHistory, stateWord, type StockState } from '@/lib/inventory/stock';
@@ -114,6 +115,8 @@ function ProductPage({ title, product, priceHistory, barcodes, canCorrectBarcode
     const [fromCreate] = useState(cameFromCreate);
     const [listPage] = useState(productsListAddress);
     const unresolved = useUnresolved();
+    // UXI-176, the Owner's: "Riwayat biaya" (CAP-20; TASK-025).
+    const costHistory = usePage<{ readonly auth: { readonly user: { readonly capabilities: readonly string[] } }; readonly [key: string]: unknown }>().props.auth.user.capabilities.includes(COST_HISTORY_CAPABILITY);
 
     const reload = (): void => router.reload({ only: RELOADED });
 
@@ -201,7 +204,7 @@ function ProductPage({ title, product, priceHistory, barcodes, canCorrectBarcode
                         </Section>
                     </div>
                 </Section>
-                {stock !== null && <StockSection product={product} stock={stock} />}
+                {stock !== null && <StockSection product={product} stock={stock} costHistory={costHistory} />}
                 {canChangePhoto && <PhotoSection product={product} onDone={done} onStale={onStale} onOpen={() => setNote(null)} />}
                 {barcodes !== null && <BarcodesSection product={product} barcodes={barcodes} canCorrect={canCorrectBarcode} onDone={done} onChanged={reload} onOpen={() => setNote(null)} />}
                 {canPrintLabels && (
@@ -219,9 +222,10 @@ function ProductPage({ title, product, priceHistory, barcodes, canCorrectBarcode
 /**
  * UXI-167, the section "Stok" (TASK-022): the stock on hand and its state — none for an
  * inactive product, which shows its mark (INVENTORY section 10) — and "Riwayat stok", the
- * history filtered to this product, which names this page as the way back.
+ * history filtered to this product, which names this page as the way back; for the Owner also
+ * "Riwayat biaya" (UXI-176; TASK-025).
  */
-function StockSection({ product, stock }: { product: ProductDetail; stock: NonNullable<ProductProps['stock']> }) {
+function StockSection({ product, stock, costHistory }: { product: ProductDetail; stock: NonNullable<ProductProps['stock']>; costHistory: boolean }) {
     const word = stock.state === null ? null : stateWord(stock.state);
     const items: KeyValue[] = [
         { key: 'onHand', label: t('inventory.stock.col_stock'), value: <span className={'bk-num'}>{formatQuantity(stock.onHand, product.quantityPrecision, product.baseUnit)}</span> },
@@ -234,6 +238,7 @@ function StockSection({ product, stock }: { product: ProductDetail; stock: NonNu
                 <KeyValueList items={items} />
                 <div className={'bk-actions'}>
                     <ButtonLink href={productHistory(product.id, 'product')} label={t('inventory.history.title')} variant={'secondary'} />
+                    {costHistory && <ButtonLink href={costHistoryPage(product.id, 'product')} label={t('costing.history.title')} variant={'secondary'} />}
                 </div>
             </div>
         </Section>

@@ -47,7 +47,9 @@ use Throwable;
  * IDEMPOTENCY_CONFLICT for another; INTENT_ABANDONED for a resolution's fence.
  * An EPOCH_STALE refusal records, after the rollback and in a transaction of
  * its own, the intent's stale-intent report if absent and holds its PENDING
- * receipts of an earlier epoch (ADR-009 section 3).
+ * receipts of an earlier epoch (ADR-009 section 3). Any refusal of an attempt passes refused(),
+ * where a command writes, after the rollback and in a transaction of its own, what its refusal
+ * needs — the mark of a cost correction refused REPLAY_REJECTED (TASK-025).
  */
 abstract class CommandAction
 {
@@ -175,6 +177,18 @@ abstract class CommandAction
     protected function settled(CommandContext $context, ?ErrorCode $refusal): void {}
 
     /**
+     * After a refusal of an attempt, outside every transaction and before it is answered: what the
+     * refusal needs written in a transaction of its own, and the refusal to answer, which is
+     * SERVICE_BUSY when that transaction fails, so that no refusal is answered without it — the
+     * mark of a cost correction refused REPLAY_REJECTED (SCHEMA section 5.8; TECHNICAL_RULES
+     * TR-TIME-01; TASK-025). By default the refusal stands and nothing is written.
+     */
+    protected function refused(CommandContext $context, CommandRefused $refusal): CommandRefused
+    {
+        return $refusal;
+    }
+
+    /**
      * Runs the command.
      *
      * @throws CommandRefused a definite refusal, or SERVICE_BUSY
@@ -222,7 +236,7 @@ abstract class CommandAction
                     $this->reportStale($context);
                 }
 
-                throw $refusal;
+                throw $this->refused($context, $refusal);
             } catch (Throwable $failure) {
                 if (SqlState::uniqueOn($failure, self::IDENTITY_KEYS)) {
                     $original = $this->original($context);

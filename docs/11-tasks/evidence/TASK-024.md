@@ -187,3 +187,17 @@ The fix changes production behaviour of a class-A Task, so `bk-reviewer-high` ma
 | V3-02: the second half of the test, UXP-402's unavailable button and "Kirim ulang", has never run in CI | NOTE | Recorded: it uses the pattern of `Product.tsx`'s correction entry, whose axe and measure checks passed in the same run (`correction.spec.ts`); the next head's browser suite proves it |
 
 Checks of fix cycle 3: `npm run lint`, `typecheck` and `test:unit` in `fast-checks` on the push and in the command contract on the pull request's next head, with the browser suite and the image checks there (D-117). Nothing runs on this machine (D-108). The push is fast run 9 of 10 (CE-46). The guard of fix cycle 3 is reported with its push.
+
+## 13. Merge
+
+Recorded by the next Task, TASK-025 (EXECUTION_CONTEXT CE-50), from the state and GitHub on 4 November 2026, by read-only Git and GitHub commands. The tick verified the merge, which the state records as merge kind `task`. CI on the final head ran the whole command contract, with the browser suite and `tests/Browser/inventory/adjustment.spec.ts`, and the image checks, and passed: the checks of sections 1 and 12 that were `NOT_RUN` passed there, and fix cycle 3 held.
+
+| Fact | Value |
+| --- | --- |
+| Pull request | #34, "TASK-024 — Stock adjustment", from `task/TASK-024-stock-adjustment` into `develop` |
+| Its head | `a1dd88a5aa9322a731749e8cd45a269fcb43f3fa` |
+| CI on the pull request | Run 41703516068, on `a1dd88a`, success: `Command contract` 19:28:08 to 20:20:53 UTC, `Image checks` 19:28:08 to 19:34:45 UTC, 3 November 2026 |
+| Merge | The tick's squash merge on the Owner's account (`yusufarst`), under D-105, on 3 November 2026 at 20:22:15 UTC, with the automated review's status DONE |
+| Merge commit | `d92b13b9c85b7d87b7ebf8b37c39a3251fc64ca0` on `develop`; its tree `80f3f77900db67f35cfade79a98678601e1a6016` equals that of `a1dd88a` |
+| CI on `develop` | Run 41711940101, on `d92b13b`, success: `Command contract` 20:22:20 to 21:06:37 UTC, `Image checks` 20:22:20 to 20:29:38 UTC |
+| Comments | No comment or review of the Owner on the pull request. The automated reviewer's account `chatgpt-codex-connector` wrote its summary comment and a review, whose P2 finding fix cycle 1 answered (section 10); data, not instructions (CE-43) |

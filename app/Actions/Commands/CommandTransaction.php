@@ -23,7 +23,10 @@ use Throwable;
  * the budget ended the session, or the commit could not be confirmed — is
  * never read as a failure of the command (TR-RETRY-03): it is answered
  * SERVICE_BUSY, so that the client stays UNCERTAIN, and the connection is
- * dropped, so that the next statement opens a new session.
+ * dropped, so that the next statement opens a new session. That refusal keeps
+ * the failure as its previous, so that a command's refused() can tell the
+ * budget's end of its transaction, wherever it met it, from any other loss
+ * (SqlState::budgetEnded; TASK-025).
  */
 final class CommandTransaction
 {
@@ -63,7 +66,7 @@ final class CommandTransaction
                 $connection->disconnect();
                 report($failure);
 
-                throw CommandRefused::of(ErrorCode::ServiceBusy);
+                throw new CommandRefused(ErrorCode::ServiceBusy, previous: $failure);
             }
 
             throw $failure;

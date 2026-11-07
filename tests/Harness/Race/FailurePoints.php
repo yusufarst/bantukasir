@@ -20,9 +20,10 @@ final class FailurePoints implements CommandPoints
 
     /**
      * The writes of the command pipeline in transactions of their own
-     * (CommandPoints::afterOwnWrite; TASK-008).
+     * (CommandPoints::afterOwnWrite; TASK-008), and the cost-incomplete mark
+     * of a refused cost correction (TASK-025).
      */
-    public const array OWN_WRITES = ['receipt', 'marking', 'settlement', 'report'];
+    public const array OWN_WRITES = ['receipt', 'marking', 'settlement', 'report', 'mark'];
 
     /** @var list<string> */
     public array $passed = [];

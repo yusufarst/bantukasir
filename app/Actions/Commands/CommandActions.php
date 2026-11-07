@@ -26,6 +26,7 @@ use App\Actions\Catalog\RetireBarcode;
 use App\Actions\Catalog\SetProductPhoto;
 use App\Actions\Catalog\UpdateProduct;
 use App\Actions\Configuration\ChangeBusinessProfile;
+use App\Actions\Costing\CorrectCost;
 use App\Actions\Documents\RecordLabelPrint;
 use App\Actions\Inventory\ConfirmAdjustment;
 use App\Actions\Inventory\ConfirmManualIssue;
@@ -87,6 +88,8 @@ final class CommandActions
         ConfirmManualIssue::OPERATION => ConfirmManualIssue::class,
         // RC-09 (TASK-024).
         ConfirmAdjustment::OPERATION => ConfirmAdjustment::class,
+        // RC-15 (TASK-025).
+        CorrectCost::OPERATION => CorrectCost::class,
     ];
 
     /**

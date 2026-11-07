@@ -54,6 +54,10 @@ final class ReceivingPagesTest extends DatabaseTestCase
     public function test_each_kind_of_account_of_cap_11_opens_each_page_with_only_its_allowlisted_props(): void
     {
         $secrets = array_values(array_map(static fn (array $one): string => $one['password'], $this->people));
+        // The Owner corrected the first document's cost: every holder of CAP-12 sees the current cost,
+        // the mark and the cost at confirmation, the Owner alone the history (D-047; TASK-025).
+        $movement = $this->observer()->table('stock_movements as m')->join('receiving_lines as l', 'l.id', '=', 'm.receiving_line_id')->where('l.receiving_document_id', $this->documents[0])->value('m.id');
+        TokoContoh::correctCost(TokoContoh::evidenceOf(is_int($movement) ? $movement : 0), '33000', 'Nota susulan');
 
         foreach (['Hendra' => 'owner', 'Agus' => 'ops', 'Dewi' => 'combined'] as $person => $actor) {
             $this->as($person);

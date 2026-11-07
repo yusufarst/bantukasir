@@ -1,10 +1,14 @@
+import { usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { Section } from '@/components/ui/Card';
 import { KeyValueList, type KeyValue } from '@/components/ui/Data';
-import { StateMark } from '@/components/ui/States';
+import { Committed, StateMark } from '@/components/ui/States';
 import { AppShell } from '@/layouts/AppShell';
 import { PageContainer, PageHeader } from '@/layouts/Page';
-import { formatCost, formatDateTime } from '@/lib/format';
+import { takeSavedNote } from '@/lib/access/users';
+import { CORRECT_CAPABILITY } from '@/lib/costing/costs';
+import { CorrectionButton } from '@/lib/costing/Parts';
+import { formatCost, formatCount, formatDateTime } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import { HISTORY_PAGE, HISTORY_SHELL, ISSUES_PAGE, openerOf, reasonWord, RECEIVINGS_PAGE, REQUESTS_PAGE, signedQuantity, sourceLink, typeWord, type MovementSource, type MovementType } from '@/lib/inventory/stock';
 
@@ -15,8 +19,19 @@ import { HISTORY_PAGE, HISTORY_SHELL, ISSUES_PAGE, openerOf, reasonWord, RECEIVI
 // document or a manual issue (TASK-023), as a link (UXI-224); for the Owner alone its cost
 // evidence (UXI-225): the status, the total or
 // "Biaya perlu dilengkapi pemilik", never Rp0 for UNKNOWN (UXS-24), and a zero's evidence or
-// reason. "Kembali ke …" names the page that opened it, UXP-402 by default (UXI-229). The
-// reversal and the cost correction (UXI-226 to UXI-228) are TASK-025's and TASK-026's.
+// reason, as it is after the Owner's corrections, with how many there were, and "Koreksi biaya" or
+// "Lengkapi biaya" (UXI-226; TASK-025), disabled with its reason while a cost correction of the
+// user is uncertain (UXS-13; NC-13). "Kembali ke …" names the page that opened it, UXP-402 by
+// default (UXI-229). The reversal (UXI-227, UXI-228) is TASK-026's.
+
+/** UXP-504 returns here. */
+const OPENER = 'movement';
+
+/** The signed-in user that every page shares (TASK-007). */
+interface SharedProps {
+    readonly auth: { readonly user: { readonly capabilities: readonly string[] } };
+    readonly [key: string]: unknown;
+}
 
 interface Movement {
     readonly id: number;
@@ -34,9 +49,12 @@ interface Movement {
 }
 
 interface CostEvidence {
+    readonly evidenceId: number;
     readonly status: 'KNOWN' | 'UNKNOWN';
     readonly total: string | null;
     readonly zeroNote: string | null;
+    /** How many corrections the Owner made (TASK-025). */
+    readonly corrections: number;
 }
 
 export default function Movement({ movement, costEvidence }: { movement: Movement; costEvidence?: CostEvidence | null }) {
@@ -71,6 +89,9 @@ function backOf(): { readonly href: string; readonly page: string } {
 
 function MovementPage({ title, movement, costEvidence }: { title: string; movement: Movement; costEvidence: CostEvidence | null | undefined }) {
     const [back] = useState(backOf);
+    // "Biaya disimpan. Laporan sudah dihitung ulang." after the success of UXP-504, which leads here (UXS-04).
+    const [note] = useState(takeSavedNote);
+    const corrects = usePage<SharedProps>().props.auth.user.capabilities.includes(CORRECT_CAPABILITY);
     const link = movement.source === null ? null : sourceLink(movement.source);
 
     const items: KeyValue[] = [
@@ -100,28 +121,41 @@ function MovementPage({ title, movement, costEvidence }: { title: string; moveme
         <PageContainer width={'form'}>
             <PageHeader title={title} subtitle={t('inventory.movement.subtitle', { jenis: typeWord(movement.type), produk: movement.product.name })} back={back} />
             <div className={'bk-stack'}>
+                {note !== null && <Committed message={note} />}
                 <Section title={title} titleHidden={true}>
                     <KeyValueList items={items} />
                 </Section>
-                {costEvidence !== undefined && costEvidence !== null && <EvidenceSection evidence={costEvidence} />}
+                {costEvidence !== undefined && costEvidence !== null && <EvidenceSection evidence={costEvidence} corrects={corrects} />}
             </div>
         </PageContainer>
     );
 }
 
-/** UXI-225, the Owner's: the status, the total, and a zero's evidence or reason (BR-COST-02 to BR-COST-04). */
-function EvidenceSection({ evidence }: { evidence: CostEvidence }) {
+/**
+ * UXI-225, the Owner's: the status, the total, and a zero's evidence or reason, as they are after the
+ * Owner's corrections, with how many there were (BR-COST-02 to BR-COST-04, BR-COST-20); and UXI-226,
+ * "Koreksi biaya" or "Lengkapi biaya" (CAP-19).
+ */
+function EvidenceSection({ evidence, corrects }: { evidence: CostEvidence; corrects: boolean }) {
     const zero = evidence.status === 'KNOWN' && evidence.total !== null && /^0(\.0+)?$/.test(evidence.total);
     const status = evidence.status === 'UNKNOWN' ? t('costing.status.unknown') : zero ? t('costing.status.zero') : t('costing.status.known');
     const items: KeyValue[] = [
         { key: 'status', label: t('catalog.field.status'), value: status },
         { key: 'total', label: t('costing.evidence.total'), value: evidence.total === null ? <StateMark kind={'cost_unknown'} /> : <span className={'bk-num'}>{formatCost(evidence.total)}</span> },
         ...(evidence.zeroNote === null ? [] : [{ key: 'zero', label: t('costing.field.zero_evidence'), value: evidence.zeroNote }]),
+        ...(evidence.corrections === 0 ? [] : [{ key: 'corrections', label: t('costing.evidence.corrections'), value: <span className={'bk-num'}>{formatCount(evidence.corrections)}</span> }]),
     ];
 
     return (
         <Section title={t('costing.evidence.title')}>
-            <KeyValueList items={items} />
+            <div className={'bk-stack'}>
+                <KeyValueList items={items} />
+                {corrects && (
+                    <div className={'bk-actions'}>
+                        <CorrectionButton evidenceId={evidence.evidenceId} cost={{ status: evidence.status, amount: evidence.total }} opener={OPENER} />
+                    </div>
+                )}
+            </div>
         </Section>
     );
 }

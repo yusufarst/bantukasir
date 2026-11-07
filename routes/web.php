@@ -48,6 +48,9 @@ use App\Http\Controllers\Commands\RequestsDataController;
 use App\Http\Controllers\Commands\ResolveIntentController;
 use App\Http\Controllers\Configuration\ChangeBusinessProfileController;
 use App\Http\Controllers\Configuration\ProfileController;
+use App\Http\Controllers\Costing\CorrectCostController;
+use App\Http\Controllers\Costing\CorrectionController;
+use App\Http\Controllers\Costing\CostHistoryController;
 use App\Http\Controllers\Documents\LabelPrintController;
 use App\Http\Controllers\Documents\RecordLabelPrintController;
 use App\Http\Controllers\Inventory\AdjustmentsController;
@@ -61,6 +64,7 @@ use App\Http\Controllers\Inventory\ReceivingsController;
 use App\Http\Controllers\Inventory\StockController;
 use App\Http\Controllers\Inventory\StockDataController;
 use App\Http\Controllers\Media\MediaController;
+use App\Http\Controllers\Reporting\CostWorklistController;
 use App\Http\Controllers\Testing\SpecimenController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Http\Controllers\AuthenticatedSessionController;
@@ -271,6 +275,19 @@ Route::middleware(['auth', 'signin.session', 'throttle:authenticated', 'cache.he
     Route::middleware('capability:CAP-16')->group(function (): void {
         Route::post('/commands/adjustment.confirm', ConfirmAdjustmentController::class)->middleware(['throttle:command', 'password.confirm'])->name('commands.adjustment.confirm');
         Route::get('/stock/adjustments/new', [AdjustmentsController::class, 'create'])->middleware('input.allow:product,from_page')->name('adjustments.create');
+    });
+
+    // The cost correction (TASK-025), the Owner's alone: RC-15 in the bucket of every command, with
+    // recent authentication, and RP-504 for CAP-19; RP-503 and RP-505 for CAP-20. Each page takes
+    // only the parameters of its row of ROUTE_CONTRACTS.
+    Route::middleware('capability:CAP-19')->group(function (): void {
+        Route::post('/commands/cost_correction.confirm', CorrectCostController::class)->middleware(['throttle:command', 'password.confirm'])->name('commands.cost_correction.confirm');
+        Route::get('/costs/{evidence}/correct', [CorrectionController::class, 'create'])->middleware('input.allow:from_page')->name('costs.correct');
+    });
+
+    Route::middleware('capability:CAP-20')->group(function (): void {
+        Route::get('/reports/costs-to-complete', [CostWorklistController::class, 'index'])->middleware('input.allow:product,after,before,perPage')->name('reports.costs');
+        Route::get('/products/{product}/cost-history', [CostHistoryController::class, 'show'])->middleware('input.allow:from_page')->name('products.cost_history');
     });
 });
 
