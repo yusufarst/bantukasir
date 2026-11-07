@@ -31,13 +31,15 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Guard | Local, on `4234f6e`, the review's fixes | 11:22 | under 1 min | `PASS`, no candidate |
 | `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit`; the same seven PostgreSQL and concurrency test files, `ConfirmReversalTest` with the review's cases R-04 and R-05 and `ReversalPagesTest` with R-06's | Fast run 6, 42338216200 on `4234f6e` | 11:23 to 11:33 | 10 min 23 s | `PASS` |
 | Guard preview of the record | Local, the working tree against origin/develop | 10:30 | under 1 min | `PASS`, no candidate |
+| `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit`; the same seven PostgreSQL and concurrency test files | Fast run 7, 42339483187 on `91d87b9`, started by the push of the record | 11:40 to 11:51 | 10 min 29 s | `PASS` |
 | `composer validate`, `lint`, `analyse`, `test:unit`, `test:race`; `npm run lint`, `typecheck`, `test:unit`, `build`, the browser suite with `reversal.spec.ts` | CI on the pull request's first head, run 42339492526 on `91d87b9`, job `Command contract` | 11:40 to 12:06 | 25 min 34 s | `PASS` for each of these steps; the job failed only its last step, which requires both parts of `test:postgres` |
 | `composer test:postgres:2` | Same run, job `PostgreSQL (2/2)` | 11:40 to 11:57 | 16 min 32 s | `PASS` |
 | Image checks | Same run, job `Image checks` | 11:40 to 11:47 | 6 min 48 s | `PASS` |
 | `composer test:postgres:1` | Same run, job `PostgreSQL (1/2)` | 11:40 to 12:00 | 19 min 40 s (tests 16 min 3 s) | `FAIL`, 2 of 496: the one-writer scans of `ConfirmManualIssueTest` and `ConfirmReceivingTest` did not list TASK-026's reads (finding F-8, section 11) |
 | Guard preview of fix cycle 1 | Local, the working tree against origin/develop | 12:12 | under 1 min | `PASS`, no candidate |
-| Guard | Local, on the commit of fix cycle 1, before its push | — | — | `NOT_RUN` at this writing; required to pass before the push (CE-31), its result in the executor's report |
-| `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit`; the PostgreSQL and concurrency test files that the branch changes, now with `ConfirmManualIssueTest` and `ConfirmReceivingTest` | Fast run 7, on the commit of fix cycle 1 | — | — | `NOT_RUN` at this writing; awaited before the phase `CI`, its result in the executor's report |
+| Guard | Local, on `f7b87dd`, the fix of fix cycle 1 | 12:13 to 12:17 | about 4 min | `PASS`, no candidate |
+| Guard | Local, on the commit that corrects this table's run numbers, before the push | — | — | `NOT_RUN` at this writing; required to pass before the push (CE-31), its result in the executor's report |
+| `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit`; the PostgreSQL and concurrency test files that the branch changes, now with `ConfirmManualIssueTest` and `ConfirmReceivingTest` | Fast run 8, on the pushed head of fix cycle 1 | — | — | `NOT_RUN` at this writing; awaited before the phase `CI`, its result in the executor's report |
 | The whole command contract and the image checks on the final head | CI on the pull request's head after fix cycle 1 | — | — | `NOT_RUN` at this writing (CE-44, D-117); never on this machine (D-108) |
 
 ## 2. What was built (contract section 4.1)
