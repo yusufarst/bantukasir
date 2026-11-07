@@ -98,10 +98,10 @@ export default function Movement({ movement, costEvidence, postingFrozen }: { mo
 }
 
 /** A link to the other movement of a reversal pair, with its words (COPY_DECK section 9.4). */
-function pairLink(link: MovementLink, key: 'inventory.movement.reversed_by' | 'inventory.movement.reverses') {
+function pairLink(link: MovementLink, text: string) {
     return (
         <a className={'bk-table-link'} href={movementPage(link.id)}>
-            {t(key, { waktu: formatDateTime(link.at) })}
+            {text}
         </a>
     );
 }
@@ -157,8 +157,8 @@ function MovementPage({ title, movement, costEvidence, postingFrozen }: { title:
                       ),
                   },
               ]),
-        ...(movement.reverses === null ? [] : [{ key: 'reverses', label: t('inventory.movement.source'), value: pairLink(movement.reverses, 'inventory.movement.reverses') }]),
-        ...(movement.reversedBy === null ? [] : [{ key: 'reversed', label: t('inventory.type.reversal'), value: pairLink(movement.reversedBy, 'inventory.movement.reversed_by') }]),
+        ...(movement.reverses === null ? [] : [{ key: 'reverses', label: t('inventory.movement.source'), value: pairLink(movement.reverses, t('inventory.movement.reverses', { waktu: formatDateTime(movement.reverses.at) })) }]),
+        ...(movement.reversedBy === null ? [] : [{ key: 'reversed', label: t('inventory.type.reversal'), value: pairLink(movement.reversedBy, t('inventory.movement.reversed_by', { waktu: formatDateTime(movement.reversedBy.at) })) }]),
     ];
 
     return (

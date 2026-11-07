@@ -24,8 +24,8 @@ use App\Domain\Costing\Replay\ReplayRefused;
 use App\Domain\Inventory\OnboardingState;
 use App\Domain\Inventory\PostingBlocks;
 use App\Domain\Inventory\PostingGuard;
-use App\Domain\Inventory\ReversalSource;
 use App\Domain\Inventory\Reversals;
+use App\Domain\Inventory\ReversalSource;
 use App\Domain\Inventory\StockLedger;
 use App\Domain\Inventory\StockPosition;
 use App\Models\User;
@@ -157,7 +157,7 @@ final class ConfirmReversal extends CommandAction
             throw CommandRefused::of(ErrorCode::PostingBlocked);
         }
 
-        $before = $this->ledger->lockPositions([$source->productId => $product])[$source->productId];
+        $before = $this->ledger->lockPositions([$source->productId => $product])[$source->productId] ?? throw new LogicException('A position is read for its product.');
         $valuation = $this->valuations->lock([$source->productId])[$source->productId] ?? throw new LogicException('A valuation is read for its product.');
         $this->allocations->lockProjectionsFrom($source->productId, $source->productSequence);
         $this->services->points->afterLock('7');
