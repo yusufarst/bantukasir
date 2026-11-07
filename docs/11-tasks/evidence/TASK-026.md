@@ -23,6 +23,9 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Guard | Local, on `1b334cc` | 10:26 | under 1 min | `PASS`, no candidate |
 | `composer validate`, `lint`, `analyse`, `test:unit` (with `ValuationReplayTest`, `OperationsTest`, `PrivilegeMatrixTest`); `npm run lint`, `typecheck`, `test:unit` | Fast run 3, 42334013917 on `1b334cc` | 10:27 to 10:31 | about 4 min | `PASS` |
 | The PostgreSQL and concurrency test files that the branch changes | Same run | 10:31 to 10:34 | 3 min 3 s | `FAIL` in `ReversalPagesTest`: the receiving page of an uncorrected receipt holds no correction, so its props could not equal the Owner's allowlist, and the reversal links, nested and null where absent, could never equal it (finding F-6); `ReversalRaceTest` 3, `CapabilityMatrixTest` 7, `RouteInventoryTest` 8, `ConfirmReversalTest` 9 and `LedgerTablesTest` 19 tests passed before it; `ReversalTablesTest` did not run |
+| Guard | Local, on `cf97f49` | 10:39 | about 3 min | `PASS`, no candidate |
+| `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit` | Fast run 4, 42335070523 on `cf97f49` | 10:43 to 10:47 | about 4 min | `PASS` |
+| The PostgreSQL and concurrency test files that the branch changes | Same run | 10:47 to 10:51 | 4 min 6 s | `FAIL` in `ReversalTablesTest`, 5 of 6: its deferred case (finding F-7); `ReversalRaceTest` 3, `CapabilityMatrixTest` 7, `RouteInventoryTest` 8, `ConfirmReversalTest` 9, `LedgerTablesTest` 19 and `ReversalPagesTest` 3 tests passed |
 
 ## 2. What was built (contract section 4.1)
 
@@ -54,6 +57,7 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | F-2 | `tsc`, ESLint and PHP do not run on this machine, so every static check is met first in CI (TASK-011 F-5) | As recorded since TASK-011; the fast runs cover them |
 | F-4 | Fast run 1 failed Pint: the imports of `ConfirmReversal.php` out of order | Fixed in checkpoint 2 |
 | F-5 | Fast run 2 failed PHPStan: two tests read offsets of `mixed` props | Fixed in checkpoint 3, tests only |
+| F-7 | Fast run 4: `ReversalTablesTest`'s deferred case named `stock_movements` among the tables to leave empty, which held setUp's receipt | Fixed in checkpoint 5, test only |
 | F-6 | Fast run 3: the channel allowlist compares a page's props exactly, so a nested link that is null on most movements could never match it | Fixed in checkpoint 4: the links are flat scalars on every movement (`reversedById`, `reversedByAt`, `reversesId`, `reversesAt`), and the test reads a corrected receipt and its movement |
 | F-3 | UXI-228, "Batalkan mutasi" for an OPENING while onboarding is active, and the replacement that follows it, are TASK-035's, which proves the OPENING case (contract section 4.3) | The server accepts an OPENING during onboarding; the control on UXP-403 shows for an OPENING as UXI-227 |
 

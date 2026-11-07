@@ -98,7 +98,9 @@ final class ReversalTablesTest extends DatabaseTestCase
 
     public function test_a_reversal_without_its_movement_fails_at_commit_and_leaves_nothing(): void
     {
-        $this->assertFailsAtCommit(fn (Connection $c) => $this->insertReversal($c), 'reversals_movement_fk', ['reversals', 'stock_movements']);
+        // The receipt of setUp() stays the product's one movement.
+        $this->assertFailsAtCommit(fn (Connection $c) => $this->insertReversal($c), 'reversals_movement_fk', ['reversals']);
+        $this->assertSame(1, $this->observer()->table('stock_movements')->where('product_id', $this->product)->count());
     }
 
     public function test_the_runtime_and_backup_roles_hold_exactly_the_privileges_of_schema_section_10(): void
