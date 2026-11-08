@@ -127,9 +127,9 @@ final class CheckoutSaleTest extends DatabaseTestCase
             [$receipt['sale_number'], $receipt['total_amount'], $receipt['cash_session_id'], $receipt['cashier_display_name'], $receipt['business_profile_revision_id'], $receipt['logo_file_id'], $receipt['template_version'], $receipt['cash_session_number'], $receipt['payment_method'], $receipt['tendered_amount'], $receipt['change_amount'], $receipt['customer_name']],
         );
         $this->assertSame([
-            ['lineNo' => '1', 'sku' => 'PEN-01', 'name' => 'Pulpen Hitam', 'unit' => 'pcs', 'quantity' => '2', 'unitPrice' => '7500', 'lineTotal' => '15000'],
-            ['lineNo' => '2', 'sku' => 'BERAS-01', 'name' => 'Beras', 'unit' => 'kg', 'quantity' => '1.5', 'unitPrice' => '12000', 'lineTotal' => '18000'],
-        ], json_decode(self::text($receipt['lines']), true));
+            ['lineNo' => '1', 'lineTotal' => '15000', 'name' => 'Pulpen Hitam', 'quantity' => '2', 'sku' => 'PEN-01', 'unit' => 'pcs', 'unitPrice' => '7500'],
+            ['lineNo' => '2', 'lineTotal' => '18000', 'name' => 'Beras', 'quantity' => '1.5', 'sku' => 'BERAS-01', 'unit' => 'kg', 'unitPrice' => '12000'],
+        ], self::dataOf($receipt['lines']));
         $this->assertSame([33000, 0], array_values((array) $this->watcher()->table('sale_correction_totals')->where('sale_id', $sale)->sole(['sale_total', 'refunded_amount'])));
 
         // One SALE_ISSUE per line, its line's product and quantity, in its product's sequence; the
