@@ -15,6 +15,10 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Check | Where it ran | Time | Duration | Result |
 | --- | --- | --- | --- | --- |
 | `npm run typecheck`, `npx eslint` | Local | — | — | `NOT_RUN`: `tsc` and ESLint are not installed on this machine; no TypeScript changed |
+| Guard (Gitleaks 8.30.1, the secret scan, identity, candidates) | Local, on `f7c69fd` | 18:18 to 18:22 | about 4 min | `PASS`, no candidate |
+| `composer validate`, `lint` | Fast run 1, 42475514675 on `f7c69fd` | 18:23 to 18:27 | about 4 min | `FAIL`: Pint passed on 749 files, the translation keys and the migration review passed; the check of the PostgreSQL parts could not list the tests, because PHPUnit could not load `CheckoutRecordsTest` (finding F-7); the later steps did not run |
+| Guard | Local, on `171fac9` | 18:28 to 18:32 | about 4 min | `PASS`, no candidate |
+| Start of the local environment | Fast run 2, 42476194681 on `171fac9` | 18:32 to 18:37 | about 4.5 min | `FAIL`: the application container exited with code 100 at its first start, Composer's code of a transport failure in `composer install` (finding F-8); no check ran |
 | `composer test:postgres` whole, `test:concurrency` whole, the browser suite, the build, the image checks | The pull request's final head | — | — | `NOT_RUN` (CE-44, D-117) |
 
 ## 2. What was built (contract section 4.1)
@@ -56,6 +60,8 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | F-4 | For TASK-031: the receipt snapshot names its template `receipt.1` and holds every line as frozen text | TASK-031 renders `receipt.1` |
 | F-5 | For TASK-033: `sale_line_correction_totals` has no writer yet, and the replay does not yet reach returns linked to Sale issues | TASK-033 writes the line totals and extends the replay (contract section 12) |
 | F-6 | RD-01's request, of the Catalog module, reads the Cash module's `OpenSessions` for the till's context, as two Access controllers do since TASK-027 (TASK-027 R-10) | For the Owner with R-10 whether STACK_AND_MODULES 2.1 records it |
+| F-7 | Fast run 1 failed `composer lint` at the check of the PostgreSQL parts: the private helper `session()` of `CheckoutRecordsTest` redeclared the public `session()` of Laravel's `TestCase`, a fatal error when PHPUnit loads the class | Fixed in checkpoint 2, test only: the helper is `rinasSession()` |
+| F-8 | Fast run 2 never reached a check: the runner's application container exited with code 100 at its first start, where `docker/app/entrypoint-local.sh` runs `composer install`; 100 is Composer's transport failure, and fast run 1 started the same environment from the same image definition | The runner's network, not a defect of this Task; the next checkpoint, this record, started fast run 3 |
 
 ## 5. Tests (contract section 7)
 
