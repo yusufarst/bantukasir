@@ -66,7 +66,7 @@ final class CheckoutRecordsTest extends DatabaseTestCase
         $book = TokoContoh::product('BUKU-01', ['categoryId' => $this->category, 'name' => 'Buku Tulis', 'sellingPrice' => '20000']);
         TokoContoh::stock($book, '10', '100000');
         TokoContoh::stock($book, '10', '140000');
-        $session = $this->session();
+        $session = $this->rinasSession();
 
         $sale = TokoContoh::sell('Rina', $session, [['productId' => $book, 'quantity' => '3']]);
         $this->assertSame(['60000', '36000.000000', '24000.000000'], $this->figuresOf($sale));
@@ -96,7 +96,7 @@ final class CheckoutRecordsTest extends DatabaseTestCase
         $book = TokoContoh::product('BUKU-01', ['categoryId' => $this->category, 'name' => 'Buku Tulis', 'sellingPrice' => '5000']);
         TokoContoh::stock($book, '4', '4000');
         TokoContoh::receive([['productId' => $book, 'quantity' => '6', 'cost' => ['status' => 'UNKNOWN']]]);
-        $session = $this->session();
+        $session = $this->rinasSession();
 
         $partial = TokoContoh::sell('Rina', $session, [['productId' => $book, 'quantity' => '7']]);
         $this->assertSame([['UNKNOWN', null, 2, 'UNKNOWN', null]], $this->allocationsOf($partial));
@@ -134,7 +134,7 @@ final class CheckoutRecordsTest extends DatabaseTestCase
         $this->travelTo('2026-11-06T16:00:00Z');
         $pen = TokoContoh::product('PEN-01', ['categoryId' => $this->category, 'name' => 'Pulpen Hitam', 'sellingPrice' => '7500']);
         TokoContoh::stock($pen, '10', '10000');
-        $session = $this->session();
+        $session = $this->rinasSession();
         $sales = [];
 
         foreach (['2026-11-06T16:59:59.999999Z', '2026-11-06T17:00:00.000000Z', '2026-11-07T16:59:59.000000Z', '2026-11-07T17:00:00.000001Z'] as $instant) {
@@ -163,7 +163,7 @@ final class CheckoutRecordsTest extends DatabaseTestCase
         // receipt already issued.
         $pen = TokoContoh::product('PEN-01', ['categoryId' => $this->category, 'name' => 'Pulpen Hitam', 'sellingPrice' => '7500']);
         TokoContoh::stock($pen, '10', '10000');
-        $session = $this->session();
+        $session = $this->rinasSession();
         $initial = $this->currentRevision();
         $first = TokoContoh::sell('Rina', $session, [['productId' => $pen, 'quantity' => '1']]);
         $this->assertSame([$initial, null, 'receipt.1'], $this->identityOf($first));
@@ -193,7 +193,7 @@ final class CheckoutRecordsTest extends DatabaseTestCase
         TokoContoh::stock($right, '5', '5000');
         $token = 'T-'.Str::random(8);
         TokoContoh::barcode($wrong, $token);
-        $session = $this->session();
+        $session = $this->rinasSession();
         $earlier = TokoContoh::sell('Rina', $session, [['productId' => $this->found($token), 'quantity' => '1']]);
         $cart = $this->found($token);
         $this->assertSame($wrong, $cart);
@@ -216,7 +216,7 @@ final class CheckoutRecordsTest extends DatabaseTestCase
         // is refused PRICE_CHANGED; after a deactivation, PRODUCT_INACTIVE.
         $pen = TokoContoh::product('PEN-01', ['categoryId' => $this->category, 'name' => 'Pulpen Hitam', 'sellingPrice' => '7500']);
         TokoContoh::stock($pen, '10', '10000');
-        $session = $this->session();
+        $session = $this->rinasSession();
         $old = $this->revisionOf($pen);
         $sale = TokoContoh::sell('Rina', $session, [['productId' => $pen, 'quantity' => '2']]);
 
@@ -316,7 +316,7 @@ final class CheckoutRecordsTest extends DatabaseTestCase
     /**
      * Rina's OPEN session, opened on first use at the time the test stands at.
      */
-    private function session(): int
+    private function rinasSession(): int
     {
         $open = $this->watcher()->table('cash_sessions')->where('responsible_user_id', $this->rina)->where('status', 'OPEN')->value('id');
 
