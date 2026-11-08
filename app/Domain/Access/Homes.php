@@ -17,8 +17,9 @@ use App\Models\User;
  * Operations and for the combined account without an OPEN session, TASK-027
  * Buka sesi kas for a cashier without one, TASK-029 Kasir for a cashier and
  * the combined account with one, TASK-041 Beranda for the Owner
- * (TRACEABILITY, RN-01). No cash session exists before TASK-027, so the
- * combined account has none of its own and its home is Stok.
+ * (TRACEABILITY, RN-01). Until TASK-029, the combined account's home is Stok
+ * and a cashier's with an OPEN session Akun saya. Whether the account holds
+ * an OPEN session is the Cash module's, which the caller reads.
  */
 final class Homes
 {
@@ -28,18 +29,25 @@ final class Homes
     /** The path of RP-401, UXP-401 "Stok" (TASK-022). */
     public const string STOCK = '/stock';
 
+    /** The path of RP-104, UXP-104 "Buka sesi kas" (TASK-027). */
+    public const string OPEN_SESSION = '/till/open-session';
+
     /**
      * The path of the account's home: Stok for an account that holds
      * OPERATIONS_ADMIN without SUPER_ADMIN — Operations and the combined
-     * account — and Akun saya for the Owner and a cashier, until their homes
-     * exist.
+     * account — Buka sesi kas for a cashier without an OPEN session, and Akun
+     * saya for the Owner and a cashier with one, until their homes exist.
      */
-    public static function of(User $user): string
+    public static function of(User $user, bool $holdsOpenSession): string
     {
         $roles = $user->roles();
 
         if (in_array(Role::OperationsAdmin, $roles, true) && ! in_array(Role::SuperAdmin, $roles, true)) {
             return self::STOCK;
+        }
+
+        if (in_array(Role::Cashier, $roles, true) && ! $holdsOpenSession) {
+            return self::OPEN_SESSION;
         }
 
         return self::ACCOUNT;

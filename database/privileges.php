@@ -271,6 +271,17 @@ return [
             'runtime' => ['select' => true, 'insert' => true],
         ],
 
+        // Cash (SCHEMA section 5.10; TASK-027): the registers, and the sessions, whose
+        // state columns alone change.
+        'cash_registers' => [
+            'class' => 'M',
+            'runtime' => ['select' => true, 'insert' => true, 'update' => ['code', 'label', 'active', 'version', 'updated_at']],
+        ],
+        'cash_sessions' => [
+            'class' => 'FS',
+            'runtime' => ['select' => true, 'insert' => true, 'update' => ['status', 'activity_version', 'updated_at']],
+        ],
+
         // Operations (SCHEMA section 5.12; TASK-013): written by the backup role
         // (SCH-42), read by the runtime role.
         'backup_runs' => [
@@ -281,6 +292,9 @@ return [
 
     ],
 
-    'sequences' => [],
+    'sequences' => [
+        // The session numbers (SCHEMA SCH-20, SCH-27, SCH-44; TASK-027): nextval only, never setval.
+        'cash_session_number_seq' => ['runtime' => ['usage' => true]],
+    ],
 
 ];

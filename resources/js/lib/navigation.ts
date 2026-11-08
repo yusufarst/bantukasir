@@ -77,9 +77,12 @@ export const SUB_ORDER: Readonly<Record<AreaId, Readonly<Partial<Record<Persona,
  * route when it delivers the page (TRACEABILITY section 9.2): UXI-008
  * "Pengaturan", the Owner's (CAP-25, CAP-32), from TASK-010; UXI-005 "Produk"
  * (CAP-02, CAP-04), from TASK-017; UXI-006 "Stok" (CAP-14), with its badge,
- * from TASK-022.
+ * from TASK-022; UXI-002 "Kasir" (CAP-21), from TASK-027, which leads to Buka
+ * sesi kas — whose server sends a user with an OPEN session home — until
+ * TASK-029 delivers the till at `/till`.
  */
 export const DESTINATIONS: Readonly<Partial<Record<DestinationId, DestinationEntry>>> = {
+    till: { label: 'sales.till.title', href: '/till/open-session', icon: 'till', capabilities: ['CAP-21'] },
     stock: { label: 'inventory.stock.title', href: '/stock', icon: 'boxes', capabilities: ['CAP-14'] },
     products: { label: 'catalog.products.title', href: '/products', icon: 'tag', capabilities: ['CAP-02', 'CAP-04'] },
     settings: { label: 'config.settings.title', href: '/settings', icon: 'sliders', capabilities: ['CAP-25', 'CAP-32'] },

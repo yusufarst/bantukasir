@@ -88,7 +88,13 @@ final class Allowlists
         // The user pages, the Owner's alone (TASK-011). UXP-606 carries only whose
         // link it is for: never the link (SEC-ACC-05).
         'access/OwnerDetails' => ['owner' => ['account', 'account.displayName', 'account.email', 'account.version']],
-        'access/Users' => ['owner' => ['users', 'users.*', 'users.*.id', 'users.*.displayName', 'users.*.email', 'users.*.roles', 'users.*.roles.*', 'users.*.status', 'filters', 'filters.status', 'filters.role']],
+        'access/Users' => ['owner' => ['users', 'users.*', 'users.*.id', 'users.*.displayName', 'users.*.email', 'users.*.roles', 'users.*.roles.*', 'users.*.status', 'users.*.holdsSession', 'filters', 'filters.status', 'filters.role']],
+        // The cash pages (TASK-027): UXP-609 and UXP-610, the Owner's alone, the registers with the
+        // name of the responsible user of an OPEN session; UXP-104, for every holder of CAP-21, the
+        // registers available now, never a session, an amount or another user.
+        'cash/Registers' => ['owner' => ['registers', 'registers.*', ...self::REGISTER_ROW]],
+        'cash/RegisterForm' => ['owner' => ['register', 'register.id', 'register.code', 'register.label', 'register.active', 'register.version', 'register.openBy']],
+        'cash/OpenSession' => ['*' => ['registers', 'registers.*', 'registers.*.id', 'registers.*.code', 'registers.*.label']],
         'access/UserCreate' => ['owner' => []],
         'access/User' => ['owner' => ['user', 'user.id', 'user.displayName', 'user.email', 'user.roles', 'user.roles.*', 'user.status', 'user.version', 'user.passwordSet', 'user.linkExpiresAt', 'user.superAdmin', 'user.self']],
         'access/UserEdit' => ['owner' => ['user', 'user.id', 'user.displayName', 'user.email', 'user.roles', 'user.roles.*', 'user.version']],
@@ -246,6 +252,9 @@ final class Allowlists
         'lines.*.corrected', 'lines.*.confirmedCost', 'lines.*.confirmedCost.status', 'lines.*.confirmedCost.amount',
     ];
 
+    /** A register of UXP-609, with the responsible user of its OPEN session. */
+    private const array REGISTER_ROW = ['registers.*.id', 'registers.*.code', 'registers.*.label', 'registers.*.active', 'registers.*.version', 'registers.*.openBy'];
+
     /** The categories of a catalogue page. */
     private const array CATEGORIES = ['categories', 'categories.*', 'categories.*.id', 'categories.*.name', 'categories.*.active', 'categories.*.version'];
 
@@ -276,6 +285,9 @@ final class Allowlists
         // RC-27 to RC-29 and their status check: the mapping with its code (TASK-016).
         'commands.committed.barcode' => ['*' => ['outcome', 'operation', 'commandId', 'repeated', 'result', 'result.type', 'result.id', 'result.number', 'result.location']],
         'commands.resolve.barcode' => ['*' => ['outcome', 'operation', 'commandId', 'result', 'result.type', 'result.id', 'result.number', 'result.location']],
+        // RC-02 and its status check: the session with its number (TASK-027).
+        'commands.committed.number' => ['*' => ['outcome', 'operation', 'commandId', 'repeated', 'result', 'result.type', 'result.id', 'result.number', 'result.location']],
+        'commands.resolve.number' => ['*' => ['outcome', 'operation', 'commandId', 'result', 'result.type', 'result.id', 'result.number', 'result.location']],
         'commands.refused' => ['*' => ['outcome', 'code', 'messageKey', 'params', 'fields', 'lines']],
         // The refusal of a posting with the lines it concerns, each by its product (RT-07;
         // TASK-021).

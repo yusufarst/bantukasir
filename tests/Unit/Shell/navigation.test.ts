@@ -67,8 +67,10 @@ describe('the primary navigation of each role', () => {
     });
 
     it('registers no destination before the Task that delivers its page (EXC-52)', () => {
-        // UXI-008 "Pengaturan" is TASK-010's, UXI-005 "Produk" TASK-017's and UXI-006 "Stok" TASK-022's, with the capabilities of their rows.
-        expect(ALL.filter((id) => DESTINATIONS[id] !== undefined)).toEqual(['stock', 'products', 'settings']);
+        // UXI-008 "Pengaturan" is TASK-010's, UXI-005 "Produk" TASK-017's, UXI-006 "Stok" TASK-022's and UXI-002 "Kasir" TASK-027's, with the capabilities of their rows.
+        expect(ALL.filter((id) => DESTINATIONS[id] !== undefined)).toEqual(['till', 'stock', 'products', 'settings']);
+        // "Kasir" leads to Buka sesi kas until TASK-029 delivers the till.
+        expect(DESTINATIONS.till).toEqual({ label: 'sales.till.title', href: '/till/open-session', icon: 'till', capabilities: ['CAP-21'] });
         expect(DESTINATIONS.settings).toEqual({ label: 'config.settings.title', href: '/settings', icon: 'sliders', capabilities: ['CAP-25', 'CAP-32'] });
         expect(DESTINATIONS.products).toEqual({ label: 'catalog.products.title', href: '/products', icon: 'tag', capabilities: ['CAP-02', 'CAP-04'] });
         expect(DESTINATIONS.stock).toEqual({ label: 'inventory.stock.title', href: '/stock', icon: 'boxes', capabilities: ['CAP-14'] });
@@ -85,11 +87,11 @@ describe('the primary navigation of each role', () => {
         expect(SUB_DESTINATIONS.reports.worklist).toEqual({ label: 'costing.worklist.title', href: '/reports/costs-to-complete', capabilities: ['CAP-20'] });
         expect(subNavigationFor('reports', ['SUPER_ADMIN'], FLAGS.owner, SUB_DESTINATIONS.reports).map((item) => item.id)).toEqual(['worklist']);
         expect(subNavigationFor('reports', ['OPERATIONS_ADMIN'], FLAGS.ops, SUB_DESTINATIONS.reports)).toEqual([]);
-        expect(navigationFor(['SUPER_ADMIN'], FLAGS.owner, DESTINATIONS).map((item) => item.id)).toEqual(['stock', 'products', 'settings']);
-        expect(navigationFor(['CASHIER', 'OPERATIONS_ADMIN'], FLAGS.combined, DESTINATIONS).map((item) => item.id)).toEqual(['stock', 'products']);
+        expect(navigationFor(['SUPER_ADMIN'], FLAGS.owner, DESTINATIONS).map((item) => item.id)).toEqual(['till', 'stock', 'products', 'settings']);
+        expect(navigationFor(['CASHIER', 'OPERATIONS_ADMIN'], FLAGS.combined, DESTINATIONS).map((item) => item.id)).toEqual(['till', 'stock', 'products']);
         expect(navigationFor(['OPERATIONS_ADMIN'], FLAGS.ops, DESTINATIONS).map((item) => item.id)).toEqual(['stock', 'products']);
         // A cashier's CAP-14 is the stock at checkout, which opens no gate and shows no Stok.
-        expect(navigationFor(['CASHIER'], FLAGS.cashier, DESTINATIONS)).toEqual([]);
+        expect(navigationFor(['CASHIER'], FLAGS.cashier, DESTINATIONS).map((item) => item.id)).toEqual(['till']);
         expect(subNavigationFor('products', ['OPERATIONS_ADMIN'], FLAGS.ops, SUB_DESTINATIONS.products).map((item) => item.id)).toEqual(['products', 'categories', 'csv']);
         expect(subNavigationFor('stock', ['OPERATIONS_ADMIN'], FLAGS.ops, SUB_DESTINATIONS.stock).map((item) => item.id)).toEqual(['stock', 'history', 'receipts', 'issues']);
         expect(subNavigationFor('stock', ['SUPER_ADMIN'], FLAGS.owner, SUB_DESTINATIONS.stock).map((item) => item.id)).toEqual(['stock', 'history', 'receipts', 'issues']);

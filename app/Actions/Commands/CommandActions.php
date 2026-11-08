@@ -10,6 +10,9 @@ use App\Actions\Access\ReactivateAccount;
 use App\Actions\Access\RevokePasswordLink;
 use App\Actions\Access\UpdateOwnerDetails;
 use App\Actions\Access\UpdateStaffAccount;
+use App\Actions\Cash\CreateCashRegister;
+use App\Actions\Cash\OpenCashSession;
+use App\Actions\Cash\UpdateCashRegister;
 use App\Actions\Catalog\AddBarcode;
 use App\Actions\Catalog\ConfirmCsvImport;
 use App\Actions\Catalog\CorrectBarcodeMisassignment;
@@ -93,6 +96,10 @@ final class CommandActions
         CorrectCost::OPERATION => CorrectCost::class,
         // RC-10 (TASK-026).
         ConfirmReversal::OPERATION => ConfirmReversal::class,
+        // RC-02, RC-33 and RC-34 (TASK-027).
+        OpenCashSession::OPERATION => OpenCashSession::class,
+        CreateCashRegister::OPERATION => CreateCashRegister::class,
+        UpdateCashRegister::OPERATION => UpdateCashRegister::class,
     ];
 
     /**

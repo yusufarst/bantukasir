@@ -139,6 +139,14 @@ final class RouteInventoryTest extends TestCase
         // TASK-026: RC-10, with recent authentication, and RP-411.
         'POST /commands/reversal.confirm' => ['commands.reversal.confirm', 'RC-10', 'CAP-17', [...self::SIGNED_IN, 'capability:CAP-17', 'throttle:command', 'password.confirm']],
         'GET /stock/movements/{movement}/reverse' => ['stock.reverse', 'RP-411', 'CAP-17', [...self::SIGNED_IN, 'capability:CAP-17', 'input.allow:from_page']],
+        // TASK-027: the cash registers, RC-33 and RC-34 with recent authentication; RP-104 and RC-02.
+        'GET /settings/cash-registers' => ['registers.index', 'RP-609', 'CAP-31', [...self::SIGNED_IN, 'capability:CAP-31', 'input.allow']],
+        'GET /settings/cash-registers/new' => ['registers.create', 'RP-610', 'CAP-31', [...self::SIGNED_IN, 'capability:CAP-31', 'input.allow']],
+        'GET /settings/cash-registers/{register}/edit' => ['registers.edit', 'RP-610', 'CAP-31', [...self::SIGNED_IN, 'capability:CAP-31', 'input.allow']],
+        'POST /commands/cash_register.create' => ['commands.cash_register.create', 'RC-33', 'CAP-31', [...self::SIGNED_IN, 'capability:CAP-31', 'throttle:command', 'password.confirm']],
+        'POST /commands/cash_register.update' => ['commands.cash_register.update', 'RC-34', 'CAP-31', [...self::SIGNED_IN, 'capability:CAP-31', 'throttle:command', 'password.confirm']],
+        'GET /till/open-session' => ['till.open', 'RP-104', 'CAP-21', [...self::SIGNED_IN, 'capability:CAP-21', 'input.allow']],
+        'POST /commands/cash_session.open' => ['commands.cash_session.open', 'RC-02', 'CAP-21', [...self::SIGNED_IN, 'capability:CAP-21', 'throttle:command']],
     ];
 
     public function test_the_routes_are_exactly_those_listed_each_with_its_gate(): void
@@ -226,10 +234,17 @@ final class RouteInventoryTest extends TestCase
             $this->assertNotContains('DELETE', $route->methods(), $route->uri());
         }
 
-        foreach (['register', 'forgot-password', 'reset-password', 'email', 'verify', 'two-factor', 'passkey', 'profile-information', 'recovery-codes'] as $fragment) {
-            foreach ($paths as $path) {
-                $this->assertStringNotContainsString($fragment, $path);
-            }
+        // A fragment of a disabled feature's path is refused at the start of any segment, so that
+        // Fortify's `register` is caught and RP-609's `settings/cash-registers` is not (TASK-027).
+        foreach (['register', 'forgot-password', 'reset-password', 'email/verify', 'email', 'verify', 'user/two-factor-recovery-codes', 'two-factor-challenge', 'user/passkeys', 'user/profile-information'] as $fortify) {
+            $this->assertTrue(self::disabledFeature($fortify), $fortify);
+        }
+
+        $this->assertFalse(self::disabledFeature('settings/cash-registers'));
+        $this->assertFalse(self::disabledFeature('commands/cash_register.create'));
+
+        foreach ($paths as $path) {
+            $this->assertFalse(self::disabledFeature($path), $path);
         }
 
         $this->assertSame([Features::updatePasswords()], config('fortify.features'));
@@ -241,6 +256,23 @@ final class RouteInventoryTest extends TestCase
         $this->assertFalse(Features::enabled(Features::passkeys()));
         $this->assertFalse(Features::enabled(Features::updateProfileInformation()));
         $this->assertTrue(Features::enabled(Features::updatePasswords()));
+    }
+
+    /**
+     * Whether a path names a disabled feature of Fortify: one of its fragments at the start of a
+     * segment of the path.
+     */
+    private static function disabledFeature(string $path): bool
+    {
+        foreach (['register', 'forgot-password', 'reset-password', 'email', 'verify', 'two-factor', 'passkey', 'profile-information', 'recovery-codes'] as $fragment) {
+            foreach (explode('/', $path) as $segment) {
+                if (str_starts_with($segment, $fragment)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     public function test_no_mail_transport_is_configured_and_nothing_can_be_sent(): void

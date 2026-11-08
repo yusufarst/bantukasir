@@ -28,6 +28,8 @@ const ENTRIES: Readonly<Record<string, { readonly title: TranslationKey; readonl
     users: { title: 'access.users.title', description: 'config.settings.users_desc', icon: 'user' },
     // UXI-327 "Profil usaha".
     profile: { title: 'config.profile.title', description: 'config.settings.profile_desc', icon: 'image' },
+    // UXI-328 "Laci kas" (TASK-027).
+    registers: { title: 'cash.registers.title', description: 'config.settings.registers_desc', icon: 'drawer' },
 };
 
 export default function Settings({ entries }: { entries: readonly Entry[] }) {

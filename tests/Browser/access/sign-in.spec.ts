@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect as baseExpect, test, type Page } from '@playwright/test';
-import { HOME, resetPeople, ACCESS_TIMEOUT, ACCESS_WAIT, SECURE_LOCAL_ORIGIN, signIn, unexpected, type Account } from '../support/access';
+import { homeOf, resetPeople, ACCESS_TIMEOUT, ACCESS_WAIT, SECURE_LOCAL_ORIGIN, signIn, unexpected, type Account } from '../support/access';
 import { measure } from '../support/measure';
 import { contextAt, watch, WIDTHS } from '../support/specimen';
 
@@ -49,12 +49,14 @@ test('a sign-in is a full page load to the home and the sign-in session reaches 
 
     await signIn(page, rina);
     expect(navigations, 'the sign-in page and then a full page load').toBeGreaterThanOrEqual(2);
-    expect(new URL(page.url()).pathname).toBe(HOME);
+    // Rina's home is Buka sesi kas (TASK-027).
+    expect(new URL(page.url()).pathname).toBe(homeOf('Rina'));
 
     await page.goto('/account');
     await expect(page.getByRole('heading', { level: 1, name: 'Akun saya' })).toBeVisible();
     await expect(page.getByText(rina.email)).toBeVisible();
-    await expect(page.getByText('Kasir', { exact: true })).toBeVisible();
+    // The role on the page; the navigation names the till "Kasir" too (UXI-002).
+    await expect(page.getByRole('main').getByText('Kasir', { exact: true })).toBeVisible();
     expect(unexpected(watched.problems)).toEqual([]);
 });
 
@@ -136,7 +138,7 @@ test('the password toggle shows and hides the password and Enter submits the for
     await expect(password).toHaveAttribute('type', 'password');
 
     await page.getByLabel('Email').fill(rina.email);
-    await Promise.all([page.waitForURL((url) => url.pathname === HOME), password.press('Enter')]);
+    await Promise.all([page.waitForURL((url) => url.pathname === homeOf('Rina')), password.press('Enter')]);
 });
 
 test('a lost answer shows the connection notice and keeps the email', async ({ page, context }) => {
@@ -155,7 +157,7 @@ test('a lost answer shows the connection notice and keeps the email', async ({ p
 
     await page.unroute('**/login');
     await page.getByLabel('Kata sandi', { exact: true }).fill(rina.password);
-    await Promise.all([page.waitForURL((url) => url.pathname === HOME), page.getByRole('button', { name: 'Masuk' }).click()]);
+    await Promise.all([page.waitForURL((url) => url.pathname === homeOf('Rina')), page.getByRole('button', { name: 'Masuk' }).click()]);
 });
 
 for (const width of WIDTHS) {
