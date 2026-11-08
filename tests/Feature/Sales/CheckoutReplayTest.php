@@ -10,6 +10,7 @@ use Tests\Harness\DatabaseTestCase;
 use Tests\Harness\Fixtures\TokoContoh;
 use Tests\Harness\Race\FailurePoints;
 use Tests\Harness\Race\InjectedFailure;
+use Throwable;
 
 /**
  * The replay of TASK-025 over Sale issues (AC-028-10, AC-028-11; ADR-008 sections 2, 4.1, 4.3 and 7;
@@ -86,12 +87,7 @@ final class CheckoutReplayTest extends DatabaseTestCase
         for ($step = 1; $step <= 6; $step++) {
             $this->app->instance(CommandPoints::class, new FailurePoints($step));
 
-            try {
-                TokoContoh::correctCost($evidence, '50000', 'Nota ditemukan');
-                $this->fail(sprintf('The correction failed after write step %d.', $step));
-            } catch (InjectedFailure) {
-                $this->addToAssertionCount(1);
-            }
+            $this->assertInstanceOf(InjectedFailure::class, $this->failureOf($evidence, '50000'), (string) $step);
 
             $this->assertSame($before, [$this->saleRows(), $this->allocationsOf($book), $this->valuationOf($book), $this->watcher()->table('cost_corrections')->count()], (string) $step);
         }
@@ -182,6 +178,20 @@ final class CheckoutReplayTest extends DatabaseTestCase
     private function correction(int $evidence, string $amount): array
     {
         return (new UserCommandScenario)->run(['operation' => 'cost_correction.confirm', 'actor' => $this->owner, 'intent' => (string) Str::uuid(), 'key' => (string) Str::uuid(), 'epoch' => TokoContoh::recoveryEpoch(), 'expected' => ['correctionNo' => 0], 'payload' => ['evidenceId' => $evidence, 'newCost' => ['amount' => $amount], 'reason' => 'Nota pemasok']]);
+    }
+
+    /**
+     * What RC-15 of a source by the Owner failed with, or null when it committed or was refused.
+     */
+    private function failureOf(int $evidence, string $amount): ?Throwable
+    {
+        try {
+            $this->correction($evidence, $amount);
+        } catch (Throwable $failure) {
+            return $failure;
+        }
+
+        return null;
     }
 
     /**

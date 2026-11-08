@@ -19,6 +19,9 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | `composer validate`, `lint` | Fast run 1, 42475514675 on `f7c69fd` | 18:23 to 18:27 | about 4 min | `FAIL`: Pint passed on 749 files, the translation keys and the migration review passed; the check of the PostgreSQL parts could not list the tests, because PHPUnit could not load `CheckoutRecordsTest` (finding F-7); the later steps did not run |
 | Guard | Local, on `171fac9` | 18:28 to 18:32 | about 4 min | `PASS`, no candidate |
 | Start of the local environment | Fast run 2, 42476194681 on `171fac9` | 18:32 to 18:37 | about 4.5 min | `FAIL`: the application container exited with code 100 at its first start, Composer's code of a transport failure in `composer install` (finding F-8); no check ran |
+| Guard | Local, on `ea48c38` | 18:38 to 18:41 | about 3 min | `PASS`, no candidate |
+| `composer validate`, `lint` (Pint, the translation keys and types, the migration review, the parts of `test:postgres`, the secret scan, the audits) | Fast run 3, 42476896749 on `ea48c38` | 18:42 to 18:46 | about 4 min | `PASS` |
+| `composer analyse` | Same run | 18:46 | 14 s | `FAIL`: four findings of PHPStan in one test, `CheckoutReplayTest` (finding F-9); none in `app/`; the later steps did not run |
 | `composer test:postgres` whole, `test:concurrency` whole, the browser suite, the build, the image checks | The pull request's final head | — | — | `NOT_RUN` (CE-44, D-117) |
 
 ## 2. What was built (contract section 4.1)
@@ -62,6 +65,7 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | F-6 | RD-01's request, of the Catalog module, reads the Cash module's `OpenSessions` for the till's context, as two Access controllers do since TASK-027 (TASK-027 R-10) | For the Owner with R-10 whether STACK_AND_MODULES 2.1 records it |
 | F-7 | Fast run 1 failed `composer lint` at the check of the PostgreSQL parts: the private helper `session()` of `CheckoutRecordsTest` redeclared the public `session()` of Laravel's `TestCase`, a fatal error when PHPUnit loads the class | Fixed in checkpoint 2, test only: the helper is `rinasSession()` |
 | F-8 | Fast run 2 never reached a check: the runner's application container exited with code 100 at its first start, where `docker/app/entrypoint-local.sh` runs `composer install`; 100 is Composer's transport failure, and fast run 1 started the same environment from the same image definition | The runner's network, not a defect of this Task; the next checkpoint, this record, started fast run 3 |
+| F-9 | Fast run 3 failed PHPStan on the failure injection of `CheckoutReplayTest`: `TokoContoh::correctCost` declares only `DatabaseRefused`, so the catch of the injected failure read as dead and the loop's later statements as unreachable | Fixed in checkpoint 4, test only: the correction runs through the race harness's scenario, which declares no throw type, and the test asserts that its failure is the injected one at each step |
 
 ## 5. Tests (contract section 7)
 
