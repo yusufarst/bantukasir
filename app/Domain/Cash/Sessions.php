@@ -86,6 +86,50 @@ final class Sessions
         return new OpenedSession((int) $id, $number);
     }
 
+    /**
+     * The session of a Sale under its update lock (TR §7.1 step 4; SCHEMA section 7: FOR NO KEY
+     * UPDATE), only when the user is its responsible user: another user's session is never locked,
+     * so that a request naming it holds no other till (G-04). A close that the lock waited for is read
+     * as it left the session. Null when the session does not exist or is another user's.
+     */
+    public function lockForSale(int $sessionId, int $userId): ?GuardedSession
+    {
+        self::requireTransaction();
+
+        $row = DB::table('cash_sessions')->where('id', $sessionId)->where('responsible_user_id', $userId)->lock('for no key update')->first(['id', 'session_number', 'status']);
+
+        if ($row === null) {
+            return null;
+        }
+
+        $values = (array) $row;
+        $id = $values['id'] ?? null;
+        $number = $values['session_number'] ?? null;
+        $status = $values['status'] ?? null;
+
+        if (! is_int($id) || ! is_string($number) || ! is_string($status)) {
+            throw new LogicException('A session holds its columns (SCHEMA section 5.10).');
+        }
+
+        return new GuardedSession($id, $number, $status === self::OPEN);
+    }
+
+    /**
+     * One more Sale or drawer-funded refund in the session whose lock the caller holds: its activity
+     * version one on, as a relative increment in one statement (BR-CASH-10; SCH-33), which a close
+     * compares with the version it reviewed (RACE-08).
+     */
+    public function recordActivity(int $sessionId, string $at): void
+    {
+        self::requireTransaction();
+
+        $changed = DB::table('cash_sessions')->where('id', $sessionId)->where('status', self::OPEN)->increment('activity_version', 1, ['updated_at' => $at]);
+
+        if ($changed !== 1) {
+            throw new LogicException('The locked session is OPEN (G-04).');
+        }
+    }
+
     private static function requireTransaction(): void
     {
         if (DB::transactionLevel() === 0) {

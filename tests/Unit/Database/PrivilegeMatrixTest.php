@@ -31,14 +31,14 @@ final class PrivilegeMatrixTest extends TestCase
     {
         $matrix = PrivilegeMatrix::load();
 
-        $this->assertSame(['acquisition_cost_evidence', 'adjustment_lines', 'adjustments', 'audit_events', 'backup_runs', 'barcode_active_mappings', 'barcode_mapping_retirements', 'barcode_mappings', 'barcode_tokens', 'business_profile_current', 'business_profile_revisions', 'cache', 'cache_locks', 'cash_registers', 'cash_sessions', 'categories', 'command_identities', 'command_request_receipts', 'command_results', 'cost_corrections', 'cost_incomplete_mark_clearances', 'cost_incomplete_marks', 'csv_product_imports', 'intent_reconciliations', 'inventory_posting_block_reopenings', 'inventory_posting_blocks', 'inventory_valuations', 'issue_cost_allocation_projections', 'issue_cost_allocations', 'manual_issue_lines', 'manual_issues', 'migrations', 'onboarding_releases', 'onboarding_state', 'password_reset_tokens', 'products', 'receiving_documents', 'receiving_lines', 'recovery_epoch', 'reversals', 'security_log_entries', 'selling_price_revisions', 'sessions', 'stale_intent_reports', 'stock_balances', 'stock_movements', 'stored_files', 'users'], array_keys($matrix->tables()));
+        $this->assertSame(['acquisition_cost_evidence', 'adjustment_lines', 'adjustments', 'audit_events', 'backup_runs', 'barcode_active_mappings', 'barcode_mapping_retirements', 'barcode_mappings', 'barcode_tokens', 'business_profile_current', 'business_profile_revisions', 'cache', 'cache_locks', 'cash_registers', 'cash_sessions', 'categories', 'command_identities', 'command_request_receipts', 'command_results', 'cost_corrections', 'cost_incomplete_mark_clearances', 'cost_incomplete_marks', 'csv_product_imports', 'intent_reconciliations', 'inventory_posting_block_reopenings', 'inventory_posting_blocks', 'inventory_valuations', 'issue_cost_allocation_projections', 'issue_cost_allocations', 'manual_issue_lines', 'manual_issues', 'migrations', 'onboarding_releases', 'onboarding_state', 'password_reset_tokens', 'payments', 'products', 'receipt_snapshots', 'receiving_documents', 'receiving_lines', 'recovery_epoch', 'reversals', 'sale_correction_totals', 'sale_line_correction_totals', 'sale_lines', 'sales', 'security_log_entries', 'selling_price_revisions', 'sessions', 'stale_intent_reports', 'stock_balances', 'stock_movements', 'stored_files', 'users'], array_keys($matrix->tables()));
         $this->assertSame(['SELECT', 'INSERT', 'UPDATE', 'DELETE'], $matrix->tablePrivileges('cache', 'runtime'));
         $this->assertSame(['SELECT', 'INSERT', 'UPDATE', 'DELETE'], $matrix->tablePrivileges('cache_locks', 'runtime'));
         $this->assertSame([], $matrix->tablePrivileges('migrations', 'runtime'));
         $this->assertSame(['SELECT'], $matrix->tablePrivileges('migrations', 'backup'));
         $this->assertSame([], $matrix->updateColumns('cache'));
-        // TASK-027 (SCH-20, SCH-44): the one number sequence, USAGE only.
-        $this->assertSame(['cash_session_number_seq' => true], $matrix->sequences());
+        // TASK-027 and TASK-028 (SCH-20, SCH-44): the two number sequences, USAGE only.
+        $this->assertSame(['cash_session_number_seq' => true, 'sale_number_seq' => true], $matrix->sequences());
 
         // TASK-006 (SCHEMA section 10).
         $this->assertSame(['SELECT', 'INSERT'], $matrix->tablePrivileges('users', 'runtime'));
@@ -126,6 +126,19 @@ final class PrivilegeMatrixTest extends TestCase
         $this->assertSame(['code', 'label', 'active', 'version', 'updated_at'], $matrix->updateColumns('cash_registers'));
         $this->assertSame(['SELECT', 'INSERT'], $matrix->tablePrivileges('cash_sessions', 'runtime'));
         $this->assertSame(['status', 'activity_version', 'updated_at'], $matrix->updateColumns('cash_sessions'));
+
+        // TASK-028 (SCHEMA section 10): the Sale's facts, never updated or deleted, and its running
+        // totals, whose amounts alone change.
+        foreach (['sales', 'sale_lines', 'payments', 'receipt_snapshots'] as $table) {
+            $this->assertSame(['SELECT', 'INSERT'], $matrix->tablePrivileges($table, 'runtime'), $table);
+            $this->assertSame([], $matrix->updateColumns($table), $table);
+            $this->assertSame(['SELECT'], $matrix->tablePrivileges($table, 'backup'), $table);
+        }
+
+        $this->assertSame(['SELECT', 'INSERT'], $matrix->tablePrivileges('sale_correction_totals', 'runtime'));
+        $this->assertSame(['refunded_amount', 'updated_at'], $matrix->updateColumns('sale_correction_totals'));
+        $this->assertSame(['SELECT', 'INSERT'], $matrix->tablePrivileges('sale_line_correction_totals', 'runtime'));
+        $this->assertSame(['refunded_amount', 'returned_quantity', 'updated_at'], $matrix->updateColumns('sale_line_correction_totals'));
 
         foreach (array_keys($matrix->tables()) as $table) {
             $this->assertSame($table === 'security_log_entries', $matrix->policies($table) !== [], $table);

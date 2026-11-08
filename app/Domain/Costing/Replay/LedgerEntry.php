@@ -35,8 +35,8 @@ final readonly class LedgerEntry
     }
 
     /**
-     * A MANUAL_ISSUE or a negative ADJUSTMENT with its allocation and that allocation's current
-     * projection, KNOWN or UNKNOWN.
+     * A SALE_ISSUE, a MANUAL_ISSUE or a negative ADJUSTMENT with its allocation and that
+     * allocation's current projection, KNOWN or UNKNOWN.
      */
     public static function issue(int $sequence, Quantity $quantity, int $allocationId, Cost $projection): self
     {

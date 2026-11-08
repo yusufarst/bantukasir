@@ -159,11 +159,17 @@ final class ConfirmManualIssueTest extends DatabaseTestCase
         $this->assertSame(['manual_issue', $issue, []], [$stored['result_type'], $stored['result_ref'], self::dataOf($stored['result_detail'])]);
         $this->assertSame(['COMMITTED'], $this->outcomesOf($envelope));
 
-        // BR-INV-22: no Sale, no Payment, no receipt and no cost of goods sold — no such table even
-        // exists yet — and no cost evidence: an issue only takes value out (BR-INV-21).
+        // BR-INV-22: no Sale, no Payment, no receipt and no cost of goods sold — a manual issue's
+        // allocation is never a SALE_ISSUE's (ADR-008 section 6) — and no cost evidence: an issue only
+        // takes value out (BR-INV-21).
         $after = $this->facts();
         $this->assertSame([$before['acquisition_cost_evidence'], $before['receiving_documents']], [$after['acquisition_cost_evidence'], $after['receiving_documents']]);
-        $this->assertSame([], $this->watcher()->table('pg_tables')->where('schemaname', 'public')->whereRaw("tablename ~ '^(sale|payment|receipt|refund)'")->pluck('tablename')->all());
+
+        foreach (['sales', 'sale_lines', 'payments', 'receipt_snapshots'] as $table) {
+            $this->assertSame(0, $this->watcher()->table($table)->count(), $table);
+        }
+
+        $this->assertSame(0, $this->watcher()->table('issue_cost_allocations')->where('issue_type', 'SALE_ISSUE')->count());
 
         // A movement changes no field of its product, so no version moved.
         $this->assertSame([1, 1], [$this->versionOf($this->pen), $this->versionOf($this->rice)]);

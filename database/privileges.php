@@ -282,6 +282,33 @@ return [
             'runtime' => ['select' => true, 'insert' => true, 'update' => ['status', 'activity_version', 'updated_at']],
         ],
 
+        // Sales (SCHEMA section 5.9; TASK-028): the Sale and its records, never changed, and the
+        // running totals of its later corrections, whose amounts alone change.
+        'sales' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'sale_lines' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'payments' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'receipt_snapshots' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'sale_correction_totals' => [
+            'class' => 'P',
+            'runtime' => ['select' => true, 'insert' => true, 'update' => ['refunded_amount', 'updated_at']],
+        ],
+        'sale_line_correction_totals' => [
+            'class' => 'P',
+            'runtime' => ['select' => true, 'insert' => true, 'update' => ['refunded_amount', 'returned_quantity', 'updated_at']],
+        ],
+
         // Operations (SCHEMA section 5.12; TASK-013): written by the backup role
         // (SCH-42), read by the runtime role.
         'backup_runs' => [
@@ -295,6 +322,8 @@ return [
     'sequences' => [
         // The session numbers (SCHEMA SCH-20, SCH-27, SCH-44; TASK-027): nextval only, never setval.
         'cash_session_number_seq' => ['runtime' => ['usage' => true]],
+        // The Sale numbers (SCHEMA SCH-20, SCH-27, SCH-44; TASK-028): nextval only, never setval.
+        'sale_number_seq' => ['runtime' => ['usage' => true]],
     ],
 
 ];

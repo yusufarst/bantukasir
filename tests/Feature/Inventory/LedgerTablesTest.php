@@ -191,6 +191,9 @@ final class LedgerTablesTest extends DatabaseTestCase
 
     public function test_the_presence_keys_are_computed_from_the_type_and_the_sign(): void
     {
+        // TASK-028 completed the key of a Sale line, so the SALE_ISSUE is a real one, of a product of
+        // its own, committed by RC-01's Action through the fixtures (EXC-45).
+        $sold = $this->saleIssue();
         $runtime = $this->runtime();
         $runtime->beginTransaction();
 
@@ -210,7 +213,7 @@ final class LedgerTablesTest extends DatabaseTestCase
                 // TASK-024 completed the key of an adjustment line, so the movements name real ones.
                 'an increase' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('ADJUSTMENT', '1', ['adjustment_line_id' => $adjustment[0], 'line_quantity' => '1', 'product_sequence' => 3]))),
                 'a decrease' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('ADJUSTMENT', '-1', ['adjustment_line_id' => $adjustment[1], 'line_quantity' => '-1', 'product_sequence' => 4]))),
-                'SALE_ISSUE' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('SALE_ISSUE', '-1', ['sale_line_id' => 7, 'line_quantity' => '1', 'product_sequence' => 5]))),
+                'SALE_ISSUE' => $this->presenceOf($runtime, $sold),
                 // TASK-023 completed the key of a manual issue line, so the movement names a real one.
                 'MANUAL_ISSUE' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('MANUAL_ISSUE', '-1', ['manual_issue_line_id' => $this->insertIssueLine($runtime), 'line_quantity' => '1', 'product_sequence' => 6]))),
                 'RETURN_RECEIPT' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('RETURN_RECEIPT', '1', ['return_line_id' => 7, 'line_quantity' => '1', 'return_condition' => 'SALEABLE', 'product_sequence' => 7]))),
@@ -635,6 +638,19 @@ final class LedgerTablesTest extends DatabaseTestCase
      * A manual issue of one line of one unit of the product, written directly (TASK-023): the
      * line's key.
      */
+    /**
+     * The SALE_ISSUE of one unit of a product of its own, sold by the Owner in a session of its own
+     * through RC-01's Action (TASK-028): its internal key.
+     */
+    private function saleIssue(): int
+    {
+        $product = TokoContoh::product('JUAL-01', ['categoryId' => TokoContoh::category('Jual')]);
+        TokoContoh::stock($product, '1');
+        $session = TokoContoh::openSession('Hendra', TokoContoh::register());
+
+        return TokoContoh::saleIssueOf(TokoContoh::sell('Hendra', $session, [['productId' => $product, 'quantity' => '1']]));
+    }
+
     private function insertIssueLine(Connection $c): int
     {
         $issue = $c->table('manual_issues')->insertGetId([

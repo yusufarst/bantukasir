@@ -17,27 +17,31 @@ use LogicException;
  * (STK-11), after the movement: the presence key of the movement refuses a commit without its
  * fact, and the fact's key refuses one without its projection (BR-INV-08).
  *
- * A SALE_ISSUE allocation names its SaleLine, whose key to sale_lines TASK-028 completes; until
- * then no allocation of a Sale is written (EXECUTION_CONTEXT EXC-44).
+ * A SALE_ISSUE allocation names its SaleLine, whose keys to sale_lines and to its movement's line
+ * hold that it issues that line's quantity (TASK-028; EXECUTION_CONTEXT EXC-44); only a SALE_ISSUE's
+ * allocation enters cost of goods sold, which the reports read (ADR-008 section 6).
  */
 final class IssueAllocations
 {
-    /** The issue types that an allocation is written for today. */
-    private const array TYPES = ['MANUAL_ISSUE', 'ADJUSTMENT'];
+    public const string SALE_ISSUE = 'SALE_ISSUE';
+
+    /** The issue types of an allocation (SCHEMA section 5.8; ADR-008 section 2). */
+    private const array TYPES = [self::SALE_ISSUE, 'MANUAL_ISSUE', 'ADJUSTMENT'];
 
     /**
      * Records the fact and its equal projection of the issue movement of this type, product,
-     * issued quantity and position, and returns the fact's internal key. The projection is
-     * written by the publication that the posting makes, the valuation's after the issue.
+     * issued quantity and position, and returns the fact's internal key; a SALE_ISSUE names its
+     * SaleLine, and no other type names one. The projection is written by the publication that the
+     * posting makes, the valuation's after the issue.
      */
-    public function record(int $movementId, int $productId, string $issueType, Quantity $issued, int $productSequence, IssueAllocation $allocation, string $at): int
+    public function record(int $movementId, int $productId, string $issueType, Quantity $issued, int $productSequence, IssueAllocation $allocation, string $at, ?int $saleLineId = null): int
     {
         if (DB::transactionLevel() === 0) {
             throw new LogicException('An allocation is written in the transaction of its movement (BR-INV-08).');
         }
 
-        if (! in_array($issueType, self::TYPES, true)) {
-            throw new LogicException('An allocation of a Sale is written once TASK-028 completes its key (EXC-44).');
+        if (! in_array($issueType, self::TYPES, true) || ($issueType === self::SALE_ISSUE) !== ($saleLineId !== null)) {
+            throw new LogicException('An allocation names its SaleLine exactly when it is a SALE_ISSUE (SCHEMA section 5.8).');
         }
 
         $id = DB::table('issue_cost_allocations')->insertGetId([
@@ -47,6 +51,7 @@ final class IssueAllocations
             'movement_quantity' => $issued->negated()->toCanonical(),
             'product_sequence' => $productSequence,
             'issued_quantity' => $issued->toCanonical(),
+            'sale_line_id' => $saleLineId,
             'at_commit_status' => $allocation->status(),
             'at_commit_amount' => $allocation->canonicalAmount(),
             'based_on_publication_no' => $allocation->basedOnPublicationNo,

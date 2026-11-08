@@ -136,11 +136,17 @@ final class ConfirmAdjustmentTest extends DatabaseTestCase
         $owner = self::dataOf($event['owner_only_data']);
         $this->assertSame(['36000', '11250', '10461.538462'], array_map(static fn (mixed $line): mixed => is_array($line) ? ($line['amount'] ?? null) : null, (array) ($owner['lines'] ?? [])));
 
-        // The result holds references only; no version moved; no Sale table exists.
+        // The result holds references only; no version moved; no Sale, Payment or receipt is
+        // written, and no allocation is a SALE_ISSUE's, the cost of goods sold (ADR-008 section 6).
         $stored = (array) $this->watcher()->table('command_results')->where('command_id', $commandId)->sole();
         $this->assertSame(['adjustment', $adjustment], [$stored['result_type'], $stored['result_ref']]);
         $this->assertSame([1, 1], [$this->versionOf($this->pen), $this->versionOf($this->rice)]);
-        $this->assertSame([], $this->watcher()->table('pg_tables')->where('schemaname', 'public')->whereRaw("tablename ~ '^(sale|payment|receipt|refund)'")->pluck('tablename')->all());
+
+        foreach (['sales', 'sale_lines', 'payments', 'receipt_snapshots'] as $table) {
+            $this->assertSame(0, $this->watcher()->table($table)->count(), $table);
+        }
+
+        $this->assertSame(0, $this->watcher()->table('issue_cost_allocations')->where('issue_type', 'SALE_ISSUE')->count());
 
         // A repeat answers the original and writes nothing; a status check recovers it.
         $facts = $this->factsAndRows();

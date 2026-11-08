@@ -295,6 +295,9 @@ final class Allowlists
         // INSUFFICIENT_STOCK with each line concerned by its product and the stock available
         // (INTERACTION_CONTRACTS section 1.6; TASK-023).
         'commands.refused.stock' => ['*' => ['outcome', 'code', 'messageKey', 'params', 'fields', 'lines', 'lines.*', 'lines.*.productId', 'lines.*.available']],
+        // PRICE_CHANGED of RC-01 with each changed line by its product, its price in force and that
+        // price's revision (INTERACTION_CONTRACTS section 1.6; TASK-028).
+        'commands.refused.price' => ['*' => ['outcome', 'code', 'messageKey', 'params', 'fields', 'lines', 'lines.*', 'lines.*.productId', 'lines.*.price', 'lines.*.price.amount', 'lines.*.price.revisionId']],
         // RD-03, the shell's indicators (TASK-009), with the stock-attention count of the
         // badge, null for a cashier (TASK-022).
         'data.shell' => ['*' => ['unresolvedRequests', 'stockAttention', 'asOf']],
@@ -320,6 +323,14 @@ final class Allowlists
         // RD-01 in the context `adjustment`, the Owner's alone (TASK-024): the same, for RC-09's
         // expected versions.
         'data.products.search.adjustment' => ['owner' => [...self::SEARCH_RESULT, 'rows.*.version']],
+        // RD-01 in the context `till` (TASK-028), for every holder of CAP-21: each row with its price
+        // revision, which RC-01 expects as reviewed, and the stock that the viewer's cell of CAP-14
+        // allows — the quantity alone for a cashier, never a version or a cost.
+        'data.products.search.till' => [
+            'owner' => self::SEARCH_RESULT,
+            'cashier' => self::SEARCH_RESULT_AT_CHECKOUT,
+            'combined' => self::SEARCH_RESULT,
+        ],
         // RD-01 in the catalog context and RD-06 (TASK-015): the Owner's, the
         // Operations admin's and the combined account's, never a cost, a
         // valuation or a margin (BR-CAT-26). RD-01 carries the stock per role
@@ -353,6 +364,14 @@ final class Allowlists
         'rows', 'rows.*', 'rows.*.id', 'rows.*.name', 'rows.*.sku', 'rows.*.baseUnit', 'rows.*.quantityPrecision',
         'rows.*.price', 'rows.*.price.amount', 'rows.*.price.revisionId', 'rows.*.active', 'rows.*.thumbnail', 'rows.*.activeBarcode',
         'rows.*.stock', 'rows.*.stock.onHand', 'rows.*.stock.minimum', 'rows.*.stock.state',
+        'page', 'perPage', 'hasMore',
+    ];
+
+    /** RD-01 in the till for a cashier, whose cell of CAP-14 is the stock needed at checkout (TASK-028). */
+    private const array SEARCH_RESULT_AT_CHECKOUT = [
+        'rows', 'rows.*', 'rows.*.id', 'rows.*.name', 'rows.*.sku', 'rows.*.baseUnit', 'rows.*.quantityPrecision',
+        'rows.*.price', 'rows.*.price.amount', 'rows.*.price.revisionId', 'rows.*.active', 'rows.*.thumbnail', 'rows.*.activeBarcode',
+        'rows.*.stock', 'rows.*.stock.onHand',
         'page', 'perPage', 'hasMore',
     ];
 

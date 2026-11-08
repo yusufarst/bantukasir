@@ -250,6 +250,8 @@ final class SignInSessionTest extends DatabaseTestCase
                 'inventory_posting_block_reopenings' => 'block_id',
                 'issue_cost_allocation_projections' => 'allocation_id',
                 'cost_incomplete_mark_clearances' => 'mark_id',
+                'sale_correction_totals' => 'sale_id',
+                'sale_line_correction_totals' => 'sale_line_id',
                 default => 'id',
             });
         }

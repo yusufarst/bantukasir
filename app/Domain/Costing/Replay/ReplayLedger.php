@@ -15,14 +15,17 @@ use LogicException;
  * Costing reads the ledger), under the product's guard, which every writer of its movements, cost
  * evidence, corrections and projections holds, so that what it reads cannot change meanwhile.
  *
- * The movement types whose writers exist are RECEIPT, MANUAL_ISSUE, ADJUSTMENT and REVERSAL (TASK-021
- * to TASK-024, TASK-026). The ledger read is the logical ledger (ADR-008 section 4.1): every pair of an
- * OPENING, RECEIPT or MANUAL_ISSUE with the REVERSAL of its reversal is left out — of the zero point,
- * of the state before the start and of the movements from it — and only the valuation skips them; the
- * physical ledger keeps both (BR-COST-32). A cancelled pair sums to zero, so the logical quantity at
- * the end is still the stock on hand. TASK-028, TASK-033 and TASK-035 extend the replay with
- * SALE_ISSUE, RETURN_RECEIPT with its linked return projections, and OPENING; until then a logical
- * movement of another type is a defect.
+ * The movement types whose writers exist are RECEIPT, SALE_ISSUE, MANUAL_ISSUE, ADJUSTMENT and
+ * REVERSAL (TASK-021 to TASK-024, TASK-026, TASK-028). The ledger read is the logical ledger (ADR-008
+ * section 4.1): every pair of an OPENING, RECEIPT or MANUAL_ISSUE with the REVERSAL of its reversal is
+ * left out — of the zero point, of the state before the start and of the movements from it — and only
+ * the valuation skips them; the physical ledger keeps both (BR-COST-32). A cancelled pair sums to
+ * zero, so the logical quantity at the end is still the stock on hand. A SALE_ISSUE is an issue like
+ * the others: the replay recomputes its projection at its point, validates it against the logical
+ * quantity there and counts it against the movement cap, and never reads or writes its Sale, its line,
+ * its Payment, its receipt or its session (D-060, REQ-COST-09); it is never reversed (BR-INV-36).
+ * TASK-033 and TASK-035 extend the replay with RETURN_RECEIPT with its linked return projections, and
+ * OPENING; until then a logical movement of another type is a defect.
  *
  * The cost values are sums and differences of stored values only, which PostgreSQL's numeric adds
  * exactly; every value computed by multiplication or division is the application's (ADR-008
@@ -33,8 +36,8 @@ final class ReplayLedger
     /** The movement types of an increase, with their cost evidence. */
     private const array INCREASES = ['RECEIPT', 'ADJUSTMENT'];
 
-    /** The movement types of an issue, with their allocation. */
-    private const array ISSUES = ['MANUAL_ISSUE', 'ADJUSTMENT'];
+    /** The movement types of an issue, with their allocation (TASK-028: the Sale's). */
+    private const array ISSUES = ['SALE_ISSUE', 'MANUAL_ISSUE', 'ADJUSTMENT'];
 
     /** The effective amount of an evidence: its latest correction's new amount, or its own. */
     private const string CORRECTED = '(select c.new_amount from cost_corrections c where c.evidence_id = e.id order by c.correction_no desc limit 1)';

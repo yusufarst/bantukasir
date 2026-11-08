@@ -165,12 +165,12 @@ final class CsvImportTest extends DatabaseTestCase
 
         $this->getJson('/data/products/search?context=catalog&mode=exact&q=BARU-01&import='.$import)->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
 
-        // Only the catalogue's context takes it (review finding R-03), and a context that no
-        // Task opened yet answers before it; the rule is read so that the first to open one
-        // has it.
+        // Only the catalogue's context takes it (review finding R-03), and a context closed to the
+        // viewer answers before it; the rule is read so that each context opened later has it. The
+        // till opened with TASK-028 for CAP-21: a cashier's request with the filter is refused.
         $this->getJson('/data/products/search?context=till&import='.$import)->assertStatus(403);
         $this->as('Rina');
-        $this->getJson('/data/products/search?context=till&import='.$import)->assertStatus(403);
+        $this->getJson('/data/products/search?context=till&import='.$import)->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
         $fails = static function (string $context) use ($import): bool {
             $request = ProductSearchRequest::create('/data/products/search?context='.$context.'&import='.$import);
             $validator = Validator::make($request->query->all(), $request->rules());

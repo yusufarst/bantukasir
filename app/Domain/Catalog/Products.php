@@ -101,6 +101,59 @@ final class Products
     }
 
     /**
+     * The products of a Sale under their update locks, ascending (TR §7.1 step 6; TECHNICAL_RULES
+     * section 7.2, "Sale checkout"): FOR NO KEY UPDATE, the lock of every stock posting, so that a
+     * price change, a deactivation, an edit of the unit and a replay of the product's cost wait for
+     * the Sale or the Sale for them (RACE-05, RACE-11, RACE-23). The rows are locked alone and the
+     * price in force read after them from its revision, which never changes (SCH-31), so that a lock
+     * that waited for a price change reads the new pointer and the new amount. A product that does
+     * not exist is absent from the answer, which stands in the order of the keys.
+     *
+     * @param  list<int>  $ids
+     * @return array<int, SaleProduct>
+     */
+    public function lockForSale(array $ids): array
+    {
+        self::requireTransaction();
+
+        $rows = DB::table('products')->whereIn('id', $ids)->orderBy('id')->lock('for no key update')->get(['id', 'sku', 'name', 'base_unit', 'quantity_precision', 'active', 'version', 'current_price_revision_id']);
+        $read = [];
+
+        foreach ($rows as $row) {
+            $values = (array) $row;
+            $id = $values['id'] ?? null;
+            $sku = $values['sku'] ?? null;
+            $name = $values['name'] ?? null;
+            $unit = $values['base_unit'] ?? null;
+            $precision = $values['quantity_precision'] ?? null;
+            $active = $values['active'] ?? null;
+            $version = $values['version'] ?? null;
+            $revision = $values['current_price_revision_id'] ?? null;
+
+            if (! is_int($id) || ! is_string($sku) || ! is_string($name) || ! is_string($unit) || ! is_int($precision) || ! is_bool($active) || ! is_int($version) || ! is_int($revision)) {
+                throw new LogicException('A product row holds its columns (SCHEMA section 5.6).');
+            }
+
+            $read[$id] = [new GuardedProduct($id, $unit, $precision, $active, $version), $sku, $name, $revision];
+        }
+
+        $amounts = $read === [] ? [] : DB::table('selling_price_revisions')->whereIn('id', array_column($read, 3))->pluck('amount', 'id')->all();
+        $products = [];
+
+        foreach ($read as $id => [$guarded, $sku, $name, $revision]) {
+            $amount = $amounts[$revision] ?? null;
+
+            if (! is_int($amount) && ! is_string($amount)) {
+                throw new LogicException('A product points at a revision of its own (SCHEMA section 5.6).');
+            }
+
+            $products[$id] = new SaleProduct($guarded, $sku, $name, $revision, Money::fromDatabase($amount));
+        }
+
+        return $products;
+    }
+
+    /**
      * Adds an active product with no movement and no stock (BR-CAT-03), its
      * pointer to be moved by the Action.
      *
