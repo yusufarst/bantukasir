@@ -205,8 +205,9 @@ final class CashCloseTablesTest extends DatabaseTestCase
         }
 
         // There is no reopening (BR-CASH-19; AC-030-06): the runtime role writes a session's state, and the
-        // close's key, ON UPDATE RESTRICT, refuses a CLOSED session that would become OPEN again.
-        $this->assertWriteRefused(fn (Connection $c) => $c->table('cash_sessions')->where('id', $session)->update(['status' => 'OPEN', 'updated_at' => now()]), '23503', 'cash_session_closes_session_fk');
+        // close's key, ON UPDATE RESTRICT, refuses a CLOSED session that would become OPEN again
+        // (restrict_violation).
+        $this->assertWriteRefused(fn (Connection $c) => $c->table('cash_sessions')->where('id', $session)->update(['status' => 'OPEN', 'updated_at' => now()]), '23001', 'cash_session_closes_session_fk');
         $this->assertSame('CLOSED', $this->watcher()->table('cash_sessions')->where('id', $session)->value('status'));
 
         // The grants equal the matrix of database/privileges.php, every table's (db:check-privileges).

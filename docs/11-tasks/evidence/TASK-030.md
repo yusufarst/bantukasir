@@ -21,6 +21,10 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Guard | Local, on `539c46c` | 12 Nov, 00:05 to 00:10 | about 5 min | `PASS`, no candidate |
 | `composer validate`, `lint` (Pint, the translation keys and the generated key types, the migration review, the parts of `test:postgres`, the secret scan, the audits) | Fast run 2, 43065539204 on `539c46c` | 12 Nov, 00:10 to 00:15 | about 5 min | `PASS` (F-5 fixed) |
 | `composer analyse` | Same run | 00:15 | 17 s | `FAIL`: one finding of PHPStan's raw-SQL rule in a test helper (F-7); the later steps did not run |
+| Guard | Local, on `cb9041c` | 12 Nov, 00:16 to 00:19 | about 3 min | `PASS`, no candidate |
+| `composer validate`, `lint`, `analyse` (F-7 fixed), `test:unit`; `npm run lint`, `typecheck`, `test:unit` | Fast run 3, 43067119540 on `cb9041c` | 12 Nov, 00:20 to 00:25 | about 6 min | `PASS` |
+| Changed PostgreSQL and concurrency files: `CheckoutRaceTest` (12), `CloseRaceTest` (3), `CapabilityMatrixTest` (7), `RouteInventoryTest` (8), `SignInSessionTest` (10) | Same run | 00:25 to 00:29 | about 4 min | `PASS` |
+| `CashCloseTablesTest` | Same run | 00:29 | 8 s | `FAIL`: 5 of 6; the refusal of a CLOSED session set OPEN again came with SQLSTATE 23001, PostgreSQL's `restrict_violation` for ON UPDATE RESTRICT, where the test expected 23503 (F-9); the files after it did not run |
 | The whole of `test:postgres` and `test:race`, the browser suite with `tests/Browser/cash/close.spec.ts`, the build, the image checks | CI on the pull request's final head (CE-44, D-117) | — | — | `NOT_RUN` until then |
 
 ## 2. What was built (contract section 4.1)
@@ -48,6 +52,8 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | The preview is an Inertia deferred prop (`Inertia::defer`, present in the pinned inertia-laravel), reloaded by name after `RECOUNT_REQUIRED` with `router.reload({ only: ['preview'] })` | ROUTE_CONTRACTS RP-105; EXC-03 |
 | A session CLOSED now needs its close, so the tests of earlier Tasks that wrote CLOSED directly close through RC-03's Action: `TokoContoh::closeSession`, `SessionCloseScenario`, `CashTablesTest`. `CheckoutSaleTest` sends its EPOCH_STALE probe as Dewi and settles the Sale's held repeats by a status check before the close, since G-27 refuses a close while the responsible user holds an unresolved checkout | EXC-44, EXC-45; G-27, D-089 |
 | The browser suite's cash sessions come from the fixture `session` (RC-03's, RC-02's and RC-01's Actions): `cash.spec.ts` closes the Owner's session first, so it runs on any database (TASK-027 F-3); the cashier opens and closes her own sessions in `close.spec.ts`, so her home stays Buka sesi kas (TASK-029 R-07) | EXC-45; `tests/Browser/support/access.ts` |
+| The Cash module never reads the Sales module (STK-10): the close's Action and the controllers of RP-105 and RP-206, which orchestrate as the Action does, read the Sales module's query `Sales::ofSession` and pass its totals to `App\Domain\Cash\SessionSales`; `SessionRecords` reads only the Cash tables. No module dependency is added to STACK_AND_MODULES section 2.1 | STK-10, STK-13 |
+| UXP-604's controller reads the account's OPEN session through `App\Queries\Cash\OpenSessions`, as UXP-602's has since TASK-027, whose review left open whether section 2.1 records the Access controllers' reads of the Cash module (TASK-027 R-10, for the Owner) | STK-13; TASK-027 evidence |
 
 ## 4. Findings
 
@@ -61,6 +67,7 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | F-6 | Self-review: RP-105's preview, reloaded after `RECOUNT_REQUIRED`, is the user's OPEN session at that moment; had this session closed and another opened elsewhere in between, the page would have shown the other session's figures under this one's header, and "Tutup sesi" would have named the other session | Fixed in checkpoint 3: a preview of another session is UXS-30, the session closed meanwhile, as a null preview is |
 | F-7 | Fast run 2, PHPStan's rule `bantukasir.rawSql` (TR-VAL-07): a helper of `CloseCashSessionTest` built its SQL with `sprintf` from a table's and a column's name | Fixed in checkpoint 3: one constant query reads the close's and the report's instants |
 | F-8 | EXC-60 asks for the evidence file in the Task's first commit; this file first entered the branch in checkpoint 3, with TASK-029's record of its merge | Recorded; nothing of the record was lost, the checks of checkpoints 1 and 2 are entered above as they ran |
+| F-9 | Fast run 3, `CashCloseTablesTest`: the key that holds the session CLOSED refused the update to OPEN, as intended, with SQLSTATE 23001 (`restrict_violation`, the code of ON UPDATE RESTRICT) rather than the 23503 the test expected | Fixed in checkpoint 4, in the test's expected code only; the refusal and its constraint name are asserted as before |
 
 ## 5. Tests (contract section 7)
 
