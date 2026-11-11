@@ -33,6 +33,9 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Guard | Local, on `b4c29dd` | 11 November, 07:48 to 07:51 | about 3 min | `PASS`, no candidate |
 | `composer validate`, `lint`, `analyse`, `test:unit` (913 tests); `npm ci`, `npm run lint`, `typecheck`, `test:unit` | Fast run 6, 42934749810 on `b4c29dd`, the reviewed head | 11 November, 07:55 to 07:59 | about 3.5 min | `PASS` |
 | The 14 changed PostgreSQL and concurrency files | Same run | 11 November, 07:59 to 08:11 | 11 min 32 s | `PASS`: `CheckoutRaceTest` 12 tests (F-11's two among them, 61 s), the 13 other files as in fast run 5; the whole job 18 min 38 s |
+| Guard | Local, on `c4bb7f9` (the review's fixes) | 11 November, 08:46 | about 1 min | `PASS`, no candidate |
+| `composer validate`, `lint`, `analyse`, `test:unit` (913 tests); `npm ci`, `npm run lint`, `typecheck`, `test:unit` | Fast run 7, 42941436960 on `c4bb7f9` | 11 November, 08:50 to 08:54 | about 3.5 min | `PASS` |
+| The 14 changed PostgreSQL and concurrency files | Same run | 11 November, 08:54 to 09:05 | 11 min 21 s | `PASS`: `CheckoutRaceTest` 12 tests with the stand-in close of R-06, `CheckoutSaleTest` 13 with the tests of R-04 and R-05, `CheckoutReplayTest` 5 with the case of R-11, the 11 other files as in fast run 6; the whole job 18 min 36 s |
 | `composer test:postgres` whole, `test:concurrency` whole, the browser suite, the build, the image checks | The pull request's final head | — | — | `NOT_RUN` (CE-44, D-117) |
 
 ## 2. What was built (contract section 4.1)
@@ -88,7 +91,7 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | --- | --- |
 | L2 families of the six tables and `sale_number_seq`: constraints, deferred keys, presence keys, the keys of EXC-44, privileges, retention, numbering, indexes | `tests/Feature/Sales/SalesTablesTest.php`; `PrivilegeMatrixTest`, `IssueTablesTest`, `LedgerTablesTest` extended |
 | L1 the methods, the cash arithmetic of L-17, the line total half-up once, the number | `tests/Unit/Sales/PaymentMethodsTest.php` |
-| L4 RC-01: one Sale with every record in one transaction and one instant; each holder of CAP-21 in its own session by either method, OPERATIONS_ADMIN never; the session; the payment and every other method, shape or price; each definite rejection in RC-01's order with nothing written and no number taken; the fields with their keys, a product named twice, 201 lines and 200 products; the envelope, a repeat and a status check, also after the session closed; the failure after each of 17 write steps and the gap of numbers; a deadlock under the bounded retry; the till's search; PAYEXT01 by review; the one writer of the Sale's tables | `tests/Feature/Sales/CheckoutSaleTest.php`; `CapabilityMatrixTest`, `RouteInventoryTest`, `ProductSearchTest`, `CsvImportTest`, `SignInSessionTest`, `OperationsTest`, `tests/Harness/Channels/Allowlists.php` |
+| L4 RC-01: one Sale with every record in one transaction and one instant; each holder of CAP-21 in its own session by either method, OPERATIONS_ADMIN never; the session; the payment and every other method, shape or price; each definite rejection in RC-01's order with nothing written and no number taken; the fields with their keys, a product named twice, 201 lines and 200 products; the envelope, a repeat and a status check, also after the session closed; the Owner's status check of a cashier's Sale, and no result for a cashier who no longer holds CAP-21 (R-05); the failure after each of 17 write steps and the gap of numbers; a deadlock under the bounded retry; the till's search for the cashier, the combined account and the Owner (R-04); PAYEXT01 by review; the one writer of the Sale's tables | `tests/Feature/Sales/CheckoutSaleTest.php`; `CapabilityMatrixTest`, `RouteInventoryTest`, `ProductSearchTest`, `CsvImportTest`, `SignInSessionTest`, `OperationsTest`, `tests/Harness/Channels/Allowlists.php` |
 | L2 the L-15 example, FIN01's line total, UNKNOWN never zero, the sell-out and the pool after it, the number across Asia/Jakarta midnight, the receipt's revision and logo (RACE-25 in sequence), a cart line before a barcode move (RACE-18 in sequence), a change after a Sale (RACE-23 in sequence) | `tests/Feature/Sales/CheckoutRecordsTest.php` |
 | L1 and L2 the ADR-008 replay cases with Sale issues (section 7) | `tests/Feature/Sales/CheckoutReplayTest.php` |
 | L3 RACE-01, RACE-02, RACE-03 (two Sales; a Sale and a manual issue in both orders), RACE-04 (a role change of the actor, both orders), RACE-08 (the Sale side, both orders), RACE-11 (both orders and past the lock timeout), RACE-18, RACE-23 (both orders and a deactivation), RACE-24 (a posting block, both orders), RACE-25 (both orders), numbering (no wait, allocation order, the gap of a rollback) | `tests/Concurrency/CheckoutRaceTest.php`, `tests/Harness/Sales/SessionCloseScenario.php` |
@@ -120,7 +123,7 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | A failure injected during the publication | `CheckoutReplayTest::test_a_failure_during_the_publication_changes_nothing` |
 | A sell-out ends its pool, a later known increase starts a new one | `CheckoutReplayTest::test_a_sale_that_empties_the_logical_quantity_ends_its_pool_in_the_replay_too`; at commit, `CheckoutRecordsTest` |
 | The movement cap counts Sale issues | `CheckoutReplayTest::test_the_sale_issues_count_against_the_movement_cap` |
-| A reversal refused because of a later Sale (G-07) | `CheckoutReplayTest::test_a_reversal_of_a_receipt_whose_units_a_later_sale_issued_is_refused_with_no_change` |
+| A reversal refused because of a later Sale (G-07); a Sale's own issue no source of a reversal (BR-INV-36, R-11) | `CheckoutReplayTest::test_a_reversal_of_a_receipt_whose_units_a_later_sale_issued_is_refused_with_no_change` |
 | The Sale's facts, receipt snapshot and session figures unchanged by every replay (FIN03) | `CheckoutReplayTest::saleRows`, compared in each case |
 
 ## 8. Definition of Done (TEST_STRATEGY section 10)
@@ -162,8 +165,8 @@ Round 1, class A, adversarial, by `bk-reviewer-max`, on the tree `6e120d4` (HEAD
 | R-11 | NOTE | No test sent RC-10 for a real SALE_ISSUE | Fixed, test only: `CheckoutReplayTest`, `NOT_FOUND` with nothing written |
 | R-12 | NOTE | PAYEXT01 by review: no provider, gateway, adapter or stub; no provider, fee, status or external-key column; one new route; no callback, webhook, polling, queue, pending state or status of a Sale | The review's confirmation of AC-028-08 |
 
-The fixes change tests, the race harness and documents only, no production code (CE-40, CE-45); fast run 7 runs the files they touch (section 1).
+The fixes change tests, the race harness and documents only, no production code (CE-40, CE-45); fast run 7, 42941436960 on `c4bb7f9`, ran the files they touch and passed (section 1).
 
 ## 11. Guard candidates (CE-50)
 
-To be recorded.
+`guard.sh` before every push, on `f7c69fd`, `171fac9`, `ea48c38`, `8250735`, `4caba50`, `b4c29dd` and `c4bb7f9`, and `guard.sh --preview` before the final commit, on 11 November 2026: no candidate of the privacy and client-data check; Gitleaks and the repository's secret scan found nothing.
