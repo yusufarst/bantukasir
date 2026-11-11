@@ -308,7 +308,8 @@ function stockText(available: string, line: Line): string {
 type Results =
     | { readonly kind: 'none' }
     | { readonly kind: 'searching' }
-    | { readonly kind: 'rows'; readonly rows: readonly ProductRow[]; readonly hasMore: boolean; readonly page: number; readonly more: boolean }
+    /** `text`: the search that the rows answer, which "Muat lebih banyak" continues (UXI-068). */
+    | { readonly kind: 'rows'; readonly rows: readonly ProductRow[]; readonly hasMore: boolean; readonly page: number; readonly more: boolean; readonly text: string }
     | { readonly kind: 'failed'; readonly text: string }
     | { readonly kind: 'invalid'; readonly fields: Readonly<Record<string, unknown>> };
 
@@ -395,7 +396,7 @@ function TillView({
             }
 
             if (answer.kind === 'read') {
-                setResults({ kind: 'rows', rows: [...append, ...answer.rows], hasMore: answer.hasMore, page, more: false });
+                setResults({ kind: 'rows', rows: [...append, ...answer.rows], hasMore: answer.hasMore, page, more: false, text: typed });
             } else if (answer.kind === 'invalid') {
                 setResults({ kind: 'invalid', fields: answer.fields });
             } else if (answer.kind === 'no_session') {
@@ -641,7 +642,7 @@ function TillView({
                 )}
                 {results.kind === 'rows' && results.hasMore && (
                     <div className={'bk-load-more'}>
-                        <Button label={t('ux.action.load_more')} variant={'secondary'} block={true} busy={results.more} onClick={() => runSearch(search.trim(), results.page + 1, results.rows)} />
+                        <Button label={t('ux.action.load_more')} variant={'secondary'} block={true} busy={results.more} onClick={() => runSearch(results.text, results.page + 1, results.rows)} />
                     </div>
                 )}
             </div>

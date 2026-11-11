@@ -101,6 +101,10 @@ final class Receipts
 
     private static function money(mixed $value): string
     {
+        if (! is_int($value) && ! is_string($value)) {
+            throw new LogicException('A receipt holds its amounts as whole rupiah (SCHEMA section 5.9).');
+        }
+
         return Money::fromDatabase($value)->toCanonical();
     }
 
