@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Cash;
 
 use App\Domain\Access\Capabilities;
 use App\Domain\Access\Capability;
-use App\Domain\Cash\SessionSales;
 use App\Domain\Cash\Sessions;
+use App\Domain\Cash\SessionSales;
 use App\Domain\Sales\Sales;
 use App\Http\Requests\Cash\SessionsPageRequest;
 use App\Models\User;
