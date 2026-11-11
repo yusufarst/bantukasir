@@ -85,9 +85,9 @@ final class CashPagesTest extends DatabaseTestCase
             $this->assertSame([['id' => $free, 'code' => 'LACI-1', 'label' => 'Laci 1']], $this->propsOf($page)['registers'] ?? null, $person);
         }
 
-        // A user who holds an OPEN session is sent to the till, RN-01 until TASK-029.
+        // A user who holds an OPEN session is sent to the till (RP-101, TASK-029).
         $this->as('Dewi');
-        $this->get('/till/open-session')->assertRedirect('/');
+        $this->get('/till/open-session')->assertRedirect('/till');
 
         TokoContoh::openSession('Hendra', $free);
         $this->as('Rina');
@@ -101,9 +101,8 @@ final class CashPagesTest extends DatabaseTestCase
 
     public function test_the_home_of_a_cashier_without_an_open_session_is_buka_sesi_kas(): void
     {
-        // NC-12, RN-01: a cashier without an OPEN session goes to RP-104; with one, to Akun saya until
-        // TASK-029 delivers RP-101; the combined account to Stok either way until then; the Owner to
-        // Akun saya until TASK-041.
+        // NC-12, RN-01: a cashier without an OPEN session goes to RP-104, the combined account to Stok;
+        // with one, both go to Kasir (RP-101, TASK-029); the Owner to Akun saya until TASK-041.
         $first = TokoContoh::register('LACI-1', 'Laci 1');
         $second = TokoContoh::register('LACI-2', 'Laci 2');
         $third = TokoContoh::register('LACI-3', 'Laci 3');
@@ -117,7 +116,7 @@ final class CashPagesTest extends DatabaseTestCase
         TokoContoh::openSession('Dewi', $second);
         TokoContoh::openSession('Hendra', $third);
 
-        foreach (['Hendra' => '/account', 'Rina' => '/account', 'Dewi' => '/stock'] as $person => $home) {
+        foreach (['Hendra' => '/account', 'Rina' => '/till', 'Dewi' => '/till'] as $person => $home) {
             $this->as($person);
             $this->get('/')->assertRedirect($home);
         }

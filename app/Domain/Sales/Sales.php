@@ -26,6 +26,15 @@ final class Sales
     public const string RECEIPT_TEMPLATE = 'receipt.1';
 
     /**
+     * The path of RP-103, UXP-103 "Struk", of a Sale by its internal key (ROUTE_CONTRACTS RP-103;
+     * TASK-029): the result page of its checkout.
+     */
+    public static function receiptPath(int $saleId): string
+    {
+        return '/sales/'.$saleId.'/receipt';
+    }
+
+    /**
      * The next value of the installation's Sale counter (SCH-20, SCH-23).
      */
     public function nextCounter(): int

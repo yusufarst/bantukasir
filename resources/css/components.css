@@ -1725,6 +1725,197 @@
             box-shadow: var(--shadow-bar);
             padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
         }
+
+        /* Beside the icon rail the bar leaves the rail and its account menu free (KS-03). */
+        .bk-app[data-layout='rail'] .bk-cart__foot {
+            left: var(--rail-w);
+        }
+    }
+
+    /* -------------------------------------------------------------------------
+       The till's pages (TASK-029; KEY_SCREENS KS-03 to KS-05): the till fills
+       the main column, the payment screen with its one final action, and the
+       receipt beside the next sale. Transcribed from the approved previews
+       (EXC-54).
+       ----------------------------------------------------------------------- */
+    .bk-till-page {
+        margin: calc(-1 * var(--gutter));
+    }
+
+    .bk-till__head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 4px 16px;
+        min-height: var(--touch-min);
+    }
+
+    .bk-till__title {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 4px 12px;
+        min-width: 0;
+    }
+
+    .bk-till__title .bk-title {
+        font-size: 22px;
+        line-height: 28px;
+    }
+
+    .bk-till__search {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 8px;
+        margin: 12px 0 8px;
+    }
+
+    .bk-till__search > .bk-field {
+        flex: 1 1 240px;
+        min-width: 0;
+    }
+
+    .bk-till__notices {
+        display: grid;
+        gap: 8px;
+        margin-top: 8px;
+    }
+
+    .bk-filters {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        padding: 12px;
+        margin-bottom: 8px;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        background: var(--color-surface);
+    }
+
+    @container (max-width: 479.98px) {
+        .bk-filters {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+
+    .bk-result[data-thumb='true'] {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+
+    .bk-result__add {
+        display: block;
+        color: var(--brand-accent-strong);
+        font-size: 13px;
+        font-weight: var(--weight-semibold);
+    }
+
+    @media (max-width: 599.98px) {
+        .bk-result__add {
+            display: none;
+        }
+    }
+
+    .bk-load-more {
+        padding: 12px 0 4px;
+    }
+
+    .bk-line__sub {
+        display: block;
+        color: var(--color-text-tertiary);
+        font-size: 12px;
+        line-height: 16px;
+        font-weight: var(--weight-medium);
+    }
+
+    .bk-line__unit {
+        color: var(--color-text-secondary);
+        font-weight: var(--weight-medium);
+        margin-right: auto;
+    }
+
+    .bk-line .bk-reason {
+        margin-top: 0;
+    }
+
+    .bk-line[data-marked='true'] {
+        margin: 0 -20px;
+        padding: 14px 20px;
+        background: var(--color-warning-bg);
+    }
+
+    .bk-line[data-flash='true'] {
+        animation: bk-flash 900ms var(--ease-standard);
+    }
+
+    @keyframes bk-flash {
+        from {
+            background: var(--brand-tint-150);
+        }
+
+        to {
+            background: transparent;
+        }
+    }
+
+    .bk-pay {
+        display: grid;
+        gap: 22px;
+    }
+
+    .bk-pay__total {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 4px 16px;
+        padding: 16px 20px;
+        border-radius: var(--radius-lg);
+        background: var(--color-surface);
+        border: 1px solid var(--color-border-subtle);
+    }
+
+    .bk-pay__label {
+        font-size: 16px;
+        font-weight: var(--weight-semibold);
+    }
+
+    .bk-tender {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: end;
+    }
+
+    .bk-change {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 4px 16px;
+        padding: 14px 20px;
+        border-radius: var(--radius-lg);
+        background: var(--brand-tint-50);
+        border: 1px solid var(--brand-tint-200);
+    }
+
+    .bk-change[data-short='true'] {
+        background: var(--color-warning-bg);
+        border-color: var(--color-warning-border, var(--color-border));
+    }
+
+    .bk-change[data-short='true'] .bk-display {
+        color: var(--color-warning-fg);
+        font-size: 28px;
+        line-height: 36px;
+    }
+
+    .bk-paper__logo {
+        display: block;
+        max-width: 60%;
+        max-height: 64px;
+        margin: 0 auto 4px;
     }
 
     /* -------------------------------------------------------------------------

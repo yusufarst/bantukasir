@@ -7,12 +7,14 @@ export type PaperSize = '58' | '80' | 'a4';
  * assembles from the receipt's snapshot: 58 mm, 80 mm and A4, black on white
  * whatever the accent, 12 px minimum. The copy marker of a reprint ("Salinan",
  * BR-DOC-04) prints at the top, bold, in a 1.5 px box. Print styles show only
- * the paper (base.css).
+ * the paper (base.css). The stage scrolls a paper wider than the screen,
+ * so the paper takes the focus, from which the keyboard scrolls it (WCAG
+ * 2.1.1; axe `scrollable-region-focusable`).
  */
 export function ReceiptPaper({ size, label, copyMarker, children }: { size: PaperSize; label: string; copyMarker?: string; children: ReactNode }) {
     return (
         <div className={'bk-paper-stage'}>
-            <article className={'bk-paper'} data-paper={size} aria-label={label}>
+            <article className={'bk-paper'} data-paper={size} aria-label={label} tabIndex={0}>
                 {copyMarker !== undefined && <p className={'bk-paper__copy'}>{copyMarker}</p>}
                 {children}
             </article>

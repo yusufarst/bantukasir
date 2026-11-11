@@ -26,8 +26,10 @@ export function TillWorkspace({ work, cart }: { work: ReactNode; cart: ReactNode
 /**
  * The search field that is a scan target (UXA-11): a scan is ordinary
  * keyboard input that ends with Enter, which runs the lookup and submits
- * nothing (UXA-10); F2 focuses and selects it (UXA-09). The page gives it the
- * focus on arrival and after every cart change.
+ * nothing (UXA-10); an empty terminator and a repeated Enter of a held key
+ * run nothing (BR-CAT-29); F2 focuses and selects it (UXA-09); the down arrow
+ * moves to the first result. The page gives it the focus on arrival and
+ * after every cart change.
  */
 export function ScanField({
     label,
@@ -35,6 +37,8 @@ export function ScanField({
     value,
     onValueChange,
     onLookup,
+    onArrowDown,
+    error,
     inputRef,
 }: {
     label: string;
@@ -42,6 +46,8 @@ export function ScanField({
     value: string;
     onValueChange: (value: string) => void;
     onLookup: (code: string) => void;
+    onArrowDown?: () => void;
+    error?: ReactNode;
     inputRef?: Ref<HTMLInputElement>;
 }) {
     const own = useRef<HTMLInputElement | null>(null);
@@ -68,10 +74,17 @@ export function ScanField({
     };
 
     const onKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
+        if (event.key === 'ArrowDown' && onArrowDown !== undefined) {
+            event.preventDefault();
+            onArrowDown();
+
+            return;
+        }
+
         if (event.key === 'Enter' && !event.ctrlKey) {
             event.preventDefault();
 
-            if (value.trim() !== '') {
+            if (!event.repeat && value.trim() !== '') {
                 onLookup(value.trim());
             }
         }
@@ -80,7 +93,7 @@ export function ScanField({
     const name = withShortcut(label, 'search');
 
     return (
-        <Field label={label} hint={hint}>
+        <Field label={label} hint={hint} error={error}>
             <TextInput
                 ref={setRef}
                 size={'lg'}
@@ -123,8 +136,30 @@ export function ProductResults({ label, children }: { label: string; children: R
     );
 }
 
-/** One result: its name (two lines at most, the full name in the accessible name), stock, SKU and price. */
-export function ProductResult({ name, meta, price, onAdd, disabledReason }: { name: string; meta: ReactNode; price: string; onAdd: () => void; disabledReason?: string }) {
+/**
+ * One result: its name (two lines at most, the full name in the accessible name), stock, SKU and price;
+ * on the till also its thumbnail, an accessible name that says what the row does, and the visible word of
+ * that action beside the price (UXI-067).
+ */
+export function ProductResult({
+    name,
+    meta,
+    price,
+    onAdd,
+    disabledReason,
+    thumb,
+    accessibleName,
+    addLabel,
+}: {
+    name: string;
+    meta: ReactNode;
+    price: string;
+    onAdd: () => void;
+    disabledReason?: string;
+    thumb?: ReactNode;
+    accessibleName?: string;
+    addLabel?: string;
+}) {
     const reasonId = useId();
 
     return (
@@ -132,10 +167,13 @@ export function ProductResult({ name, meta, price, onAdd, disabledReason }: { na
             <button
                 type={'button'}
                 className={'bk-result'}
+                data-thumb={thumb !== undefined}
+                aria-label={accessibleName}
                 aria-disabled={disabledReason === undefined ? undefined : true}
                 aria-describedby={disabledReason === undefined ? undefined : reasonId}
                 onClick={() => (disabledReason === undefined ? onAdd() : undefined)}
             >
+                {thumb}
                 <span>
                     <span className={'bk-result__name bk-clamp-2'}>{name}</span>
                     <span className={'bk-result__meta'}>{meta}</span>
@@ -145,7 +183,14 @@ export function ProductResult({ name, meta, price, onAdd, disabledReason }: { na
                         </span>
                     )}
                 </span>
-                <span className={'bk-result__price'}>{price}</span>
+                <span className={'bk-result__price'}>
+                    {price}
+                    {addLabel !== undefined && disabledReason === undefined && (
+                        <span className={'bk-result__add'} aria-hidden={true}>
+                            {addLabel}
+                        </span>
+                    )}
+                </span>
             </button>
         </li>
     );
@@ -162,18 +207,46 @@ export function CartRegion({ label, head, children, foot }: { label: string; hea
     );
 }
 
-/** A cart line: the name in full, its unit price, the line total, the stepper and remove. */
-export function CartLine({ name, meta, total, controls }: { name: string; meta: ReactNode; total: string; controls: ReactNode }) {
+/**
+ * A cart line: the name in full, its unit price, the line total, the stepper and remove; on the till
+ * also what the line must say — a price change, the stock available, a reason (`notes`) — and whether
+ * it is marked for that or was just added (`marked`, `flash`).
+ */
+export function CartLine({
+    name,
+    meta,
+    total,
+    controls,
+    totalLabel,
+    notes,
+    marked = false,
+    flash = false,
+    lineRef,
+}: {
+    name: string;
+    meta: ReactNode;
+    total: string;
+    controls: ReactNode;
+    totalLabel?: string;
+    notes?: ReactNode;
+    marked?: boolean;
+    flash?: boolean;
+    lineRef?: Ref<HTMLLIElement>;
+}) {
     return (
-        <li className={'bk-line'}>
+        <li className={'bk-line'} data-marked={marked} data-flash={flash} ref={lineRef}>
             <div className={'bk-line__top'}>
                 <div>
                     <p className={'bk-line__name'}>{name}</p>
                     <p className={'bk-line__meta'}>{meta}</p>
                 </div>
-                <p className={'bk-line__total'}>{total}</p>
+                <p className={'bk-line__total'}>
+                    {totalLabel !== undefined && <span className={'bk-line__sub'}>{totalLabel}</span>}
+                    <span>{total}</span>
+                </p>
             </div>
             <div className={'bk-line__controls'}>{controls}</div>
+            {notes}
         </li>
     );
 }
@@ -197,6 +270,10 @@ export function QuantityStepper({
     decrementLabel,
     canDecrement,
     decimal = false,
+    onEnter,
+    decrementDescribedBy,
+    invalid = false,
+    describedBy,
 }: {
     label: string;
     value: string;
@@ -208,16 +285,31 @@ export function QuantityStepper({
     decrementLabel: string;
     canDecrement: boolean;
     decimal?: boolean;
+    /** After the commit of a plain Enter: the till returns the focus to its search field (UXA-09). */
+    onEnter?: () => void;
+    /** The id of the reason why "−" cannot act (UXS-13). */
+    decrementDescribedBy?: string;
+    /** The quantity is refused, with its message at `describedBy` (UXS-05). */
+    invalid?: boolean;
+    describedBy?: string;
 }) {
     return (
         <span className={'bk-stepper'} {...{ [ENTER_BLOCKED_ATTRIBUTE]: '' }}>
-            <button type={'button'} aria-label={decrementLabel} aria-disabled={canDecrement ? undefined : true} onClick={() => (canDecrement ? onDecrement() : undefined)}>
+            <button
+                type={'button'}
+                aria-label={decrementLabel}
+                aria-disabled={canDecrement ? undefined : true}
+                aria-describedby={canDecrement ? undefined : decrementDescribedBy}
+                onClick={() => (canDecrement ? onDecrement() : undefined)}
+            >
                 <Icon name={'minus'} />
             </button>
             <input
                 type={'text'}
                 inputMode={decimal ? 'decimal' : 'numeric'}
                 aria-label={label}
+                aria-invalid={invalid ? true : undefined}
+                aria-describedby={describedBy}
                 value={value}
                 onChange={(event) => onValueChange(event.target.value)}
                 onBlur={onCommit}
@@ -225,6 +317,7 @@ export function QuantityStepper({
                     if (event.key === 'Enter' && !event.ctrlKey) {
                         event.preventDefault();
                         onCommit();
+                        onEnter?.();
                     }
                 }}
             />

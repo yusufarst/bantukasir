@@ -95,6 +95,18 @@ final class Allowlists
         'cash/Registers' => ['owner' => ['registers', 'registers.*', ...self::REGISTER_ROW]],
         'cash/RegisterForm' => ['owner' => ['register', 'register.id', 'register.code', 'register.label', 'register.active', 'register.version', 'register.openBy']],
         'cash/OpenSession' => ['*' => ['registers', 'registers.*', 'registers.*.id', 'registers.*.code', 'registers.*.label']],
+        // The till and its payment view (TASK-029), for every holder of CAP-21 in its own OPEN session: the
+        // view, the session's header, the onboarding freeze and the active categories of the search's
+        // filter; never a product, a price or a cost, which RD-01 carries. The receipt, for its cashier and
+        // the Owner: the snapshot and the shop identity it froze as `issuer`, beside the shell's shared
+        // `shop`, never a cost (BR-COST-08).
+        'sales/Till' => ['*' => ['view', 'session', 'session.id', 'session.number', 'session.register', 'postingFrozen', ...self::CATEGORIES]],
+        'sales/Receipt' => ['*' => [
+            'receipt', 'receipt.saleId', 'receipt.number', 'receipt.issuedAt', 'receipt.cashier', 'receipt.sessionNumber', 'receipt.method', 'receipt.total', 'receipt.tendered',
+            'receipt.change', 'receipt.customerName', 'receipt.lines', 'receipt.lines.*', 'receipt.lines.*.lineNo', 'receipt.lines.*.sku', 'receipt.lines.*.name', 'receipt.lines.*.unit',
+            'receipt.lines.*.quantity', 'receipt.lines.*.unitPrice', 'receipt.lines.*.lineTotal',
+            'issuer', 'issuer.name', 'issuer.identity', 'issuer.address', 'issuer.contact', 'issuer.email', 'issuer.header', 'issuer.footer', 'issuer.logo',
+        ]],
         'access/UserCreate' => ['owner' => []],
         'access/User' => ['owner' => ['user', 'user.id', 'user.displayName', 'user.email', 'user.roles', 'user.roles.*', 'user.status', 'user.version', 'user.passwordSet', 'user.linkExpiresAt', 'user.superAdmin', 'user.self']],
         'access/UserEdit' => ['owner' => ['user', 'user.id', 'user.displayName', 'user.email', 'user.roles', 'user.roles.*', 'user.version']],

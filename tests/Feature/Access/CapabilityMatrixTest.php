@@ -373,6 +373,18 @@ final class CapabilityMatrixTest extends DatabaseTestCase
         'RC-01' => ['method' => 'POST', 'path' => '/commands/sale.checkout', 'json' => true, 'answers' => [
             'guest' => [401, null], 'owner' => [422, null], 'ops' => [403, null], 'cashier' => [422, null], 'combined' => [422, null],
         ]],
+        // TASK-029: the till and its payment view for CAP-21, each holder in its own OPEN session —
+        // without one, Buka sesi kas; the receipt of a Sale that does not exist, for its cashier
+        // (CAP-21) and the Owner (CAP-22); Operations refused.
+        'RP-101' => ['method' => 'GET', 'path' => '/till', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [302, '/till/open-session'], 'ops' => [403, null], 'cashier' => [302, '/till/open-session'], 'combined' => [302, '/till/open-session'],
+        ]],
+        'RP-102' => ['method' => 'GET', 'path' => '/till/payment', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [302, '/till/open-session'], 'ops' => [403, null], 'cashier' => [302, '/till/open-session'], 'combined' => [302, '/till/open-session'],
+        ]],
+        'RP-103' => ['method' => 'GET', 'path' => '/sales/{sale}/receipt', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [404, null], 'ops' => [403, null], 'cashier' => [404, null], 'combined' => [404, null],
+        ]],
     ];
 
     /** @var array<string, array{id: int, email: string, password: string}> */

@@ -12,6 +12,7 @@ use App\Actions\Catalog\AddBarcode;
 use App\Actions\Catalog\CreateCategory;
 use App\Actions\Catalog\CreateProduct;
 use App\Actions\Catalog\RetireBarcode;
+use App\Actions\Catalog\UpdateProduct;
 use App\Actions\Commands\CommandAction;
 use App\Actions\Commands\CommandContext;
 use App\Actions\Costing\CorrectCost;
@@ -323,6 +324,32 @@ final class TokoContoh
             'minimumStock' => '0',
             ...$fields,
         ]);
+    }
+
+    /**
+     * A new selling price of a product, set by the Owner through RC-18's Action (TASK-015;
+     * EXECUTION_CONTEXT EXC-45), its other fields as they stand, at the version it stands at; the
+     * price change of a cart that the till reviews (UXS-18; TASK-029).
+     *
+     * @throws DatabaseRefused
+     */
+    public static function reprice(int $product, string $price): void
+    {
+        $values = (array) DB::table('products')->where('id', $product)->first(['name', 'category_id', 'brand', 'base_unit', 'quantity_precision', 'minimum_stock', 'version']);
+        $stored = $values['minimum_stock'] ?? null;
+        // The stored minimum as a canonical quantity: "0.000" is "0", "2.500" is "2.5".
+        $minimum = is_string($stored) && str_contains($stored, '.') ? rtrim(rtrim($stored, '0'), '.') : '0';
+
+        self::asOwner(UpdateProduct::class, UpdateProduct::OPERATION, [
+            'productId' => $product,
+            'name' => $values['name'] ?? null,
+            'categoryId' => $values['category_id'] ?? null,
+            'brand' => $values['brand'] ?? null,
+            'baseUnit' => $values['base_unit'] ?? null,
+            'quantityPrecision' => $values['quantity_precision'] ?? null,
+            'sellingPrice' => $price,
+            'minimumStock' => $minimum,
+        ], ['productVersion' => $values['version'] ?? null]);
     }
 
     /**

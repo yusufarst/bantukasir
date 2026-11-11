@@ -116,9 +116,10 @@ export function linkAddress(link: Link): string {
 }
 
 /**
- * Akun saya (RP-003): the home of the Owner until Beranda exists, and of a
- * cashier with an OPEN session until Kasir exists (RN-01, NC-12; TASK-007,
- * TASK-027), and the page that every role has.
+ * Akun saya (RP-003): the home of the Owner until Beranda exists (RN-01,
+ * NC-12; TASK-007), and the page that every role has. A cashier or the
+ * combined account with an OPEN session goes to Kasir (TASK-029), which the
+ * browser suite never gives them: only the Owner sells there (tests/Browser/sales/).
  */
 export const HOME = '/account';
 

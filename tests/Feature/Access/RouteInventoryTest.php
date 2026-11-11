@@ -149,6 +149,10 @@ final class RouteInventoryTest extends TestCase
         'POST /commands/cash_session.open' => ['commands.cash_session.open', 'RC-02', 'CAP-21', [...self::SIGNED_IN, 'capability:CAP-21', 'throttle:command']],
         // TASK-028: RC-01, without recent authentication.
         'POST /commands/sale.checkout' => ['commands.sale.checkout', 'RC-01', 'CAP-21', [...self::SIGNED_IN, 'capability:CAP-21', 'throttle:command']],
+        // TASK-029: the till, its payment view and the receipt, each taking only its path.
+        'GET /till' => ['till.show', 'RP-101', 'CAP-21', [...self::SIGNED_IN, 'capability:CAP-21', 'input.allow']],
+        'GET /till/payment' => ['till.payment', 'RP-102', 'CAP-21', [...self::SIGNED_IN, 'capability:CAP-21', 'input.allow']],
+        'GET /sales/{sale}/receipt' => ['sales.receipt', 'RP-103', 'CAP-21,CAP-22', [...self::SIGNED_IN, 'capability:CAP-21,CAP-22', 'input.allow']],
     ];
 
     public function test_the_routes_are_exactly_those_listed_each_with_its_gate(): void

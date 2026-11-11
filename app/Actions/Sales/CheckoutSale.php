@@ -64,8 +64,8 @@ use LogicException;
  * SERVICE_BUSY past the lock timeout, and a replay waits for the Sale (RACE-11).
  *
  * The cashier is the actor, never a field of the request (TR-VAL-03), and every name is frozen from
- * the actor's row that the guard holds (G-16). The answer's location is RN-01, the user's home, until
- * TASK-029 delivers RP-103 (EXECUTION_CONTEXT EXC-52).
+ * the actor's row that the guard holds (G-16). The answer's location is RP-103, the Sale's receipt
+ * (TASK-029; INTERACTION_CONTRACTS RC-01).
  *
  * Write steps (TEST_STRATEGY TS-21): the Sale; each line; the Payment; the receipt snapshot; the
  * running total; each product's balance; each product's valuation; for each line its SALE_ISSUE and
@@ -81,9 +81,6 @@ final class CheckoutSale extends CommandAction
 
     /** The result's type and its subject in the audit (SCHEMA section 5.3). */
     public const string RESULT_TYPE = 'sale';
-
-    /** RN-01, until RP-103 exists (TASK-029). */
-    public const string LOCATION = '/';
 
     public function __construct(
         CommandServices $services,
@@ -127,7 +124,7 @@ final class CheckoutSale extends CommandAction
             return null;
         }
 
-        return ['type' => $result->type, 'id' => $sale->id, 'number' => $sale->number, 'location' => self::LOCATION];
+        return ['type' => $result->type, 'id' => $sale->id, 'number' => $sale->number, 'location' => Sales::receiptPath($sale->id)];
     }
 
     protected function perform(CommandContext $context, User $actor, int $commandId): StoredResult

@@ -39,8 +39,8 @@ use Throwable;
  *   and the result, all or nothing (TR-TX-01). Opening creates no Sale and no movement.
  *
  * The responsible user is the actor, never a field of the request (TR-VAL-03), and the name is
- * frozen from the actor's row that the guard holds (G-16). The answer's location is RN-01, the
- * user's home, until TASK-029 delivers RP-101 (EXECUTION_CONTEXT EXC-52).
+ * frozen from the actor's row that the guard holds (G-16). The answer's location is RP-101, the
+ * user's till (TASK-029; NAVIGATION_CONTRACTS UXP-104).
  *
  * Write steps (TEST_STRATEGY TS-21): the session, the audit event, the result.
  */
@@ -51,8 +51,8 @@ final class OpenCashSession extends CommandAction
     /** The result's type (SCHEMA section 5.3). */
     public const string RESULT_TYPE = 'cash_session';
 
-    /** RN-01, until RP-101 exists (TASK-029). */
-    public const string LOCATION = '/';
+    /** RP-101, the till (TASK-029). */
+    public const string LOCATION = '/till';
 
     public function __construct(
         CommandServices $services,
