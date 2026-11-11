@@ -742,6 +742,16 @@ final class CheckoutSaleTest extends DatabaseTestCase
 
         foreach (app(Router::class)->getRoutes()->getRoutes() as $route) {
             $uris[] = $route->uri();
+
+            // RP-102 "Pembayaran" is the till's own payment view, read only and behind CAP-21
+            // (ROUTE_CONTRACTS RP-102; TASK-029): a page of the cashier, never one a provider calls.
+            if ($route->uri() === 'till/payment') {
+                $this->assertSame(['GET', 'HEAD'], $route->methods());
+                $this->assertContains('capability:CAP-21', $route->gatherMiddleware());
+
+                continue;
+            }
+
             $this->assertDoesNotMatchRegularExpression('/(webhook|callback|notify|provider|gateway|qris|payment)/i', $route->uri());
         }
 
@@ -767,13 +777,18 @@ final class CheckoutSaleTest extends DatabaseTestCase
         // STK-12, ARC-20, ARC-21; ADR-008 section 4.3: the Sale's tables are named by the Sales module's
         // writer alone, which only inserts; their running totals are TASK-033's to change, and nothing
         // names the line totals yet. The language files' group `sales` is no table: the dictionary
-        // names it without a query.
-        $this->assertSame(['Domain/Sales/Sales.php', 'Support/Localization/Dictionary.php'], self::filesNaming('sales'));
+        // names it without a query. RP-103's query reads a Sale's receipt snapshot and writes nothing
+        // (TASK-029).
+        $reader = 'Queries/Sales/Receipts.php';
+        $this->assertSame(['Domain/Sales/Sales.php', $reader, 'Support/Localization/Dictionary.php'], self::filesNaming('sales'));
         $this->assertDoesNotMatchRegularExpression('/DB::|->table\(|->insert|->update/', (string) file_get_contents(app_path('Support/Localization/Dictionary.php')));
+        $this->assertDoesNotMatchRegularExpression('/->(?:insert|insertGetId|insertOrIgnore|update|upsert|delete|increment|decrement|truncate|lockForUpdate)\(|DB::(?:statement|insert|update|delete|unprepared)/', (string) file_get_contents(app_path($reader)));
 
-        foreach (['sale_lines', 'payments', 'receipt_snapshots', 'sale_correction_totals'] as $table) {
+        foreach (['sale_lines', 'payments', 'sale_correction_totals'] as $table) {
             $this->assertSame(['Domain/Sales/Sales.php'], self::filesNaming($table), $table);
         }
+
+        $this->assertSame(['Domain/Sales/Sales.php', $reader], self::filesNaming('receipt_snapshots'));
 
         $this->assertSame([], self::filesNaming('sale_line_correction_totals'));
         $this->assertDoesNotMatchRegularExpression('/->(?:update|upsert|delete|increment|decrement|truncate)\(/', (string) file_get_contents(app_path('Domain/Sales/Sales.php')));
