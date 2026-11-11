@@ -1,5 +1,5 @@
 {
-  "decision": "D-112, D-115, D-118, D-123, D-127",
+  "decision": "D-112, D-115, D-118, D-123, D-127, D-128",
   "limits": "Conditional and temporary, for development only: the Debian findings of the assessed image, at these exact versions. It authorizes no staging or production deployment and accepts no future CVE. A critical finding enters this list only by its own decision of the Owner. TASK-013 reassesses curl and libcurl before its HTTP or S3 integration; gate RELEASE reviews every remaining vulnerability independently.",
   "assessed": {
     "ciRun": 41129923061,
@@ -40,6 +40,14 @@
     "database": "2026-11-10T06:21:20Z",
     "image": "the release stage of docker/app/Dockerfile at that head; libgssapi-krb5-2, libk5crypto3, libkrb5-3 and libkrb5support0 at 1.21.3-5+deb13u1, the version that every assessed image held (D-112), and no other binary package of the source package krb5",
     "statusRead": "2026-11-11, Grype's database of that run for Debian's fix state, known exploitation and EPSS, and the same run's build, whose apt-get upgrade against trixie, trixie-updates and trixie-security left the four at this version; MIT's advisory MITKRB5-SA-2026-001, Debian's tracker and its bug 1153598, and CISA's KEV catalog of 2026.11.10 were read by the Owner (D-127): they are outside the domains that this run's tools allow (EXECUTION_CONTEXT CE-47)"
+  },
+  "assessedD128": {
+    "ciRun": 42981698380,
+    "head": "095ce1bfb81b7e93b5c1bdfd84e2ac28e872f8fc",
+    "scanner": "Grype 0.121.0, with Syft 1.55.0",
+    "database": "2026-11-11T06:21:32Z",
+    "image": "the release stage of docker/app/Dockerfile at that head; libgssapi-krb5-2, libk5crypto3, libkrb5-3 and libkrb5support0 at 1.21.3-5+deb13u1, the version that every assessed image held (D-112), and no other binary package of the source package krb5, libgssrpc among them",
+    "statusRead": "2026-11-11, Grype's database of that run for Debian's fix state, known exploitation and EPSS, and the same run's build, whose apt-get upgrade against trixie, trixie-updates and trixie-security left the four at this version; MIT's advisory MITKRB5-SA-2026-001 and Debian's tracker were read by the Owner (D-128): they are outside the domains that this run's tools allow (EXECUTION_CONTEXT CE-47)"
   },
   "commonReviewTrigger": "Every entry is reviewed again when the gate refuses it (a fix available, known exploitation, another version or severity), and at gate RELEASE.",
   "accepted": [
@@ -1095,6 +1103,40 @@
       "rationale": "One of the four flaws of MIT's advisory MITKRB5-SA-2026-001, each a denial of service against kadmind through libgssrpc's AUTH_GSSAPI or against the KDC (the Owner's reading, D-127); High by the scan's database, which records no known exploitation and no EPSS score, and not in CISA's KEV catalog of 2026.11.10. Its description was not read by this run; the assessment holds for any flaw reached through a request to a KDC or to kadmind, which no process of the image serves.",
       "mitigation": "The image holds no KDC, kadmind or libgssrpc: its package list holds no binary package of the source package krb5 but these four client libraries, present only as dependencies of libpq and libcurl. Nothing in app/, config/, bootstrap/, routes/, database/, docker/, compose.yaml, the workflows or the scripts but this list names Kerberos or GSS-API, and no process of the image is a Kerberos server.",
       "reviewTrigger": "Any Debian update of krb5, a DSA or a point release, which the build installs and the gate then prints as ACCEPTED_NOT_REPORTED, or refuses as fixable while the build lags; any Task that uses Kerberos or GSS-API, or installs a KDC, kadmind or libgssrpc; known exploitation, which the gate refuses; a change of the base image; gate RELEASE."
+    },
+    {
+      "id": "CVE-2026-112314",
+      "severity": "High",
+      "decision": "D-128",
+      "sourcePackage": "krb5",
+      "packages": [
+        {"name": "libgssapi-krb5-2", "version": "1.21.3-5+deb13u1", "type": "deb"},
+        {"name": "libk5crypto3", "version": "1.21.3-5+deb13u1", "type": "deb"},
+        {"name": "libkrb5-3", "version": "1.21.3-5+deb13u1", "type": "deb"},
+        {"name": "libkrb5support0", "version": "1.21.3-5+deb13u1", "type": "deb"}
+      ],
+      "fixState": "not-fixed",
+      "debianStatus": "trixie 1.21.3-5+deb13u1 vulnerable, no fixed package and no DSA triage, by the Owner's reading of 2026-11-11 (D-128); Grype's database of 2026-11-11T06:21:32Z, built from Debian's tracker, gives the state not-fixed and no fixed version for Debian 13, and the build of the same run, which upgrades every package from trixie, trixie-updates and trixie-security, left the four libraries at this version; fixed upstream in krb5 1.22.3",
+      "rationale": "A memory leak in GSS-RPC client programs, in clnttcp_call of lib/rpc/clnt_tcp.c, the code of libgssrpc (the Owner's reading of MIT's advisory MITKRB5-SA-2026-001, D-128); High by the scan's database, which records no known exploitation (EPSS 0.00915). Its description was not read by this run; the assessment holds for any flaw of libgssrpc's client, whose code the image does not hold.",
+      "mitigation": "The image holds no libgssrpc, kadmind or KDC: its package list holds no binary package of the source package krb5 but these four client libraries, present only as dependencies of libpq and libcurl, and the scan matches the finding to them by their source package. Nothing in app/, config/, bootstrap/, routes/, database/, docker/, compose.yaml, the workflows or the scripts but this list names Kerberos, GSS-API or GSS-RPC, and no process of the image is a GSS-RPC client or a Kerberos server.",
+      "reviewTrigger": "Any Debian update of krb5, a DSA or a point release, which the build installs and the gate then prints as ACCEPTED_NOT_REPORTED, or refuses as fixable while the build lags; any Task that uses Kerberos, GSS-API or GSS-RPC, or installs libgssrpc, kadmind or a KDC; known exploitation, which the gate refuses; a change of the base image; gate RELEASE."
+    },
+    {
+      "id": "CVE-2026-112320",
+      "severity": "High",
+      "decision": "D-128",
+      "sourcePackage": "krb5",
+      "packages": [
+        {"name": "libgssapi-krb5-2", "version": "1.21.3-5+deb13u1", "type": "deb"},
+        {"name": "libk5crypto3", "version": "1.21.3-5+deb13u1", "type": "deb"},
+        {"name": "libkrb5-3", "version": "1.21.3-5+deb13u1", "type": "deb"},
+        {"name": "libkrb5support0", "version": "1.21.3-5+deb13u1", "type": "deb"}
+      ],
+      "fixState": "not-fixed",
+      "debianStatus": "trixie 1.21.3-5+deb13u1 vulnerable, no fixed package and no DSA triage, by the Owner's reading of 2026-11-11 (D-128); Grype's database of 2026-11-11T06:21:32Z, built from Debian's tracker, gives the state not-fixed and no fixed version for Debian 13, and the build of the same run, which upgrades every package from trixie, trixie-updates and trixie-security, left the four libraries at this version; fixed upstream in krb5 1.22.3",
+      "rationale": "Memory exhaustion in kadmind through the GSS-RPC transport layer (the Owner's reading of MIT's advisory MITKRB5-SA-2026-001, D-128); High by the scan's database, which records no known exploitation (EPSS 0.00731). Its description was not read by this run; the assessment holds for any flaw reached through a request to kadmind, which no process of the image serves.",
+      "mitigation": "The image holds no kadmind, KDC or libgssrpc: its package list holds no binary package of the source package krb5 but these four client libraries, present only as dependencies of libpq and libcurl, and the scan matches the finding to them by their source package. Nothing in app/, config/, bootstrap/, routes/, database/, docker/, compose.yaml, the workflows or the scripts but this list names Kerberos, GSS-API or GSS-RPC, and no process of the image is a Kerberos server.",
+      "reviewTrigger": "Any Debian update of krb5, a DSA or a point release, which the build installs and the gate then prints as ACCEPTED_NOT_REPORTED, or refuses as fixable while the build lags; any Task that uses Kerberos, GSS-API or GSS-RPC, or installs libgssrpc, kadmind or a KDC; known exploitation, which the gate refuses; a change of the base image; gate RELEASE."
     }
   ]
 }
