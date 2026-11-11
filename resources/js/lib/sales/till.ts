@@ -118,15 +118,11 @@ function sessionStore(): Storage | null {
 }
 
 export function rememberedSize(): ReceiptSize {
-    let stored: string | null = null;
-
     try {
-        stored = sessionStore()?.getItem(SIZE_KEY) ?? null;
+        return sizeOf(sessionStore()?.getItem(SIZE_KEY) ?? null);
     } catch {
-        stored = null;
+        return sizeOf(null);
     }
-
-    return sizeOf(stored);
 }
 
 function sizeOf(value: string | null): ReceiptSize {

@@ -113,6 +113,9 @@ const PRICE_CHANGED = 'PRICE_CHANGED';
 
 const TENDER_INSUFFICIENT = 'TENDER_INSUFFICIENT';
 
+/** The stock of a line refused for stock whose answer named none. */
+const NONE_AVAILABLE = '0';
+
 interface TillProps {
     readonly view: string;
     readonly session: TillSession;
@@ -955,7 +958,7 @@ function PaymentView({
                             <ul>
                                 {shortLines.map((line) => (
                                     <li key={line.product.id}>
-                                        {line.product.name}: {t('ux.state.insufficient_stock.line', { jumlah: stockText(line.available ?? '0', line) })}
+                                        {line.product.name}: {t('ux.state.insufficient_stock.line', { jumlah: stockText(line.available ?? NONE_AVAILABLE, line) })}
                                     </li>
                                 ))}
                             </ul>
