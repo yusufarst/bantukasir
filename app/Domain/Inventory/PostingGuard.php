@@ -65,6 +65,23 @@ final class PostingGuard
      */
     public function requirePostable(array $lineProducts, array $held, array $expected): void
     {
+        $this->requireActiveAndUnblocked($lineProducts, $held);
+
+        self::refuseLines(ErrorCode::StaleVersion, $lineProducts, static fn (int $product): bool => ($expected[$product] ?? null) !== $held[$product]->version);
+    }
+
+    /**
+     * The checks under the product guard that every posting makes, a Sale's too (TECHNICAL_RULES
+     * section 7.2, "Sale checkout"; G-11), whose own reviewed state is its price revision rather
+     * than the product's version (BR-SALE-05): each product exists, is active and is not blocked.
+     *
+     * @param  array<int, int>  $lineProducts  the product of each line, by the line's index in the request
+     * @param  array<int, GuardedProduct>  $held  the products under their update locks
+     *
+     * @throws CommandRefused NOT_FOUND, PRODUCT_INACTIVE or POSTING_BLOCKED
+     */
+    public function requireActiveAndUnblocked(array $lineProducts, array $held): void
+    {
         foreach ($lineProducts as $product) {
             if (! array_key_exists($product, $held)) {
                 throw CommandRefused::of(ErrorCode::NotFound);
@@ -75,8 +92,6 @@ final class PostingGuard
 
         $blocked = $this->blocks->blockedAmong(array_keys($held));
         self::refuseLines(ErrorCode::PostingBlocked, $lineProducts, static fn (int $product): bool => in_array($product, $blocked, true));
-
-        self::refuseLines(ErrorCode::StaleVersion, $lineProducts, static fn (int $product): bool => ($expected[$product] ?? null) !== $held[$product]->version);
     }
 
     /**

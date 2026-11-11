@@ -72,6 +72,7 @@ use App\Http\Controllers\Inventory\StockController;
 use App\Http\Controllers\Inventory\StockDataController;
 use App\Http\Controllers\Media\MediaController;
 use App\Http\Controllers\Reporting\CostWorklistController;
+use App\Http\Controllers\Sales\CheckoutSaleController;
 use App\Http\Controllers\Testing\SpecimenController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Http\Controllers\AuthenticatedSessionController;
@@ -181,9 +182,10 @@ Route::middleware(['auth', 'signin.session', 'throttle:authenticated', 'cache.he
     // then the capability of its context, which its FormRequest checks; RD-06,
     // the search-first check; and RC-17 to RC-24, in the bucket of every command.
     // A price change needs CAP-05 too, which its Action checks. CAP-02 is
-    // restricted for a cashier, which opens no gate: TASK-028 adds what the till
-    // needs to this route.
-    Route::get('/data/products/search', SearchController::class)->middleware(['capability:CAP-02', 'throttle:search'])->name('data.products.search');
+    // restricted for a cashier, "in the till", which opens no gate by itself: the
+    // gate opens for CAP-21 too, whose holders all hold CAP-02, and the context
+    // `till` alone is open to CAP-21, with the actor's own OPEN session (TASK-028).
+    Route::get('/data/products/search', SearchController::class)->middleware(['capability:CAP-02,CAP-21', 'throttle:search'])->name('data.products.search');
 
     // The CSV import (TASK-019): RP-308 before RP-302, whose path would take it; RR-01
     // in the bucket `csv`; RR-02, which takes only its path; and RC-31.
@@ -315,10 +317,13 @@ Route::middleware(['auth', 'signin.session', 'throttle:authenticated', 'cache.he
     });
 
     // The cash session open (TASK-027): RP-104 and RC-02 for CAP-21, each holder on its own session —
-    // the responsible user is always the actor (TR-VAL-03); RC-02 in the bucket of every command.
+    // the responsible user is always the actor (TR-VAL-03); RC-02 in the bucket of every command. The
+    // Sale checkout (TASK-028): RC-01 for CAP-21, in the actor's own OPEN session, which its Action
+    // checks under the session's lock; in the bucket of every command, without recent authentication.
     Route::middleware('capability:CAP-21')->group(function (): void {
         Route::get('/till/open-session', [OpenSessionController::class, 'show'])->middleware('input.allow')->name('till.open');
         Route::post('/commands/cash_session.open', OpenCashSessionController::class)->middleware('throttle:command')->name('commands.cash_session.open');
+        Route::post('/commands/sale.checkout', CheckoutSaleController::class)->middleware('throttle:command')->name('commands.sale.checkout');
     });
 });
 

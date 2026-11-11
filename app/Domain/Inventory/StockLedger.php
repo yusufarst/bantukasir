@@ -21,6 +21,8 @@ final class StockLedger
 
     public const string RECEIPT = 'RECEIPT';
 
+    public const string SALE_ISSUE = 'SALE_ISSUE';
+
     public const string MANUAL_ISSUE = 'MANUAL_ISSUE';
 
     public const string ADJUSTMENT = 'ADJUSTMENT';
@@ -118,6 +120,36 @@ final class StockLedger
             'movement_type' => self::RECEIPT,
             'quantity' => $quantity->toCanonical(),
             'receiving_line_id' => $receivingLineId,
+            'line_quantity' => $quantity->toCanonical(),
+            'recorded_at' => $at,
+            'actor_user_id' => $actorUserId,
+            'command_id' => $commandId,
+        ]);
+    }
+
+    /**
+     * Appends the SALE_ISSUE of a Sale line, the line's positive quantity taken out of stock, with
+     * the unit and precision of its guarded product, and returns its internal key. Its key to the
+     * line holds that it moves exactly the line's product and quantity; its allocation is Costing's,
+     * in this transaction: the presence key refuses a commit without it (BR-SALE-09, BR-INV-08;
+     * ADR-008 section 2).
+     */
+    public function appendSaleIssue(GuardedProduct $product, int $sequence, Quantity $quantity, int $saleLineId, int $actorUserId, int $commandId, string $at): int
+    {
+        self::requireTransaction();
+
+        if (! $quantity->isPositive()) {
+            throw new LogicException('A Sale line takes a positive quantity out of stock.');
+        }
+
+        return DB::table('stock_movements')->insertGetId([
+            'product_id' => $product->id,
+            'base_unit' => $product->baseUnit,
+            'quantity_precision' => $product->quantityPrecision,
+            'product_sequence' => $sequence,
+            'movement_type' => self::SALE_ISSUE,
+            'quantity' => $quantity->negated()->toCanonical(),
+            'sale_line_id' => $saleLineId,
             'line_quantity' => $quantity->toCanonical(),
             'recorded_at' => $at,
             'actor_user_id' => $actorUserId,

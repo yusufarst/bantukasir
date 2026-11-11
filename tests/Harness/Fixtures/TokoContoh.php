@@ -19,6 +19,7 @@ use App\Actions\Inventory\ConfirmAdjustment;
 use App\Actions\Inventory\ConfirmManualIssue;
 use App\Actions\Inventory\ConfirmReceiving;
 use App\Actions\Inventory\ConfirmReversal;
+use App\Actions\Sales\CheckoutSale;
 use App\Database\DatabaseRefused;
 use App\Database\EnvironmentMarker;
 use App\Domain\Access\Accounts;
@@ -36,6 +37,8 @@ use App\Domain\Configuration\ProfileFields;
 use App\Domain\Inventory\OnboardingState;
 use App\Domain\Inventory\PostingBlocks;
 use App\Models\User;
+use App\Support\Numbers\Money;
+use App\Support\Numbers\Quantity;
 use App\Support\Time\Clock;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Facades\DB;
@@ -472,6 +475,57 @@ final class TokoContoh
         $id = app(OpenCashSession::class)->execute(new CommandContext($actor, $envelope, app(Clock::class)->now()))->result['id'] ?? null;
 
         return is_int($id) ? $id : throw new LogicException('The fixture session was not opened.');
+    }
+
+    /**
+     * A Sale by a person of Toko Contoh in their own OPEN session through RC-01's Action (TASK-028;
+     * EXECUTION_CONTEXT EXC-45), at the price revisions its products stand at, paid by default in
+     * CASH with the exact total: its internal key.
+     *
+     * @param  list<array{productId: int, quantity: string}>  $lines
+     * @param  array<string, mixed>  $payment  RC-01's `payment`, when the test names one
+     *
+     * @throws DatabaseRefused
+     */
+    public static function sell(string $person, int $session, array $lines, array $payment = []): int
+    {
+        self::build(DB::connection());
+        self::shop();
+
+        // The person's account as it is, its password and sign-in sessions kept; created on first use.
+        $actor = app(Accounts::class)->findByEmail(self::email($person))->id ?? self::person($person)['id'];
+        $reviewed = [];
+        $total = Money::zero();
+
+        foreach ($lines as $line) {
+            $values = (array) DB::table('products as p')->join('selling_price_revisions as r', 'r.id', '=', 'p.current_price_revision_id')->where('p.id', $line['productId'])->first(['p.quantity_precision', 'r.id', 'r.amount']);
+            $precision = $values['quantity_precision'] ?? null;
+            $revision = $values['id'] ?? null;
+            $amount = $values['amount'] ?? null;
+
+            if (! is_int($precision) || ! is_int($revision) || (! is_int($amount) && ! is_string($amount))) {
+                throw new LogicException('A product of the fixture Sale exists, with its price in force.');
+            }
+
+            $reviewed[] = ['priceRevisionId' => $revision];
+            $total = $total->plus(Money::lineTotal(Quantity::of($line['quantity'], $precision), Money::fromDatabase($amount)));
+        }
+
+        $payload = ['sessionId' => $session, 'lines' => $lines, 'payment' => $payment === [] ? ['method' => 'CASH', 'tendered' => $total->toCanonical()] : $payment];
+        $envelope = new Envelope(CheckoutSale::OPERATION, Operations::VERSION, (string) Str::uuid(), (string) Str::uuid(), self::recoveryEpoch(), ['lines' => $reviewed], $payload);
+        $id = app(CheckoutSale::class)->execute(new CommandContext($actor, $envelope, app(Clock::class)->now()))->result['id'] ?? null;
+
+        return is_int($id) ? $id : throw new LogicException('The fixture Sale was not committed.');
+    }
+
+    /**
+     * The SALE_ISSUE of a Sale's first line (TASK-028): its internal key.
+     */
+    public static function saleIssueOf(int $sale): int
+    {
+        $movement = DB::table('stock_movements as m')->join('sale_lines as l', 'l.id', '=', 'm.sale_line_id')->where('l.sale_id', $sale)->orderBy('l.line_no')->value('m.id');
+
+        return is_int($movement) ? $movement : throw new LogicException('The Sale posted its SALE_ISSUE.');
     }
 
     /**

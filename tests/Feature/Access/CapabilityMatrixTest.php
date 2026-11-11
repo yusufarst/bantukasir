@@ -164,12 +164,13 @@ final class CapabilityMatrixTest extends DatabaseTestCase
             'guest' => [401, null], 'owner' => [423, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
         ]],
         // TASK-015: Product Search for CAP-02, which a cashier holds only in the
-        // till's restricted form, and the search-first check and RC-17 to RC-24
-        // for CAP-04; each sent without its parameters or fields, the Owner, the
-        // Operations admin and the combined account pass the gate to the refusal
-        // of what is missing.
+        // till's restricted form — the gate opens for CAP-21 too, whose context
+        // `till` alone a cashier passes (TASK-028) — and the search-first check
+        // and RC-17 to RC-24 for CAP-04; each sent without its parameters or
+        // fields, every kind of account that passes the gate meets the refusal of
+        // what is missing.
         'RD-01' => ['method' => 'GET', 'path' => '/data/products/search', 'json' => true, 'answers' => [
-            'guest' => [401, null], 'owner' => [422, null], 'ops' => [422, null], 'cashier' => [403, null], 'combined' => [422, null],
+            'guest' => [401, null], 'owner' => [422, null], 'ops' => [422, null], 'cashier' => [422, null], 'combined' => [422, null],
         ]],
         'RD-06' => ['method' => 'GET', 'path' => '/data/products/check', 'json' => true, 'answers' => [
             'guest' => [401, null], 'owner' => [422, null], 'ops' => [422, null], 'cashier' => [403, null], 'combined' => [422, null],
@@ -365,6 +366,11 @@ final class CapabilityMatrixTest extends DatabaseTestCase
             'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [403, null], 'cashier' => [200, null], 'combined' => [200, null],
         ]],
         'RC-02' => ['method' => 'POST', 'path' => '/commands/cash_session.open', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [422, null], 'ops' => [403, null], 'cashier' => [422, null], 'combined' => [422, null],
+        ]],
+        // TASK-028: the Sale checkout for CAP-21, each holder in its own OPEN session, without recent
+        // authentication; an account with OPERATIONS_ADMIN only refused (AC-028-02).
+        'RC-01' => ['method' => 'POST', 'path' => '/commands/sale.checkout', 'json' => true, 'answers' => [
             'guest' => [401, null], 'owner' => [422, null], 'ops' => [403, null], 'cashier' => [422, null], 'combined' => [422, null],
         ]],
     ];

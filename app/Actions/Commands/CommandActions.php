@@ -35,6 +35,7 @@ use App\Actions\Inventory\ConfirmAdjustment;
 use App\Actions\Inventory\ConfirmManualIssue;
 use App\Actions\Inventory\ConfirmReceiving;
 use App\Actions\Inventory\ConfirmReversal;
+use App\Actions\Sales\CheckoutSale;
 use App\Domain\Commands\Operations;
 use LogicException;
 
@@ -100,6 +101,8 @@ final class CommandActions
         OpenCashSession::OPERATION => OpenCashSession::class,
         CreateCashRegister::OPERATION => CreateCashRegister::class,
         UpdateCashRegister::OPERATION => UpdateCashRegister::class,
+        // RC-01 (TASK-028).
+        CheckoutSale::OPERATION => CheckoutSale::class,
     ];
 
     /**

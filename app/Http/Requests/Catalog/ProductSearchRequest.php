@@ -4,9 +4,12 @@ namespace App\Http\Requests\Catalog;
 
 use App\Domain\Access\Capabilities;
 use App\Domain\Access\Capability;
+use App\Domain\Commands\CommandRefused;
+use App\Domain\Commands\ErrorCode;
 use App\Http\Requests\Commands\RefusingRequest;
 use App\Models\User;
 use App\Policies\ObjectScope;
+use App\Queries\Cash\OpenSessions;
 use App\Queries\Catalog\ProductSearch;
 use App\Queries\Catalog\SearchFilters;
 use Illuminate\Contracts\Validation\Validator;
@@ -27,7 +30,11 @@ use LogicException;
  * `receiving` (TASK-022, CAP-11) adds each product's version, which RC-07 expects as reviewed,
  * and so does the context `issue` (TASK-023, CAP-13) for RC-08, and the context `adjustment`
  * (TASK-024, CAP-16, the Owner's alone) for RC-09; the context `stock` (TASK-022, CAP-14) is the
- * product filter of RP-402. A cashier's restricted cell of CAP-14 opens neither.
+ * product filter of RP-402. A cashier's restricted cell of CAP-14 opens neither. The context `till`
+ * (TASK-028, CAP-21) is the cart's search of RC-01, whose rows carry the price revision that the
+ * Sale expects as reviewed and the stock that the viewer's cell of CAP-14 allows — the quantity alone
+ * for a cashier; it needs the actor's own OPEN cash session, else NO_OPEN_SESSION (BR-CAT-33). It is
+ * the only context that a cashier's narrow form of CAP-02, "in the till", opens.
  *
  * The client's sequence number travels in the header SEQUENCE_HEADER, which the
  * answer repeats, so that a page applies only the answer to its newest request
@@ -48,7 +55,7 @@ final class ProductSearchRequest extends RefusingRequest
      *
      * @var array<string, Capability>
      */
-    private const array PROVIDED = ['catalog' => Capability::Cap04, 'correction' => Capability::Cap07, 'receiving' => Capability::Cap11, 'issue' => Capability::Cap13, 'adjustment' => Capability::Cap16, 'stock' => Capability::Cap14];
+    private const array PROVIDED = ['catalog' => Capability::Cap04, 'correction' => Capability::Cap07, 'receiving' => Capability::Cap11, 'issue' => Capability::Cap13, 'adjustment' => Capability::Cap16, 'stock' => Capability::Cap14, 'till' => Capability::Cap21];
 
     /** The contexts whose rows carry each product's version, which their command expects as reviewed. */
     private const array VERSIONED = ['receiving', 'issue', 'adjustment'];
@@ -130,6 +137,21 @@ final class ProductSearchRequest extends RefusingRequest
                 }
             },
         ];
+    }
+
+    /**
+     * The till's search needs the actor's own OPEN cash session (INTERACTION_CONTRACTS section 3.1;
+     * BR-CAT-33): NO_OPEN_SESSION otherwise, once the request's shape passed.
+     *
+     * @throws CommandRefused NO_OPEN_SESSION
+     */
+    protected function passedValidation(): void
+    {
+        $user = $this->user();
+
+        if ($this->query('context') === 'till' && (! $user instanceof User || ! app(OpenSessions::class)->heldBy($user->id))) {
+            throw CommandRefused::of(ErrorCode::NoOpenSession);
+        }
     }
 
     /**

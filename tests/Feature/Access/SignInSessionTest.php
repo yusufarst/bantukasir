@@ -3,6 +3,7 @@
 namespace Tests\Feature\Access;
 
 use App\Models\User;
+use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\DB;
 use Tests\Harness\DatabaseTestCase;
 use Tests\Harness\Fixtures\TokoContoh;
@@ -237,10 +238,13 @@ final class SignInSessionTest extends DatabaseTestCase
      */
     private function counts(array $tables): array
     {
+        // One independent session reads every table, as snapshot() reads one, so that the test
+        // stays within the server's connections however many tables the schema holds (TASK-028).
+        $observer = $this->observer();
         $rows = [];
 
         foreach ($tables as $table) {
-            $rows[$table] = $this->snapshot($table, match ($table) {
+            $rows[$table] = self::rowsOf($observer, $table, match ($table) {
                 'password_reset_tokens' => 'email',
                 'command_results' => 'command_id',
                 'intent_reconciliations' => 'report_id',
@@ -250,8 +254,33 @@ final class SignInSessionTest extends DatabaseTestCase
                 'inventory_posting_block_reopenings' => 'block_id',
                 'issue_cost_allocation_projections' => 'allocation_id',
                 'cost_incomplete_mark_clearances' => 'mark_id',
+                'sale_correction_totals' => 'sale_id',
+                'sale_line_correction_totals' => 'sale_line_id',
                 default => 'id',
             });
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Every row of a table, in key order, a bytea column's stream read as its bytes, as
+     * DatabaseTestCase::snapshot() reads it.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private static function rowsOf(Connection $observer, string $table, string $key): array
+    {
+        $rows = [];
+
+        foreach ($observer->table($table)->orderBy($key)->get() as $row) {
+            $values = [];
+
+            foreach ((array) $row as $column => $value) {
+                $values[(string) $column] = is_resource($value) ? stream_get_contents($value) : $value;
+            }
+
+            $rows[] = $values;
         }
 
         return $rows;

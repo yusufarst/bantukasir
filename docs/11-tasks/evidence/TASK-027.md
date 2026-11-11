@@ -166,3 +166,7 @@ Round 2, verification, by `bk-reviewer-high`, on `5fe173f` with the package `r2`
 ## 10. Guard candidates (CE-50)
 
 `guard.sh --preview` before the final commit and `guard.sh` before every push: no candidate of the privacy and client-data check on any head of this branch; Gitleaks and the repository's secret scan found nothing.
+
+## 11. Merge
+
+Recorded by TASK-028 (EXECUTION_CONTEXT CE-50, CE-61). Pull request #38, its final head `c20dce567daa43381fb106e476464ce51d42eecc` after the fix cycle of F-12 and F-13, passed CI in run 42465126666, all four jobs. The tick squash-merged it under D-105 as `6e8165544ba87de3c68b647be00d0c09ec236156` on `develop` on 8 November 2026, after the automated review's window ended with the status TIMEOUT; the squash commit's tree equals the head's, its parent is `8118cbc` and its author the Owner's identity. CI on `develop` at the merge, run 42467200527, passed, all four jobs, and the tick verified the merge. TASK-027 is `DONE`.

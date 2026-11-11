@@ -78,7 +78,7 @@ final class RouteInventoryTest extends TestCase
         'POST /commands/user.issue_link' => ['commands.user.issue_link', 'RC-41', 'CAP-25,CAP-26', [...self::SIGNED_IN, 'capability:CAP-25,CAP-26', 'throttle:command', 'throttle:link_issue', 'password.confirm']],
         'POST /commands/user.revoke_link' => ['commands.user.revoke_link', 'RC-42', 'CAP-26', [...self::SIGNED_IN, 'capability:CAP-26', 'throttle:command', 'password.confirm']],
         // TASK-015: Product Search, the search-first check and RC-17 to RC-24.
-        'GET /data/products/search' => ['data.products.search', 'RD-01', 'CAP-02', [...self::SIGNED_IN, 'capability:CAP-02', 'throttle:search']],
+        'GET /data/products/search' => ['data.products.search', 'RD-01', 'CAP-02,CAP-21', [...self::SIGNED_IN, 'capability:CAP-02,CAP-21', 'throttle:search']],
         'GET /data/products/check' => ['data.products.check', 'RD-06', 'CAP-04', [...self::SIGNED_IN, 'capability:CAP-04', 'throttle:search']],
         'POST /commands/product.create' => ['commands.product.create', 'RC-17', 'CAP-04', [...self::SIGNED_IN, 'capability:CAP-04', 'throttle:command']],
         'POST /commands/product.update' => ['commands.product.update', 'RC-18', 'CAP-04', [...self::SIGNED_IN, 'capability:CAP-04', 'throttle:command']],
@@ -147,6 +147,8 @@ final class RouteInventoryTest extends TestCase
         'POST /commands/cash_register.update' => ['commands.cash_register.update', 'RC-34', 'CAP-31', [...self::SIGNED_IN, 'capability:CAP-31', 'throttle:command', 'password.confirm']],
         'GET /till/open-session' => ['till.open', 'RP-104', 'CAP-21', [...self::SIGNED_IN, 'capability:CAP-21', 'input.allow']],
         'POST /commands/cash_session.open' => ['commands.cash_session.open', 'RC-02', 'CAP-21', [...self::SIGNED_IN, 'capability:CAP-21', 'throttle:command']],
+        // TASK-028: RC-01, without recent authentication.
+        'POST /commands/sale.checkout' => ['commands.sale.checkout', 'RC-01', 'CAP-21', [...self::SIGNED_IN, 'capability:CAP-21', 'throttle:command']],
     ];
 
     public function test_the_routes_are_exactly_those_listed_each_with_its_gate(): void

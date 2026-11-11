@@ -233,13 +233,16 @@ final class ProductSearchTest extends DatabaseTestCase
         $observer = $this->observer();
         $refusals = static fn (): int => $observer->table('security_log_entries')->where('event_type', 'AUTHORIZATION_REFUSED')->count();
 
+        // `correction` opened with TASK-020, for CAP-07, and `adjustment` with TASK-024, for CAP-16,
+        // both the Owner's alone; `receiving` and `stock` with TASK-022, for CAP-11 and CAP-14, and
+        // `issue` with TASK-023, for CAP-13, which all three hold; `till` with TASK-028, for CAP-21,
+        // which Operations does not hold.
+        $closed = ['Hendra' => ['opening'], 'Agus' => ['till', 'adjustment', 'opening', 'correction'], 'Dewi' => ['adjustment', 'opening', 'correction']];
+
         foreach (['Hendra', 'Agus', 'Dewi'] as $person) {
             $this->as($person);
 
-            // `correction` opened with TASK-020, for CAP-07, and `adjustment` with TASK-024, for
-            // CAP-16, both the Owner's alone; `receiving` and `stock` with TASK-022, for CAP-11
-            // and CAP-14, and `issue` with TASK-023, for CAP-13, which all three hold.
-            foreach ($person === 'Hendra' ? ['till', 'opening'] : ['till', 'adjustment', 'opening', 'correction'] as $context) {
+            foreach ($closed[$person] as $context) {
                 $before = $refusals();
                 $this->getJson(self::SEARCH.'?context='.$context)->assertStatus(403)->assertJsonPath('code', 'FORBIDDEN');
                 $this->assertSame($before + 1, $refusals(), $context.' is recorded (SEC-LOG-03).');
@@ -249,19 +252,27 @@ final class ProductSearchTest extends DatabaseTestCase
                 $this->getJson(self::SEARCH.'?context='.$context.'&q=PEN')->assertOk();
             }
 
+            // The till's search needs the actor's own OPEN session, which none holds here (BR-CAT-33);
+            // CheckoutSaleTest reads it with one.
+            if ($person !== 'Agus') {
+                $this->getJson(self::SEARCH.'?context=till&q=PEN')->assertStatus(422)->assertJsonPath('code', 'NO_OPEN_SESSION');
+            }
+
             // A context no contract names, or none, is a refused parameter.
             foreach (['?context=labels', '?context=semua', '', '?q=PEN'] as $query) {
                 $this->getJson(self::SEARCH.$query)->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
             }
         }
 
-        // A cashier is refused at the gate of CAP-02 in every context today: the
-        // narrow form of the till is TASK-028's.
+        // A cashier holds CAP-02 only in its narrow form, "in the till" (TASK-028): every other
+        // context is refused, and the till needs the cashier's own OPEN session.
         $this->as('Rina');
 
-        foreach (['catalog', 'till', 'stock', 'issue', 'adjustment'] as $context) {
+        foreach (['catalog', 'stock', 'issue', 'adjustment', 'receiving', 'correction', 'opening'] as $context) {
             $this->getJson(self::SEARCH.'?context='.$context)->assertStatus(403)->assertJsonPath('code', 'FORBIDDEN');
         }
+
+        $this->getJson(self::SEARCH.'?context=till')->assertStatus(422)->assertJsonPath('code', 'NO_OPEN_SESSION');
 
         $this->getJson(self::CHECK.'?sku=PEN-01')->assertStatus(403);
 

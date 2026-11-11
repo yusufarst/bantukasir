@@ -55,6 +55,21 @@ final class BusinessProfiles
     }
 
     /**
+     * The current pointer's revision under the pointer's share lock (step 2.4: FOR SHARE), the lock
+     * of a command that freezes the shop identity in a snapshot, or null before the bootstrap: a
+     * change waits for it, and a snapshot that waited for a change reads the revision that the
+     * change committed (RACE-25).
+     */
+    public function lockCurrentShared(): ?int
+    {
+        self::requireTransaction();
+
+        $revision = DB::table('business_profile_current')->where('id', 1)->sharedLock()->value('revision_id');
+
+        return is_int($revision) ? $revision : null;
+    }
+
+    /**
      * Adds an immutable revision and returns its internal key.
      */
     public function insertRevision(ProfileFields $fields, ?int $logoFileId, int $actorUserId, string $actorDisplayName, ?int $commandId): int
