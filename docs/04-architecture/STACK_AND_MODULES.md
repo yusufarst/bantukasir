@@ -72,7 +72,7 @@ A module may read from the modules listed for it; writes across modules happen o
 | Audit, Commands, Media | Shared kernel |
 | Access | Audit, Commands, shared kernel |
 | Configuration | Media, Audit, Commands, Access (actor), shared kernel |
-| Catalog | Media, Audit, Commands, Access, shared kernel |
+| Catalog | Media, Audit, Commands, Access, Cash (read: whether the actor holds an OPEN session, for RD-01's context `till`, TASK-028), shared kernel |
 | Inventory | Catalog, Audit, Commands, Access, shared kernel |
 | Costing | Inventory (ledger, balances, posting blocks and reversals, read: the logical ledger of the replay, TASK-026), Catalog, Audit, Commands (RC-15, TASK-025), Access, shared kernel |
 | Cash | Configuration (snapshot revision), Audit, Commands, Access, shared kernel |

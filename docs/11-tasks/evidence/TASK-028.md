@@ -30,6 +30,9 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Guard | Local, on `4caba50` | 20:54, its end | not recorded | `PASS`, no candidate (the state's log) |
 | `composer validate`, `lint`, `analyse`, `test:unit` (913 tests); `npm ci`, `npm run lint`, `typecheck`, `test:unit` | Fast run 5, 42930945004 on `4caba50` | 11 November, 07:26 to 07:30 | about 3.5 min | `PASS` |
 | The 14 changed PostgreSQL and concurrency files | Same run | 11 November, 07:30 to 07:41 | 10 min 49 s | `PASS`: `CheckoutRaceTest` 10 tests, `CapabilityMatrixTest` 7, `RouteInventoryTest` 8, `SignInSessionTest` 10 (F-10 fixed), `CsvImportTest` 20, `ProductSearchTest` 16, `ConfirmAdjustmentTest` 9, `ConfirmManualIssueTest` 11, `IssueTablesTest` 11, `LedgerTablesTest` 19, `CheckoutRecordsTest` 6, `CheckoutReplayTest` 5, `CheckoutSaleTest` 12, `SalesTablesTest` 11; the whole job 17 min 44 s |
+| Guard | Local, on `b4c29dd` | 11 November, 07:48 to 07:51 | about 3 min | `PASS`, no candidate |
+| `composer validate`, `lint`, `analyse`, `test:unit` (913 tests); `npm ci`, `npm run lint`, `typecheck`, `test:unit` | Fast run 6, 42934749810 on `b4c29dd`, the reviewed head | 11 November, 07:55 to 07:59 | about 3.5 min | `PASS` |
+| The 14 changed PostgreSQL and concurrency files | Same run | 11 November, 07:59 to 08:11 | 11 min 32 s | `PASS`: `CheckoutRaceTest` 12 tests (F-11's two among them, 61 s), the 13 other files as in fast run 5; the whole job 18 min 38 s |
 | `composer test:postgres` whole, `test:concurrency` whole, the browser suite, the build, the image checks | The pull request's final head | — | — | `NOT_RUN` (CE-44, D-117) |
 
 ## 2. What was built (contract section 4.1)
@@ -50,7 +53,8 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Reading | Why |
 | --- | --- |
 | RC-01's result leads to RN-01 (`/`) until TASK-029 delivers RP-103 | EXC-52: a destination not yet delivered leads to the role's home (`CheckoutSale::LOCATION`) |
-| Without an OPEN session of their own the actor is refused `NO_OPEN_SESSION`, whatever session the cart names; with one, any other session — another user's, one that does not exist, their own once closed — is `SESSION_NOT_OPEN`. Another user's session is never locked, and answers as one that does not exist | RC-01, "the session is OPEN and the actor's own (`SESSION_NOT_OPEN`; `NO_OPEN_SESSION` when the actor has no OPEN session at all)"; SEC-AZ-03 |
+| The session the cart names is locked only when it is the actor's own. OPEN, the Sale goes on; the actor's own no longer OPEN is `SESSION_NOT_OPEN` (UXS-30), whether or not the actor holds another OPEN session. Another user's session, or one that does not exist, is never locked and answers as one that does not exist: `NO_OPEN_SESSION` when the actor holds no OPEN session, else `SESSION_NOT_OPEN` (review finding R-01) | RC-01's "`NO_OPEN_SESSION` when the actor has no OPEN session at all" read with TECHNICAL_RULES RACE-08 ("close first: the Sale is refused `SESSION_NOT_OPEN`") and ACCEPTANCE_SUITES SESSION05, where a checkout that finds its session CLOSED is refused `SESSION_NOT_OPEN` though its actor then holds none; SEC-AZ-03 |
+| The rules of each method's fields — the tendered amount required for CASH and refused for BANK_TRANSFER, a reference refused for CASH — are the FormRequest's validation; `PaymentMethods` holds the methods' names and amounts and asserts those shapes again, so a reviewed change of the seam touches both (review NOTE R-07) | ARC-30, ARC-32: one place defines the methods and their arithmetic; the field rules of a request are the FormRequest's (TR-VAL-01) |
 | BR-PAY-03's confirmation that the funds were received is the cashier's step in the till before the command (TASK-029, COPY_DECK `sales.payment.transfer_help`); RC-01's payload names no field for it, so the server records the transfer at its commit, never as pending | RC-01's payload table; BR-PAY-07 |
 | `customerName` is a field of `payment`, as RC-01's payload table lists it; it is kept on the Sale and its receipt, never in the audit's change data | RC-01; BR-AUD-02 names what the audit carries |
 | A BusinessProfile revision missing under the pointer's share lock is `VALIDATION_FAILED` without a field, before any fact | RC-01 lists G-23 under the locks without a code of its own; the bootstrap writes the first revision and no command removes one, so the case is unreachable in use |
@@ -69,14 +73,14 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | F-1 | PHP, `tsc` and ESLint do not run on this machine, so every static check is met first in CI (TASK-011 F-5) | As recorded since TASK-011; the fast runs cover them |
 | F-2 | For TASK-029: RC-01's location is RN-01 until RP-103 exists; the till's search and the cart's reviewed revisions are ready on RD-01 `till`; the confirmation of BR-PAY-03 is the till's step | TASK-029 switches `CheckoutSale::LOCATION` to RP-103 and builds the confirmation |
 | F-3 | For TASK-030: the close compares the activity version that RC-01 increments under the session's lock (RACE-08), and reads the PENDING or HELD `sale.checkout` receipts of the responsible user (G-27, D-088); `SessionCloseScenario` and `CheckoutSaleTest::closeSession` are stand-ins to replace by RC-03 | TASK-030 |
-| F-4 | For TASK-031: the receipt snapshot names its template `receipt.1` and holds every line as frozen text | TASK-031 renders `receipt.1` |
+| F-4 | For TASK-031: the receipt snapshot names its template `receipt.1` and holds every line as frozen text; RP-402 and RP-403 answer a SALE_ISSUE's `source` as null until RP-202 exists (EXC-52; review NOTE R-10) | TASK-031 renders `receipt.1` and adds the SALE_ISSUE source of RP-402 and RP-403 (UXI-224 → RP-202) |
 | F-5 | For TASK-033: `sale_line_correction_totals` has no writer yet — its rows come with a line's first refund or return (SCHEMA section 5.9) — and the replay does not yet reach returns linked to Sale issues | TASK-033 writes the line totals and extends the replay (contract section 12) |
-| F-6 | RD-01's request, of the Catalog module, reads the Cash module's `OpenSessions` for the till's context, as two Access controllers do since TASK-027 (TASK-027 R-10) | For the Owner with R-10 whether STACK_AND_MODULES 2.1 records it |
+| F-6 | RD-01's request, of the Catalog module, reads the Cash module's `OpenSessions` for the till's context. Unlike the Access controllers' read of TASK-027 R-10, which would make a cycle, this dependency is acyclic: neither Cash nor any module it depends on depends on Catalog (review finding R-02) | Recorded in STACK_AND_MODULES section 2.1, the Catalog row, in this change (STK-13); TASK-027 R-10 stays for the Owner |
 | F-7 | Fast run 1 failed `composer lint` at the check of the PostgreSQL parts: the private helper `session()` of `CheckoutRecordsTest` redeclared the public `session()` of Laravel's `TestCase`, a fatal error when PHPUnit loads the class | Fixed in checkpoint 2, test only: the helper is `rinasSession()` |
 | F-8 | Fast run 2 never reached a check: the runner's application container exited with code 100 at its first start, where `docker/app/entrypoint-local.sh` runs `composer install`; 100 is Composer's transport failure, and fast run 1 started the same environment from the same image definition | The runner's network, not a defect of this Task; the next checkpoint, this record, started fast run 3 |
 | F-9 | Fast run 3 failed PHPStan on the failure injection of `CheckoutReplayTest`: `TokoContoh::correctCost` declares only `DatabaseRefused`, so the catch of the injected failure read as dead and the loop's later statements as unreachable | Fixed in checkpoint 4, test only: the correction runs through the race harness's scenario, which declares no throw type, and the test asserts that its failure is the injected one at each step |
 | F-10 | Fast run 4 failed `SignInSessionTest::test_signing_out_and_a_session_ending_change_nothing_but_the_sign_in_session_and_the_security_log`: it compares every table of the schema before and after, and `snapshot()` opens an observer for each table, so the six new tables took the test past the server's connection slots (`remaining connection slots are reserved for roles with the SUPERUSER attribute`) | Fixed in checkpoint 5, test only: one observer reads every table, as `snapshot()` reads one, its bytea streams read as bytes; no assertion changed. Fast run 5 passed it |
-| F-11 | INTERACTION_CONTRACTS RC-01 names RACE-04 and RACE-24 among its tests, which EXECUTION_CONTEXT section 10 makes an obligation of the command, and `CheckoutRaceTest` covered neither | Added before the review, in checkpoint 6, test only: a role change of the actor against a running Sale and a posting block against a Sale, each in both orders |
+| F-11 | INTERACTION_CONTRACTS RC-01 names RACE-04 and RACE-24 among its tests, which EXECUTION_CONTEXT section 10 makes an obligation of the command, and `CheckoutRaceTest` covered neither | Added before the review, in checkpoint 6, test only: a role change of the actor against a running Sale and a posting block against a Sale, each in both orders. Fast run 6 passed them |
 
 ## 5. Tests (contract section 7)
 
@@ -94,17 +98,17 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 
 | Criterion | Proof | Result |
 | --- | --- | --- |
-| AC-028-01 One Sale with its lines, Payment, issues, balances, allocations, receipt snapshot, audit event and result per intent; RACE-01 and RACE-02; a failure after every write step leaves nothing | `CheckoutSaleTest` (the first test, the envelope, the 17 steps), `CheckoutRaceTest` (RACE-01, RACE-02) | See section 1 |
-| AC-028-02 The actor's own eligible OPEN session for every role and method; OPERATIONS_ADMIN alone refused; a product named twice or more than 200 lines refused before any lock; the activity version + 1 | `CheckoutSaleTest` (the roles, the session, the fields), `CheckoutRaceTest` (RACE-08) | See section 1 |
-| AC-028-03 Rp75.000 with Rp100.000 tendered gives Rp25.000 change and Rp75.000 applied; Rp70.000 `TENDER_INSUFFICIENT`; BANK_TRANSFER the exact total, no pending state; mixed, partial and unknown methods, STATIC_QRIS included, refused; a tampered price refused | `PaymentMethodsTest`, `CheckoutSaleTest` (the payment) | See section 1 |
-| AC-028-04 Each definite rejection writes nothing | `CheckoutSaleTest` (the session, the rejections in RC-01's order), `CheckoutRaceTest` | See section 1 |
-| AC-028-05 FIN01: sales Rp60.000, cost of goods sold Rp36.000, gross profit Rp24.000; each line's allocation, or UNKNOWN, in the Sale's transaction | `CheckoutRecordsTest` (L-15, UNKNOWN), `CheckoutSaleTest` (the first test, the 17 steps) | See section 1 |
-| AC-028-06 Sales of different sessions never wait for a number; unique, in allocation order, a gap after a rollback, the date part across midnight | `CheckoutRaceTest` (numbering), `CheckoutSaleTest` (the gap of 17), `CheckoutRecordsTest` (midnight), `SalesTablesTest` | See section 1 |
-| AC-028-07 RACE-03, RACE-23, RACE-25; a cart line before a barcode move keeps its product (RACE-18) | `CheckoutRaceTest`; `CheckoutRecordsTest` in sequence | See section 1 |
-| AC-028-08 No provider record, controller, callback, webhook or asynchronous payment state (PAYEXT01, by review) | `CheckoutSaleTest::test_the_payment_boundary_holds_no_provider_record_route_callback_or_asynchronous_state`; the review of section 10 | See sections 1 and 10 |
-| AC-028-09 The constraint, deferred and privilege families for the six tables and the sequence | `SalesTablesTest`, `PrivilegeMatrixTest` | See section 1 |
-| AC-028-10 The replay reaches Sale issues: KNOWN Rp20.000 published, the fact UNKNOWN, 6 worth Rp30.000; the same twice; a failure during publication changes nothing; the Sale and the session unchanged | `CheckoutReplayTest` | See section 1 |
-| AC-028-11 The sell-out ends its pool; the movement cap counts Sale issues; a reversal refused `REPLAY_REJECTED` for a later Sale (G-07); RACE-11 | `CheckoutReplayTest`, `CheckoutRecordsTest`, `CheckoutRaceTest` (RACE-11) | See section 1 |
+| AC-028-01 One Sale with its lines, Payment, issues, balances, allocations, receipt snapshot, audit event and result per intent; RACE-01 and RACE-02; a failure after every write step leaves nothing | `CheckoutSaleTest` (the first test, the envelope, the 17 steps), `CheckoutRaceTest` (RACE-01, RACE-02) | `PASS`, fast run 6 |
+| AC-028-02 The actor's own eligible OPEN session for every role and method; OPERATIONS_ADMIN alone refused; a product named twice or more than 200 lines refused before any lock; the activity version + 1 | `CheckoutSaleTest` (the roles, the session, the fields), `CheckoutRaceTest` (RACE-08) | `PASS`, fast run 6 |
+| AC-028-03 Rp75.000 with Rp100.000 tendered gives Rp25.000 change and Rp75.000 applied; Rp70.000 `TENDER_INSUFFICIENT`; BANK_TRANSFER the exact total, no pending state; mixed, partial and unknown methods, STATIC_QRIS included, refused; a tampered price refused | `PaymentMethodsTest`, `CheckoutSaleTest` (the payment) | `PASS`, fast run 6 |
+| AC-028-04 Each definite rejection writes nothing | `CheckoutSaleTest` (the session, the rejections in RC-01's order), `CheckoutRaceTest` | `PASS`, fast run 6 |
+| AC-028-05 FIN01: sales Rp60.000, cost of goods sold Rp36.000, gross profit Rp24.000; each line's allocation, or UNKNOWN, in the Sale's transaction | `CheckoutRecordsTest` (L-15, UNKNOWN), `CheckoutSaleTest` (the first test, the 17 steps) | `PASS`, fast run 6 |
+| AC-028-06 Sales of different sessions never wait for a number; unique, in allocation order, a gap after a rollback, the date part across midnight | `CheckoutRaceTest` (numbering), `CheckoutSaleTest` (the gap of 17), `CheckoutRecordsTest` (midnight), `SalesTablesTest` | `PASS`, fast run 6 |
+| AC-028-07 RACE-03, RACE-23, RACE-25; a cart line before a barcode move keeps its product (RACE-18) | `CheckoutRaceTest`; `CheckoutRecordsTest` in sequence | `PASS`, fast run 6 |
+| AC-028-08 No provider record, controller, callback, webhook or asynchronous payment state (PAYEXT01, by review) | `CheckoutSaleTest::test_the_payment_boundary_holds_no_provider_record_route_callback_or_asynchronous_state`; the review of section 10 | `PASS`, fast run 6 and the review (R-12) |
+| AC-028-09 The constraint, deferred and privilege families for the six tables and the sequence | `SalesTablesTest`, `PrivilegeMatrixTest` | `PASS`, fast run 6 |
+| AC-028-10 The replay reaches Sale issues: KNOWN Rp20.000 published, the fact UNKNOWN, 6 worth Rp30.000; the same twice; a failure during publication changes nothing; the Sale and the session unchanged | `CheckoutReplayTest` | `PASS`, fast run 6 |
+| AC-028-11 The sell-out ends its pool; the movement cap counts Sale issues; a reversal refused `REPLAY_REJECTED` for a later Sale (G-07); RACE-11 | `CheckoutReplayTest`, `CheckoutRecordsTest`, `CheckoutRaceTest` (RACE-11) | `PASS`, fast run 6 |
 
 ## 7. The ADR-008 replay cases with Sale issues (contract section 8)
 
@@ -123,15 +127,15 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 
 | Dimension | Result | Reason |
 | --- | --- | --- |
-| Business | See section 1 | AC-028-01 to AC-028-11 by the L1 to L4 tests (sections 5 and 6); REQ-SALE-01 to REQ-SALE-10, REQ-PAY-01 to REQ-PAY-05, REQ-COST-10, REQ-CASH-04, REQ-CASH-13, REQ-DOC-01 |
+| Business | `PASS` | AC-028-01 to AC-028-11 by the L1 to L4 tests of fast run 6 (sections 5 and 6); REQ-SALE-01 to REQ-SALE-10, REQ-PAY-01 to REQ-PAY-05, REQ-COST-10, REQ-CASH-04, REQ-CASH-13, REQ-DOC-01 |
 | UI and UX | `N/A` | No page or control (contract section 4.2); the till is TASK-029's |
-| Backend | See section 1 | FormRequest allowlist, CAP-21 at the route and in the transaction, the session by object scope, the guards under the locks, the result's presentation to its cashier and the Owner only, the L4 tests |
-| Database | See section 1 | Six tables and a sequence with the constraint, deferred, presence, privilege, retention and numbering families (`SalesTablesTest`); a forward and additive migration with its class, duration, lock impact and verification (EXC-46; its rehearsal on the benchmark dataset waits for TASK-043) |
-| Security | See section 1 | The capability matrix and route inventory, the refusals of OPERATIONS_ADMIN and of another user's session, the channel allowlists per role, no secret (the guard), no cost on the cashier's channels |
-| Data integrity | See section 1 | Append-only facts, one transaction with its audit and result, identity and idempotency, the races of section 5 and the failure after each write step |
-| Performance | See section 1 | At most 200 lines; one statement per lock step and per write; no counter row or lock for the number (SCH-25); the budgets are measured at TASK-048 |
+| Backend | `PASS` | FormRequest allowlist, CAP-21 at the route and in the transaction, the session by object scope, the guards under the locks, the result presented to its cashier and to the Owner and to nobody else, the L4 tests |
+| Database | `PASS` for the families run; `test:postgres` whole on the final head | Six tables and a sequence with the constraint, deferred, presence, privilege, retention and numbering families (`SalesTablesTest`); a forward and additive migration with its class, duration, lock impact and verification (EXC-46; its rehearsal on the benchmark dataset waits for TASK-043) |
+| Security | `PASS` | The capability matrix and route inventory, the refusals of OPERATIONS_ADMIN and of another user's session, the channel allowlists per role, no secret (the guard), no cost on the cashier's channels |
+| Data integrity | `PASS` | Append-only facts, one transaction with its audit and result, identity and idempotency, the races of section 5 and the failure after each write step |
+| Performance | `PASS` | At most 200 lines; one statement per lock step and per write; no counter row or lock for the number (SCH-25); the budgets are measured at TASK-048 |
 | Operations | `PASS` | The four fact tables in the manifest's counts, all six and the sequence in the backup role's reads (section 9); no runbook or status change |
-| Verification | See section 1 | Self-review and the class-A review (section 10); the fast runs of section 1; the whole command contract on the pull request's final head |
+| Verification | `BLOCKED` until the final head | Self-review and the class-A review (section 10); the fast runs of section 1; the whole command contract and the image checks are `NOT_RUN` until the pull request's final head (D-117) |
 
 ## 9. Backup impact (EXC-47)
 
@@ -139,7 +143,26 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 
 ## 10. Review (EXECUTION_CONTEXT section 12, CE-40)
 
-To be recorded.
+Self-review before the review, on `b4c29dd`: the migration and the privilege matrix, the Action and the domain classes of the Sales, Cash, Catalog, Inventory, Costing and Configuration modules, the request, the controller and the routes, RD-01's context, the replay, the fixtures and the tests, against the contract, RC-01, SCHEMA section 5.9, TECHNICAL_RULES section 7 and DC-01. RACE-04 and RACE-24, which RC-01 names, were missing (F-11, fixed in checkpoint 6); a docblock of `LedgerTablesTest` that checkpoint 1 had separated from its method was put back; no other defect found.
+
+Round 1, class A, adversarial, by `bk-reviewer-max`, on the tree `6e120d4` (HEAD `b4c29dd` with this file's update) with the package `r1` (`review-pack.sh --check`: `UNCHANGED`). Verdict `PASS`, no MUST-FIX, so no targeted verification (CE-40). The production code held under attack: the lock order and modes of TR §7.2 and SCHEMA section 7, with no deadlock path; the re-reads under READ COMMITTED; the checks in RC-01's order, the number at step 8, no number taken by a refusal; exact money; the migration against SCHEMA sections 5.9 and 10; the replay and the reversal allowlist; RD-01's gate.
+
+| ID | Severity | Finding | Outcome |
+| --- | --- | --- | --- |
+| R-01 | SHOULD-FIX | The reading of `NO_OPEN_SESSION` and `SESSION_NOT_OPEN` in section 3 did not say what the code does: the actor's own session no longer OPEN is `SESSION_NOT_OPEN`, also when the actor then holds no OPEN session (RACE-08, SESSION05) | Fixed: the reading rewritten, with its sources; no code change |
+| R-02 | SHOULD-FIX | RD-01's request, of the Catalog module, reads the Cash module, which STK-13 requires STACK_AND_MODULES section 2.1 to record; the dependency is acyclic | Fixed: the Catalog row of section 2.1; F-6 updated |
+| R-03 | SHOULD-FIX | Every acceptance criterion and seven dimensions of the Definition of Done read "See section 1", no status | Fixed: each criterion and dimension with its status and the run it rests on (sections 6 and 8) |
+| R-04 | SHOULD-FIX | The Owner's answer of RD-01's context `till` was never read against its allowlist | Fixed, test only: the Owner in a session of his own in `CheckoutSaleTest::test_the_till_search_needs_the_cashiers_own_open_session_and_gives_what_checkout_expects` |
+| R-05 | SHOULD-FIX | No test of `present()` for the Owner's status check of a cashier's Sale, nor of its null for an actor who no longer holds CAP-21 | Fixed, test only: `CheckoutSaleTest::test_a_status_check_answers_the_sale_to_the_owner_and_no_result_once_its_cashier_holds_no_cap_21` |
+| R-06 | NOTE | The stand-in close locked FOR NO KEY UPDATE, while SCHEMA section 7 gives a close FOR UPDATE | Fixed, harness only: `SessionCloseScenario` takes FOR UPDATE; both outcomes of RACE-08 stand either way |
+| R-07 | NOTE | The field rules of each method are the FormRequest's, the names and amounts `PaymentMethods`'s | Recorded as a reading in section 3 |
+| R-08 | NOTE | ROUTE_CONTRACTS RD-01's gate reads "CAP-02 and the capability of the context"; the route carries `capability:CAP-02,CAP-21` and the FormRequest the context's capability, to the same effect | For the next change control of ROUTE_CONTRACTS |
+| R-09 | NOTE | Of RACE-04's four cases only the role change is raced | Recorded: the role change proves the actor guard's lock in both orders, the lock a deactivation takes too; RACE-25 is the configuration change; the onboarding freeze is raced once TASK-035 starts onboarding |
+| R-10 | NOTE | RP-402 and RP-403 answer a SALE_ISSUE's source as null (EXC-52) | Added to F-4, for TASK-031 |
+| R-11 | NOTE | No test sent RC-10 for a real SALE_ISSUE | Fixed, test only: `CheckoutReplayTest`, `NOT_FOUND` with nothing written |
+| R-12 | NOTE | PAYEXT01 by review: no provider, gateway, adapter or stub; no provider, fee, status or external-key column; one new route; no callback, webhook, polling, queue, pending state or status of a Sale | The review's confirmation of AC-028-08 |
+
+The fixes change tests, the race harness and documents only, no production code (CE-40, CE-45); fast run 7 runs the files they touch (section 1).
 
 ## 11. Guard candidates (CE-50)
 

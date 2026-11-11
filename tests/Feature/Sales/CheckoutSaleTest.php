@@ -21,6 +21,7 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
 use Symfony\Component\HttpFoundation\Response;
+use Tests\Harness\Access\UserCommandScenario;
 use Tests\Harness\Channels\ChannelInspector;
 use Tests\Harness\Commands\CommandRequests;
 use Tests\Harness\Commands\DeadlockPoints;
@@ -573,6 +574,39 @@ final class CheckoutSaleTest extends DatabaseTestCase
         $this->assertSame([1, ['7.000', 2]], [$this->watcher()->table('sales')->count(), $this->balanceOf($this->pen)]);
     }
 
+    public function test_a_status_check_answers_the_sale_to_the_owner_and_no_result_once_its_cashier_holds_no_cap_21(): void
+    {
+        // ADR-007 section 3; INTERACTION_CONTRACTS sections 2.1 and 2.5; CAP-21 own, CAP-22, CAP-34;
+        // SEC-AZ-06 (review finding R-05). The Owner's status check of a cashier's committed checkout,
+        // as before an assisted close, answers it with its number. Once the cashier holds no CAP-21 — a
+        // role change, which also ends her sign-in sessions — her own check answers COMMITTED with no
+        // result.
+        TokoContoh::stock($this->pen, '10', '10000');
+        $session = TokoContoh::openSession('Rina', TokoContoh::register('LACI-1', 'Laci 1'));
+        $this->as('Rina');
+        $envelope = $this->envelopeOf($session, [self::line($this->pen, '1')], self::cash('7500'));
+        $committed = $this->checkout($envelope)->assertStatus(201);
+        $sale = self::number($committed->json('result.id'));
+        $commandId = self::number($committed->json('commandId'));
+        $number = self::text($committed->json('result.number'));
+
+        $this->as('Hendra');
+        $resolved = $this->check($envelope)->assertOk()->assertJsonPath('outcome', 'COMMITTED')->assertJsonPath('commandId', $commandId)->assertJsonPath('result.id', $sale)->assertJsonPath('result.number', $number)->assertJsonPath('result.location', '/');
+        $this->assertJsonChannel($resolved, 'commands.resolve.number', 'owner');
+
+        $rina = $this->people['Rina'];
+        $changed = (new UserCommandScenario)->run([
+            'operation' => 'user.update', 'actor' => $this->people['Hendra']['id'], 'intent' => (string) Str::uuid(), 'key' => (string) Str::uuid(), 'epoch' => $this->epoch,
+            'expected' => ['userVersion' => self::number($this->watcher()->table('users')->where('id', $rina['id'])->value('version'))],
+            'payload' => ['userId' => $rina['id'], 'displayName' => 'Rina', 'email' => $rina['email'], 'roles' => ['operationsAdmin']],
+        ]);
+        $this->assertSame('COMMITTED', $changed['outcome'] ?? null);
+
+        $this->browse($this->signInBrowser($rina['email'], $rina['password']));
+        $this->check($envelope)->assertOk()->assertJsonPath('outcome', 'COMMITTED')->assertJsonPath('commandId', $commandId)->assertJsonPath('result', null);
+        $this->assertSame(1, $this->watcher()->table('sales')->count());
+    }
+
     public function test_a_failure_after_every_write_step_leaves_no_fact_and_the_numbers_taken_leave_a_gap(): void
     {
         // AC-028-01, AC-028-06; TS-21; SCH-21, TR-TX-10. Two lines of two products write 17 steps: the
@@ -664,6 +698,12 @@ final class CheckoutSaleTest extends DatabaseTestCase
         TokoContoh::openSession('Dewi', TokoContoh::register('LACI-2', 'Laci 2'));
         $this->as('Dewi');
         $this->assertJsonChannel($this->getJson('/data/products/search?context=till&q=PEN')->assertOk()->assertJsonPath('rows.0.stock.onHand', '6'), 'data.products.search.till', 'combined');
+
+        // So does the Owner, who sells in a session of his own too (CAP-21 own, CAP-14 full; review
+        // finding R-04).
+        TokoContoh::openSession('Hendra', TokoContoh::register('LACI-3', 'Laci 3'));
+        $this->as('Hendra');
+        $this->assertJsonChannel($this->getJson('/data/products/search?context=till&q=PEN')->assertOk()->assertJsonPath('rows.0.stock.onHand', '6'), 'data.products.search.till', 'owner');
 
         // Once her session closes, the till's search is refused again.
         $this->closeSession($session);

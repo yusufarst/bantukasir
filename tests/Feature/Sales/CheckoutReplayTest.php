@@ -153,15 +153,17 @@ final class CheckoutReplayTest extends DatabaseTestCase
     {
         // AC-028-11; G-07; BR-INV-37; COSTING section 8, the invalid history; TASK-026: 5 in, 4 sold, 10
         // in, 11 on hand. Reversing the first receipt would leave the Sale without stock at its point
-        // of the logical ledger: REPLAY_REJECTED, nothing written and no mark. The second receipt, after
-        // the Sale, reverses.
+        // of the logical ledger: REPLAY_REJECTED, nothing written and no mark. The Sale's own issue is
+        // no source of a reversal (BR-INV-36): NOT_FOUND, nothing written (review finding R-11). The
+        // second receipt, after the Sale, reverses.
         $book = TokoContoh::product('BUKU-01', ['categoryId' => $this->category, 'name' => 'Buku Tulis', 'sellingPrice' => '10000']);
         $first = TokoContoh::stock($book, '5', '5000');
-        TokoContoh::sell('Rina', $this->session, [['productId' => $book, 'quantity' => '4']]);
+        $sale = TokoContoh::sell('Rina', $this->session, [['productId' => $book, 'quantity' => '4']]);
         $second = TokoContoh::stock($book, '10', '20000');
         $before = [$this->saleRows(), $this->allocationsOf($book), $this->valuationOf($book), $this->watcher()->table('stock_movements')->count()];
 
         $this->assertSame(['refused' => 'REPLAY_REJECTED'], $this->reversal(TokoContoh::movementOf($first)));
+        $this->assertSame(['refused' => 'NOT_FOUND'], $this->reversal(TokoContoh::saleIssueOf($sale)));
         $this->assertSame($before, [$this->saleRows(), $this->allocationsOf($book), $this->valuationOf($book), $this->watcher()->table('stock_movements')->count()]);
         $this->assertSame(0, $this->watcher()->table('cost_incomplete_marks')->count());
 
