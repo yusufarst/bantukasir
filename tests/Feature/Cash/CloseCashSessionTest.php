@@ -89,7 +89,7 @@ final class CloseCashSessionTest extends DatabaseTestCase
             ['CLOSED', 'OWN', $rina, 'Rina', null, 2, 118000, 120000, -2000, $commandId],
             [$close['session_status'], $close['close_kind'], $close['close_actor_user_id'], $close['close_actor_display_name'], $close['close_reason'], $close['activity_version_at_close'], $close['physical_cash'], $close['expected_cash'], $close['variance'], $close['command_id']],
         );
-        $this->assertSame('2026-11-11T10:30:00.500000', $this->utcOf('cash_session_closes', 'closed_at', $session));
+        $this->assertSame(['2026-11-11T10:30:00.500000', '2026-11-11T02:00:00.000000', '2026-11-11T10:30:00.500000'], $this->instantsOf($session));
 
         // The report of DC-02: the frozen identity, names and register, the totals per method, the
         // drawer-funded refunds apart — none before TASK-034 — and the keys of its sources.
@@ -103,7 +103,6 @@ final class CloseCashSessionTest extends DatabaseTestCase
                 $report['cash_applied'], $report['bank_transfer_applied'], $report['drawer_refund_total'], $report['close_reason'], $report['notes'],
             ],
         );
-        $this->assertSame(['2026-11-11T02:00:00.000000', '2026-11-11T10:30:00.500000'], [$this->utcOf('cash_session_reports', 'opened_at', $session), $this->utcOf('cash_session_reports', 'closed_at', $session)]);
         $payments = $this->watcher()->table('payments')->whereIn('sale_id', [$cash, $transfer])->orderBy('sale_id')->pluck('id')->all();
         $this->assertSame([], self::dataOf($report['drawer_refunds']));
         $this->assertSame(['drawerRefundIds' => [], 'paymentIds' => $payments, 'saleIds' => [$cash, $transfer]], self::dataOf($report['source_ids']));
@@ -475,10 +474,20 @@ final class CloseCashSessionTest extends DatabaseTestCase
         return self::number($this->watcher()->table('business_profile_current')->where('id', 1)->value('revision_id'));
     }
 
-    /** An instant of a session's row, in UTC to the microsecond. */
-    private function utcOf(string $table, string $column, int $session): string
+    /**
+     * The close's time, and the report's opened and closed times, of a session, in UTC to the microsecond.
+     *
+     * @return list<mixed>
+     */
+    private function instantsOf(int $session): array
     {
-        return self::text($this->watcher()->scalar(sprintf("select to_char(%s at time zone 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US') from %s where session_id = ?", $column, $table), [$session]));
+        return array_values((array) $this->watcher()->selectOne(<<<'SQL'
+            select to_char(c.closed_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US') as closed_at,
+                to_char(r.opened_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US') as report_opened_at,
+                to_char(r.closed_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US') as report_closed_at
+            from cash_session_closes c join cash_session_reports r on r.session_id = c.session_id
+            where c.session_id = ?
+            SQL, [$session]));
     }
 
     /**

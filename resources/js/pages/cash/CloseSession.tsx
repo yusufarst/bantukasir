@@ -102,7 +102,9 @@ function CloseFlow({ title, session, preview }: CloseSessionProps & { title: str
     // What the page shows is what is sent while a frozen close is out (INTERACTION_CONTRACTS section 1.3).
     const frozen = busy || committed || throttled || phase.kind === 'recent_auth' || phase.kind === 'uncertain' || phase.kind === 'held' || phase.kind === 'reload';
     const recount = refusal?.code === RECOUNT_REQUIRED;
-    const closedMeanwhile = refusal?.code === SESSION_NOT_OPEN || preview === null;
+    // A preview of another session — this one closed and a new one opened elsewhere before a reload
+    // of the preview — is never counted under this session's header: this one is no longer OPEN.
+    const closedMeanwhile = refusal?.code === SESSION_NOT_OPEN || preview === null || (preview !== undefined && preview.sessionId !== session.id);
     const amountRefused = refusal?.code === VALIDATION_FAILED ? cashFieldMessage(refusal.fields['payload.physicalCash']) : undefined;
     // BR-CASH-16: an unresolved checkout of this browser or of the server keeps the count closed.
     const checkoutUnresolved = blockingRequest(unresolved.union, CHECKOUT_FAMILY.operation, CHECKOUT_FAMILY.family) !== null || (preview?.unresolvedCheckouts ?? 0) > 0;
