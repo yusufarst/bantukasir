@@ -541,9 +541,29 @@ test('"Bayar" waits for the scans still out, so that the payment shows every sca
     });
 
     // F8 while the second scan's lookup is out: the till stays until it is applied, then the payment shows both.
+    // A held unknown code first: "Bayar" waits for it, and since it adds nothing the till stays with its notice (review R-13).
+    const unknown = gate();
+
+    await page.route('**/data/products/search*', async (route) => {
+        if (new URL(route.request().url()).searchParams.get('q') === '0000000000000') {
+            await unknown.wait;
+        }
+
+        await route.fallback();
+    });
+    await scan(page, '0000000000000');
+    await page.keyboard.press('F8');
+    await expect(page.getByRole('heading', { level: 1, name: 'Pembayaran' })).toHaveCount(0);
+    unknown.open();
+    await expect(page.getByText('Kode tidak dikenal', { exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Kasir' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Pembayaran' })).toHaveCount(0);
+    await searchField(page).fill('');
+
     await scan(page, paper.code);
     await page.keyboard.press('F8');
     await expect(page.getByRole('heading', { level: 1, name: 'Kasir' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Pembayaran' })).toHaveCount(0);
     await expect(lines(page)).toHaveCount(1);
     lookup.open();
     await expect(page.getByRole('heading', { level: 1, name: 'Pembayaran' })).toBeVisible();

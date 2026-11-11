@@ -13,6 +13,7 @@ import { CartLine, CartRegion, ProductResult, ProductResults, QuantityStepper, S
 import { AppShell, type ShellLayout } from '@/layouts/AppShell';
 import { PageContainer } from '@/layouts/Page';
 import { takeSavedNote } from '@/lib/access/users';
+import { throttledBody } from '@/lib/authAnswer';
 import { ProductThumb } from '@/lib/catalog/Parts';
 import { catalogFieldMessage, type ProductRow } from '@/lib/catalog/products';
 import { useScanCapture } from '@/lib/catalog/scanCapture';
@@ -427,8 +428,12 @@ function TillView({
 
     /** A scan's answer, in the order of the scans (BR-CAT-30). */
     applyRef.current = ({ code, answer }: ScanAnswer, scan: number): void => {
-        // The code goes back to the field when no newer scan or typing took it (BR-CAT-31).
+        // The code goes back to the field when no newer scan or typing took it (BR-CAT-31). A scan that adds
+        // nothing keeps the till open, so that its notice is seen: "Bayar" pressed while it was out waits for
+        // another press (review R-13).
         const keep = (): void => {
+            setPayAfter(false);
+
             if (queue.isLatest(scan) && searchValue.current === '') {
                 setSearch(code);
             }
@@ -988,7 +993,7 @@ function PaymentView({
                     variant={'quiet'}
                     icon={'arrow-left'}
                     shortcut={'back'}
-                    disabledReason={backBlocked ? t('sales.payment.back_disabled') : undefined}
+                    disabledReason={phase.kind === 'throttled' ? throttledBody(phase.seconds) : backBlocked ? t('sales.payment.back_disabled') : undefined}
                     onClick={onBack}
                 />
                 <div className={'bk-pagehead'}>
