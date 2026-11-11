@@ -103,10 +103,24 @@ function ReceiptPage({ title, receipt, issuer: shop }: ReceiptProps & { title: s
         searchField.current?.focus();
     }, []);
 
-    /** A scan or a search here starts the next sale on the till with it (UXI-089; UXA-11). */
+    const leaving = useRef(false);
+
+    /**
+     * A scan or a search here starts the next sale on the till with it (UXI-089; UXA-11). The till opens
+     * once: a scan made before it opens is held after the others and taken with them (review R-05).
+     */
     const nextSale = (code: string): void => {
         holdScan(code);
-        router.visit(TILL_PAGE);
+        setSearch('');
+
+        if (!leaving.current) {
+            leaving.current = true;
+            router.visit(TILL_PAGE, {
+                onFinish: () => {
+                    leaving.current = false;
+                },
+            });
+        }
     };
 
     const choose = (next: ReceiptSize): void => {

@@ -72,4 +72,33 @@ describe('the scan queue of the till', () => {
 
         expect(applied).toEqual(['B']);
     });
+
+    it('counts the scans still to apply, so that the till waits for them before the payment (review R-01)', async () => {
+        const counts: number[] = [];
+        const queue = createScanQueue<string>(() => undefined, (count) => counts.push(count));
+        const first = pending();
+        const second = pending();
+
+        queue.enqueue(first.promise);
+        queue.enqueue(second.promise);
+        expect(queue.pending()).toBe(2);
+
+        second.resolve('B');
+        await settle();
+        expect(queue.pending()).toBe(2);
+
+        first.resolve('A');
+        await settle();
+        expect(queue.pending()).toBe(0);
+        expect(counts[counts.length - 1]).toBe(0);
+
+        // A reset forgets the scans still out: none is counted, and none is applied later.
+        const late = pending();
+
+        queue.enqueue(late.promise);
+        expect(queue.pending()).toBe(1);
+        queue.reset();
+        expect(queue.pending()).toBe(0);
+        expect(counts[counts.length - 1]).toBe(0);
+    });
 });

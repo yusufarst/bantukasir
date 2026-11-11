@@ -140,6 +140,56 @@ function checkouts(page: Page): string[] {
     return sent;
 }
 
+/** A gate that a route waits on until the test opens it. */
+function gate(): { readonly wait: Promise<void>; readonly open: () => void } {
+    let open: () => void = () => undefined;
+    const wait = new Promise<void>((done) => {
+        open = done;
+    });
+
+    return { wait, open };
+}
+
+/** An amount in rupiah as the pages show it: "Rp12.500". */
+function rupiah(amount: bigint): string {
+    return `Rp${amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
+}
+
+/** The next checkout reaches the server, which commits it, and its answer is lost (TS-22). */
+async function loseNextCheckout(page: Page): Promise<void> {
+    await page.route(
+        CHECKOUT,
+        async (route) => {
+            await route.fetch();
+            await route.abort();
+        },
+        { times: 1 },
+    );
+}
+
+/** The next checkout reaches the server and is answered HELD (UXS-15, TS-22). */
+async function holdNextCheckout(page: Page): Promise<void> {
+    await page.route(
+        CHECKOUT,
+        async (route) => {
+            await route.fetch();
+            await route.fulfill({ status: 409, json: refusal('IDEMPOTENCY_CONFLICT', 'HELD') });
+        },
+        { times: 1 },
+    );
+}
+
+/** From an empty till to the payment screen with one product, the cash entered exactly. */
+async function payOne(page: Page, product: TillProduct): Promise<void> {
+    await page.goto(TILL);
+    await scan(page, product.code);
+    await expect(quantity(page, product)).toHaveValue('1');
+    await page.keyboard.press('F8');
+    await expect(page.getByRole('heading', { level: 1, name: 'Pembayaran' })).toBeVisible();
+    await page.keyboard.press('Alt+U');
+    await expect(finalAction(page)).not.toHaveAttribute('aria-disabled', 'true');
+}
+
 /** Waits until no transition of a finite length runs, so that axe reads the colours at rest (D-124). */
 async function settled(page: Page): Promise<void> {
     await page.waitForFunction(
@@ -315,12 +365,28 @@ test('a sale paid in cash takes three actions by keyboard, and its receipt start
     await page.getByRole('radio', { name: 'A4' }).click();
     await expect(paper58).toContainText('Nota Penjualan');
 
-    // The next sale with one scan on the receipt page, and nothing else (UXI-089; USER_TASKS section 5).
+    // The next sale with one scan on the receipt page, and nothing else (UXI-089; USER_TASKS section 5); a
+    // second scan before the till opens is added after the first, never in its place (review R-05).
     await page.getByRole('radio', { name: '58 mm' }).click();
     await searchField(page).focus();
-    await Promise.all([page.waitForURL((url) => url.pathname === TILL), scan(page, paper.code)]);
+    const tillOpens = gate();
+
+    await page.route(
+        `**${TILL}`,
+        async (route) => {
+            await tillOpens.wait;
+            await route.continue();
+        },
+        { times: 1 },
+    );
+    await scan(page, paper.code);
+    await scan(page, pen.code);
+    tillOpens.open();
+    await page.waitForURL((url) => url.pathname === TILL);
     await expect(quantity(page, paper)).toHaveValue('1');
-    await expect(lines(page)).toHaveCount(1);
+    await expect(quantity(page, pen)).toHaveValue('1');
+    await expect(lines(page)).toHaveCount(2);
+    await expect(lines(page).nth(0)).toContainText(paper.name);
 
     // Back never returns to the cart that was paid (NC-04, NC-13 (e)).
     await page.goBack();
@@ -441,6 +507,57 @@ test('a lost answer, a reload, a status check and a held request recover the ori
     await Promise.all([page.waitForURL((url) => RECEIPT.test(url.pathname)), uncertainPanel(page).getByRole('button', { name: 'Cek status' }).click()]);
     expect(sent).toHaveLength(5);
 
+    // A 429 before any attempt reached the server (UXS-12): nothing ran, the way back waits with its reason,
+    // and the final action repeats the frozen request once: one Sale (review R-02).
+    await toPayment();
+    await page.route(CHECKOUT, (route) => route.fulfill({ status: 429, headers: { 'Retry-After': '1' }, json: refusal('THROTTLED') }), { times: 1 });
+    await page.keyboard.press('Control+Enter');
+    await expect(page.getByRole('main')).toContainText('Terlalu banyak percobaan');
+    await expect(page.getByRole('button', { name: 'Kembali ke keranjang (Esc)' })).toHaveAttribute('aria-disabled', 'true');
+    await page.keyboard.press('Escape');
+    await expect(page).toHaveURL((url) => url.pathname === PAYMENT);
+    await expect(finalAction(page)).not.toHaveAttribute('aria-disabled', 'true');
+    await Promise.all([page.waitForURL((url) => RECEIPT.test(url.pathname)), page.keyboard.press('Control+Enter')]);
+    await expect(page.getByRole('article', { name: 'Struk' })).toContainText(pen.name);
+    expect(sent).toHaveLength(7);
+
+    expect(injected(watched.problems)).toEqual([]);
+    await context.close();
+});
+
+test('"Bayar" waits for the scans still out, so that the payment shows every scan and no answer changes it later (review R-01)', async ({ browser }) => {
+    const { context, page, watched, products } = await openTill(browser);
+    const [pen, paper] = products;
+    const lookup = gate();
+
+    await scan(page, pen.code);
+    await expect(quantity(page, pen)).toHaveValue('1');
+    await page.route('**/data/products/search*', async (route) => {
+        if (new URL(route.request().url()).searchParams.get('q') === paper.code) {
+            await lookup.wait;
+        }
+
+        await route.continue();
+    });
+
+    // F8 while the second scan's lookup is out: the till stays until it is applied, then the payment shows both.
+    await scan(page, paper.code);
+    await page.keyboard.press('F8');
+    await expect(page.getByRole('heading', { level: 1, name: 'Kasir' })).toBeVisible();
+    await expect(lines(page)).toHaveCount(1);
+    lookup.open();
+    await expect(page.getByRole('heading', { level: 1, name: 'Pembayaran' })).toBeVisible();
+    await expect(page.getByText(`Uang diterima kurang ${rupiah(BigInt(pen.price) + BigInt(paper.price))}.`)).toBeVisible();
+
+    // The sale is the one shown; the next cart starts empty.
+    await page.keyboard.press('Alt+U');
+    await Promise.all([page.waitForURL((url) => RECEIPT.test(url.pathname)), page.keyboard.press('Control+Enter')]);
+    const paper58 = page.getByRole('article', { name: 'Struk' });
+    await expect(paper58).toContainText(pen.name);
+    await expect(paper58).toContainText(paper.name);
+    await page.goto(TILL);
+    await expect(cart(page)).toContainText('Keranjang masih kosong. Scan atau cari produk.');
+
     expect(injected(watched.problems)).toEqual([]);
     await context.close();
 });
@@ -548,44 +665,230 @@ test('a scanner Enter never confirms the payment; offline, nothing is queued and
     await context.close();
 });
 
-test('KS-03, KS-04 and KS-05 at every width, with the final action usable on the tablet (AC-029-06)', async ({ browser }) => {
-    test.setTimeout(ACCESS_TIMEOUT * 5);
+test('KS-03 with its states `empty`, `default`, `price-changed` and `unresolved` at every width (AC-029-06)', async ({ browser }) => {
+    test.setTimeout(ACCESS_TIMEOUT * 8);
 
     for (const width of WIDTHS) {
         const { context, page, watched, products } = await openTill(browser, width);
         const [pen, paper] = products;
 
-        // KS-03 `empty`, then `default`.
+        // `empty`, then `default`.
+        await expect(cart(page)).toContainText('Keranjang masih kosong. Scan atau cari produk.');
         await checked(page);
         await scan(page, pen.code);
         await scan(page, paper.code);
         await expect(quantity(page, paper)).toHaveValue('1');
         await checked(page);
 
-        // KS-04 `default` and `transfer`.
+        // `price-changed` (UXS-18): a newer read of a product in the cart carries another price.
+        await reprice(context, pen, '5000');
+        await scan(page, pen.code);
+        const notice = page.getByRole('main').getByRole('alert').filter({ hasText: 'Harga berubah' });
+        await expect(notice).toContainText('Total baru');
+        await expect(pay(page)).toHaveAttribute('aria-disabled', 'true');
+        await checked(page);
+        await notice.getByRole('button', { name: 'Setuju harga baru' }).click();
+        await expect(pay(page)).not.toHaveAttribute('aria-disabled', 'true');
+
+        // `unresolved` (NC-13): a checkout whose answer was lost; "Bayar" waits, "Cek pembayaran yang belum pasti" leads.
         await page.keyboard.press('F8');
         await expect(page.getByRole('heading', { level: 1, name: 'Pembayaran' })).toBeVisible();
+        await page.keyboard.press('Alt+U');
+        await loseNextCheckout(page);
+        await page.keyboard.press('Control+Enter');
+        await expect(uncertainPanel(page)).toBeVisible();
+        await page.goto(TILL);
+        await expect(page.getByRole('link', { name: 'Cek pembayaran yang belum pasti' })).toBeVisible();
+        await expect(pay(page)).toHaveAttribute('aria-disabled', 'true');
         await checked(page);
 
-        if (width.width === 768) {
-            // The tablet: the final action at least 56 px high, at least 24 px below the controls above it (UXA-07).
-            const final = await finalAction(page).boundingBox();
-            const field = await page.getByLabel('Nama pelanggan').boundingBox();
-
-            expect(final?.height ?? 0).toBeGreaterThanOrEqual(56);
-            expect((final?.y ?? 0) - ((field?.y ?? 0) + (field?.height ?? 0))).toBeGreaterThanOrEqual(24);
-        }
-
-        await page.keyboard.press('Alt+2');
-        await expect(page.getByRole('radio', { name: 'Transfer bank (Alt+2)' })).toHaveAttribute('aria-checked', 'true');
-        await checked(page);
-
-        // KS-05 `default`.
-        await Promise.all([page.waitForURL((url) => RECEIPT.test(url.pathname)), page.keyboard.press('Control+Enter')]);
-        await expect(page.getByRole('heading', { level: 1, name: 'Struk' })).toBeVisible();
-        await checked(page);
+        // Its status check answers the Sale, so that the next width starts without it.
+        await page.goto(PAYMENT);
+        await Promise.all([page.waitForURL((url) => RECEIPT.test(url.pathname)), uncertainPanel(page).getByRole('button', { name: 'Cek status' }).click()]);
 
         expect(injected(watched.problems), width.name).toEqual([]);
         await context.close();
     }
+});
+
+test('KS-04 with its states `short`, `default`, `transfer`, `submitting`, `uncertain` and `held` at every width, the final action usable on the tablet (AC-029-03, AC-029-06)', async ({ browser }) => {
+    test.setTimeout(ACCESS_TIMEOUT * 8);
+
+    for (const width of WIDTHS) {
+        const { context, page, watched, products } = await openTill(browser, width);
+        const [pen, paper] = products;
+
+        await scan(page, pen.code);
+        await scan(page, paper.code);
+        await expect(quantity(page, paper)).toHaveValue('1');
+        await page.keyboard.press('F8');
+        await expect(page.getByRole('heading', { level: 1, name: 'Pembayaran' })).toBeVisible();
+
+        // `short` (UXS-34), then `default` with the change.
+        await page.getByLabel('Uang diterima', { exact: true }).fill('1000');
+        await expect(page.locator('.bk-change')).toHaveAttribute('data-short', 'true');
+        await expect(finalAction(page)).toHaveAttribute('aria-disabled', 'true');
+        await checked(page);
+        await page.keyboard.press('Alt+U');
+        await expect(page.locator('.bk-change')).toContainText('Rp0');
+        await checked(page);
+
+        if (width.width === 768) {
+            // The tablet: the final action 64 px high, at least 24 px below the controls above it (UXA-07; review R-06).
+            const final = await finalAction(page).boundingBox();
+            const field = await page.getByLabel('Nama pelanggan').boundingBox();
+
+            expect(final?.height ?? 0).toBeGreaterThanOrEqual(64);
+            expect((final?.y ?? 0) - ((field?.y ?? 0) + (field?.height ?? 0))).toBeGreaterThanOrEqual(24);
+        }
+
+        // `transfer`.
+        await page.keyboard.press('Alt+2');
+        await expect(page.getByRole('radio', { name: 'Transfer bank (Alt+2)' })).toHaveAttribute('aria-checked', 'true');
+        await checked(page);
+
+        // `submitting`: the request out, the final action busy with "Sedang diproses", the screen frozen.
+        const answer = gate();
+
+        await page.route(
+            CHECKOUT,
+            async (route) => {
+                await answer.wait;
+                await route.continue();
+            },
+            { times: 1 },
+        );
+        await page.keyboard.press('Control+Enter');
+        await expect(page.getByRole('button', { name: 'Sedang diproses' })).toHaveAttribute('aria-busy', 'true');
+        await expect(page.getByLabel('Nama pelanggan')).toBeDisabled();
+        await checked(page);
+        answer.open();
+        await page.waitForURL((url) => RECEIPT.test(url.pathname));
+
+        // `uncertain` (UXS-14).
+        await payOne(page, pen);
+        await loseNextCheckout(page);
+        await page.keyboard.press('Control+Enter');
+        await expect(uncertainPanel(page)).toContainText('Jangan minta pelanggan membayar atau mentransfer lagi.');
+        await checked(page);
+        await Promise.all([page.waitForURL((url) => RECEIPT.test(url.pathname)), uncertainPanel(page).getByRole('button', { name: 'Cek status' }).click()]);
+
+        // `held` (UXS-15).
+        await payOne(page, pen);
+        await holdNextCheckout(page);
+        await page.keyboard.press('Control+Enter');
+        await expect(uncertainPanel(page)).toContainText('Permintaan ini tidak bisa dikirim ulang karena mungkin sudah tersimpan.');
+        await checked(page);
+        await Promise.all([page.waitForURL((url) => RECEIPT.test(url.pathname)), uncertainPanel(page).getByRole('button', { name: 'Cek status' }).click()]);
+
+        expect(injected(watched.problems), width.name).toEqual([]);
+        await context.close();
+    }
+});
+
+test('KS-05 in each size at every width (AC-029-06)', async ({ browser }) => {
+    test.setTimeout(ACCESS_TIMEOUT * 5);
+
+    for (const width of WIDTHS) {
+        const { context, page, watched, products } = await openTill(browser, width);
+        const [pen] = products;
+
+        await payOne(page, pen);
+        await Promise.all([page.waitForURL((url) => RECEIPT.test(url.pathname)), page.keyboard.press('Control+Enter')]);
+        await expect(page.getByRole('heading', { level: 1, name: 'Struk' })).toBeVisible();
+        const paper58 = page.getByRole('article', { name: 'Struk' });
+
+        for (const size of ['58 mm', '80 mm', 'A4']) {
+            await page.getByRole('radio', { name: size }).click();
+            await expect(page.getByRole('radio', { name: size })).toHaveAttribute('aria-checked', 'true');
+            await checked(page);
+        }
+
+        await expect(paper58).toContainText('Nota Penjualan');
+        // The size stays the browser session's choice; the next receipt opens in 58 mm again.
+        await page.getByRole('radio', { name: '58 mm' }).click();
+
+        expect(injected(watched.problems), width.name).toEqual([]);
+        await context.close();
+    }
+});
+
+test('the refusals of RC-01 on the payment screen show their states (UI_STATES UXP-102; UXS-27, UXS-28, UXS-29, UXS-30, UXS-32, UXS-46)', async ({ browser }) => {
+    const { context, page, watched, products } = await openTill(browser);
+    const [pen] = products;
+    const sent = checkouts(page);
+    const line = { '0': { productId: pen.id } };
+    // Each answered in place of the server, which never sees the request: their server paths are RC-01's tests (TASK-028).
+    const cases: readonly { readonly code: string; readonly title: string; readonly lines: Record<string, unknown> }[] = [
+        { code: 'ONBOARDING_FREEZE', title: 'Masa input stok awal aktif', lines: {} },
+        { code: 'POSTING_BLOCKED', title: 'Mutasi diblokir', lines: line },
+        { code: 'NO_OPEN_SESSION', title: 'Belum ada sesi kas', lines: {} },
+        { code: 'SESSION_NOT_OPEN', title: 'Sesi kas sudah ditutup', lines: {} },
+        { code: 'PRODUCT_INACTIVE', title: 'Nonaktif', lines: line },
+        { code: 'METHOD_NOT_ALLOWED', title: 'Metode pembayaran tidak tersedia', lines: {} },
+    ];
+
+    await payOne(page, pen);
+
+    for (const refused of cases) {
+        await page.route(CHECKOUT, (route) => route.fulfill({ status: 422, json: { ...refusal(refused.code), lines: refused.lines } }), { times: 1 });
+        await page.keyboard.press('Control+Enter');
+        const state = page.getByRole('main').getByRole('alert').filter({ hasText: refused.title });
+
+        await expect(state, refused.code).toBeVisible();
+        await expect(page).toHaveURL((url) => url.pathname === PAYMENT);
+
+        if (refused.code === 'PRODUCT_INACTIVE') {
+            await expect(state).toContainText(`Produk ${pen.name} sudah nonaktif dan tidak bisa dipakai.`);
+        }
+
+        await checked(page);
+    }
+
+    expect(sent).toHaveLength(cases.length);
+
+    expect(injected(watched.problems)).toEqual([]);
+    await context.close();
+});
+
+test('at the tablet width a sale takes three taps in cash and three by bank transfer (AC-029-07; USER_TASKS section 5)', async ({ browser }) => {
+    const tablet = WIDTHS.find((width) => width.width === 768);
+
+    if (tablet === undefined) {
+        throw new Error('KEY_SCREENS section 4 has the tablet width 768.');
+    }
+
+    const { context, page, watched, products } = await openTill(browser, tablet);
+    const [pen] = products;
+    const counted = async (taps: string[], target: Locator, name: string): Promise<void> => {
+        taps.push(name);
+        await target.click();
+    };
+
+    // Cash: "Bayar" → "Uang Pas" → "Selesaikan".
+    const cash: string[] = [];
+
+    await scan(page, pen.code);
+    await expect(quantity(page, pen)).toHaveValue('1');
+    await counted(cash, pay(page), 'Bayar');
+    await expect(page.getByRole('heading', { level: 1, name: 'Pembayaran' })).toBeVisible();
+    await counted(cash, page.getByRole('button', { name: 'Uang Pas (Alt+U)' }), 'Uang Pas');
+    await Promise.all([page.waitForURL((url) => RECEIPT.test(url.pathname)), counted(cash, finalAction(page), 'Selesaikan')]);
+    expect(cash).toEqual(['Bayar', 'Uang Pas', 'Selesaikan']);
+
+    // Bank transfer: "Bayar" → "Transfer bank" → "Dana sudah diterima — Selesaikan".
+    const transfer: string[] = [];
+
+    await page.goto(TILL);
+    await scan(page, pen.code);
+    await expect(quantity(page, pen)).toHaveValue('1');
+    await counted(transfer, pay(page), 'Bayar');
+    await expect(page.getByRole('heading', { level: 1, name: 'Pembayaran' })).toBeVisible();
+    await counted(transfer, page.getByRole('radio', { name: 'Transfer bank (Alt+2)' }), 'Transfer bank');
+    await Promise.all([page.waitForURL((url) => RECEIPT.test(url.pathname)), counted(transfer, finalAction(page), 'Dana sudah diterima — Selesaikan')]);
+    await expect(page.getByRole('article', { name: 'Struk' })).toContainText('Pembayaran: Transfer bank');
+    expect(transfer).toEqual(['Bayar', 'Transfer bank', 'Dana sudah diterima — Selesaikan']);
+
+    expect(injected(watched.problems)).toEqual([]);
+    await context.close();
 });

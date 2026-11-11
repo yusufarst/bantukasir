@@ -86,19 +86,23 @@ export async function searchTill(parameters: Readonly<Record<string, string>>): 
     return { kind: 'failed' };
 }
 
-let heldScan: string | null = null;
+let heldScans: string[] = [];
 
-/** A scan or search on the receipt page starts the next sale with it (UXI-089, UXA-11): held in page memory only, never stored. */
+/**
+ * A scan or search on the receipt page starts the next sale with it (UXI-089, UXA-11): held in page memory
+ * only, never stored. A second scan before the till opens is held after the first, never in its place
+ * (BR-CAT-29, BR-CAT-30; review R-05).
+ */
 export function holdScan(code: string): void {
-    heldScan = code;
+    heldScans = [...heldScans, code];
 }
 
-/** The till takes the held scan once. */
-export function takeScan(): string | null {
-    const code = heldScan;
-    heldScan = null;
+/** The till takes the held scans once, in the order they were made. */
+export function takeScans(): readonly string[] {
+    const codes = heldScans;
+    heldScans = [];
 
-    return code;
+    return codes;
 }
 
 /** The receipt's paper sizes (UXI-091; UXA-23). */

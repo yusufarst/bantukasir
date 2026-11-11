@@ -52,7 +52,7 @@ import {
     type TillDraft,
 } from '@/lib/sales/cart';
 import { createScanQueue } from '@/lib/sales/scanQueue';
-import { OPEN_SESSION_PAGE, PAYMENT_PAGE, PAYMENT_VIEW, SALE_COMMAND, searchTill, takeScan, TILL_PAGE, TILL_VIEW, UNRESOLVED_PAGE, type TillCategory, type TillSearchAnswer, type TillSession, type TillView } from '@/lib/sales/till';
+import { OPEN_SESSION_PAGE, PAYMENT_PAGE, PAYMENT_VIEW, SALE_COMMAND, searchTill, takeScans, TILL_PAGE, TILL_VIEW, UNRESOLVED_PAGE, type TillCategory, type TillSearchAnswer, type TillSession, type TillView } from '@/lib/sales/till';
 
 // UXP-101 "Kasir" and UXP-102 "Pembayaran", one page with two views (ROUTE_CONTRACTS RP-101, RP-102, RD-01
 // `till`, RC-01, RC-50; KEY_SCREENS KS-03 with its states `default`, `empty`, `price-changed`, `unresolved`
@@ -177,14 +177,22 @@ function TillPage({ view, session, postingFrozen, categories, stored }: { view: 
         router.replace({ props: (props) => ({ ...props, draft: kept }), preserveState: true, preserveScroll: true });
     }, [draft, cartOut, leaving]);
 
-    // A checkout out of this page keeps its cart out of the history until a definite answer.
+    // A checkout out of this page keeps its cart out of the history until a definite answer. A request refused
+    // by 429 before any attempt reached the server (`throttled`) ran nowhere (review R-02).
     useEffect(() => {
         if (phase.kind === 'submitting') {
             setCartOut(true);
-        } else if (phase.kind === 'rejected' || phase.kind === 'not_committed' || phase.kind === 'idle') {
+        } else if (phase.kind === 'rejected' || phase.kind === 'not_committed' || phase.kind === 'idle' || phase.kind === 'throttled') {
             setCartOut(false);
         }
     }, [phase.kind]);
+
+    // While a checkout of the cart is out, unknown or committed, nothing changes the cart: what the payment
+    // screen shows is what was sent (INTERACTION_CONTRACTS section 1.3; review R-01).
+    const cartFrozen = useRef(false);
+
+    cartFrozen.current =
+        leaving !== null || phase.kind === 'submitting' || phase.kind === 'throttled' || (control.ownRequest && (phase.kind === 'uncertain' || phase.kind === 'held' || phase.kind === 'committed'));
 
     const refusal = phase.kind === 'rejected' ? phase.refusal : null;
 
@@ -222,6 +230,10 @@ function TillPage({ view, session, postingFrozen, categories, stored }: { view: 
     }, [phase]);
 
     const add = (product: CartProduct, announce: (text: string) => void): void => {
+        if (cartFrozen.current) {
+            return;
+        }
+
         const next = update((draft) => addProduct(draft, product));
         const line = next.lines.find((candidate) => candidate.product.id === product.id);
 
@@ -360,12 +372,15 @@ function TillView({
     const [category, setCategory] = useState('');
     const [brand, setBrand] = useState('');
     const [clearing, setClearing] = useState(false);
+    /** The scans still to apply: "Bayar" waits for them, so that the payment shows every scan (review R-01). */
+    const [lookups, setLookups] = useState(0);
+    const [payAfter, setPayAfter] = useState(false);
     const latest = useRef(0);
     const timer = useRef<number | null>(null);
     const searchValue = useRef('');
     const resultList = useRef<HTMLDivElement | null>(null);
     const applyRef = useRef<(answer: ScanAnswer, scan: number) => void>(() => undefined);
-    const queue = useMemo(() => createScanQueue<ScanAnswer>((answer, scan) => applyRef.current(answer, scan)), []);
+    const queue = useMemo(() => createScanQueue<ScanAnswer>((answer, scan) => applyRef.current(answer, scan), setLookups), []);
 
     searchValue.current = search;
     useScanCapture(searchField, !clearing);
@@ -486,13 +501,15 @@ function TillView({
     useEffect(() => {
         searchField.current?.focus();
 
-        const held = takeScan();
-
-        if (held !== null) {
+        for (const held of takeScans()) {
             lookUp(held);
         }
 
-        return () => void supersede();
+        // Leaving the till's view forgets the scans still out: an answer after it changes no cart (review R-01).
+        return () => {
+            supersede();
+            queue.reset();
+        };
         // On arrival only.
     }, []);
 
@@ -536,13 +553,34 @@ function TillView({
             </>
         ) : postingFrozen ? (
             t('sales.cart.disabled_onboarding')
-        ) : lines.length === 0 ? (
+        ) : lines.length === 0 && lookups === 0 ? (
             t('sales.cart.disabled_empty')
         ) : review ? (
             t('sales.cart.disabled_price_review')
         ) : !linesValid(lines) ? (
             t('sales.cart.disabled_invalid')
         ) : undefined;
+    const payable = payReason === undefined && lines.length > 0;
+
+    // "Bayar" while scans are still out opens the payment once they are applied, if the cart may still be paid
+    // then: the payment always shows every scan, and no answer changes the cart after it (review R-01).
+    useEffect(() => {
+        if (payAfter && lookups === 0) {
+            setPayAfter(false);
+
+            if (payable) {
+                showView(PAYMENT_VIEW);
+            }
+        }
+    }, [payAfter, lookups, payable]);
+
+    const toPayment = (): void => {
+        if (queue.pending() > 0) {
+            setPayAfter(true);
+        } else if (payable) {
+            showView(PAYMENT_VIEW);
+        }
+    };
 
     const confirmClear = (): void => {
         setClearing(false);
@@ -668,7 +706,7 @@ function TillView({
                         <span className={'bk-total__value'}>{formatMoney(total)}</span>
                     </p>
                     {blocked && <ButtonLink href={UNRESOLVED_PAGE} label={t('sales.till.resolve_payment')} variant={'primary'} size={'xl'} className={'bk-btn--block'} />}
-                    <Button label={t('sales.cart.pay')} size={'xl'} block={true} shortcut={'pay'} enterActivates={false} disabledReason={payReason} onClick={() => showView(PAYMENT_VIEW)} />
+                    <Button label={t('sales.cart.pay')} size={'xl'} block={true} shortcut={'pay'} enterActivates={false} disabledReason={payReason} onClick={toPayment} />
                 </>
             }
         >
@@ -820,7 +858,7 @@ function TillLine({
                         incrementLabel={t('sales.cart.increase', { satuan: line.product.unit, produk: line.product.name })}
                         decrementLabel={t('sales.cart.decrease', { satuan: line.product.unit, produk: line.product.name })}
                         canDecrement={decreasable}
-                        decrementDescribedBy={reasonId}
+                        decrementDescribedBy={!decreasable && problem === null ? reasonId : undefined}
                         invalid={problem !== null}
                         describedBy={problem === null ? undefined : errorId}
                     />
@@ -870,8 +908,11 @@ function PaymentView({
     const outstanding = phase.kind === 'uncertain' || phase.kind === 'held';
     const committed = phase.kind === 'committed';
     // What the screen shows is what is sent while a frozen request is out (INTERACTION_CONTRACTS section 1.3).
-    const frozen = busy || outstanding || committed || phase.kind === 'throttled' || phase.kind === 'recent_auth' || phase.kind === 'reload';
-    const backBlocked = busy || outstanding;
+    const throttled = phase.kind === 'throttled';
+    const frozen = busy || outstanding || committed || throttled || phase.kind === 'recent_auth' || phase.kind === 'reload';
+    // After a 429 the final action repeats the frozen request (UXS-12), so the cart stays as it was sent until
+    // then: the way back waits too (review R-02).
+    const backBlocked = busy || outstanding || throttled;
     const hasCart = lines.length > 0;
 
     // Loaded without a cart, the payment view returns to the till (RP-102), unless a request of the family is
@@ -912,6 +953,13 @@ function PaymentView({
             t('sales.cart.disabled_onboarding')
         ) : !online ? (
             t('ux.state.offline.body')
+        ) : lines.length === 0 ? (
+            // The till's own reasons hold here too: the final action never sends a cart that "Bayar" could not (review R-01).
+            t('sales.cart.disabled_empty')
+        ) : priceReviewPending(lines) ? (
+            t('sales.cart.disabled_price_review')
+        ) : !linesValid(lines) ? (
+            t('sales.cart.disabled_invalid')
         ) : payment.method === CASH && tender.kind !== 'enough' ? (
             t('sales.payment.disabled_tender', { uang: formatMoney(tender.kind === 'short' ? tender.missing : total) })
         ) : undefined;
@@ -1040,7 +1088,7 @@ function PaymentView({
                         </Field>
                         {!outstanding && !committed && (
                             <div className={'bk-final'}>
-                                <Button label={finalLabel} size={'final'} block={true} shortcut={'confirm'} busy={busy} disabledReason={busy ? undefined : finalReason} unavailable={frozen && !busy} onClick={onPay} />
+                                <Button label={finalLabel} size={'final'} block={true} shortcut={'confirm'} busy={busy} disabledReason={busy ? undefined : finalReason} unavailable={frozen && !busy && !throttled} onClick={onPay} />
                             </div>
                         )}
                     </div>
