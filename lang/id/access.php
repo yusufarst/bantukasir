@@ -91,6 +91,8 @@ return [
         'link_status' => 'Tautan kata sandi',
         'password_not_set' => 'Belum mengatur kata sandi',
         'owner_note' => 'Peran akun Pemilik tidak bisa diubah, dan akun ini tidak bisa dinonaktifkan atau dianonimkan dari aplikasi.',
+        // UXI-340 (TASK-030): the account's OPEN cash session.
+        'open_session' => 'Sesi kas yang masih dibuka',
     ],
     'user_edit' => [
         'title' => 'Ubah pengguna',

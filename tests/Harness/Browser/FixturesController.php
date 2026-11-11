@@ -95,26 +95,92 @@ final class FixturesController
         $people = self::people($request->input('people'));
         Probe::ensureTables(DB::connection(TestDatabase::MIGRATION));
         $epoch = TokoContoh::recoveryEpoch();
-        $owner = self::account('Hendra');
 
         foreach ($people as $person) {
-            $receipts = DB::table('command_request_receipts')
-                ->where('actor_user_id', self::account($person)->id)
-                ->whereIn('outcome', ['PENDING', 'HELD'])
-                ->distinct()
-                ->get(['operation', DB::raw('source_intent_id::text as intent')]);
-
-            foreach ($receipts as $receipt) {
-                try {
-                    app(ResolveIntent::class)($owner, (string) $receipt->operation, (string) $receipt->intent, $epoch, CarbonImmutable::now('UTC'));
-                } catch (CommandRefused) {
-                    // An intent that a check cannot settle stays listed; the
-                    // test that needs none fails on it and says so.
-                }
-            }
+            self::settle(self::account($person), $epoch);
         }
 
         return new JsonResponse(['epoch' => $epoch]);
+    }
+
+    /**
+     * The cash session of one person of Toko Contoh for the browser suite (TASK-030): their unresolved
+     * requests settled by the Owner's status check, as `commands` settles them, then their OPEN session,
+     * if any, closed through RC-03's Action with expected cash counted (EXECUTION_CONTEXT EXC-45), so
+     * that their home is Buka sesi kas again. With `register`, a new active register for them to open a
+     * session on; with `open`, a new session on a new register with that opening cash, through RC-02's
+     * Action, and one Sale of a new product at Rp50.000 for each method of `sales`, through RC-01's.
+     * Every code and name is new, because the local database keeps its registers and products.
+     */
+    public function session(Request $request): JsonResponse
+    {
+        EnvironmentMarker::require(DB::connection(), ['local', 'test']);
+
+        [$person] = self::people([$request->input('person')]);
+        $account = self::account($person);
+        self::settle($account, TokoContoh::recoveryEpoch());
+        $current = DB::table('cash_sessions')->where('responsible_user_id', $account->id)->where('status', 'OPEN')->value('id');
+
+        if (is_int($current)) {
+            TokoContoh::closeSession($current);
+        }
+
+        $opening = $request->input('open');
+        $sales = $request->input('sales', []);
+
+        if (($opening !== null && (! is_string($opening) || preg_match('/^(?:0|[1-9][0-9]{0,8})$/D', $opening) !== 1))
+            || ! is_array($sales) || array_filter($sales, static fn (mixed $method): bool => $method !== 'CASH' && $method !== 'BANK_TRANSFER') !== []) {
+            throw new InvalidArgumentException('A session opens with whole rupiah, and its Sales name CASH or BANK_TRANSFER.');
+        }
+
+        $suffix = strtoupper(Str::random(8));
+        $register = ['code' => 'T-'.$suffix, 'label' => 'Laci uji '.strtolower($suffix)];
+
+        if ($opening === null) {
+            if ($request->boolean('register')) {
+                TokoContoh::register($register['code'], $register['label']);
+
+                return new JsonResponse(['session' => null, 'register' => $register]);
+            }
+
+            return new JsonResponse(['session' => null, 'register' => null]);
+        }
+
+        $session = TokoContoh::openSession($person, TokoContoh::register($register['code'], $register['label']), $opening);
+
+        if ($sales !== []) {
+            $product = TokoContoh::product('TS-'.$suffix, ['categoryId' => TokoContoh::category('Uji tutup '.$suffix), 'name' => 'Produk tutup '.$suffix, 'sellingPrice' => '50000']);
+            TokoContoh::stock($product, (string) count($sales), '1000');
+
+            foreach ($sales as $method) {
+                TokoContoh::sell($person, $session, [['productId' => $product, 'quantity' => '1']], $method === 'CASH' ? [] : ['method' => 'BANK_TRANSFER', 'reference' => 'TRF-'.$suffix]);
+            }
+        }
+
+        return new JsonResponse(['session' => ['id' => $session, 'number' => DB::table('cash_sessions')->where('id', $session)->value('session_number')], 'register' => $register]);
+    }
+
+    /**
+     * Each PENDING or HELD receipt of the account resolved by the Owner's status check, RC-50's Action,
+     * which writes its fence or settles it as committed (ADR-007 section 4).
+     */
+    private static function settle(User $account, string $epoch): void
+    {
+        $owner = self::account('Hendra');
+        $receipts = DB::table('command_request_receipts')
+            ->where('actor_user_id', $account->id)
+            ->whereIn('outcome', ['PENDING', 'HELD'])
+            ->distinct()
+            ->get(['operation', DB::raw('source_intent_id::text as intent')]);
+
+        foreach ($receipts as $receipt) {
+            try {
+                app(ResolveIntent::class)($owner, (string) $receipt->operation, (string) $receipt->intent, $epoch, CarbonImmutable::now('UTC'));
+            } catch (CommandRefused) {
+                // An intent that a check cannot settle stays listed; the
+                // test that needs none fails on it and says so.
+            }
+        }
     }
 
     /**

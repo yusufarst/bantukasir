@@ -95,6 +95,18 @@ final class Allowlists
         'cash/Registers' => ['owner' => ['registers', 'registers.*', ...self::REGISTER_ROW]],
         'cash/RegisterForm' => ['owner' => ['register', 'register.id', 'register.code', 'register.label', 'register.active', 'register.version', 'register.openBy']],
         'cash/OpenSession' => ['*' => ['registers', 'registers.*', 'registers.*.id', 'registers.*.code', 'registers.*.label']],
+        // The close and the session pages (TASK-030), for every holder of CAP-21 on its own sessions and
+        // the Owner on every one: UXP-105's header, its close preview a deferred prop read apart; UXP-205's
+        // page of sessions with its filters, and the Owner's registers and people of the filters, empty
+        // lists for anyone else; UXP-206's session with its figures and, once CLOSED, its count. Never a
+        // cost, a margin or a profit (BR-CASH-20).
+        'cash/CloseSession' => ['*' => ['session', 'session.id', 'session.number', 'session.registerCode', 'session.registerLabel']],
+        'cash/Sessions' => [
+            'owner' => [...self::SESSION_LIST, 'registers.*', 'registers.*.id', 'registers.*.code', 'registers.*.label', 'responsibles.*', 'responsibles.*.id', 'responsibles.*.displayName'],
+            'cashier' => self::SESSION_LIST,
+            'combined' => self::SESSION_LIST,
+        ],
+        'cash/Session' => ['*' => [...self::SESSION, ...self::SESSION_FIGURES]],
         // The till and its payment view (TASK-029), for every holder of CAP-21 in its own OPEN session: the
         // view, the session's header, the onboarding freeze and the active categories of the search's
         // filter; never a product, a price or a cost, which RD-01 carries. The receipt, for its cashier and
@@ -108,7 +120,8 @@ final class Allowlists
             'issuer', 'issuer.name', 'issuer.identity', 'issuer.address', 'issuer.contact', 'issuer.email', 'issuer.header', 'issuer.footer', 'issuer.logo',
         ]],
         'access/UserCreate' => ['owner' => []],
-        'access/User' => ['owner' => ['user', 'user.id', 'user.displayName', 'user.email', 'user.roles', 'user.roles.*', 'user.status', 'user.version', 'user.passwordSet', 'user.linkExpiresAt', 'user.superAdmin', 'user.self']],
+        // UXP-604 also names the account's OPEN cash session, null without one (UXI-340; TASK-030).
+        'access/User' => ['owner' => ['user', 'user.id', 'user.displayName', 'user.email', 'user.roles', 'user.roles.*', 'user.status', 'user.version', 'user.passwordSet', 'user.linkExpiresAt', 'user.superAdmin', 'user.self', 'openSession', 'openSession.id']],
         'access/UserEdit' => ['owner' => ['user', 'user.id', 'user.displayName', 'user.email', 'user.roles', 'user.roles.*', 'user.version']],
         'access/LinkHandover' => ['owner' => ['user', 'user.id', 'user.displayName']],
         // The catalogue pages (TASK-017), for every kind of account that CAP-04 opens
@@ -266,6 +279,29 @@ final class Allowlists
 
     /** A register of UXP-609, with the responsible user of its OPEN session. */
     private const array REGISTER_ROW = ['registers.*.id', 'registers.*.code', 'registers.*.label', 'registers.*.active', 'registers.*.version', 'registers.*.openBy'];
+
+    /**
+     * UXP-205 (TASK-030): its filters and one page of sessions, each with its register, responsible
+     * user, opening and close times and variance; the lists of the Owner's filters, empty here.
+     */
+    private const array SESSION_LIST = [
+        'filters', 'filters.status', 'filters.from', 'filters.to', 'filters.register', 'filters.responsible',
+        'sessions', 'sessions.rows', 'sessions.rows.*', 'sessions.rows.*.id', 'sessions.rows.*.number', 'sessions.rows.*.status', 'sessions.rows.*.registerCode',
+        'sessions.rows.*.registerLabel', 'sessions.rows.*.responsible', 'sessions.rows.*.openedAt', 'sessions.rows.*.closedAt', 'sessions.rows.*.variance',
+        'sessions.nextCursor', 'sessions.previousCursor', 'registers', 'responsibles',
+    ];
+
+    /** UXP-206 (TASK-030): the session and whether the viewer may close it here. */
+    private const array SESSION = [
+        'session', 'session.id', 'session.number', 'session.status', 'session.registerCode', 'session.registerLabel', 'session.responsible',
+        'session.openedAt', 'session.closedAt', 'session.canClose',
+    ];
+
+    /** UXP-206 (TASK-030): the running figures of an OPEN session or its report's, and the count, null fields while OPEN. */
+    private const array SESSION_FIGURES = [
+        'figures', 'figures.openingCash', 'figures.saleCount', 'figures.saleValue', 'figures.cashPayments', 'figures.transferPayments', 'figures.drawerRefunds',
+        'figures.expectedCash', 'count', 'count.physicalCash', 'count.variance', 'count.closedBy', 'count.closeReason', 'count.notes',
+    ];
 
     /** The categories of a catalogue page. */
     private const array CATEGORIES = ['categories', 'categories.*', 'categories.*.id', 'categories.*.name', 'categories.*.active', 'categories.*.version'];

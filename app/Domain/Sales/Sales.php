@@ -183,6 +183,59 @@ final class Sales
         return new SaleReference($id, $number, $actor);
     }
 
+    /**
+     * The completed Sales of a cash session with their one Payment each, the Sales module's query of
+     * a session's totals (STACK_AND_MODULES STK-10; BR-CASH-13, BR-CASH-20; G-05): their number and
+     * value, the applied CASH and BANK_TRANSFER separately (BR-PAY-06), and the internal keys of the
+     * Sales and Payments, in the order of the Sales. A close reads it under the session's lock, which
+     * every checkout of the session takes too, so no Sale can join or leave the session meanwhile
+     * (RACE-08); a page reads it without a lock. Every amount is summed exactly on Money (ADR-006).
+     *
+     * @return array{count: int, value: Money, cash: Money, transfer: Money, saleIds: list<int>, paymentIds: list<int>}
+     */
+    public function ofSession(int $sessionId): array
+    {
+        $rows = DB::table('sales as s')
+            ->join('payments as p', 'p.sale_id', '=', 's.id')
+            ->where('s.cash_session_id', $sessionId)
+            ->orderBy('s.id')
+            ->get(['s.id as sale_id', 's.total_amount', 'p.id as payment_id', 'p.method', 'p.applied_amount']);
+        $value = Money::zero();
+        $cash = Money::zero();
+        $transfer = Money::zero();
+        $saleIds = [];
+        $paymentIds = [];
+
+        foreach ($rows as $row) {
+            $values = (array) $row;
+            $sale = $values['sale_id'] ?? null;
+            $total = $values['total_amount'] ?? null;
+            $payment = $values['payment_id'] ?? null;
+            $method = $values['method'] ?? null;
+            $applied = $values['applied_amount'] ?? null;
+
+            if (! is_int($sale) || (! is_int($total) && ! is_string($total)) || ! is_int($payment) || ! is_string($method) || (! is_int($applied) && ! is_string($applied))) {
+                throw new LogicException('A Sale and its Payment hold their columns (SCHEMA section 5.9).');
+            }
+
+            $value = $value->plus(Money::fromDatabase($total));
+            $amount = Money::fromDatabase($applied);
+
+            if ($method === PaymentMethods::CASH) {
+                $cash = $cash->plus($amount);
+            } elseif ($method === PaymentMethods::BANK_TRANSFER) {
+                $transfer = $transfer->plus($amount);
+            } else {
+                throw new LogicException('A Payment is CASH or BANK_TRANSFER (D-077).');
+            }
+
+            $saleIds[] = $sale;
+            $paymentIds[] = $payment;
+        }
+
+        return ['count' => count($saleIds), 'value' => $value, 'cash' => $cash, 'transfer' => $transfer, 'saleIds' => $saleIds, 'paymentIds' => $paymentIds];
+    }
+
     private static function requireTransaction(): void
     {
         if (DB::transactionLevel() === 0) {

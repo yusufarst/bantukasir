@@ -153,6 +153,12 @@ final class RouteInventoryTest extends TestCase
         'GET /till' => ['till.show', 'RP-101', 'CAP-21', [...self::SIGNED_IN, 'capability:CAP-21', 'input.allow']],
         'GET /till/payment' => ['till.payment', 'RP-102', 'CAP-21', [...self::SIGNED_IN, 'capability:CAP-21', 'input.allow']],
         'GET /sales/{sale}/receipt' => ['sales.receipt', 'RP-103', 'CAP-21,CAP-22', [...self::SIGNED_IN, 'capability:CAP-21,CAP-22', 'input.allow']],
+        // TASK-030: RC-03 and RP-105 for CAP-21, without recent authentication; RP-205 and RP-206 for
+        // CAP-21 on its own sessions and CAP-22 on every one.
+        'GET /till/close-session' => ['till.close', 'RP-105', 'CAP-21', [...self::SIGNED_IN, 'capability:CAP-21', 'input.allow']],
+        'POST /commands/cash_session.close' => ['commands.cash_session.close', 'RC-03', 'CAP-21', [...self::SIGNED_IN, 'capability:CAP-21', 'throttle:command']],
+        'GET /cash-sessions' => ['sessions.index', 'RP-205', 'CAP-21,CAP-22', [...self::SIGNED_IN, 'capability:CAP-21,CAP-22', 'input.allow:status,from,to,register,responsible,after,before,perPage']],
+        'GET /cash-sessions/{session}' => ['sessions.show', 'RP-206', 'CAP-21,CAP-22', [...self::SIGNED_IN, 'capability:CAP-21,CAP-22', 'input.allow']],
     ];
 
     public function test_the_routes_are_exactly_those_listed_each_with_its_gate(): void

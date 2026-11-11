@@ -10,6 +10,7 @@ use App\Actions\Access\ReactivateAccount;
 use App\Actions\Access\RevokePasswordLink;
 use App\Actions\Access\UpdateOwnerDetails;
 use App\Actions\Access\UpdateStaffAccount;
+use App\Actions\Cash\CloseCashSession;
 use App\Actions\Cash\CreateCashRegister;
 use App\Actions\Cash\OpenCashSession;
 use App\Actions\Cash\UpdateCashRegister;
@@ -103,6 +104,8 @@ final class CommandActions
         UpdateCashRegister::OPERATION => UpdateCashRegister::class,
         // RC-01 (TASK-028).
         CheckoutSale::OPERATION => CheckoutSale::class,
+        // RC-03 (TASK-030).
+        CloseCashSession::OPERATION => CloseCashSession::class,
     ];
 
     /**

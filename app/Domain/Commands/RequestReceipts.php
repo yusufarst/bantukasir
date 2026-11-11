@@ -150,6 +150,21 @@ final class RequestReceipts
     }
 
     /**
+     * How many receipts of this operation the actor holds unresolved — PENDING or HELD, an
+     * earlier-epoch HELD receipt included — read without a lock (SCHEMA G-27, the index
+     * (actor_user_id, outcome); D-088). A settled receipt no longer counts (D-089). A close reads it
+     * after its session's lock (RACE-35).
+     */
+    public function unresolvedOf(int $actorId, string $operation): int
+    {
+        return DB::table('command_request_receipts')
+            ->where('actor_user_id', $actorId)
+            ->whereIn('outcome', [self::PENDING, self::HELD])
+            ->where('operation', $operation)
+            ->count();
+    }
+
+    /**
      * The actors of the intent's receipts, whatever their outcome.
      *
      * @return list<int>

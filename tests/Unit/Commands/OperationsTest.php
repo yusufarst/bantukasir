@@ -10,6 +10,7 @@ use App\Actions\Access\ReactivateAccount;
 use App\Actions\Access\RevokePasswordLink;
 use App\Actions\Access\UpdateOwnerDetails;
 use App\Actions\Access\UpdateStaffAccount;
+use App\Actions\Cash\CloseCashSession;
 use App\Actions\Cash\CreateCashRegister;
 use App\Actions\Cash\OpenCashSession;
 use App\Actions\Cash\UpdateCashRegister;
@@ -143,6 +144,7 @@ final class OperationsTest extends TestCase
             'cash_register.create' => CreateCashRegister::class,
             'cash_register.update' => UpdateCashRegister::class,
             'sale.checkout' => CheckoutSale::class,
+            'cash_session.close' => CloseCashSession::class,
         ], CommandActions::built());
     }
 

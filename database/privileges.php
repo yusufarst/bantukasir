@@ -281,6 +281,16 @@ return [
             'class' => 'FS',
             'runtime' => ['select' => true, 'insert' => true, 'update' => ['status', 'activity_version', 'updated_at']],
         ],
+        // The close of a session and its immutable report (SCHEMA section 5.10; TASK-030): facts,
+        // never changed.
+        'cash_session_closes' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'cash_session_reports' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
 
         // Sales (SCHEMA section 5.9; TASK-028): the Sale and its records, never changed, and the
         // running totals of its later corrections, whose amounts alone change.

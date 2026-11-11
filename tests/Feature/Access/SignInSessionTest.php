@@ -256,6 +256,7 @@ final class SignInSessionTest extends DatabaseTestCase
                 'cost_incomplete_mark_clearances' => 'mark_id',
                 'sale_correction_totals' => 'sale_id',
                 'sale_line_correction_totals' => 'sale_line_id',
+                'cash_session_closes', 'cash_session_reports' => 'session_id',
                 default => 'id',
             });
         }

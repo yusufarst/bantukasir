@@ -385,6 +385,21 @@ final class CapabilityMatrixTest extends DatabaseTestCase
         'RP-103' => ['method' => 'GET', 'path' => '/sales/{sale}/receipt', 'json' => true, 'answers' => [
             'guest' => [401, null], 'owner' => [404, null], 'ops' => [403, null], 'cashier' => [404, null], 'combined' => [404, null],
         ]],
+        // TASK-030: the close for CAP-21, each holder on its own OPEN session — without one, the till —
+        // without recent authentication; the sessions for CAP-21 on its own and CAP-22 on every one, a
+        // session that does not exist; Operations refused.
+        'RP-105' => ['method' => 'GET', 'path' => '/till/close-session', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [302, '/till'], 'ops' => [403, null], 'cashier' => [302, '/till'], 'combined' => [302, '/till'],
+        ]],
+        'RC-03' => ['method' => 'POST', 'path' => '/commands/cash_session.close', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [422, null], 'ops' => [403, null], 'cashier' => [422, null], 'combined' => [422, null],
+        ]],
+        'RP-205' => ['method' => 'GET', 'path' => '/cash-sessions', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [403, null], 'cashier' => [200, null], 'combined' => [200, null],
+        ]],
+        'RP-206' => ['method' => 'GET', 'path' => '/cash-sessions/{session}', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [404, null], 'ops' => [403, null], 'cashier' => [404, null], 'combined' => [404, null],
+        ]],
     ];
 
     /** @var array<string, array{id: int, email: string, password: string}> */

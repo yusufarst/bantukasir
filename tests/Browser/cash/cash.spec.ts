@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect as baseExpect, test, type BrowserContext, type Page } from '@playwright/test';
 import { ACCESS_TIMEOUT, ACCESS_WAIT, resetPeople, SECURE_LOCAL_ORIGIN, signIn, STOCK_HOME, type Person } from '../support/access';
+import { cashSession } from '../support/cash';
 import { injected, prepareCommands } from '../support/commands';
 import { measure } from '../support/measure';
 import { contextAt, watch, WIDTHS } from '../support/specimen';
@@ -18,8 +19,8 @@ const expect = baseExpect.configure({ timeout: ACCESS_WAIT });
 // at every width of KEY_SCREENS section 4 and 1440 px, and UXS-48 when no register is available.
 // These tests sign in the people of Toko Contoh, so they run one at a time (playwright.config.ts).
 // Every register gets a new random code, because the local database keeps its registers; the
-// Owner's session is opened once per database, until TASK-030 delivers the close, so this file runs
-// on a fresh database, as CI's is (TASK-027 evidence, finding F-3).
+// Owner's OPEN session, if he holds one, is closed first through RC-03's Action (the fixture
+// `session` of TASK-030), so this file runs on any database (TASK-027 evidence, finding F-3).
 
 test.describe.configure({ timeout: ACCESS_TIMEOUT });
 test.use(SECURE_LOCAL_ORIGIN);
@@ -178,6 +179,7 @@ test('the Owner opens his own session with Rp0 through the review, and the regis
     const page = await context.newPage();
     const watched = await watch(page);
     const password = await signedIn(context, page, 'Hendra');
+    await cashSession(context, 'Hendra');
     await page.goto(REGISTERS);
     const register = await newRegister(page, password);
     const name = `${register.code} · ${register.label}`;
