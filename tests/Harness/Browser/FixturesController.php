@@ -145,6 +145,59 @@ final class FixturesController
     }
 
     /**
+     * The till of the browser suite (TASK-029): the Owner's own OPEN cash session — opened through RC-02's
+     * Action on a new register when he holds none, which tests/Browser/cash/ opens first on a fresh
+     * database — and three new products of their own category, each with a barcode and stock received
+     * through the Actions (EXECUTION_CONTEXT EXC-45): one counted whole, one sold by the metre with one
+     * decimal, and one with two units only. Every name, SKU and code is new, because the local database
+     * keeps its products. With `reprice`, the Owner's new price of one product through RC-18's Action
+     * instead, the price change that a cart then reviews (UXS-18).
+     */
+    public function till(Request $request): JsonResponse
+    {
+        EnvironmentMarker::require(DB::connection(), ['local', 'test']);
+
+        $reprice = $request->input('reprice');
+
+        if (is_array($reprice)) {
+            $product = $reprice['productId'] ?? null;
+            $price = $reprice['price'] ?? null;
+
+            if (! is_int($product) || ! is_string($price) || preg_match('/^[1-9][0-9]{0,8}$/D', $price) !== 1) {
+                throw new InvalidArgumentException('A new price names a product and whole rupiah.');
+            }
+
+            TokoContoh::reprice($product, $price);
+
+            return new JsonResponse(['repriced' => $product]);
+        }
+
+        $owner = self::account('Hendra');
+
+        if (! DB::table('cash_sessions')->where('responsible_user_id', $owner->id)->where('status', 'OPEN')->exists()) {
+            TokoContoh::openSession('Hendra', TokoContoh::register('T-'.strtoupper(Str::random(10)), 'Laci uji'));
+        }
+
+        $suffix = strtoupper(Str::random(8));
+        $category = TokoContoh::category('Uji kasir '.$suffix);
+        $products = [];
+
+        foreach ([
+            ['sku' => 'PG-'.$suffix, 'name' => 'Pulpen gel hitam '.$suffix, 'baseUnit' => 'pcs', 'quantityPrecision' => 0, 'sellingPrice' => '4500', 'stock' => '50'],
+            ['sku' => 'KK-'.$suffix, 'name' => 'Kertas kado per meter '.$suffix, 'baseUnit' => 'm', 'quantityPrecision' => 1, 'sellingPrice' => '7000', 'stock' => '20'],
+            ['sku' => 'BT-'.$suffix, 'name' => 'Buku tulis '.$suffix, 'baseUnit' => 'pcs', 'quantityPrecision' => 0, 'sellingPrice' => '6000', 'stock' => '2'],
+        ] as $fields) {
+            $id = TokoContoh::product($fields['sku'], ['categoryId' => $category, 'name' => $fields['name'], 'baseUnit' => $fields['baseUnit'], 'quantityPrecision' => $fields['quantityPrecision'], 'sellingPrice' => $fields['sellingPrice']]);
+            $code = '899'.(string) random_int(1000000000, 9999999999);
+            TokoContoh::barcode($id, $code);
+            TokoContoh::stock($id, $fields['stock'], '1000');
+            $products[] = ['id' => $id, 'sku' => $fields['sku'], 'name' => $fields['name'], 'code' => $code, 'unit' => $fields['baseUnit'], 'price' => $fields['sellingPrice']];
+        }
+
+        return new JsonResponse(['products' => $products]);
+    }
+
+    /**
      * Turns the application's real maintenance mode on or off (RELEASE_PROCESS
      * RB-20 step 7; TASK-014), on the local or test database only. The browser
      * suite runs the tests that use it after every other test, alone

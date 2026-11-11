@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect as baseExpect, test, type BrowserContext, type Page } from '@playwright/test';
-import { ACCESS_TIMEOUT, ACCESS_WAIT, HOME, resetPeople, SECURE_LOCAL_ORIGIN, signIn, STOCK_HOME, type Person } from '../support/access';
+import { ACCESS_TIMEOUT, ACCESS_WAIT, resetPeople, SECURE_LOCAL_ORIGIN, signIn, STOCK_HOME, type Person } from '../support/access';
 import { injected, prepareCommands } from '../support/commands';
 import { measure } from '../support/measure';
 import { contextAt, watch, WIDTHS } from '../support/specimen';
@@ -13,7 +13,7 @@ const expect = baseExpect.configure({ timeout: ACCESS_WAIT });
 // UXI-002, UXI-094 to UXI-100, UXI-328 and UXI-367 to UXI-373; UI_STATES UXS-05, UXS-11, UXS-13 and
 // UXS-48; WF-04, WF-30; suites UX01, UX02, SESSION02 and CONFIG01; TASK-027, L5). The Owner adds and
 // changes a register with the password once; a code that another register holds is said at its
-// field; the Owner opens his own session with Rp0 through the review, lands home with its number,
+// field; the Owner opens his own session with Rp0 through the review, lands on the till with its number,
 // and the register then shows the session and cannot be changed; the combined account sees the form
 // at every width of KEY_SCREENS section 4 and 1440 px, and UXS-48 when no register is available.
 // These tests sign in the people of Toko Contoh, so they run one at a time (playwright.config.ts).
@@ -29,6 +29,9 @@ const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-prac
 const REGISTERS = '/settings/cash-registers';
 
 const OPEN_SESSION = '/till/open-session';
+
+/** RP-101, where a session opened leads (TASK-029). */
+const TILL = '/till';
 
 function letters(length: number): string {
     return Array.from(crypto.getRandomValues(new Uint8Array(length)), (byte) => String.fromCharCode(97 + (byte % 26))).join('');
@@ -212,14 +215,14 @@ test('the Owner opens his own session with Rp0 through the review, and the regis
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.getByLabel('Modal awal', { exact: true })).toHaveValue('0');
 
-    // "Buka sesi" commits; the Owner's home until the till exists says the session's number.
+    // "Buka sesi" commits; the till says the session's number (TASK-029; KS-03 `opened`).
     await page.getByRole('button', { name: /^Tinjau/ }).click();
-    await Promise.all([page.waitForURL((url) => url.pathname === HOME), page.getByRole('dialog', { name: 'Tinjau buka sesi kas' }).getByRole('button', { name: /^Buka sesi/ }).click()]);
+    await Promise.all([page.waitForURL((url) => url.pathname === TILL), page.getByRole('dialog', { name: 'Tinjau buka sesi kas' }).getByRole('button', { name: /^Buka sesi/ }).click()]);
     await expect(page.getByText(/^Sesi kas \d{8}-\d{6,} dibuka\.$/)).toBeVisible();
 
-    // With a session, Buka sesi kas leads home (RP-104).
+    // With a session, Buka sesi kas leads to the till (RP-104).
     await page.goto(OPEN_SESSION);
-    expect(new URL(page.url()).pathname).toBe(HOME);
+    expect(new URL(page.url()).pathname).toBe(TILL);
 
     // UXP-609: the session on its register, which cannot be changed now (UXS-13; BR-CASH-02).
     await page.goto(REGISTERS);

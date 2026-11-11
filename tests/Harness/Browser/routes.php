@@ -11,6 +11,7 @@ Route::post('/testing/browser/reset', [FixturesController::class, 'reset'])->nam
 Route::post('/testing/browser/link', [FixturesController::class, 'link'])->name('testing.browser.link');
 Route::post('/testing/browser/commands', [FixturesController::class, 'commands'])->name('testing.browser.commands');
 Route::post('/testing/browser/receipt', [FixturesController::class, 'receipt'])->name('testing.browser.receipt');
+Route::post('/testing/browser/till', [FixturesController::class, 'till'])->name('testing.browser.till');
 
 // Real maintenance mode for the browser suite (TASK-014); this one route stays
 // reachable in it, so that the test can end it.

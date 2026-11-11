@@ -121,6 +121,8 @@ return [
         // The password visibility toggle (TASK-006; COPY_DECK section 5).
         'show_password' => 'Tampilkan kata sandi',
         'hide_password' => 'Sembunyikan kata sandi',
+        // The filters of the till's search (UXI-069; TASK-029; COPY_DECK section 5).
+        'filter' => 'Filter',
     ],
     'list' => [
         'updated_at' => 'Diperbarui :waktu',

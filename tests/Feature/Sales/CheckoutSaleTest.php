@@ -96,7 +96,8 @@ final class CheckoutSaleTest extends DatabaseTestCase
         $row = (array) $this->watcher()->table('sales')->where('id', $sale)->sole();
         $counter = self::number($row['sale_number_seq']);
         $number = sprintf('20261107-%06d', $counter);
-        $this->assertSame(['sale', $number, '/'], [$response->json('result.type'), $response->json('result.number'), $response->json('result.location')]);
+        // Its location is the Sale's receipt (RP-103; TASK-029).
+        $this->assertSame(['sale', $number, '/sales/'.$sale.'/receipt'], [$response->json('result.type'), $response->json('result.number'), $response->json('result.location')]);
 
         // The Sale: its number by its business date and counter, its session of its actor, its total
         // the sum of its line totals, its cashier's name frozen (G-01, G-16, G-18).
@@ -196,7 +197,7 @@ final class CheckoutSaleTest extends DatabaseTestCase
         $facts = $this->factsAndRows();
         $this->checkout($envelope)->assertStatus(200)->assertJsonPath('repeated', true)->assertJsonPath('commandId', $commandId)->assertJsonPath('result.id', $sale)->assertJsonPath('result.number', $number);
         $this->assertSame($facts, $this->factsAndRows());
-        $resolved = $this->check($envelope)->assertOk()->assertJsonPath('outcome', 'COMMITTED')->assertJsonPath('result.number', $number)->assertJsonPath('result.location', '/');
+        $resolved = $this->check($envelope)->assertOk()->assertJsonPath('outcome', 'COMMITTED')->assertJsonPath('result.number', $number)->assertJsonPath('result.location', '/sales/'.$sale.'/receipt');
         $this->assertJsonChannel($resolved, 'commands.resolve.number', 'cashier');
     }
 
@@ -568,7 +569,7 @@ final class CheckoutSaleTest extends DatabaseTestCase
         // before any session lock; a new intent in that session is refused.
         $this->closeSession($session);
         $this->checkout($envelope)->assertStatus(200)->assertJsonPath('repeated', true)->assertJsonPath('result.id', $sale)->assertJsonPath('result.number', $number);
-        $resolved = $this->check($envelope)->assertOk()->assertJsonPath('outcome', 'COMMITTED')->assertJsonPath('result.id', $sale)->assertJsonPath('result.number', $number)->assertJsonPath('result.location', '/');
+        $resolved = $this->check($envelope)->assertOk()->assertJsonPath('outcome', 'COMMITTED')->assertJsonPath('result.id', $sale)->assertJsonPath('result.number', $number)->assertJsonPath('result.location', '/sales/'.$sale.'/receipt');
         $this->assertJsonChannel($resolved, 'commands.resolve.number', 'cashier');
         $this->checkout($this->envelopeOf($session, [self::line($this->pen, '1')], self::cash('7500')))->assertStatus(422)->assertJsonPath('code', 'SESSION_NOT_OPEN');
         $this->assertSame([1, ['7.000', 2]], [$this->watcher()->table('sales')->count(), $this->balanceOf($this->pen)]);
@@ -591,7 +592,7 @@ final class CheckoutSaleTest extends DatabaseTestCase
         $number = self::text($committed->json('result.number'));
 
         $this->as('Hendra');
-        $resolved = $this->check($envelope)->assertOk()->assertJsonPath('outcome', 'COMMITTED')->assertJsonPath('commandId', $commandId)->assertJsonPath('result.id', $sale)->assertJsonPath('result.number', $number)->assertJsonPath('result.location', '/');
+        $resolved = $this->check($envelope)->assertOk()->assertJsonPath('outcome', 'COMMITTED')->assertJsonPath('commandId', $commandId)->assertJsonPath('result.id', $sale)->assertJsonPath('result.number', $number)->assertJsonPath('result.location', '/sales/'.$sale.'/receipt');
         $this->assertJsonChannel($resolved, 'commands.resolve.number', 'owner');
 
         $rina = $this->people['Rina'];

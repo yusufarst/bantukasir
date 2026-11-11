@@ -69,8 +69,8 @@ describe('the primary navigation of each role', () => {
     it('registers no destination before the Task that delivers its page (EXC-52)', () => {
         // UXI-008 "Pengaturan" is TASK-010's, UXI-005 "Produk" TASK-017's, UXI-006 "Stok" TASK-022's and UXI-002 "Kasir" TASK-027's, with the capabilities of their rows.
         expect(ALL.filter((id) => DESTINATIONS[id] !== undefined)).toEqual(['till', 'stock', 'products', 'settings']);
-        // "Kasir" leads to Buka sesi kas until TASK-029 delivers the till.
-        expect(DESTINATIONS.till).toEqual({ label: 'sales.till.title', href: '/till/open-session', icon: 'till', capabilities: ['CAP-21'] });
+        // "Kasir" leads to the till, which sends a user without an OPEN session to Buka sesi kas (TASK-029).
+        expect(DESTINATIONS.till).toEqual({ label: 'sales.till.title', href: '/till', icon: 'till', capabilities: ['CAP-21'] });
         expect(DESTINATIONS.settings).toEqual({ label: 'config.settings.title', href: '/settings', icon: 'sliders', capabilities: ['CAP-25', 'CAP-32'] });
         expect(DESTINATIONS.products).toEqual({ label: 'catalog.products.title', href: '/products', icon: 'tag', capabilities: ['CAP-02', 'CAP-04'] });
         expect(DESTINATIONS.stock).toEqual({ label: 'inventory.stock.title', href: '/stock', icon: 'boxes', capabilities: ['CAP-14'] });

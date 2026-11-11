@@ -69,7 +69,8 @@ final class OpenCashSessionTest extends DatabaseTestCase
         $row = (array) $this->watcher()->table('cash_sessions')->where('id', $session)->sole();
         $counter = self::number($row['session_number_seq']);
 
-        $this->assertSame(['cash_session', '/'], [$response->json('result.type'), $response->json('result.location')]);
+        // Its location is the till (RP-101; TASK-029).
+        $this->assertSame(['cash_session', '/till'], [$response->json('result.type'), $response->json('result.location')]);
         $this->assertSame(sprintf('20261107-%06d', $counter), $response->json('result.number'));
         $this->assertSame(
             [sprintf('20261107-%06d', $counter), '2026-11-07', $this->register, $rina, 'Rina', 0, 'OPEN', 0, null],

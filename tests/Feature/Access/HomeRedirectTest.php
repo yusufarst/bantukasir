@@ -12,7 +12,8 @@ use Tests\Harness\Http\Browsers;
  * TASK-007 scope item 7): Operations and the combined account without an
  * OPEN session are sent to Stok (RP-401, TASK-022); a cashier without an OPEN
  * session to Buka sesi kas (RP-104, TASK-027); the Owner to Akun saya
- * (RP-003), until TASK-029 and TASK-041 switch the others;
+ * (RP-003), until TASK-041 switches it; with an OPEN session a cashier and
+ * the combined account go to Kasir (RP-101, TASK-029, CashPagesTest);
  * a first visit is sent to the
  * sign-in page without the note that a sign-in session ended, and a browser
  * whose sign-in session a limit ended gets it — by the application's limit

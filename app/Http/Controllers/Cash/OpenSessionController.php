@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Cash;
 
+use App\Domain\Access\Homes;
 use App\Models\User;
 use App\Queries\Cash\CashRegisterRows;
 use App\Queries\Cash\OpenSessions;
@@ -15,13 +16,12 @@ use Inertia\Response;
  * KS-06; NAVIGATION_CONTRACTS UXP-104; TASK-027 scope item 4), for every holder of CAP-21: the
  * registers available now — active, without an OPEN session — and none when every one is in use or
  * inactive (UXS-48). A user who is already responsible for an OPEN session is sent with 302 to
- * RP-101, which is RN-01, the user's home, until TASK-029 delivers RP-101 (EXECUTION_CONTEXT
- * EXC-52).
+ * RP-101, the till (TASK-029).
  */
 final class OpenSessionController
 {
-    /** RP-101, until it exists RN-01 (TASK-029). */
-    public const string WITH_SESSION = '/';
+    /** RP-101, the till (TASK-029). */
+    public const string WITH_SESSION = Homes::TILL;
 
     public function show(Request $request, CashRegisterRows $registers, OpenSessions $sessions): Response|RedirectResponse
     {
