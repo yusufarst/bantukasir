@@ -73,6 +73,9 @@ final class CopyDeckTest extends TestCase
         }
 
         $copies = [];
+        // A field's key followed by " + `ux.action.optional`" holds the label alone; its copy cell
+        // shows the label with the optional marker appended (COPY_DECK section 5; TASK-029).
+        $optional = ' + `ux.action.optional`';
 
         foreach (preg_split('/\R/', $deck) ?: [] as $line) {
             if (! str_starts_with($line, '| ')) {
@@ -82,11 +85,17 @@ final class CopyDeckTest extends TestCase
             $cells = array_map(trim(...), explode('|', trim($line, ' |')));
 
             foreach ($cells as $at => $cell) {
-                if (! isset($cells[$at + 1]) || preg_match('/^`[a-z0-9_.]+`(; `[a-z0-9_.]+`)*$/', $cell) !== 1) {
+                // A cell of interaction identifiers is never a copy: the table of section 5.1
+                // names the keys whose accessible names take a shortcut, and their controls (TASK-029).
+                $next = $cells[$at + 1] ?? '';
+                $keyCell = preg_match('/^`[a-z0-9_.]+`( \+ `ux\.action\.optional`)?(; `[a-z0-9_.]+`( \+ `ux\.action\.optional`)?)*$/', $cell) === 1;
+
+                if (! isset($cells[$at + 1]) || ! $keyCell || preg_match('/^UXI-[0-9]{3}([,;] UXI-[0-9]{3})*$/', $next) === 1) {
                     continue;
                 }
 
-                $keys = array_map(static fn (string $named): string => trim($named, '`'), explode('; ', $cell));
+                $named = explode('; ', $cell);
+                $keys = array_map(static fn (string $one): string => trim(str_replace($optional, '', $one), '`'), $named);
                 $position = array_search($key, $keys, true);
 
                 if ($position === false) {
@@ -97,7 +106,16 @@ final class CopyDeckTest extends TestCase
                 $this->assertCount(count($keys), $texts, "COPY_DECK gives each key of {$cell} its copy.");
                 // A page title of section 4.1 may name its mode after it, in parentheses:
                 // "Lengkapi biaya (when the cost is UNKNOWN)", "Ubah laci kas (edit)" (TASK-025).
-                $copies[] = (string) preg_replace(['/^[a-z][a-z ]*: /', '/ \((?:when [^)]*|otherwise|new|edit)\)$/'], '', trim($texts[$position]));
+                // A text may follow its label: "accessible name: …", "Accessible names: …" (TASK-029).
+                $copy = (string) preg_replace(['/^(?:[a-z][a-z ]*|Accessible names?): /', '/ \((?:when [^)]*|otherwise|new|edit)\)$/'], '', trim($texts[$position]));
+
+                if (str_ends_with($named[$position], $optional)) {
+                    $marker = ' '.$this->row($deck, 'ux.action.optional');
+                    $this->assertStringEndsWith($marker, $copy, "COPY_DECK appends the optional marker to {$key}.");
+                    $copy = substr($copy, 0, -strlen($marker));
+                }
+
+                $copies[] = $copy;
             }
         }
 
