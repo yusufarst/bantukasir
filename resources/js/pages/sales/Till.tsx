@@ -456,10 +456,17 @@ function TillView({
         const product = row === undefined ? null : cartProductOf(row);
 
         if (row === undefined || product === null) {
+            // Its text is searched only when the code goes back to the field: an older scan never replaces the
+            // search of newer typing or a newer scan (pull request #40, review comment 4537940397).
+            const untouched = queue.isLatest(scan) && searchValue.current === '';
+
             keep();
             setNotice({ kind: 'unknown', code });
             announce(t('ux.announce.unknown_code', { kode: code }));
-            runSearch(code);
+
+            if (untouched) {
+                runSearch(code);
+            }
 
             return;
         }
@@ -518,15 +525,21 @@ function TillView({
         // On arrival only.
     }, []);
 
-    // A changed filter searches again.
+    // A changed filter searches again; with no text and no filter left, nothing is searched and the results
+    // go, as for an emptied field (pull request #40, review comment 4537940412).
     useEffect(() => {
-        if (search.trim() !== '' || category !== '' || brand.trim() !== '') {
-            supersede();
-            timer.current = window.setTimeout(() => {
-                timer.current = null;
-                runSearch(searchValue.current.trim());
-            }, TYPING_MS);
+        supersede();
+
+        if (searchValue.current.trim() === '' && category === '' && brand.trim() === '') {
+            setResults({ kind: 'none' });
+
+            return;
         }
+
+        timer.current = window.setTimeout(() => {
+            timer.current = null;
+            runSearch(searchValue.current.trim());
+        }, TYPING_MS);
         // The filters only: typing searches by itself.
     }, [category, brand]);
 

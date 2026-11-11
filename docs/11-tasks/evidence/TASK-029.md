@@ -36,6 +36,8 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Guard | Local, on `9a02421` | 19:18 | about 1 min | `PASS`, no candidate |
 | The same steps after round 2's fixes | Fast run 8, 43019182845 on `9a02421` | 19:18 to 19:30 | 11 min 44 s | `PASS` |
 | The whole of `test:postgres` and `test:race`, the browser suite with `tests/Browser/sales/till.spec.ts`, the build, the image checks | CI on the pull request's final head (CE-44, D-117) | — | — | `NOT_RUN` until then |
+| Fix cycle 1 (section 10): `npm run typecheck`, `npx eslint` on the two changed files | Local | 19:41 | seconds | `NOT_RUN`: `tsc` and `eslint` are not on the path of this machine (F-1) |
+| Fix cycle 1: `npm run lint`, `typecheck`, `test:unit`, the browser suite with the new test of `till.spec.ts`, and the rest of the command contract | CI on the fix's head (CE-41, CE-45) | — | — | `NOT_RUN` until then; the results before the fix stay valid for every file it does not touch |
 
 ## 2. What was built (contract section 4.1)
 
@@ -165,9 +167,20 @@ Round 2, the targeted verification by `bk-reviewer-high` on the package `.git/ba
 | R-14 | NOTE | Scans held by RP-103 stay in the page's memory when the visit to the till fails or is redirected | Accepted: the memory is the document's, never stored; a visit that does not reach the till leaves them for the till the same document opens next, the cashier's own scans of this sale |
 | R-15 | NOTE | The R-01 test's wait was observable only right after F8 | Fixed: the test asserts no payment heading while the lookup is held |
 
-## 10. Record (CE-50)
+## 10. Fix cycle 1 — the automated reviewer's findings on pull request #40 (CE-43)
 
-- Guard: `guard.sh --preview` of the uncommitted record against origin/develop `PASS`, no candidate to judge; the guard `PASS` with no candidate on every checkpoint (section 1).
+The repository's automated reviewer raised two P2 findings on the head `d8cea77`; each was checked against the code and held, so each is a defect of this Task, fixed in `resources/js/pages/sales/Till.tsx` with a regression test. Its other output, a summary comment and a review receipt, holds no finding.
+
+| ID | Finding | Outcome |
+| --- | --- | --- |
+| R-16 | Review comment 4537940397 (P2): an unknown code's answer called `runSearch(code)` unconditionally; when the cashier typed or scanned again while that exact lookup was out, its `supersede()` cancelled the newer typed search and showed the old code's results under the newer text | Held. Fixed: the code's text is searched only when the code goes back to the field — no newer scan, nothing typed (`queue.isLatest(scan)` and an empty field, the same condition as the field's), so BR-CAT-31 and the scan order are unchanged. Regression test: L5 "an unknown scan searches its code only while it keeps the field, and removing the last filter clears the results (pull request #40)": an untouched unknown code is searched; a held unknown code answered after typing keeps the typed text and its results, and its code is never searched |
+| R-17 | Review comment 4537940412 (P2): with the field empty, removing the last category or brand filter left the filtered results or the empty-results state, since the filter effect did nothing without criteria; "Hapus filter" also let a search with the removed filter come back, through `edited('')`'s timer that read the filters before the change | Held. Fixed: the filter effect always supersedes the pending search, and with no text and no filter clears the results, as an emptied field does. Regression test: the same L5 test, the brand field emptied and "Hapus filter", the empty-results state gone in both |
+
+Targeted verification (CE-43, class A, production behaviour changed) by `bk-reviewer-high` on the package `.git/bantukasir-executor/review/TASK-029/r3` (HEAD `d8cea77`, tree `976cbf7`, previous tree `25acb8f`), `--check` `UNCHANGED`: verdict `PASS` — R-16 and R-17 FIXED, no regression of BR-CAT-29 to BR-CAT-31, R-01 or R-13, the test failing before the fix and deterministic, no lint or type error seen by reading; two NOTEs: this record (done here), and the test's one fixed wait of one second after "Hapus filter", a negative check that cannot pass wrongly on the fixed code, the test failing before the fix at the brand field already (accepted, as ten other tests of the suite wait so).
+
+## 11. Record (CE-50)
+
+- Guard: `guard.sh --preview` of the uncommitted record against origin/develop `PASS`, no candidate to judge; the guard `PASS` with no candidate on every checkpoint (section 1); fix cycle 1's `guard.sh --preview` `PASS`, no candidate to judge.
 - Backup impact: none — no table, no stored file, no procedure (DoD Operations N/A).
 - The previous merge, TASK-028's pull request #39, is recorded in [its evidence](TASK-028.md) section 14.
 - TASK_PLAN: TASK-029 `DONE`, TASK-030 `READY`, the totals TODO 19, READY 2, DONE 29; CURRENT_HANDOFF last.

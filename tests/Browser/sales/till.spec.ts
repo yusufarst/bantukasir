@@ -321,6 +321,80 @@ test('scans add one base unit each in their order; empty terminators, a held Ent
     await context.close();
 });
 
+test('an unknown scan searches its code only while it keeps the field, and removing the last filter clears the results (pull request #40)', async ({ browser }) => {
+    const { context, page, watched, products } = await openTill(browser);
+    const [pen] = products;
+    const search = searchField(page);
+    const result = page.getByRole('button', { name: `Tambah ${pen.name} ke keranjang` });
+    const noResults = page.locator('[data-state="no_results"]');
+
+    // The text searches of each code: a search without the exact mode.
+    const searched: string[] = [];
+
+    page.on('request', (request) => {
+        const url = new URL(request.url());
+
+        if (url.pathname === '/data/products/search' && url.searchParams.get('mode') === null) {
+            searched.push(url.searchParams.get('q') ?? '');
+        }
+    });
+
+    const late = gate();
+
+    await page.route('**/data/products/search*', async (route) => {
+        const url = new URL(route.request().url());
+
+        if (url.searchParams.get('q') === '0000000000001' && url.searchParams.get('mode') === 'exact') {
+            await late.wait;
+        }
+
+        await route.continue();
+    });
+
+    // Nothing typed since the scan: the unknown code goes back to the field and its text is searched (BR-CAT-31).
+    await scan(page, '0000000000000');
+    await expect(page.getByText('Kode tidak dikenal', { exact: true })).toBeVisible();
+    await expect(search).toHaveValue('0000000000000');
+    await expect.poll(() => searched.includes('0000000000000')).toBe(true);
+    await search.fill('');
+
+    // Typing while an unknown scan's lookup is out: its answer replaces neither the field nor the typed search (review comment 4537940397).
+    await scan(page, '0000000000001');
+    await search.fill(pen.name);
+    await expect(result).toBeVisible();
+    late.open();
+    await expect(page.getByText('Kode tidak dikenal', { exact: true })).toBeVisible();
+    await expect(result).toBeVisible();
+    await expect(search).toHaveValue(pen.name);
+    await expect(noResults).toHaveCount(0);
+    expect(searched).not.toContain('0000000000001');
+    await search.fill('');
+    await expect(result).toHaveCount(0);
+
+    // A brand that matches nothing, then the field of the brand emptied: the empty results go (review comment 4537940412).
+    await page.getByRole('button', { name: 'Filter' }).click();
+    const brand = page.getByRole('searchbox', { name: 'Merek' });
+
+    await brand.fill('Merek tanpa produk 4537940412');
+    await expect(noResults).toBeVisible();
+    await brand.fill('');
+    await expect(noResults).toHaveCount(0);
+    await expect(page.getByRole('main').locator('.bk-result')).toHaveCount(0);
+
+    // The same through "Hapus filter": no search with the removed filter comes back.
+    await brand.fill('Merek tanpa produk 4537940412');
+    await expect(noResults).toBeVisible();
+    await noResults.getByRole('button', { name: 'Hapus filter' }).click();
+    await expect(brand).toHaveValue('');
+    await expect(noResults).toHaveCount(0);
+    await page.waitForTimeout(1000);
+    await expect(noResults).toHaveCount(0);
+    await expect(search).toHaveValue('');
+
+    expect(injected(watched.problems)).toEqual([]);
+    await context.close();
+});
+
 test('a sale paid in cash takes three actions by keyboard, and its receipt starts the next sale with a scan (AC-029-03, AC-029-07)', async ({ browser }) => {
     const { context, page, watched, products } = await openTill(browser);
     const [pen, paper] = products;
