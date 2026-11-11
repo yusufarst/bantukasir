@@ -76,7 +76,7 @@ A module may read from the modules listed for it; writes across modules happen o
 | Inventory | Catalog, Audit, Commands, Access, shared kernel |
 | Costing | Inventory (ledger, balances, posting blocks and reversals, read: the logical ledger of the replay, TASK-026), Catalog, Audit, Commands (RC-15, TASK-025), Access, shared kernel |
 | Cash | Configuration (snapshot revision), Audit, Commands, Access, shared kernel |
-| Sales | Catalog, Inventory, Costing, Cash, Configuration, Audit, Commands, Access, shared kernel |
+| Sales | Catalog, Inventory, Costing, Cash, Configuration, Media (read: the delivery path of a receipt's logo, RP-103, TASK-029), Audit, Commands, Access, shared kernel |
 | Documents | Sales, Cash, Catalog, Configuration (all read), Audit, Commands and Access (a print or export request is a command: TASK-018's RC-47), shared kernel |
 | Reporting | Every domain module, read only |
 | Operations | Inventory, Costing (reconciliation reads; the recovery and rebuild procedures call their services), Catalog (active mappings), Sales (running totals), Media, Commands, Access (actor), Audit |

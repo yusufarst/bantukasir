@@ -269,3 +269,7 @@ The counts were derived without `jq`, which this machine lacks. On `095ce1b` the
 | The whole command contract and the fast checks | CI on the new head | — | — | `NOT_RUN` at this writing; their results on `095ce1b` cover the same code. The push is fast run 10 of 10 (CE-46, D-117) |
 
 A newer database of Grype that refuses another finding — a krb5 finding of lower severity raised to High among them — or any other new CVE or advisory, is a stop for the Owner, never accepted, ignored or suppressed here (T-38 (d), D-128). A red new head is failure 3 of 3, with the last fix cycle that CE-42 permits.
+
+## 14. Merge
+
+Recorded by TASK-029 (EXECUTION_CONTEXT CE-50, CE-61). Pull request #39, its final head `f1102d40dcd45e6656ca1ad90a169e2931956229` after fix cycles 1 and 2, passed CI in run 42989301795. The tick squash-merged it under D-105 as `341d4cb741a5793afebea8b05f244d98aaf0d08a` on `develop` on 11 November 2026, after the automated review's window ended with the status DONE; the squash commit's tree, `016fcb7`, equals the head's, its parent is `6e81655` and its author the Owner's identity. CI on `develop` at the merge, run 42993453914, passed, and the tick verified the merge. TASK-028 is `DONE`.
