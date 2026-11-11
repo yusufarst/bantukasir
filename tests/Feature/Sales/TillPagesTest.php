@@ -131,7 +131,9 @@ final class TillPagesTest extends DatabaseTestCase
                 ['lineNo' => '1', 'sku' => 'PEN-01', 'name' => 'Pulpen Hitam', 'unit' => 'pcs', 'quantity' => '2', 'unitPrice' => '4500', 'lineTotal' => '9000'],
                 ['lineNo' => '2', 'sku' => 'KADO-01', 'name' => 'Kertas kado per meter', 'unit' => 'm', 'quantity' => '2.5', 'unitPrice' => '7000', 'lineTotal' => '17500'],
             ], $receipt['lines'] ?? null);
-            $this->assertSame($shop['shop_name'], ((array) ($props['shop'] ?? []))['name'] ?? null);
+            $this->assertSame($shop['shop_name'], ((array) ($props['issuer'] ?? []))['name'] ?? null);
+            // The shell keeps its shared shop, with its initials and accent, beside the receipt's issuer.
+            $this->assertSame(['name', 'initials', 'accent'], array_keys((array) ($props['shop'] ?? [])), $person);
         }
 
         // The transfer's receipt carries no cash amounts (DC-01 element 12), to its cashier.

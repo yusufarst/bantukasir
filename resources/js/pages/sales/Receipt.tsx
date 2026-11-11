@@ -56,7 +56,8 @@ interface ReceiptProps {
         readonly customerName: string | null;
         readonly lines: readonly ReceiptLine[];
     };
-    readonly shop: {
+    /** The shop as the snapshot froze it; the shared prop `shop` stays the shell's (TASK-010). */
+    readonly issuer: {
         readonly name: string;
         readonly identity: string | null;
         readonly address: string | null;
@@ -73,7 +74,7 @@ export default function Receipt(props: ReceiptProps) {
 
     return (
         <AppShell title={title} current={DESTINATION} layout={TILL_LAYOUT}>
-            <ReceiptPage title={title} {...props} />
+            <ReceiptPage title={title} receipt={props.receipt} issuer={props.issuer} />
         </AppShell>
     );
 }
@@ -89,7 +90,7 @@ function quantityOf(line: ReceiptLine): string {
     }
 }
 
-function ReceiptPage({ title, receipt, shop }: ReceiptProps & { title: string }) {
+function ReceiptPage({ title, receipt, issuer: shop }: ReceiptProps & { title: string }) {
     const [search, setSearch] = useState('');
     const [size, setSize] = useState<ReceiptSize>(rememberedSize);
     const searchField = useRef<HTMLInputElement | null>(null);

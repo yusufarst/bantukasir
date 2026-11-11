@@ -35,7 +35,10 @@ final class Receipts
     public function __construct(private readonly BusinessProfiles $profiles) {}
 
     /**
-     * @return array{receipt: array<string, mixed>, shop: array<string, string|null>}
+     * The issuer is the shop as the snapshot froze it; it is not named `shop`, the shared prop of the
+     * shell's name and accent that a page prop of the same name would replace.
+     *
+     * @return array{receipt: array<string, mixed>, issuer: array<string, string|null>}
      *
      * @throws NotFound
      */
@@ -86,7 +89,7 @@ final class Receipts
                 'customerName' => Read::nullableText($values, 'customer_name'),
                 'lines' => self::lines(Read::text($values, 'lines')),
             ],
-            'shop' => [
+            'issuer' => [
                 'name' => $fields->shopName,
                 'identity' => $fields->documentIdentity,
                 'address' => $fields->address,
