@@ -2,12 +2,14 @@
 
 namespace Tests\Concurrency;
 
+use App\Models\User;
 use Illuminate\Database\Connection;
 use Illuminate\Support\Str;
 use Tests\Harness\Access\UserCommandScenario;
 use Tests\Harness\Configuration\ProfileChangeScenario;
 use Tests\Harness\DatabaseTestCase;
 use Tests\Harness\Fixtures\TokoContoh;
+use Tests\Harness\Inventory\PostingBlockScenario;
 use Tests\Harness\Race\Scenario;
 use Tests\Harness\Race\Worker;
 use Tests\Harness\Sales\SessionCloseScenario;
@@ -29,7 +31,9 @@ use Tests\Harness\Sales\SessionCloseScenario;
  *   both orders and past the lock timeout;
  * - RACE-23: a price change or a deactivation against a Sale whose cart is open, in both orders;
  * - RACE-25: a BusinessProfile change against a Sale, in both orders;
- * - RACE-18, the Sale side: a barcode move against the Sale of a cart line taken before it.
+ * - RACE-18, the Sale side: a barcode move against the Sale of a cart line taken before it;
+ * - RACE-04, which RC-01 names: a role change of the actor against a running Sale, in both orders;
+ * - RACE-24, which RC-01 names: a posting block against a Sale, in both orders.
  */
 final class CheckoutRaceTest extends DatabaseTestCase
 {
@@ -431,6 +435,82 @@ final class CheckoutRaceTest extends DatabaseTestCase
         $this->assertSame($right, $this->watcher()->table('barcode_tokens as t')->join('barcode_active_mappings as am', 'am.token_id', '=', 't.id')->where('t.token', $token)->value('am.product_id'));
     }
 
+    public function test_race_04_a_role_change_against_a_running_sale_in_both_orders(): void
+    {
+        // RC-01 "Tests: RACE-04"; BR-USR-05, REQ-ACC-09: the actor guard's share lock of step 2.1 against
+        // RC-36's lock of the account. The Sale holds the actor first: it commits, then the change, and the
+        // session stays OPEN (D-069 (d)). The change holds the account first: the Sale waits for it, finds
+        // the actor without CAP-21 and is refused FORBIDDEN, with nothing written.
+        TokoContoh::stock($this->product, '10', '10000');
+        [$satu, $satuEmail, $satuSession] = $this->cashierWithSession('Satu', 'LACI-3');
+        $sale = $this->start($this->saleBy($satu, $satuSession), ['after_lock:2.1']);
+        $change = $this->start($this->roleChange($satu, $satuEmail, 'Satu'));
+        Worker::ready($sale, $change);
+
+        $sale->run()->awaitBarrier('after_lock:2.1');
+        $change->run()->awaitBlocked($this->watcher());
+        $sale->release();
+
+        $this->assertSame('COMMITTED', ($sale->finish()->result ?? [])['outcome'] ?? null);
+        $this->assertSame('COMMITTED', ($change->finish()->result ?? [])['outcome'] ?? null);
+        $this->assertSame(['OPEN', 1], array_values((array) $this->watcher()->table('cash_sessions')->where('id', $satuSession)->first(['status', 'activity_version'])));
+
+        [$dua, $duaEmail, $duaSession] = $this->cashierWithSession('Dua', 'LACI-4');
+        $changing = $this->start($this->roleChange($dua, $duaEmail, 'Dua'), ['after_lock:2.2']);
+        $refused = $this->saleBy($dua, $duaSession);
+        $waiting = $this->start($refused);
+        Worker::ready($changing, $waiting);
+
+        $changing->run()->awaitBarrier('after_lock:2.2');
+        $waiting->run()->awaitBlocked($this->watcher());
+        $changing->release();
+
+        $this->assertSame('COMMITTED', ($changing->finish()->result ?? [])['outcome'] ?? null);
+        $this->assertSame(['refused' => 'FORBIDDEN'], $waiting->finish()->result);
+        $this->assertLeftNothing($refused);
+        $this->assertSame([[$satu], 0, ['9.000', 2]], [$this->watcher()->table('sales')->pluck('actor_user_id')->all(), $this->watcher()->table('cash_sessions')->where('id', $duaSession)->value('activity_version'), $this->balanceOf($this->product)]);
+    }
+
+    public function test_race_24_a_posting_block_against_a_sale_each_sees_the_others_result(): void
+    {
+        // RC-01 "Tests: RACE-24"; BR-INV-45, G-11: both hold the product guard. The block first: the Sale
+        // waits for it, then is refused POSTING_BLOCKED before any fact. The Sale first: the block waits,
+        // both commit, and the next Sale of that product is refused.
+        TokoContoh::stock($this->product, '10', '10000');
+        $block = $this->startBlock($this->product, ['after_lock:6']);
+        $refused = $this->sale('Rina', '1', '20000');
+        $sale = $this->start($refused);
+        Worker::ready($block, $sale);
+
+        $block->run()->awaitBarrier('after_lock:6');
+        $sale->run()->awaitBlocked($this->watcher());
+        $block->release();
+
+        $this->assertIsInt(($block->finish()->result ?? [])['block'] ?? null);
+        $this->assertSame(['refused' => 'POSTING_BLOCKED'], $sale->finish()->result);
+        $this->assertLeftNothing($refused);
+        $this->assertSame([0, ['10.000', 1]], [$this->watcher()->table('sales')->count(), $this->balanceOf($this->product)]);
+
+        $other = TokoContoh::product('RACE-S4', ['categoryId' => $this->category, 'name' => 'Produk Empat', 'sellingPrice' => '10000']);
+        TokoContoh::stock($other, '10', '10000');
+        $first = $this->start($this->sale('Dewi', '1', '10000', $other), ['after_lock:7']);
+        $blocking = $this->startBlock($other);
+        Worker::ready($first, $blocking);
+
+        $first->run()->awaitBarrier('after_lock:7');
+        $blocking->run()->awaitBlocked($this->watcher());
+        $first->release();
+
+        $this->assertSame('COMMITTED', ($first->finish()->result ?? [])['outcome'] ?? null);
+        $this->assertIsInt(($blocking->finish()->result ?? [])['block'] ?? null);
+
+        $late = $this->start($this->sale('Dewi', '1', '10000', $other));
+        Worker::ready($late);
+        $late->run();
+        $this->assertSame(['refused' => 'POSTING_BLOCKED'], $late->finish()->result);
+        $this->assertSame([1, ['9.000', 2]], [$this->watcher()->table('sales')->count(), $this->balanceOf($other)]);
+    }
+
     /**
      * Two receipts of the product, 10 worth Rp100.000 and 10 worth Rp140.000: the evidence of the second.
      */
@@ -524,6 +604,52 @@ final class CheckoutRaceTest extends DatabaseTestCase
             'expected' => ['lines' => [['priceRevisionId' => $revision ?? (is_int($current) ? $current : 0)]]],
             'payload' => ['sessionId' => $person === 'Dewi' ? $this->dewiSession : $this->rinaSession, 'lines' => [['productId' => $product, 'quantity' => $quantity]], 'payment' => ['method' => 'CASH', 'tendered' => $tendered]],
         ];
+    }
+
+    /**
+     * RC-01 of one unit of the product by this actor in this session, paid with the exact cash.
+     *
+     * @return array<string, mixed>
+     */
+    private function saleBy(int $actor, int $session): array
+    {
+        return [...$this->sale('Rina', '1', '20000'), 'actor' => $actor, 'payload' => ['sessionId' => $session, 'lines' => [['productId' => $this->product, 'quantity' => '1']], 'payment' => ['method' => 'CASH', 'tendered' => '20000']]];
+    }
+
+    /**
+     * A cashier of their own, beside the people of Toko Contoh, with an OPEN session on a new register
+     * opened through RC-02's Action (RACE-04): the account's key, its e-mail and the session's key.
+     *
+     * @return array{0: int, 1: string, 2: int}
+     */
+    private function cashierWithSession(string $name, string $code): array
+    {
+        $staff = TokoContoh::staff($name);
+        $opened = (new UserCommandScenario)->run(['operation' => 'cash_session.open', 'actor' => $staff['id'], 'intent' => (string) Str::uuid(), 'key' => (string) Str::uuid(), 'epoch' => $this->epoch, 'expected' => [], 'payload' => ['registerId' => TokoContoh::register($code, 'Laci '.$name), 'openingCash' => '0']]);
+        $this->assertSame('COMMITTED', $opened['outcome'] ?? null);
+        $session = $this->watcher()->table('cash_sessions')->where('responsible_user_id', $staff['id'])->where('status', 'OPEN')->value('id');
+
+        return [$staff['id'], $staff['email'], is_int($session) ? $session : 0];
+    }
+
+    /**
+     * RC-36 by the Owner: the account becomes Operations alone, which holds no CAP-21 (RACE-04).
+     *
+     * @return array<string, mixed>
+     */
+    private function roleChange(int $id, string $email, string $name): array
+    {
+        return $this->command('user.update', ['userId' => $id, 'displayName' => $name, 'email' => $email, 'roles' => ['operationsAdmin']], ['userVersion' => User::query()->findOrFail($id)->version]);
+    }
+
+    /**
+     * A posting block of a product, as the reconciliation will write it (PostingBlockScenario; RACE-24).
+     *
+     * @param  list<string>  $barriers
+     */
+    private function startBlock(int $product, array $barriers = []): Worker
+    {
+        return $this->start(['product' => $product, 'epoch' => $this->epoch], $barriers, PostingBlockScenario::class);
     }
 
     /**

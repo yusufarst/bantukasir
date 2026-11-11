@@ -635,10 +635,6 @@ final class LedgerTablesTest extends DatabaseTestCase
     }
 
     /**
-     * A manual issue of one line of one unit of the product, written directly (TASK-023): the
-     * line's key.
-     */
-    /**
      * The SALE_ISSUE of one unit of a product of its own, sold by the Owner in a session of its own
      * through RC-01's Action (TASK-028): its internal key.
      */
@@ -651,6 +647,10 @@ final class LedgerTablesTest extends DatabaseTestCase
         return TokoContoh::saleIssueOf(TokoContoh::sell('Hendra', $session, [['productId' => $product, 'quantity' => '1']]));
     }
 
+    /**
+     * A manual issue of one line of one unit of the product, written directly (TASK-023): the
+     * line's key.
+     */
     private function insertIssueLine(Connection $c): int
     {
         $issue = $c->table('manual_issues')->insertGetId([
