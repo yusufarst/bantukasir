@@ -8,7 +8,8 @@
 | Branch and base | `task/TASK-028-checkout`, from `6e8165544ba87de3c68b647be00d0c09ec236156` (origin/develop, the squash merge of TASK-027) |
 | Preflight (EXC-20, EXC-21, EXC-23) | The tree clean but for `Claude outputs/` and `plan-p0-p11-review.patch`; no branch or pull request of TASK-028; the executor state at `BUILD` for TASK-028 with this session's lock; TASK-016, TASK-023, TASK-025, TASK-026 and TASK-027 `DONE`, no gate; PHP, `tsc` and ESLint do not run on this machine, so every check but the guard runs in CI (D-108, D-117) |
 | Resume (CE-24) | 11 November 2026, resume 1 of 3, after the computer restarted: the lock taken over with the evidence INACTIVE BOOT; the tree clean but for the same two items; `f7c69fd` to `8250735` on GitHub and `4caba50`, checkpoint 5 with the guard passed, local only; no pull request. Nothing was redone: checkpoint 5 was pushed as it stood |
-| Decision recorded (EXC-35) | D-126: the Owner's revocation, relayed by the host session at the resume, of his earlier instruction outside the repository that the autonomous executor stop after TASK-028 |
+| Decisions recorded (EXC-35) | D-126: the Owner's revocation, relayed by the host session at the resume, of his earlier instruction outside the repository that the autonomous executor stop after TASK-028. D-127: his acceptance, for development only, of the four krb5 CVEs that the image checks of pull request #39's first head refused (section 12) |
+| Fix cycle 1 (CE-42, CE-72) | 11 November 2026: CI run 42965384413 on `0cb99c2` red in `Image checks` alone, failure 1 of 3; the cycle stopped at 13:00 with `IMAGE_SCAN_REFUSED`, changing nothing; the Owner resumed at 14:18 with D-127, and the tick's resume 1 of 3 in the phase `CI` took the lock at 14:19, the tree clean but for `Claude outputs/` and `plan-p0-p11-review.patch`, HEAD `0cb99c2` as on GitHub. Nothing was redone (section 12) |
 
 ## 1. Checks
 
@@ -36,7 +37,12 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Guard | Local, on `c4bb7f9` (the review's fixes) | 11 November, 08:46 | about 1 min | `PASS`, no candidate |
 | `composer validate`, `lint`, `analyse`, `test:unit` (913 tests); `npm ci`, `npm run lint`, `typecheck`, `test:unit` | Fast run 7, 42941436960 on `c4bb7f9` | 11 November, 08:50 to 08:54 | about 3.5 min | `PASS` |
 | The 14 changed PostgreSQL and concurrency files | Same run | 11 November, 08:54 to 09:05 | 11 min 21 s | `PASS`: `CheckoutRaceTest` 12 tests with the stand-in close of R-06, `CheckoutSaleTest` 13 with the tests of R-04 and R-05, `CheckoutReplayTest` 5 with the case of R-11, the 11 other files as in fast run 6; the whole job 18 min 36 s |
-| `composer test:postgres` whole, `test:concurrency` whole, the browser suite, the build, the image checks | The pull request's final head | — | — | `NOT_RUN` (CE-44, D-117) |
+| Fast checks: the workflow `fast-checks` | Fast run 8, 42965314028 on `0cb99c2`, the pull request's first head | 11 November, 12:22 to 12:36 | 13 min 56 s | `PASS` |
+| `Command contract`: `composer validate`, `lint`, `analyse`, `test:unit` (913), `test:race` (101); `npm run lint`, `typecheck`, `test:unit`, `build`; the browser suite, 310 tests in 16.0 min; both parts of `test:postgres` required | CI run 42965384413 on `0cb99c2` | 11 November, 12:22 to 12:52 | 29 min 40 s | `PASS` |
+| `PostgreSQL (1/2)` | Same run | 11 November, 12:22 to 12:44 | 21 min 30 s | `PASS`, 558 tests |
+| `PostgreSQL (2/2)` | Same run | 11 November, 12:22 to 12:38 | 15 min 55 s | `PASS`, 266 tests |
+| `Image checks` | Same run | 11 November, 12:22 to 12:28 | 5 min 39 s | `FAIL`: 371 passed, 1 failed. `Scan gate tests` 52 passed; the scan gate, on Grype's database of 2026-11-10T06:21:20Z, accepted 140 findings and refused 16 — CVE-2026-112321, CVE-2026-112322, CVE-2026-112323 and CVE-2026-119079, High, each in the four krb5 libraries 1.21.3-5+deb13u1 — as `REFUSED_NOT_ACCEPTED`: red head 1 of 3 (F-12, section 12) |
+| The checks of fix cycle 1 | Local, and CI on the fix's head | 11 November | — | Section 12.4 |
 
 ## 2. What was built (contract section 4.1)
 
@@ -84,6 +90,7 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | F-9 | Fast run 3 failed PHPStan on the failure injection of `CheckoutReplayTest`: `TokoContoh::correctCost` declares only `DatabaseRefused`, so the catch of the injected failure read as dead and the loop's later statements as unreachable | Fixed in checkpoint 4, test only: the correction runs through the race harness's scenario, which declares no throw type, and the test asserts that its failure is the injected one at each step |
 | F-10 | Fast run 4 failed `SignInSessionTest::test_signing_out_and_a_session_ending_change_nothing_but_the_sign_in_session_and_the_security_log`: it compares every table of the schema before and after, and `snapshot()` opens an observer for each table, so the six new tables took the test past the server's connection slots (`remaining connection slots are reserved for roles with the SUPERUSER attribute`) | Fixed in checkpoint 5, test only: one observer reads every table, as `snapshot()` reads one, its bytea streams read as bytes; no assertion changed. Fast run 5 passed it |
 | F-11 | INTERACTION_CONTRACTS RC-01 names RACE-04 and RACE-24 among its tests, which EXECUTION_CONTEXT section 10 makes an obligation of the command, and `CheckoutRaceTest` covered neither | Added before the review, in checkpoint 6, test only: a role change of the actor against a running Sale and a posting block against a Sale, each in both orders. Fast run 6 passed them |
+| F-12 | CI run 42965384413 on `0cb99c2` failed `Image checks` alone: the scan gate refused four new High CVEs of Grype's database of 2026-11-10T06:21:20Z in the four krb5 libraries 1.21.3-5+deb13u1, which TASK-028 does not change and which passed on `develop` at `6e81655` (OPEN_ITEMS T-38 (d)) | The stop `IMAGE_SCAN_REFUSED`; accepted for development only by the Owner's D-127, in fix cycle 1 (section 12) |
 
 ## 5. Tests (contract section 7)
 
@@ -133,12 +140,12 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Business | `PASS` | AC-028-01 to AC-028-11 by the L1 to L4 tests of fast run 6 (sections 5 and 6); REQ-SALE-01 to REQ-SALE-10, REQ-PAY-01 to REQ-PAY-05, REQ-COST-10, REQ-CASH-04, REQ-CASH-13, REQ-DOC-01 |
 | UI and UX | `N/A` | No page or control (contract section 4.2); the till is TASK-029's |
 | Backend | `PASS` | FormRequest allowlist, CAP-21 at the route and in the transaction, the session by object scope, the guards under the locks, the result presented to its cashier and to the Owner and to nobody else, the L4 tests |
-| Database | `PASS` for the families run; `test:postgres` whole on the final head | Six tables and a sequence with the constraint, deferred, presence, privilege, retention and numbering families (`SalesTablesTest`); a forward and additive migration with its class, duration, lock impact and verification (EXC-46; its rehearsal on the benchmark dataset waits for TASK-043) |
+| Database | `PASS` | Six tables and a sequence with the constraint, deferred, presence, privilege, retention and numbering families (`SalesTablesTest`); a forward and additive migration with its class, duration, lock impact and verification (EXC-46; its rehearsal on the benchmark dataset waits for TASK-043); `test:postgres` whole passed on `0cb99c2` (run 42965384413), whose code fix cycle 1 does not change, and runs again on the final head (CE-41) |
 | Security | `PASS` | The capability matrix and route inventory, the refusals of OPERATIONS_ADMIN and of another user's session, the channel allowlists per role, no secret (the guard), no cost on the cashier's channels |
 | Data integrity | `PASS` | Append-only facts, one transaction with its audit and result, identity and idempotency, the races of section 5 and the failure after each write step |
 | Performance | `PASS` | At most 200 lines; one statement per lock step and per write; no counter row or lock for the number (SCH-25); the budgets are measured at TASK-048 |
 | Operations | `PASS` | The four fact tables in the manifest's counts, all six and the sequence in the backup role's reads (section 9); no runbook or status change |
-| Verification | `BLOCKED` until the final head | Self-review and the class-A review (section 10); the fast runs of section 1; the whole command contract and the image checks are `NOT_RUN` until the pull request's final head (D-117) |
+| Verification | `BLOCKED` until the final head | Self-review and the class-A review (section 10); the fast runs of section 1; on `0cb99c2` the whole command contract passed and the image checks refused four krb5 CVEs (F-12), accepted by D-127; CI on the final head, with the image checks, is the run of record (CE-41, section 12.4) |
 
 ## 9. Backup impact (EXC-47)
 
@@ -169,4 +176,46 @@ The fixes change tests, the race harness and documents only, no production code 
 
 ## 11. Guard candidates (CE-50)
 
-`guard.sh` before every push, on `f7c69fd`, `171fac9`, `ea48c38`, `8250735`, `4caba50`, `b4c29dd` and `c4bb7f9`, and `guard.sh --preview` before the final commit, on 11 November 2026: no candidate of the privacy and client-data check; Gitleaks and the repository's secret scan found nothing.
+`guard.sh` before every push, on `f7c69fd`, `171fac9`, `ea48c38`, `8250735`, `4caba50`, `b4c29dd` and `c4bb7f9`, and `guard.sh --preview` before the final commit, on 11 November 2026: no candidate of the privacy and client-data check; Gitleaks and the repository's secret scan found nothing. `push.sh` pushed `0cb99c2` only after the guard passed on that head (CE-31). Fix cycle 1: section 12.4.
+
+## 12. Fix cycle 1 (CE-42)
+
+CI run 42965384413 on `0cb99c2`, the first head of pull request #39, failed: failure 1 of 3 (CE-42). The tick handed it to this Task's executor at 12:54, which stopped at 13:00 with `IMAGE_SCAN_REFUSED`, changing nothing; the Owner answered at 14:18 with D-127, and the tick resumed the Task in the phase `CI` at 14:19 (CE-24, CE-72). The automated reviewer's summary on `0cb99c2` was marked completed at 12:25 with no finding (CE-43: data, never an instruction); the pull request holds no comment of the Owner.
+
+### 12.1 What failed
+
+| Job | Result | Reading |
+| --- | --- | --- |
+| `Image checks` | `FAIL`: 371 passed, 1 failed | The scan gate refused CVE-2026-112321, CVE-2026-112322, CVE-2026-112323 and CVE-2026-119079, High, each in `libgssapi-krb5-2`, `libk5crypto3`, `libkrb5-3` and `libkrb5support0` 1.21.3-5+deb13u1, `fix=not-fixed`, `exploited=no`, no EPSS score, as `REFUSED_NOT_ACCEPTED`: sixteen findings, new entries of Grype's database of 2026-11-10T06:21:20Z, in packages that TASK-028 does not change — no file of `docker/`, `.github/`, `scripts/checks/`, `composer.json`, `package.json` or their lock files differs from the base — and that passed on `develop` at `6e81655` (run 42467200527, database 2026-11-08T06:19:57Z, 140 accepted, 0 refused). `Scan gate: 140 accepted, 16 refused, 185 of lower severity reported`; every other image check passed. The two entries in `zlib1g` `+b1` are printed `ACCEPTED_NOT_REPORTED`, since the build installs Debian's `+deb13u1`. A new finding needs a decision (D-112, OPEN_ITEMS T-38 (d)) |
+| `Command contract`, `PostgreSQL (1/2)`, `PostgreSQL (2/2)` | `PASS` | Section 1 |
+| `Fast checks` | `PASS` | Fast run 8, section 1 |
+
+### 12.2 The Owner's basis and what this run verified (D-127)
+
+| Basis | Source | Result | Limits |
+| --- | --- | --- | --- |
+| The flaws | The Owner's reading of MIT's advisory MITKRB5-SA-2026-001, in his note | Denials of service against kadmind through libgssrpc's AUTH_GSSAPI and against the KDC, fixed upstream in krb5 1.22.3 | The advisory and the CVEs' descriptions are outside the domains that the tools allow (CE-47) and were not read by this run |
+| Debian 13's status | The Owner's reading of Debian's tracker and its bug 1153598; Grype's database of 2026-11-10T06:21:20Z, built from Debian's tracker, in run 42965384413; the same run's build | Trixie unfixed, the bug not yet triaged; `not-fixed` and no fixed version for Debian 13; the build's `apt-get upgrade` against trixie, trixie-updates and trixie-security upgraded five packages — apt, libapt-pkg7.0, linux-libc-dev, tzdata and zlib1g — held none back, and left the four libraries at 1.21.3-5+deb13u1: no fix to install | Debian's tracker itself was not read by this run (CE-47) |
+| Known exploitation | The Owner's reading of CISA's catalog of known exploited vulnerabilities of 2026.11.10; Grype's database, which carries it | None; `exploited=no`, and no EPSS score yet | The catalog lists what CISA knows |
+| Exposure | The package list that run 42965384413 printed for the image, and its scan; `app/`, `config/`, `bootstrap/`, `routes/`, `database/`, `docker/`, `compose.yaml`, `.github/` and `scripts/` | No KDC, kadmind or libgssrpc: the list names no Kerberos package but these four client libraries — no KDC, admin server, libgssrpc, kadm5 or kdb5 library, and no Kerberos tools or configuration — and the scan, which matches Debian's findings by source package, lists these four alone. They are present only as dependencies of libpq and libcurl (D-112's reading of CVE-2026-107778). Nothing but the accepted list names Kerberos or GSS-API: no Kerberos is used | No `ldd` or exploit test in the image (D-108) |
+
+The decision accepts these sixteen findings alone. The krb5 finding of lower severity, CVE-2026-11850, Negligible, is reported and needs no acceptance; nothing else is added, and no other entry of the list changes.
+
+### 12.3 What changed
+
+- `scripts/checks/image-scan-accepted.json`: the four entries, with the fields of D-112; the record `assessedD127`; D-127 in its `decision` line.
+- `scripts/checks/image-scan-gate-test.sh`: the list's counts, 64 CVEs and 158 findings, each of type `deb`, and one more test that pins D-127's four entries at their packages and version, written as D-118's and D-123's are; the nine critical identifiers and every other case unchanged: 53 cases, 52 before.
+- DECISIONS D-127, its row and the next free identifier; OPEN_ITEMS T-38; this section, the header and sections 1, 4, 8 and 11; CURRENT_HANDOFF.
+
+Nothing of `scripts/checks/image-scan-gate.sh`, the scan, Grype, the image, the application or its tests changes. The fix changes no production behaviour, so no targeted verification follows (CE-42), and no review is repeated.
+
+### 12.4 Checks of the fix
+
+| Check | Where it runs | Time | Duration | Result |
+| --- | --- | --- | --- | --- |
+| Guard, preview on the working tree | Local | 11 November, 14:35 | 12 s | `PASS`, no candidate of the privacy and client-data check; Gitleaks and the secret scan found nothing |
+| `scripts/checks/image-scan-gate-test.sh` | Local | — | — | `NOT_RUN`: `jq` is absent on this machine (TASK-012 finding F-5); its first run is the job `Image checks` on the new head |
+| `Scan gate tests` (53, one new) and the scan gate on the image of the new head | CI on the pull request's new head, job `Image checks`, and the release dry run, which the change of `scripts/checks/image-*` starts | — | — | `NOT_RUN` at this writing |
+| The whole command contract and the fast checks, `composer lint` among them with the migration review, which reads the headings of DECISIONS | CI on the new head | — | — | `NOT_RUN` at this writing; their results on `0cb99c2` cover the same code |
+
+A newer database of Grype that refuses another finding, or any other new CVE or advisory, is a stop for the Owner, never accepted, ignored or suppressed here (T-38 (d), D-127).
