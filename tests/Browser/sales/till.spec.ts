@@ -87,7 +87,7 @@ async function openTill(browser: Browser, width: Width = WIDTHS[0]!): Promise<Ti
     const products = await tillProducts(context);
 
     await signIn(page, accounts.Hendra);
-    await page.goto(TILL);
+    await gotoTill(page);
     await expect(page.getByRole('heading', { level: 1, name: 'Kasir' })).toBeVisible();
 
     return { context, page, watched, products };
@@ -95,6 +95,25 @@ async function openTill(browser: Browser, width: Width = WIDTHS[0]!): Promise<Ti
 
 function searchField(page: Page): Locator {
     return page.getByRole('searchbox', { name: 'Cari atau scan produk (F2)' });
+}
+
+/**
+ * A full load of the till. The search field takes the focus on arrival (UXA-09) once the page has mounted
+ * and bound its keys, so no key of a scan is typed before the page exists to receive it.
+ */
+async function gotoTill(page: Page): Promise<void> {
+    await page.goto(TILL);
+    await expect(searchField(page)).toBeFocused();
+}
+
+/**
+ * "Bayar" (F8) to the payment screen with Tunai. "Uang diterima" takes the focus on arrival (UXA-10) in the
+ * effect that runs after the screen's shortcuts are bound, so Alt+U is never pressed before the screen exists.
+ */
+async function openPayment(page: Page): Promise<void> {
+    await page.keyboard.press('F8');
+    await expect(page.getByRole('heading', { level: 1, name: 'Pembayaran' })).toBeVisible();
+    await expect(page.getByLabel('Uang diterima', { exact: true })).toBeFocused();
 }
 
 /** A keyboard-wedge scan: the code's keys, then the scanner's Enter (BR-CAT-28). */
@@ -181,11 +200,10 @@ async function holdNextCheckout(page: Page): Promise<void> {
 
 /** From an empty till to the payment screen with one product, the cash entered exactly. */
 async function payOne(page: Page, product: TillProduct): Promise<void> {
-    await page.goto(TILL);
+    await gotoTill(page);
     await scan(page, product.code);
     await expect(quantity(page, product)).toHaveValue('1');
-    await page.keyboard.press('F8');
-    await expect(page.getByRole('heading', { level: 1, name: 'Pembayaran' })).toBeVisible();
+    await openPayment(page);
     await page.keyboard.press('Alt+U');
     await expect(finalAction(page)).not.toHaveAttribute('aria-disabled', 'true');
 }
@@ -480,8 +498,7 @@ test('a sale paid by bank transfer takes three actions by keyboard, its final ac
 
     await scan(page, pen.code);
     await expect(quantity(page, pen)).toHaveValue('1');
-    await page.keyboard.press('F8');
-    await expect(page.getByRole('heading', { level: 1, name: 'Pembayaran' })).toBeVisible();
+    await openPayment(page);
     await page.keyboard.press('Alt+2');
     await expect(page.getByRole('radio', { name: 'Transfer bank (Alt+2)' })).toHaveAttribute('aria-checked', 'true');
     await expect(page.getByRole('button', { name: 'Dana sudah diterima — Selesaikan (Ctrl+Enter)' })).not.toHaveAttribute('aria-disabled', 'true');
@@ -504,15 +521,7 @@ test('a lost answer, a reload, a status check and a held request recover the ori
     const [pen] = products;
     const sent = checkouts(page);
 
-    const toPayment = async (): Promise<void> => {
-        await page.goto(TILL);
-        await scan(page, pen.code);
-        await expect(quantity(page, pen)).toHaveValue('1');
-        await page.keyboard.press('F8');
-        await expect(page.getByRole('heading', { level: 1, name: 'Pembayaran' })).toBeVisible();
-        await page.keyboard.press('Alt+U');
-        await expect(finalAction(page)).not.toHaveAttribute('aria-disabled', 'true');
-    };
+    const toPayment = (): Promise<void> => payOne(page, pen);
 
     const loseAnswer = async (): Promise<void> => {
         await page.route(
@@ -642,6 +651,7 @@ test('"Bayar" waits for the scans still out, so that the payment shows every sca
     lookup.open();
     await expect(page.getByRole('heading', { level: 1, name: 'Pembayaran' })).toBeVisible();
     await expect(page.getByText(`Uang diterima kurang ${rupiah(BigInt(pen.price) + BigInt(paper.price))}.`)).toBeVisible();
+    await expect(page.getByLabel('Uang diterima', { exact: true })).toBeFocused();
 
     // The sale is the one shown; the next cart starts empty.
     await page.keyboard.press('Alt+U');
@@ -665,7 +675,7 @@ test('a definite refusal returns to the review with its reason at its line, neve
     await scan(page, pen.code);
     await expect(quantity(page, pen)).toHaveValue('1');
     await reprice(context, pen, '5000');
-    await page.keyboard.press('F8');
+    await openPayment(page);
     await page.keyboard.press('Alt+U');
     await expect(page.locator('.bk-change')).toContainText('Rp0');
     await page.keyboard.press('Control+Enter');
@@ -681,7 +691,7 @@ test('a definite refusal returns to the review with its reason at its line, neve
     await expect(cart(page).locator('.bk-total__value')).toHaveText('Rp5.000');
 
     // The payment screen starts again for the new total.
-    await page.keyboard.press('F8');
+    await openPayment(page);
     await expect(page.getByText('Uang diterima kurang Rp5.000.')).toBeVisible();
     await page.keyboard.press('Alt+U');
     await Promise.all([page.waitForURL((url) => RECEIPT.test(url.pathname)), page.keyboard.press('Control+Enter')]);
@@ -689,12 +699,12 @@ test('a definite refusal returns to the review with its reason at its line, neve
 
     // INSUFFICIENT_STOCK: the payment screen says which line, with the stock available; back in the cart
     // the line keeps it until it changes (UXS-31).
-    await page.goto(TILL);
+    await gotoTill(page);
     await scan(page, book.code);
     await scan(page, book.code);
     await scan(page, book.code);
     await expect(quantity(page, book)).toHaveValue('3');
-    await page.keyboard.press('F8');
+    await openPayment(page);
     await page.keyboard.press('Alt+U');
     await expect(page.locator('.bk-change')).toContainText('Rp0');
     await page.keyboard.press('Control+Enter');
@@ -707,7 +717,7 @@ test('a definite refusal returns to the review with its reason at its line, neve
     await page.getByRole('button', { name: `Kurangi satu pcs ${book.name}` }).click();
     await expect(quantity(page, book)).toHaveValue('2');
     await expect(lines(page).nth(0)).not.toContainText('Tersedia 2 pcs');
-    await page.keyboard.press('F8');
+    await openPayment(page);
     await page.keyboard.press('Alt+U');
     await Promise.all([page.waitForURL((url) => RECEIPT.test(url.pathname)), page.keyboard.press('Control+Enter')]);
 
@@ -722,7 +732,7 @@ test('a scanner Enter never confirms the payment; offline, nothing is queued and
 
     await scan(page, pen.code);
     await expect(quantity(page, pen)).toHaveValue('1');
-    await page.keyboard.press('F8');
+    await openPayment(page);
     await page.keyboard.press('Alt+U');
     await expect(finalAction(page)).not.toHaveAttribute('aria-disabled', 'true');
 
@@ -737,12 +747,13 @@ test('a scanner Enter never confirms the payment; offline, nothing is queued and
     // Offline: the banner, the final action refused with its reason, a scan in the cart not queued (UXS-20).
     await page.keyboard.press('Escape');
     await expect(page).toHaveURL((url) => url.pathname === TILL);
+    await expect(searchField(page)).toBeFocused();
     await context.setOffline(true);
     await expect(page.getByText('Tidak ada koneksi', { exact: true })).toBeVisible();
     await scan(page, paper.code);
     await expect(page.getByRole('main').getByText('Gagal memuat', { exact: true })).toBeVisible();
     await expect(lines(page)).toHaveCount(1);
-    await page.keyboard.press('F8');
+    await openPayment(page);
     await page.keyboard.press('Alt+U');
     await expect(finalAction(page)).toHaveAttribute('aria-disabled', 'true');
     await expect(page.getByRole('main')).toContainText('Penyimpanan berhenti sampai koneksi kembali.');
@@ -773,6 +784,8 @@ test('KS-03 with its states `empty`, `default`, `price-changed` and `unresolved`
         await scan(page, paper.code);
         await expect(quantity(page, paper)).toHaveValue('1');
         await checked(page);
+        // The line's remove names its product after its visible label (UXA-13, COPY_DECK CW-11; evidence F-11).
+        await expect(cart(page).getByRole('button', { name: `Hapus dari keranjang ${pen.name}`, exact: true })).toBeVisible();
 
         // `price-changed` (UXS-18): a newer read of a product in the cart carries another price.
         await reprice(context, pen, '5000');
@@ -785,8 +798,7 @@ test('KS-03 with its states `empty`, `default`, `price-changed` and `unresolved`
         await expect(pay(page)).not.toHaveAttribute('aria-disabled', 'true');
 
         // `unresolved` (NC-13): a checkout whose answer was lost; "Bayar" waits, "Cek pembayaran yang belum pasti" leads.
-        await page.keyboard.press('F8');
-        await expect(page.getByRole('heading', { level: 1, name: 'Pembayaran' })).toBeVisible();
+        await openPayment(page);
         await page.keyboard.press('Alt+U');
         await loseNextCheckout(page);
         await page.keyboard.press('Control+Enter');
@@ -898,6 +910,10 @@ test('KS-05 in each size at every width (AC-029-06)', async ({ browser }) => {
             await checked(page);
         }
 
+        // The paper takes the focus, from which the keyboard scrolls a paper wider than its stage (WCAG 2.1.1; evidence F-12).
+        await paper58.focus();
+        await expect(paper58).toBeFocused();
+
         await expect(paper58).toContainText('Nota Penjualan');
         // The size stays the browser session's choice; the next receipt opens in 58 mm again.
         await page.getByRole('radio', { name: '58 mm' }).click();
@@ -927,6 +943,7 @@ test('the refusals of RC-01 on the payment screen show their states (UI_STATES U
     for (const refused of cases) {
         await page.route(CHECKOUT, (route) => route.fulfill({ status: 422, json: { ...refusal(refused.code), lines: refused.lines } }), { times: 1 });
         await page.keyboard.press('Control+Enter');
+        // Every refusal is announced assertively (UXA-17), UXS-27 and UXS-29 too, whose banners have no role.
         const state = page.getByRole('main').getByRole('alert').filter({ hasText: refused.title });
 
         await expect(state, refused.code).toBeVisible();
@@ -973,7 +990,7 @@ test('at the tablet width a sale takes three taps in cash and three by bank tran
     // Bank transfer: "Bayar" → "Transfer bank" → "Dana sudah diterima — Selesaikan".
     const transfer: string[] = [];
 
-    await page.goto(TILL);
+    await gotoTill(page);
     await scan(page, pen.code);
     await expect(quantity(page, pen)).toHaveValue('1');
     await counted(transfer, pay(page), 'Bayar');

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { t } from '@/lib/i18n';
 import { Button } from './Button';
 import { Icon } from './Icon';
-import { Notice } from './Notice';
+import { Notice, type Urgency } from './Notice';
 import { STATE_CATALOGUE, type StateId } from './stateCatalogue';
 
 // The presentations of the states of UI_STATES section 2 (DESIGN_SYSTEM
@@ -12,13 +12,16 @@ import { STATE_CATALOGUE, type StateId } from './stateCatalogue';
 /**
  * A notice of a state of the catalogue, with its COPY_DECK title and body.
  * A body with placeholders, or the page's own text, is given as `body`.
+ * `urgency` replaces the catalogue's where the page shows the state as the
+ * answer to an action: a refusal is announced assertively (UXA-17), even of a
+ * state whose banner is already on the page when it loads.
  */
-export function StateNotice({ state, body, actions, children }: { state: StateId; body?: ReactNode; actions?: ReactNode; children?: ReactNode }) {
+export function StateNotice({ state, body, actions, children, urgency }: { state: StateId; body?: ReactNode; actions?: ReactNode; children?: ReactNode; urgency?: Urgency }) {
     const entry = STATE_CATALOGUE[state];
     const text = body ?? (entry.body === undefined ? undefined : t(entry.body));
 
     return (
-        <Notice tone={entry.tone} urgency={entry.urgency} title={t(entry.title)} actions={actions}>
+        <Notice tone={entry.tone} urgency={urgency ?? entry.urgency} title={t(entry.title)} actions={actions}>
             {text === undefined && children === undefined ? undefined : (
                 <>
                     {text !== undefined && <p>{text}</p>}

@@ -881,9 +881,11 @@ function TillLine({
                         describedBy={problem === null ? undefined : errorId}
                     />
                     <span className={'bk-line__unit'}>{line.product.unit}</span>
+                    {/* The accessible name holds the visible label, then the line's product (UXA-13, COPY_DECK CW-11);
+                        `sales.cart.remove_named` of UXI-072 leaves the label out, which WCAG 2.5.3 refuses (OPEN_ITEMS T-43). */}
                     <Button
                         label={t('sales.cart.remove')}
-                        accessibleName={t('sales.cart.remove_named', { produk: line.product.name })}
+                        rowName={line.product.name}
                         variant={'quiet'}
                         icon={'trash'}
                         onClick={() => onChange((draft) => removeLine(draft, id))}
@@ -1019,7 +1021,7 @@ function PaymentView({
             </header>
             <div className={'bk-stack'}>
                 {refusalState !== undefined && (
-                    <StateNotice state={refusalState} {...(refusalBody === undefined ? {} : { body: refusalBody })} {...(refusalAction === undefined ? {} : { actions: refusalAction })}>
+                    <StateNotice state={refusalState} urgency={'alert'} {...(refusalBody === undefined ? {} : { body: refusalBody })} {...(refusalAction === undefined ? {} : { actions: refusalAction })}>
                         {shortLines.length > 0 && (
                             <ul>
                                 {shortLines.map((line) => (

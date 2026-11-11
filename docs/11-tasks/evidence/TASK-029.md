@@ -37,7 +37,12 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | The same steps after round 2's fixes | Fast run 8, 43019182845 on `9a02421` | 19:18 to 19:30 | 11 min 44 s | `PASS` |
 | The whole of `test:postgres` and `test:race`, the browser suite with `tests/Browser/sales/till.spec.ts`, the build, the image checks | CI on the pull request's final head (CE-44, D-117) | — | — | `NOT_RUN` until then |
 | Fix cycle 1 (section 10): `npm run typecheck`, `npx eslint` on the two changed files | Local | 19:41 | seconds | `NOT_RUN`: `tsc` and `eslint` are not on the path of this machine (F-1) |
-| Fix cycle 1: `npm run lint`, `typecheck`, `test:unit`, the browser suite with the new test of `till.spec.ts`, and the rest of the command contract | CI on the fix's head (CE-41, CE-45) | — | — | `NOT_RUN` until then; the results before the fix stay valid for every file it does not touch |
+| Fix cycle 1: `npm run lint`, `typecheck`, `test:unit`, the browser suite with the new test of `till.spec.ts`, and the rest of the command contract | CI on the fix's head (CE-41, CE-45) | — | — | Superseded by the two rows below |
+| The whole command contract and the image checks | CI run 43021514738 on the pull request's first head `d8cea77` | 19:34 to 20:01 | 27 min 22 s | `FAIL`: `Command contract`, the browser suite 313 passed, 7 failed, 2 did not run, every failure in `till.spec.ts` (section 12); every other step, both parts of `test:postgres` and the image checks `PASS` |
+| `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit`; the changed PostgreSQL files | Fast run 43031434100 on `601bc84` | 20:41 to 20:54 | 12 min 43 s | `PASS` |
+| The whole command contract and the image checks | CI run 43031447370 on `601bc84` | 20:41 to 21:13 | 31 min 15 s | `FAIL`, failure 1 of 3 (CE-42): the browser suite 314 passed, the same 7 failed, 2 did not run (section 12); every other step — `npm run lint` and `typecheck` among them, so fix cycle 1's two files pass both — both parts of `test:postgres` and the image checks `PASS` |
+| Fix cycle 2 (section 12): `npm run typecheck`, `npx eslint` | Local | 21:40 | seconds | `NOT_RUN`: `tsc` and `eslint` are not on the path of this machine (F-1) |
+| Fix cycle 2: `npm run lint`, `typecheck`, `test:unit`, the browser suite, and the rest of the command contract | The fast run and CI on the fix's head (CE-41, CE-45) | — | — | `NOT_RUN` until then; `test:postgres`, `test:race` and the image checks of run 43031447370 cover no file the fix changes |
 
 ## 2. What was built (contract section 4.1)
 
@@ -85,6 +90,10 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | F-8 | Fast run 3 failed ESLint: `no-useless-assignment` in `rememberedSize` (`resources/js/lib/sales/till.ts`), and a string literal in a JSX expression of `PaymentView` | Fixed in checkpoint 4: the size read returns from its `try`; the literal is a named constant |
 | F-9 | Fast run 4 failed two of TASK-028's scans in `CheckoutSaleTest`: the payment boundary refused every route whose path holds "payment", which RP-102's contracted path `/till/payment` does; the one-writer scan allowed no file but the writer to name `sales` and `receipt_snapshots`, which RP-103's query `App\Queries\Sales\Receipts` reads | Fixed in checkpoint 5, as TASK-022 to TASK-026 list their readers: RP-102 is exempt by its exact path only, and the test proves it read only (GET and HEAD) and behind CAP-21; `Receipts` is listed as the one reader of both tables, and the test proves it holds no write. Every other assertion stays |
 | F-10 | Fast run 5, the channel inspection of `TillPagesTest`: RP-103's page prop `shop`, the issuer's identity from the snapshot, replaced the shared prop `shop` of the shell — its name, initials and accent (TASK-010) — so the receipt page would have lost the shell's accent and initials | Fixed in checkpoint 6, a defect of this Task: the prop is `issuer` (`Receipts`, `Receipt.tsx`, the allowlist), and the test asserts the shared `shop` keeps its three fields on RP-103 for the cashier and the Owner (regression test) |
+| F-11 | CI 43021514738 and 43031447370, KS-03 `default`: axe `label-content-name-mismatch` on each line's remove button. COPY_DECK UXI-072 words its accessible name `sales.cart.remove_named` "Hapus :produk dari keranjang", which leaves out the visible label `sales.cart.remove` "Hapus dari keranjang", against UXA-13, CW-11 and DESIGN_SYSTEM section 10 (WCAG 2.5.3). COPY_DECK section 1.5 lets the deck prevail for wording while the rule of the P7-G1 documents stays unchanged, and CW-11 gives a row action's form, the label and then the row | Fixed in fix cycle 2: the label followed by the product (`rowName`), as UXP-408 did (T-40 (c)); the copy shown is unchanged. The key, UXI-072's wording and the preview go to the next COPY_DECK change control, with UXI-067's result button of the same form: OPEN_ITEMS T-43. Regression: KS-03 asserts the name, and axe at every width |
+| F-12 | CI 43031447370, KS-05: axe `scrollable-region-focusable` on `.bk-paper-stage`, which scrolls a paper wider than the screen with nothing in it to focus (WCAG 2.1.1) | Fixed in fix cycle 2: the paper of `ReceiptPaper` takes the focus (`tabIndex` 0), from which the keyboard scrolls the stage. Regression: KS-05 focuses the paper, and axe in each size at every width |
+| F-13 | CI 43021514738 and 43031447370: four tests typed before the page could take the keys — a scan right after `page.goto('/till')` (the quantity never appeared), or Alt+U right after F8 (the payment showed "Kembalian —", the final action disabled). A race of the tests, not of the till: no page receives keys before it mounts | Fixed in fix cycle 2, in the tests only: `gotoTill` waits for the search field's arrival focus (UXA-09) and `openPayment` for "Uang diterima"'s (UXA-10), each set by an effect that runs after the page's keys are bound, so the waits are conditions, never pauses; used by `openTill`, `payOne` and every scan after a load or shortcut after F8, the three places of verification R-02 included. No assertion removed, no timeout changed |
+| F-14 | CI 43021514738 and 43031447370, "the refusals of RC-01": the notices of ONBOARDING_FREEZE (UXS-27) and NO_OPEN_SESSION (UXS-29) had no role, since the catalogue gives their banners none, so the payment screen never announced these refusals (UXA-17: a refusal is assertive) | Fixed in fix cycle 2 (verification R-01, MUST-FIX): `StateNotice` takes an `urgency` that replaces the catalogue's, and the payment view shows every refusal as an alert; the banners keep theirs. Regression: the test's assertion of `role="alert"` for all six refusals, unchanged |
 
 ## 5. Tests (contract section 7)
 
@@ -180,7 +189,41 @@ Targeted verification (CE-43, class A, production behaviour changed) by `bk-revi
 
 ## 11. Record (CE-50)
 
-- Guard: `guard.sh --preview` of the uncommitted record against origin/develop `PASS`, no candidate to judge; the guard `PASS` with no candidate on every checkpoint (section 1); fix cycle 1's `guard.sh --preview` `PASS`, no candidate to judge.
+- Guard: `guard.sh --preview` of the uncommitted record against origin/develop `PASS`, no candidate to judge; the guard `PASS` with no candidate on every checkpoint (section 1); fix cycle 1's `guard.sh --preview` `PASS`, no candidate to judge; fix cycle 2's `guard.sh --preview` `PASS`, no candidate to judge.
 - Backup impact: none — no table, no stored file, no procedure (DoD Operations N/A).
 - The previous merge, TASK-028's pull request #39, is recorded in [its evidence](TASK-028.md) section 14.
 - TASK_PLAN: TASK-029 `DONE`, TASK-030 `READY`, the totals TODO 19, READY 2, DONE 29; CURRENT_HANDOFF last.
+
+## 12. Fix cycle 2 — CI failure 1 of 3 (CE-42)
+
+CI run 43031447370 on `601bc84` failed in `Command contract`: the browser suite ran its first time on this Task's pages and 7 tests of `till.spec.ts` failed; run 43021514738 on `d8cea77` had failed the same 7 for the same causes, so fix cycle 1 caused none of them. Each failure was read from the run's log before any change (section 1):
+
+| Test | What failed | Cause | Finding |
+| --- | --- | --- | --- |
+| A lost answer, a reload… (AC-029-04) | The quantity never appeared after `page.goto('/till')` and a scan | The scan typed before the page mounted | F-13 |
+| A definite refusal… (AC-029-05) | "Kembalian —" after F8 and Alt+U | Alt+U pressed before the payment view existed | F-13 |
+| A scanner Enter… (AC-029-02) | The final action disabled after F8 and Alt+U | As above | F-13 |
+| KS-03 with its states | axe `label-content-name-mismatch` on the remove buttons | UXI-072's accessible name against UXA-13 | F-11 |
+| KS-04 with its states | As the first row, in `payOne` | As the first row | F-13 |
+| KS-05 in each size | axe `scrollable-region-focusable` on `.bk-paper-stage` | Nothing focusable in the paper's scrolling stage | F-12 |
+| The refusals of RC-01 | No alert for ONBOARDING_FREEZE | UXS-27's banner urgency used for a refusal | F-14 |
+
+Changed: `resources/js/pages/sales/Till.tsx` (the remove button's name; the refusal notice an alert), `resources/js/components/ui/States.tsx` (`StateNotice`'s `urgency`), `resources/js/components/ui/ReceiptPaper.tsx` (the paper focusable), `tests/Browser/sales/till.spec.ts` (the readiness waits and two regression assertions), OPEN_ITEMS T-43 and T-44. Not changed: every other assertion, axe's tags, `measure()`, the widths, every timeout; no fixed pause added.
+
+Targeted verification (CE-42, class A, production behaviour changed) by `bk-reviewer-high`, round 4, on the package `.git/bantukasir-executor/review/TASK-029/r4` (HEAD `601bc84`, tree `21ec15d`, previous tree `976cbf7`), `--check` `UNCHANGED`: verdict `FAIL`, one MUST-FIX.
+
+| ID | Severity | Finding | Outcome |
+| --- | --- | --- | --- |
+| R-18 | MUST-FIX | The first fix of the refusals' test asserted no role for UXS-27 and UXS-29, matching the code instead of UXA-17, under which a refusal is announced assertively | Fixed as F-14: the code announces every refusal as an alert, and the test's assertion is restored for all six |
+| R-19 | SHOULD-FIX | Three places outside the seven failures kept the same race: the tablet's second sale after `page.goto`, the transfer path's Alt+2 and the R-01 test's Alt+U right after the payment opened | Fixed: `gotoTill`, `openPayment`, and the wait for "Uang diterima"'s focus |
+| R-20 | SHOULD-FIX | The evidence did not yet record this cycle, which T-43 and the tests cite | Fixed: this section, section 1 and F-11 to F-14 |
+| R-21 | NOTE | UXI-067's result button keeps a name without its visible content; no axe check runs with results shown | Accepted as recorded in T-43; a Task that adds such a check fixes it first |
+
+The verdict also found failures 1 to 6 FIXED, the readiness waits deterministic (each focus is set by an effect that runs after the page's shortcuts and scan capture are bound), UXI-072's resolution within the approved rules with no stop needed under EXC-50 (COPY_DECK section 1.5, CW-11, UXA-13; T-40 (c)), and nothing else in the seven tests that would fail by reading.
+
+Round 5, the targeted check of R-18's fix alone by `bk-reviewer-high` on the package `.git/bantukasir-executor/review/TASK-029/r5` (HEAD `601bc84`, tree `2cf041f`, previous tree `21ec15d`), `--check` `UNCHANGED`: verdict `PASS` — R-18 FIXED, every refusal of the payment view an alert while the catalogue and every other caller of `StateNotice` are unchanged, one alert per refusal; R-19's waits without regression; no new MUST-FIX or SHOULD-FIX.
+
+| ID | Severity | Finding | Outcome |
+| --- | --- | --- | --- |
+| R-22 | NOTE | The refusals' test stopped at its first case in both runs, so its five other cases and their axe checks have never run | Accepted: the browser suite on the fix's head must pass before the merge (section 1) |
+| R-23 | NOTE | The inventory pages show their ONBOARDING_FREEZE refusal without a role, a gap older than this Task | Recorded as OPEN_ITEMS T-44 |
