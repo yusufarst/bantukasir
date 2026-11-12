@@ -13,6 +13,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Inertia\Support\Header;
 
 /**
  * RP-105, UXP-105 "Tutup sesi kas" (ROUTE_CONTRACTS RP-105; KEY_SCREENS KS-07; NAVIGATION_CONTRACTS
@@ -25,12 +26,17 @@ use Inertia\Response;
  * two reads is counted in the figures but not in the version, so its close is refused
  * RECOUNT_REQUIRED, never recorded against figures the user did not review. No lock is held while the
  * cash is counted (BR-CASH-13). Without an OPEN session of the user's own, 302 to RP-101, which leads
- * on to Buka sesi kas.
+ * on to Buka sesi kas; but the page's own read of its preview then answers a null preview, so that the
+ * page says the session closed meanwhile (UXS-30) rather than being led away (NAVIGATION_CONTRACTS
+ * UXP-105).
  */
 final class CloseSessionController
 {
     /** The deferred prop of the close preview, reloaded by name (RP-105). */
     public const string PREVIEW = 'preview';
+
+    /** The page's component, which the page's own partial reload names. */
+    private const string COMPONENT = 'cash/CloseSession';
 
     public function show(Request $request, SessionRecords $sessions, Sales $sales, RequestReceipts $receipts): Response|RedirectResponse
     {
@@ -42,13 +48,14 @@ final class CloseSessionController
 
         $session = $sessions->openOf($user->id);
 
-        if ($session === null) {
+        if ($session === null && $request->header(Header::PARTIAL_COMPONENT) !== self::COMPONENT) {
             return redirect()->to(Homes::TILL);
         }
 
-        return Inertia::render('cash/CloseSession', [
-            'session' => ['id' => $session['id'], 'number' => $session['number'], 'registerCode' => $session['registerCode'], 'registerLabel' => $session['registerLabel']],
-            self::PREVIEW => Inertia::defer(static fn (): ?array => self::preview($user, $session['id'], $sessions, $sales, $receipts)),
+        return Inertia::render(self::COMPONENT, [
+            // The header, which a partial reload of the preview never reads.
+            'session' => static fn (): ?array => $session === null ? null : ['id' => $session['id'], 'number' => $session['number'], 'registerCode' => $session['registerCode'], 'registerLabel' => $session['registerLabel']],
+            self::PREVIEW => Inertia::defer(static fn (): ?array => $session === null ? null : self::preview($user, $session['id'], $sessions, $sales, $receipts)),
         ]);
     }
 

@@ -33,12 +33,14 @@ use Illuminate\Support\Facades\DB;
  *
  * Class: additive (RELEASE_PROCESS section 5). Expected duration: well under a second, on two new,
  * empty tables and a key of cash_sessions whose column is null on every row, since no code before
- * this Task writes a CLOSED status. Lock impact: the keys to cash_sessions, users,
- * command_identities, business_profile_revisions and stored_files take a SHARE ROW EXCLUSIVE lock
- * on those tables, held to the end of the migration's transaction, and validating the key added to
- * cash_sessions scans it once under that lock: every session open, checkout and close waits that
- * long. Verification (REL-20): db:check-privileges passes; tests/Feature/Cash/CashCloseTablesTest.php
- * proves the constraint, deferred, privilege and retention families as the runtime role.
+ * this Task writes a CLOSED status, with that column's index (SCHEMA sections 3.6 and 11). Lock
+ * impact: the keys to cash_sessions, users, command_identities, business_profile_revisions and
+ * stored_files take a SHARE ROW EXCLUSIVE lock on those tables, and the index of cash_sessions a
+ * SHARE lock on it, held to the end of the migration's transaction; validating the key added to
+ * cash_sessions and building its index each scan it once under that lock: every session open,
+ * checkout and close waits that long. Verification (REL-20): db:check-privileges passes;
+ * tests/Feature/Cash/CashCloseTablesTest.php proves the constraint, deferred, privilege and retention
+ * families as the runtime role, and the indexes.
  */
 return new class extends Migration
 {
@@ -119,10 +121,12 @@ return new class extends Migration
                 FOREIGN KEY (close_presence) REFERENCES cash_session_closes (session_id) DEFERRABLE INITIALLY DEFERRED
             SQL);
 
-        // SCHEMA section 11: every foreign-key column that a key above does not lead.
+        // SCHEMA sections 3.6 and 11: every foreign-key column that a key above does not lead, the
+        // presence column of cash_sessions among them, as every earlier presence key has its index.
         $database->statement('CREATE INDEX cash_session_closes_actor_index ON cash_session_closes (close_actor_user_id)');
         $database->statement('CREATE INDEX cash_session_reports_profile_revision_index ON cash_session_reports (business_profile_revision_id)');
         $database->statement('CREATE INDEX cash_session_reports_logo_file_id_index ON cash_session_reports (logo_file_id)');
+        $database->statement('CREATE INDEX cash_sessions_close_presence_index ON cash_sessions (close_presence)');
 
         $database->statement('GRANT SELECT, INSERT ON TABLE cash_session_closes, cash_session_reports TO '.Identifier::quote($roles->runtime));
         $database->statement('GRANT SELECT ON TABLE cash_session_closes, cash_session_reports TO '.Identifier::quote($roles->backup));

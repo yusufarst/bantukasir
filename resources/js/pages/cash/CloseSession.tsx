@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import { useEffect, useId, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useState, type ReactNode } from 'react';
 import { Button, ButtonLink } from '@/components/ui/Button';
 import { Section } from '@/components/ui/Card';
 import { KeyValueList, type KeyValue } from '@/components/ui/Data';
@@ -13,7 +13,7 @@ import { AppShell, useLeaveGuard, useUnsavedChanges, type ShellLayout } from '@/
 import { CommandLayout, PageHeader } from '@/layouts/Page';
 import { leaveSavedNote } from '@/lib/access/users';
 import { cashFieldMessage } from '@/lib/cash/registers';
-import { CHECKOUT_FAMILY, CLOSE_SESSION_COMMAND, refundsText, sessionPage, TILL_PAGE, UNRESOLVED_PAGE, type ClosePreview, type SessionFigures } from '@/lib/cash/sessions';
+import { CHECKOUT_FAMILY, CLOSE_SESSION_COMMAND, closedMeanwhile, refundsText, sessionPage, TILL_PAGE, UNRESOLVED_PAGE, type ClosePreview, type SessionFigures } from '@/lib/cash/sessions';
 import { VarianceWord } from '@/lib/cash/Parts';
 import { blockingRequest } from '@/lib/commands/families';
 import { CommandPanels } from '@/lib/commands/Panels';
@@ -35,10 +35,12 @@ import type { DestinationId } from '@/lib/navigation';
 // Enter) opens the review of physical cash, expected cash and the variance in words; "Tutup sesi"
 // sends RC-03 with the activity version of the preview. Nothing is locked while the cash is counted.
 // RECOUNT_REQUIRED returns to the preview, reloaded, with UXS-19 — or its variant when the preview now
-// lists an unresolved checkout; a session closed meanwhile is UXS-30 with the way to its report; an
-// uncertain outcome freezes the close on its panel (UXS-14), never counted again. Success leads to the
-// session's report, RP-206. "Batal" and "Kembali ke Kasir" lead to the till, asking first once a count
-// was entered (UXS-45).
+// lists an unresolved checkout; "Lanjut hitung" waits for the new figures, and a reload that fails says
+// so with "Coba lagi" (UXS-22). The count is kept within its step and its review only: back at the
+// preview it is discarded, so that a new preview is counted again. A session closed meanwhile is UXS-30
+// with the way to its report; an uncertain outcome freezes the close on its panel (UXS-14), never
+// counted again. Success leads to the session's report, RP-206. "Batal" and "Kembali ke Kasir" lead to
+// the till, asking first once a count was entered (UXS-45).
 
 const DESTINATION: DestinationId = 'till';
 
@@ -48,8 +50,6 @@ const TILL_LAYOUT: ShellLayout = 'rail';
 const PREVIEW_PROP = 'preview';
 
 const RECOUNT_REQUIRED = 'RECOUNT_REQUIRED';
-
-const SESSION_NOT_OPEN = 'SESSION_NOT_OPEN';
 
 const VALIDATION_FAILED = 'VALIDATION_FAILED';
 
@@ -62,10 +62,15 @@ const RECOUNT_UNRESOLVED: StateId = 'UXS-19-unresolved';
 
 const CLOSED_MEANWHILE: StateId = 'UXS-30-close';
 
+const LOAD_FAILED: StateId = 'UXS-22';
+
 /** The amount the review names while none is entered, which the review never shows: it opens only with an amount. */
 const NO_AMOUNT = '0';
 
 type Step = 'preview' | 'count';
+
+/** The preview as the page holds it: read, read again after RECOUNT_REQUIRED, or failed to read again. */
+type PreviewRead = 'read' | 'reading' | 'failed';
 
 interface CloseSessionProps {
     readonly session: { readonly id: number; readonly number: string; readonly registerCode: string; readonly registerLabel: string };
@@ -93,6 +98,7 @@ function CloseFlow({ title, session, preview }: CloseSessionProps & { title: str
     const [amount, setAmount] = useState<string | null>(null);
     const [review, setReview] = useState(false);
     const [checked, setChecked] = useState(false);
+    const [previewRead, setPreviewRead] = useState<PreviewRead>('read');
 
     const refusal = phase.kind === 'rejected' ? phase.refusal : null;
     const busy = phase.kind === 'submitting';
@@ -104,7 +110,7 @@ function CloseFlow({ title, session, preview }: CloseSessionProps & { title: str
     const recount = refusal?.code === RECOUNT_REQUIRED;
     // A preview of another session — this one closed and a new one opened elsewhere before a reload
     // of the preview — is never counted under this session's header: this one is no longer OPEN.
-    const closedMeanwhile = refusal?.code === SESSION_NOT_OPEN || preview === null || (preview !== undefined && preview.sessionId !== session.id);
+    const closed = closedMeanwhile(session.id, preview, refusal?.code ?? null);
     const amountRefused = refusal?.code === VALIDATION_FAILED ? cashFieldMessage(refusal.fields['payload.physicalCash']) : undefined;
     // BR-CASH-16: an unresolved checkout of this browser or of the server keeps the count closed.
     const checkoutUnresolved = blockingRequest(unresolved.union, CHECKOUT_FAMILY.operation, CHECKOUT_FAMILY.family) !== null || (preview?.unresolvedCheckouts ?? 0) > 0;
@@ -126,16 +132,32 @@ function CloseFlow({ title, session, preview }: CloseSessionProps & { title: str
         }
     }, [phase.kind]);
 
+    // The preview read again by name: "Lanjut hitung" waits for it, and a failed read is said in place
+    // with "Coba lagi" (UXS-22), never the earlier figures to count against.
+    const readPreview = useCallback((): void => {
+        const failed = (): boolean => {
+            setPreviewRead('failed');
+
+            return false;
+        };
+
+        setPreviewRead('reading');
+        router.reload({ only: [PREVIEW_PROP], onSuccess: () => setPreviewRead('read'), onHttpException: failed, onNetworkError: failed });
+    }, []);
+
     // RECOUNT_REQUIRED: back to the preview, reloaded with the new figures or the unresolved checkout
-    // (UXS-19; INTERACTION_CONTRACTS RC-03 "Client").
+    // (UXS-19; INTERACTION_CONTRACTS RC-03 "Client"); the count is discarded, so that the new preview is
+    // counted again (NAVIGATION_CONTRACTS UXP-105; BR-CASH-14).
     useEffect(() => {
         if (recount) {
             setStep('preview');
-            router.reload({ only: [PREVIEW_PROP] });
+            setAmount(null);
+            setChecked(false);
+            readPreview();
         } else if (amountRefused !== undefined) {
             setStep('count');
         }
-    }, [recount, amountRefused]);
+    }, [recount, amountRefused, readPreview]);
 
     const checkoutReason: ReactNode = checkoutUnresolved ? (
         <>
@@ -148,12 +170,17 @@ function CloseFlow({ title, session, preview }: CloseSessionProps & { title: str
     const summary: FieldError[] = amountRefused === undefined ? [] : [{ fieldId: amountId, label: t('cash.close.physical_cash'), message: amountRefused }];
 
     const toCount = (): void => {
-        if (checkoutReason === undefined && preview !== undefined && preview !== null) {
+        if (checkoutReason === undefined && previewRead === 'read' && preview !== undefined && preview !== null) {
             setStep('count');
         }
     };
 
-    const toPreview = (): void => setStep('preview');
+    // UXI-106: back at the preview the count is discarded (NAVIGATION_CONTRACTS UXP-105).
+    const toPreview = (): void => {
+        setStep('preview');
+        setAmount(null);
+        setChecked(false);
+    };
 
     const openReview = (): void => {
         setChecked(true);
@@ -179,7 +206,7 @@ function CloseFlow({ title, session, preview }: CloseSessionProps & { title: str
     );
 
     // A session closed meanwhile, by the user elsewhere or by the Owner: the count is not kept (UXS-30).
-    if (closedMeanwhile && !committed) {
+    if (closed && !committed) {
         return (
             <CommandLayout header={header} width={'focused'}>
                 <StateNotice state={CLOSED_MEANWHILE} actions={<ButtonLink href={sessionPage(session.id)} label={t('ux.state.session_closed.open_report')} variant={'secondary'} />} />
@@ -202,7 +229,15 @@ function CloseFlow({ title, session, preview }: CloseSessionProps & { title: str
                             <p>{t('cash.close.unresolved_note')}</p>
                         </Notice>
                     )}
-                    <Section title={t('cash.close.step_preview')}>{preview === undefined ? <Loading lines={3} /> : <PreviewFigures figures={preview?.figures ?? null} />}</Section>
+                    <Section title={t('cash.close.step_preview')}>
+                        {previewRead === 'failed' ? (
+                            <StateNotice state={LOAD_FAILED} actions={<Button label={t('ux.action.retry')} variant={'secondary'} onClick={readPreview} />} />
+                        ) : preview === undefined || previewRead === 'reading' ? (
+                            <Loading lines={3} />
+                        ) : (
+                            <PreviewFigures figures={preview?.figures ?? null} />
+                        )}
+                    </Section>
                     <div className={'bk-actions'}>
                         <Button
                             label={t('cash.close.continue_count')}
@@ -210,7 +245,7 @@ function CloseFlow({ title, session, preview }: CloseSessionProps & { title: str
                             shortcut={'confirm'}
                             enterActivates={false}
                             disabledReason={checkoutReason}
-                            unavailable={frozen || preview === undefined}
+                            unavailable={frozen || preview === undefined || previewRead !== 'read'}
                             onClick={toCount}
                         />
                         <ButtonLink href={TILL_PAGE} label={t('ux.action.cancel')} variant={'secondary'} size={'lg'} onClick={guard} />
@@ -251,7 +286,7 @@ function CloseFlow({ title, session, preview }: CloseSessionProps & { title: str
                     <p>{t('cash.close.review_note')}</p>
                 </ReviewDialog>
             )}
-            {!recount && !closedMeanwhile && <CommandPanels control={control} {...(committed ? { committed: t('cash.close.success', { nomor: session.number }) } : {})} />}
+            {!recount && !closed && <CommandPanels control={control} {...(committed ? { committed: t('cash.close.success', { nomor: session.number }) } : {})} />}
         </CommandLayout>
     );
 }

@@ -43,13 +43,14 @@ export interface SessionRow {
     readonly variance: string | null;
 }
 
-/** The filters of RP-205 (UXI-135, UXI-136), as the page read them; `register` and `responsible` the Owner's. */
+/** The filters of RP-205 (UXI-135, UXI-136), as the page read them; `register` and `responsible` the Owner's; the page's size. */
 export interface SessionFilters {
     readonly status: string | null;
     readonly from: string | null;
     readonly to: string | null;
     readonly register: number | null;
     readonly responsible: number | null;
+    readonly perPage: number;
 }
 
 /** A page of a keyset list (TR-PAGE-02). */
@@ -59,14 +60,18 @@ export interface SessionPage {
     readonly previousCursor: string | null;
 }
 
-/** The filters as the page changes them: a register or a person by the text of its key, none as null. */
+/** The filters as the page changes them: a register or a person by the text of its key, none as null; the page's size. */
 export interface FilterChoice {
     readonly status: string | null;
     readonly from: string | null;
     readonly to: string | null;
     readonly register: string | null;
     readonly responsible: string | null;
+    readonly perPage: number;
 }
+
+/** RP-205's page size when the address names none (ROUTE_CONTRACTS RP-205). */
+export const SESSIONS_PER_PAGE = 25;
 
 /** The filters that the page read, as the page changes them. */
 export function choiceOf(filters: SessionFilters): FilterChoice {
@@ -76,12 +81,14 @@ export function choiceOf(filters: SessionFilters): FilterChoice {
         to: filters.to,
         register: filters.register === null ? null : String(filters.register),
         responsible: filters.responsible === null ? null : String(filters.responsible),
+        perPage: filters.perPage,
     };
 }
 
 /**
- * The address of RP-205 with its filters and a cursor (ROUTE_CONTRACTS RP-205): the filters and the
- * page stand in the address, so that they are kept when the user returns from a session (NC-10).
+ * The address of RP-205 with its filters and a cursor (ROUTE_CONTRACTS RP-205): the filters, the
+ * page's size other than the default and the page stand in the address, so that they are kept when
+ * the user pages and when the user returns from a session (NC-10).
  */
 export function sessionsAddress(filters: FilterChoice, cursor: { readonly after?: string; readonly before?: string } = {}): string {
     const query = new URLSearchParams();
@@ -92,6 +99,7 @@ export function sessionsAddress(filters: FilterChoice, cursor: { readonly after?
         ['to', filters.to],
         ['register', filters.register],
         ['responsible', filters.responsible],
+        ['perPage', filters.perPage === SESSIONS_PER_PAGE ? null : String(filters.perPage)],
         ['after', cursor.after ?? null],
         ['before', cursor.before ?? null],
     ] as const) {
@@ -136,6 +144,30 @@ export function sessionPage(id: number): string {
     return `${SESSIONS_PAGE}/${String(id)}`;
 }
 
+/**
+ * The way back of UXP-206, "Kembali ke Sesi kas" (UXI-148): UXP-205 with the filters and the page it
+ * stood at when it opened this document (NAVIGATION_CONTRACTS UXP-205, NC-10); else the whole list,
+ * the default and the way after the close's success (NC-01).
+ */
+export function sessionsListFrom(referrer: string, origin: string): string {
+    try {
+        const opener = new URL(referrer);
+
+        return opener.origin === origin && opener.pathname === SESSIONS_PAGE ? `${SESSIONS_PAGE}${opener.search}` : SESSIONS_PAGE;
+    } catch {
+        return SESSIONS_PAGE;
+    }
+}
+
+/**
+ * Whether the close page's session is no longer OPEN, which the page shows as UXS-30: the close was
+ * refused SESSION_NOT_OPEN, or the preview read again is null — the session closed elsewhere — or names
+ * another session, opened since, whose figures are never counted under this session's header.
+ */
+export function closedMeanwhile(sessionId: number, preview: ClosePreview | null | undefined, refusalCode: string | null): boolean {
+    return refusalCode === 'SESSION_NOT_OPEN' || preview === null || (preview !== undefined && preview.sessionId !== sessionId);
+}
+
 export const OPEN = 'OPEN';
 
 export const CLOSED = 'CLOSED';
@@ -169,9 +201,12 @@ export function varianceOf(physical: string, expected: string): string | null {
     return whole.test(physical) && whole.test(expected) ? subtractMoney(physical, expected) : null;
 }
 
-/** The tone of a variance: short is a danger, over a warning, even a success; never colour alone (UXA-18). */
-export function varianceTone(variance: string): 'danger' | 'warning' | 'success' {
-    return variance.startsWith('-') ? 'danger' : /^0+$/.test(variance) ? 'success' : 'warning';
+/**
+ * The tone of a variance, as the approved KS-07 gives it: even a success, short or over a warning —
+ * danger is for errors (DESIGN_SYSTEM section 3.2) — and never colour alone (UXA-18).
+ */
+export function varianceTone(variance: string): 'warning' | 'success' {
+    return /^0+$/.test(variance) ? 'success' : 'warning';
 }
 
 /** The drawer-funded refunds as the figures show them: taken from expected cash, "−Rp50.000" (KS-07). */

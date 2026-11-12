@@ -281,11 +281,11 @@ final class Allowlists
     private const array REGISTER_ROW = ['registers.*.id', 'registers.*.code', 'registers.*.label', 'registers.*.active', 'registers.*.version', 'registers.*.openBy'];
 
     /**
-     * UXP-205 (TASK-030): its filters and one page of sessions, each with its register, responsible
-     * user, opening and close times and variance; the lists of the Owner's filters, empty here.
+     * UXP-205 (TASK-030): its filters and page size and one page of sessions, each with its register,
+     * responsible user, opening and close times and variance; the lists of the Owner's filters, empty here.
      */
     private const array SESSION_LIST = [
-        'filters', 'filters.status', 'filters.from', 'filters.to', 'filters.register', 'filters.responsible',
+        'filters', 'filters.status', 'filters.from', 'filters.to', 'filters.register', 'filters.responsible', 'filters.perPage',
         'sessions', 'sessions.rows', 'sessions.rows.*', 'sessions.rows.*.id', 'sessions.rows.*.number', 'sessions.rows.*.status', 'sessions.rows.*.registerCode',
         'sessions.rows.*.registerLabel', 'sessions.rows.*.responsible', 'sessions.rows.*.openedAt', 'sessions.rows.*.closedAt', 'sessions.rows.*.variance',
         'sessions.nextCursor', 'sessions.previousCursor', 'registers', 'responsibles',
@@ -310,6 +310,21 @@ final class Allowlists
     private const array PRODUCT = [
         'product', 'product.id', 'product.sku', 'product.name', 'product.categoryId', 'product.categoryName', 'product.categoryActive', 'product.brand', 'product.baseUnit',
         'product.quantityPrecision', 'product.price', 'product.price.amount', 'product.price.revisionId', 'product.minimumStock', 'product.active', 'product.version', 'product.unitLocked', 'product.photo',
+    ];
+
+    /**
+     * The deferred props of a page, which the page reads apart by a partial
+     * reload, per page component and kind of account (TASK-030): the close
+     * preview of UXP-105 — its session, the activity version, the running
+     * figures and the user's unresolved checkouts; never a cost (BR-CASH-20).
+     *
+     * @var array<string, array<string, list<string>>>
+     */
+    public const array DEFERRED = [
+        'cash/CloseSession' => ['*' => [
+            'preview', 'preview.sessionId', 'preview.activityVersion', 'preview.figures', 'preview.figures.openingCash', 'preview.figures.saleCount', 'preview.figures.saleValue',
+            'preview.figures.cashPayments', 'preview.figures.transferPayments', 'preview.figures.drawerRefunds', 'preview.figures.expectedCash', 'preview.unresolvedCheckouts',
+        ]],
     ];
 
     /**
@@ -454,6 +469,17 @@ final class Allowlists
     public static function json(string $route, string $actor): ?array
     {
         return self::pick(self::JSON[$route] ?? null, $actor);
+    }
+
+    /**
+     * The paths that a page's deferred props may carry for this kind of
+     * account, or null when the page has none that this kind may read.
+     *
+     * @return list<string>|null
+     */
+    public static function deferred(string $component, string $actor): ?array
+    {
+        return self::pick(self::DEFERRED[$component] ?? null, $actor);
     }
 
     /**

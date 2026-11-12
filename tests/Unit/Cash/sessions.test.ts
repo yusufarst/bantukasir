@@ -4,20 +4,25 @@ import {
     choiceOf,
     CLOSE_SESSION_COMMAND,
     CLOSED,
+    closedMeanwhile,
     OPEN,
     registerText,
     sessionPage,
     sessionsAddress,
+    sessionsListFrom,
     sessionsShell,
     statusOf,
     varianceOf,
     varianceTone,
+    type ClosePreview,
 } from '@/lib/cash/sessions';
 
 // The close and the session pages (AC-030-01, AC-030-07; KEY_SCREENS KS-07; COPY_DECK sections 7.5,
-// 7.10 and 7.11; INTERACTION_INVENTORY UXI-004, UXI-019, UXI-105, UXI-135 to UXI-138; ROUTE_CONTRACTS
-// RP-205, RP-206; BR-CASH-12; TASK-030): the variance exactly from canonical strings with its sign and
-// tone, the filters and cursor in RP-205's address, the keys a filter takes, and the shell of each role.
+// 7.10 and 7.11; INTERACTION_INVENTORY UXI-004, UXI-019, UXI-105, UXI-135 to UXI-138, UXI-148;
+// ROUTE_CONTRACTS RP-205, RP-206; NAVIGATION_CONTRACTS UXP-105, UXP-205, UXP-206; BR-CASH-12;
+// TASK-030): the variance exactly from canonical strings with its sign and tone, the filters, page
+// size and cursor in RP-205's address and UXP-206's way back to it, the keys a filter takes, a session
+// closed meanwhile, and the shell of each role.
 
 describe('the variance of a count', () => {
     it('is the physical cash minus expected cash, exactly, with its sign', () => {
@@ -33,23 +38,42 @@ describe('the variance of a count', () => {
         }
     });
 
-    it('is a danger short, a warning over and a success even, never colour alone', () => {
-        expect([varianceTone('-2000'), varianceTone('500'), varianceTone('0')]).toEqual(['danger', 'warning', 'success']);
+    it('is a warning short or over and a success even, as the approved KS-07 gives it, never colour alone', () => {
+        expect([varianceTone('-2000'), varianceTone('500'), varianceTone('0')]).toEqual(['warning', 'warning', 'success']);
     });
 });
 
 describe('the address of the sessions list', () => {
-    it('keeps the filters and the cursor that are set, and nothing else', () => {
-        const none = { status: null, from: null, to: null, register: null, responsible: null };
+    it('keeps the filters, a page size other than the default and the cursor that are set, and nothing else', () => {
+        const none = { status: null, from: null, to: null, register: null, responsible: null, perPage: 25 };
 
         expect(sessionsAddress(none)).toBe('/cash-sessions');
         expect(sessionsAddress({ ...none, status: CLOSED, from: '2026-11-10', to: '2026-11-11' })).toBe('/cash-sessions?status=CLOSED&from=2026-11-10&to=2026-11-11');
         expect(sessionsAddress({ ...none, register: '3', responsible: '7' }, { after: 'abc' })).toBe('/cash-sessions?register=3&responsible=7&after=abc');
         expect(sessionsAddress(none, { before: 'xyz' })).toBe('/cash-sessions?before=xyz');
+        expect(sessionsAddress({ ...none, status: CLOSED, perPage: 1 }, { after: 'abc' })).toBe('/cash-sessions?status=CLOSED&perPage=1&after=abc');
     });
 
     it('reads the filters as the page read them, a key as its text', () => {
-        expect(choiceOf({ status: OPEN, from: null, to: '2026-11-11', register: 3, responsible: null })).toEqual({ status: 'OPEN', from: null, to: '2026-11-11', register: '3', responsible: null });
+        expect(choiceOf({ status: OPEN, from: null, to: '2026-11-11', register: 3, responsible: null, perPage: 10 })).toEqual({
+            status: 'OPEN',
+            from: null,
+            to: '2026-11-11',
+            register: '3',
+            responsible: null,
+            perPage: 10,
+        });
+    });
+
+    it('is the way back of a session to the list it was opened from, with its filters and page, and else the whole list (UXI-148; review R-03)', () => {
+        const origin = 'https://kasir.test';
+
+        expect(sessionsListFrom(`${origin}/cash-sessions?status=CLOSED&perPage=1&after=abc`, origin)).toBe('/cash-sessions?status=CLOSED&perPage=1&after=abc');
+        expect(sessionsListFrom(`${origin}/cash-sessions`, origin)).toBe('/cash-sessions');
+
+        for (const opener of [`${origin}/till`, `${origin}/cash-sessions/7`, `${origin}/settings/users/3`, 'https://other.test/cash-sessions?status=OPEN', '', 'not an address']) {
+            expect(sessionsListFrom(opener, origin)).toBe('/cash-sessions');
+        }
     });
 
     it('takes a status of the list and a key of a choice, nothing else', () => {
@@ -67,6 +91,19 @@ describe('the session pages', () => {
 
     it('close a session without recent authentication', () => {
         expect(CLOSE_SESSION_COMMAND).toEqual({ operation: 'cash_session.close', family: 'close_session', recentAuth: false });
+    });
+
+    it('say the session closed meanwhile when the close is refused so or the preview read again is none or another session (UXS-30; F-6)', () => {
+        const figures = { openingCash: '0', saleCount: 0, saleValue: '0', cashPayments: '0', transferPayments: '0', drawerRefunds: '0', expectedCash: '0' };
+        const own: ClosePreview = { sessionId: 7, activityVersion: 0, figures, unresolvedCheckouts: 0 };
+        const other: ClosePreview = { ...own, sessionId: 8 };
+
+        expect(closedMeanwhile(7, own, null)).toBe(false);
+        expect(closedMeanwhile(7, undefined, null)).toBe(false);
+        expect(closedMeanwhile(7, own, 'RECOUNT_REQUIRED')).toBe(false);
+        expect(closedMeanwhile(7, own, 'SESSION_NOT_OPEN')).toBe(true);
+        expect(closedMeanwhile(7, null, null)).toBe(true);
+        expect(closedMeanwhile(7, other, null)).toBe(true);
     });
 
     it('name a register by its code and its label', () => {

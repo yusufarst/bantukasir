@@ -200,6 +200,9 @@ final class CloseCashSessionTest extends DatabaseTestCase
         $this->close($this->envelopeOf(999999, '0', 0))->assertStatus(404)->assertJsonPath('code', 'NOT_FOUND');
         $this->as('Hendra');
         $this->close($this->envelopeOf($rina, '0', 0))->assertStatus(404)->assertJsonPath('code', 'NOT_FOUND');
+        // The combined account, with an OPEN session of its own, likewise (review R-15).
+        $this->as('Dewi');
+        $this->close($this->envelopeOf($rina, '0', 0))->assertStatus(404)->assertJsonPath('code', 'NOT_FOUND');
         $this->assertSame($before, $this->facts());
 
         // BR-CASH-14, RACE-08 in sequence: a Sale after the preview moves the activity version; the close

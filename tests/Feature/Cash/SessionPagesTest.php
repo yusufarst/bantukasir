@@ -87,10 +87,44 @@ final class SessionPagesTest extends DatabaseTestCase
         app(RequestReceipts::class)->record($this->people['Rina']['id'], CheckoutSale::OPERATION, (string) Str::uuid(), (string) Str::uuid(), $this->epoch, app(Clock::class)->now()->format('Y-m-d H:i:s.uP'));
         $this->assertSame(1, $this->previewOf($version)['unresolvedCheckouts'] ?? null);
 
+        // The preview's own channel, exactly its allowlist, for the cashier, the combined account and the
+        // Owner, each in their own OPEN session (SEC-CH-01; review R-07).
+        $this->assertDeferredChannel($this->previewReload($version), 'cashier', $this->secrets());
+        TokoContoh::openSession('Dewi', $this->laci2);
+        TokoContoh::openSession('Hendra', TokoContoh::register('LACI-3', 'Laci 3'));
+
+        foreach (['Dewi' => 'combined', 'Hendra' => 'owner'] as $person => $actor) {
+            $this->as($person);
+            $this->assertPageChannel($this->get('/till/close-session')->assertOk(), $actor, $this->secrets());
+            $this->assertDeferredChannel($this->previewReload($version), $actor, $this->secrets());
+        }
+
         // The page takes only its path; Operations has no close (CAP-21).
+        $this->as('Rina');
         $this->get('/till/close-session?sessionId='.$session)->assertStatus(422);
         $this->as('Agus');
         $this->get('/till/close-session')->assertStatus(403);
+    }
+
+    public function test_the_preview_read_again_is_null_once_the_session_closed_and_names_the_next_one_once_it_opened(): void
+    {
+        // UXP-105, F-6 (review R-05): the page's own read of its preview after the session closed — by the
+        // user elsewhere or by the Owner — answers a null preview, which the page shows as UXS-30, where the
+        // page loaded anew leads to the till; once a new session opened, the preview names that one, which
+        // the page never counts under the header of the one it shows.
+        $session = TokoContoh::openSession('Rina', $this->laci1);
+        $this->as('Rina');
+        $version = self::text($this->inertiaPage($this->get('/till/close-session')->assertOk())['version'] ?? null);
+        $this->assertSame($session, $this->previewOf($version)['sessionId'] ?? null);
+
+        TokoContoh::closeSession($session);
+        $props = $this->propsOf($this->previewReload($version));
+        $this->assertArrayHasKey('preview', $props);
+        $this->assertNull($props['preview']);
+        $this->get('/till/close-session')->assertRedirect('/till');
+
+        $next = TokoContoh::openSession('Rina', $this->laci2);
+        $this->assertSame($next, $this->previewOf($version)['sessionId'] ?? null);
     }
 
     public function test_the_sessions_list_holds_the_viewers_scope_newest_first_with_its_filters_and_pages(): void
@@ -104,7 +138,7 @@ final class SessionPagesTest extends DatabaseTestCase
         $this->assertSame('cash/Sessions', $this->inertiaPage($page)['component'] ?? null);
         $this->assertPageChannel($page, 'cashier', $this->secrets());
         $props = $this->propsOf($page);
-        $this->assertSame([['status' => null, 'from' => null, 'to' => null, 'register' => null, 'responsible' => null], [], []], [$props['filters'] ?? null, $props['registers'] ?? null, $props['responsibles'] ?? null]);
+        $this->assertSame([['status' => null, 'from' => null, 'to' => null, 'register' => null, 'responsible' => null, 'perPage' => 25], [], []], [$props['filters'] ?? null, $props['registers'] ?? null, $props['responsibles'] ?? null]);
         $this->assertSame([
             'rows' => [
                 ['id' => $rina, 'number' => $this->numberOf($rina), 'status' => 'OPEN', 'registerCode' => 'LACI-1', 'registerLabel' => 'Laci 1', 'responsible' => 'Rina', 'openedAt' => '2026-11-11T02:00:00.000000Z', 'closedAt' => null, 'variance' => null],
@@ -146,7 +180,9 @@ final class SessionPagesTest extends DatabaseTestCase
         $this->assertSame([$rina, $closed], $this->idsOf('responsible='.$this->people['Rina']['id']));
         $this->assertSame([], $this->idsOf('responsible='.$this->people['Agus']['id']));
 
-        // Pages of one, and back (TR-PAGE-01); a cursor read again under the scope (TR-PAGE-03).
+        // Pages of one, and back (TR-PAGE-01); a cursor read again under the scope (TR-PAGE-03). The page's
+        // size stands among the filters, so that the page keeps it when it pages (NC-10).
+        $this->assertSame(1, ((array) ($this->propsOf($this->get('/cash-sessions?perPage=1')->assertOk())['filters'] ?? []))['perPage'] ?? null);
         $first = $this->listOf('perPage=1');
         $this->assertSame([[$rina], null], [array_column($first['rows'], 'id'), $first['previousCursor']]);
         $second = $this->listOf('perPage=1&after='.self::text($first['nextCursor']));
@@ -199,6 +235,10 @@ final class SessionPagesTest extends DatabaseTestCase
 
         $this->get('/cash-sessions/'.$rina.'?from_page=till')->assertStatus(422);
 
+        // The combined account, a holder of CAP-21 as she is, sees its own sessions alone (review R-15).
+        $this->as('Dewi');
+        $this->getJson('/cash-sessions/'.$rina)->assertStatus(404)->assertJsonPath('code', 'NOT_FOUND');
+
         // The Owner sees every session, and closes none here: an own close is the responsible user's
         // (RC-03); the Owner's sections are TASK-032's.
         $this->as('Hendra');
@@ -249,11 +289,12 @@ final class SessionPagesTest extends DatabaseTestCase
     }
 
     /**
-     * The close preview, as the page reloads it by name.
+     * The page's own read of its close preview, by name, as the page reloads it: the page's component,
+     * and never its header.
      *
-     * @return array<array-key, mixed>
+     * @return TestResponse<Response>
      */
-    private function previewOf(string $version): array
+    private function previewReload(string $version): TestResponse
     {
         $reload = $this->get('/till/close-session', [
             'X-Inertia' => 'true',
@@ -261,10 +302,20 @@ final class SessionPagesTest extends DatabaseTestCase
             'X-Inertia-Partial-Component' => 'cash/CloseSession',
             'X-Inertia-Partial-Data' => 'preview',
         ])->assertOk();
-        $props = (array) ($this->inertiaPage($reload)['props'] ?? []);
-        $this->assertArrayNotHasKey('session', $props);
+        $this->assertSame('cash/CloseSession', $this->inertiaPage($reload)['component'] ?? null);
+        $this->assertArrayNotHasKey('session', $this->propsOf($reload));
 
-        return (array) ($props['preview'] ?? null);
+        return $reload;
+    }
+
+    /**
+     * The close preview, as the page reloads it by name.
+     *
+     * @return array<array-key, mixed>
+     */
+    private function previewOf(string $version): array
+    {
+        return (array) ($this->propsOf($this->previewReload($version))['preview'] ?? null);
     }
 
     /**

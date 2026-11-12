@@ -8,7 +8,7 @@ import { AppShell } from '@/layouts/AppShell';
 import { PageContainer, PageHeader } from '@/layouts/Page';
 import { takeSavedNote } from '@/lib/access/users';
 import { CloseSessionEntry, VarianceWord } from '@/lib/cash/Parts';
-import { OPEN, refundsText, registerText, SESSIONS_PAGE, sessionsShell, statusWord, type SessionFigures } from '@/lib/cash/sessions';
+import { OPEN, refundsText, registerText, sessionsListFrom, sessionsShell, statusWord, type SessionFigures } from '@/lib/cash/sessions';
 import { formatCount, formatDateTime, formatMoney } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import { personaOf, type RoleCode } from '@/lib/navigation';
@@ -20,7 +20,8 @@ import { personaOf, type RoleCode } from '@/lib/navigation';
 // "Tutup sesi kas" (UXI-139), disabled with its reason while this user holds an unresolved close request
 // (NC-13). A CLOSED session shows its immutable report as the close froze it, rows 3 to 11 of DC-02, the
 // variance in words. Arriving from the close, the page says the session was closed. The way back is
-// "Kembali ke Sesi kas" (UXI-148), the parent, also after the close (NC-01). The print and export
+// "Kembali ke Sesi kas" (UXI-148): the list with the filters and the page it stood at when it opened
+// this session (NC-10), else the parent, also after the close (NC-01). The print and export
 // controls are TASK-031's, the Owner's review notes and assisted close TASK-032's, and the list of the
 // drawer-funded refunds beside the variance TASK-034's.
 
@@ -65,6 +66,7 @@ export default function Session(props: SessionProps) {
 
 function SessionDetail({ title, session, figures, count }: SessionProps & { title: string }) {
     const [note] = useState(takeSavedNote);
+    const [back] = useState(() => sessionsListFrom(document.referrer, window.location.origin));
     const open = session.status === OPEN;
     // UXI-139: the responsible user's own OPEN session, waiting while a close request is unresolved (NC-13 (a)).
     const action = session.canClose ? <CloseSessionEntry variant={'primary'} /> : undefined;
@@ -82,7 +84,7 @@ function SessionDetail({ title, session, figures, count }: SessionProps & { titl
                 <PageHeader
                     title={title}
                     subtitle={t('cash.session_detail.subtitle', { nomor: session.number, laci: session.registerLabel })}
-                    back={{ href: SESSIONS_PAGE, page: t('cash.sessions.title') }}
+                    back={{ href: back, page: t('cash.sessions.title') }}
                     actions={action}
                 />
                 {note !== null && <Committed message={note} />}

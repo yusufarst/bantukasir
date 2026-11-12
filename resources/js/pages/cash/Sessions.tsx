@@ -21,8 +21,8 @@ import { personaOf, type RoleCode } from '@/lib/navigation';
 // sessions, which the page says. Each row leads to UXP-206 (UXI-137) and shows the register, the
 // responsible user, the opening and close times — "Dibuka" while still OPEN — and the variance in
 // words. It is the top-level "Sesi kas" of a cashier and the combined account (UXI-004) and the
-// Owner's item of the Laporan sub-navigation (UXI-019). The filters and the page stand in the address
-// (NC-10).
+// Owner's item of the Laporan sub-navigation (UXI-019). The filters, the page's size and the page stand
+// in the address (NC-10), which a session's way back returns to (UXI-148).
 
 interface SessionsProps {
     readonly filters: SessionFilters;
@@ -60,7 +60,7 @@ function SessionList({ title, owner, filters, sessions, registers, responsibles 
     const chooseStatus = (value: string): void => visit({ ...choice, status: statusOf(value) });
     const chooseRegister = (value: string): void => visit({ ...choice, register: choiceKey(value) });
     const chooseResponsible = (value: string): void => visit({ ...choice, responsible: choiceKey(value) });
-    const clear = (): void => visit({ status: null, from: null, to: null, register: null, responsible: null });
+    const clear = (): void => visit({ status: null, from: null, to: null, register: null, responsible: null, perPage: choice.perPage });
     const filtered = filters.status !== null || filters.from !== null || filters.to !== null || filters.register !== null || filters.responsible !== null;
 
     const columns: readonly Column<SessionRow>[] = [

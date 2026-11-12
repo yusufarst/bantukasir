@@ -243,6 +243,13 @@ final class CashCloseTablesTest extends DatabaseTestCase
             $this->assertSame($definition, $indexes[$name] ?? null, $name);
         }
 
+        // The presence column of cash_sessions, a foreign-key column since this Task's key, has its index
+        // as every earlier presence key has (SCHEMA sections 3.6 and 11; review R-02).
+        $this->assertSame(
+            'CREATE INDEX cash_sessions_close_presence_index ON public.cash_sessions USING btree (close_presence)',
+            $this->watcher()->table('pg_indexes')->where('schemaname', 'public')->where('tablename', 'cash_sessions')->where('indexname', 'cash_sessions_close_presence_index')->value('indexdef'),
+        );
+
         // The two keys that go both ways are deferred to the commit; the key that holds the session
         // CLOSED is immediate, and refuses any change of the session's status (BR-CASH-19).
         $keys = $this->watcher()->table('pg_constraint')->whereIn('conname', ['cash_session_closes_report_fk', 'cash_session_closes_session_fk', 'cash_sessions_close_presence_fk'])->orderBy('conname')->get(['conname', 'condeferrable', 'condeferred', 'confupdtype']);

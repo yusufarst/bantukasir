@@ -22,7 +22,8 @@ use Inertia\Response;
  * TASK-030 scope item 3), for a holder of CAP-21 on the sessions they are responsible for and for the
  * Owner on every session (CAP-22); OPERATIONS_ADMIN has no access (the gate).
  *
- * RP-205: one page of the sessions in scope with the filters as they were read; for the Owner also
+ * RP-205: one page of the sessions in scope with the filters and the page's size as they were read,
+ * which the page keeps in its address when it pages (NC-10); for the Owner also
  * the registers and the people of the filters "Laci kas" and "Penanggung jawab" (UXI-136). RP-206: one
  * session in scope, NOT_FOUND otherwise (TR-ERR-03); an OPEN session with its running figures, which
  * the Sales module's query gives (STK-10), and whether the viewer may close it here — its own
@@ -46,6 +47,7 @@ final class SessionsController
                 'to' => $filters['to'],
                 'register' => $filters['register'],
                 'responsible' => $filters['responsible'],
+                'perPage' => $filters['perPage'],
             ],
             'sessions' => $sessions->list($viewer, $filters),
             // The Owner's filters (UXI-136); none for anyone else, who sees only their own sessions.
