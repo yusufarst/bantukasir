@@ -38,11 +38,11 @@ final class MovementsController
         $read = $detail->movement($movement, $viewer);
         $props = ['movement' => [...$read, ...$reversibility->links($read['id'])]];
 
-        if ($viewer instanceof User && Capabilities::allows($viewer, Capability::Cap20)) {
+        if (Capabilities::allows($viewer, Capability::Cap20)) {
             $props['costEvidence'] = $detail->evidence($read['id']);
         }
 
-        if ($viewer instanceof User && Capabilities::allows($viewer, Capability::Cap17)) {
+        if (Capabilities::allows($viewer, Capability::Cap17)) {
             $props['postingFrozen'] = $onboarding->current() === OnboardingState::ACTIVE;
         }
 

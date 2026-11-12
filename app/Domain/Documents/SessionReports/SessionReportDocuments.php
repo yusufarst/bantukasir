@@ -12,7 +12,6 @@ use App\Policies\ObjectScope;
 use App\Queries\Inventory\Column as Read;
 use App\Support\Numbers\Money;
 use Illuminate\Support\Facades\DB;
-use JsonException;
 use LogicException;
 
 /**
@@ -43,7 +42,8 @@ final class SessionReportDocuments
         to_char(rep.opened_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as opened_at,
         to_char(rep.closed_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as closed_at,
         to_char(rep.opened_at at time zone 'Asia/Jakarta', 'YYYY-MM-DD HH24:MI') as opened_local,
-        to_char(rep.closed_at at time zone 'Asia/Jakarta', 'YYYY-MM-DD HH24:MI') as closed_local
+        to_char(rep.closed_at at time zone 'Asia/Jakarta', 'YYYY-MM-DD HH24:MI') as closed_local,
+        jsonb_array_length(rep.drawer_refunds) as refund_count
         SQL;
 
     public function __construct(private readonly BusinessProfiles $profiles) {}
@@ -63,7 +63,7 @@ final class SessionReportDocuments
             ->where('rep.session_id', $key)
             ->select([
                 'rep.session_id', 'rep.session_number', 'rep.register_code', 'rep.register_label', 'rep.responsible_display_name', 'rep.opening_cash',
-                'rep.completed_sale_count', 'rep.completed_sale_value', 'rep.cash_applied', 'rep.bank_transfer_applied', 'rep.drawer_refund_total', 'rep.drawer_refunds',
+                'rep.completed_sale_count', 'rep.completed_sale_value', 'rep.cash_applied', 'rep.bank_transfer_applied', 'rep.drawer_refund_total',
                 'rep.expected_cash', 'rep.physical_cash', 'rep.variance', 'rep.close_actor_display_name', 'rep.close_reason', 'rep.notes', 'rep.template_version',
                 'rep.business_profile_revision_id', 's.responsible_user_id',
             ])
@@ -81,7 +81,7 @@ final class SessionReportDocuments
             throw new NotFound;
         }
 
-        if (self::refunds(Read::text($values, 'drawer_refunds')) !== 0) {
+        if (Read::int($values, 'refund_count') !== 0) {
             throw new LogicException('A report holds no drawer-funded refund before TASK-034, which adds their rows (SCHEMA section 5.10).');
         }
 
@@ -125,24 +125,6 @@ final class SessionReportDocuments
                 'closedAt' => Read::text($values, 'closed_local'),
             ],
         ];
-    }
-
-    /**
-     * The number of drawer-funded refunds the report froze, a JSON list.
-     */
-    private static function refunds(string $json): int
-    {
-        try {
-            $refunds = json_decode($json, true, 4, JSON_THROW_ON_ERROR);
-        } catch (JsonException) {
-            $refunds = null;
-        }
-
-        if (! is_array($refunds) || ! array_is_list($refunds)) {
-            throw new LogicException('A report holds its drawer-funded refunds as a list (SCHEMA section 5.10).');
-        }
-
-        return count($refunds);
     }
 
     /**

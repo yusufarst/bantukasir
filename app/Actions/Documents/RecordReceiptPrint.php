@@ -88,7 +88,8 @@ final class RecordReceiptPrint extends CommandAction
         );
         $this->written();
 
-        return new StoredResult(self::RESULT, $commandId, ['saleId' => $sale['id'], 'size' => $size, 'copy' => $copy]);
+        // A result's detail holds whole numbers and texts: the copy flag as 1 or 0 (SCHEMA section 5.3).
+        return new StoredResult(self::RESULT, $commandId, ['saleId' => $sale['id'], 'size' => $size, 'copy' => $copy ? 1 : 0]);
     }
 
     /**
@@ -103,7 +104,7 @@ final class RecordReceiptPrint extends CommandAction
         $size = $result->detail['size'] ?? null;
         $copy = $result->detail['copy'] ?? null;
 
-        if (! is_int($saleId) || ! is_string($size) || ! is_bool($copy)) {
+        if (! is_int($saleId) || ! is_string($size) || ($copy !== 0 && $copy !== 1)) {
             throw new LogicException('A print request stored its Sale, its size and whether it is a copy.');
         }
 
@@ -114,7 +115,7 @@ final class RecordReceiptPrint extends CommandAction
             return null;
         }
 
-        return ['type' => $result->type, 'id' => $result->ref, 'location' => ReceiptPrints::path($saleId, $commandId, $size), 'copy' => $copy];
+        return ['type' => $result->type, 'id' => $result->ref, 'location' => ReceiptPrints::path($saleId, $commandId, $size), 'copy' => $copy === 1];
     }
 
     /**
