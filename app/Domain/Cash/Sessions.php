@@ -2,6 +2,7 @@
 
 namespace App\Domain\Cash;
 
+use App\Support\Numbers\Money;
 use App\Support\Time\BusinessDate;
 use App\Support\Time\Clock;
 use Illuminate\Support\Facades\DB;
@@ -19,12 +20,23 @@ final class Sessions
 {
     public const string OPEN = 'OPEN';
 
+    public const string CLOSED = 'CLOSED';
+
     /** The partial unique indexes of BR-CASH-06: one OPEN session per register and per user. */
     public const array ONE_OPEN_PER_REGISTER = ['cash_sessions_one_open_per_register'];
 
     public const array ONE_OPEN_PER_USER = ['cash_sessions_one_open_per_user'];
 
     public function __construct(private readonly Clock $clock) {}
+
+    /**
+     * The path of RP-206, UXP-206 "Detail sesi kas", of a session by its internal key (ROUTE_CONTRACTS
+     * RP-206; TASK-030): the result page of its close.
+     */
+    public static function detailPath(int $sessionId): string
+    {
+        return '/cash-sessions/'.$sessionId;
+    }
 
     /**
      * Whether a session is OPEN on the register, read under the register's lock (TR-VAL-08).
@@ -112,6 +124,62 @@ final class Sessions
         }
 
         return new GuardedSession($id, $number, $status === self::OPEN);
+    }
+
+    /**
+     * The session of a close under the close's update lock (TR §7.1 step 4; SCHEMA section 7: FOR
+     * UPDATE, because the close changes its status), only when the user is its responsible user:
+     * another user's session is never locked by an own close (G-19). The same lock as a Sale's, so a
+     * close and a Sale of the session never interleave (RACE-08). A Sale or a close that the lock
+     * waited for is read as it left the session. Null when the session does not exist or is another
+     * user's.
+     */
+    public function lockForClose(int $sessionId, int $userId): ?ClosingSession
+    {
+        self::requireTransaction();
+
+        $row = DB::table('cash_sessions')
+            ->where('id', $sessionId)
+            ->where('responsible_user_id', $userId)
+            ->lockForUpdate()
+            ->first(['id', 'session_number', 'status', 'activity_version', 'opening_cash', 'opened_at', 'responsible_display_name', 'register_id']);
+
+        if ($row === null) {
+            return null;
+        }
+
+        $values = (array) $row;
+        $id = $values['id'] ?? null;
+        $number = $values['session_number'] ?? null;
+        $status = $values['status'] ?? null;
+        $version = $values['activity_version'] ?? null;
+        $opening = $values['opening_cash'] ?? null;
+        $openedAt = $values['opened_at'] ?? null;
+        $name = $values['responsible_display_name'] ?? null;
+        $register = $values['register_id'] ?? null;
+
+        if (! is_int($id) || ! is_string($number) || ! is_string($status) || ! is_int($version) || (! is_int($opening) && ! is_string($opening))
+            || ! is_string($openedAt) || ! is_string($name) || ! is_int($register)) {
+            throw new LogicException('A session holds its columns (SCHEMA section 5.10).');
+        }
+
+        return new ClosingSession($id, $number, $status === self::OPEN, $version, Money::fromDatabase($opening), $openedAt, $name, $register);
+    }
+
+    /**
+     * The close of the session whose lock the caller holds: CLOSED, before its close row is added,
+     * which names the session as CLOSED (SCHEMA section 5.10). The presence key then refuses a commit
+     * without the close (EXC-44), and the close's key, a commit without its report.
+     */
+    public function close(int $sessionId, string $at): void
+    {
+        self::requireTransaction();
+
+        $changed = DB::table('cash_sessions')->where('id', $sessionId)->where('status', self::OPEN)->update(['status' => self::CLOSED, 'updated_at' => $at]);
+
+        if ($changed !== 1) {
+            throw new LogicException('The locked session is OPEN (G-04).');
+        }
     }
 
     /**

@@ -79,10 +79,12 @@ export const SUB_ORDER: Readonly<Record<AreaId, Readonly<Partial<Record<Persona,
  * (CAP-02, CAP-04), from TASK-017; UXI-006 "Stok" (CAP-14), with its badge,
  * from TASK-022; UXI-002 "Kasir" (CAP-21), from TASK-027, which leads to the
  * till at `/till` since TASK-029, whose server sends a user without an OPEN
- * session to Buka sesi kas.
+ * session to Buka sesi kas; UXI-004 "Sesi kas" (CAP-21) of a cashier and the
+ * combined account, from TASK-030 — the Owner reaches it through Laporan.
  */
 export const DESTINATIONS: Readonly<Partial<Record<DestinationId, DestinationEntry>>> = {
     till: { label: 'sales.till.title', href: '/till', icon: 'till', capabilities: ['CAP-21'] },
+    sessions: { label: 'cash.sessions.title', href: '/cash-sessions', icon: 'drawer', capabilities: ['CAP-21'] },
     stock: { label: 'inventory.stock.title', href: '/stock', icon: 'boxes', capabilities: ['CAP-14'] },
     products: { label: 'catalog.products.title', href: '/products', icon: 'tag', capabilities: ['CAP-02', 'CAP-04'] },
     settings: { label: 'config.settings.title', href: '/settings', icon: 'sliders', capabilities: ['CAP-25', 'CAP-32'] },
@@ -91,8 +93,8 @@ export const DESTINATIONS: Readonly<Partial<Record<DestinationId, DestinationEnt
 /**
  * The registered items of each sub-navigation: UXI-009 and UXI-010, from TASK-017; UXI-011,
  * from TASK-019; UXI-012 to UXI-014, from TASK-022; UXI-015 "Barang keluar", the Owner's explicit
- * entry of D-018, from TASK-023; UXI-021 "Biaya perlu dilengkapi" (CAP-20), from TASK-025, shown
- * once the Laporan destination exists (TASK-041).
+ * entry of D-018, from TASK-023; UXI-021 "Biaya perlu dilengkapi" (CAP-20), from TASK-025, and
+ * UXI-019 "Sesi kas" (CAP-22), from TASK-030, shown once the Laporan destination exists (TASK-041).
  */
 export const SUB_DESTINATIONS: Readonly<Record<AreaId, Readonly<Partial<Record<SubDestinationId, SubDestinationEntry>>>>> = {
     products: {
@@ -107,6 +109,7 @@ export const SUB_DESTINATIONS: Readonly<Record<AreaId, Readonly<Partial<Record<S
         issues: { label: 'inventory.issues.title', href: '/stock/issues', capabilities: ['CAP-13'] },
     },
     reports: {
+        sessions: { label: 'cash.sessions.title', href: '/cash-sessions', capabilities: ['CAP-22'] },
         worklist: { label: 'costing.worklist.title', href: '/reports/costs-to-complete', capabilities: ['CAP-20'] },
     },
 };

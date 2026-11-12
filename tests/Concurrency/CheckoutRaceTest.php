@@ -26,7 +26,7 @@ use Tests\Harness\Sales\SessionCloseScenario;
  *   payload under either is held, never run;
  * - the number: Sales in different sessions never wait on each other for it; numbers are unique, follow
  *   the order they were taken, and one rolled back leaves its gap;
- * - RACE-08, the Sale side: against the close of its session, as RC-03 of TASK-030 will take its lock;
+ * - RACE-08, the Sale side: against the close of its session through RC-03's Action (TASK-030);
  * - RACE-11: a Sale against a running replay of its product, and a replay against a running Sale, in
  *   both orders and past the lock timeout;
  * - RACE-23: a price change or a deactivation against a Sale whose cart is open, in both orders;
@@ -225,10 +225,10 @@ final class CheckoutRaceTest extends DatabaseTestCase
 
     public function test_race_08_a_sale_against_the_close_of_its_session(): void
     {
-        // AC-028-02, AC-028-04; BR-CASH-14, BR-CASH-15; RACE-08, the Sale side (the close is RC-03 of
-        // TASK-030, whose session lock SessionCloseScenario takes as it will). Sale first: it commits once,
-        // and the close finds the activity version moved, RECOUNT_REQUIRED. Close first: the Sale waits for
-        // the session's lock and is refused SESSION_NOT_OPEN before any fact and before its number.
+        // AC-028-02, AC-028-04; BR-CASH-14, BR-CASH-15; RACE-08, the Sale side (the close is RC-03's
+        // Action of TASK-030, which SessionCloseScenario runs). Sale first: it commits once, and the close
+        // finds the activity version moved, RECOUNT_REQUIRED. Close first: the Sale waits for the session's
+        // lock and is refused SESSION_NOT_OPEN before any fact and before its number.
         TokoContoh::stock($this->product, '10', '10000');
         $sale = $this->start($this->sale('Rina', '1', '20000'), ['after_lock:7']);
         $close = $this->start(['session' => $this->rinaSession, 'activityVersion' => 0], [], SessionCloseScenario::class);

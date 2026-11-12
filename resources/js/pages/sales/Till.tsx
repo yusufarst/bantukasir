@@ -14,6 +14,7 @@ import { AppShell, type ShellLayout } from '@/layouts/AppShell';
 import { PageContainer } from '@/layouts/Page';
 import { takeSavedNote } from '@/lib/access/users';
 import { throttledBody } from '@/lib/authAnswer';
+import { CloseSessionEntry } from '@/lib/cash/Parts';
 import { ProductThumb } from '@/lib/catalog/Parts';
 import { catalogFieldMessage, type ProductRow } from '@/lib/catalog/products';
 import { useScanCapture } from '@/lib/catalog/scanCapture';
@@ -619,6 +620,7 @@ function TillView({
                     </h1>
                     <p className={'bk-meta'}>{t('sales.till.session', { nomor: session.number, laci: session.register })}</p>
                 </div>
+                <CloseSessionEntry variant={'quiet'} />
             </div>
             <div className={'bk-till__notices'}>
                 {postingFrozen && <StateNotice state={FROZEN_STATE} />}

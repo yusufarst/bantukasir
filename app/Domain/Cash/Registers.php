@@ -43,6 +43,15 @@ final class Registers
     }
 
     /**
+     * The register as it is, read without a lock, or null: what a session's close freezes in its
+     * report, which cannot change while that session is OPEN on it (G-19; RACE-26).
+     */
+    public function find(int $id): ?RegisterRecord
+    {
+        return self::recordOf(DB::table('cash_registers')->where('id', $id)->first());
+    }
+
+    /**
      * Changes the register whose update lock the caller holds, one version on.
      */
     public function change(RegisterRecord $register, string $code, string $label, bool $active): void

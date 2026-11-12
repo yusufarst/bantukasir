@@ -545,7 +545,12 @@ final class CheckoutSaleTest extends DatabaseTestCase
             $this->checkout([...$envelope, 'idempotencyKey' => (string) Str::uuid(), ...$changes])->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
         }
 
+        // An earlier epoch is held whoever sends it (G-12). Dewi sends it, so that Rina holds no receipt
+        // that only a restore reconciliation settles, which would keep her session's close refused below
+        // (G-27; TASK-030).
+        $this->as('Dewi');
         $this->checkout([...$envelope, 'sourceIntentId' => (string) Str::uuid(), 'idempotencyKey' => (string) Str::uuid(), 'recoveryEpoch' => str_repeat('ab', 32)])->assertStatus(409)->assertJsonPath('code', 'EPOCH_STALE')->assertJsonPath('outcome', 'HELD');
+        $this->as('Rina');
         $this->assertSame($before, $this->factsAndRows());
 
         // The command runs once; a repeat answers the original; another payload is held.
@@ -565,8 +570,10 @@ final class CheckoutSaleTest extends DatabaseTestCase
         $this->assertSame($facts, $this->factsAndRows());
         $this->assertSame(['7.000', 2], $this->balanceOf($this->pen));
 
-        // The session closes: a repeat and a status check still answer the Sale, whose identity is read
+        // The session closes once a status check settled the held repeats of the Sale's intent (G-27,
+        // D-089; TASK-030): a repeat and a status check still answer the Sale, whose identity is read
         // before any session lock; a new intent in that session is refused.
+        $this->check($envelope)->assertOk()->assertJsonPath('outcome', 'COMMITTED');
         $this->closeSession($session);
         $this->checkout($envelope)->assertStatus(200)->assertJsonPath('repeated', true)->assertJsonPath('result.id', $sale)->assertJsonPath('result.number', $number);
         $resolved = $this->check($envelope)->assertOk()->assertJsonPath('outcome', 'COMMITTED')->assertJsonPath('result.id', $sale)->assertJsonPath('result.number', $number)->assertJsonPath('result.location', '/sales/'.$sale.'/receipt');
@@ -912,12 +919,13 @@ final class CheckoutSaleTest extends DatabaseTestCase
     }
 
     /**
-     * Until the close of TASK-030 exists, a session is closed as that close will leave it: CLOSED,
-     * its state column written through the runtime role's privilege (SCHEMA section 5.10).
+     * The close of the session by its responsible user through RC-03's Action (TASK-030), which
+     * replaced the stand-in of TASK-028.
      */
     private function closeSession(int $session): void
     {
-        $this->assertSame(1, $this->runtime()->table('cash_sessions')->where('id', $session)->update(['status' => 'CLOSED', 'updated_at' => now()]));
+        TokoContoh::closeSession($session);
+        $this->assertSame('CLOSED', $this->watcher()->table('cash_sessions')->where('id', $session)->value('status'));
     }
 
     private function revisionOf(int $product): int

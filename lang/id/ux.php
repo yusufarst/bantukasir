@@ -163,6 +163,8 @@ return [
         'unresolved_family' => 'Ada permintaan sejenis yang statusnya belum pasti. Cek statusnya dulu.',
         // The onboarding freeze (TASK-022; COPY_DECK section 15).
         'onboarding' => 'Tidak bisa dipakai selama masa input stok awal.',
+        // "Lanjut hitung" while a checkout is unresolved (UXI-103; TASK-030; COPY_DECK section 15).
+        'unresolved_checkouts' => 'Ada penjualan yang statusnya belum pasti. Cek statusnya dulu sebelum menghitung laci.',
     ],
     // The states of UI_STATES section 2 with their wording (COPY_DECK section
     // 12). A state key is the parent of its texts: the title or label, the

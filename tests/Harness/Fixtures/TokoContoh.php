@@ -6,6 +6,7 @@ use App\Actions\Access\BootstrapInput;
 use App\Actions\Access\BootstrapInstallation;
 use App\Actions\Access\ConsumeLink;
 use App\Actions\Access\CreateStaffAccount;
+use App\Actions\Cash\CloseCashSession;
 use App\Actions\Cash\CreateCashRegister;
 use App\Actions\Cash\OpenCashSession;
 use App\Actions\Catalog\AddBarcode;
@@ -27,6 +28,8 @@ use App\Domain\Access\Accounts;
 use App\Domain\Access\OneTimeLinks;
 use App\Domain\Access\Role;
 use App\Domain\Access\StaffRoles;
+use App\Domain\Cash\CashCount;
+use App\Domain\Cash\SessionSales;
 use App\Domain\Commands\CommandIdentities;
 use App\Domain\Commands\Envelope;
 use App\Domain\Commands\Fingerprint;
@@ -37,6 +40,7 @@ use App\Domain\Configuration\BusinessProfiles;
 use App\Domain\Configuration\ProfileFields;
 use App\Domain\Inventory\OnboardingState;
 use App\Domain\Inventory\PostingBlocks;
+use App\Domain\Sales\Sales;
 use App\Models\User;
 use App\Support\Numbers\Money;
 use App\Support\Numbers\Quantity;
@@ -502,6 +506,35 @@ final class TokoContoh
         $id = app(OpenCashSession::class)->execute(new CommandContext($actor, $envelope, app(Clock::class)->now()))->result['id'] ?? null;
 
         return is_int($id) ? $id : throw new LogicException('The fixture session was not opened.');
+    }
+
+    /**
+     * The close of a session by its responsible user through RC-03's Action (TASK-030; EXECUTION_CONTEXT
+     * EXC-45), against its activity version now, with the physical cash given or, by default, the
+     * session's expected cash, a variance of Rp0: the session's internal key. The user must hold no
+     * unresolved checkout receipt (G-27).
+     *
+     * @throws DatabaseRefused
+     */
+    public static function closeSession(int $session, ?string $physicalCash = null): int
+    {
+        self::build(DB::connection());
+
+        $values = (array) DB::table('cash_sessions')->where('id', $session)->first(['responsible_user_id', 'activity_version', 'opening_cash']);
+        $actor = $values['responsible_user_id'] ?? null;
+        $version = $values['activity_version'] ?? null;
+        $opening = $values['opening_cash'] ?? null;
+
+        if (! is_int($actor) || ! is_int($version) || (! is_int($opening) && ! is_string($opening))) {
+            throw new LogicException('The fixture session exists.');
+        }
+
+        $sales = SessionSales::of(app(Sales::class)->ofSession($session));
+        $physical = $physicalCash ?? CashCount::due(Money::fromDatabase($opening), $sales->cashApplied, Money::zero())->toCanonical();
+        $envelope = new Envelope(CloseCashSession::OPERATION, Operations::VERSION, (string) Str::uuid(), (string) Str::uuid(), self::recoveryEpoch(), ['activityVersion' => $version], ['sessionId' => $session, 'physicalCash' => $physical]);
+        $id = app(CloseCashSession::class)->execute(new CommandContext($actor, $envelope, app(Clock::class)->now()))->result['id'] ?? null;
+
+        return is_int($id) ? $id : throw new LogicException('The fixture session was not closed.');
     }
 
     /**

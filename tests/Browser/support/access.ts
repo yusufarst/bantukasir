@@ -119,7 +119,9 @@ export function linkAddress(link: Link): string {
  * Akun saya (RP-003): the home of the Owner until Beranda exists (RN-01,
  * NC-12; TASK-007), and the page that every role has. A cashier or the
  * combined account with an OPEN session goes to Kasir (TASK-029), which the
- * browser suite never gives them: only the Owner sells there (tests/Browser/sales/).
+ * browser suite never leaves them: the cashier's sessions of
+ * tests/Browser/cash/close.spec.ts and sessions.spec.ts are closed again in the
+ * same test (TASK-030).
  */
 export const HOME = '/account';
 
@@ -131,8 +133,8 @@ export const OPEN_SESSION_HOME = '/till/open-session';
 
 /**
  * The home of each person of Toko Contoh (NC-12): Agus is Operations, Dewi the
- * combined account, Rina a cashier, who never opens a session in the browser
- * suite (tests/Browser/cash/ opens the Owner's), so her home is Buka sesi kas.
+ * combined account, Rina a cashier, whose sessions the browser suite always
+ * closes again (tests/Browser/cash/close.spec.ts, sessions.spec.ts), so her home is Buka sesi kas.
  */
 export function homeOf(person: Person): string {
     return person === 'Agus' || person === 'Dewi' ? STOCK_HOME : person === 'Rina' ? OPEN_SESSION_HOME : HOME;

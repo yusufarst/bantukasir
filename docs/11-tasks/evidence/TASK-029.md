@@ -227,3 +227,7 @@ Round 5, the targeted check of R-18's fix alone by `bk-reviewer-high` on the pac
 | --- | --- | --- | --- |
 | R-22 | NOTE | The refusals' test stopped at its first case in both runs, so its five other cases and their axe checks have never run | Accepted: the browser suite on the fix's head must pass before the merge (section 1) |
 | R-23 | NOTE | The inventory pages show their ONBOARDING_FREEZE refusal without a role, a gap older than this Task | Recorded as OPEN_ITEMS T-44 |
+
+## 13. Merge
+
+Recorded by TASK-030 (EXECUTION_CONTEXT CE-50, CE-61). Pull request #40, its final head `bdf5e1d12b00c42a9f0c780777cf05846807a3d6` after fix cycles 1 and 2, passed CI in run 43041211945. The tick squash-merged it under D-105 as `ad16a628e4d5ddec976c734d4c56bd7efae40340` on `develop` on 11 November 2026, after the automated review's window ended with the status DONE; the squash commit's tree, `97d95c0`, equals the head's, its parent is `341d4cb` and its author the Owner's identity. CI on `develop` at the merge, run 43046125934, passed, and the tick verified the merge. TASK-029 is `DONE`.

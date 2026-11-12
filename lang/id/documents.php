@@ -14,6 +14,29 @@ return [
     'label' => [
         'sku' => 'SKU :sku',
     ],
+    // The labels of a session's report as UXP-206 shows a CLOSED session (COPY_DECK sections 7.11
+    // and 17.2; TASK-030); the print, the export and the drawer-funded refunds' rows are TASK-031's
+    // and TASK-034's.
+    'session_report' => [
+        'title' => 'Laporan sesi kas',
+        'register' => 'Laci kas',
+        'responsible' => 'Penanggung jawab',
+        'opened_at' => 'Dibuka',
+        'cutoff' => 'Dihitung sampai',
+        'closed_at' => 'Ditutup',
+        'opening_cash' => 'Modal awal',
+        'sale_count' => 'Jumlah penjualan',
+        'sale_value' => 'Nilai penjualan',
+        'cash_payments' => 'Pembayaran tunai',
+        'transfer_payments' => 'Pembayaran transfer bank',
+        'drawer_refunds' => 'Pengembalian dari laci kas',
+        'expected_cash' => 'Uang seharusnya di laci',
+        'physical_cash' => 'Uang fisik di laci',
+        'variance' => 'Selisih',
+        'closed_by' => 'Ditutup oleh',
+        'close_reason' => 'Alasan penutupan',
+        'notes' => 'Catatan',
+    ],
     'receipt' => [
         'number' => 'No. :nomor',
         'time' => 'Waktu: :waktu',

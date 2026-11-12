@@ -37,9 +37,18 @@ final class UsersController
         return Inertia::render('access/UserCreate');
     }
 
-    public function show(Request $request, string $user, UserAccounts $accounts): Response
+    /**
+     * UXP-604 with the account's OPEN cash session, if any, from the Cash module, before and after a
+     * deactivation (UXI-340; D-069 (d); TASK-030): its internal key, for "Detail sesi kas", or null.
+     */
+    public function show(Request $request, string $user, UserAccounts $accounts, OpenSessions $sessions): Response
     {
-        return Inertia::render('access/User', ['user' => $accounts->detail($user, self::viewer($request))->toArray()]);
+        $account = $accounts->detail($user, self::viewer($request));
+
+        return Inertia::render('access/User', [
+            'user' => $account->toArray(),
+            'openSession' => ['id' => $sessions->sessionOf($account->id)['id'] ?? null],
+        ]);
     }
 
     public function edit(Request $request, string $user, UserAccounts $accounts): Response

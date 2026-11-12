@@ -18,10 +18,13 @@ use App\Http\Controllers\Access\SignInController;
 use App\Http\Controllers\Access\UpdateOwnerDetailsController;
 use App\Http\Controllers\Access\UpdateStaffAccountController;
 use App\Http\Controllers\Access\UsersController;
+use App\Http\Controllers\Cash\CloseCashSessionController;
+use App\Http\Controllers\Cash\CloseSessionController;
 use App\Http\Controllers\Cash\CreateCashRegisterController;
 use App\Http\Controllers\Cash\OpenCashSessionController;
 use App\Http\Controllers\Cash\OpenSessionController;
 use App\Http\Controllers\Cash\RegistersController;
+use App\Http\Controllers\Cash\SessionsController;
 use App\Http\Controllers\Cash\UpdateCashRegisterController;
 use App\Http\Controllers\Catalog\AddBarcodeController;
 use App\Http\Controllers\Catalog\BarcodeCorrectionController;
@@ -323,13 +326,25 @@ Route::middleware(['auth', 'signin.session', 'throttle:authenticated', 'cache.he
     // Sale checkout (TASK-028): RC-01 for CAP-21, in the actor's own OPEN session, which its Action
     // checks under the session's lock; in the bucket of every command, without recent authentication.
     // The till (TASK-029): RP-101 and its payment view RP-102 for CAP-21, in the actor's own OPEN session,
-    // each taking only its path.
+    // each taking only its path. The close (TASK-030): RP-105 and RC-03 for CAP-21, on the actor's own
+    // OPEN session, which its Action checks under the session's lock; RC-03 in the bucket of every
+    // command, without recent authentication.
     Route::middleware('capability:CAP-21')->group(function (): void {
         Route::get('/till', [TillController::class, 'show'])->middleware('input.allow')->name('till.show');
         Route::get('/till/payment', [TillController::class, 'payment'])->middleware('input.allow')->name('till.payment');
         Route::get('/till/open-session', [OpenSessionController::class, 'show'])->middleware('input.allow')->name('till.open');
+        Route::get('/till/close-session', [CloseSessionController::class, 'show'])->middleware('input.allow')->name('till.close');
         Route::post('/commands/cash_session.open', OpenCashSessionController::class)->middleware('throttle:command')->name('commands.cash_session.open');
+        Route::post('/commands/cash_session.close', CloseCashSessionController::class)->middleware('throttle:command')->name('commands.cash_session.close');
         Route::post('/commands/sale.checkout', CheckoutSaleController::class)->middleware('throttle:command')->name('commands.sale.checkout');
+    });
+
+    // The session pages (TASK-030): RP-205 and RP-206 for the sessions a holder of CAP-21 is responsible
+    // for and for the Owner on every session (CAP-22), whose scope their query applies; RP-205 takes only
+    // its parameters of ROUTE_CONTRACTS, which its FormRequest checks again, and RP-206 only its path.
+    Route::middleware('capability:CAP-21,CAP-22')->group(function (): void {
+        Route::get('/cash-sessions', [SessionsController::class, 'index'])->middleware('input.allow:status,from,to,register,responsible,after,before,perPage')->name('sessions.index');
+        Route::get('/cash-sessions/{session}', [SessionsController::class, 'show'])->middleware('input.allow')->name('sessions.show');
     });
 
     // The receipt (TASK-029): RP-103 for the Sale's own cashier (CAP-21) and the Owner (CAP-22), whose

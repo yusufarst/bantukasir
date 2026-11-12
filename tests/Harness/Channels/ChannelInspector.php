@@ -64,6 +64,38 @@ trait ChannelInspector
     }
 
     /**
+     * A page's deferred props, read apart by a partial reload: exactly the
+     * paths of Allowlists::DEFERRED for the page and the kind of account, the
+     * shared props that such an answer carries among the signed-in ones, and
+     * no secret (TASK-030 review R-07).
+     *
+     * @param  TestResponse<Response>  $response
+     * @param  list<string>  $secrets
+     */
+    protected function assertDeferredChannel(TestResponse $response, string $actor, array $secrets = []): void
+    {
+        $page = $this->inertiaPage($response);
+        $component = $page['component'] ?? null;
+        $this->assertIsString($component);
+
+        $allowed = Allowlists::deferred($component, $actor);
+        $this->assertNotNull($allowed, sprintf('%s has no deferred props that %s may read (Allowlists::DEFERRED).', $component, $actor));
+
+        $props = $page['props'] ?? null;
+        $this->assertIsArray($props);
+        $sharedKeys = $page['sharedProps'] ?? [];
+        $this->assertIsArray($sharedKeys);
+        $shared = array_intersect_key($props, array_flip(array_map(static fn (mixed $key): string => is_string($key) ? $key : '', $sharedKeys)));
+        $own = array_diff_key($props, $shared);
+        $signedIn = array_values(array_filter(Allowlists::SHARED_SIGNED_IN, static fn (string $path): bool => ! str_contains($path, '.')));
+
+        $this->assertSame([], array_values(array_diff(array_map(static fn (int|string $key): string => (string) $key, array_keys($shared)), $signedIn)), sprintf('The shared props of the deferred read of %s for %s (SEC-CH-02).', $component, $actor));
+        $this->assertSame(self::sorted($allowed), self::sorted(self::paths($own)), sprintf('The deferred props of %s for %s (SEC-CH-01).', $component, $actor));
+
+        $this->assertNoSecret($response, $secrets);
+    }
+
+    /**
      * @param  TestResponse<Response>  $response
      * @param  list<string>  $secrets
      */

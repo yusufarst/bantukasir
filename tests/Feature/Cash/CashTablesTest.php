@@ -17,7 +17,8 @@ use Tests\Harness\Fixtures\TokoContoh;
  * the status and the activity version, the unique and composite targets and the two partial unique
  * indexes of BR-CASH-06; the presence key computed by the database; the key of audit_events; the
  * privilege family, the sequence included; the retention family; and the indexes of section 11.
- * The deferred key of close_presence is TASK-030's, which creates cash_session_closes.
+ * The deferred key of close_presence came with cash_session_closes (TASK-030): a session committed
+ * CLOSED here is closed through RC-03's Action, and the tables of the close are CashCloseTablesTest's.
  */
 final class CashTablesTest extends DatabaseTestCase
 {
@@ -135,7 +136,7 @@ final class CashTablesTest extends DatabaseTestCase
         // user on another register, is refused; CLOSED sessions are not limited.
         $second = $this->secondRegister();
         $rina = $this->cashier();
-        $commands = $this->commands(4);
+        $commands = $this->commands(2);
 
         $this->assertWriteRefused(function (Connection $c) use ($commands, $rina): void {
             $this->insertSession($c, ['open_command_id' => $commands[0]]);
@@ -147,30 +148,34 @@ final class CashTablesTest extends DatabaseTestCase
             $this->insertSession($c, ['session_number_seq' => 2, 'session_number' => '20261107-000002', 'register_id' => $second, 'open_command_id' => $commands[1]]);
         }, '23505', 'cash_sessions_one_open_per_user');
 
-        $this->runtime()->transaction(function (Connection $c) use ($second, $commands, $rina): void {
-            $this->insertSession($c, ['status' => 'CLOSED', 'open_command_id' => $commands[0]]);
-            $this->insertSession($c, ['session_number_seq' => 2, 'session_number' => '20261107-000002', 'status' => 'CLOSED', 'open_command_id' => $commands[1]]);
-            $this->insertSession($c, ['session_number_seq' => 3, 'session_number' => '20261107-000003', 'open_command_id' => $commands[2]]);
-            $this->insertSession($c, ['session_number_seq' => 4, 'session_number' => '20261107-000004', 'register_id' => $second, 'responsible_user_id' => $rina, 'responsible_display_name' => 'Rina', 'open_command_id' => $commands[3]]);
-        });
+        // A CLOSED session has its close (TASK-030), so these are opened and closed through RC-02's
+        // and RC-03's Actions: two CLOSED sessions of the Owner on the register, then an OPEN one, and
+        // Rina's OPEN one on the second register.
+        TokoContoh::closeSession(TokoContoh::openSession('Hendra', $this->register));
+        TokoContoh::closeSession(TokoContoh::openSession('Hendra', $this->register));
+        TokoContoh::openSession('Hendra', $this->register);
+        TokoContoh::openSession('Rina', $second);
         $this->assertSame([2, 2], [$this->observer()->table('cash_sessions')->where('status', 'CLOSED')->count(), $this->observer()->table('cash_sessions')->where('status', 'OPEN')->count()]);
     }
 
     public function test_the_presence_key_is_computed_by_the_database_and_never_written(): void
     {
         // SCHEMA section 3.7: close_presence is the id exactly when the session is CLOSED. Its key to
-        // cash_session_closes comes with that table (TASK-030).
-        $commands = $this->commands(2);
-        $this->runtime()->transaction(function (Connection $c) use ($commands): void {
-            $this->insertSession($c, ['open_command_id' => $commands[0]]);
-            $this->insertSession($c, ['session_number_seq' => 2, 'session_number' => '20261107-000002', 'status' => 'CLOSED', 'open_command_id' => $commands[1]]);
+        // cash_session_closes, deferred (EXC-44; TASK-030), refuses at the commit a session CLOSED
+        // without its close, and leaves nothing.
+        $this->assertFailsAtCommit(fn (Connection $c) => $this->insertSession($c, ['status' => 'CLOSED']), 'cash_sessions_close_presence_fk', ['cash_sessions', 'cash_session_closes', 'cash_session_reports']);
+
+        $closed = TokoContoh::closeSession(TokoContoh::openSession('Rina', $this->secondRegister()));
+        $this->runtime()->transaction(function (Connection $c): void {
+            $this->insertSession($c, ['session_number_seq' => 9, 'session_number' => '20261107-000009']);
         });
 
         $rows = $this->observer()->table('cash_sessions')->orderBy('id')->get(['id', 'status', 'close_presence'])->map(static fn (object $row): array => (array) $row)->all();
-        $this->assertSame([null, $rows[1]['id']], array_column($rows, 'close_presence'));
+        $this->assertSame([[$closed, 'CLOSED'], [null, 'OPEN']], array_map(static fn (array $row): array => [$row['close_presence'], $row['status']], $rows));
 
-        $this->assertWriteRefused(fn (Connection $c) => $this->insertSession($c, ['session_number_seq' => 9, 'session_number' => '20261107-000009', 'status' => 'CLOSED', 'close_presence' => 1]), '428C9');
-        $this->assertSame([], $this->observer()->table('pg_constraint')->where('conname', 'like', 'cash_sessions%close%')->where('contype', 'f')->pluck('conname')->all());
+        $this->assertWriteRefused(fn (Connection $c) => $this->insertSession($c, ['session_number_seq' => 10, 'session_number' => '20261107-000010', 'status' => 'CLOSED', 'close_presence' => 1]), '428C9');
+        $keys = $this->observer()->table('pg_constraint')->where('conname', 'like', 'cash_sessions%close%')->where('contype', 'f')->get(['conname', 'condeferrable', 'condeferred']);
+        $this->assertSame([['cash_sessions_close_presence_fk', true, true]], $keys->map(static fn (object $row): array => array_values((array) $row))->all());
     }
 
     public function test_an_audit_event_names_only_a_session_that_exists(): void
