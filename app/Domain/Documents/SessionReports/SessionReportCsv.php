@@ -14,7 +14,8 @@ use LogicException;
  * - UTF-8 with a byte-order mark; the semicolon as separator, the list separator of Indonesian
  *   regional settings; CRLF line ends;
  * - the line `Laporan sesi kas;<number>`, then one line `<label>;<value>` per field of DC-02 rows 3
- *   to 11 — the reason and the notes only when the report holds them — then the time-zone line;
+ *   to 11 — the reason and the notes only when the report holds them — then the time-zone line, an
+ *   empty line and the header line of the drawer-funded refunds' table;
  * - the labels of COPY_DECK section 17.2, a money label with " (Rp)";
  * - money as whole rupiah, plain integers, unquoted and without separators, a negative variance a
  *   negative number with its word in the next field; the count of Sales a plain integer;
@@ -23,8 +24,8 @@ use LogicException;
  *   `@`, a tab or a carriage return prefixed with an apostrophe, so that no spreadsheet reads it as a
  *   formula.
  *
- * The drawer-funded refunds' table of DC-03 follows only a report that holds one, which none does
- * before TASK-034 (SessionReportDocuments).
+ * The rows of the drawer-funded refunds' table are TASK-034's: no report holds a refund before it
+ * (SessionReportDocuments).
  *
  * @phpstan-import-type Report from SessionReportDocuments
  * @phpstan-import-type LocalTimes from SessionReportDocuments
@@ -100,6 +101,19 @@ final class SessionReportCsv
         }
 
         $lines[] = [self::text(self::label(__('documents.session_report.time_zone')))];
+
+        // Then an empty line and the drawer-funded refunds as a table with its header line, also without
+        // a row (review R-01). Section 17.2 has no keys for these headers; the keys of exactly these words
+        // are used, a reading for the next change control of COPY_DECK (evidence F-1). Its rows are
+        // TASK-034's, which pays the first refund; no report holds one before (SessionReportDocuments).
+        $lines[] = [];
+        $lines[] = [
+            self::text(self::label(__('sales.list.title'))),
+            self::text(self::label(__('sales.detail.reference'))),
+            self::text(self::money(__('sales.detail.quantity'))),
+            self::text(self::label(__('sales.list.col_time'))),
+            self::text(self::label(__('inventory.history.col_actor'))),
+        ];
 
         return self::BOM.implode('', array_map(static fn (array $fields): string => implode(self::SEPARATOR, $fields).self::LINE_END, $lines));
     }

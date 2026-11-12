@@ -11,7 +11,8 @@ use Tests\TestCase;
  * SECURITY_MODEL SEC-CH-07; suite SESSION08; TASK-031 section 7, L1): the byte-order mark, semicolons and
  * CRLF; labels of COPY_DECK section 17.2, money labels with " (Rp)"; plain integers, a negative variance
  * negative with its word; every text quoted, inner quotes doubled, formula and control prefixes neutralized;
- * the reason and notes only when present; the file name; and only the template version it knows.
+ * the reason and notes only when present; the empty line and the refunds' table header; the file name; and
+ * only the template version it knows.
  */
 final class SessionReportCsvTest extends TestCase
 {
@@ -38,7 +39,8 @@ final class SessionReportCsvTest extends TestCase
         $file = SessionReportCsv::render(self::report(['variance' => '2500', 'physicalCash' => '122500', 'closeReason' => 'Kasir sakit', 'notes' => "Baris 1\nBaris 2"]), self::local());
 
         $this->assertStringStartsWith("\u{FEFF}\"Laporan sesi kas\";\"20261112-1\"\r\n", $file);
-        $this->assertStringEndsWith("\"Zona waktu: WIB (Asia/Jakarta)\"\r\n", $file);
+        // Then an empty line and the header of the drawer-funded refunds' table, also without a row (review R-01).
+        $this->assertStringEndsWith("\"Zona waktu: WIB (Asia/Jakarta)\"\r\n\r\n\"Penjualan\";\"Referensi\";\"Jumlah (Rp)\";\"Waktu\";\"Oleh\"\r\n", $file);
         $lines = explode("\r\n", substr($file, strlen(SessionReportCsv::BOM), -2));
         $this->assertSame([
             '"Laporan sesi kas";"20261112-1"',
@@ -60,6 +62,8 @@ final class SessionReportCsvTest extends TestCase
             '"Alasan penutupan";"Kasir sakit"',
             "\"Catatan\";\"Baris 1\nBaris 2\"",
             '"Zona waktu: WIB (Asia/Jakarta)"',
+            '',
+            '"Penjualan";"Referensi";"Jumlah (Rp)";"Waktu";"Oleh"',
         ], $lines);
 
         // A negative variance stays a negative number; an even one is "sesuai"; no reason, no notes.

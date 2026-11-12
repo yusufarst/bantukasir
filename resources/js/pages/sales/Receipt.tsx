@@ -109,7 +109,10 @@ function ReceiptPage({ title, receipt, issuer }: ReceiptProps & { title: string 
                             {t('sales.receipt.print_check')}
                         </p>
                     </div>
-                    <ReceiptV1 size={size} receipt={receipt} issuer={issuer} label={title} copy={false} />
+                    {/* The preview never prints: only a recorded print request's view does, with its copy marker (review R-02; BR-DOC-04). */}
+                    <div className={'bk-no-print'}>
+                        <ReceiptV1 size={size} receipt={receipt} issuer={issuer} label={title} copy={false} />
+                    </div>
                 </section>
             }
         />

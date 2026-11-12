@@ -88,6 +88,8 @@ final class SessionReportDocumentsTest extends DatabaseTestCase
             '"Selisih (Rp)";-1500;"kurang"',
             '"Ditutup oleh";"Rina"',
             '"Zona waktu: WIB (Asia/Jakarta)"',
+            '',
+            '"Penjualan";"Referensi";"Jumlah (Rp)";"Waktu";"Oleh"',
         ])."\r\n";
         $this->assertSame($expected, $response->getContent());
 

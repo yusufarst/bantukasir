@@ -786,18 +786,18 @@ final class CheckoutSaleTest extends DatabaseTestCase
         // names the line totals yet. The language files' group `sales` is no table: the dictionary
         // names it without a query. RP-103's query reads a Sale's receipt snapshot and writes nothing
         // (TASK-029). TASK-031's reads write nothing either: RC-44 reads the Sale it prints, RP-201 and
-        // RP-202 read Sales with their payments and snapshots, and RP-403 a SALE_ISSUE's Sale (UXI-224); RP-201's
+        // RP-202 read Sales with their payments and snapshots, and RP-403's SaleSources a SALE_ISSUE's Sale (UXI-224); RP-201's
         // controller names its page prop `sales`, no table.
         $reader = 'Queries/Sales/Receipts.php';
-        $readers = ['Actions/Documents/RecordReceiptPrint.php', 'Http/Controllers/Sales/SalesController.php', 'Queries/Inventory/MovementDetail.php', 'Queries/Sales/SaleRecords.php'];
-        $this->assertSame(['Actions/Documents/RecordReceiptPrint.php', 'Domain/Sales/Sales.php', 'Http/Controllers/Sales/SalesController.php', 'Queries/Inventory/MovementDetail.php', $reader, 'Queries/Sales/SaleRecords.php', 'Support/Localization/Dictionary.php'], self::filesNaming('sales'));
+        $readers = ['Actions/Documents/RecordReceiptPrint.php', 'Http/Controllers/Sales/SalesController.php', 'Queries/Sales/SaleRecords.php', 'Queries/Sales/SaleSources.php'];
+        $this->assertSame(['Actions/Documents/RecordReceiptPrint.php', 'Domain/Sales/Sales.php', 'Http/Controllers/Sales/SalesController.php', $reader, 'Queries/Sales/SaleRecords.php', 'Queries/Sales/SaleSources.php', 'Support/Localization/Dictionary.php'], self::filesNaming('sales'));
         $this->assertDoesNotMatchRegularExpression('/DB::|->table\(|->insert|->update/', (string) file_get_contents(app_path('Support/Localization/Dictionary.php')));
 
         foreach ([$reader, ...$readers] as $file) {
             $this->assertDoesNotMatchRegularExpression('/->(?:insert|insertGetId|insertOrIgnore|update|upsert|delete|increment|decrement|truncate|lockForUpdate)\(|DB::(?:statement|insert|update|delete|unprepared)/', (string) file_get_contents(app_path($file)), $file);
         }
 
-        $this->assertSame(['Domain/Sales/Sales.php', 'Queries/Inventory/MovementDetail.php'], self::filesNaming('sale_lines'));
+        $this->assertSame(['Domain/Sales/Sales.php', 'Queries/Sales/SaleSources.php'], self::filesNaming('sale_lines'));
         $this->assertSame(['Domain/Sales/Sales.php', 'Queries/Sales/SaleRecords.php'], self::filesNaming('payments'));
         $this->assertSame(['Domain/Sales/Sales.php'], self::filesNaming('sale_correction_totals'));
 

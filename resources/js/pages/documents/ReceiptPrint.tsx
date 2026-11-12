@@ -2,6 +2,7 @@ import { Head, usePage } from '@inertiajs/react';
 import { useEffect, useRef } from 'react';
 import { brandOf, documentTitle, type Shop } from '@/layouts/AppShell';
 import { ReceiptDocument, type ReceiptIssuer, type ReceiptSnapshot } from '@/lib/documents/ReceiptDocument';
+import { openedForPrinting } from '@/lib/documents/requests';
 import { t } from '@/lib/i18n';
 import type { ReceiptSize } from '@/lib/sales/till';
 
@@ -26,9 +27,10 @@ export default function ReceiptPrint({ receipt, issuer, template, size, copy }: 
     const title = t('sales.receipt.title');
     const printed = useRef(false);
 
-    // Once, after the first drawing and once the font is there to measure the text.
+    // Once, after the first drawing and once the font is there to measure the text, and only on the
+    // navigation that follows the request, never on a reload or a move back (review R-03).
     useEffect(() => {
-        if (printed.current) {
+        if (printed.current || !openedForPrinting()) {
             return;
         }
 

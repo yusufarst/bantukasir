@@ -1,6 +1,7 @@
 import { Head, usePage } from '@inertiajs/react';
 import { useEffect, useRef } from 'react';
 import { brandOf, documentTitle, type Shop } from '@/layouts/AppShell';
+import { openedForPrinting } from '@/lib/documents/requests';
 import { SessionReportDocument, type SessionReportIssuer, type SessionReportSnapshot } from '@/lib/documents/SessionReportDocument';
 import { t } from '@/lib/i18n';
 
@@ -16,8 +17,9 @@ export default function SessionReportPrint({ report, issuer }: { report: Session
     const title = t('documents.session_report.title');
     const printed = useRef(false);
 
+    // Only on the navigation that follows the request, never on a reload or a move back (review R-03).
     useEffect(() => {
-        if (printed.current) {
+        if (printed.current || !openedForPrinting()) {
             return;
         }
 

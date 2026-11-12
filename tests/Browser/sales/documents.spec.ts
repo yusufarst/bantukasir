@@ -141,6 +141,19 @@ test('the cashier finds her Sale at every width and reprints it in each size, th
 
                 await expect.poll(() => tab.evaluate(() => (window as unknown as { printed?: number }).printed ?? 0)).toBe(1);
                 await checked(tab);
+
+                if (!copy) {
+                    // A reload shows the paper again but never opens the print dialog by itself: that would
+                    // print the original again with no audited request (review R-03).
+                    await tab.reload();
+                    await expect(tab.locator('.bk-paper')).toBeVisible();
+                    await tab.evaluate(async () => {
+                        await document.fonts.ready;
+                    });
+                    await tab.waitForTimeout(300);
+                    expect(await tab.evaluate(() => (window as unknown as { printed?: number }).printed ?? 0)).toBe(0);
+                }
+
                 await tab.close();
             }
 
@@ -168,6 +181,14 @@ test('the receipt prints and leads to its detail, and a failed print leaves the 
     await page.goto(`${sale}/receipt`);
     await expect(page.getByRole('heading', { level: 1, name: 'Struk' })).toBeVisible();
     await expect(page.getByText('Pastikan struk benar-benar tercetak.')).toBeVisible();
+
+    // The on-screen preview never prints: printed without a recorded request it would be an unmarked,
+    // unaudited original (review R-02; BR-DOC-04).
+    await expect(page.locator('.bk-paper')).toBeVisible();
+    await page.emulateMedia({ media: 'print' });
+    await expect(page.locator('.bk-paper')).toBeHidden();
+    await page.emulateMedia({ media: 'screen' });
+    await expect(page.locator('.bk-paper')).toBeVisible();
 
     // UXS-44: the request fails; the tab closes, the page says so, and the Sale stays as it was.
     await page.route('**/commands/document.print_receipt', (route) => route.abort());
@@ -230,7 +251,7 @@ test('the closed session report prints on A4 and downloads as the CSV of DC-03 (
 
     expect(content.startsWith(`\u{FEFF}"Laporan sesi kas";"${session.number}"\r\n`)).toBe(true);
     expect(content).toContain('"Jumlah penjualan";2\r\n');
-    expect(content.endsWith('"Zona waktu: WIB (Asia/Jakarta)"\r\n')).toBe(true);
+    expect(content.endsWith('"Zona waktu: WIB (Asia/Jakarta)"\r\n\r\n"Penjualan";"Referensi";"Jumlah (Rp)";"Waktu";"Oleh"\r\n')).toBe(true);
 
     expect(injected(watched.problems)).toEqual([]);
     await context.close();

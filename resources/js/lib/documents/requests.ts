@@ -21,6 +21,18 @@ export const EXPORT_SESSION_REPORT_COMMAND = { operation: 'document.export_sessi
 /** The two print requests whose answer leads to a print view. */
 export type PrintCommand = typeof PRINT_RECEIPT_COMMAND | typeof PRINT_SESSION_REPORT_COMMAND;
 
+/**
+ * Whether the print view was reached by a new navigation — the one that follows its committed request —
+ * and not by a reload or a move back or forward, which would print the same request again with no new
+ * audited request: only a new navigation opens the print dialog by itself (review R-03; BR-DOC-04). A
+ * print through the browser's own menu cannot be prevented.
+ */
+export function openedForPrinting(): boolean {
+    const [entry] = performance.getEntriesByType('navigation');
+
+    return !(entry instanceof PerformanceNavigationTiming) || entry.type === 'navigate';
+}
+
 /** The state of an export request (UXI-142). */
 export interface ExportRequest {
     readonly busy: boolean;
