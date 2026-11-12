@@ -28,7 +28,11 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Guard | Local, on `b28cfb6` | 12 Nov, 00:30 to 00:33 | about 3 min | `PASS`, no candidate |
 | `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit` | Fast run 4, 43069406323 on `b28cfb6` | 12 Nov, 00:36 to 00:39 | about 2.5 min | `PASS` |
 | The ten changed PostgreSQL and concurrency files: `CheckoutRaceTest`, `CloseRaceTest`, `CapabilityMatrixTest`, `RouteInventoryTest`, `SignInSessionTest`, `CashCloseTablesTest` (F-9 fixed), `CashTablesTest`, `CloseCashSessionTest`, `SessionPagesTest`, `CheckoutSaleTest` | Same run | 00:39 to 00:44 | 4 min 43 s | `PASS`, every file; the run 10 min in all |
-| The whole of `test:postgres` and `test:race`, the browser suite with `tests/Browser/cash/close.spec.ts`, the build, the image checks | CI on the pull request's final head (CE-44, D-117) | — | — | `NOT_RUN` until then |
+| The review, round 1 (section 9.1) | On `b28cfb6`, tree `3ba0801` | 12 Nov, 00:45 to 01:11 | 26 min | `FAIL`, five MUST-FIX; fixed in checkpoint 5 |
+| Guard | Local, on `c078966` (checkpoint 5, the review's fixes) | 12 Nov, 14:30 to 14:35 | about 5 min | `PASS`, no candidate |
+| `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit` (the unit tests of `sessionsListFrom`, `closedMeanwhile`, the page size and the tone among them) | Fast run 5, 43176521055 on `c078966` | 12 Nov, 14:39 to 14:43 | about 3.5 min | `PASS` |
+| The ten changed PostgreSQL and concurrency files, with the review's regression tests of `CashCloseTablesTest`, `CloseCashSessionTest` and `SessionPagesTest` | Same run | 14:43 to 14:50 | 6 min 46 s | `PASS`, every file; the run 14 min in all |
+| The whole of `test:postgres` and `test:race`, the browser suite with `tests/Browser/cash/close.spec.ts` and `sessions.spec.ts`, the build, the image checks | CI on the pull request's final head (CE-44, D-117) | — | — | `NOT_RUN` until then |
 
 ## 2. What was built (contract section 4.1)
 
@@ -128,7 +132,7 @@ The PostgreSQL files that this branch changes run in its fast runs; the whole su
 | Data integrity | PASS | The close, the report, the audit event and the result in one transaction; one close per session and per command; class F facts; RACE-08, RACE-09, RACE-35 and the failure injection |
 | Performance | PASS | The close reads one session's Sales under its lock; RP-205 keyset-paged with its indexes; the budgets at TASK-048 |
 | Operations | PASS | Section 7, backup impact; no runbook or status change |
-| Verification | See sections 1 and 9 | The fast runs, the final head's CI, the self-review and the review of class A |
+| Verification | PASS, subject to CI on the final head | Fast run 4 green on the reviewed head and fast run 5 on the review's fixes (section 1); the self-review; the review of class A, round 1 `FAIL` with five MUST-FIX, all fixed, and the targeted verification `PASS` (section 9); the whole suites, the browser suite, the build and the image checks on the final head's CI |
 
 ## 9. Review (EXECUTION_CONTEXT CE-40)
 
@@ -162,3 +166,28 @@ The adversarial review of the close transaction (contract section 8), as the rev
 | R-13 | NOTE | Until TASK-041 adds Laporan, the Owner has no navigation entry to UXP-205 | Recorded, for TASK-041 |
 | R-14 | NOTE | No assertion of an earlier Task's tests or harness was weakened | None needed |
 | R-15 | NOTE | The combined account was tried against a guessed session only | Fixed: Dewi against Rina's session on RP-206 (`SessionPagesTest`) and RC-03 (`CloseCashSessionTest`) |
+
+### 9.2 Round 2, the targeted verification
+
+| | |
+| --- | --- |
+| Reviewer | `bk-reviewer-xhigh`, isolated and read-only, mode `verify`: the MUST-FIX fixes of round 1 and their regression tests, the other fixes only for new defects |
+| Package | `.git/bantukasir-executor/review/TASK-030/r2`: HEAD `c078966`, snapshot tree `c563e45`, previous tree `3ba0801` (round 1), with fast run 5 green on that head; written 12 November 2026, 14:51 |
+| Duration | 10 min; `review-pack.sh --check` then printed `UNCHANGED` |
+| Verdict | PASS: R-01 to R-05 FIXED, F-10 with R-05; no new MUST-FIX or SHOULD-FIX; two NOTEs; no test run asked for |
+
+The verifier judged the browser tests by reading, since they run first on the final head: each waits on a condition before it acts, uses the copy of COPY_DECK, and would fail on the code before its fix.
+
+| ID | Severity | Finding | Outcome |
+| --- | --- | --- | --- |
+| R-16 | NOTE | The Owner's test of `sessions.spec.ts` filters by Rina, whom the file's first test gave sessions: run alone on a fresh database it would fail; the suite's `people` project runs its files one at a time, in order, without retries, so the final head's run is not affected | Recorded; no change. The Task that next changes the file may give her a session inside that test |
+| R-17 | NOTE | F-10's bypass of the redirect reads the partial-component header alone, which inertia-laravel honours without `X-Inertia`: a user's own hand-made request with that header and no OPEN session would get the HTML page with a null header, which the page cannot show; no data is exposed, and a browser never sends the header on a navigation | Recorded; no change. A later change of RP-105 may also require `X-Inertia` |
+
+## 10. Record (CE-50)
+
+- Guard: `guard.sh --preview` of the uncommitted record against origin/develop `PASS`, no candidate to judge; the guard `PASS` with no candidate on every checkpoint (section 1).
+- Backup impact (EXC-47): both new tables are class F, so the manifest's counts include them through `database/privileges.php`; no stored file and no procedure; the index changes nothing of the backup (section 7).
+- The previous merge, TASK-029's pull request #40, is recorded in [its evidence](TASK-029.md) section 13.
+- TASK_PLAN: TASK-030 `DONE`, TASK-031 and TASK-032 `READY`, the totals TODO 17, READY 3, DONE 30; OPEN_ITEMS T-45 and T-46 added; CURRENT_HANDOFF last.
+- After round 1 the run paused from 01:11 to 14:15 on 12 November at the service's rate limit, its lock and its phase `REVIEW` kept; it resumed where it stood, on the host's message, with nothing redone.
+- For later Tasks: TASK-031 prints and exports the report (DC-02) from `cash_session_reports`; TASK-032 adds RC-04, the Owner-assisted close, and the review notes (OPEN_ITEMS T-45); TASK-034 pays the first drawer-funded refund, lists them in the preview and the report and fills the report's `drawerRefundIds` (T-45); TASK-041 adds UXP-205's entry under Laporan (R-13); the planning agent or the Owner, OPEN_ITEMS T-46 (R-11, with TASK-027 R-10).
