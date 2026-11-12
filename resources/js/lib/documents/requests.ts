@@ -18,6 +18,9 @@ export const PRINT_SESSION_REPORT_COMMAND = { operation: 'document.print_session
 
 export const EXPORT_SESSION_REPORT_COMMAND = { operation: 'document.export_session_report', family: 'print' } as const;
 
+/** The two print requests whose answer leads to a print view. */
+export type PrintCommand = typeof PRINT_RECEIPT_COMMAND | typeof PRINT_SESSION_REPORT_COMMAND;
+
 /** The state of an export request (UXI-142). */
 export interface ExportRequest {
     readonly busy: boolean;

@@ -4,7 +4,7 @@ import { Button, type ButtonVariant } from '@/components/ui/Button';
 import type { StateId } from '@/components/ui/stateCatalogue';
 import { StateNotice } from '@/components/ui/States';
 import { useCommand } from '@/lib/commands/useCommand';
-import { PRINT_RECEIPT_COMMAND, PRINT_SESSION_REPORT_COMMAND, useExportRequest } from '@/lib/documents/requests';
+import { useExportRequest, type PrintCommand } from '@/lib/documents/requests';
 import { t } from '@/lib/i18n';
 
 // The print and export controls of the documents (UXI-090, UXI-117, UXI-141, UXI-142; INTERACTION_CONTRACTS,
@@ -19,7 +19,7 @@ import { t } from '@/lib/i18n';
 const FAILED_STATE: StateId = 'UXS-44';
 
 interface PrintControlProps {
-    readonly command: typeof PRINT_RECEIPT_COMMAND | typeof PRINT_SESSION_REPORT_COMMAND;
+    readonly command: PrintCommand;
     readonly payload: Readonly<Record<string, unknown>>;
     readonly label: string;
     readonly variant: ButtonVariant;
