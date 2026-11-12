@@ -118,8 +118,8 @@ export function formOf(frozen: FrozenRequest): FormData | null {
     return form;
 }
 
-/** The CSRF token of the session, from the cookie that the framework sets for scripts. */
-function xsrfToken(): string {
+/** The CSRF token of the session, from the cookie that the framework sets for scripts; RC-46's download sends it too (TASK-031). */
+export function xsrfToken(): string {
     const prefix = 'XSRF-TOKEN=';
     const cookie = document.cookie.split('; ').find((part) => part.startsWith(prefix));
 

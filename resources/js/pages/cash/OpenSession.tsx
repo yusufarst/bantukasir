@@ -29,7 +29,8 @@ import { personaOf, type DestinationId, type RoleCode } from '@/lib/navigation';
 // session of the user's own opened meanwhile loads the page again, which leads home; an uncertain
 // outcome freezes the request (UXS-14). Success leads to the till — RN-01, the user's home, until
 // TASK-029 delivers it — with "Sesi kas :nomor dibuka.". "Batal" leads to the role's non-till home:
-// Stok for the combined account, RN-01 for the others until their homes exist (EXC-52), asking
+// Stok for the combined account, Penjualan for a cashier (TASK-031), RN-01 for the Owner until Beranda
+// exists (EXC-52), asking
 // first once an amount was entered (UXS-45).
 
 const DESTINATION: DestinationId = 'till';
@@ -46,8 +47,13 @@ const REGISTERS_PROP = 'registers';
 /** The most options a segmented control holds (DESIGN_SYSTEM 8.4); more registers are a list. */
 const SEGMENTED_MAX = 3;
 
-/** The non-till homes until each role's own exists: Stok for the combined account (TASK-022), RN-01 otherwise. */
+/**
+ * The non-till homes (UXI-100): Stok for the combined account (TASK-022), Penjualan for a cashier (UXP-201,
+ * TASK-031), RN-01 for the Owner until Beranda exists (TASK-041).
+ */
 const STOCK_HOME = '/stock';
+
+const SALES_HOME = '/sales';
 
 const HOME = '/';
 
@@ -75,7 +81,8 @@ function OpenForm({ title, registers }: { title: string; registers: readonly Ava
     const guard = useLeaveGuard();
     const ids = useId();
     const roles = usePage<SharedProps>().props.auth?.user.roles ?? [];
-    const cancel = personaOf(roles) === 'combined' ? STOCK_HOME : HOME;
+    const persona = personaOf(roles);
+    const cancel = persona === 'combined' ? STOCK_HOME : persona === 'cashier' ? SALES_HOME : HOME;
     const only = registers.length === 1 ? registers[0] : undefined;
     const [chosen, setChosen] = useState<string | null>(only === undefined ? null : String(only.id));
     const [amount, setAmount] = useState<string | null>(null);

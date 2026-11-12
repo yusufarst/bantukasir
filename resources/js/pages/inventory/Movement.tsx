@@ -22,10 +22,10 @@ import {
     REQUESTS_PAGE,
     REVERSE_CAPABILITY,
     REVERSIBLE_TYPES,
+    movementSourceLink,
     signedQuantity,
-    sourceLink,
     typeWord,
-    type MovementSource,
+    type MovementDetailSource,
     type MovementType,
 } from '@/lib/inventory/stock';
 
@@ -33,7 +33,8 @@ import {
 // UXI-224, UXI-225 and UXI-229; NAVIGATION_CONTRACTS UXP-403; UI_STATES section 6; BR-INV-02,
 // BR-INV-44; CAP-14, CAP-20; TASK-022 scope item 2): one movement with its type, product,
 // signed quantity, time, who recorded it, its reference, its reason and its source, a receiving
-// document or a manual issue (TASK-023), as a link (UXI-224); for the Owner alone its cost
+// document or a manual issue (TASK-023), as a link (UXI-224), or a SALE_ISSUE's Sale, a link to UXP-202
+// for a viewer in its scope and its number as text for anyone else (TASK-031); for the Owner alone its cost
 // evidence (UXI-225): the status, the total or
 // "Biaya perlu dilengkapi pemilik", never Rp0 for UNKNOWN (UXS-24), and a zero's evidence or
 // reason, as it is after the Owner's corrections, with how many there were, and "Koreksi biaya" or
@@ -66,7 +67,8 @@ interface Movement {
     readonly reference: string | null;
     /** A manual issue's reason (BR-INV-19). */
     readonly reasonCode: string | null;
-    readonly source: MovementSource | null;
+    /** Since TASK-031 also a SALE_ISSUE's Sale, a link only within the viewer's scope (UXI-224). */
+    readonly source: MovementDetailSource | null;
     /** The REVERSAL that cancelled this movement, and its time (TASK-026). */
     readonly reversedById: number | null;
     readonly reversedByAt: string | null;
@@ -131,7 +133,7 @@ function MovementPage({ title, movement, costEvidence, postingFrozen }: { title:
     const corrects = capabilities.includes(CORRECT_CAPABILITY);
     // UXI-227, the Owner's: shown for an OPENING, a RECEIPT or a MANUAL_ISSUE only (BR-INV-36).
     const reverses = capabilities.includes(REVERSE_CAPABILITY) && REVERSIBLE_TYPES.includes(movement.type);
-    const link = movement.source === null ? null : sourceLink(movement.source);
+    const link = movement.source === null ? null : movementSourceLink(movement.source);
 
     const items: KeyValue[] = [
         { key: 'type', label: t('inventory.movement.type'), value: typeWord(movement.type) },
@@ -147,11 +149,14 @@ function MovementPage({ title, movement, costEvidence, postingFrozen }: { title:
                   {
                       key: 'source',
                       label: t('inventory.movement.source'),
-                      value: (
-                          <a className={'bk-table-link'} href={link.href}>
-                              {link.label}
-                          </a>
-                      ),
+                      value:
+                          link.href === null ? (
+                              link.label
+                          ) : (
+                              <a className={'bk-table-link'} href={link.href}>
+                                  {link.label}
+                              </a>
+                          ),
                   },
               ]),
         ...(movement.reversesId === null || movement.reversesAt === null

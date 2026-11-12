@@ -102,9 +102,10 @@ abstract class CommandAction
      * viewer under the viewer's current authorization and object scope, or
      * null when the viewer may not see it (ADR-007 section 3, SEC-AZ-06,
      * SEC-CH-11): the type, the internal key, the document number of a
-     * numbered record and the path of ROUTE_CONTRACTS that shows it.
+     * numbered record and the path of ROUTE_CONTRACTS that shows it; a print request of a receipt
+     * also whether it is a copy (RC-44; TASK-031).
      *
-     * @return array{type: string, id: int|null, number?: string, location: string}|null
+     * @return array{type: string, id: int|null, number?: string, copy?: bool, location: string}|null
      */
     abstract public function present(User $viewer, int $commandId, StoredResult $result): ?array;
 
@@ -131,7 +132,7 @@ abstract class CommandAction
      * repeat's and a status check's. An issued link leads to its one-time page
      * in this answer only (SEC-ACC-05).
      *
-     * @return array{type: string, id: int|null, number?: string, location: string}|null
+     * @return array{type: string, id: int|null, number?: string, copy?: bool, location: string}|null
      */
     protected function presentNow(User $viewer, int $commandId, StoredResult $result): ?array
     {
@@ -358,7 +359,7 @@ abstract class CommandAction
      * neither the client nor its receipt reads it as a rejection (review
      * finding R-05; BR-CMD-03).
      *
-     * @return array{type: string, id: int|null, number?: string, location: string}|null
+     * @return array{type: string, id: int|null, number?: string, copy?: bool, location: string}|null
      */
     private function presented(User $viewer, int $commandId, StoredResult $result): ?array
     {

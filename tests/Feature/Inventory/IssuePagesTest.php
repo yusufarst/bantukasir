@@ -141,7 +141,7 @@ final class IssuePagesTest extends DatabaseTestCase
         $movement = ((array) $lines[1])['movementId'] ?? null;
         $this->assertIsInt($movement);
         $read = (array) ($this->propsOf($this->get('/stock/movements/'.$movement)->assertOk())['movement'] ?? []);
-        $this->assertSame(['MANUAL_ISSUE', '-3', 'INTERNAL_USE', null, ['kind' => 'MANUAL_ISSUE', 'id' => $this->issues[2], 'at' => '2026-11-01T03:02:00.000000Z']], [$read['type'], $read['quantity'], $read['reasonCode'], $read['reference'], $read['source']]);
+        $this->assertSame(['MANUAL_ISSUE', '-3', 'INTERNAL_USE', null, ['kind' => 'MANUAL_ISSUE', 'id' => $this->issues[2], 'at' => '2026-11-01T03:02:00.000000Z', 'number' => null]], [$read['type'], $read['quantity'], $read['reasonCode'], $read['reference'], $read['source']]);
 
         // The history names it as its source too.
         $history = (array) (((array) ($this->propsOf($this->get('/stock/history?product='.$this->paper))['history'] ?? []))['rows'] ?? []);

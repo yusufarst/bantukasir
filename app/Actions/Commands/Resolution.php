@@ -16,7 +16,7 @@ final readonly class Resolution
     public const string NOT_COMMITTED = 'NOT_COMMITTED';
 
     /**
-     * @param  array{type: string, id: int|null, number?: string, location: string}|null  $result
+     * @param  array{type: string, id: int|null, number?: string, copy?: bool, location: string}|null  $result
      */
     public function __construct(
         public string $outcome,

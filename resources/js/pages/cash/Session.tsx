@@ -9,6 +9,8 @@ import { PageContainer, PageHeader } from '@/layouts/Page';
 import { takeSavedNote } from '@/lib/access/users';
 import { CloseSessionEntry, VarianceWord } from '@/lib/cash/Parts';
 import { OPEN, refundsText, registerText, sessionsListFrom, sessionsShell, statusWord, type SessionFigures } from '@/lib/cash/sessions';
+import { ExportControl, PrintControl } from '@/lib/documents/Printing';
+import { PRINT_SESSION_REPORT_COMMAND } from '@/lib/documents/requests';
 import { formatCount, formatDateTime, formatMoney } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import { personaOf, type RoleCode } from '@/lib/navigation';
@@ -21,9 +23,10 @@ import { personaOf, type RoleCode } from '@/lib/navigation';
 // (NC-13). A CLOSED session shows its immutable report as the close froze it, rows 3 to 11 of DC-02, the
 // variance in words. Arriving from the close, the page says the session was closed. The way back is
 // "Kembali ke Sesi kas" (UXI-148): the list with the filters and the page it stood at when it opened
-// this session (NC-10), else the parent, also after the close (NC-01). The print and export
-// controls are TASK-031's, the Owner's review notes and assisted close TASK-032's, and the list of the
-// drawer-funded refunds beside the variance TASK-034's.
+// this session (NC-10), else the parent, also after the close (NC-01). A CLOSED session's report has
+// "Cetak laporan" (UXI-141), which records RC-45 and opens RP-206P, and "Unduh CSV" (UXI-142), RC-46,
+// whose answer is the file of DC-03 (TASK-031). The Owner's review notes and assisted close are
+// TASK-032's, and the list of the drawer-funded refunds beside the variance TASK-034's.
 
 interface SessionProps {
     readonly session: {
@@ -97,7 +100,13 @@ function SessionDetail({ title, session, figures, count }: SessionProps & { titl
                     </Section>
                 ) : (
                     <Section title={t('documents.session_report.title')}>
-                        <ReportFigures session={session} figures={figures} count={count} />
+                        <div className={'bk-stack'}>
+                            <div className={'bk-print-row'}>
+                                <PrintControl command={PRINT_SESSION_REPORT_COMMAND} payload={{ sessionId: session.id }} label={t('cash.session_detail.print')} variant={'primary'} />
+                                <ExportControl sessionId={session.id} number={session.number} />
+                            </div>
+                            <ReportFigures session={session} figures={figures} count={count} />
+                        </div>
                     </Section>
                 )}
             </div>

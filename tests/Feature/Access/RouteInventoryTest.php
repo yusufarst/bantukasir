@@ -159,6 +159,15 @@ final class RouteInventoryTest extends TestCase
         'POST /commands/cash_session.close' => ['commands.cash_session.close', 'RC-03', 'CAP-21', [...self::SIGNED_IN, 'capability:CAP-21', 'throttle:command']],
         'GET /cash-sessions' => ['sessions.index', 'RP-205', 'CAP-21,CAP-22', [...self::SIGNED_IN, 'capability:CAP-21,CAP-22', 'input.allow:status,from,to,register,responsible,after,before,perPage']],
         'GET /cash-sessions/{session}' => ['sessions.show', 'RP-206', 'CAP-21,CAP-22', [...self::SIGNED_IN, 'capability:CAP-21,CAP-22', 'input.allow']],
+        // TASK-031: RP-201, RP-202, the print views RP-103P and RP-206P, and RC-44 to RC-46 in the buckets
+        // `command` and `print`, without recent authentication, for CAP-21 on its own and CAP-22.
+        'GET /sales' => ['sales.index', 'RP-201', 'CAP-21,CAP-22', [...self::SIGNED_IN, 'capability:CAP-21,CAP-22', 'input.allow:from,to,number,cashier,register,after,before,perPage']],
+        'GET /sales/{sale}' => ['sales.show', 'RP-202', 'CAP-21,CAP-22', [...self::SIGNED_IN, 'capability:CAP-21,CAP-22', 'input.allow']],
+        'GET /sales/{sale}/receipt/print/{printRequest}' => ['sales.receipt.print', 'RP-103P', 'CAP-21,CAP-22', [...self::SIGNED_IN, 'capability:CAP-21,CAP-22', 'input.allow:size']],
+        'GET /cash-sessions/{session}/report/print/{printRequest}' => ['sessions.report.print', 'RP-206P', 'CAP-21,CAP-22', [...self::SIGNED_IN, 'capability:CAP-21,CAP-22', 'input.allow']],
+        'POST /commands/document.print_receipt' => ['commands.document.print_receipt', 'RC-44', 'CAP-21,CAP-22', [...self::SIGNED_IN, 'capability:CAP-21,CAP-22', 'throttle:command', 'throttle:print']],
+        'POST /commands/document.print_session_report' => ['commands.document.print_session_report', 'RC-45', 'CAP-21,CAP-22', [...self::SIGNED_IN, 'capability:CAP-21,CAP-22', 'throttle:command', 'throttle:print']],
+        'POST /commands/document.export_session_report' => ['commands.document.export_session_report', 'RC-46', 'CAP-21,CAP-22', [...self::SIGNED_IN, 'capability:CAP-21,CAP-22', 'throttle:command', 'throttle:print']],
     ];
 
     public function test_the_routes_are_exactly_those_listed_each_with_its_gate(): void

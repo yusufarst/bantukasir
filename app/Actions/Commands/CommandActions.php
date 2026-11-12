@@ -31,7 +31,10 @@ use App\Actions\Catalog\SetProductPhoto;
 use App\Actions\Catalog\UpdateProduct;
 use App\Actions\Configuration\ChangeBusinessProfile;
 use App\Actions\Costing\CorrectCost;
+use App\Actions\Documents\ExportSessionReport;
 use App\Actions\Documents\RecordLabelPrint;
+use App\Actions\Documents\RecordReceiptPrint;
+use App\Actions\Documents\RecordSessionReportPrint;
 use App\Actions\Inventory\ConfirmAdjustment;
 use App\Actions\Inventory\ConfirmManualIssue;
 use App\Actions\Inventory\ConfirmReceiving;
@@ -106,6 +109,10 @@ final class CommandActions
         CheckoutSale::OPERATION => CheckoutSale::class,
         // RC-03 (TASK-030).
         CloseCashSession::OPERATION => CloseCashSession::class,
+        // RC-44 to RC-46 (TASK-031).
+        RecordReceiptPrint::OPERATION => RecordReceiptPrint::class,
+        RecordSessionReportPrint::OPERATION => RecordSessionReportPrint::class,
+        ExportSessionReport::OPERATION => ExportSessionReport::class,
     ];
 
     /**

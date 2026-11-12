@@ -78,6 +78,8 @@ return [
         'source' => 'Sumber',
         'source_receipt' => 'Barang masuk :waktu',
         'source_issue' => 'Barang keluar :waktu',
+        // A SALE_ISSUE's Sale (UXI-224; TASK-031).
+        'source_sale' => 'Penjualan :nomor',
         'source_pair' => ':jenis :waktu',
     ],
     'receipts' => [

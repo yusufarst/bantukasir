@@ -29,8 +29,13 @@ final class MovementsController
      */
     public function show(Request $request, string $movement, MovementDetail $detail, Reversibility $reversibility, OnboardingState $onboarding): Response
     {
-        $read = $detail->movement($movement);
         $viewer = $request->user();
+
+        if (! $viewer instanceof User) {
+            abort(401);
+        }
+
+        $read = $detail->movement($movement, $viewer);
         $props = ['movement' => [...$read, ...$reversibility->links($read['id'])]];
 
         if ($viewer instanceof User && Capabilities::allows($viewer, Capability::Cap20)) {
