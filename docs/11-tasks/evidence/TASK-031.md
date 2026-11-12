@@ -27,6 +27,9 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit`; the nine changed PostgreSQL and concurrency files, `CheckoutSaleTest` (F-6 fixed) and `SalesPagesTest` among them | Fast run 3, 43222387296 on `0719394`, the reviewed head | 12 Nov, 19:55 to 20:07 | 12 min 26 s | `PASS` |
 | Self-review of the whole change against the contract | Local, on `0719394` | 12 Nov, 20:07 | — | Done; nothing beyond the fast runs' findings |
 | The review, round 1 (section 8.1) | On `0719394` with the record, package `r1` | 12 Nov, 20:08 to 20:15 | about 7 min | `FAIL`, two MUST-FIX; fixed in checkpoint 5 |
+| Guard | Local, on `194abd5` (checkpoint 5, the review's fixes) | 12 Nov, 20:27 to 20:31 | about 4 min | `PASS`, no candidate |
+| The targeted verification, round 2 (section 8.2) | On `194abd5` with the record, package `r2` | 12 Nov, 20:30 to 20:33 | about 3 min | `PASS` |
+| `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit`; the changed PostgreSQL and concurrency files with the review's regression tests (`SessionReportCsvTest`, `SessionReportDocumentsTest`, `SalesPagesTest`'s Sale source, `CheckoutSaleTest`) | Fast run 4, 43226617514 on `194abd5` | 12 Nov, 20:22 to 20:35 | 12 min 55 s | `PASS` |
 | The whole of `test:postgres` and `test:race`, the browser suite with `tests/Browser/sales/documents.spec.ts`, the build, the image checks | CI on the pull request's final head (CE-44, D-117) | — | — | `NOT_RUN` until then |
 
 ## 2. What was built (contract section 4.1)
@@ -86,26 +89,26 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 
 | Criterion | Evidence | Status |
 | --- | --- | --- |
-| AC-031-01 | `ReceiptPrintTest` (the three sizes from one snapshot, its template), `documents.spec.ts` (A4 "Nota Penjualan" with its table); no tax line in the templates | Pending CI |
-| AC-031-02 | `ReceiptPrintTest`, `SessionReportDocumentsTest` (the fact tables and the session's activity version unchanged, the audit events), `DocumentRaceTest` | Pending CI |
-| AC-031-03 | `SessionReportCsvTest`, `SessionReportDocumentsTest` (the exact file, a repeat and a retry the same file) | Pending CI |
-| AC-031-04 | `ReceiptPrintTest` (a profile change, a deactivation and an anonymization, the reprint identical) | Pending CI |
-| AC-031-05 | `ReceiptPrintTest`, `SessionReportDocumentsTest`, `SalesPagesTest`, `CapabilityMatrixTest` | Pending CI |
-| AC-031-06 | `ReceiptPrintTest` (failure after each write step, the next print the original), `documents.spec.ts` (a failed print, then "Coba lagi") | Pending CI |
+| AC-031-01 | `ReceiptPrintTest` (the three sizes from one snapshot, its template), `documents.spec.ts` (A4 "Nota Penjualan" with its table); no tax line in the templates | `PASS` in fast run 4 (L2); the L5 part `NOT_RUN` until the final head |
+| AC-031-02 | `ReceiptPrintTest`, `SessionReportDocumentsTest` (the fact tables and the session's activity version unchanged, the audit events), `DocumentRaceTest`; RP-103's preview never prints (`documents.spec.ts`) | `PASS` in fast run 4; the L5 part `NOT_RUN` until the final head |
+| AC-031-03 | `SessionReportCsvTest`, `SessionReportDocumentsTest` (the exact file, a repeat and a retry the same file) | `PASS` in fast run 4 |
+| AC-031-04 | `ReceiptPrintTest` (a profile change, a deactivation and an anonymization, the reprint identical) | `PASS` in fast run 4 |
+| AC-031-05 | `ReceiptPrintTest`, `SessionReportDocumentsTest`, `SalesPagesTest`, `CapabilityMatrixTest` | `PASS` in fast run 4 |
+| AC-031-06 | `ReceiptPrintTest` (failure after each write step, the next print the original), `documents.spec.ts` (a failed print, then "Coba lagi") | `PASS` in fast run 4 (L4); the L5 part `NOT_RUN` until the final head |
 
 ## 7. Definition of Done
 
 | Dimension | Status |
 | --- | --- |
-| Business | Pending CI — the criteria of section 6 |
-| UI and UX | Pending CI — the pages and controls of section 2, `documents.spec.ts` |
-| Backend | Pending CI |
+| Business | `PASS` in the fast runs — the criteria of section 6; their L5 parts on the final head |
+| UI and UX | `NOT_RUN` until the final head — the pages and controls of section 2, `documents.spec.ts`; the typecheck and lint `PASS` |
+| Backend | `PASS` in fast run 4 — the FormRequests, the scopes in queries and Actions, the channel allowlists, the L4 tests |
 | Database | N/A — no migration |
-| Security | Pending CI — scopes, refusals, channels, the guard |
-| Data integrity | Pending CI — audit only, identity and idempotency, the races, failure injection |
+| Security | `PASS` — scopes and refusals of every role and the combined account, the channels, the guard with no candidate |
+| Data integrity | `PASS` in fast run 4 — audit only, identity and idempotency, the first-print race, RACE-01 and RACE-02, failure injection |
 | Performance | N/A here — bounded keyset queries on the indexes of SCHEMA section 11; the budgets are TASK-048's |
 | Operations | N/A — no backup, runbook or status impact; no stored file |
-| Verification | Pending — the review (section 9) and CI |
+| Verification | The self-review, the class-A review and its verification `PASS` (section 8); the whole command contract and the image checks on the final head |
 
 ## 8. Review (EXECUTION_CONTEXT CE-40)
 
@@ -123,6 +126,24 @@ Agent `bk-reviewer-high` (Claude Opus 5.5, effort High), package `r1` (base `973
 | R-06 | SHOULD-FIX | The checks table lacked the fast runs and the self-review; the sections jumped from 6 to 8 | Fixed: section 1; sections renumbered |
 | R-07 | NOTE | RP-103P renders the address's size, not the recorded one | Recorded (section 3); the contract leaves the size to the address |
 
+### 8.2 Round 2, the targeted verification
+
+Agent `bk-reviewer-high`, package `r2` (head `194abd5` with the record, previous `r1`), 12 November 2026, 20:30 to 20:33; the tree `UNCHANGED` after it. Verdict `PASS`: no MUST-FIX open, none new.
+
+| ID | Severity | Finding | Outcome |
+| --- | --- | --- | --- |
+| R-01 | MUST-FIX | — | FIXED: DC-03 followed exactly; the keys of the same words acceptable within scope (EXC-51; section 14 item 7 not met, the texts have keys) |
+| R-02 | MUST-FIX | — | FIXED; its test discriminates |
+| R-08 | SHOULD-FIX | Where the browser blocks the print view's tab, the view opens in the same document by a client-side visit, and whether its dialog opens by itself follows that document's navigation type, not the request | Recorded as a known limit, not fixed (the throughput directive: a SHOULD-FIX only when cheap and safe): it needs a per-request mark carried across the visit; the tab path, the normal one, is right and tested. For TASK-046, which prints on the shop's real devices and browsers, or the next change of the print controls |
+| R-09 | NOTE | `sales.detail.quantity` and `sales.detail.reference` carry the words of DC-03's header in another context | In F-1, for the next change control of COPY_DECK, whose keys must keep the same words so that `session_report.1`'s bytes do not change |
+| R-10 | NOTE | The reload check of `documents.spec.ts` bounds "no print" by a short wait after the fonts are ready | Recorded; `window.print` follows the fonts in the same effect |
+
 ## 9. Record (CE-50)
 
-Pending.
+- Guard: `guard.sh --preview` of the uncommitted record `PASS`, no candidate to judge; the guard `PASS` with no candidate on every checkpoint (section 1).
+- Backup impact (EXC-47): no table, no stored file; the print and export requests are audit events and command results, already in the manifest's counts.
+- The previous merge, TASK-030's pull request #41, is recorded in [its evidence](TASK-030.md) section 11.
+- TASK_PLAN: TASK-031 `DONE`, TASK-033 `READY` (its dependencies TASK-031, TASK-025 and TASK-028 `DONE`), the totals TODO 16, READY 3, DONE 31; TECHNICAL_RULES section 7.2 (R-04); CURRENT_HANDOFF last. No decision taken; the next free decision stays D-129.
+- The run paused once at the service's usage limit during the build, its lock and phase `BUILD` kept, and resumed where it stood with nothing redone.
+- For later Tasks: F-1 and R-09, the next change control of COPY_DECK, and TASK-034 for the refunds' rows; F-2, the next change control of COPY_DECK; F-3, TASK-034 (UXI-120); F-4, the Task that next changes RP-402; R-08, TASK-046 or the next change of the print controls; RP-201's read of the Cash module, OPEN_ITEMS T-46 for the planning agent or the Owner.
+- Next Task: TASK-032, Owner-assisted close and session review notes, effort High (agent `bk-executor-high`; review and verification `bk-reviewer-high`).

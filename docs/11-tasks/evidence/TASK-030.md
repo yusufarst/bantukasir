@@ -191,3 +191,7 @@ The verifier judged the browser tests by reading, since they run first on the fi
 - TASK_PLAN: TASK-030 `DONE`, TASK-031 and TASK-032 `READY`, the totals TODO 17, READY 3, DONE 30; OPEN_ITEMS T-45 and T-46 added; CURRENT_HANDOFF last.
 - After round 1 the run paused from 01:11 to 14:15 on 12 November at the service's rate limit, its lock and its phase `REVIEW` kept; it resumed where it stood, on the host's message, with nothing redone.
 - For later Tasks: TASK-031 prints and exports the report (DC-02) from `cash_session_reports`; TASK-032 adds RC-04, the Owner-assisted close, and the review notes (OPEN_ITEMS T-45); TASK-034 pays the first drawer-funded refund, lists them in the preview and the report and fills the report's `drawerRefundIds` (T-45); TASK-041 adds UXP-205's entry under Laporan (R-13); the planning agent or the Owner, OPEN_ITEMS T-46 (R-11, with TASK-027 R-10).
+
+## 11. Merge
+
+Recorded by TASK-031 (EXECUTION_CONTEXT CE-50, CE-61). Pull request #41, its final head `6848b96199ef06857c5006617d0af81486744b3f`, passed CI in run 43180373533. The tick squash-merged it under D-105 as `973f190484488f21bac076080d52f547ae92dc02` on `develop` on 12 November 2026, after the automated review's window ended with the status DONE; the squash commit's tree, `27d10a2`, equals the head's, its parent is `ad16a62` and its author the Owner's identity. CI on `develop` at the merge, run 43185133824, passed, and the tick verified the merge. TASK-030 is `DONE`.
