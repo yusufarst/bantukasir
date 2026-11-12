@@ -786,10 +786,11 @@ final class CheckoutSaleTest extends DatabaseTestCase
         // names the line totals yet. The language files' group `sales` is no table: the dictionary
         // names it without a query. RP-103's query reads a Sale's receipt snapshot and writes nothing
         // (TASK-029). TASK-031's reads write nothing either: RC-44 reads the Sale it prints, RP-201 and
-        // RP-202 read Sales with their payments and snapshots, and RP-403 a SALE_ISSUE's Sale (UXI-224).
+        // RP-202 read Sales with their payments and snapshots, and RP-403 a SALE_ISSUE's Sale (UXI-224); RP-201's
+        // controller names its page prop `sales`, no table.
         $reader = 'Queries/Sales/Receipts.php';
-        $readers = ['Actions/Documents/RecordReceiptPrint.php', 'Queries/Inventory/MovementDetail.php', 'Queries/Sales/SaleRecords.php'];
-        $this->assertSame(['Actions/Documents/RecordReceiptPrint.php', 'Domain/Sales/Sales.php', 'Queries/Inventory/MovementDetail.php', $reader, 'Queries/Sales/SaleRecords.php', 'Support/Localization/Dictionary.php'], self::filesNaming('sales'));
+        $readers = ['Actions/Documents/RecordReceiptPrint.php', 'Http/Controllers/Sales/SalesController.php', 'Queries/Inventory/MovementDetail.php', 'Queries/Sales/SaleRecords.php'];
+        $this->assertSame(['Actions/Documents/RecordReceiptPrint.php', 'Domain/Sales/Sales.php', 'Http/Controllers/Sales/SalesController.php', 'Queries/Inventory/MovementDetail.php', $reader, 'Queries/Sales/SaleRecords.php', 'Support/Localization/Dictionary.php'], self::filesNaming('sales'));
         $this->assertDoesNotMatchRegularExpression('/DB::|->table\(|->insert|->update/', (string) file_get_contents(app_path('Support/Localization/Dictionary.php')));
 
         foreach ([$reader, ...$readers] as $file) {
