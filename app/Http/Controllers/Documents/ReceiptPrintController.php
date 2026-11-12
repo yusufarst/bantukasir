@@ -35,7 +35,7 @@ final class ReceiptPrintController
         }
 
         $read = $receipts->forViewer($sale, $viewer);
-        $saleKey = $read['receipt']['saleId'];
+        $saleKey = ObjectScope::key($sale) ?? throw new NotFound;
         $requestKey = ObjectScope::key($printRequest);
         $print = $requestKey === null ? null : $prints->find($saleKey, $requestKey, $viewer->id);
 
