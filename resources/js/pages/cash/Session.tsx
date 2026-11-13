@@ -214,6 +214,7 @@ function NoteForm({ sessionId, onSaved, onCancel }: { sessionId: number; onSaved
     const trimmed = text.trim();
     const refused = refusal?.code === VALIDATION_FAILED ? cashFieldMessage(refusal.fields['payload.text']) : undefined;
     const error = refused ?? (checked && trimmed === '' ? t('ux.validation.required') : undefined);
+    const noteId = `${ids}-note`;
 
     useUnsavedChanges(trimmed !== '' && !committed, t('ux.state.unsaved.body'));
 
@@ -234,7 +235,7 @@ function NoteForm({ sessionId, onSaved, onCancel }: { sessionId: number; onSaved
     return (
         <div className={'bk-stack'}>
             <CommandForm label={t('cash.session_detail.add_note')}>
-                <Field id={`${ids}-note`} label={t('cash.session_detail.note')} required={true} error={error}>
+                <Field id={noteId} label={t('cash.session_detail.note')} required={true} error={error}>
                     <TextArea rows={4} maxLength={NOTE_MAX} disabled={frozen} value={text} onChange={(event) => setText(event.target.value)} />
                 </Field>
                 <div className={'bk-actions'}>

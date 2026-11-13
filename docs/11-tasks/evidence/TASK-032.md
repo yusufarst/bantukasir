@@ -45,6 +45,14 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | `review_note.add` is the family of the command platform's probe (TASK-009): a probe's unresolved request in a browser now blocks the Owner's note there, as any request of the family would. The harness's comment says so; no test sends a probe and a note in one browser | `tests/Harness/Commands/Probe.php` |
 | RC-04 has no own drawer-funded refunds yet: expected cash is the opening cash plus the applied CASH, as RC-03's, until TASK-034 | D-035; TASK-030 |
 
+## 4. Findings
+
+| ID | Finding | Outcome |
+| --- | --- | --- |
+| F-1 | Fast run 1, PHPStan: four findings in the new tests — a list built by a collection's `map()`, an offset of a narrowed array read with `??`, and two offsets read on `mixed` | Fixed in checkpoint 2, in the tests only; the code under test unchanged |
+| F-3 | Fast run 2, ESLint `react/jsx-no-literals`: the note field's id written as a template literal inside the JSX attribute | Fixed in checkpoint 3: the id computed before the JSX, as the other pages do |
+| F-2 | OPEN_ITEMS T-45 gave UXI-144, UXI-145 and UXI-147 to this Task, though TRACEABILITY section 9.2 lists them under TASK-030; they are built here with UXI-146 | Built; the change control of TRACEABILITY that T-45 names stays open |
+
 ## 5. Tests (contract section 7)
 
 | Test | Where |
@@ -82,3 +90,17 @@ The PostgreSQL files that this branch changes run in its fast runs; the whole su
 | Keys across Tasks (EXC-44) | None completed: no earlier table names the notes |
 | Tests on the database (EXC-45) | The constraint, privilege and retention families as the runtime role; the table has no deferred key |
 | Backup impact (EXC-47) | Class F, so the manifest's counts include it through `database/privileges.php` (`BackupRunner::COUNTED_CLASSES`); no stored file |
+
+## 8. Definition of Done
+
+| Dimension | Result | Reason |
+| --- | --- | --- |
+| Business | PASS, subject to CI on the final head | AC-032-01 to AC-032-04 by their tests (section 6); REQ-CASH-11, WF-09 and WF-10 built |
+| UI and UX | PASS, subject to CI on the final head | UXP-207 and the Owner's sections of UXP-206 from the approved artifacts, the copy verbatim from COPY_DECK; widths, axe and targets in L5, `NOT_RUN` until the final head; the drawer-funded refunds beside the variance are TASK-034's |
+| Backend | PASS | FormRequest allowlists, the gates of the routes, object scope under the session's lock, the actor guard, the results rebuilt per viewer; L4 tests |
+| Database | PASS | One additive migration with its REL-20 metadata; the constraint, privilege and retention families (section 7) |
+| Security | PASS | CAP-23 and CAP-22 the Owner's alone at the gate and in the guard; recent authentication of RC-04; every other role and the combined account refused; channel allowlists exact; no secret; the guard `PASS` |
+| Data integrity | PASS | The close all or nothing with failure injection after every write step; RACE-09 and RACE-28; notes append-only and changing nothing of the close or the report; identity and repeats |
+| Performance | PASS | Bounded reads: the unresolved checkouts at most 100, the notes at most 200; the budgets are TASK-048's |
+| Operations | PASS | The table in the backup manifest's counts; no runbook or status impact |
+| Verification | See section 9 | The fast runs green, the review of class A; the heavy checks on the final head |
