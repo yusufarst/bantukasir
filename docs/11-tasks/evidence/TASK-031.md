@@ -197,3 +197,7 @@ Targeted verification (CE-42; class A): agent `bk-reviewer-high`, package `r4` (
 - The run paused once at the service's usage limit during the build, its lock and phase `BUILD` kept, and resumed where it stood with nothing redone.
 - For later Tasks: F-1 and R-09, the next change control of COPY_DECK, and TASK-034 for the refunds' rows; F-2, the next change control of COPY_DECK; F-3, TASK-034 (UXI-120); F-4, the Task that next changes RP-402; RP-201's read of the Cash module, OPEN_ITEMS T-46 for the planning agent or the Owner.
 - Next Task: TASK-032, Owner-assisted close and session review notes, effort High (agent `bk-executor-high`; review and verification `bk-reviewer-high`).
+
+## 10. Merge
+
+Recorded by TASK-032 (EXECUTION_CONTEXT CE-50, CE-61). Pull request #42, its final head `72314c477227737410640bb22c1bda2cbf98dd46`, passed CI in run 43394011775. The tick squash-merged it under D-105 as `296998f1ddfa8dc0caef675e831c232dc6c6ca95` on `develop` on 13 November 2026, after the automated review's window ended with the status DONE; the squash commit's tree, `c1ce3d2`, equals the head's, its parent is `973f190` and its author the Owner's identity. CI on `develop` at the merge, run 43398509680, passed, and the tick verified the merge. TASK-031 is `DONE`.

@@ -25,6 +25,10 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Guard | Local, on `fca274b` | 17:54 | about 1 min | `PASS`, no candidate |
 | `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit` | Fast run 3, 43412729980 on `fca274b` | 17:57 to 18:00 | about 3 min | `PASS` |
 | The changed PostgreSQL and concurrency files: `AssistedCloseRaceTest`, `CapabilityMatrixTest`, `RouteInventoryTest`, `AssistedClosePagesTest`, `AssistedCloseTest`, `ReviewNoteTest`, `ReviewNotesTableTest`, `SessionPagesTest` | Same run | 18:00 to 18:05 | 4 min 40 s | `PASS`, every file; the run 10 min 45 s in all |
+| The review, round 1 (section 9.1) | On `fca274b`, tree `1bbebf8` | 18:05 to 18:14 | about 8 min | `FAIL`, three MUST-FIX of missing proofs; fixed in checkpoint 4 |
+| Guard | Local, on `0e25453` (checkpoint 4, the review's regression tests) | 18:17 to 18:23 | about 6 min | `PASS`, no candidate |
+| `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit` | Fast run 4, 43416697636 on `0e25453` | 18:27 to 18:30 | about 3.5 min | `PASS` |
+| The changed PostgreSQL and concurrency files, with the new races of `AssistedCloseRaceTest` and the new cases of `AssistedCloseTest` and `ReviewNoteTest` | Same run | 18:30 to 18:36 | 5 min 13 s | `PASS`, every file; the run 12 min 37 s in all |
 | The whole of `test:postgres` and `test:race` (with `CloseCashSessionTest`, `CloseRaceTest` and `CashCloseTablesTest`, which cover the changed `Sessions` and `SessionReports`), the browser suite with `tests/Browser/cash/assisted-close.spec.ts`, the build, the image checks | CI on the pull request's final head (CE-44, D-117) | — | — | `NOT_RUN` until then |
 
 ## 2. What was built (contract section 4.1)
@@ -130,3 +134,16 @@ Agent `bk-reviewer-high`, model `claude-opus-5-5`, effort High, mode `review`; p
 | R-05 | NOTE | UXI-148's destination RP-207 unrecorded | Recorded in section 3 |
 | R-06 | NOTE | The notes' read bounded at 200 without a sign of the older ones | Recorded: a session with more than 200 notes is not expected; the bound stays a reading of section 3, for TASK-048's budgets |
 | R-07 | NOTE | The Definition of Done pointed to a section not yet written; the handoff cited the wrong section and did not carry T-45 | Fixed: this section; CURRENT_HANDOFF's "For later Tasks" |
+
+### 9.2 Round 2, the targeted verification
+
+Agent `bk-reviewer-high`, model `claude-opus-5-5`, effort High, mode `verify`; package `review/TASK-032/r2`, tree `ab56b22`, previous tree `1bbebf8`, HEAD `0e25453`; 13 November, 18:37 to 18:42; `review-pack.sh --check` `UNCHANGED` after it. The fixes change tests and records only. Verdict `PASS`: R-01, R-02 and R-07 FIXED; R-03 and R-04 FIXED by reading, their proof the browser suite on the pull request's final head; none regressed, no new finding.
+
+## 10. Record (CE-50)
+
+- Guard: `guard.sh --preview` of the uncommitted record before its commit, the guard on every pushed head, `PASS` with no candidate to judge (section 1).
+- Backup impact (EXC-47): `cash_session_review_notes` is class F, so the manifest's counts include it; no stored file and no procedure (section 7).
+- The previous merge, TASK-031's pull request #42, is recorded in [its evidence](TASK-031.md) section 10.
+- TASK_PLAN: TASK-032 `DONE`; no dependent becomes `READY` — TASK-034 waits for TASK-033, TASK-041 for TASK-039 and TASK-040; the totals TODO 16, READY 2, DONE 32; CURRENT_HANDOFF last. No decision taken; the next free decision stays D-129.
+- For later Tasks: TASK-034, the drawer-funded refunds beside the variance on RP-206 and in RC-04's expected cash; OPEN_ITEMS T-45 for the next change control of TRACEABILITY section 9.2 (F-2).
+- Next Task: TASK-033, Refunds and returns: correction core (server), effort Max (agent `bk-executor-max`; review `bk-reviewer-max`; verification `bk-reviewer-xhigh`).
