@@ -151,7 +151,9 @@ trait ChannelInspector
     }
 
     /**
-     * The paths of every field of a value: a map's keys, a list's items as `*`.
+     * The paths of every field of a value: a map's keys; a list's items, and the items of a map keyed by
+     * whole numbers alone — the lines of a refusal by their index, such as the repeated lines from index
+     * 1 on (INTERACTION_CONTRACTS section 1.6; TASK-033) — as `*`.
      *
      * @param  array<array-key, mixed>  $value
      * @return list<string>
@@ -159,7 +161,7 @@ trait ChannelInspector
     protected static function paths(array $value, string $prefix = ''): array
     {
         $paths = [];
-        $list = array_is_list($value);
+        $list = array_is_list($value) || array_filter(array_keys($value), static fn (int|string $key): bool => is_string($key)) === [];
 
         foreach ($value as $key => $item) {
             $path = $prefix.($list ? '*' : (string) $key);

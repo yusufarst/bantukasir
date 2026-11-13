@@ -70,9 +70,4 @@ final readonly class LedgerEntry
     {
         return $this->cost !== null || $this->link !== null;
     }
-
-    public function isReturn(): bool
-    {
-        return $this->link !== null;
-    }
 }

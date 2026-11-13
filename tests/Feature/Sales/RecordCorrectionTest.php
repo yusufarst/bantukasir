@@ -269,7 +269,8 @@ final class RecordCorrectionTest extends DatabaseTestCase
 
         $this->runtime()->table('onboarding_state')->where('id', 1)->update(['state' => 'ACTIVE', 'version' => 2]);
         $before = $this->factsAndRows();
-        $this->correct($saleable)->assertStatus(422)->assertJsonPath('code', 'ONBOARDING_FREEZE');
+        $frozen = $this->correct($saleable)->assertStatus(422)->assertJsonPath('code', 'ONBOARDING_FREEZE');
+        $this->assertJsonChannel($frozen, 'commands.refused', 'owner');
         // The bounds come first: a return beyond the line is RETURN_BOUND_EXCEEDED even while frozen.
         $this->correct($this->envelopeOf($sale, [self::line($line, '0', '6')]))->assertStatus(422)->assertJsonPath('code', 'RETURN_BOUND_EXCEEDED');
         $this->assertSame($before, $this->factsAndRows());
@@ -287,7 +288,8 @@ final class RecordCorrectionTest extends DatabaseTestCase
 
         $this->postJson('/commands/product.deactivate', $this->envelope(['productId' => $this->pen], ['operation' => 'product.deactivate', 'expected' => ['productVersion' => self::number($this->watcher()->table('products')->where('id', $this->pen)->value('version'))]]))->assertStatus(201);
         $before = $this->factsAndRows();
-        $this->correct($this->envelopeOf($sale, [self::line($line, '0', '1')]))->assertStatus(422)->assertJsonPath('code', 'PRODUCT_INACTIVE')->assertJsonPath('lines.0.productId', $this->pen);
+        $inactive = $this->correct($this->envelopeOf($sale, [self::line($line, '0', '1')]))->assertStatus(422)->assertJsonPath('code', 'PRODUCT_INACTIVE')->assertJsonPath('lines.0.productId', $this->pen);
+        $this->assertJsonChannel($inactive, 'commands.refused.lines', 'owner');
         $this->assertSame($before, $this->factsAndRows());
         $this->correct($this->envelopeOf($sale, [self::line($line, '7500')], self::transfer('TRF-2')))->assertStatus(201);
         $this->assertSame([0, 3], [$this->watcher()->table('stock_movements')->where('movement_type', 'RETURN_RECEIPT')->count(), $this->watcher()->table('sale_corrections')->count()]);
@@ -316,6 +318,7 @@ final class RecordCorrectionTest extends DatabaseTestCase
 
         $repeated = $this->correct($this->envelopeOf($sale, [self::line($penLine, '1000'), self::line($penLine, '0', '1')], self::transfer('TRF-1')))->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
         $this->assertSame([[], [1 => ['saleLineId' => $penLine]]], [$repeated->json('fields'), $repeated->json('lines')]);
+        $this->assertJsonChannel($repeated, 'commands.refused.sale_lines', 'owner');
 
         foreach ([
             [[], self::transfer('TRF-1'), 'payload.lines', 'ux.validation.lines_min', []],
@@ -337,7 +340,8 @@ final class RecordCorrectionTest extends DatabaseTestCase
         // A payout without money is refused, and so is an identifier that is not a JSON whole number.
         $this->correct($this->envelopeOf($sale, [self::line($penLine, '0', '1')], self::transfer('TRF-1')))->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED')->assertJsonPath('fields', []);
         $this->correct($this->envelopeOf($sale, [[...self::line($penLine, '7500'), 'saleLineId' => (string) $penLine]], self::transfer('TRF-1')))->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
-        $this->correct($this->envelopeOf(999999, [self::line($penLine, '7500')], self::transfer('TRF-1')))->assertStatus(404)->assertJsonPath('code', 'NOT_FOUND');
+        $missing = $this->correct($this->envelopeOf(999999, [self::line($penLine, '7500')], self::transfer('TRF-1')))->assertStatus(404)->assertJsonPath('code', 'NOT_FOUND');
+        $this->assertJsonChannel($missing, 'commands.refused', 'owner');
 
         $this->assertSame($before, $this->factsAndRows());
     }

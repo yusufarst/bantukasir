@@ -17,10 +17,12 @@ use Throwable;
  * BR-COST-18, BR-COST-22 to BR-COST-25, BR-COST-32; D-060, D-061; G-07, G-13, G-14; suites RET01 and
  * FIN03; TASK-033 scope item 4 and section 7, L2): a cost correction recomputes each return projection
  * together with its issue — D-061's worked example — so that the cost is restored exactly once, also over
- * several partial returns; an UNKNOWN issue's return is completed with it; a return of an issue before
- * the start keeps its cost, and the state before the start counts the returns' projections; a reversal
- * recomputes the returns of the issues it reaches; a failure during the publication changes nothing. No
- * replay touches a return's fact, its correction, its return line or its Sale.
+ * several partial returns, which leave no residue; a damaged return counts for no cost, and the saleable
+ * returns after it restore their cumulative share; an UNKNOWN issue's return is completed with it; a
+ * return of an issue before the start keeps its cost, and the state before the start counts the returns'
+ * projections; a reversal recomputes the returns of the issues it reaches; a refused replay and a failure
+ * during the publication change nothing. No replay touches a return's fact, its correction, its return
+ * line or its Sale.
  */
 final class CorrectionReplayTest extends DatabaseTestCase
 {
@@ -76,6 +78,73 @@ final class CorrectionReplayTest extends DatabaseTestCase
         $this->assertSame([['KNOWN', '200.000000', 'KNOWN', '200.000000', 6], ['KNOWN', '240.000000', 'KNOWN', '200.000000', 6]], $this->returnsOf($book));
         $this->assertSame('KNOWN|400.000000|6|4', $this->valuationOf($book));
         $this->assertSame([$movements, 2], [$this->watcher()->table('stock_movements')->count(), $this->watcher()->table('return_cost_allocations')->count()]);
+    }
+
+    public function test_a_damaged_return_counts_for_no_cost_and_the_saleable_returns_after_it_restore_their_cumulative_share(): void
+    {
+        // ADR-008 section 5 and its test list ("a partial return after a not-saleable return of the same
+        // line"); BR-COST-19; D-061: R(k) counts the saleable returns alone, never the line's running total.
+        // 3 units received for Rp100 and all three sold: the issue takes Rp100. One unit comes back damaged:
+        // no RETURN_RECEIPT, no allocation, the valuation as it was. Then one and one come back saleable and
+        // restore Rp33,333333 and Rp33,333334, the first and the second third — had the damaged unit counted,
+        // the first would restore Rp33,333334. The receipt corrected to Rp200: the replay, with R in ledger
+        // order, gives Rp66,666667 and Rp66,666666; the facts stay.
+        $book = TokoContoh::product('BUKU-01', ['categoryId' => $this->category, 'name' => 'Buku Tulis', 'sellingPrice' => '10000']);
+        $receipt = TokoContoh::stock($book, '3', '100');
+        $sale = TokoContoh::sell('Rina', $this->session, [['productId' => $book, 'quantity' => '3']]);
+        $line = TokoContoh::saleLinesOf($sale)[0] ?? 0;
+        $this->assertSame([['SALE_ISSUE', 'KNOWN', '100.000000', 'KNOWN', '100.000000', 2]], $this->allocationsOf($book));
+
+        TokoContoh::correct($sale, [['saleLineId' => $line, 'returnedNotSaleable' => '1']]);
+        $this->assertSame([[], 'KNOWN|0.000000|2|2', 0], [$this->returnsOf($book), $this->valuationOf($book), $this->watcher()->table('stock_movements')->where('movement_type', 'RETURN_RECEIPT')->count()]);
+
+        TokoContoh::correct($sale, [['saleLineId' => $line, 'returnedSaleable' => '1']]);
+        $this->assertSame([[['KNOWN', '33.333333', 'KNOWN', '33.333333', 3]], 'KNOWN|33.333333|3|3'], [$this->returnsOf($book), $this->valuationOf($book)]);
+        TokoContoh::correct($sale, [['saleLineId' => $line, 'returnedSaleable' => '1']]);
+        $this->assertSame([['KNOWN', '33.333333', 'KNOWN', '33.333333', 3], ['KNOWN', '33.333334', 'KNOWN', '33.333334', 4]], $this->returnsOf($book));
+        $this->assertSame('KNOWN|66.666667|4|4', $this->valuationOf($book));
+
+        TokoContoh::correctCost(TokoContoh::evidenceOf(TokoContoh::movementOf($receipt)), '200', 'Nota pemasok');
+        $this->assertSame([['SALE_ISSUE', 'KNOWN', '100.000000', 'KNOWN', '200.000000', 5]], $this->allocationsOf($book));
+        $this->assertSame([['KNOWN', '33.333333', 'KNOWN', '66.666667', 5], ['KNOWN', '33.333334', 'KNOWN', '66.666666', 5]], $this->returnsOf($book));
+        $this->assertSame('KNOWN|133.333333|5|4', $this->valuationOf($book));
+    }
+
+    public function test_partial_returns_restore_the_whole_issue_with_no_residue_and_a_refused_replay_changes_no_projection(): void
+    {
+        // ADR-008 section 5 and its test list ("several partial returns of one line leaving no residue",
+        // "a refused replay leaving every projection unchanged"); D-061: 3 units received for Rp100, all
+        // three sold, and returned saleable one at a time restore Rp33,333333, Rp33,333334 and Rp33,333333 —
+        // exactly Rp100 — each fact equal to its projection. A replay refused at the movement cap changes
+        // no projection and no valuation. The receipt corrected to Rp200 gives Rp66,666667, Rp66,666666 and
+        // Rp66,666667 — exactly Rp200 — the facts as they were; corrected back to Rp100, every projection
+        // equals its fact again, with no drift.
+        $book = TokoContoh::product('BUKU-01', ['categoryId' => $this->category, 'name' => 'Buku Tulis', 'sellingPrice' => '10000']);
+        $receipt = TokoContoh::stock($book, '3', '100');
+        $sale = TokoContoh::sell('Rina', $this->session, [['productId' => $book, 'quantity' => '3']]);
+        $line = TokoContoh::saleLinesOf($sale)[0] ?? 0;
+
+        TokoContoh::correct($sale, [['saleLineId' => $line, 'returnedSaleable' => '1']]);
+        TokoContoh::correct($sale, [['saleLineId' => $line, 'returnedSaleable' => '1']]);
+        TokoContoh::correct($sale, [['saleLineId' => $line, 'returnedSaleable' => '1']]);
+        $restored =[['KNOWN', '33.333333', 'KNOWN', '33.333333', 3], ['KNOWN', '33.333334', 'KNOWN', '33.333334', 4], ['KNOWN', '33.333333', 'KNOWN', '33.333333', 5]];
+        $this->assertSame([$restored, 'KNOWN|100.000000|5|5'], [$this->returnsOf($book), $this->valuationOf($book)]);
+
+        // From the receipt the replay reaches five movements: at a cap of four it is refused.
+        $evidence = TokoContoh::evidenceOf(TokoContoh::movementOf($receipt));
+        $cap = config('costing.replay.movement_cap');
+        config(['costing.replay.movement_cap' => 4]);
+        $this->assertSame(['refused' => 'REPLAY_REJECTED'], $this->correction($evidence, '200'));
+        $this->assertSame([[['SALE_ISSUE', 'KNOWN', '100.000000', 'KNOWN', '100.000000', 2]], $restored, 'KNOWN|100.000000|5|5'], [$this->allocationsOf($book), $this->returnsOf($book), $this->valuationOf($book)]);
+        config(['costing.replay.movement_cap' => $cap]);
+
+        TokoContoh::correctCost($evidence, '200', 'Nota pemasok');
+        $this->assertSame([['KNOWN', '33.333333', 'KNOWN', '66.666667', 6], ['KNOWN', '33.333334', 'KNOWN', '66.666666', 6], ['KNOWN', '33.333333', 'KNOWN', '66.666667', 6]], $this->returnsOf($book));
+        $this->assertSame([[['SALE_ISSUE', 'KNOWN', '100.000000', 'KNOWN', '200.000000', 6]], 'KNOWN|200.000000|6|5'], [$this->allocationsOf($book), $this->valuationOf($book)]);
+
+        TokoContoh::correctCost($evidence, '100', 'Nota yang benar');
+        $this->assertSame([['KNOWN', '33.333333', 'KNOWN', '33.333333', 7], ['KNOWN', '33.333334', 'KNOWN', '33.333334', 7], ['KNOWN', '33.333333', 'KNOWN', '33.333333', 7]], $this->returnsOf($book));
+        $this->assertSame('KNOWN|100.000000|7|5', $this->valuationOf($book));
     }
 
     public function test_an_unknown_issue_gives_an_unknown_return_which_its_completion_completes(): void
