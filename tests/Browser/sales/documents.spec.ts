@@ -213,6 +213,20 @@ test('the receipt prints and leads to its detail, and a failed print leaves the 
     await Promise.all([page.waitForURL((url) => url.pathname === sale), page.getByRole('link', { name: 'Detail penjualan' }).click()]);
     await expect(page.getByRole('link', { name: 'Kembali ke Struk' })).toBeVisible();
 
+    // A blocked tab on a page reached by a reload: the view takes this tab by a full navigation, so that
+    // the committed request still opens the print dialog, once (review R-03; PR #42 finding).
+    await page.reload();
+    const reprint = page.getByRole('button', { name: 'Cetak ulang struk' });
+
+    await expect(reprint).toBeVisible();
+    await page.evaluate(() => {
+        window.open = () => null;
+    });
+    await Promise.all([page.waitForURL((url) => RECEIPT_PRINT.test(url.pathname)), reprint.click()]);
+    await expect(page.locator('.bk-paper')).toBeVisible();
+    await expect.poll(() => page.evaluate(() => (window as unknown as { printed?: number }).printed ?? 0)).toBe(1);
+    expect(context.pages()).toHaveLength(1);
+
     expect(injected(watched.problems)).toEqual([]);
     await cashSession(context, 'Rina');
     await context.close();

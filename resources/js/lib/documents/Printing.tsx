@@ -1,4 +1,3 @@
-import { router } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import { Button, type ButtonVariant } from '@/components/ui/Button';
 import type { StateId } from '@/components/ui/stateCatalogue';
@@ -11,7 +10,9 @@ import { t } from '@/lib/i18n';
 // "RC-44 to RC-47"; UI_STATES UXS-06, UXS-44; UXA-10; TASK-031 scope items 2, 3 and 5). Enter never prints
 // or exports. A print records its request (RC-44 or RC-45), then the print view opens in its own tab:
 // the press opens the tab, the only moment a browser allows it; it gets the view's address once the
-// request committed and closes if it did not; without a tab the view takes this one. Each print is a new
+// request committed and closes if it did not; without a tab the view takes this one by a full navigation,
+// never an Inertia visit, so that the view sees the new navigation that opens its print dialog and not
+// this document's reload or move back (openedForPrinting, review R-03). Each print is a new
 // request, and the control starts again after each, so that the page stays for another print. Print and
 // export are exempt from the block of NC-13 and have no uncertain panel: a failure is UXS-44, asked again
 // by "Coba lagi" — the same request after an uncertain answer, which answers the same print request.
@@ -57,7 +58,7 @@ function PrintRun({ command, payload, label, variant, describedBy, onPrinted }: 
         if (location === undefined) {
             tab.current?.close();
         } else if (tab.current === null) {
-            router.visit(location);
+            window.location.assign(location);
         } else {
             tab.current.location.href = location;
         }

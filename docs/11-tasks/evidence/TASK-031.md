@@ -31,6 +31,9 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | The targeted verification, round 2 (section 8.2) | On `194abd5` with the record, package `r2` | 12 Nov, 20:30 to 20:33 | about 3 min | `PASS` |
 | `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit`; the changed PostgreSQL and concurrency files with the review's regression tests (`SessionReportCsvTest`, `SessionReportDocumentsTest`, `SalesPagesTest`'s Sale source, `CheckoutSaleTest`) | Fast run 4, 43226617514 on `194abd5` | 12 Nov, 20:22 to 20:35 | 12 min 55 s | `PASS` |
 | The whole of `test:postgres` and `test:race`, the browser suite with `tests/Browser/sales/documents.spec.ts`, the build, the image checks | CI on the pull request's final head (CE-44, D-117) | — | — | `NOT_RUN` until then |
+| Fix cycle 1 (section 8.3): `npm run lint`, `typecheck` and the browser suite with the regression test of `documents.spec.ts`, over the changed `Printing.tsx` and `documents.spec.ts`; the earlier results stay valid for every other file (CE-45) | The fast run and CI on the fix's head, the pull request's new final head | — | — | `NOT_RUN` at this writing; the fix's commit starts them |
+| Fix cycle 1: the targeted verification (section 8.3) | Package `r3`, on `16d6edd` with the fix uncommitted | 13 Nov, 13:15 to 13:17 | about 2 min | `PASS` |
+| Fix cycle 1: guard's preview of the uncommitted fix | Local | 13 Nov, 13:18 | under 1 min | `PASS`, no candidate; the guard on the fix's commit runs before its push, which follows only its `PASS` (CE-31) |
 
 ## 2. What was built (contract section 4.1)
 
@@ -101,7 +104,7 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Dimension | Status |
 | --- | --- |
 | Business | `PASS` in the fast runs — the criteria of section 6; their L5 parts on the final head |
-| UI and UX | `NOT_RUN` until the final head — the pages and controls of section 2, `documents.spec.ts`; the typecheck and lint `PASS` |
+| UI and UX | `NOT_RUN` until the final head — the pages and controls of section 2, `documents.spec.ts`; the typecheck and lint `PASS` in fast run 4, and on the fix of section 8.3 `NOT_RUN` until its head's runs |
 | Backend | `PASS` in fast run 4 — the FormRequests, the scopes in queries and Actions, the channel allowlists, the L4 tests |
 | Database | N/A — no migration |
 | Security | `PASS` — scopes and refusals of every role and the combined account, the channels, the guard with no candidate |
@@ -134,9 +137,26 @@ Agent `bk-reviewer-high`, package `r2` (head `194abd5` with the record, previous
 | --- | --- | --- | --- |
 | R-01 | MUST-FIX | — | FIXED: DC-03 followed exactly; the keys of the same words acceptable within scope (EXC-51; section 14 item 7 not met, the texts have keys) |
 | R-02 | MUST-FIX | — | FIXED; its test discriminates |
-| R-08 | SHOULD-FIX | Where the browser blocks the print view's tab, the view opens in the same document by a client-side visit, and whether its dialog opens by itself follows that document's navigation type, not the request | Recorded as a known limit, not fixed (the throughput directive: a SHOULD-FIX only when cheap and safe): it needs a per-request mark carried across the visit; the tab path, the normal one, is right and tested. For TASK-046, which prints on the shop's real devices and browsers, or the next change of the print controls |
+| R-08 | SHOULD-FIX | Where the browser blocks the print view's tab, the view opens in the same document by a client-side visit, and whether its dialog opens by itself follows that document's navigation type, not the request | Recorded at first as a known limit; raised again on the pull request as a P2 finding and fixed in fix cycle 1 (section 8.3) |
 | R-09 | NOTE | `sales.detail.quantity` and `sales.detail.reference` carry the words of DC-03's header in another context | In F-1, for the next change control of COPY_DECK, whose keys must keep the same words so that `session_report.1`'s bytes do not change |
 | R-10 | NOTE | The reload check of `documents.spec.ts` bounds "no print" by a short wait after the fonts are ready | Recorded; `window.print` follows the fonts in the same effect |
+
+### 8.3 Fix cycle 1, the automated reviewer's finding on pull request #42 (CE-43)
+
+Head `16d6edd`, 13 November 2026. The automated reviewer's other output, its summary comment and its review receipt, holds no finding.
+
+| ID | Severity | Finding | Outcome |
+| --- | --- | --- | --- |
+| PR-1 (review comment 4551210254) | P2 | Where the browser blocks the print view's tab, `PrintControl` opened the view in the same tab by an Inertia visit, which keeps the document's navigation timing: on a page reached by a reload or a move back, `openedForPrinting` refused the committed request's view, which has no print control, so the dialog never opened (R-08) | Holds; fixed: the same-tab fallback is a full navigation (`window.location.assign`), as the tab's own path is, so the view is a new document whose navigation is `navigate`; a reload or a move back of the view still opens no dialog. Regression test in `documents.spec.ts`: RP-202 reloaded, the tab blocked, "Cetak ulang struk" takes this tab to RP-103P and prints once — by reading, it would fail with the Inertia visit, whose view counts no print; its run is CI's on the final head |
+
+Targeted verification (CE-43; class A, production behaviour changed): agent `bk-reviewer-high`, package `r3` (previous `r2`), 13 November 2026, 13:15 to 13:17; the tree `UNCHANGED` after it. Verdict `PASS`: PR-1 FIXED for both print views through the shared control, R-03 kept, no regression, the test discriminating and deterministic by reading.
+
+| ID | Severity | Finding | Outcome |
+| --- | --- | --- | --- |
+| R-11 | NOTE | The verification's record and its checks rows missing | Fixed: this record; section 1 |
+| R-12 | NOTE | The test's failure with the old visit is established by reading, not by a run | Fixed: worded so above |
+| R-13 | NOTE | The Definition of Done's typecheck and lint `PASS` was fast run 4's, before the fix | Fixed: section 7 ties it to fast run 4 and the fix's head |
+| R-14 | NOTE | Only RP-103P is exercised with a blocked tab; RP-206P takes the same branch of the same control | Recorded; the shared path covers it |
 
 ## 9. Record (CE-50)
 
@@ -145,5 +165,5 @@ Agent `bk-reviewer-high`, package `r2` (head `194abd5` with the record, previous
 - The previous merge, TASK-030's pull request #41, is recorded in [its evidence](TASK-030.md) section 11.
 - TASK_PLAN: TASK-031 `DONE`, TASK-033 `READY` (its dependencies TASK-031, TASK-025 and TASK-028 `DONE`), the totals TODO 16, READY 3, DONE 31; TECHNICAL_RULES section 7.2 (R-04); CURRENT_HANDOFF last. No decision taken; the next free decision stays D-129.
 - The run paused once at the service's usage limit during the build, its lock and phase `BUILD` kept, and resumed where it stood with nothing redone.
-- For later Tasks: F-1 and R-09, the next change control of COPY_DECK, and TASK-034 for the refunds' rows; F-2, the next change control of COPY_DECK; F-3, TASK-034 (UXI-120); F-4, the Task that next changes RP-402; R-08, TASK-046 or the next change of the print controls; RP-201's read of the Cash module, OPEN_ITEMS T-46 for the planning agent or the Owner.
+- For later Tasks: F-1 and R-09, the next change control of COPY_DECK, and TASK-034 for the refunds' rows; F-2, the next change control of COPY_DECK; F-3, TASK-034 (UXI-120); F-4, the Task that next changes RP-402; RP-201's read of the Cash module, OPEN_ITEMS T-46 for the planning agent or the Owner.
 - Next Task: TASK-032, Owner-assisted close and session review notes, effort High (agent `bk-executor-high`; review and verification `bk-reviewer-high`).
