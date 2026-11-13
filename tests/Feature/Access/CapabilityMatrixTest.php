@@ -424,6 +424,18 @@ final class CapabilityMatrixTest extends DatabaseTestCase
         'RC-46' => ['method' => 'POST', 'path' => '/commands/document.export_session_report', 'json' => true, 'answers' => [
             'guest' => [401, null], 'owner' => [422, null], 'ops' => [403, null], 'cashier' => [422, null], 'combined' => [422, null],
         ]],
+        // TASK-032: the Owner-assisted close for CAP-23 — a session that does not exist; RC-04, which without
+        // a recent confirmation answers 423 before anything runs — and RC-43 for CAP-22, refused before its
+        // Action without a body; every other role refused.
+        'RP-207' => ['method' => 'GET', 'path' => '/cash-sessions/{session}/assisted-close', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [404, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RC-04' => ['method' => 'POST', 'path' => '/commands/cash_session.close_assisted', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [423, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RC-43' => ['method' => 'POST', 'path' => '/commands/review_note.add', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [422, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
     ];
 
     /** @var array<string, array{id: int, email: string, password: string}> */

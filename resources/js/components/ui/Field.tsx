@@ -1,4 +1,4 @@
-import { createContext, useContext, useId, useState, type FormEvent, type InputHTMLAttributes, type KeyboardEvent, type ReactNode, type Ref, type SelectHTMLAttributes } from 'react';
+import { createContext, useContext, useId, useState, type FormEvent, type InputHTMLAttributes, type KeyboardEvent, type ReactNode, type Ref, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
 import { cn } from '@/lib/cn';
 import { RUPIAH_SYMBOL } from '@/lib/format';
 import { t } from '@/lib/i18n';
@@ -158,6 +158,39 @@ export function SelectInput({
             >
                 {children}
             </select>
+        </div>
+    );
+}
+
+/**
+ * A text of several lines in a Field, such as the Owner's review note (UXI-146; TR-VAL-05, a line break
+ * allowed only in multi-line notes; TASK-032): the boundary of DESIGN_SYSTEM 8.3 around a textarea of at
+ * least four lines, which Enter never submits (UXA-10) — it starts a new line.
+ */
+export function TextArea({
+    disabled,
+    ref,
+    ...rest
+}: Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'id' | 'className' | 'aria-describedby' | 'aria-invalid' | 'required'> & { ref?: Ref<HTMLTextAreaElement> }) {
+    const field = useContext(FieldIds);
+
+    if (field === null) {
+        throw new Error('A TextArea is placed inside a Field, which gives it its label (UXA-13).');
+    }
+
+    return (
+        <div className={'bk-input bk-input--area'} data-invalid={field.invalid} data-disabled={disabled === true}>
+            <textarea
+                {...rest}
+                ref={ref}
+                id={field.id}
+                className={'bk-input__control'}
+                disabled={disabled}
+                required={field.required}
+                aria-required={field.required ? true : undefined}
+                aria-invalid={field.invalid ? true : undefined}
+                aria-describedby={field.describedBy}
+            />
         </div>
     );
 }

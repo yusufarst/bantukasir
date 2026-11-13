@@ -40,6 +40,11 @@ final class RequestReceipts
 
     public const string NOT_COMMITTED = 'NOT_COMMITTED';
 
+    /** An intent's row of unresolvedIntentsOf(): its identity and its first receipt's time in UTC. */
+    private const string INTENT_ROW = <<<'SQL'
+        source_intent_id::text as intent, to_char(min(received_at) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as received_at
+        SQL;
+
     public function __construct(
         private readonly Clock $clock,
         private readonly CommandPoints $points,
@@ -162,6 +167,41 @@ final class RequestReceipts
             ->whereIn('outcome', [self::PENDING, self::HELD])
             ->where('operation', $operation)
             ->count();
+    }
+
+    /**
+     * The intents of this operation that the actor holds unresolved — PENDING or HELD, as unresolvedOf()
+     * counts them — one row per intent with the time its first receipt was received, in UTC, oldest
+     * first; at most $bound (ADR-009 section 4; INTERACTION_CONTRACTS section 2.5; TASK-032): the
+     * checkouts that RP-207 lists for the Owner's status check.
+     *
+     * @return list<array{sourceIntentId: string, receivedAt: string}>
+     */
+    public function unresolvedIntentsOf(int $actorId, string $operation, int $bound): array
+    {
+        $rows = DB::table('command_request_receipts')
+            ->where('actor_user_id', $actorId)
+            ->whereIn('outcome', [self::PENDING, self::HELD])
+            ->where('operation', $operation)
+            ->groupBy('source_intent_id')
+            ->selectRaw(self::INTENT_ROW)
+            ->orderByRaw('min(received_at), source_intent_id')
+            ->limit($bound)
+            ->get()
+            ->all();
+        $intents = [];
+
+        foreach ($rows as $row) {
+            $values = (array) $row;
+            $intent = $values['intent'] ?? null;
+            $at = $values['received_at'] ?? null;
+
+            if (is_string($intent) && is_string($at)) {
+                $intents[] = ['sourceIntentId' => $intent, 'receivedAt' => $at];
+            }
+        }
+
+        return $intents;
     }
 
     /**

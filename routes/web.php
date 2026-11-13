@@ -18,6 +18,9 @@ use App\Http\Controllers\Access\SignInController;
 use App\Http\Controllers\Access\UpdateOwnerDetailsController;
 use App\Http\Controllers\Access\UpdateStaffAccountController;
 use App\Http\Controllers\Access\UsersController;
+use App\Http\Controllers\Cash\AddReviewNoteController;
+use App\Http\Controllers\Cash\AssistedCloseController;
+use App\Http\Controllers\Cash\CloseCashSessionAssistedController;
 use App\Http\Controllers\Cash\CloseCashSessionController;
 use App\Http\Controllers\Cash\CloseSessionController;
 use App\Http\Controllers\Cash\CreateCashRegisterController;
@@ -352,6 +355,17 @@ Route::middleware(['auth', 'signin.session', 'throttle:authenticated', 'cache.he
         Route::get('/cash-sessions', [SessionsController::class, 'index'])->middleware('input.allow:status,from,to,register,responsible,after,before,perPage')->name('sessions.index');
         Route::get('/cash-sessions/{session}', [SessionsController::class, 'show'])->middleware('input.allow')->name('sessions.show');
     });
+
+    // The Owner-assisted close and the review notes (TASK-032), the Owner's alone: RP-207 and RC-04 for
+    // CAP-23 on another user's OPEN session, which the page's controller and the Action check, RC-04 in
+    // the bucket of every command, with recent authentication; RC-43 for CAP-22 on a CLOSED session, in
+    // the bucket of every command, without recent authentication. RP-207 takes only its path.
+    Route::middleware('capability:CAP-23')->group(function (): void {
+        Route::get('/cash-sessions/{session}/assisted-close', [AssistedCloseController::class, 'show'])->middleware('input.allow')->name('sessions.assisted_close');
+        Route::post('/commands/cash_session.close_assisted', CloseCashSessionAssistedController::class)->middleware(['throttle:command', 'password.confirm'])->name('commands.cash_session.close_assisted');
+    });
+
+    Route::post('/commands/review_note.add', AddReviewNoteController::class)->middleware(['capability:CAP-22', 'throttle:command'])->name('commands.review_note.add');
 
     // The receipt (TASK-029): RP-103 for the Sale's own cashier (CAP-21) and the Owner (CAP-22), whose
     // scope its query checks; it takes only its path.

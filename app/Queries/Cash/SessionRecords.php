@@ -203,6 +203,43 @@ final class SessionRecords
     }
 
     /**
+     * One session in the viewer's scope for the Owner-assisted close (RP-207; TASK-032): its number and
+     * state, its register as it is — it cannot change while the session is OPEN (G-19) — its responsible
+     * user, the activity version that the close compares, and its opening cash. NOT_FOUND outside the
+     * scope (TR-ERR-03).
+     *
+     * @return array{id: int, number: string, open: bool, registerCode: string, registerLabel: string, responsible: string, responsibleUserId: int, activityVersion: int, openingCash: Money}
+     *
+     * @throws NotFound
+     */
+    public function forAssistedClose(mixed $identifier, User $viewer): array
+    {
+        $key = ObjectScope::key($identifier);
+        $row = $key === null ? null : self::scoped($viewer)
+            ->join('cash_registers as r', 'r.id', '=', 's.register_id')
+            ->where('s.id', $key)
+            ->first(['s.id', 's.session_number', 's.status', 's.responsible_user_id', 's.responsible_display_name', 's.activity_version', 's.opening_cash', 'r.code', 'r.label']);
+
+        if ($row === null) {
+            throw new NotFound;
+        }
+
+        $values = (array) $row;
+
+        return [
+            'id' => self::int($values, 'id'),
+            'number' => self::text($values, 'session_number'),
+            'open' => self::text($values, 'status') === Sessions::OPEN,
+            'registerCode' => self::text($values, 'code'),
+            'registerLabel' => self::text($values, 'label'),
+            'responsible' => self::text($values, 'responsible_display_name'),
+            'responsibleUserId' => self::int($values, 'responsible_user_id'),
+            'activityVersion' => self::int($values, 'activity_version'),
+            'openingCash' => Money::fromDatabase(self::amount($values, 'opening_cash')),
+        ];
+    }
+
+    /**
      * The viewer's own OPEN session for its close preview (RP-105), or null: its number and register,
      * the activity version that the close compares, and its opening cash.
      *

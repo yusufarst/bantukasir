@@ -6,6 +6,7 @@ import type { AreaId, DestinationId, SubDestinationId } from '@/lib/navigation';
 // The close and the session pages (COPY_DECK sections 7.5, 7.10, 7.11 and 17.2; TASK-030): the
 // session's figures as the server sends them, RC-03 with its family (INTERACTION_CONTRACTS section
 // 1.4), the paths of RP-105, RP-205 and RP-206, the shell of each, and the words of a session's state.
+// TASK-032 adds RC-04 and RC-43 with their families, RP-207's path and preview, and the review notes.
 
 /**
  * The running figures of an OPEN session, or its report's once CLOSED (BR-CASH-12, BR-CASH-20):
@@ -28,6 +29,29 @@ export interface ClosePreview {
     readonly figures: SessionFigures;
     /** The user's checkout receipts that the server holds PENDING or HELD (G-27). */
     readonly unresolvedCheckouts: number;
+}
+
+/** A checkout of the responsible user that the server holds unresolved, by its intent (RP-207; ADR-009 section 4). */
+export interface UnresolvedCheckout {
+    readonly sourceIntentId: string;
+    readonly receivedAt: string;
+}
+
+/** The close preview of RP-207, a deferred prop; null once the session is no longer another user's OPEN one (TASK-032). */
+export interface AssistedClosePreview {
+    readonly sessionId: number;
+    readonly activityVersion: number;
+    readonly figures: SessionFigures;
+    /** The responsible user's checkouts that the server holds PENDING or HELD, for the Owner's "Cek status" (G-27). */
+    readonly unresolvedCheckouts: readonly UnresolvedCheckout[];
+}
+
+/** An Owner review note of RP-206 (UXI-144; TASK-032): its text, its time and the frozen name of its author. */
+export interface ReviewNote {
+    readonly id: number;
+    readonly text: string;
+    readonly recordedAt: string;
+    readonly author: string;
 }
 
 /** A row of RP-205 (UXI-137): a CLOSED session's register as its report froze it, its close time and its variance. */
@@ -126,6 +150,12 @@ export function choiceKey(value: string): string | null {
 /** RC-03's family; no recent authentication (INTERACTION_CONTRACTS section 1.5). */
 export const CLOSE_SESSION_COMMAND = { operation: 'cash_session.close', family: 'close_session', recentAuth: false } as const;
 
+/** RC-04's family, the close's; with recent authentication (INTERACTION_CONTRACTS section 1.5; TASK-032). */
+export const ASSISTED_CLOSE_COMMAND = { operation: 'cash_session.close_assisted', family: 'close_session', recentAuth: true } as const;
+
+/** RC-43's family; no recent authentication (TASK-032). */
+export const REVIEW_NOTE_COMMAND = { operation: 'review_note.add', family: 'review_note', recentAuth: false } as const;
+
 /** RC-01's family, whose unresolved request keeps "Lanjut hitung" disabled (UXI-103; BR-CASH-16). */
 export const CHECKOUT_FAMILY = { operation: 'sale.checkout', family: 'sale' } as const;
 
@@ -142,6 +172,11 @@ export const UNRESOLVED_PAGE = '/requests';
 /** RP-206 of a session by its internal key. */
 export function sessionPage(id: number): string {
     return `${SESSIONS_PAGE}/${String(id)}`;
+}
+
+/** RP-207 of a session by its internal key (TASK-032). */
+export function assistedClosePage(id: number): string {
+    return `${sessionPage(id)}/assisted-close`;
 }
 
 /**
@@ -164,7 +199,7 @@ export function sessionsListFrom(referrer: string, origin: string): string {
  * refused SESSION_NOT_OPEN, or the preview read again is null — the session closed elsewhere — or names
  * another session, opened since, whose figures are never counted under this session's header.
  */
-export function closedMeanwhile(sessionId: number, preview: ClosePreview | null | undefined, refusalCode: string | null): boolean {
+export function closedMeanwhile(sessionId: number, preview: Pick<ClosePreview, 'sessionId'> | null | undefined, refusalCode: string | null): boolean {
     return refusalCode === 'SESSION_NOT_OPEN' || preview === null || (preview !== undefined && preview.sessionId !== sessionId);
 }
 

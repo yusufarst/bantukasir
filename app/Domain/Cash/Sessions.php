@@ -27,6 +27,9 @@ final class Sessions
 
     public const array ONE_OPEN_PER_USER = ['cash_sessions_one_open_per_user'];
 
+    /** The columns of a session that a close reads under its lock. */
+    private const array CLOSING = ['id', 'session_number', 'status', 'activity_version', 'opening_cash', 'opened_at', 'responsible_display_name', 'register_id', 'responsible_user_id'];
+
     public function __construct(private readonly Clock $clock) {}
 
     /**
@@ -138,12 +141,52 @@ final class Sessions
     {
         self::requireTransaction();
 
-        $row = DB::table('cash_sessions')
-            ->where('id', $sessionId)
-            ->where('responsible_user_id', $userId)
-            ->lockForUpdate()
-            ->first(['id', 'session_number', 'status', 'activity_version', 'opening_cash', 'opened_at', 'responsible_display_name', 'register_id']);
+        return self::closing(DB::table('cash_sessions')->where('id', $sessionId)->where('responsible_user_id', $userId)->lockForUpdate()->first(self::CLOSING));
+    }
 
+    /**
+     * The session of an Owner-assisted close under the same update lock as an own close's (TR §7.1 step
+     * 4: the target session; RACE-09), only when the actor is not its responsible user: the Owner's own
+     * session is closed by RC-03, never here (INTERACTION_CONTRACTS RC-04; G-19). The responsible user
+     * may be deactivated (D-069 (d), D-087). Null when the session does not exist or is the actor's own.
+     */
+    public function lockForAssistedClose(int $sessionId, int $actorId): ?ClosingSession
+    {
+        self::requireTransaction();
+
+        return self::closing(DB::table('cash_sessions')->where('id', $sessionId)->where('responsible_user_id', '<>', $actorId)->lockForUpdate()->first(self::CLOSING));
+    }
+
+    /**
+     * The session of an Owner review note under a share lock (TR §7.2, family Owner review note; SCHEMA
+     * section 7: FOR SHARE), so that a close never interleaves with it: its number and whether it is
+     * CLOSED. Null when it does not exist.
+     *
+     * @return array{number: string, closed: bool}|null
+     */
+    public function lockForNote(int $sessionId): ?array
+    {
+        self::requireTransaction();
+
+        $row = DB::table('cash_sessions')->where('id', $sessionId)->sharedLock()->first(['session_number', 'status']);
+
+        if ($row === null) {
+            return null;
+        }
+
+        $values = (array) $row;
+        $number = $values['session_number'] ?? null;
+        $status = $values['status'] ?? null;
+
+        if (! is_string($number) || ! is_string($status)) {
+            throw new LogicException('A session holds its columns (SCHEMA section 5.10).');
+        }
+
+        return ['number' => $number, 'closed' => $status === self::CLOSED];
+    }
+
+    private static function closing(?object $row): ?ClosingSession
+    {
         if ($row === null) {
             return null;
         }
@@ -157,13 +200,14 @@ final class Sessions
         $openedAt = $values['opened_at'] ?? null;
         $name = $values['responsible_display_name'] ?? null;
         $register = $values['register_id'] ?? null;
+        $responsible = $values['responsible_user_id'] ?? null;
 
         if (! is_int($id) || ! is_string($number) || ! is_string($status) || ! is_int($version) || (! is_int($opening) && ! is_string($opening))
-            || ! is_string($openedAt) || ! is_string($name) || ! is_int($register)) {
+            || ! is_string($openedAt) || ! is_string($name) || ! is_int($register) || ! is_int($responsible)) {
             throw new LogicException('A session holds its columns (SCHEMA section 5.10).');
         }
 
-        return new ClosingSession($id, $number, $status === self::OPEN, $version, Money::fromDatabase($opening), $openedAt, $name, $register);
+        return new ClosingSession($id, $number, $status === self::OPEN, $version, Money::fromDatabase($opening), $openedAt, $name, $register, $responsible);
     }
 
     /**

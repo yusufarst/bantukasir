@@ -211,7 +211,7 @@ final class SessionPagesTest extends DatabaseTestCase
         $this->assertPageChannel($page, 'cashier', $this->secrets());
         $props = $this->propsOf($page);
         $this->assertSame([
-            ['id' => $rina, 'number' => $this->numberOf($rina), 'status' => 'OPEN', 'registerCode' => 'LACI-1', 'registerLabel' => 'Laci 1', 'responsible' => 'Rina', 'openedAt' => '2026-11-11T02:00:00.000000Z', 'closedAt' => null, 'canClose' => true],
+            ['id' => $rina, 'number' => $this->numberOf($rina), 'status' => 'OPEN', 'registerCode' => 'LACI-1', 'registerLabel' => 'Laci 1', 'responsible' => 'Rina', 'openedAt' => '2026-11-11T02:00:00.000000Z', 'closedAt' => null, 'canClose' => true, 'canAssistedClose' => false],
             ['openingCash' => '0', 'saleCount' => 1, 'saleValue' => '50000', 'cashPayments' => '0', 'transferPayments' => '50000', 'drawerRefunds' => '0', 'expectedCash' => '0'],
             ['physicalCash' => null, 'variance' => null, 'closedBy' => null, 'closeReason' => null, 'notes' => null],
         ], [$props['session'] ?? null, $props['figures'] ?? null, $props['count'] ?? null]);
@@ -239,12 +239,12 @@ final class SessionPagesTest extends DatabaseTestCase
         $this->as('Dewi');
         $this->getJson('/cash-sessions/'.$rina)->assertStatus(404)->assertJsonPath('code', 'NOT_FOUND');
 
-        // The Owner sees every session, and closes none here: an own close is the responsible user's
-        // (RC-03); the Owner's sections are TASK-032's.
+        // The Owner sees every session; an own close is the responsible user's (RC-03), and his is the
+        // Owner-assisted close of another user's OPEN session (UXI-140; TASK-032).
         $this->as('Hendra');
         $owner = $this->get('/cash-sessions/'.$rina)->assertOk();
         $this->assertPageChannel($owner, 'owner', $this->secrets());
-        $this->assertFalse(((array) ($this->propsOf($owner)['session'] ?? []))['canClose'] ?? null);
+        $this->assertSame([false, true], [((array) ($this->propsOf($owner)['session'] ?? []))['canClose'] ?? null, ((array) ($this->propsOf($owner)['session'] ?? []))['canAssistedClose'] ?? null]);
         $this->assertPageChannel($this->get('/cash-sessions/'.$dewi)->assertOk(), 'owner', $this->secrets());
 
         $this->as('Agus');

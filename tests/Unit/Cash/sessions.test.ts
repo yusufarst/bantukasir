@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+    ASSISTED_CLOSE_COMMAND,
+    assistedClosePage,
     choiceKey,
     choiceOf,
     CLOSE_SESSION_COMMAND,
@@ -7,6 +9,7 @@ import {
     closedMeanwhile,
     OPEN,
     registerText,
+    REVIEW_NOTE_COMMAND,
     sessionPage,
     sessionsAddress,
     sessionsListFrom,
@@ -14,6 +17,7 @@ import {
     statusOf,
     varianceOf,
     varianceTone,
+    type AssistedClosePreview,
     type ClosePreview,
 } from '@/lib/cash/sessions';
 
@@ -108,5 +112,27 @@ describe('the session pages', () => {
 
     it('name a register by its code and its label', () => {
         expect([registerText('LACI-1', 'Laci 1'), registerText('LACI-1', 'LACI-1')]).toEqual(['LACI-1 · Laci 1', 'LACI-1']);
+    });
+});
+
+// TASK-032: RP-207's path, RC-04 in the close's family with recent authentication, RC-43 in the review
+// note's without it (INTERACTION_CONTRACTS sections 1.4 and 1.5), and a session closed meanwhile under the
+// assisted close's preview, whose unresolved checkouts are a list.
+describe('the Owner-assisted close and the review notes', () => {
+    it('name RP-207 of a session and the families of RC-04 and RC-43', () => {
+        expect(assistedClosePage(42)).toBe('/cash-sessions/42/assisted-close');
+        expect(ASSISTED_CLOSE_COMMAND).toEqual({ operation: 'cash_session.close_assisted', family: 'close_session', recentAuth: true });
+        expect(REVIEW_NOTE_COMMAND).toEqual({ operation: 'review_note.add', family: 'review_note', recentAuth: false });
+        expect(ASSISTED_CLOSE_COMMAND.family).toBe(CLOSE_SESSION_COMMAND.family);
+    });
+
+    it('say the session closed meanwhile under the assisted preview as under the own one (UXS-30)', () => {
+        const figures = { openingCash: '0', saleCount: 0, saleValue: '0', cashPayments: '0', transferPayments: '0', drawerRefunds: '0', expectedCash: '0' };
+        const preview: AssistedClosePreview = { sessionId: 7, activityVersion: 0, figures, unresolvedCheckouts: [{ sourceIntentId: 'a', receivedAt: '2026-11-13T03:00:00.000000Z' }] };
+
+        expect(closedMeanwhile(7, preview, null)).toBe(false);
+        expect(closedMeanwhile(7, preview, 'SESSION_NOT_OPEN')).toBe(true);
+        expect(closedMeanwhile(7, null, null)).toBe(true);
+        expect(closedMeanwhile(8, preview, null)).toBe(true);
     });
 });

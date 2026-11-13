@@ -9,7 +9,9 @@
 // "Tutup sesi kas" (section 7.5, with its disabled reasons of section 15),
 // UXP-205 "Sesi kas" (section 7.10) and UXP-206 "Detail sesi kas" (sections
 // 4.1 and 7.11) without the Owner's notes, print and export, and the drawer-
-// funded refunds' lists, which TASK-031, TASK-032 and TASK-034 add.
+// funded refunds' lists, which TASK-031, TASK-032 and TASK-034 add. TASK-032
+// adds the Owner's review notes of UXP-206 and UXP-207 "Tutup sesi oleh
+// Pemilik" (sections 4.1, 7.11, 7.12 and 15).
 
 return [
     'close' => [
@@ -64,6 +66,24 @@ return [
         // UXI-141 and UXI-142 (COPY_DECK section 7.11; TASK-031).
         'print' => 'Cetak laporan',
         'download_csv' => 'Unduh CSV',
+        // UXI-144 to UXI-146, the Owner's review notes (COPY_DECK section 7.11; TASK-032).
+        'notes' => 'Catatan tinjauan Pemilik',
+        'note_meta' => 'Oleh :nama, :waktu',
+        'notes_empty' => 'Belum ada catatan tinjauan.',
+        'notes_help' => 'Catatan tidak mengubah hitungan, selisih, atau laporan. Catatan tidak bisa diubah atau dihapus; untuk koreksi, tulis catatan baru.',
+        'add_note' => 'Tambah catatan tinjauan',
+        'note' => 'Catatan',
+        'save_note' => 'Simpan catatan',
+        'note_saved' => 'Catatan tinjauan disimpan.',
+    ],
+    // UXP-207 "Tutup sesi oleh Pemilik" (COPY_DECK sections 4.1, 7.12 and 15; TASK-032).
+    'assisted_close' => [
+        'title' => 'Tutup sesi oleh Pemilik',
+        'responsible' => 'Penanggung jawab',
+        'reason' => 'Alasan',
+        'review_title' => 'Tinjau tutup sesi oleh Pemilik',
+        'review_body' => 'Penanggung jawab sesi kas ini tetap :nama. Anda tercatat sebagai yang menutup.',
+        'disabled' => 'Isi uang fisik di laci dan alasan.',
     ],
     'open' => [
         'title' => 'Buka sesi kas',

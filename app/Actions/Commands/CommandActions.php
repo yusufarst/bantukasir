@@ -10,7 +10,9 @@ use App\Actions\Access\ReactivateAccount;
 use App\Actions\Access\RevokePasswordLink;
 use App\Actions\Access\UpdateOwnerDetails;
 use App\Actions\Access\UpdateStaffAccount;
+use App\Actions\Cash\AddReviewNote;
 use App\Actions\Cash\CloseCashSession;
+use App\Actions\Cash\CloseCashSessionAssisted;
 use App\Actions\Cash\CreateCashRegister;
 use App\Actions\Cash\OpenCashSession;
 use App\Actions\Cash\UpdateCashRegister;
@@ -113,6 +115,9 @@ final class CommandActions
         RecordReceiptPrint::OPERATION => RecordReceiptPrint::class,
         RecordSessionReportPrint::OPERATION => RecordSessionReportPrint::class,
         ExportSessionReport::OPERATION => ExportSessionReport::class,
+        // RC-04 and RC-43 (TASK-032).
+        CloseCashSessionAssisted::OPERATION => CloseCashSessionAssisted::class,
+        AddReviewNote::OPERATION => AddReviewNote::class,
     ];
 
     /**
