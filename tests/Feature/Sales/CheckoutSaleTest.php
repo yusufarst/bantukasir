@@ -782,28 +782,28 @@ final class CheckoutSaleTest extends DatabaseTestCase
     public function test_each_table_of_the_sale_has_its_one_writer(): void
     {
         // STK-12, ARC-20, ARC-21; ADR-008 section 4.3: the Sale's tables are named by the Sales module's
-        // writer alone, which only inserts; their running totals are TASK-033's to change, and nothing
-        // names the line totals yet. The language files' group `sales` is no table: the dictionary
+        // writer alone, which only inserts; their running totals are changed by the Sales module's writer
+        // of corrections alone, which reads the Sale and its lines as facts (TASK-033). The language files' group `sales` is no table: the dictionary
         // names it without a query. RP-103's query reads a Sale's receipt snapshot and writes nothing
         // (TASK-029). TASK-031's reads write nothing either: RC-44 reads the Sale it prints, RP-201 and
         // RP-202 read Sales with their payments and snapshots, and RP-403's SaleSources a SALE_ISSUE's Sale (UXI-224); RP-201's
         // controller names its page prop `sales`, no table.
         $reader = 'Queries/Sales/Receipts.php';
         $readers = ['Actions/Documents/RecordReceiptPrint.php', 'Http/Controllers/Sales/SalesController.php', 'Queries/Sales/SaleRecords.php', 'Queries/Sales/SaleSources.php'];
-        $this->assertSame(['Actions/Documents/RecordReceiptPrint.php', 'Domain/Sales/Sales.php', 'Http/Controllers/Sales/SalesController.php', $reader, 'Queries/Sales/SaleRecords.php', 'Queries/Sales/SaleSources.php', 'Support/Localization/Dictionary.php'], self::filesNaming('sales'));
+        $this->assertSame(['Actions/Documents/RecordReceiptPrint.php', 'Domain/Sales/Corrections/SaleCorrections.php', 'Domain/Sales/Sales.php', 'Http/Controllers/Sales/SalesController.php', $reader, 'Queries/Sales/SaleRecords.php', 'Queries/Sales/SaleSources.php', 'Support/Localization/Dictionary.php'], self::filesNaming('sales'));
         $this->assertDoesNotMatchRegularExpression('/DB::|->table\(|->insert|->update/', (string) file_get_contents(app_path('Support/Localization/Dictionary.php')));
 
         foreach ([$reader, ...$readers] as $file) {
             $this->assertDoesNotMatchRegularExpression('/->(?:insert|insertGetId|insertOrIgnore|update|upsert|delete|increment|decrement|truncate|lockForUpdate)\(|DB::(?:statement|insert|update|delete|unprepared)/', (string) file_get_contents(app_path($file)), $file);
         }
 
-        $this->assertSame(['Domain/Sales/Sales.php', 'Queries/Sales/SaleSources.php'], self::filesNaming('sale_lines'));
+        $this->assertSame(['Domain/Sales/Corrections/SaleCorrections.php', 'Domain/Sales/Sales.php', 'Queries/Sales/SaleSources.php'], self::filesNaming('sale_lines'));
         $this->assertSame(['Domain/Sales/Sales.php', 'Queries/Sales/SaleRecords.php'], self::filesNaming('payments'));
-        $this->assertSame(['Domain/Sales/Sales.php'], self::filesNaming('sale_correction_totals'));
+        $this->assertSame(['Domain/Sales/Corrections/SaleCorrections.php', 'Domain/Sales/Sales.php'], self::filesNaming('sale_correction_totals'));
 
         $this->assertSame(['Domain/Sales/Sales.php', $reader, 'Queries/Sales/SaleRecords.php'], self::filesNaming('receipt_snapshots'));
 
-        $this->assertSame([], self::filesNaming('sale_line_correction_totals'));
+        $this->assertSame(['Domain/Sales/Corrections/SaleCorrections.php'], self::filesNaming('sale_line_correction_totals'));
         $this->assertDoesNotMatchRegularExpression('/->(?:update|upsert|delete|increment|decrement|truncate)\(/', (string) file_get_contents(app_path('Domain/Sales/Sales.php')));
         $this->assertSame([CheckoutSale::OPERATION], array_values(array_filter(array_keys(Operations::FAMILIES), static fn (string $operation): bool => str_starts_with($operation, 'sale.'))));
     }

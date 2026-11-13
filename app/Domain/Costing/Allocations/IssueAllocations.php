@@ -3,6 +3,7 @@
 namespace App\Domain\Costing\Allocations;
 
 use App\Domain\Costing\Replay\ProjectionChange;
+use App\Support\Numbers\Cost;
 use App\Support\Numbers\Quantity;
 use Illuminate\Support\Facades\DB;
 use LogicException;
@@ -69,6 +70,49 @@ final class IssueAllocations
         ]);
 
         return $id;
+    }
+
+    /**
+     * The SALE_ISSUE allocation of each of these Sale lines with its current projection, by the line's
+     * internal key: what a saleable return of the line links to and restores its cost from (ADR-008
+     * section 3; D-061; TASK-033). The caller holds the guards of the lines' products, which every replay
+     * of a product holds too, so that no projection is rewritten meanwhile (ADR-008 section 7). Each
+     * quantity is read at the precision given for its line.
+     *
+     * @param  array<int, int>  $precisions  the precision of each line's product, by the line's internal key
+     * @return array<int, LinkedIssue>
+     */
+    public function ofSaleLines(array $precisions): array
+    {
+        if (DB::transactionLevel() === 0) {
+            throw new LogicException('A linked issue is read under the product guard of its transaction (ADR-008 section 7).');
+        }
+
+        $rows = DB::table('issue_cost_allocations as a')
+            ->join('issue_cost_allocation_projections as p', 'p.allocation_id', '=', 'a.id')
+            ->where('a.issue_type', self::SALE_ISSUE)
+            ->whereIn('a.sale_line_id', array_keys($precisions))
+            ->orderBy('a.sale_line_id')
+            ->get(['a.id', 'a.sale_line_id', 'a.product_id', 'a.issued_quantity', 'p.current_status', 'p.current_amount']);
+        $linked = [];
+
+        foreach ($rows as $row) {
+            $values = (array) $row;
+            $id = $values['id'] ?? null;
+            $line = $values['sale_line_id'] ?? null;
+            $product = $values['product_id'] ?? null;
+            $issued = $values['issued_quantity'] ?? null;
+            $status = $values['current_status'] ?? null;
+            $amount = $values['current_amount'] ?? null;
+
+            if (! is_int($id) || ! is_int($line) || ! is_int($product) || ! is_string($issued) || ! in_array($status, ['KNOWN', 'UNKNOWN'], true) || ($amount !== null && ! is_string($amount))) {
+                throw new LogicException('A SALE_ISSUE allocation holds its columns, and its projection is KNOWN or UNKNOWN (SCHEMA section 5.8).');
+            }
+
+            $linked[$line] = new LinkedIssue($id, $line, $product, Quantity::fromDatabase($issued, $precisions[$line]), Cost::fromDatabase($amount, $status));
+        }
+
+        return $linked;
     }
 
     /**

@@ -23,6 +23,7 @@ use App\Actions\Inventory\ConfirmManualIssue;
 use App\Actions\Inventory\ConfirmReceiving;
 use App\Actions\Inventory\ConfirmReversal;
 use App\Actions\Sales\CheckoutSale;
+use App\Actions\Sales\RecordCorrection;
 use App\Database\DatabaseRefused;
 use App\Database\EnvironmentMarker;
 use App\Domain\Access\Accounts;
@@ -588,6 +589,50 @@ final class TokoContoh
         $id = app(CheckoutSale::class)->execute(new CommandContext($actor, $envelope, app(Clock::class)->now()))->result['id'] ?? null;
 
         return is_int($id) ? $id : throw new LogicException('The fixture Sale was not committed.');
+    }
+
+    /**
+     * The Owner's correction of a Sale — a refund paid from the Owner's own funds or by bank transfer, a
+     * return, or both — through RC-06's Action (TASK-033; EXECUTION_CONTEXT EXC-45): its internal key. A
+     * line's amounts default to zero. The recent authentication of RC-06 is its route's, which this
+     * fixture does not pass through.
+     *
+     * @param  list<array{saleLineId: int, refundAmount?: string, returnedSaleable?: string, returnedNotSaleable?: string}>  $lines
+     * @param  array{method: string, reference: string}|null  $payout  null for a return without money
+     *
+     * @throws DatabaseRefused
+     */
+    public static function correct(int $sale, array $lines, ?array $payout = null, string $reason = 'Barang dikembalikan pembeli'): int
+    {
+        $payload = [
+            'saleId' => $sale,
+            'lines' => array_map(static fn (array $line): array => [
+                'saleLineId' => $line['saleLineId'],
+                'refundAmount' => $line['refundAmount'] ?? '0',
+                'returnedSaleable' => $line['returnedSaleable'] ?? '0',
+                'returnedNotSaleable' => $line['returnedNotSaleable'] ?? '0',
+            ], $lines),
+            'reason' => $reason,
+            ...($payout === null ? [] : ['payout' => $payout]),
+        ];
+
+        return self::asOwner(RecordCorrection::class, RecordCorrection::OPERATION, $payload);
+    }
+
+    /**
+     * The lines of a Sale in their order (TASK-028): their internal keys.
+     *
+     * @return list<int>
+     */
+    public static function saleLinesOf(int $sale): array
+    {
+        $lines = [];
+
+        foreach (DB::table('sale_lines')->where('sale_id', $sale)->orderBy('line_no')->pluck('id') as $id) {
+            $lines[] = is_int($id) ? $id : throw new LogicException('A Sale line has its key.');
+        }
+
+        return $lines;
     }
 
     /**

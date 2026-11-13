@@ -13,6 +13,8 @@ namespace App\Domain\Costing\Replay;
  * The ledger is the logical one (ADR-008 section 4.1): a reversal, written before its replay in the
  * same transaction, starts it at its source, which with its REVERSAL the replay skips, and the source's
  * allocation, if it is a manual issue's, becomes CANCELLED in the same publication (BR-COST-32; TASK-026).
+ * Every RETURN_RECEIPT reached is recomputed from its link together with its SALE_ISSUE, and its return
+ * projection is published with the issue projections (D-061; TASK-033).
  */
 final class ProductReplay
 {
@@ -37,6 +39,6 @@ final class ProductReplay
         $result = ValuationReplay::recompute($start, $entries, $this->ledger->onHand($productId, $precision), $budget->checker());
         $cancelled = array_map(static fn (int $allocation): ProjectionChange => ProjectionChange::cancelled($allocation), $this->ledger->cancelledIssues($productId, $startSequence));
 
-        return $cancelled === [] ? $result : new ReplayResult($result->value, [...$cancelled, ...$result->changes], $result->movements);
+        return $cancelled === [] ? $result : new ReplayResult($result->value, [...$cancelled, ...$result->changes], $result->movements, $result->returnChanges);
     }
 }

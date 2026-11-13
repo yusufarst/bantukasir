@@ -7,6 +7,7 @@ use App\Domain\Costing\Replay\ProjectionChange;
 use App\Domain\Costing\Replay\ReplayRefused;
 use App\Domain\Costing\Replay\ReplayResult;
 use App\Domain\Costing\Replay\ReplayStart;
+use App\Domain\Costing\Replay\ReturnLink;
 use App\Domain\Costing\Replay\ValuationReplay;
 use App\Support\Numbers\Cost;
 use App\Support\Numbers\Quantity;
@@ -184,6 +185,76 @@ final class ValuationReplayTest extends TestCase
         $this->assertSame([1, '100'], [$result->changes[0]->allocationId, $result->changes[0]->amount->toCanonical()]);
     }
 
+    public function test_a_corrected_receipt_recomputes_the_sale_issue_and_its_linked_return_together(): void
+    {
+        // AC-033-04, L1 (TASK-033); D-061's worked example; ADR-008 sections 3 and 5: 10 units received at
+        // Rp1.000, all 10 sold (issue 41, Rp1.000), 2 returned saleable (return 51, Rp200). The receipt
+        // corrected to Rp1.200: the issue's projection becomes Rp1.200 and the linked return's Rp240,
+        // recomputed together; the 2 returned units are worth Rp240, and net cost of goods sold is
+        // Rp960, 8 × Rp120.
+        $entries = [
+            LedgerEntry::increase(1, self::units('10'), Cost::of('1200')),
+            LedgerEntry::issue(2, self::units('-10'), 41, Cost::of('1000')),
+            LedgerEntry::returnReceipt(3, self::units('2'), 51, Cost::of('200'), new ReturnLink(41, self::units('10'), Cost::of('1000'), self::units('0'))),
+        ];
+
+        $result = ValuationReplay::recompute(new ReplayStart(self::units('0'), Cost::of('0')), $entries, self::units('2'), self::always());
+
+        $this->assertSame(['240', 3], [$result->value->toCanonical(), $result->movements]);
+        $this->assertSame([[41, '1200']], self::changes($result));
+        $this->assertSame([[51, '240']], self::returnChanges($result));
+    }
+
+    public function test_the_returns_of_an_issue_before_the_start_keep_its_cost_and_leave_no_residue(): void
+    {
+        // ADR-008 sections 4.3 and 5, T-17 e (TASK-033): an issue before the start position keeps its
+        // projection, Rp100 for 3 units, so its returns after the start restore from it, one unit at a
+        // time: 33.333333, 33.333334 and 33.333333 — Rp100 in all, exactly, never more. Only the second
+        // return's projection, stored wrongly, is rewritten.
+        $entries = [
+            LedgerEntry::increase(5, self::units('4'), Cost::of('400')),
+            LedgerEntry::returnReceipt(6, self::units('1'), 61, Cost::of('33.333333'), new ReturnLink(40, self::units('3'), Cost::of('100'), self::units('0'))),
+            LedgerEntry::returnReceipt(7, self::units('1'), 62, Cost::of('0'), new ReturnLink(40, self::units('3'), Cost::of('100'), self::units('1'))),
+            LedgerEntry::returnReceipt(8, self::units('1'), 63, Cost::of('33.333333'), new ReturnLink(40, self::units('3'), Cost::of('100'), self::units('2'))),
+        ];
+
+        $result = ValuationReplay::recompute(new ReplayStart(self::units('0'), Cost::of('0')), $entries, self::units('7'), self::always());
+
+        $this->assertSame(['500', [], [[62, '33.333334']]], [$result->value->toCanonical(), self::changes($result), self::returnChanges($result)]);
+    }
+
+    public function test_an_unknown_issue_gives_an_unknown_return_until_its_cost_is_completed(): void
+    {
+        // ADR-008 section 3, "UNKNOWN"; BR-COST-13, BR-COST-22; D-061 (TASK-033): a receipt of 5 at
+        // UNKNOWN cost, all 5 sold (UNKNOWN), 1 returned (UNKNOWN). Completing the receipt at Rp500
+        // completes the issue, Rp500, and its return, Rp100, together, and so the returned unit's value.
+        $entries = [
+            LedgerEntry::increase(1, self::units('5'), Cost::of('500')),
+            LedgerEntry::issue(2, self::units('-5'), 71, Cost::unknown()),
+            LedgerEntry::returnReceipt(3, self::units('1'), 72, Cost::unknown(), new ReturnLink(71, self::units('5'), Cost::unknown(), self::units('0'))),
+        ];
+
+        $result = ValuationReplay::recompute(new ReplayStart(self::units('0'), Cost::of('0')), $entries, self::units('1'), self::always());
+
+        $this->assertSame(['100', [[71, '500']], [[72, '100']]], [$result->value->toCanonical(), self::changes($result), self::returnChanges($result)]);
+
+        // While the receipt is UNKNOWN, the return stays UNKNOWN, never zero, and so does the valuation.
+        $stale = ValuationReplay::recompute(new ReplayStart(self::units('0'), Cost::of('0')), [LedgerEntry::increase(1, self::units('5'), Cost::unknown()), ...array_slice($entries, 1)], self::units('1'), self::always());
+
+        $this->assertSame(['UNKNOWN', [], []], [$stale->value->toCanonical(), self::changes($stale), self::returnChanges($stale)]);
+    }
+
+    public function test_a_return_beyond_its_issue_is_an_unsafe_history(): void
+    {
+        // ADR-008 section 4.1, a valid history (TASK-033): the returns linked to an issue never take back
+        // more than it issued: 1 already back and 2 more of an issue of 2 is refused.
+        $this->assertRefused('UNSAFE_HISTORY', new ReplayStart(self::units('0'), Cost::of('0')), [
+            LedgerEntry::increase(1, self::units('2'), Cost::of('200')),
+            LedgerEntry::issue(2, self::units('-2'), 81, Cost::of('200')),
+            LedgerEntry::returnReceipt(3, self::units('2'), 82, Cost::of('200'), new ReturnLink(81, self::units('2'), Cost::of('200'), self::units('1'))),
+        ], self::units('2'));
+    }
+
     /**
      * @param  list<LedgerEntry>  $entries
      */
@@ -205,6 +276,16 @@ final class ValuationReplayTest extends TestCase
     private static function changes(ReplayResult $result): array
     {
         return array_map(static fn (ProjectionChange $change): array => [$change->allocationId, $change->amount->toCanonical()], $result->changes);
+    }
+
+    /**
+     * The return projections a result rewrites: allocation and amount, or UNKNOWN (TASK-033).
+     *
+     * @return list<array{int, string}>
+     */
+    private static function returnChanges(ReplayResult $result): array
+    {
+        return array_map(static fn (ProjectionChange $change): array => [$change->allocationId, $change->amount->toCanonical()], $result->returnChanges);
     }
 
     /**

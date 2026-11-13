@@ -436,6 +436,11 @@ final class CapabilityMatrixTest extends DatabaseTestCase
         'RC-43' => ['method' => 'POST', 'path' => '/commands/review_note.add', 'json' => true, 'answers' => [
             'guest' => [401, null], 'owner' => [422, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
         ]],
+        // TASK-033: RC-06 for CAP-24, the Owner's alone, which without a recent confirmation answers 423
+        // before anything runs; every other role and the combined account refused (AC-033-01, THR-19).
+        'RC-06' => ['method' => 'POST', 'path' => '/commands/sale_correction.other', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [423, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
     ];
 
     /** @var array<string, array{id: int, email: string, password: string}> */

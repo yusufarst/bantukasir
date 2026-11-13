@@ -325,6 +325,36 @@ return [
             'runtime' => ['select' => true, 'insert' => true, 'update' => ['refunded_amount', 'returned_quantity', 'updated_at']],
         ],
 
+        // Sales, the Owner's corrections of a Sale (SCHEMA section 5.9; TASK-033): a refund, a return or
+        // both, never changed or removed.
+        'sale_corrections' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'refunds' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'refund_lines' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'return_lines' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+
+        // Costing, the return allocation (SCHEMA section 5.8; ADR-008 section 3; TASK-033): the fact as
+        // the return committed, and its projection, which only a replay publication rewrites.
+        'return_cost_allocations' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'return_cost_allocation_projections' => [
+            'class' => 'P',
+            'runtime' => ['select' => true, 'insert' => true, 'update' => ['current_status', 'current_amount', 'publication_no', 'updated_at']],
+        ],
+
         // Operations (SCHEMA section 5.12; TASK-013): written by the backup role
         // (SCH-42), read by the runtime role.
         'backup_runs' => [

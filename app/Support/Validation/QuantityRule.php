@@ -17,11 +17,14 @@ use InvalidArgumentException;
  * than the precision it is given (BR-NUM-02). A JSON number or a string that
  * is not canonical is refused, never repaired; so is a value that the global
  * trimming changed (TrimmedInput). The Action checks the product's own
- * precision again inside its transaction (TR-VAL-08).
+ * precision again inside its transaction (TR-VAL-08). Where a field is zero or
+ * more — the quantities returned of a refund or return line, RC-05 and RC-06
+ * (TASK-033) — zero is admitted as well, written as "0" or with zero decimals
+ * that the precision allows.
  */
 final class QuantityRule implements ValidationRule
 {
-    public function __construct(private readonly int $precision)
+    public function __construct(private readonly int $precision, private readonly bool $zeroAllowed = false)
     {
         if ($precision < 0 || $precision > Quantity::MAX_PRECISION) {
             throw new InvalidArgumentException('A quantity precision is 0 to 3 decimals (BR-NUM-02).');
@@ -49,7 +52,11 @@ final class QuantityRule implements ValidationRule
     {
         $parts = is_string($value) ? CanonicalNumber::split($value) : null;
 
-        if (! is_string($value) || $parts === null || $parts['negative'] || trim($parts['integer'].$parts['fraction'], '0') === '' || TrimmedInput::wasTrimmed($attribute)) {
+        if (! is_string($value) || $parts === null || $parts['negative'] || TrimmedInput::wasTrimmed($attribute)) {
+            return 'quantity_positive';
+        }
+
+        if (! $this->zeroAllowed && trim($parts['integer'].$parts['fraction'], '0') === '') {
             return 'quantity_positive';
         }
 

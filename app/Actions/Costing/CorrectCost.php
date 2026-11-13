@@ -18,6 +18,7 @@ use App\Domain\Commands\ErrorCode;
 use App\Domain\Commands\StoredResult;
 use App\Domain\Costing\AcquisitionCost;
 use App\Domain\Costing\Allocations\IssueAllocations;
+use App\Domain\Costing\Allocations\ReturnAllocations;
 use App\Domain\Costing\CostCorrections;
 use App\Domain\Costing\CostIncompleteMarks;
 use App\Domain\Costing\CostSource;
@@ -96,6 +97,7 @@ final class CorrectCost extends CommandAction
         private readonly IssueAllocations $allocations,
         private readonly ProductReplay $replay,
         private readonly Reversals $reversals,
+        private readonly ReturnAllocations $returns,
     ) {
         parent::__construct($services);
     }
@@ -242,6 +244,7 @@ final class CorrectCost extends CommandAction
         }
 
         $this->allocations->lockProjectionsFrom($source->productId, $source->productSequence);
+        $this->returns->lockProjectionsFrom($source->productId, $source->productSequence);
         $this->services->points->afterLock('7');
 
         $at = $this->services->clock->now()->format('Y-m-d H:i:s.uP');
@@ -257,7 +260,10 @@ final class CorrectCost extends CommandAction
         $this->valuations->publish(new ProductValuation($source->productId, $result->value, $number, $valuation->lastSequence, true), $at);
         $this->written();
 
+        // The issue projections and the return projections linked to them, recomputed together, are one
+        // publication (D-061; TASK-033).
         $this->allocations->republish($result->changes, $number, $at);
+        $this->returns->republish($result->returnChanges, $number, $at);
         $this->written();
 
         $cleared = $this->marks->activeOf($source->evidenceId);
@@ -274,7 +280,7 @@ final class CorrectCost extends CommandAction
                 'movementId' => $source->movementId,
                 'correctionNo' => $correctionNo,
                 'publicationNo' => $number,
-                'projectionsRewritten' => count($result->changes),
+                'projectionsRewritten' => count($result->changes) + count($result->returnChanges),
                 'marksCleared' => count($cleared),
             ],
             ['old' => self::valueOf($old), 'new' => self::valueOf($new), 'zeroNote' => $zeroNote, 'reason' => $reason],
