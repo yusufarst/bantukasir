@@ -127,7 +127,7 @@ final class CorrectionReplayTest extends DatabaseTestCase
         TokoContoh::correct($sale, [['saleLineId' => $line, 'returnedSaleable' => '1']]);
         TokoContoh::correct($sale, [['saleLineId' => $line, 'returnedSaleable' => '1']]);
         TokoContoh::correct($sale, [['saleLineId' => $line, 'returnedSaleable' => '1']]);
-        $restored =[['KNOWN', '33.333333', 'KNOWN', '33.333333', 3], ['KNOWN', '33.333334', 'KNOWN', '33.333334', 4], ['KNOWN', '33.333333', 'KNOWN', '33.333333', 5]];
+        $restored = [['KNOWN', '33.333333', 'KNOWN', '33.333333', 3], ['KNOWN', '33.333334', 'KNOWN', '33.333334', 4], ['KNOWN', '33.333333', 'KNOWN', '33.333333', 5]];
         $this->assertSame([$restored, 'KNOWN|100.000000|5|5'], [$this->returnsOf($book), $this->valuationOf($book)]);
 
         // From the receipt the replay reaches five movements: at a cap of four it is refused.
