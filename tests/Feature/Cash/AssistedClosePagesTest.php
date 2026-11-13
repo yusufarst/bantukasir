@@ -79,7 +79,12 @@ final class AssistedClosePagesTest extends DatabaseTestCase
         $receipts->record($rina, 'cash_session.open', (string) Str::uuid(), (string) Str::uuid(), $this->epoch, '2026-11-13 03:00:00+00');
         $receipts->record($this->people['Dewi']['id'], CheckoutSale::OPERATION, (string) Str::uuid(), (string) Str::uuid(), $this->epoch, '2026-11-13 03:00:00+00');
 
-        $this->assertSame([['sourceIntentId' => $intent, 'receivedAt' => '2026-11-13T03:00:00.000000Z']], $this->previewOf($path, $version)['unresolvedCheckouts'] ?? null);
+        $this->assertSame([
+            'sessionId' => $session,
+            'activityVersion' => 1,
+            'figures' => ['openingCash' => '20000', 'saleCount' => 1, 'saleValue' => '50000', 'cashPayments' => '50000', 'transferPayments' => '0', 'drawerRefunds' => '0', 'expectedCash' => '70000'],
+            'unresolvedCheckouts' => [['sourceIntentId' => $intent, 'receivedAt' => '2026-11-13T03:00:00.000000Z']],
+        ], $this->previewOf($path, $version));
         $this->assertDeferredChannel($this->previewReload($path, $version), 'owner', $this->secrets());
 
         // The page takes only its path.

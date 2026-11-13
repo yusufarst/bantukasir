@@ -145,7 +145,7 @@ final class AssistedCloseTest extends DatabaseTestCase
             $refused = $this->close($this->envelope([...['sessionId' => $session, 'physicalCash' => '0', 'reason' => self::REASON], ...$payload], ['operation' => CloseCashSessionAssisted::OPERATION, 'expected' => ['activityVersion' => 0]]))
                 ->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
             $fields = (array) $refused->json('fields');
-            $this->assertSame($key, (((array) ($fields[$field] ?? []))[0] ?? [])['key'] ?? null, (string) $index);
+            $this->assertSame($key, ((array) (((array) ($fields[$field] ?? []))[0] ?? []))['key'] ?? null, (string) $index);
         }
 
         foreach ([

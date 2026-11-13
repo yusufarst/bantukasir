@@ -124,7 +124,7 @@ final class ReviewNoteTest extends DatabaseTestCase
         ] as $index => [$payload, $key]) {
             $refused = $this->note($this->envelope([...['sessionId' => $closed], ...$payload], ['operation' => AddReviewNote::OPERATION]))->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
             $fields = (array) $refused->json('fields');
-            $this->assertSame($key, (((array) ($fields['payload.text'] ?? []))[0] ?? [])['key'] ?? null, (string) $index);
+            $this->assertSame($key, ((array) (((array) ($fields['payload.text'] ?? []))[0] ?? []))['key'] ?? null, (string) $index);
         }
 
         foreach ([

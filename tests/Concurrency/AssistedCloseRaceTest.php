@@ -178,7 +178,13 @@ final class AssistedCloseRaceTest extends DatabaseTestCase
      */
     private function closesOf(int $session): array
     {
-        return $this->watcher()->table('cash_session_closes')->where('session_id', $session)->get(['close_kind', 'close_actor_user_id', 'variance'])->map(static fn (object $row): array => array_values((array) $row))->values()->all();
+        $closes = [];
+
+        foreach ($this->watcher()->table('cash_session_closes')->where('session_id', $session)->get(['close_kind', 'close_actor_user_id', 'variance']) as $row) {
+            $closes[] = array_values((array) $row);
+        }
+
+        return $closes;
     }
 
     /**
