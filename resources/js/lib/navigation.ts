@@ -80,10 +80,12 @@ export const SUB_ORDER: Readonly<Record<AreaId, Readonly<Partial<Record<Persona,
  * from TASK-022; UXI-002 "Kasir" (CAP-21), from TASK-027, which leads to the
  * till at `/till` since TASK-029, whose server sends a user without an OPEN
  * session to Buka sesi kas; UXI-004 "Sesi kas" (CAP-21) of a cashier and the
- * combined account, from TASK-030 — the Owner reaches it through Laporan.
+ * combined account, from TASK-030 — the Owner reaches it through Laporan; UXI-003 "Penjualan" (CAP-21,
+ * CAP-22), from TASK-031.
  */
 export const DESTINATIONS: Readonly<Partial<Record<DestinationId, DestinationEntry>>> = {
     till: { label: 'sales.till.title', href: '/till', icon: 'till', capabilities: ['CAP-21'] },
+    sales: { label: 'sales.list.title', href: '/sales', icon: 'receipt', capabilities: ['CAP-21', 'CAP-22'] },
     sessions: { label: 'cash.sessions.title', href: '/cash-sessions', icon: 'drawer', capabilities: ['CAP-21'] },
     stock: { label: 'inventory.stock.title', href: '/stock', icon: 'boxes', capabilities: ['CAP-14'] },
     products: { label: 'catalog.products.title', href: '/products', icon: 'tag', capabilities: ['CAP-02', 'CAP-04'] },

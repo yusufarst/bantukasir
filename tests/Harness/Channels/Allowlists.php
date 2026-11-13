@@ -119,6 +119,33 @@ final class Allowlists
             'receipt.lines.*.quantity', 'receipt.lines.*.unitPrice', 'receipt.lines.*.lineTotal',
             'issuer', 'issuer.name', 'issuer.identity', 'issuer.address', 'issuer.contact', 'issuer.email', 'issuer.header', 'issuer.footer', 'issuer.logo',
         ]],
+        // The print views and the Sales pages (TASK-031), for a holder of CAP-21 on its own and the Owner
+        // on every one: RP-103P, the receipt's snapshot as RP-103 gives it with its template, size and copy
+        // marker; RP-206P, the report's snapshot with the shop's name and document identity; UXP-201's page
+        // of Sales with its filters, and the Owner's registers and people, empty lists for anyone else;
+        // UXP-202's Sale with its frozen lines and its payment. Never a cost or a profit (BR-COST-08).
+        'documents/ReceiptPrint' => ['*' => [
+            'receipt', 'receipt.saleId', 'receipt.number', 'receipt.issuedAt', 'receipt.cashier', 'receipt.sessionNumber', 'receipt.method', 'receipt.total', 'receipt.tendered',
+            'receipt.change', 'receipt.customerName', 'receipt.lines', 'receipt.lines.*', 'receipt.lines.*.lineNo', 'receipt.lines.*.sku', 'receipt.lines.*.name', 'receipt.lines.*.unit',
+            'receipt.lines.*.quantity', 'receipt.lines.*.unitPrice', 'receipt.lines.*.lineTotal',
+            'issuer', 'issuer.name', 'issuer.identity', 'issuer.address', 'issuer.contact', 'issuer.email', 'issuer.header', 'issuer.footer', 'issuer.logo',
+            'template', 'size', 'copy',
+        ]],
+        'documents/SessionReportPrint' => ['*' => [
+            'report', 'report.sessionId', 'report.number', 'report.registerCode', 'report.registerLabel', 'report.responsible', 'report.openedAt', 'report.cutoffAt', 'report.closedAt',
+            'report.openingCash', 'report.saleCount', 'report.saleValue', 'report.cashPayments', 'report.transferPayments', 'report.drawerRefunds', 'report.expectedCash',
+            'report.physicalCash', 'report.variance', 'report.closedBy', 'report.closeReason', 'report.notes', 'report.template', 'issuer', 'issuer.name', 'issuer.identity',
+        ]],
+        'sales/Index' => [
+            'owner' => [...self::SALE_LIST, 'registers.*', 'registers.*.id', 'registers.*.code', 'registers.*.label', 'cashiers.*', 'cashiers.*.id', 'cashiers.*.displayName'],
+            'cashier' => self::SALE_LIST,
+            'combined' => self::SALE_LIST,
+        ],
+        'sales/Show' => ['*' => [
+            'sale', 'sale.id', 'sale.number', 'sale.committedAt', 'sale.cashier', 'sale.customerName', 'sale.total', 'sale.sessionId', 'sale.sessionNumber',
+            'lines', 'lines.*', 'lines.*.lineNo', 'lines.*.sku', 'lines.*.name', 'lines.*.unit', 'lines.*.quantity', 'lines.*.unitPrice', 'lines.*.lineTotal',
+            'payment', 'payment.method', 'payment.tendered', 'payment.change', 'payment.reference',
+        ]],
         'access/UserCreate' => ['owner' => []],
         // UXP-604 also names the account's OPEN cash session, null without one (UXI-340; TASK-030).
         'access/User' => ['owner' => ['user', 'user.id', 'user.displayName', 'user.email', 'user.roles', 'user.roles.*', 'user.status', 'user.version', 'user.passwordSet', 'user.linkExpiresAt', 'user.superAdmin', 'user.self', 'openSession', 'openSession.id']],
@@ -257,6 +284,8 @@ final class Allowlists
         'movement', 'movement.id', 'movement.type', 'movement.quantity', 'movement.baseUnit', 'movement.quantityPrecision', 'movement.recordedAt',
         'movement.product', 'movement.product.id', 'movement.product.name', 'movement.product.sku', 'movement.actorDisplayName', 'movement.reference',
         'movement.reasonCode', 'movement.source', 'movement.source.kind', 'movement.source.id', 'movement.source.at',
+        // A Sale's number, null for another source; its key null outside the viewer's scope (UXI-224; TASK-031).
+        'movement.source.number',
         // The reversal links (COPY_DECK section 9.4; TASK-026).
         'movement.reversedById', 'movement.reversedByAt', 'movement.reversesId', 'movement.reversesAt',
     ];
@@ -289,6 +318,13 @@ final class Allowlists
         'sessions', 'sessions.rows', 'sessions.rows.*', 'sessions.rows.*.id', 'sessions.rows.*.number', 'sessions.rows.*.status', 'sessions.rows.*.registerCode',
         'sessions.rows.*.registerLabel', 'sessions.rows.*.responsible', 'sessions.rows.*.openedAt', 'sessions.rows.*.closedAt', 'sessions.rows.*.variance',
         'sessions.nextCursor', 'sessions.previousCursor', 'registers', 'responsibles',
+    ];
+
+    /** UXP-201 (TASK-031): its filters and page size and one page of Sales; the lists of the Owner's filters, empty here. */
+    private const array SALE_LIST = [
+        'filters', 'filters.from', 'filters.to', 'filters.number', 'filters.cashier', 'filters.register', 'filters.perPage',
+        'sales', 'sales.rows', 'sales.rows.*', 'sales.rows.*.id', 'sales.rows.*.number', 'sales.rows.*.committedAt', 'sales.rows.*.total', 'sales.rows.*.method',
+        'sales.rows.*.cashier', 'sales.nextCursor', 'sales.previousCursor', 'registers', 'cashiers',
     ];
 
     /** UXP-206 (TASK-030): the session and whether the viewer may close it here. */
@@ -348,6 +384,8 @@ final class Allowlists
         // RC-27 to RC-29 and their status check: the mapping with its code (TASK-016).
         'commands.committed.barcode' => ['*' => ['outcome', 'operation', 'commandId', 'repeated', 'result', 'result.type', 'result.id', 'result.number', 'result.location']],
         'commands.resolve.barcode' => ['*' => ['outcome', 'operation', 'commandId', 'result', 'result.type', 'result.id', 'result.number', 'result.location']],
+        // RC-44: the print request and whether it is a copy (DC-01; TASK-031).
+        'commands.committed.print' => ['*' => ['outcome', 'operation', 'commandId', 'repeated', 'result', 'result.type', 'result.id', 'result.copy', 'result.location']],
         // RC-02 and its status check: the session with its number (TASK-027).
         'commands.committed.number' => ['*' => ['outcome', 'operation', 'commandId', 'repeated', 'result', 'result.type', 'result.id', 'result.number', 'result.location']],
         'commands.resolve.number' => ['*' => ['outcome', 'operation', 'commandId', 'result', 'result.type', 'result.id', 'result.number', 'result.location']],

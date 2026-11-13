@@ -52,8 +52,10 @@ final class CommittedData
     }
 
     /**
-     * @param  array{type: string, id: int|null, number?: string, location: string}  $result
-     * @return array{type: string, id: int|null, number?: string, location: string}
+     * A print request of a receipt also says whether it is a copy (RC-44; DC-01; TASK-031).
+     *
+     * @param  array{type: string, id: int|null, number?: string, copy?: bool, location: string}  $result
+     * @return array{type: string, id: int|null, number?: string, copy?: bool, location: string}
      */
     private static function result(array $result): array
     {
@@ -61,6 +63,10 @@ final class CommittedData
 
         if (isset($result['number'])) {
             $allowed['number'] = $result['number'];
+        }
+
+        if (isset($result['copy'])) {
+            $allowed['copy'] = $result['copy'];
         }
 
         $allowed['location'] = $result['location'];

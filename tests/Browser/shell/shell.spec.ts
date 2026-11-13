@@ -59,15 +59,15 @@ for (const persona of Object.keys(PEOPLE) as (keyof typeof PEOPLE)[]) {
             await expect(page.getByRole('banner')).toHaveCount(1);
             await expect(page.getByRole('main')).toHaveCount(1);
 
-            // The destinations that exist are "Kasir" (TASK-027), "Sesi kas" of a cashier and the
-            // combined account (TASK-030), "Stok" (TASK-022), with its badge when products need
-            // attention, "Produk" (TASK-017) and the Owner's "Pengaturan" (TASK-010; EXC-52): in the
-            // side navigation, or the drawer at compact width.
+            // The destinations that exist are "Kasir" (TASK-027), "Penjualan" (TASK-031), "Sesi kas" of
+            // a cashier and the combined account (TASK-030), "Stok" (TASK-022), with its badge when
+            // products need attention, "Produk" (TASK-017) and the Owner's "Pengaturan" (TASK-010;
+            // EXC-52): in the side navigation, or the drawer at compact width.
             const destinations: Readonly<Record<keyof typeof PEOPLE, readonly (string | RegExp)[]>> = {
-                owner: ['Kasir', /^Stok/, 'Produk', 'Pengaturan'],
+                owner: ['Kasir', 'Penjualan', /^Stok/, 'Produk', 'Pengaturan'],
                 ops: [/^Stok/, 'Produk'],
-                cashier: ['Kasir', 'Sesi kas'],
-                combined: ['Kasir', 'Sesi kas', /^Stok/, 'Produk'],
+                cashier: ['Kasir', 'Penjualan', 'Sesi kas'],
+                combined: ['Kasir', 'Penjualan', 'Sesi kas', /^Stok/, 'Produk'],
             };
 
             // Buka sesi kas is a page of the till, whose side navigation is the icon rail without the

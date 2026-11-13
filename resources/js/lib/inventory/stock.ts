@@ -239,6 +239,27 @@ export function sourceLink(source: MovementSource): { readonly href: string; rea
         : { href: receivingPage(source.id), label: t('inventory.movement.source_receipt', { waktu: when }) };
 }
 
+/**
+ * The source of the movement of RP-403 (App\Queries\Inventory\MovementDetail): a receiving document, a manual
+ * issue or, for a SALE_ISSUE, its Sale with its number (UXI-224; TASK-031), whose key is null outside the
+ * viewer's scope, where the source is its text without a link (SEC-AZ-03).
+ */
+export interface MovementDetailSource {
+    readonly kind: 'RECEIVING' | 'MANUAL_ISSUE' | 'SALE';
+    readonly id: number | null;
+    readonly at: string;
+    readonly number: string | null;
+}
+
+/** The page of a movement's source, or null for a text without a link, and the words of its link (UXI-224). */
+export function movementSourceLink(source: MovementDetailSource): { readonly href: string | null; readonly label: string } {
+    if (source.kind === 'SALE') {
+        return { href: source.id === null ? null : `/sales/${String(source.id)}`, label: t('inventory.movement.source_sale', { nomor: source.number ?? '' }) };
+    }
+
+    return source.id === null ? { href: null, label: formatDateTime(source.at) } : sourceLink({ kind: source.kind, id: source.id, at: source.at });
+}
+
 /** A row of RP-402 (App\Queries\Inventory\StockHistory). */
 export interface HistoryRow {
     readonly id: number;

@@ -15,7 +15,11 @@ export function ReceiptPaper({ size, label, copyMarker, children }: { size: Pape
     return (
         <div className={'bk-paper-stage'}>
             <article className={'bk-paper'} data-paper={size} aria-label={label} tabIndex={0}>
-                {copyMarker !== undefined && <p className={'bk-paper__copy'}>{copyMarker}</p>}
+                {copyMarker !== undefined && (
+                    <p className={'bk-paper__copy-line'}>
+                        <span className={'bk-paper__copy'}>{copyMarker}</span>
+                    </p>
+                )}
                 {children}
             </article>
         </div>

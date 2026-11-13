@@ -28,9 +28,10 @@ final class MovementDetail
 
     /**
      * The movement; a MANUAL_ISSUE's source is its issue, and its reason that of the issue
-     * (BR-INV-19; TASK-023).
+     * (BR-INV-19; TASK-023). Every source carries its number, null but for a Sale's, which the Sales
+     * module reads for a SALE_ISSUE through saleLineOf() (UXI-224; TASK-031, review R-05).
      *
-     * @return array{id: int, type: string, quantity: string, baseUnit: string, quantityPrecision: int, recordedAt: string, product: array{id: int, name: string, sku: string}, actorDisplayName: string, reference: string|null, reasonCode: string|null, source: array{kind: string, id: int, at: string}|null}
+     * @return array{id: int, type: string, quantity: string, baseUnit: string, quantityPrecision: int, recordedAt: string, product: array{id: int, name: string, sku: string}, actorDisplayName: string, reference: string|null, reasonCode: string|null, source: array{kind: string, id: int|null, at: string, number: string|null}|null}
      *
      * @throws NotFound
      */
@@ -72,11 +73,22 @@ final class MovementDetail
             'reference' => Read::nullableText($values, 'reference'),
             'reasonCode' => Read::nullableText($values, 'reason_code'),
             'source' => match (true) {
-                $document !== null => ['kind' => 'RECEIVING', 'id' => $document, 'at' => Read::text($values, 'document_at')],
-                $issue !== null => ['kind' => 'MANUAL_ISSUE', 'id' => $issue, 'at' => Read::text($values, 'issue_at')],
+                $document !== null => ['kind' => 'RECEIVING', 'id' => $document, 'at' => Read::text($values, 'document_at'), 'number' => null],
+                $issue !== null => ['kind' => 'MANUAL_ISSUE', 'id' => $issue, 'at' => Read::text($values, 'issue_at'), 'number' => null],
                 default => null,
             },
         ];
+    }
+
+    /**
+     * The Sale line of a SALE_ISSUE, whose Sale the Sales module reads (UXI-224; STK-10), or null for
+     * any other movement.
+     */
+    public function saleLineOf(int $movementId): ?int
+    {
+        $line = DB::table('stock_movements')->where('id', $movementId)->value('sale_line_id');
+
+        return is_int($line) ? $line : null;
     }
 
     /**

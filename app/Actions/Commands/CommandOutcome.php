@@ -14,7 +14,7 @@ namespace App\Actions\Commands;
 final readonly class CommandOutcome
 {
     /**
-     * @param  array{type: string, id: int|null, number?: string, location: string}|null  $result  null when the viewer may not see it
+     * @param  array{type: string, id: int|null, number?: string, copy?: bool, location: string}|null  $result  null when the viewer may not see it
      * @param  array{url: string, expiresAt: string}|null  $link  the link handed over once, in this answer only
      * @param  int|null  $sessionsEndedOf  the account whose sign-in sessions this commit ended, for the security log
      */

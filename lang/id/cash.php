@@ -61,6 +61,9 @@ return [
     'session_detail' => [
         'title' => 'Detail sesi kas',
         'subtitle' => 'Sesi kas :nomor · :laci',
+        // UXI-141 and UXI-142 (COPY_DECK section 7.11; TASK-031).
+        'print' => 'Cetak laporan',
+        'download_csv' => 'Unduh CSV',
     ],
     'open' => [
         'title' => 'Buka sesi kas',

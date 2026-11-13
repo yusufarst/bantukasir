@@ -4,8 +4,8 @@
 // receipt, Nota Penjualan, session report, labels, CSV export headers. Its
 // keys are copied verbatim from COPY_DECK by the first Task that uses them;
 // TASK-018 adds the label's (COPY_DECK section 17.3); TASK-029 the receipt's
-// that UXP-103 shows from the snapshot (section 17.1). The copy marker is the
-// reprint's, TASK-031's.
+// that UXP-103 shows from the snapshot (section 17.1). TASK-031 adds the copy
+// marker, the print views' and the CSV's (sections 17.1 and 17.2).
 
 return [
     'invoice' => [
@@ -36,6 +36,10 @@ return [
         'closed_by' => 'Ditutup oleh',
         'close_reason' => 'Alasan penutupan',
         'notes' => 'Catatan',
+        // The print and the CSV of DC-02 and DC-03 (COPY_DECK section 17.2; TASK-031).
+        'number' => 'No. sesi: :nomor',
+        'time_zone' => 'Zona waktu: WIB (Asia/Jakarta)',
+        'money_header' => ':kolom (Rp)',
     ],
     'receipt' => [
         'number' => 'No. :nomor',
@@ -49,5 +53,8 @@ return [
         'tendered' => 'Uang diterima',
         'change' => 'Kembalian',
         'customer' => 'Pelanggan: :nama',
+        // The print view's copy marker and the A4 table's line total (COPY_DECK section 17.1; TASK-031).
+        'line_total' => 'Subtotal',
+        'copy_marker' => 'Salinan',
     ],
 ];

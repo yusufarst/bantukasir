@@ -1978,6 +1978,13 @@
         overflow: auto;
     }
 
+    /* A wrapper of the stage, such as the receipt's screen-only preview, lets its grid track shrink
+       below the paper's width, so that a wide paper scrolls in its stage and never the page: a grid
+       item that is not a scroll container is never narrower than its content by default. */
+    .bk-paper-preview {
+        min-width: 0;
+    }
+
     .bk-paper {
         flex: none;
         background: #ffffff;
@@ -2073,14 +2080,60 @@
         line-height: 20px;
     }
 
-    /* The copy marker "Salinan": sentence case, bold, in a 1.5 px box. */
+    /* The copy marker "Salinan": sentence case, bold, in a 1.5 px box; the paper's first element,
+       centred on thermal paper, at the top right of the A4 header (DOCUMENT_CONTRACTS DC-01). */
+    .bk-paper__copy-line {
+        margin-bottom: 2mm;
+        text-align: center;
+    }
+
+    .bk-paper[data-paper='a4'] .bk-paper__copy-line {
+        text-align: right;
+    }
+
     .bk-paper__copy {
         display: inline-block;
-        margin-bottom: 2mm;
         padding: 1px 8px;
         border: 1.5px solid #000000;
         font-weight: var(--weight-bold);
         font-size: 13px;
+    }
+
+    /* The A4 lines as a table: Produk, Jumlah, Harga, Subtotal (DC-01 row 9). */
+    .bk-paper__table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .bk-paper__table th,
+    .bk-paper__table td {
+        padding: 1.5mm 2mm 1.5mm 0;
+        border-bottom: 1px solid #000000;
+        text-align: left;
+        vertical-align: top;
+    }
+
+    .bk-paper__table th:not(:first-child),
+    .bk-paper__table td:not(:first-child) {
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    /* The print control with its reminder that a closed print dialog is not proof of ink (UXI-090). */
+    .bk-print-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 12px;
+    }
+
+    /* A print view in its own tab: only the paper, on a plain page (RP-103P, RP-206P; UXA-23). */
+    .bk-print-view {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        padding: 16px;
     }
 
     /* A control with its disabled reason below it (8.7). */

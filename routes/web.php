@@ -59,8 +59,13 @@ use App\Http\Controllers\Configuration\ProfileController;
 use App\Http\Controllers\Costing\CorrectCostController;
 use App\Http\Controllers\Costing\CorrectionController;
 use App\Http\Controllers\Costing\CostHistoryController;
+use App\Http\Controllers\Documents\ExportSessionReportController;
 use App\Http\Controllers\Documents\LabelPrintController;
+use App\Http\Controllers\Documents\ReceiptPrintController;
 use App\Http\Controllers\Documents\RecordLabelPrintController;
+use App\Http\Controllers\Documents\RecordReceiptPrintController;
+use App\Http\Controllers\Documents\RecordSessionReportPrintController;
+use App\Http\Controllers\Documents\SessionReportPrintController;
 use App\Http\Controllers\Inventory\AdjustmentsController;
 use App\Http\Controllers\Inventory\ConfirmAdjustmentController;
 use App\Http\Controllers\Inventory\ConfirmManualIssueController;
@@ -77,6 +82,7 @@ use App\Http\Controllers\Media\MediaController;
 use App\Http\Controllers\Reporting\CostWorklistController;
 use App\Http\Controllers\Sales\CheckoutSaleController;
 use App\Http\Controllers\Sales\ReceiptController;
+use App\Http\Controllers\Sales\SalesController;
 use App\Http\Controllers\Sales\TillController;
 use App\Http\Controllers\Testing\SpecimenController;
 use Illuminate\Support\Facades\Route;
@@ -350,6 +356,21 @@ Route::middleware(['auth', 'signin.session', 'throttle:authenticated', 'cache.he
     // The receipt (TASK-029): RP-103 for the Sale's own cashier (CAP-21) and the Owner (CAP-22), whose
     // scope its query checks; it takes only its path.
     Route::get('/sales/{sale}/receipt', [ReceiptController::class, 'show'])->middleware(['capability:CAP-21,CAP-22', 'input.allow'])->name('sales.receipt');
+
+    // The documents and the Sales pages (TASK-031), for a holder of CAP-21 on the Sales and sessions of
+    // its own and the Owner on every one (CAP-22), whose scope their queries and Actions check: RP-201,
+    // which takes only its parameters of ROUTE_CONTRACTS, checked again by its FormRequest; RP-202 and
+    // RP-206P, only their paths; RP-103P, only its size; RC-44 to RC-46 in the bucket of every command
+    // and the bucket `print`, without recent authentication.
+    Route::middleware('capability:CAP-21,CAP-22')->group(function (): void {
+        Route::get('/sales', [SalesController::class, 'index'])->middleware('input.allow:from,to,number,cashier,register,after,before,perPage')->name('sales.index');
+        Route::get('/sales/{sale}', [SalesController::class, 'show'])->middleware('input.allow')->name('sales.show');
+        Route::get('/sales/{sale}/receipt/print/{printRequest}', [ReceiptPrintController::class, 'show'])->middleware('input.allow:size')->name('sales.receipt.print');
+        Route::get('/cash-sessions/{session}/report/print/{printRequest}', [SessionReportPrintController::class, 'show'])->middleware('input.allow')->name('sessions.report.print');
+        Route::post('/commands/document.print_receipt', RecordReceiptPrintController::class)->middleware(['throttle:command', 'throttle:print'])->name('commands.document.print_receipt');
+        Route::post('/commands/document.print_session_report', RecordSessionReportPrintController::class)->middleware(['throttle:command', 'throttle:print'])->name('commands.document.print_session_report');
+        Route::post('/commands/document.export_session_report', ExportSessionReportController::class)->middleware(['throttle:command', 'throttle:print'])->name('commands.document.export_session_report');
+    });
 });
 
 // RD-07, a stored image (TASK-010): signed in, with the middleware of every

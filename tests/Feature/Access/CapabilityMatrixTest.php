@@ -400,6 +400,30 @@ final class CapabilityMatrixTest extends DatabaseTestCase
         'RP-206' => ['method' => 'GET', 'path' => '/cash-sessions/{session}', 'json' => true, 'answers' => [
             'guest' => [401, null], 'owner' => [404, null], 'ops' => [403, null], 'cashier' => [404, null], 'combined' => [404, null],
         ]],
+        // TASK-031: the Sales pages, the print views and RC-44 to RC-46 for CAP-21 on its own and CAP-22 on
+        // every one; Operations refused. RP-103P without its size is refused before any read; an empty
+        // command is refused before its Action.
+        'RP-201' => ['method' => 'GET', 'path' => '/sales', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [403, null], 'cashier' => [200, null], 'combined' => [200, null],
+        ]],
+        'RP-202' => ['method' => 'GET', 'path' => '/sales/{sale}', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [404, null], 'ops' => [403, null], 'cashier' => [404, null], 'combined' => [404, null],
+        ]],
+        'RP-103P' => ['method' => 'GET', 'path' => '/sales/{sale}/receipt/print/{printRequest}', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [422, null], 'ops' => [403, null], 'cashier' => [422, null], 'combined' => [422, null],
+        ]],
+        'RP-206P' => ['method' => 'GET', 'path' => '/cash-sessions/{session}/report/print/{printRequest}', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [404, null], 'ops' => [403, null], 'cashier' => [404, null], 'combined' => [404, null],
+        ]],
+        'RC-44' => ['method' => 'POST', 'path' => '/commands/document.print_receipt', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [422, null], 'ops' => [403, null], 'cashier' => [422, null], 'combined' => [422, null],
+        ]],
+        'RC-45' => ['method' => 'POST', 'path' => '/commands/document.print_session_report', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [422, null], 'ops' => [403, null], 'cashier' => [422, null], 'combined' => [422, null],
+        ]],
+        'RC-46' => ['method' => 'POST', 'path' => '/commands/document.export_session_report', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [422, null], 'ops' => [403, null], 'cashier' => [422, null], 'combined' => [422, null],
+        ]],
     ];
 
     /** @var array<string, array{id: int, email: string, password: string}> */

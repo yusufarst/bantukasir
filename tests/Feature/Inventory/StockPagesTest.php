@@ -189,7 +189,7 @@ final class StockPagesTest extends DatabaseTestCase
         $this->assertArrayNotHasKey('costEvidence', $props);
         $read = (array) ($props['movement'] ?? []);
         $this->assertSame(['RECEIPT', '3', 'pcs', 0, 'Hendra', 'NOTA-1', '2026-11-02T03:00:00.000000Z'], [$read['type'], $read['quantity'], $read['baseUnit'], $read['quantityPrecision'], $read['actorDisplayName'], $read['reference'], $read['recordedAt']]);
-        $this->assertSame(['kind' => 'RECEIVING', 'id' => $this->documents[0], 'at' => '2026-11-02T03:00:00.000000Z'], $read['source']);
+        $this->assertSame(['kind' => 'RECEIVING', 'id' => $this->documents[0], 'at' => '2026-11-02T03:00:00.000000Z', 'number' => null], $read['source']);
         $this->assertStringNotContainsString('30000', (string) json_encode($read), 'No cost in the movement of a staff account (CAP-14).');
 
         // The evidence as it is after the Owner's corrections, with how many there were (TASK-025).

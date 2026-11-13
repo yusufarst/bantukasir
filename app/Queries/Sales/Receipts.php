@@ -102,6 +102,17 @@ final class Receipts
         ];
     }
 
+    /**
+     * The template version that the Sale's snapshot names, for its print view (RP-103P; ARC-45;
+     * TASK-031); read after forViewer() has checked the viewer's scope.
+     */
+    public function template(int $sale): string
+    {
+        $version = DB::table('receipt_snapshots')->where('sale_id', $sale)->value('template_version');
+
+        return is_string($version) ? $version : throw new LogicException('A Sale has its receipt snapshot (SCHEMA section 5.9).');
+    }
+
     private static function money(mixed $value): string
     {
         if (! is_int($value) && ! is_string($value)) {
