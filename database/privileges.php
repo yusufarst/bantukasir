@@ -291,6 +291,12 @@ return [
             'class' => 'F',
             'runtime' => ['select' => true, 'insert' => true],
         ],
+        // The Owner's review notes on a CLOSED session (SCHEMA section 5.10; TASK-032): insert-only,
+        // never edited or removed (D-069 (f)).
+        'cash_session_review_notes' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
 
         // Sales (SCHEMA section 5.9; TASK-028): the Sale and its records, never changed, and the
         // running totals of its later corrections, whose amounts alone change.

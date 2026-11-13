@@ -6,6 +6,7 @@ use App\Actions\Access\BootstrapInput;
 use App\Actions\Access\BootstrapInstallation;
 use App\Actions\Access\ConsumeLink;
 use App\Actions\Access\CreateStaffAccount;
+use App\Actions\Cash\AddReviewNote;
 use App\Actions\Cash\CloseCashSession;
 use App\Actions\Cash\CreateCashRegister;
 use App\Actions\Cash\OpenCashSession;
@@ -535,6 +536,17 @@ final class TokoContoh
         $id = app(CloseCashSession::class)->execute(new CommandContext($actor, $envelope, app(Clock::class)->now()))->result['id'] ?? null;
 
         return is_int($id) ? $id : throw new LogicException('The fixture session was not closed.');
+    }
+
+    /**
+     * The Owner's review note on a CLOSED session through RC-43's Action (TASK-032; EXECUTION_CONTEXT
+     * EXC-45): the note's internal key.
+     *
+     * @throws DatabaseRefused
+     */
+    public static function reviewNote(int $session, string $text = 'Selisih sudah dijelaskan kasir.'): int
+    {
+        return self::asOwner(AddReviewNote::class, AddReviewNote::OPERATION, ['sessionId' => $session, 'text' => $text]);
     }
 
     /**

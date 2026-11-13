@@ -168,6 +168,10 @@ final class RouteInventoryTest extends TestCase
         'POST /commands/document.print_receipt' => ['commands.document.print_receipt', 'RC-44', 'CAP-21,CAP-22', [...self::SIGNED_IN, 'capability:CAP-21,CAP-22', 'throttle:command', 'throttle:print']],
         'POST /commands/document.print_session_report' => ['commands.document.print_session_report', 'RC-45', 'CAP-21,CAP-22', [...self::SIGNED_IN, 'capability:CAP-21,CAP-22', 'throttle:command', 'throttle:print']],
         'POST /commands/document.export_session_report' => ['commands.document.export_session_report', 'RC-46', 'CAP-21,CAP-22', [...self::SIGNED_IN, 'capability:CAP-21,CAP-22', 'throttle:command', 'throttle:print']],
+        // TASK-032: RP-207 and RC-04, with recent authentication, for CAP-23; RC-43 for CAP-22, without.
+        'GET /cash-sessions/{session}/assisted-close' => ['sessions.assisted_close', 'RP-207', 'CAP-23', [...self::SIGNED_IN, 'capability:CAP-23', 'input.allow']],
+        'POST /commands/cash_session.close_assisted' => ['commands.cash_session.close_assisted', 'RC-04', 'CAP-23', [...self::SIGNED_IN, 'capability:CAP-23', 'throttle:command', 'password.confirm']],
+        'POST /commands/review_note.add' => ['commands.review_note.add', 'RC-43', 'CAP-22', [...self::SIGNED_IN, 'capability:CAP-22', 'throttle:command']],
     ];
 
     public function test_the_routes_are_exactly_those_listed_each_with_its_gate(): void

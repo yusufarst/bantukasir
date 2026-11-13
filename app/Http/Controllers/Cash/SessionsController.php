@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Cash;
 
 use App\Domain\Access\Capabilities;
 use App\Domain\Access\Capability;
+use App\Domain\Cash\ReviewNotes;
 use App\Domain\Cash\Sessions;
 use App\Domain\Cash\SessionSales;
 use App\Domain\Sales\Sales;
@@ -27,13 +28,18 @@ use Inertia\Response;
  * the registers and the people of the filters "Laci kas" and "Penanggung jawab" (UXI-136). RP-206: one
  * session in scope, NOT_FOUND otherwise (TR-ERR-03); an OPEN session with its running figures, which
  * the Sales module's query gives (STK-10), and whether the viewer may close it here — its own
- * (UXI-139); a CLOSED session with its immutable report (BR-CASH-19). The print and export controls
- * are TASK-031's, the Owner's review notes and assisted close TASK-032's, and the list of the
- * drawer-funded refunds beside the variance (UXI-143) TASK-034's, which pays the first one: until
- * then their total is Rp0 in the figures.
+ * (UXI-139), and, for the Owner, whether he may close it with an Owner-assisted close — another
+ * user's (UXI-140); a CLOSED session with its immutable report (BR-CASH-19) and, for the Owner, its
+ * review notes as a deferred prop (UXI-144). The print and export controls are TASK-031's, the
+ * Owner's review notes and assisted close TASK-032's, and the list of the drawer-funded refunds beside
+ * the variance (UXI-143) TASK-034's, which pays the first one: until then their total is Rp0 in the
+ * figures.
  */
 final class SessionsController
 {
+    /** The Owner's deferred prop of RP-206, the review notes (UXI-144; TASK-032). */
+    public const string NOTES = 'notes';
+
     public function index(SessionsPageRequest $request, SessionRecords $sessions, CashRegisterRows $registers): Response
     {
         $viewer = self::viewer($request);
@@ -59,14 +65,13 @@ final class SessionsController
     /**
      * @throws NotFound
      */
-    public function show(Request $request, string $session, SessionRecords $sessions, Sales $sales): Response
+    public function show(Request $request, string $session, SessionRecords $sessions, Sales $sales, ReviewNotes $notes): Response
     {
         $viewer = self::viewer($request);
         $read = $sessions->detail($session, $viewer);
         $found = $read['session'];
         $report = $read['report'];
-
-        return Inertia::render('cash/Session', [
+        $props = [
             'session' => [
                 'id' => $found['id'],
                 'number' => $found['number'],
@@ -78,11 +83,21 @@ final class SessionsController
                 'closedAt' => $found['closedAt'],
                 // UXI-139: the responsible user's own OPEN session.
                 'canClose' => $found['status'] === Sessions::OPEN && $found['own'] && Capabilities::allows($viewer, Capability::Cap21),
+                // UXI-140: another user's OPEN session, for the Owner (CAP-23; TASK-032).
+                'canAssistedClose' => $found['status'] === Sessions::OPEN && ! $found['own'] && Capabilities::allows($viewer, Capability::Cap23),
             ],
             'figures' => $report === null ? SessionSales::of($sales->ofSession($found['id']))->figures($read['openingCash']) : $report['figures'],
             // The count of the report, every field null while the session is OPEN.
             'count' => $report === null ? ['physicalCash' => null, 'variance' => null, 'closedBy' => null, 'closeReason' => null, 'notes' => null] : $report['count'],
-        ]);
+        ];
+
+        // UXI-144: the Owner's review notes of a CLOSED session, a deferred prop that the page reads
+        // again after "Simpan catatan" (TASK-032); nobody else reads them (CAP-22).
+        if ($report !== null && Capabilities::allows($viewer, Capability::Cap22)) {
+            $props[self::NOTES] = Inertia::defer(static fn (): array => $notes->of($found['id']));
+        }
+
+        return Inertia::render('cash/Session', $props);
     }
 
     private static function viewer(Request $request): User

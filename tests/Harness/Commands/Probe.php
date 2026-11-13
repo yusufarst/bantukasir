@@ -20,10 +20,12 @@ use Illuminate\Database\Connection;
  *
  * Its family is that of the Owner's review note (INTERACTION_CONTRACTS
  * section 1.4), a family with a label and a panel text in COPY_DECK section
- * 14.1 whose only command, `review_note.add`, no Task has built yet: so the
+ * 14.1 whose only command, `review_note.add`, no Task had built then: so the
  * command client's panels, its block of NC-13 and the rows of UXP-006 show
- * the probe with real words (TASK-009 evidence, the readings), and no real
- * command is blocked by a probe's unresolved request.
+ * the probe with real words (TASK-009 evidence, the readings). Since TASK-032
+ * builds RC-43, a probe's unresolved request also blocks the Owner's review
+ * note in the same browser, as one of its family would; the tests that send
+ * a probe settle it, or sign in a person whose notes they never add.
  */
 final class Probe
 {

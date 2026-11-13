@@ -12,7 +12,8 @@ import { AppShell } from '@/layouts/AppShell';
 import { PageContainer, PageHeader } from '@/layouts/Page';
 import { useWidthClass } from '@/layouts/widthClass';
 import { holdLink, rolesText, statusText, takeSavedNote, USER_COMMANDS, userPage, usersListAddress, type RoleCode, type StatusCode } from '@/lib/access/users';
-import { sessionPage } from '@/lib/cash/sessions';
+import { CloseSessionEntry } from '@/lib/cash/Parts';
+import { assistedClosePage, sessionPage } from '@/lib/cash/sessions';
 import { blockingRequest, committedText } from '@/lib/commands/families';
 import { CommandPanels } from '@/lib/commands/Panels';
 import { useUnresolved } from '@/lib/commands/unresolved';
@@ -29,8 +30,8 @@ import type { DestinationId } from '@/lib/navigation';
 // never confirms and needs recent authentication; it updates the page in place with its
 // message, and issuing a link leads to UXP-606. An unresolved request of the family blocks
 // the others, but never Nonaktifkan or Cabut tautan (NC-13 (d)). TASK-030 adds the OPEN
-// cash session with "Detail sesi kas" (UXI-340), TASK-032 its "Tutup sesi oleh Pemilik",
-// and TASK-042 the way back to UXP-612 (UXI-349).
+// cash session with "Detail sesi kas" (UXI-340), TASK-032 its "Tutup sesi oleh Pemilik"
+// for another user's session, and TASK-042 the way back to UXP-612 (UXI-349).
 
 const DESTINATION: DestinationId = 'settings';
 
@@ -193,10 +194,12 @@ function UserPage({ title, user, openSession }: { title: string; user: Account; 
                 </Card>
                 {openSession.id !== null && (
                     // UXI-340: the account's OPEN cash session, before and after a deactivation (D-069 (d)),
-                    // with "Detail sesi kas"; "Tutup sesi oleh Pemilik" is TASK-032's.
+                    // with "Detail sesi kas" and, for another user's, "Tutup sesi oleh Pemilik" (TASK-032),
+                    // waiting while the Owner holds an unresolved close request (NC-13 (a)).
                     <Section title={t('access.user_detail.open_session')}>
                         <div className={'bk-actions'}>
                             <ButtonLink href={sessionPage(openSession.id)} label={t('cash.session_detail.title')} variant={'secondary'} />
+                            {!user.self && <CloseSessionEntry variant={'secondary'} href={assistedClosePage(openSession.id)} label={t('cash.assisted_close.title')} />}
                         </div>
                     </Section>
                 )}

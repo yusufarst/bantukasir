@@ -107,6 +107,9 @@ final class Allowlists
             'combined' => self::SESSION_LIST,
         ],
         'cash/Session' => ['*' => [...self::SESSION, ...self::SESSION_FIGURES]],
+        // UXP-207, the Owner's alone (TASK-032): the session's header with its responsible user; its close
+        // preview a deferred prop read apart.
+        'cash/AssistedClose' => ['owner' => ['session', 'session.id', 'session.number', 'session.registerCode', 'session.registerLabel', 'session.responsible']],
         // The till and its payment view (TASK-029), for every holder of CAP-21 in its own OPEN session: the
         // view, the session's header, the onboarding freeze and the active categories of the search's
         // filter; never a product, a price or a cost, which RD-01 carries. The receipt, for its cashier and
@@ -327,10 +330,10 @@ final class Allowlists
         'sales.rows.*.cashier', 'sales.nextCursor', 'sales.previousCursor', 'registers', 'cashiers',
     ];
 
-    /** UXP-206 (TASK-030): the session and whether the viewer may close it here. */
+    /** UXP-206 (TASK-030): the session and whether the viewer may close it here, own or, for the Owner, assisted (TASK-032). */
     private const array SESSION = [
         'session', 'session.id', 'session.number', 'session.status', 'session.registerCode', 'session.registerLabel', 'session.responsible',
-        'session.openedAt', 'session.closedAt', 'session.canClose',
+        'session.openedAt', 'session.closedAt', 'session.canClose', 'session.canAssistedClose',
     ];
 
     /** UXP-206 (TASK-030): the running figures of an OPEN session or its report's, and the count, null fields while OPEN. */
@@ -361,6 +364,15 @@ final class Allowlists
             'preview', 'preview.sessionId', 'preview.activityVersion', 'preview.figures', 'preview.figures.openingCash', 'preview.figures.saleCount', 'preview.figures.saleValue',
             'preview.figures.cashPayments', 'preview.figures.transferPayments', 'preview.figures.drawerRefunds', 'preview.figures.expectedCash', 'preview.unresolvedCheckouts',
         ]],
+        // TASK-032: UXP-207's close preview, the Owner's alone, with the responsible user's unresolved
+        // checkouts by intent, never a payload or an amount of them (ADR-009 section 2); UXP-206's review
+        // notes of a CLOSED session, the Owner's alone, with their authors' frozen names.
+        'cash/AssistedClose' => ['owner' => [
+            'preview', 'preview.sessionId', 'preview.activityVersion', 'preview.figures', 'preview.figures.openingCash', 'preview.figures.saleCount', 'preview.figures.saleValue',
+            'preview.figures.cashPayments', 'preview.figures.transferPayments', 'preview.figures.drawerRefunds', 'preview.figures.expectedCash', 'preview.unresolvedCheckouts',
+            'preview.unresolvedCheckouts.*', 'preview.unresolvedCheckouts.*.sourceIntentId', 'preview.unresolvedCheckouts.*.receivedAt',
+        ]],
+        'cash/Session' => ['owner' => ['notes', 'notes.*', 'notes.*.id', 'notes.*.text', 'notes.*.recordedAt', 'notes.*.author']],
     ];
 
     /**

@@ -1,19 +1,19 @@
 import { usePage } from '@inertiajs/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAnnounce } from '@/components/ui/Announcer';
 import { Button, ButtonLink } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { LoadMore } from '@/components/ui/Data';
 import { Notice } from '@/components/ui/Notice';
-import { EmptyState, LoadFailed, Loading, RecoveryPanel, StillSubmitting } from '@/components/ui/States';
+import { EmptyState, LoadFailed, Loading, RecoveryPanel } from '@/components/ui/States';
 import { AppShell } from '@/layouts/AppShell';
 import { PageContainer, PageHeader } from '@/layouts/Page';
 import type { CommandResult } from '@/lib/commands/answers';
-import { announceSettled, checkStatus, recheckDelay, RECORD_CHECK_WAIT_MINUTES } from '@/lib/commands/client';
-import { committedText, familyLabel, familyMustNot, isLabelledFamily } from '@/lib/commands/families';
+import { announceSettled, RECORD_CHECK_WAIT_MINUTES } from '@/lib/commands/client';
+import { familyLabel, familyMustNot, isLabelledFamily } from '@/lib/commands/families';
 import { releaseReference } from '@/lib/commands/references';
+import { CheckNote, useRowCheck } from '@/lib/commands/RowCheck';
 import { forgetReceipt, readReceipts, refreshReceipts, useUnresolved, type ReceiptRow, type UnresolvedRequest } from '@/lib/commands/unresolved';
-import { leaveSignedInSession } from '@/lib/browserSession';
 import { formatCount, formatDateTime } from '@/lib/format';
 import { t } from '@/lib/i18n';
 
@@ -31,9 +31,10 @@ import { t } from '@/lib/i18n';
 // without an answer leaves the request as it was. A request resolved as
 // committed says so here, with "Lihat hasil" (UXI-056) to its result page
 // where one exists: RP-406 of a receiving (TASK-022), RP-409 of a manual issue
-// (TASK-023), RP-103 of a Sale (TASK-029), RP-206 of a close (TASK-030); the Tasks of the other
-// result pages add their operations to RESULT_PAGES. The result page is
-// authorized again when it opens (SEC-AZ-06).
+// (TASK-023), RP-103 of a Sale (TASK-029), RP-206 of a close (TASK-030) and of
+// an Owner-assisted close (TASK-032); the Tasks of the other result pages add
+// their operations to RESULT_PAGES. The result page is authorized again when
+// it opens (SEC-AZ-06). Each card's status check is lib/commands/RowCheck.tsx.
 
 interface SharedProps {
     readonly auth: { readonly user: { readonly id: number; readonly roles: readonly string[] } };
@@ -44,8 +45,8 @@ interface SharedProps {
 /** The home of every role (RN-01), named "halaman awal" (NC-12). */
 const HOME = '/';
 
-/** The operations whose result page exists (UXI-056; INTERACTION_CONTRACTS section 9): RP-206 of a close since TASK-030. */
-const RESULT_PAGES: readonly string[] = ['receiving.confirm', 'manual_issue.confirm', 'sale.checkout', 'cash_session.close'];
+/** The operations whose result page exists (UXI-056; INTERACTION_CONTRACTS section 9): RP-206 of a close since TASK-030, of an assisted one since TASK-032. */
+const RESULT_PAGES: readonly string[] = ['receiving.confirm', 'manual_issue.confirm', 'sale.checkout', 'cash_session.close', 'cash_session.close_assisted'];
 
 /** The result page of a committed request, from its answer's location, or null. */
 function resultPageOf(operation: string, result: CommandResult | null): string | null {
@@ -183,131 +184,6 @@ function RequestsPage({ title }: { title: string }) {
     );
 }
 
-type CheckView = { readonly kind: 'idle' } | { readonly kind: 'checking' } | { readonly kind: 'in_progress' } | { readonly kind: 'no_answer' } | { readonly kind: 'epoch_stale' };
-
-/**
- * The status check of one card (UXI-055, UXI-058): its answer, the automatic
- * repeats while the original is still running, and the conclusion that the
- * page announces. A request that stays HELD keeps "Cek status" only.
- */
-function useRowCheck(request: { operation: string; sourceIntentId: string; recoveryEpoch: string | null }, epoch: string | null, onConcluded: (text: string, href?: string | null) => void, onResolved: () => void) {
-    const [view, setView] = useState<CheckView>({ kind: 'idle' });
-    const timer = useRef<number | null>(null);
-    const done = useRef(0);
-    const live = useRef(true);
-
-    useEffect(
-        () => () => {
-            live.current = false;
-
-            if (timer.current !== null) {
-                window.clearTimeout(timer.current);
-            }
-        },
-        [],
-    );
-
-    const run = useCallback(
-        async (background: boolean): Promise<void> => {
-            const sentEpoch = request.recoveryEpoch ?? epoch;
-
-            if (sentEpoch === null) {
-                setView({ kind: 'no_answer' });
-
-                return;
-            }
-
-            setView({ kind: 'checking' });
-            const answer = await checkStatus({ operation: request.operation, sourceIntentId: request.sourceIntentId, recoveryEpoch: sentEpoch }, background);
-
-            if (!live.current) {
-                return;
-            }
-
-            switch (answer.kind) {
-                case 'committed':
-                    onResolved();
-                    onConcluded(committedText(request.operation), resultPageOf(request.operation, answer.result));
-
-                    return;
-                case 'not_committed':
-                    onResolved();
-                    onConcluded(t('commands.resolution.not_committed'));
-
-                    return;
-                case 'epoch_stale':
-                    setView({ kind: 'epoch_stale' });
-
-                    return;
-                case 'in_progress': {
-                    setView({ kind: 'in_progress' });
-                    const delay = recheckDelay(done.current);
-                    done.current += 1;
-                    const repeat = (): void => {
-                        if (!live.current) {
-                            return;
-                        }
-
-                        timer.current = document.visibilityState === 'visible' ? null : window.setTimeout(repeat, delay);
-
-                        if (timer.current === null) {
-                            void run(true);
-                        }
-                    };
-
-                    timer.current = window.setTimeout(repeat, delay);
-
-                    return;
-                }
-                case 'not_run':
-                    if (answer.reason === 'signed_out') {
-                        leaveSignedInSession();
-
-                        return;
-                    }
-
-                    setView({ kind: 'no_answer' });
-
-                    return;
-                case 'no_answer':
-                    setView({ kind: 'no_answer' });
-            }
-        },
-        [request.operation, request.sourceIntentId, request.recoveryEpoch, epoch, onConcluded, onResolved],
-    );
-
-    const check = (): void => {
-        if (view.kind === 'checking') {
-            return;
-        }
-
-        done.current = 0;
-
-        if (timer.current !== null) {
-            window.clearTimeout(timer.current);
-            timer.current = null;
-        }
-
-        void run(false);
-    };
-
-    return { view, check };
-}
-
-/** The note under a card after a check that did not conclude (COPY_DECK section 14.2). */
-function CheckNote({ view }: { view: CheckView }) {
-    const text = view.kind === 'no_answer' ? t('commands.resolution.no_answer') : view.kind === 'in_progress' ? t('commands.resolution.in_progress') : null;
-
-    return (
-        <>
-            {view.kind === 'checking' && <StillSubmitting active={true} />}
-            <p className={'bk-meta'} role={'status'}>
-                {text}
-            </p>
-        </>
-    );
-}
-
 /** A card of the user's own request (UXI-055). */
 function OwnRequest({ request, userId, epoch, onConcluded }: { request: UnresolvedRequest; userId: number; epoch: string | null; onConcluded: (text: string, href?: string | null) => void }) {
     const resolved = useCallback((): void => {
@@ -315,7 +191,7 @@ function OwnRequest({ request, userId, epoch, onConcluded }: { request: Unresolv
         forgetReceipt(request);
         announceSettled();
     }, [userId, request]);
-    const { view, check } = useRowCheck(request, epoch, onConcluded, resolved);
+    const { view, check } = useRowCheck(request, epoch, onConcluded, resolved, resultPageOf);
 
     if (!isLabelledFamily(request.family)) {
         return null;
@@ -342,7 +218,7 @@ function OwnRequest({ request, userId, epoch, onConcluded }: { request: Unresolv
 /** A card of another user's request, for the Owner (UXI-058). */
 function OtherRequest({ row, epoch, onConcluded }: { row: ReceiptRow; epoch: string | null; onConcluded: (text: string, href?: string | null) => void }) {
     const resolved = useCallback((): void => announceSettled(), []);
-    const { view, check } = useRowCheck({ ...row, recoveryEpoch: null }, epoch, onConcluded, resolved);
+    const { view, check } = useRowCheck({ ...row, recoveryEpoch: null }, epoch, onConcluded, resolved, resultPageOf);
 
     if (!isLabelledFamily(row.family)) {
         return null;

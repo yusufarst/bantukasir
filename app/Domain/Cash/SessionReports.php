@@ -26,15 +26,20 @@ final class SessionReports
     /** The kind of a close by the session's responsible user (SCHEMA section 5.10; RC-03). */
     public const string OWN = 'OWN';
 
+    /** The kind of the Owner's close of another user's session, with its reason (SCHEMA section 5.10; RC-04; BR-CASH-18). */
+    public const string OWNER_ASSISTED = 'OWNER_ASSISTED';
+
     /** The version of the template that renders a report of DC-02 (SCHEMA section 5.10; ARC-45). */
     public const string TEMPLATE = 'session_report.1';
 
     /**
-     * Adds the own close of the session, CLOSED: its time, its actor, the cutoff it was counted
-     * against and the count (BR-CASH-13). The close's deferred key refuses a commit without its
-     * report, and the session's presence key one without the close (BR-CASH-17).
+     * Adds the close of the session, CLOSED: its time, its actor, the cutoff it was counted against
+     * and the count (BR-CASH-13); an own close without a reason, an Owner-assisted one with the
+     * Owner's reason, its actor the Owner while the responsible user stays (BR-CASH-18). The close's
+     * deferred key refuses a commit without its report, and the session's presence key one without the
+     * close (BR-CASH-17).
      */
-    public function record(ClosingSession $session, CashCount $count, int $actorId, string $actorDisplayName, string $at, int $commandId): void
+    public function record(ClosingSession $session, CashCount $count, int $actorId, string $actorDisplayName, string $at, int $commandId, ?string $assistedReason = null): void
     {
         self::requireTransaction();
 
@@ -42,10 +47,10 @@ final class SessionReports
             'session_id' => $session->id,
             'session_status' => Sessions::CLOSED,
             'closed_at' => $at,
-            'close_kind' => self::OWN,
+            'close_kind' => $assistedReason === null ? self::OWN : self::OWNER_ASSISTED,
             'close_actor_user_id' => $actorId,
             'close_actor_display_name' => $actorDisplayName,
-            'close_reason' => null,
+            'close_reason' => $assistedReason,
             'activity_version_at_close' => $session->activityVersion,
             'physical_cash' => $count->physical->toCanonical(),
             'expected_cash' => $count->expected->toCanonical(),
@@ -56,12 +61,13 @@ final class SessionReports
 
     /**
      * Adds the report of the close just added (G-17): every figure of BR-CASH-20 as it was counted,
-     * the drawer-funded refunds of the session — none before TASK-034 pays one — and the keys of
-     * the Sales, Payments and refunds it was derived from (BR-CASH-13).
+     * the drawer-funded refunds of the session — none before TASK-034 pays one — the keys of the
+     * Sales, Payments and refunds it was derived from (BR-CASH-13), and the close's reason as the close
+     * recorded it, an Owner-assisted close's (BR-CASH-20; G-17).
      *
      * @param  array{code: string, label: string}  $register
      */
-    public function freeze(ClosingSession $session, array $register, ProfileRevision $revision, SessionSales $sales, CashCount $count, string $actorDisplayName, string $at): void
+    public function freeze(ClosingSession $session, array $register, ProfileRevision $revision, SessionSales $sales, CashCount $count, string $actorDisplayName, string $at, ?string $assistedReason = null): void
     {
         self::requireTransaction();
 
@@ -89,7 +95,7 @@ final class SessionReports
             'drawer_refund_total' => 0,
             'drawer_refunds' => '[]',
             'source_ids' => json_encode(['saleIds' => $sales->saleIds, 'paymentIds' => $sales->paymentIds, 'drawerRefundIds' => []], JSON_THROW_ON_ERROR),
-            'close_reason' => null,
+            'close_reason' => $assistedReason,
             'notes' => null,
         ]);
     }

@@ -528,6 +528,23 @@
         font-variant-numeric: tabular-nums;
     }
 
+    /* A text written on several lines, shown with its line breaks and wrapped anywhere so that a long
+       word never scrolls the page sideways (UXI-144; TASK-032). */
+    .bk-text-lines {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        min-width: 0;
+    }
+
+    /* A text of several lines (UXI-146; TASK-032): four lines at least, its padding the field's, taller
+       only by the user's hand. */
+    .bk-input--area .bk-input__control {
+        min-height: 6.5em;
+        padding: 10px 12px;
+        line-height: 1.5;
+        resize: vertical;
+    }
+
     .bk-input[data-invalid='true'] {
         border-color: var(--color-danger-fg);
         box-shadow: 0 0 0 1px var(--color-danger-fg);

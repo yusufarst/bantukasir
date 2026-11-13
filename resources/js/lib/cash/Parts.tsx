@@ -11,14 +11,15 @@ import { t } from '@/lib/i18n';
 /**
  * "Tutup sesi kas", the entry of the close (UXI-077 in the till's header, UXI-139 on UXP-206): a link to
  * RP-105, disabled with its reason and the way to UXP-006 while this user holds an unresolved close
- * request (NC-13 (a); COPY_DECK section 15, `cash.close.disabled_unresolved`).
+ * request (NC-13 (a); COPY_DECK section 15, `cash.close.disabled_unresolved`). With the label and page of
+ * the Owner-assisted close, "Tutup sesi oleh Pemilik" (UXI-140 on UXP-206, UXI-340 on UXP-604; TASK-032),
+ * whose RC-04 is of the same family.
  */
-export function CloseSessionEntry({ variant }: { variant: ButtonVariant }) {
+export function CloseSessionEntry({ variant, href = CLOSE_SESSION_PAGE, label = t('cash.close.title') }: { variant: ButtonVariant; href?: string; label?: string }) {
     const unresolved = useUnresolved();
-    const label = t('cash.close.title');
 
     if (blockingRequest(unresolved.union, CLOSE_SESSION_COMMAND.operation, CLOSE_SESSION_COMMAND.family) === null) {
-        return <ButtonLink href={CLOSE_SESSION_PAGE} label={label} variant={variant} />;
+        return <ButtonLink href={href} label={label} variant={variant} />;
     }
 
     const reason = (
