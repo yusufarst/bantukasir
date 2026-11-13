@@ -25,6 +25,10 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | The review, round 1 (section 9) | On `a2c7ea7`, tree `805e9e9` | 14 Nov, 00:04 to 00:29 | about 24 min | `FAIL`: one MUST-FIX of missing proofs, no defect in the code; fixed in checkpoint 3 |
 | Guard | Local, on `81a7090` (checkpoint 3: the review's fixes) | 14 Nov, 00:35 to 00:38 | about 3 min | `PASS`, no candidate |
 | `composer validate`, then `composer lint` | Fast run 3, 43474907612 on `81a7090` | 00:39 to 00:42 | 3 min 10 s for the run | `FAIL`: `composer validate` `PASS`; Pint found one `binary_operator_spaces` in the new lines of `CorrectionReplayTest` (F-8); the later steps did not run |
+| Guard | Local, on `ad74f49` (checkpoint 4: F-8) | 14 Nov, 00:44 to 00:47 | about 3 min | `PASS`, no candidate |
+| `composer validate`, `lint`, `analyse`, `test:unit` (927 tests); `npm run lint`, `typecheck`, `test:unit` | Fast run 4, 43476264819 on `ad74f49` | 00:47 to 00:54 | about 7 min | `PASS` |
+| The changed PostgreSQL and concurrency files: `CorrectionRaceTest` (7 tests), `CapabilityMatrixTest` (7), `RouteInventoryTest` (8), `SignInSessionTest` (10), `LedgerTablesTest` (19), `CheckoutSaleTest` (13), `CorrectionReplayTest` (7, with R-01's and R-04's cases), `CorrectionTablesTest` (10), `RecordCorrectionTest` (10, with R-03's channels) | Same run | 00:54 to 01:02 | 7 min 48 s; the run 15 min 11 s in all | `PASS`, every file |
+| The verification, round 2 (section 9.2) | On `ad74f49`, tree `30fe749` | 01:03 to 01:06 | about 3 min | `PASS`: R-01 FIXED, no finding introduced |
 | The whole of `test:postgres` and `test:race` — with the unchanged files that the change reaches (F-2): the replay's `CorrectCostTest`, `CostCorrectionTablesTest`, `CostPagesTest`, `ConfirmReversalTest`, `ReversalTablesTest`, `ReversalPagesTest`, `ReceivingPagesTest`, `CheckoutReplayTest`, `CostCorrectionRaceTest`, `ReversalRaceTest` and `CheckoutRaceTest`, `QuantityRule`'s `ConfirmReceivingTest`, `ConfirmManualIssueTest` and `ConfirmAdjustmentTest`, and every channel assertion of the changed `ChannelInspector` — the browser suite with `costing.spec.ts` and `reversal.spec.ts`, the build, the image checks | CI on the pull request's final head (CE-44, D-117) | — | — | `NOT_RUN` until then |
 
 ## 2. What was built (contract section 4.1)
@@ -89,7 +93,7 @@ The PostgreSQL and concurrency files that this branch changes run in its fast ru
 | AC-033-01 Only the Owner corrects; CASHIER, OPERATIONS_ADMIN and the combined account refused on the server; a reason and recent authentication required | `RecordCorrectionTest` (the roles, the reason, 423), `CapabilityMatrixTest` RC-06 | `PASS` in fast run 2 (43466349779 on `a2c7ea7`) |
 | AC-033-02 Separate, cumulative money and quantity bounds under RACE-10: a CASH Sale of Rp75.000 paid with Rp100.000 refunded at most Rp75.000; a partial line refund within its bound | `RecordCorrectionTest` (the bounds), `CorrectionRaceTest` RACE-10, `CorrectionTablesTest` | `PASS` in fast run 2 |
 | AC-033-03 A refund without return adds no stock; a damaged return adds no saleable stock; a saleable return posts RETURN_RECEIPT with its cost recovery | `RecordCorrectionTest` (the commit; refund without return) | `PASS` in fast run 2 |
-| AC-033-04 A refund without return keeps cost of goods sold; a saleable return restores the cost of its sale issue once; a correction after a return recovers cost exactly once | `RecordCorrectionTest`, `CorrectionReplayTest` (with R-01's damaged-then-saleable and partial returns), `ReturnAllocationTest`, `ValuationReplayTest`, `CorrectionRaceTest` RACE-11 | `PASS` in fast run 2, the unit tests in its `test:unit`; R-01's cases in fast run 4 (section 1); RC-15's and RC-10's own files on the final head (F-2) |
+| AC-033-04 A refund without return keeps cost of goods sold; a saleable return restores the cost of its sale issue once; a correction after a return recovers cost exactly once | `RecordCorrectionTest`, `CorrectionReplayTest` (with R-01's damaged-then-saleable and partial returns), `ReturnAllocationTest`, `ValuationReplayTest`, `CorrectionRaceTest` RACE-11 | `PASS` in fast run 2, the unit tests in its `test:unit`; R-01's cases `PASS` in fast run 4 (43476264819 on `ad74f49`); RC-15's and RC-10's own files on the final head (F-2) |
 | AC-033-05 Atomic and idempotent; a failure after every write step leaves nothing; the original Sale, Payment, receipt and a closed report unchanged; the correction linked and dated by its posting | `RecordCorrectionTest` (the commit, failure injection, repeats, the closed session) | `PASS` in fast run 2 |
 | AC-033-06 The constraint, deferred and privilege families for the six tables | `CorrectionTablesTest` | `PASS` in fast run 2 |
 
@@ -136,8 +140,19 @@ Agent `bk-reviewer-max`, model `claude-opus-5-5`, effort Max, mode `review`; pac
 | R-06 | NOTE | One product read per line before the locks, up to 200 | Recorded for TASK-048's budgets (TR §13.1); no change |
 | R-07 | NOTE | `LedgerEntry::isReturn()` had no caller | Fixed: removed |
 
-The fixes change tests, the channel harness, an unused method and the evidence, and no production behaviour (CE-40, CE-45). Fast run 3 stopped at Pint on a space in the new lines (F-8); fast run 4 runs the files they touch (section 1).
+The fixes change tests, the channel harness, an unused method and the evidence, and no production behaviour (CE-40, CE-45). Fast run 3 stopped at Pint on a space in the new lines (F-8); fast run 4, 43476264819 on `ad74f49`, ran the files they touch and passed (section 1).
+
+### 9.2 Round 2, the targeted verification
+
+Agent `bk-reviewer-xhigh`, model `claude-opus-5-5`, effort XHigh, mode `verify`; package `review/TASK-033/r2`, tree `30fe749`, previous tree `805e9e9`, HEAD `ad74f49`; 14 November, 01:03 to 01:06; `review-pack.sh --check` `UNCHANGED` after it. Verdict `PASS`: R-01 FIXED — both cases go through RC-06's Action and RC-15's replay, match the required values, recomputed by hand, and fail if R counted the damaged unit (33,333334 first) or each return were rounded alone (33,333333 second); R-04 refused only because the RETURN_RECEIPTs count in the replay's range. No finding introduced: R-07's method has no caller left; `ChannelInspector::paths()` changes only maps keyed by whole numbers alone, which no allowlist named, and the repeated-line assertion is its regression test; R-02's row and F-2 agree with the changed files.
 
 ## 10. Record (CE-50)
 
-Written when the Task is recorded, before its publication.
+- Guard: `guard.sh` `PASS` with no candidate on every pushed head (section 1); `guard.sh --preview` of the uncommitted record, on 14 November 2026, `PASS` with no candidate to judge.
+- Backup impact (EXC-47): the five fact tables are class F, so the manifest's counts include them; the projection is class P, rebuilt from facts; no stored file and no procedure (section 7).
+- The previous merge, TASK-032's pull request #43, is recorded in [its evidence](TASK-032.md) section 11.
+- Documents: SCHEMA section 5.8 (F-6) and STACK_AND_MODULES section 2 (F-7). TASK_PLAN: TASK-033 `DONE`, TASK-034 `READY` (its dependencies TASK-033 and TASK-032 `DONE`, no gate), the totals TODO 15, READY 2, DONE 33; CURRENT_HANDOFF last. No decision taken; the next free decision stays D-129.
+- Fast runs: four of the ten of CE-46, two failing on proven defects of this change, each fixed (F-5, F-8); no CI run was repeated.
+- The run stalled once in the build, before any file was written, and resumed under CE-24 with its lock and phase `BUILD` kept.
+- For later Tasks: F-1, TASK-034 — RC-05 on the engine's hooks and RP-204 at its path; F-3, TASK-040 — refunds on their posting date and the restored cost from the return projections; R-06, TASK-048 — one product read per line before the locks.
+- Next Task: TASK-034, Drawer-funded refunds and the refund pages, effort Max (agent `bk-executor-max`; review `bk-reviewer-max`; verification `bk-reviewer-xhigh`).

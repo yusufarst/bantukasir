@@ -100,8 +100,8 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-030](tasks/TASK-030-session-close.md) | Cash session close and session pages | 6 | S | L | A | TASK-029 | — | `DONE` |
 | [TASK-031](tasks/TASK-031-documents-sales-lookup.md) | Receipt and session documents, sales lookup, print and export | 6 | S | L | A | TASK-030 | — | `DONE` |
 | [TASK-032](tasks/TASK-032-assisted-close-notes.md) | Owner-assisted close and session review notes | 6 | S | M | A | TASK-030, TASK-011 | — | `DONE` |
-| [TASK-033](tasks/TASK-033-refunds-core.md) | Refunds and returns: correction core (server) | 6 | S | XL | A | TASK-031, TASK-025, TASK-028 | — | `READY` |
-| [TASK-034](tasks/TASK-034-drawer-refunds.md) | Drawer-funded refunds and the refund pages | 6 | S | L | A | TASK-033, TASK-032 | — | `TODO` |
+| [TASK-033](tasks/TASK-033-refunds-core.md) | Refunds and returns: correction core (server) | 6 | S | XL | A | TASK-031, TASK-025, TASK-028 | — | `DONE` |
+| [TASK-034](tasks/TASK-034-drawer-refunds.md) | Drawer-funded refunds and the refund pages | 6 | S | L | A | TASK-033, TASK-032 | — | `READY` |
 | [TASK-035](tasks/TASK-035-onboarding.md) | Onboarding and opening stock | 7 | I | L | A | TASK-026, TASK-034 | — | `TODO` |
 | [TASK-036](tasks/TASK-036-reconciliation-repair.md) | Reconciliation, incidents and data-repair procedures | 7 | O | L | A | TASK-034, TASK-020, TASK-013 | — | `TODO` |
 | [TASK-037](tasks/TASK-037-restore-tooling.md) | Restore tooling and recovery procedures | 7 | O | L | A | TASK-013, TASK-035 | — | `TODO` |
@@ -119,7 +119,7 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-049](tasks/TASK-049-release-readiness.md) | Release readiness: staging, UAT and first installation | 10 | R | L | V | TASK-045, TASK-047, TASK-048 | G1, G2, G3, G4, DEVICES, TARGET, GATE-PUBLISH | `TODO` |
 | [TASK-050](tasks/TASK-050-production-pilot.md) | Production release, cutover and pilot acceptance | 10 | R | L | V | TASK-049 | RELEASE, GATE-PUBLISH, G4 | `TODO` |
 
-Totals: `TODO` 16; `READY` 2; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 32; `SUPERSEDED` 0.
+Totals: `TODO` 15; `READY` 2; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 33; `SUPERSEDED` 0.
 
 ## 5. Implementation sequence
 
