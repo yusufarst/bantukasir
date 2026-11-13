@@ -38,7 +38,9 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Image checks; `test:postgres` parts 1 and 2 | CI run 43378119018 on `da1b0ec` | 13 Nov, 13:21 | 7 min 7 s; 30 min 32 s; 21 min 29 s | `PASS` |
 | Command contract: `composer validate` to `test:race`, `npm run lint`, `typecheck`, `test:unit`, `build` | Same run | 13 Nov, 13:21 to 13:35 | about 14 min | `PASS` |
 | Command contract: `npm run test:e2e` | Same run | 13 Nov, 13:35 to 14:21 | cut at the job's 60 min limit | `FAIL` (section 8.4): 7 failed — `documents.spec.ts` 289 to 291 at their time limit, `till.spec.ts` 302 (KS-05) in 4.3 s, `shell/session.spec.ts` 309 and `shell/shell.spec.ts` 324 and 325 at their time limit; the job cancelled before the failure messages were printed |
-| Fix cycle 2 (section 8.4): `npm run lint`, `typecheck` and the browser suite over the changed `documents.spec.ts` | The fast run and CI on the fix's head | — | — | `NOT_RUN` at this writing; the fix's commit starts them |
+| Fix cycle 2 (section 8.4): guard | Local, on `72581e7` | 13 Nov, 14:44 to 14:48 | about 4 min | `PASS`, no candidate |
+| Fix cycle 2: the whole run on its head | CI run 43388303757 on `72581e7` | 13 Nov, 14:48 to 15:21 | Command contract 32 min 42 s; the browser suite 19.9 min | Browser suite `FAIL`: 328 passed, 1 failed (`till.spec.ts` KS-05, section 8.4 CI-2), 2 did not run; `documents.spec.ts`, `shell/session.spec.ts` and `shell/shell.spec.ts` `PASS` (CI-1 fixed); every other step `PASS` |
+| Fix cycle 3 (section 8.4, CI-2): `npm run lint`, `typecheck`, `test:unit` and the browser suite over the changed `Receipt.tsx` and `components.css` | The fast run and CI on the fix's head | — | — | `NOT_RUN` at this writing; the fix's commit starts them |
 
 ## 2. What was built (contract section 4.1)
 
@@ -170,7 +172,21 @@ Head `da1b0ec`, 13 November 2026. Classified as a defect of this Task's browser 
 | ID | Finding | Outcome |
 | --- | --- | --- |
 | CI-1 | `withSales` of `documents.spec.ts` opened Rina's session through the fixture before her sign-in. A cashier with an OPEN session lands on Kasir (`Homes::of`, `/till`), but `signIn` waits only for `/account`, `/stock` or `/till/open-session`, and that wait has no limit of its own: tests 289, 290 and 291 each waited until their time limit (16.0 min, then 2.0 min, then 2.0 min). Their closing `cashSession(context, 'Rina')` never ran, so Rina's session stayed OPEN, and the next sign-ins of Rina waited out their limits the same way: `shell/session.spec.ts` 309, with 310 to 319 skipped because that file runs in serial, and `shell/shell.spec.ts` 324 and 325. The tests that sign Rina in earlier in the run (`cash/close.spec.ts`, `cash/sessions.spec.ts`) passed, because each closes her session before she signs in | Fixed in the test only: `withSales` closes any session Rina still has, signs her in, and then opens the session with its Sales, as `cash/sessions.spec.ts` does. Production code is unchanged, so no targeted verification is needed (CE-42). The fixed tests are the regression check; they run in CI on the fix's head |
-| CI-2 | `till.spec.ts` 302, KS-05, failed in 4.3 s, as Hendra, the Owner, whose sign-in this does not affect. A failure that fast is an assertion that does not retry (axe, the measurements or the page's problems) on the receipt page that this Task changed. The log does not say which assertion | Not fixed: the cause is not proven by the available evidence, and a guess is not a fix. Once CI-1 is fixed, the browser suite finishes within the job's limit and prints KS-05's failure message on the fix's head |
+| CI-2 | `till.spec.ts` 302, KS-05, failed in 4.3 s, as Hendra, the Owner, whose sign-in this does not affect. A failure that fast is an assertion that does not retry (axe, the measurements or the page's problems) on the receipt page that this Task changed. The log does not say which assertion | Not fixed in cycle 2: the cause is not proven by the available evidence, and a guess is not a fix. Once CI-1 is fixed, the browser suite finishes within the job's limit and prints KS-05's failure message on the fix's head |
+
+Fix cycle 3, CI run 43388303757 on `72581e7` (CE-42, failure 2 of 3). CI-1 is fixed: `documents.spec.ts` and the Rina tests of the shell pass. The run printed CI-2's failure message.
+
+| ID | Finding | Outcome |
+| --- | --- | --- |
+| CI-2 | `till.spec.ts:233` via `:910`, at 1440x900: "no sideways scrolling of the page", `scrollWidth` 1729 against `innerWidth` 1440, from the `checked` of a receipt size. The cause is this Task's `Receipt.tsx`, which wraps the preview's `bk-paper-stage` in a `div.bk-no-print`. The section around it is the grid `.bk-stack`. A grid item that is not a scroll container keeps its automatic minimum size, which is its content's width (CSS Grid, the automatic minimum size of grid items). Before the wrapper, the grid item was the stage itself, a scroll container (`overflow: auto`) whose minimum is 0, so a wide paper scrolled inside the stage. With the wrapper in between, the A4 paper (210 mm plus the stage's padding) set the column's minimum width and widened the page | Fixed: the wrapper also carries `bk-paper-preview` (`min-width: 0`, in `components.css` 8.16), so the stage scrolls the paper again and the page does not. The rule `bk-no-print` keeps the preview out of print. The regression check is KS-05 itself, which fails on `72581e7` and runs in CI on the fix's head. Production behaviour changed (the layout of RP-103), so the targeted verification of CE-42 follows |
+
+Targeted verification (CE-42; class A): agent `bk-reviewer-high`, package `r4` (previous `r3`), 13 November 2026; the tree `UNCHANGED` after it. Verdict `PASS`: CI-1 and CI-2 FIXED, no regression, no MUST-FIX or SHOULD-FIX.
+
+| ID | Severity | Finding | Outcome |
+| --- | --- | --- | --- |
+| R-15 | NOTE | KS-05 has not run at its other widths with this Task's receipt page; the fix is correct by reading | Recorded: the run on the fix's head is in section 1, `NOT_RUN` until then |
+| R-16 | NOTE | An already-existing behaviour, from TASK-029 and not caused by these fixes: the stage centres a paper wider than itself with `justify-content: center`, so the left edge of the A4 preview cannot be scrolled to | Recorded for the Owner as a follow-up (for example `safe center` with a check of the left edge); outside this fix cycle |
+| R-17 | NOTE | Rina's session is still closed only at the end of each test in `documents.spec.ts`; a test that fails early can still hold up later sign-ins of Rina | Recorded; optional hardening, outside this fix cycle |
 
 ## 9. Record (CE-50)
 
