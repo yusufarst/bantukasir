@@ -2,6 +2,7 @@
 
 namespace App\Domain\Sales\Corrections;
 
+use App\Domain\Sales\PaymentMethods;
 use LogicException;
 
 /**
@@ -9,13 +10,15 @@ use LogicException;
  * method, CASH or BANK_TRANSFER; for CASH exactly one source, the drawer of one OPEN session or the
  * Owner's own funds, and for BANK_TRANSFER none; the session of a drawer-funded payout; and its reference
  * — the payout actually made, which the Owner types, or for a drawer-funded refund `<Sale number>/<k>`,
- * which the server generates (TASK-034). No rule ties the method to the Sale's own (BR-RFD-05).
+ * which the server generates (TASK-034). No rule ties the method to the Sale's own (BR-RFD-05). The
+ * methods' names are those of PaymentMethods, their one place (ARC-30); the payout's own list stays
+ * explicit, so that a method added to the Sale's list is never a payout method unreviewed.
  */
 final readonly class Payout
 {
-    public const string CASH = 'CASH';
+    public const string CASH = PaymentMethods::CASH;
 
-    public const string BANK_TRANSFER = 'BANK_TRANSFER';
+    public const string BANK_TRANSFER = PaymentMethods::BANK_TRANSFER;
 
     public const string DRAWER = 'DRAWER';
 

@@ -252,7 +252,7 @@ final class SignInSessionTest extends DatabaseTestCase
                 'barcode_active_mappings' => 'token_id',
                 'stock_balances', 'inventory_valuations' => 'product_id',
                 'inventory_posting_block_reopenings' => 'block_id',
-                'issue_cost_allocation_projections' => 'allocation_id',
+                'issue_cost_allocation_projections', 'return_cost_allocation_projections' => 'allocation_id',
                 'cost_incomplete_mark_clearances' => 'mark_id',
                 'sale_correction_totals' => 'sale_id',
                 'sale_line_correction_totals' => 'sale_line_id',
