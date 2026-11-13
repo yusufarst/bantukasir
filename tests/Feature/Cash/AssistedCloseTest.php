@@ -226,6 +226,43 @@ final class AssistedCloseTest extends DatabaseTestCase
         $this->assertSame('CLOSED', $this->watcher()->table('cash_sessions')->where('id', $session)->value('status'));
     }
 
+    public function test_a_held_or_earlier_epoch_checkout_refuses_the_close_until_settled_committed_and_the_new_version_is_counted(): void
+    {
+        // G-27, D-088, D-089 (review R-02): a HELD receipt counts, an earlier-epoch HELD one included; the
+        // Owner's status check settles a committed intent COMMITTED; the version its Sale moved then needs
+        // the preview read again (RECOUNT_REQUIRED, BR-CASH-14) before the close succeeds.
+        $session = TokoContoh::openSession('Rina', $this->register);
+        $this->as('Rina');
+        $sold = $this->checkoutOf($session);
+        $this->postJson('/commands/sale.checkout', $sold)->assertStatus(201);
+        $this->postJson('/commands/sale.checkout', [...$sold, 'payload' => ['sessionId' => $session, 'lines' => [self::line($this->product, '2')], 'payment' => ['method' => 'CASH', 'tendered' => '100000']]])
+            ->assertStatus(409)->assertJsonPath('code', 'IDEMPOTENCY_CONFLICT')->assertJsonPath('outcome', 'HELD');
+        $stale = [...$this->checkoutOf($session), 'recoveryEpoch' => str_repeat('ab', 32)];
+        $this->postJson('/commands/sale.checkout', $stale)->assertStatus(409)->assertJsonPath('code', 'EPOCH_STALE')->assertJsonPath('outcome', 'HELD');
+
+        $this->as('Hendra');
+        $this->confirm('Hendra');
+        $unresolved = 'ux.state.recount.unresolved_checkouts';
+        $this->close($this->envelopeOf($session, '50000', 1))->assertStatus(409)->assertJsonPath('messageKey', $unresolved);
+
+        // The Owner's check settles the HELD repeat COMMITTED; the earlier-epoch receipt still counts.
+        $this->check($sold)->assertOk()->assertJsonPath('outcome', 'COMMITTED');
+        $this->close($this->envelopeOf($session, '50000', 1))->assertStatus(409)->assertJsonPath('messageKey', $unresolved);
+        $this->check($stale)->assertStatus(409)->assertJsonPath('code', 'EPOCH_STALE');
+        $this->close($this->envelopeOf($session, '50000', 1))->assertStatus(409)->assertJsonPath('messageKey', $unresolved);
+
+        // Its intent committed in the current epoch, the Owner's check settles the earlier receipt too; the
+        // close against the version of the earlier preview is refused, and against the new one succeeds.
+        $this->as('Rina');
+        $this->postJson('/commands/sale.checkout', [...$stale, 'recoveryEpoch' => $this->epoch, 'idempotencyKey' => (string) Str::uuid()])->assertStatus(201);
+        $this->as('Hendra');
+        $this->check([...$stale, 'recoveryEpoch' => $this->epoch])->assertOk()->assertJsonPath('outcome', 'COMMITTED');
+        $this->assertSame(['COMMITTED', 'COMMITTED'], $this->outcomesOf($stale));
+        $this->close($this->envelopeOf($session, '50000', 1))->assertStatus(409)->assertJsonPath('code', 'RECOUNT_REQUIRED')->assertJsonPath('messageKey', 'ux.state.recount');
+        $this->close($this->envelopeOf($session, '100000', 2))->assertStatus(201);
+        $this->assertSame([2, 100000, 0], array_values((array) $this->watcher()->table('cash_session_reports')->where('session_id', $session)->first(['completed_sale_count', 'expected_cash', 'variance'])));
+    }
+
     public function test_a_failure_after_every_write_step_leaves_the_session_open_and_every_repeat_answers_the_one_close(): void
     {
         // TS-21, BR-CASH-17: five steps — the session's status, the close, the report, the audit event, the result.

@@ -1,8 +1,8 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect as baseExpect, test, type Locator, type Page } from '@playwright/test';
+import { expect as baseExpect, test, type Locator, type Page, type Route } from '@playwright/test';
 import { ACCESS_TIMEOUT, ACCESS_WAIT, resetPeople, SECURE_LOCAL_ORIGIN, signIn } from '../support/access';
 import { cashSession, type FixtureSession } from '../support/cash';
-import { injected, prepareCommands, receiptOf } from '../support/commands';
+import { injected, prepareCommands, receiptOf, refusal } from '../support/commands';
 import { measure } from '../support/measure';
 import { contextAt, watch, WIDTHS } from '../support/specimen';
 
@@ -25,6 +25,10 @@ test.use(SECURE_LOCAL_ORIGIN);
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'];
 
 const REASON = 'Kasir pulang sebelum menutup sesi.';
+
+const CLOSE_COMMAND = '**/commands/cash_session.close_assisted';
+
+const NOTE_COMMAND = '**/commands/review_note.add';
 
 /** Waits until no transition of a finite length runs, so that axe reads the colours at rest (D-124). */
 async function settled(page: Page): Promise<void> {
@@ -220,5 +224,145 @@ test('the Owner closes a cashier’s session with a count and a reason and adds 
             await cashSession(context, 'Rina');
             await context.close();
         }
+    }
+});
+
+test('the assisted close recounts, says an unreadable preview, a lost or held answer and a session closed meanwhile, and a lost note is checked (UXS-14, UXS-15, UXS-19, UXS-22, UXS-30; review R-03, R-04)', async ({ browser }) => {
+    test.setTimeout(ACCESS_TIMEOUT * 4);
+    const context = await contextAt(browser, WIDTHS[0]!);
+    const page = await context.newPage();
+    const watched = await watch(page);
+    const accounts = await resetPeople(context, ['Hendra']);
+    const main = page.getByRole('main');
+    const uncertainPanel = main.getByRole('alert').filter({ hasText: 'Status belum pasti' });
+
+    // UXP-207 of a new OPEN session of hers, counted at Rp0 with a reason and reviewed.
+    const counted = async (session: FixtureSession): Promise<void> => {
+        await gotoAssistedClose(page, session);
+        await continueCount(page).click();
+        await physicalCash(page).fill('0');
+        await reason(page).fill(REASON);
+        await page.getByRole('button', { name: /^Tinjau/ }).click();
+        await expect(reviewDialog(page).getByRole('button', { name: /^Kembali ubah/ })).toBeFocused();
+    };
+    const opened = async (): Promise<FixtureSession> => {
+        const { session } = await cashSession(context, 'Rina', { open: '0' });
+
+        if (session === null) {
+            throw new Error('The fixture opens a session.');
+        }
+
+        return session;
+    };
+
+    await prepareCommands(context, ['Hendra', 'Rina']);
+    await cashSession(context, 'Hendra');
+
+    try {
+        await signIn(page, accounts.Hendra);
+
+        // UXS-19 and UXS-22: RECOUNT_REQUIRED returns to the preview, which fails to load once and says so
+        // with "Coba lagi"; "Lanjut hitung" waits for the figures; the count is discarded, the reason kept.
+        const recounted = await opened();
+        await counted(recounted);
+        await page.route(CLOSE_COMMAND, (route) => route.fulfill({ status: 409, json: { ...refusal('RECOUNT_REQUIRED'), messageKey: 'ux.state.recount' } }), { times: 1 });
+        await page.route(`**/cash-sessions/${String(recounted.id)}/assisted-close`, (route) => route.fulfill({ status: 503, body: '' }), { times: 1 });
+        await reviewDialog(page).getByRole('button', { name: /^Tutup sesi/ }).click();
+        await confirmPassword(page, accounts.Hendra.password);
+        await expect(main.getByRole('alert').filter({ hasText: 'Ada transaksi baru; hitung ulang kas' })).toBeVisible();
+        await expect(main).toContainText('Bagian ini tidak dapat dimuat.');
+        await expect(continueCount(page)).toHaveAttribute('aria-disabled', 'true');
+        await main.getByRole('button', { name: 'Coba lagi' }).click();
+        await expect(main).toContainText('Uang seharusnya di laci');
+        await expect(continueCount(page)).not.toHaveAttribute('aria-disabled', 'true');
+        await checked(page);
+        await continueCount(page).click();
+        await expect(physicalCash(page)).toHaveValue('');
+        await expect(reason(page)).toHaveValue(REASON);
+
+        // UXS-19's variant when the server holds an unresolved checkout of hers.
+        await physicalCash(page).fill('0');
+        await page.getByRole('button', { name: /^Tinjau/ }).click();
+        await page.route(CLOSE_COMMAND, (route) => route.fulfill({ status: 409, json: { ...refusal('RECOUNT_REQUIRED'), messageKey: 'ux.state.recount.unresolved_checkouts' } }), { times: 1 });
+        await reviewDialog(page).getByRole('button', { name: /^Tutup sesi/ }).click();
+        await expect(main.getByRole('alert').filter({ hasText: 'Ada penjualan yang statusnya belum pasti' })).toBeVisible();
+        await expect(main).toContainText('Uang seharusnya di laci');
+
+        // UXS-14: a lost answer freezes the close on its panel, never counted again; "Cek status" finds it
+        // and opens its report (RC-50; NC-13).
+        await continueCount(page).click();
+        await physicalCash(page).fill('0');
+        await page.getByRole('button', { name: /^Tinjau/ }).click();
+        await page.route(
+            CLOSE_COMMAND,
+            async (route: Route) => {
+                await route.fetch();
+                await route.abort();
+            },
+            { times: 1 },
+        );
+        await reviewDialog(page).getByRole('button', { name: /^Tutup sesi/ }).click();
+        await expect(uncertainPanel).toContainText('Jangan hitung ulang laci atau tutup sesi ini lagi. Sesi kas ini mungkin sudah ditutup.');
+        await expect(page.getByRole('button', { name: /^Tinjau/ })).toHaveAttribute('aria-disabled', 'true');
+        await checked(page);
+        await Promise.all([page.waitForURL((url) => url.pathname === `/cash-sessions/${String(recounted.id)}`), uncertainPanel.getByRole('button', { name: 'Cek status' }).click()]);
+        await expect(page.getByText(`Sesi kas ${recounted.number} ditutup.`)).toBeVisible();
+
+        // Review R-04: a note whose answer is lost keeps its panel, can be neither cancelled nor written
+        // again, and "Cek status" finds it; it then stands in the list once.
+        const notes = main.locator('section').filter({ has: page.getByRole('heading', { level: 2, name: 'Catatan tinjauan Pemilik' }) });
+        await notes.getByRole('button', { name: 'Tambah catatan tinjauan' }).click();
+        await page.getByLabel('Catatan', { exact: true }).fill('Catatan yang jawabannya hilang.');
+        await page.route(
+            NOTE_COMMAND,
+            async (route: Route) => {
+                await route.fetch();
+                await route.abort();
+            },
+            { times: 1 },
+        );
+        await notes.getByRole('button', { name: 'Simpan catatan' }).click();
+        await expect(uncertainPanel).toContainText('Jangan menulis catatan ini lagi.');
+        await expect(notes.getByRole('button', { name: 'Simpan catatan' })).toHaveAttribute('aria-disabled', 'true');
+        await expect(notes.getByRole('button', { name: 'Batal' })).toHaveAttribute('aria-disabled', 'true');
+        await expect(notes.getByRole('button', { name: 'Tambah catatan tinjauan' })).toHaveCount(0);
+        await checked(page);
+        await uncertainPanel.getByRole('button', { name: 'Cek status' }).click();
+        await expect(notes.getByText('Catatan tinjauan disimpan.')).toBeVisible();
+        await expect(notes.getByText('Catatan yang jawabannya hilang.', { exact: true })).toHaveCount(1);
+
+        // UXS-15: a held close offers "Cek status" only, which finds it.
+        const held = await opened();
+        await counted(held);
+        await page.route(
+            CLOSE_COMMAND,
+            async (route: Route) => {
+                await route.fetch();
+                await route.fulfill({ status: 409, json: refusal('IDEMPOTENCY_CONFLICT', 'HELD') });
+            },
+            { times: 1 },
+        );
+        await reviewDialog(page).getByRole('button', { name: /^Tutup sesi/ }).click();
+        await expect(uncertainPanel).toContainText('Permintaan ini tidak bisa dikirim ulang karena mungkin sudah tersimpan.');
+        await expect(uncertainPanel.getByRole('button', { name: 'Kirim ulang' })).toHaveCount(0);
+        await checked(page);
+        await Promise.all([page.waitForURL((url) => url.pathname === `/cash-sessions/${String(held.id)}`), uncertainPanel.getByRole('button', { name: 'Cek status' }).click()]);
+        await expect(page.getByText(`Sesi kas ${held.number} ditutup.`)).toBeVisible();
+
+        // UXS-30: the session closed meanwhile, here by her own close through the fixture: the count is not
+        // kept, and the page leads to the report.
+        const closed = await opened();
+        await counted(closed);
+        await cashSession(context, 'Rina');
+        await reviewDialog(page).getByRole('button', { name: /^Tutup sesi/ }).click();
+        await expect(main).toContainText('Sesi kas ini sudah ditutup, mungkin oleh Pemilik. Hitungan Anda tidak disimpan.');
+        await checked(page);
+        await Promise.all([page.waitForURL((url) => url.pathname === `/cash-sessions/${String(closed.id)}`), main.getByRole('link', { name: 'Buka Detail sesi kas', exact: true }).click()]);
+        await expect(main).toContainText('Laporan sesi kas');
+
+        expect(injected(watched.problems)).toEqual([]);
+    } finally {
+        await cashSession(context, 'Rina');
+        await context.close();
     }
 });

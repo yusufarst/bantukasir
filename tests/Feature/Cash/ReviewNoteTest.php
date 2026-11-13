@@ -99,6 +99,10 @@ final class ReviewNoteTest extends DatabaseTestCase
 
         // The same request answers the original note; a status check rebuilds it (RC-50).
         $this->note($first)->assertStatus(200)->assertJsonPath('repeated', true)->assertJsonPath('result.id', $noteId);
+        // RACE-01 and RACE-02 in sequence (their races are AssistedCloseRaceTest's; review R-01): another key
+        // of the intent answers the one note; another text under the key is held and writes nothing.
+        $this->note([...$first, 'idempotencyKey' => (string) Str::uuid()])->assertStatus(200)->assertJsonPath('repeated', true)->assertJsonPath('result.id', $noteId);
+        $this->note([...$first, 'payload' => ['sessionId' => $session, 'text' => 'Teks lain']])->assertStatus(409)->assertJsonPath('code', 'IDEMPOTENCY_CONFLICT')->assertJsonPath('outcome', 'HELD');
         $resolved = $this->check($first)->assertOk()->assertJsonPath('outcome', 'COMMITTED')->assertJsonPath('result.location', '/cash-sessions/'.$session);
         $this->assertJsonChannel($resolved, 'commands.resolve', 'owner');
         $this->assertSame(2, $this->watcher()->table('cash_session_review_notes')->count());

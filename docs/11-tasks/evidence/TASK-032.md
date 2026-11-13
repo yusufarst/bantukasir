@@ -17,6 +17,15 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | --- | --- | --- | --- | --- |
 | `npm run typecheck`, `npx tsc --noEmit`, `npx eslint`, PHP's checks | Local | — | — | `NOT_RUN`: neither PHP nor `tsc` and `eslint` are on the path of this machine; the fast runs run them |
 | Guard preview, then guard (Gitleaks 8.30.1, the secret scan, identity, candidates) | Local, on `bf3e8b2` | 13 Nov, 17:36 to 17:39 | about 3 min | `PASS`, no candidate |
+| `composer validate`, `composer lint` (Pint, the translation keys and their types, the migration review and the rest) | Fast run 1, 43410751592 on `bf3e8b2` | 13 Nov, 17:39 to 17:42 | 3 min 21 s for the run | `PASS` |
+| `composer analyse` | Same run | 17:42 | 14 s | `FAIL`: four PHPStan findings in the new tests (F-1); the later steps did not run |
+| Guard | Local, on `ab3515a` | 17:46 | about 1 min | `PASS`, no candidate |
+| `composer validate`, `lint`, `analyse` (F-1 fixed), `test:unit` | Fast run 2, 43411691388 on `ab3515a` | 17:46 to 17:50 | 4 min 24 s for the run | `PASS` |
+| `npm run lint` | Same run | 17:50 | 4 s | `FAIL`: one `react/jsx-no-literals` finding (F-3); the later steps did not run |
+| Guard | Local, on `fca274b` | 17:54 | about 1 min | `PASS`, no candidate |
+| `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit` | Fast run 3, 43412729980 on `fca274b` | 17:57 to 18:00 | about 3 min | `PASS` |
+| The changed PostgreSQL and concurrency files: `AssistedCloseRaceTest`, `CapabilityMatrixTest`, `RouteInventoryTest`, `AssistedClosePagesTest`, `AssistedCloseTest`, `ReviewNoteTest`, `ReviewNotesTableTest`, `SessionPagesTest` | Same run | 18:00 to 18:05 | 4 min 40 s | `PASS`, every file; the run 10 min 45 s in all |
+| The whole of `test:postgres` and `test:race` (with `CloseCashSessionTest`, `CloseRaceTest` and `CashCloseTablesTest`, which cover the changed `Sessions` and `SessionReports`), the browser suite with `tests/Browser/cash/assisted-close.spec.ts`, the build, the image checks | CI on the pull request's final head (CE-44, D-117) | — | — | `NOT_RUN` until then |
 
 ## 2. What was built (contract section 4.1)
 
@@ -44,6 +53,7 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Each "Tambah catatan tinjauan" opens a new form with its own command, so that every note is a new intent, as UXP-604's dialogs are | D-069 (f); NC-13 |
 | `review_note.add` is the family of the command platform's probe (TASK-009): a probe's unresolved request in a browser now blocks the Owner's note there, as any request of the family would. The harness's comment says so; no test sends a probe and a note in one browser | `tests/Harness/Commands/Probe.php` |
 | RC-04 has no own drawer-funded refunds yet: expected cash is the opening cash plus the applied CASH, as RC-03's, until TASK-034 | D-035; TASK-030 |
+| UXI-148's destination RP-207 (contract section 4.2, "Controls extended with a destination") needs no change: UXP-206's way back reads its opener only when it is UXP-205, and after UXP-207's success, as after UXP-105's, it leads to UXP-205, the default of NC-01 (`sessionsListFrom`; review R-05) | INTERACTION_INVENTORY UXI-148; NAVIGATION_CONTRACTS UXP-206 |
 
 ## 4. Findings
 
@@ -61,11 +71,11 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | L1 the matrix holds the new table; the built Actions | `tests/Unit/Database/PrivilegeMatrixTest.php`, `tests/Unit/Commands/OperationsTest.php` |
 | L2 the notes table: the constraint family — the text's bounds, the frozen name, the keys to the close, the author and the command, one note per command, several per session, line breaks and 2,000 characters of two bytes; the privilege family — no update, delete or truncate for the runtime or backup role, the grants equal the matrix; the retention family — later notes leave every earlier note, close and report; the indexes and the keys as declared | `tests/Feature/Cash/ReviewNotesTableTest.php` |
 | L2 failure injection after each write step: RC-04's five, RC-43's three | `AssistedCloseTest`, `ReviewNoteTest` |
-| L3 RACE-09, the Owner-assisted close against the user's own close in both orders; RACE-28, a deactivation holding her account against her checkout, the session OPEN and unchanged, then the Owner-assisted close | `tests/Concurrency/AssistedCloseRaceTest.php` |
-| L4 RC-04: the close with its count and reason, the responsible user kept, the Owner the close actor, the report and the audit; 423 without recent authentication and no receipt; validation; the Owner's own and a missing session NOT_FOUND, a CLOSED one SESSION_NOT_OPEN, a moved version RECOUNT_REQUIRED; G-27 refused until the Owner's status check settles the checkout; repeats; a deactivated cashier's session (D-069 (d)) and an outgoing Owner's after OP-03 (D-087) OPEN and unchanged until this close; the other roles at the gate and the guard | `tests/Feature/Cash/AssistedCloseTest.php` |
+| L3 RACE-09, the Owner-assisted close against the user's own close in both orders; RACE-28, a deactivation holding her account against her checkout, the session OPEN and unchanged, then the Owner-assisted close; RACE-01 and RACE-02 of RC-04 and RC-43 with another payload held (review R-01); RACE-35 of RC-04, a settlement before its read and a checkout receipt after it (review R-02) | `tests/Concurrency/AssistedCloseRaceTest.php` |
+| L4 RC-04: the close with its count and reason, the responsible user kept, the Owner the close actor, the report and the audit; 423 without recent authentication and no receipt; validation; the Owner's own and a missing session NOT_FOUND, a CLOSED one SESSION_NOT_OPEN, a moved version RECOUNT_REQUIRED; G-27 refused until the Owner's status check settles the checkout, NOT_COMMITTED and, for a HELD and an earlier-epoch HELD receipt, COMMITTED, then RECOUNT_REQUIRED against the earlier version (review R-02); repeats; a deactivated cashier's session (D-069 (d)) and an outgoing Owner's after OP-03 (D-087) OPEN and unchanged until this close; the other roles at the gate and the guard | `tests/Feature/Cash/AssistedCloseTest.php` |
 | L4 RC-43: two notes, line breaks kept, nothing else changed; STALE_VERSION for an OPEN session, NOT_FOUND; the text's bounds; repeats; the other roles | `tests/Feature/Cash/ReviewNoteTest.php` |
 | L4 RP-207 and RP-206: exactly the allowlisted props and deferred props for the Owner, the unresolved checkouts one per intent and only the responsible user's checkouts, the redirects, NOT_FOUND, the preview null once closed, the notes for the Owner of a CLOSED session only; the route inventory and the capability matrix | `tests/Feature/Cash/AssistedClosePagesTest.php`, `SessionPagesTest`, `tests/Feature/Access/RouteInventoryTest.php`, `CapabilityMatrixTest.php`, `tests/Harness/Channels/Allowlists.php` |
-| L5 RP-207 and the notes of RP-206: at every width of KEY_SCREENS section 4 and 1440 px the preview, the count, the review and the report with axe, targets, contrast and no sideways scrolling; at the first width the unresolved checkout settled by the Owner's "Cek status", the unsaved-changes guard, and two notes with "Batal" | `tests/Browser/cash/assisted-close.spec.ts` |
+| L5 RP-207 and the notes of RP-206: at every width of KEY_SCREENS section 4 and 1440 px the preview, the count, the review and the report with axe, targets, contrast and no sideways scrolling; at the first width the unresolved checkout settled by the Owner's "Cek status", the unsaved-changes guard, and two notes with "Batal"; and UXS-19 in both variants with the count discarded and the reason kept, UXS-22 with "Coba lagi", UXS-14, UXS-15 and UXS-30 of the close, and a lost note checked to the list (review R-03, R-04) | `tests/Browser/cash/assisted-close.spec.ts` |
 | Fixtures through the Actions (EXC-45) | `TokoContoh::reviewNote` (RC-43's Action); the sessions of RC-02, RC-01 and RC-03; OP-03's Action in the test |
 
 ## 6. Acceptance criteria
@@ -103,4 +113,20 @@ The PostgreSQL files that this branch changes run in its fast runs; the whole su
 | Data integrity | PASS | The close all or nothing with failure injection after every write step; RACE-09 and RACE-28; notes append-only and changing nothing of the close or the report; identity and repeats |
 | Performance | PASS | Bounded reads: the unresolved checkouts at most 100, the notes at most 200; the budgets are TASK-048's |
 | Operations | PASS | The table in the backup manifest's counts; no runbook or status impact |
-| Verification | See section 9 | The fast runs green, the review of class A; the heavy checks on the final head |
+| Verification | PASS, subject to CI on the final head | The fast runs green (section 1), the review of class A and its targeted verification (section 9); the heavy checks on the final head |
+
+## 9. Review (EXECUTION_CONTEXT CE-40)
+
+### 9.1 Round 1, the full review
+
+Agent `bk-reviewer-high`, model `claude-opus-5-5`, effort High, mode `review`; package `review/TASK-032/r1` of the executor state, base `296998f`, tree `1bbebf8`, HEAD `fca274b`; 13 November, 18:05 to 18:14; `review-pack.sh --check` `UNCHANGED` after it. Verdict `FAIL`: no defect in the code, three MUST-FIX of missing proofs.
+
+| ID | Severity | Finding | Outcome |
+| --- | --- | --- | --- |
+| R-01 | MUST-FIX | No barrier-controlled RACE-01 and RACE-02 of RC-04 and RC-43, and for RC-43 no other key of the intent or other payload under the key, even in sequence (EXECUTION_CONTEXT section 10, a command) | Fixed: `AssistedCloseRaceTest` "race_01_and_race_02…" — the same key, another key of the intent and another payload under the key, each operation; `ReviewNoteTest` the other key and the held payload in sequence |
+| R-02 | MUST-FIX | RACE-35 of RC-04, a new reader of another user's receipts, proven only in sequence and only through NOT_COMMITTED | Fixed: `AssistedCloseRaceTest` "race_35_of_rc_04…" — the Owner's settlement while RC-04 holds the lock before its read, and a checkout receipt written after its read that waits for the lock and is refused SESSION_NOT_OPEN; `AssistedCloseTest` "a held or earlier-epoch checkout…" — HELD and earlier-epoch HELD receipts settled COMMITTED, then RECOUNT_REQUIRED against the earlier version before the close |
+| R-03 | MUST-FIX | No L5 of UXP-207's own states: UXS-19 in both variants, UXS-22, UXS-14, UXS-15, UXS-30 | Fixed: the second test of `assisted-close.spec.ts` |
+| R-04 | SHOULD-FIX | No test of the note form's uncertain phase | Fixed: the same test — a lost note frozen on its panel, neither cancelled nor written again, checked to the list once |
+| R-05 | NOTE | UXI-148's destination RP-207 unrecorded | Recorded in section 3 |
+| R-06 | NOTE | The notes' read bounded at 200 without a sign of the older ones | Recorded: a session with more than 200 notes is not expected; the bound stays a reading of section 3, for TASK-048's budgets |
+| R-07 | NOTE | The Definition of Done pointed to a section not yet written; the handoff cited the wrong section and did not carry T-45 | Fixed: this section; CURRENT_HANDOFF's "For later Tasks" |

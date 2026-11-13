@@ -2,8 +2,13 @@
 
 namespace Tests\Concurrency;
 
+use App\Actions\Cash\AddReviewNote;
 use App\Actions\Cash\CloseCashSessionAssisted;
+use App\Actions\Commands\ResolveIntent;
 use App\Actions\Sales\CheckoutSale;
+use App\Domain\Commands\RequestReceipts;
+use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Connection;
 use Illuminate\Support\Str;
 use Tests\Harness\Access\UserCommandScenario;
@@ -23,7 +28,11 @@ use Tests\Harness\Sales\SessionCloseScenario;
  *   overwriting; one CLOSED session, one close, one report;
  * - RACE-28: the deactivation of a cashier who holds an OPEN session, holding her account's lock, against a
  *   checkout of hers, which waits for that lock and is refused before any fact; the session stays OPEN and
- *   unchanged, and the Owner-assisted close then succeeds, she staying its responsible user.
+ *   unchanged, and the Owner-assisted close then succeeds, she staying its responsible user;
+ * - RACE-01 and RACE-02 of RC-04 and RC-43: the same key, or another key of the same intent, answers the one
+ *   execution; another payload under the key is held (review R-01);
+ * - RACE-35 for RC-04: a settlement before its read no longer counts, and a checkout whose receipt is
+ *   written after its read waits for the session's lock and is refused SESSION_NOT_OPEN (review R-02).
  */
 final class AssistedCloseRaceTest extends DatabaseTestCase
 {
@@ -139,14 +148,104 @@ final class AssistedCloseRaceTest extends DatabaseTestCase
         $this->assertSame([['OWNER_ASSISTED', $this->owner, 0]], $this->closesOf($session));
     }
 
+    public function test_race_01_and_race_02_of_rc_04_and_rc_43_each_run_once_and_another_payload_under_the_key_is_held(): void
+    {
+        // EXECUTION_CONTEXT section 10, a command; RACE-01, RACE-02 (review R-01): the same key, or another
+        // key of the same intent, waits on the first's identity, then answers its result; another payload
+        // under the key is refused IDEMPOTENCY_CONFLICT and writes nothing.
+        $closed = TokoContoh::closeSession(TokoContoh::openSession('Rina', $this->register));
+
+        foreach (['same key', 'another key', 'another payload'] as $case) {
+            $session = TokoContoh::openSession('Rina', $this->register);
+            $commands = [
+                'RC-04' => fn (string $intent, string $key, string $count): array => $this->assisted($session, $count, 0, $intent, $key),
+                'RC-43' => fn (string $intent, string $key, string $count): array => $this->command(AddReviewNote::OPERATION, $this->owner, ['sessionId' => $closed, 'text' => 'Catatan '.$count], [], $intent, $key),
+            ];
+
+            foreach ($commands as $name => $make) {
+                $intent = (string) Str::uuid();
+                $key = (string) Str::uuid();
+                $original = $this->start($make($intent, $key, '0'), ['after_identity']);
+                $repeat = $this->start($make($intent, $case === 'another key' ? (string) Str::uuid() : $key, $case === 'another payload' ? '5000' : '0'));
+                Worker::ready($original, $repeat);
+
+                $original->run()->awaitBarrier('after_identity');
+                $repeat->run()->awaitBlocked($this->watcher());
+                $original->release();
+
+                $first = $original->finish()->result ?? [];
+                $this->assertSame(['COMMITTED', false], [$first['outcome'] ?? null, $first['repeated'] ?? null], $name.' '.$case);
+                $this->assertSame(
+                    $case === 'another payload' ? ['refused' => 'IDEMPOTENCY_CONFLICT'] : ['outcome' => 'COMMITTED', 'repeated' => true, 'commandId' => $first['commandId'] ?? null],
+                    $repeat->finish()->result,
+                    $name.' '.$case,
+                );
+                $this->assertSame(1, $this->watcher()->table('command_identities')->where('source_intent_id', $intent)->count(), $name.' '.$case);
+            }
+
+            $this->assertSame([['OWNER_ASSISTED', $this->owner, 0]], $this->closesOf($session), $case);
+        }
+
+        // One note per committed intent: three.
+        $this->assertSame(3, $this->watcher()->table('cash_session_review_notes')->where('session_id', $closed)->count());
+    }
+
+    public function test_race_35_of_rc_04_a_settlement_before_its_read_no_longer_counts_and_a_later_checkout_waits_for_its_lock(): void
+    {
+        // G-27, D-088, D-089 for the Owner-assisted close (review R-02): a checkout receipt of the
+        // responsible user PENDING when RC-04 reads it refuses the close; settled by the Owner's status
+        // check while RC-04 holds the session's lock, before its read — the check takes no session lock —
+        // it no longer counts, and the close succeeds.
+        $session = TokoContoh::openSession('Rina', $this->register);
+        $intent = (string) Str::uuid();
+        app(RequestReceipts::class)->record($this->rina, CheckoutSale::OPERATION, $intent, (string) Str::uuid(), $this->epoch, CarbonImmutable::now('UTC')->format('Y-m-d H:i:s.uP'));
+
+        $refused = $this->start($this->assisted($session, '0'));
+        Worker::ready($refused);
+        $this->assertSame(['refused' => 'RECOUNT_REQUIRED'], $refused->run()->finish()->result);
+
+        $close = $this->start($this->assisted($session, '0'), ['after_lock:4']);
+        Worker::ready($close);
+        $close->run()->awaitBarrier('after_lock:4');
+        $owner = User::query()->findOrFail($this->owner);
+        $this->assertSame('NOT_COMMITTED', app(ResolveIntent::class)($owner, CheckoutSale::OPERATION, $intent, $this->epoch, CarbonImmutable::now('UTC'))->outcome);
+        $close->release();
+        $this->assertSame('COMMITTED', ($close->finish()->result ?? [])['outcome'] ?? null);
+        $this->assertSame([['OWNER_ASSISTED', $this->owner, 0]], $this->closesOf($session));
+
+        // A checkout whose receipt is written after RC-04's read — the close past its first write — waits
+        // for the session's lock and is refused SESSION_NOT_OPEN before any fact.
+        $session = TokoContoh::openSession('Rina', $this->register);
+        $closing = $this->start($this->assisted($session, '0'), ['after_write:1']);
+        $late = $this->sale($session);
+        $waiting = $this->start($late);
+        Worker::ready($closing, $waiting);
+
+        $closing->run()->awaitBarrier('after_write:1');
+        app(RequestReceipts::class)->record($this->rina, CheckoutSale::OPERATION, self::text($late['intent']), self::text($late['key']), $this->epoch, CarbonImmutable::now('UTC')->format('Y-m-d H:i:s.uP'));
+        $waiting->run()->awaitBlocked($this->watcher());
+        $closing->release();
+
+        $this->assertSame('COMMITTED', ($closing->finish()->result ?? [])['outcome'] ?? null);
+        $this->assertSame(['refused' => 'SESSION_NOT_OPEN'], $waiting->finish()->result);
+        $this->assertSame(0, $this->watcher()->table('command_identities')->where('source_intent_id', $late['intent'])->count());
+        $this->assertSame(0, $this->watcher()->table('sales')->where('cash_session_id', $session)->count());
+    }
+
     /**
-     * RC-04 of the session by the Owner, against this version, with this count.
+     * RC-04 of the session by the Owner, against this version, with this count; a new intent and key
+     * unless given.
      *
      * @return array<string, mixed>
      */
-    private function assisted(int $session, string $physicalCash, int $version = 0): array
+    private function assisted(int $session, string $physicalCash, int $version = 0, ?string $intent = null, ?string $key = null): array
     {
-        return $this->command(CloseCashSessionAssisted::OPERATION, $this->owner, ['sessionId' => $session, 'physicalCash' => $physicalCash, 'reason' => self::REASON], ['activityVersion' => $version]);
+        return $this->command(CloseCashSessionAssisted::OPERATION, $this->owner, ['sessionId' => $session, 'physicalCash' => $physicalCash, 'reason' => self::REASON], ['activityVersion' => $version], $intent, $key);
+    }
+
+    private static function text(mixed $value): string
+    {
+        return is_string($value) ? $value : '';
     }
 
     /**
@@ -166,9 +265,9 @@ final class AssistedCloseRaceTest extends DatabaseTestCase
      * @param  array<string, mixed>  $expected
      * @return array<string, mixed>
      */
-    private function command(string $operation, int $actor, array $payload, array $expected): array
+    private function command(string $operation, int $actor, array $payload, array $expected, ?string $intent = null, ?string $key = null): array
     {
-        return ['operation' => $operation, 'actor' => $actor, 'intent' => (string) Str::uuid(), 'key' => (string) Str::uuid(), 'epoch' => $this->epoch, 'expected' => $expected, 'payload' => $payload];
+        return ['operation' => $operation, 'actor' => $actor, 'intent' => $intent ?? (string) Str::uuid(), 'key' => $key ?? (string) Str::uuid(), 'epoch' => $this->epoch, 'expected' => $expected, 'payload' => $payload];
     }
 
     /**
