@@ -65,18 +65,22 @@ async function countPrints(context: BrowserContext): Promise<void> {
     });
 }
 
-/** Rina signed in with an OPEN session of hers holding a Sale in each method. */
+/**
+ * Rina signed in with an OPEN session of hers holding a Sale in each method. She signs in first, with no
+ * OPEN session, so that the sign-in lands on Buka sesi kas, a home that `signIn` waits for: with the session
+ * already open it would land on Kasir and wait until the test's time ran out (PR #42, CI run 43378119018).
+ */
 async function withSales(context: BrowserContext, page: Page): Promise<FixtureSession> {
     const accounts = await resetPeople(context, ['Rina']);
 
     await prepareCommands(context, ['Rina']);
+    await cashSession(context, 'Rina');
+    await signIn(page, accounts.Rina);
     const { session } = await cashSession(context, 'Rina', { open: '0', sales: ['CASH', 'BANK_TRANSFER'] });
 
     if (session === null) {
         throw new Error('The fixture opens a session.');
     }
-
-    await signIn(page, accounts.Rina);
 
     return session;
 }

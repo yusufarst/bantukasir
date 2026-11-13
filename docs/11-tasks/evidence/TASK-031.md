@@ -34,6 +34,11 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Fix cycle 1 (section 8.3): `npm run lint`, `typecheck` and the browser suite with the regression test of `documents.spec.ts`, over the changed `Printing.tsx` and `documents.spec.ts`; the earlier results stay valid for every other file (CE-45) | The fast run and CI on the fix's head, the pull request's new final head | — | — | `NOT_RUN` at this writing; the fix's commit starts them |
 | Fix cycle 1: the targeted verification (section 8.3) | Package `r3`, on `16d6edd` with the fix uncommitted | 13 Nov, 13:15 to 13:17 | about 2 min | `PASS` |
 | Fix cycle 1: guard's preview of the uncommitted fix | Local | 13 Nov, 13:18 | under 1 min | `PASS`, no candidate; the guard on the fix's commit runs before its push, which follows only its `PASS` (CE-31) |
+| Fast checks on the fix cycle 1 head | Fast run 43378109224 on `da1b0ec` | 13 Nov, 13:21 | 13 min 33 s | `PASS` |
+| Image checks; `test:postgres` parts 1 and 2 | CI run 43378119018 on `da1b0ec` | 13 Nov, 13:21 | 7 min 7 s; 30 min 32 s; 21 min 29 s | `PASS` |
+| Command contract: `composer validate` to `test:race`, `npm run lint`, `typecheck`, `test:unit`, `build` | Same run | 13 Nov, 13:21 to 13:35 | about 14 min | `PASS` |
+| Command contract: `npm run test:e2e` | Same run | 13 Nov, 13:35 to 14:21 | cut at the job's 60 min limit | `FAIL` (section 8.4): 7 failed — `documents.spec.ts` 289 to 291 at their time limit, `till.spec.ts` 302 (KS-05) in 4.3 s, `shell/session.spec.ts` 309 and `shell/shell.spec.ts` 324 and 325 at their time limit; the job cancelled before the failure messages were printed |
+| Fix cycle 2 (section 8.4): `npm run lint`, `typecheck` and the browser suite over the changed `documents.spec.ts` | The fast run and CI on the fix's head | — | — | `NOT_RUN` at this writing; the fix's commit starts them |
 
 ## 2. What was built (contract section 4.1)
 
@@ -157,6 +162,15 @@ Targeted verification (CE-43; class A, production behaviour changed): agent `bk-
 | R-12 | NOTE | The test's failure with the old visit is established by reading, not by a run | Fixed: worded so above |
 | R-13 | NOTE | The Definition of Done's typecheck and lint `PASS` was fast run 4's, before the fix | Fixed: section 7 ties it to fast run 4 and the fix's head |
 | R-14 | NOTE | Only RP-103P is exercised with a blocked tab; RP-206P takes the same branch of the same control | Recorded; the shared path covers it |
+
+### 8.4 Fix cycle 2, the red Command contract of CI run 43378119018 (CE-42, failure 1 of 3)
+
+Head `da1b0ec`, 13 November 2026. Classified as a defect of this Task's browser test, not the infrastructure's: the job reached its 60 min limit because failing tests each waited out their time limit. The job log holds the results line by line, but not the failure messages, which the reporter prints at the end of the run.
+
+| ID | Finding | Outcome |
+| --- | --- | --- |
+| CI-1 | `withSales` of `documents.spec.ts` opened Rina's session through the fixture before her sign-in. A cashier with an OPEN session lands on Kasir (`Homes::of`, `/till`), but `signIn` waits only for `/account`, `/stock` or `/till/open-session`, and that wait has no limit of its own: tests 289, 290 and 291 each waited until their time limit (16.0 min, then 2.0 min, then 2.0 min). Their closing `cashSession(context, 'Rina')` never ran, so Rina's session stayed OPEN, and the next sign-ins of Rina waited out their limits the same way: `shell/session.spec.ts` 309, with 310 to 319 skipped because that file runs in serial, and `shell/shell.spec.ts` 324 and 325. The tests that sign Rina in earlier in the run (`cash/close.spec.ts`, `cash/sessions.spec.ts`) passed, because each closes her session before she signs in | Fixed in the test only: `withSales` closes any session Rina still has, signs her in, and then opens the session with its Sales, as `cash/sessions.spec.ts` does. Production code is unchanged, so no targeted verification is needed (CE-42). The fixed tests are the regression check; they run in CI on the fix's head |
+| CI-2 | `till.spec.ts` 302, KS-05, failed in 4.3 s, as Hendra, the Owner, whose sign-in this does not affect. A failure that fast is an assertion that does not retry (axe, the measurements or the page's problems) on the receipt page that this Task changed. The log does not say which assertion | Not fixed: the cause is not proven by the available evidence, and a guess is not a fix. Once CI-1 is fixed, the browser suite finishes within the job's limit and prints KS-05's failure message on the fix's head |
 
 ## 9. Record (CE-50)
 
