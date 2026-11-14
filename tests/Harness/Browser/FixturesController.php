@@ -109,8 +109,9 @@ final class FixturesController
      * if any, closed through RC-03's Action with expected cash counted (EXECUTION_CONTEXT EXC-45), so
      * that their home is Buka sesi kas again. With `register`, a new active register for them to open a
      * session on; with `open`, a new session on a new register with that opening cash, through RC-02's
-     * Action, and one Sale of a new product at Rp50.000 for each method of `sales`, through RC-01's.
-     * Every code and name is new, because the local database keeps its registers and products.
+     * Action, and one Sale of a new product at Rp50.000 for each method of `sales`, through RC-01's,
+     * each answered by its key and number (TASK-034). Every code and name is new, because the local
+     * database keeps its registers and products.
      */
     public function session(Request $request): JsonResponse
     {
@@ -140,24 +141,27 @@ final class FixturesController
             if ($request->boolean('register')) {
                 TokoContoh::register($register['code'], $register['label']);
 
-                return new JsonResponse(['session' => null, 'register' => $register]);
+                return new JsonResponse(['session' => null, 'register' => $register, 'sales' => []]);
             }
 
-            return new JsonResponse(['session' => null, 'register' => null]);
+            return new JsonResponse(['session' => null, 'register' => null, 'sales' => []]);
         }
 
         $session = TokoContoh::openSession($person, TokoContoh::register($register['code'], $register['label']), $opening);
+        $sold = [];
 
         if ($sales !== []) {
             $product = TokoContoh::product('TS-'.$suffix, ['categoryId' => TokoContoh::category('Uji tutup '.$suffix), 'name' => 'Produk tutup '.$suffix, 'sellingPrice' => '50000']);
             TokoContoh::stock($product, (string) count($sales), '1000');
 
             foreach ($sales as $method) {
-                TokoContoh::sell($person, $session, [['productId' => $product, 'quantity' => '1']], $method === 'CASH' ? [] : ['method' => 'BANK_TRANSFER', 'reference' => 'TRF-'.$suffix]);
+                $sale = TokoContoh::sell($person, $session, [['productId' => $product, 'quantity' => '1']], $method === 'CASH' ? [] : ['method' => 'BANK_TRANSFER', 'reference' => 'TRF-'.$suffix]);
+                $sold[] = ['id' => $sale, 'number' => DB::table('sales')->where('id', $sale)->value('sale_number')];
             }
         }
 
-        return new JsonResponse(['session' => ['id' => $session, 'number' => DB::table('cash_sessions')->where('id', $session)->value('session_number')], 'register' => $register]);
+        // The Sales by their keys and numbers, for the refund pages (TASK-034).
+        return new JsonResponse(['session' => ['id' => $session, 'number' => DB::table('cash_sessions')->where('id', $session)->value('session_number')], 'register' => $register, 'sales' => $sold]);
     }
 
     /**

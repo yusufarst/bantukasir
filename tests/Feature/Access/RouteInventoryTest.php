@@ -174,6 +174,11 @@ final class RouteInventoryTest extends TestCase
         'POST /commands/review_note.add' => ['commands.review_note.add', 'RC-43', 'CAP-22', [...self::SIGNED_IN, 'capability:CAP-22', 'throttle:command']],
         // TASK-033: RC-06 for CAP-24, with recent authentication.
         'POST /commands/sale_correction.other' => ['commands.sale_correction.other', 'RC-06', 'CAP-24', [...self::SIGNED_IN, 'capability:CAP-24', 'throttle:command', 'password.confirm']],
+        // TASK-034: RC-05 for CAP-24, with recent authentication; RP-203 and RP-204 for CAP-24, each taking
+        // only its path.
+        'POST /commands/sale_correction.drawer_funded' => ['commands.sale_correction.drawer_funded', 'RC-05', 'CAP-24', [...self::SIGNED_IN, 'capability:CAP-24', 'throttle:command', 'password.confirm']],
+        'GET /sales/{sale}/refund' => ['sales.refund', 'RP-203', 'CAP-24', [...self::SIGNED_IN, 'capability:CAP-24', 'input.allow']],
+        'GET /sales/{sale}/corrections/{correction}' => ['sales.correction', 'RP-204', 'CAP-24', [...self::SIGNED_IN, 'capability:CAP-24', 'input.allow']],
     ];
 
     public function test_the_routes_are_exactly_those_listed_each_with_its_gate(): void

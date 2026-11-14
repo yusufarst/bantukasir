@@ -11,6 +11,7 @@ use App\Domain\Access\Capability;
 use App\Domain\Audit\Actor;
 use App\Domain\Audit\AuditCategory;
 use App\Domain\Cash\CashCount;
+use App\Domain\Cash\DrawerRefunds;
 use App\Domain\Cash\Registers;
 use App\Domain\Cash\SessionReports;
 use App\Domain\Cash\Sessions;
@@ -20,6 +21,7 @@ use App\Domain\Commands\ErrorCode;
 use App\Domain\Commands\StoredResult;
 use App\Domain\Configuration\BusinessProfiles;
 use App\Domain\Configuration\ProfileRevision;
+use App\Domain\Sales\Corrections\SaleCorrections;
 use App\Domain\Sales\Sales;
 use App\Models\User;
 use App\Support\Numbers\Money;
@@ -71,6 +73,7 @@ final class CloseCashSessionAssisted extends CommandAction
         private readonly Registers $registers,
         private readonly SessionReports $reports,
         private readonly Sales $sales,
+        private readonly SaleCorrections $corrections,
     ) {
         parent::__construct($services);
     }
@@ -126,7 +129,7 @@ final class CloseCashSessionAssisted extends CommandAction
             throw new CommandRefused(ErrorCode::SessionNotOpen, messageKey: 'ux.state.session_closed.close');
         }
 
-        // BR-CASH-14: a Sale after the preview needs a recount.
+        // BR-CASH-14: a Sale or a drawer-funded refund after the preview needs a recount.
         if ($session->activityVersion !== $reviewed) {
             throw CommandRefused::of(ErrorCode::RecountRequired);
         }
@@ -138,10 +141,11 @@ final class CloseCashSessionAssisted extends CommandAction
 
         $register = $this->registers->find($session->registerId) ?? throw new LogicException('A session names its register (SCHEMA section 5.10).');
         $sales = SessionSales::of($this->sales->ofSession($session->id));
+        // The drawer-funded refunds paid from the session, under its lock (D-035; RACE-13).
+        $refunds = DrawerRefunds::of($this->corrections->drawerRefundsOf($session->id));
 
         try {
-            // The drawer-funded refunds of the session, none before TASK-034 pays one (D-035).
-            $count = CashCount::of(CashCount::expected($session->openingCash, $sales->cashApplied, Money::zero()), Money::of($physical));
+            $count = CashCount::of(CashCount::expected($session->openingCash, $sales->cashApplied, $refunds->total), Money::of($physical));
         } catch (NumberOutOfRange) {
             throw CommandRefused::of(ErrorCode::ValidationFailed);
         }
@@ -154,7 +158,7 @@ final class CloseCashSessionAssisted extends CommandAction
         $this->reports->record($session, $count, $actor->id, $actor->display_name, $at, $commandId, $reason);
         $this->written();
 
-        $this->reports->freeze($session, ['code' => $register->code, 'label' => $register->label], $revision, $sales, $count, $actor->display_name, $at, $reason);
+        $this->reports->freeze($session, ['code' => $register->code, 'label' => $register->label], $revision, $sales, $refunds, $count, $actor->display_name, $at, $reason);
         $this->written();
 
         $this->services->audit->record(

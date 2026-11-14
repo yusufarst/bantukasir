@@ -158,6 +158,37 @@ final class Sessions
     }
 
     /**
+     * The session selected as the funding source of a drawer-funded refund, under the update lock of a
+     * Sale's (TR §7.1 step 4; SCHEMA section 7: FOR NO KEY UPDATE), whoever its responsible user is: the
+     * Owner selects the drawer the money comes from (BR-RFD-07; RC-05). The register is not locked: it
+     * keeps its code and label while a session is OPEN on it (BR-CASH-02). A close that the lock waited
+     * for is read as it left the session, CLOSED (RACE-13). Null when the session does not exist.
+     */
+    public function lockForRefund(int $sessionId): ?FundingSession
+    {
+        self::requireTransaction();
+
+        $row = DB::table('cash_sessions')->where('id', $sessionId)->lock('for no key update')->first(['id', 'session_number', 'status', 'opening_cash', 'register_id']);
+
+        if ($row === null) {
+            return null;
+        }
+
+        $values = (array) $row;
+        $id = $values['id'] ?? null;
+        $number = $values['session_number'] ?? null;
+        $status = $values['status'] ?? null;
+        $opening = $values['opening_cash'] ?? null;
+        $register = $values['register_id'] ?? null;
+
+        if (! is_int($id) || ! is_string($number) || ! is_string($status) || (! is_int($opening) && ! is_string($opening)) || ! is_int($register)) {
+            throw new LogicException('A session holds its columns (SCHEMA section 5.10).');
+        }
+
+        return new FundingSession($id, $number, $status === self::OPEN, Money::fromDatabase($opening), $register);
+    }
+
+    /**
      * The session of an Owner review note under a share lock (TR §7.2, family Owner review note; SCHEMA
      * section 7: FOR SHARE), so that a close never interleaves with it: its number and whether it is
      * CLOSED. Null when it does not exist.

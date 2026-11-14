@@ -79,6 +79,8 @@ final class SessionPagesTest extends DatabaseTestCase
             'sessionId' => $session,
             'activityVersion' => 2,
             'figures' => ['openingCash' => '20000', 'saleCount' => 2, 'saleValue' => '150000', 'cashPayments' => '100000', 'transferPayments' => '50000', 'drawerRefunds' => '0', 'expectedCash' => '120000'],
+            // Its drawer-funded refunds, none here (UXI-101; TASK-034).
+            'drawerRefunds' => [],
             'unresolvedCheckouts' => 0,
         ], $preview);
 

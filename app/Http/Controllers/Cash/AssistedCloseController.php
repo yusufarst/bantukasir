@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Cash;
 
 use App\Actions\Sales\CheckoutSale;
+use App\Domain\Cash\DrawerRefunds;
 use App\Domain\Cash\Sessions;
 use App\Domain\Cash\SessionSales;
 use App\Domain\Commands\RequestReceipts;
+use App\Domain\Sales\Corrections\SaleCorrections;
 use App\Domain\Sales\Sales;
 use App\Models\User;
 use App\Policies\NotFound;
@@ -43,7 +45,7 @@ final class AssistedCloseController
     /**
      * @throws NotFound
      */
-    public function show(Request $request, string $session, SessionRecords $sessions, Sales $sales, RequestReceipts $receipts): Response|RedirectResponse
+    public function show(Request $request, string $session, SessionRecords $sessions, Sales $sales, SaleCorrections $corrections, RequestReceipts $receipts): Response|RedirectResponse
     {
         $user = $request->user();
 
@@ -67,20 +69,21 @@ final class AssistedCloseController
                 'registerLabel' => $found['registerLabel'],
                 'responsible' => $found['responsible'],
             ],
-            self::PREVIEW => Inertia::defer(static fn (): ?array => self::preview($user, $found['id'], $sessions, $sales, $receipts)),
+            self::PREVIEW => Inertia::defer(static fn (): ?array => self::preview($user, $found['id'], $sessions, $sales, $corrections, $receipts)),
         ]);
     }
 
     /**
      * The close preview of the session, read again when the page asks for it; null once it is no longer
      * an OPEN session of another user — closed meanwhile, by its responsible user or by the Owner
-     * elsewhere — which the page says (UXS-30).
+     * elsewhere — which the page says (UXS-30). Its drawer-funded refunds, each for UXI-149's list with
+     * the reminder of D-068, beside their total in the figures (TASK-034).
      *
-     * @return array{sessionId: int, activityVersion: int, figures: array{openingCash: string, saleCount: int, saleValue: string, cashPayments: string, transferPayments: string, drawerRefunds: string, expectedCash: string}, unresolvedCheckouts: list<array{sourceIntentId: string, receivedAt: string}>}|null
+     * @return array{sessionId: int, activityVersion: int, figures: array{openingCash: string, saleCount: int, saleValue: string, cashPayments: string, transferPayments: string, drawerRefunds: string, expectedCash: string}, drawerRefunds: list<array{saleNumber: string, amount: string, recordedAt: string}>, unresolvedCheckouts: list<array{sourceIntentId: string, receivedAt: string}>}|null
      *
      * @throws NotFound
      */
-    private static function preview(User $user, int $sessionId, SessionRecords $sessions, Sales $sales, RequestReceipts $receipts): ?array
+    private static function preview(User $user, int $sessionId, SessionRecords $sessions, Sales $sales, SaleCorrections $corrections, RequestReceipts $receipts): ?array
     {
         $session = $sessions->forAssistedClose((string) $sessionId, $user);
 
@@ -88,10 +91,13 @@ final class AssistedCloseController
             return null;
         }
 
+        $refunds = DrawerRefunds::of($corrections->drawerRefundsOf($session['id']));
+
         return [
             'sessionId' => $session['id'],
             'activityVersion' => $session['activityVersion'],
-            'figures' => SessionSales::of($sales->ofSession($session['id']))->figures($session['openingCash']),
+            'figures' => SessionSales::of($sales->ofSession($session['id']))->figures($session['openingCash'], $refunds),
+            'drawerRefunds' => $refunds->previewRows(),
             'unresolvedCheckouts' => $receipts->unresolvedIntentsOf($session['responsibleUserId'], CheckoutSale::OPERATION, self::UNRESOLVED_BOUND),
         ];
     }
