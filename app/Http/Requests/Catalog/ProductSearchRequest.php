@@ -29,7 +29,9 @@ use LogicException;
  * alone; the context `correction` (TASK-020) answers active products only. The context
  * `receiving` (TASK-022, CAP-11) adds each product's version, which RC-07 expects as reviewed,
  * and so does the context `issue` (TASK-023, CAP-13) for RC-08, and the context `adjustment`
- * (TASK-024, CAP-16, the Owner's alone) for RC-09; the context `stock` (TASK-022, CAP-14) is the
+ * (TASK-024, CAP-16, the Owner's alone) for RC-09, and the context `opening` (TASK-035, CAP-15, the
+ * Owner's alone) for RC-11 and RC-48, whose rows carry each product's eligibility of D-087 too
+ * (SearchController); the context `stock` (TASK-022, CAP-14) is the
  * product filter of RP-402. A cashier's restricted cell of CAP-14 opens neither. The context `till`
  * (TASK-028, CAP-21) is the cart's search of RC-01, whose rows carry the price revision that the
  * Sale expects as reviewed and the stock that the viewer's cell of CAP-14 allows — the quantity alone
@@ -55,10 +57,13 @@ final class ProductSearchRequest extends RefusingRequest
      *
      * @var array<string, Capability>
      */
-    private const array PROVIDED = ['catalog' => Capability::Cap04, 'correction' => Capability::Cap07, 'receiving' => Capability::Cap11, 'issue' => Capability::Cap13, 'adjustment' => Capability::Cap16, 'stock' => Capability::Cap14, 'till' => Capability::Cap21];
+    private const array PROVIDED = ['catalog' => Capability::Cap04, 'correction' => Capability::Cap07, 'receiving' => Capability::Cap11, 'issue' => Capability::Cap13, 'adjustment' => Capability::Cap16, 'opening' => Capability::Cap15, 'stock' => Capability::Cap14, 'till' => Capability::Cap21];
 
     /** The contexts whose rows carry each product's version, which their command expects as reviewed. */
-    private const array VERSIONED = ['receiving', 'issue', 'adjustment'];
+    private const array VERSIONED = ['receiving', 'issue', 'adjustment', 'opening'];
+
+    /** The context whose rows carry each product's eligibility of D-087 (TASK-035). */
+    public const string OPENING = 'opening';
 
     private const string PLAIN_TEXT = '/\A[^\p{Cc}]*\z/u';
 
@@ -187,6 +192,16 @@ final class ProductSearchRequest extends RefusingRequest
             ($validated['context'] ?? null) === 'correction',
             in_array($validated['context'] ?? null, self::VERSIONED, true),
         );
+    }
+
+    /**
+     * The context, validated.
+     */
+    public function context(): string
+    {
+        $context = $this->validatedInput()['context'] ?? null;
+
+        return is_string($context) ? $context : throw new LogicException('RD-01 names its context, which the rules require.');
     }
 
     /**

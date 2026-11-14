@@ -227,9 +227,20 @@ export interface UnresolvedState {
      * and for an account without the stock pages. A failed read keeps the last number.
      */
     readonly stockAttention: number | null;
+    /**
+     * The onboarding state of the last successful read of RD-03 (TASK-035), which shows the banner of
+     * UXS-27 on every page while it is ACTIVE (UXI-030; G-10); null before one, and when the answer
+     * has none. A failed read keeps the last state.
+     */
+    readonly onboarding: OnboardingPhase | null;
 }
 
-let state: UnresolvedState = { userId: null, union: [], serverCount: null, asOf: null, failed: false, stockAttention: null };
+/** The onboarding states of SCHEMA section 5.7, as RD-03 gives them (BR-INV-23). */
+export type OnboardingPhase = 'NOT_STARTED' | 'ACTIVE' | 'RELEASED';
+
+const ONBOARDING_PHASES: readonly OnboardingPhase[] = ['NOT_STARTED', 'ACTIVE', 'RELEASED'];
+
+let state: UnresolvedState = { userId: null, union: [], serverCount: null, asOf: null, failed: false, stockAttention: null, onboarding: null };
 let rows: readonly ReceiptRow[] = [];
 const listeners = new Set<() => void>();
 let reading: Promise<void> | null = null;
@@ -251,7 +262,7 @@ function subscribe(listener: () => void): () => void {
 export function setUser(userId: number): void {
     if (state.userId !== userId) {
         rows = [];
-        state = { userId, union: [], serverCount: null, asOf: null, failed: false, stockAttention: null };
+        state = { userId, union: [], serverCount: null, asOf: null, failed: false, stockAttention: null, onboarding: null };
     }
 
     publish({ userId });
@@ -289,11 +300,20 @@ export function setStockAttention(count: number): void {
     publish({ stockAttention: count });
 }
 
-/** What an answer of RD-03 means for the shell; `stockAttention` is null without the stock pages. */
+/** What an answer of RD-03 means for the shell; `stockAttention` is null without the stock pages, `onboarding` without its state. */
 export type IndicatorsAnswer =
-    | { readonly kind: 'read'; readonly count: number; readonly asOf: string; readonly stockAttention: number | null }
+    | { readonly kind: 'read'; readonly count: number; readonly asOf: string; readonly stockAttention: number | null; readonly onboarding: OnboardingPhase | null }
     | { readonly kind: 'ended' }
     | { readonly kind: 'failed' };
+
+/** The onboarding state of RD-03: null when absent or null, undefined when it is no state of SCHEMA section 5.7. */
+function phaseOrNull(value: unknown): OnboardingPhase | null | undefined {
+    if (value === null || value === undefined) {
+        return null;
+    }
+
+    return ONBOARDING_PHASES.find((phase) => phase === value);
+}
 
 /** A count of RD-03 that a role may not have: null when absent or null, undefined when unreadable. */
 function countOrNull(value: unknown): number | null | undefined {
@@ -319,8 +339,9 @@ export function indicatorsOf(arrived: Arrived | null): IndicatorsAnswer {
     const count = body !== null && typeof body.unresolvedRequests === 'number' && Number.isSafeInteger(body.unresolvedRequests) && body.unresolvedRequests >= 0 ? body.unresolvedRequests : null;
     const asOf = body !== null && typeof body.asOf === 'string' ? body.asOf : null;
     const stockAttention = body === null ? undefined : countOrNull(body.stockAttention);
+    const onboarding = body === null ? undefined : phaseOrNull(body.onboarding);
 
-    return count === null || asOf === null || stockAttention === undefined ? { kind: 'failed' } : { kind: 'read', count, asOf, stockAttention };
+    return count === null || asOf === null || stockAttention === undefined || onboarding === undefined ? { kind: 'failed' } : { kind: 'read', count, asOf, stockAttention, onboarding };
 }
 
 /** What the shell does when a read of its indicators finds the sign-in session ended. */
@@ -368,19 +389,19 @@ export function refreshIndicators(): Promise<void> {
             return;
         }
 
-        const { count, asOf, stockAttention } = answer;
+        const { count, asOf, stockAttention, onboarding } = answer;
 
         if (count === 0) {
             rows = [];
         } else if (!(await refreshReceipts(true, leaving.signal))) {
             if (!leaving.signal.aborted) {
-                publish({ failed: true, stockAttention });
+                publish({ failed: true, stockAttention, onboarding });
             }
 
             return;
         }
 
-        publish({ serverCount: count, asOf, failed: false, stockAttention });
+        publish({ serverCount: count, asOf, failed: false, stockAttention, onboarding });
     })().finally(() => {
         reading = null;
     });

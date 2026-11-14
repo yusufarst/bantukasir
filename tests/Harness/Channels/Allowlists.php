@@ -292,6 +292,34 @@ final class Allowlists
             'product.price.revisionId', 'product.active', 'product.thumbnail', 'product.activeBarcode', 'product.version', 'product.stock', 'product.stock.onHand',
             'product.stock.minimum', 'product.stock.state',
         ]],
+        // UXP-412, the Owner's alone (TASK-035): the onboarding state, the filter, one page of the
+        // checklist — each row's cost as its status only, never an amount — and the counts of the release
+        // review; `#empty` with an empty page.
+        'inventory/Onboarding' => ['owner' => [...self::ONBOARDING, ...self::CHECKLIST_ROWS]],
+        'inventory/Onboarding#empty' => ['owner' => self::ONBOARDING],
+        // UXP-413, the Owner's alone (TASK-035): the onboarding version expected and the categories of
+        // "Tambah produk"; `#product` with the product of "Catat ulang stok awal" as RD-01 in the context
+        // `opening` gives it, with its version, stock and eligibility, never a cost.
+        'inventory/OpeningEntry' => ['owner' => ['onboardingVersion', 'product', ...self::CATEGORIES]],
+        'inventory/OpeningEntry#product' => ['owner' => [
+            'onboardingVersion', ...self::CATEGORIES,
+            'product', 'product.id', 'product.name', 'product.sku', 'product.baseUnit', 'product.quantityPrecision', 'product.price', 'product.price.amount',
+            'product.price.revisionId', 'product.active', 'product.thumbnail', 'product.activeBarcode', 'product.version', 'product.stock', 'product.stock.onHand',
+            'product.stock.minimum', 'product.stock.state', 'product.opening', 'product.opening.eligibility', 'product.opening.zeroCountId', 'product.opening.replacesLineId',
+        ]],
+    ];
+
+    /** RP-412 without the rows of its checklist (TASK-035). */
+    private const array ONBOARDING = [
+        'onboarding', 'onboarding.state', 'onboarding.version', 'onboarding.held', 'onboarding.startedAt', 'onboarding.releasedAt', 'filters', 'filters.filter',
+        'checklist', 'checklist.rows', 'checklist.nextCursor', 'checklist.previousCursor', 'counts', 'counts.counted', 'counts.notCounted', 'counts.unknownCost',
+    ];
+
+    /** The rows of the checklist of RP-412 (TASK-035). */
+    private const array CHECKLIST_ROWS = [
+        'checklist.rows.*', 'checklist.rows.*.product', 'checklist.rows.*.product.id', 'checklist.rows.*.product.name', 'checklist.rows.*.product.sku',
+        'checklist.rows.*.product.baseUnit', 'checklist.rows.*.product.quantityPrecision', 'checklist.rows.*.product.active', 'checklist.rows.*.state',
+        'checklist.rows.*.quantity', 'checklist.rows.*.cost', 'checklist.rows.*.movementId', 'checklist.rows.*.zeroCountId',
     ];
 
     /** RD-02's answer, and the prop `stock` of RP-401 that holds its first page. */
@@ -487,8 +515,8 @@ final class Allowlists
         // TASK-034).
         'commands.refused.drawer_short' => ['owner' => ['outcome', 'code', 'messageKey', 'params', 'params.laci', 'params.uang', 'fields', 'lines']],
         // RD-03, the shell's indicators (TASK-009), with the stock-attention count of the
-        // badge, null for a cashier (TASK-022).
-        'data.shell' => ['*' => ['unresolvedRequests', 'stockAttention', 'asOf']],
+        // badge, null for a cashier (TASK-022), and the onboarding state for every role (TASK-035).
+        'data.shell' => ['*' => ['unresolvedRequests', 'stockAttention', 'onboarding', 'asOf']],
         // RD-02, the stock list (TASK-022): no cost.
         'data.stock' => [
             'owner' => self::STOCK_LIST,
@@ -511,6 +539,9 @@ final class Allowlists
         // RD-01 in the context `adjustment`, the Owner's alone (TASK-024): the same, for RC-09's
         // expected versions.
         'data.products.search.adjustment' => ['owner' => [...self::SEARCH_RESULT, 'rows.*.version']],
+        // RD-01 in the context `opening`, the Owner's alone (TASK-035): the same, for RC-11's and RC-48's
+        // expected versions, with each row's eligibility of D-087.
+        'data.products.search.opening' => ['owner' => [...self::SEARCH_RESULT, 'rows.*.version', 'rows.*.opening', 'rows.*.opening.eligibility', 'rows.*.opening.zeroCountId', 'rows.*.opening.replacesLineId']],
         // RD-01 in the context `till` (TASK-028), for every holder of CAP-21: each row with its price
         // revision, which RC-01 expects as reviewed, and the stock that the viewer's cell of CAP-14
         // allows — the quantity alone for a cashier, never a version or a cost.

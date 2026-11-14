@@ -40,8 +40,13 @@ use App\Actions\Documents\RecordReceiptPrint;
 use App\Actions\Documents\RecordSessionReportPrint;
 use App\Actions\Inventory\ConfirmAdjustment;
 use App\Actions\Inventory\ConfirmManualIssue;
+use App\Actions\Inventory\ConfirmOpeningStock;
 use App\Actions\Inventory\ConfirmReceiving;
 use App\Actions\Inventory\ConfirmReversal;
+use App\Actions\Inventory\ReleaseOnboarding;
+use App\Actions\Inventory\ReplaceOpeningStock;
+use App\Actions\Inventory\StartOnboarding;
+use App\Actions\Inventory\WithdrawZeroCount;
 use App\Actions\Sales\CheckoutSale;
 use App\Actions\Sales\RecordCorrection;
 use App\Actions\Sales\RecordDrawerFundedCorrection;
@@ -160,6 +165,11 @@ final class OperationsTest extends TestCase
             'review_note.add' => AddReviewNote::class,
             'sale_correction.other' => RecordCorrection::class,
             'sale_correction.drawer_funded' => RecordDrawerFundedCorrection::class,
+            'opening_stock.confirm' => ConfirmOpeningStock::class,
+            'onboarding.start' => StartOnboarding::class,
+            'onboarding.release' => ReleaseOnboarding::class,
+            'onboarding.withdraw_zero_count' => WithdrawZeroCount::class,
+            'opening_stock.replace' => ReplaceOpeningStock::class,
         ], CommandActions::built());
     }
 

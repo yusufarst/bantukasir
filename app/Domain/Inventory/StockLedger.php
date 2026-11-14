@@ -109,6 +109,38 @@ final class StockLedger
     }
 
     /**
+     * Appends the OPENING of an opening line, with the unit and precision of its guarded product, and
+     * returns its internal key: an original OPENING at the product's first place (BR-INV-26), or a
+     * replacement at its next place, whose line names the reversed line it replaces (D-087). Its key to
+     * the line holds that it moves exactly the line's product and quantity and is a replacement exactly
+     * when the line is one; its evidence is Costing's, in this transaction: the presence key refuses a
+     * commit without it (BR-INV-08).
+     */
+    public function appendOpening(GuardedProduct $product, int $sequence, Quantity $quantity, int $openingLineId, bool $replacement, int $actorUserId, int $commandId, string $at): int
+    {
+        self::requireTransaction();
+
+        if (! $quantity->isPositive() || (! $replacement && $sequence !== 1)) {
+            throw new LogicException('An original OPENING is the first movement of its product, and every OPENING adds stock (BR-INV-26).');
+        }
+
+        return DB::table('stock_movements')->insertGetId([
+            'product_id' => $product->id,
+            'base_unit' => $product->baseUnit,
+            'quantity_precision' => $product->quantityPrecision,
+            'product_sequence' => $sequence,
+            'movement_type' => self::OPENING,
+            'quantity' => $quantity->toCanonical(),
+            'opening_line_id' => $openingLineId,
+            'line_quantity' => $quantity->toCanonical(),
+            'opening_replacement' => $replacement,
+            'recorded_at' => $at,
+            'actor_user_id' => $actorUserId,
+            'command_id' => $commandId,
+        ]);
+    }
+
+    /**
      * Appends the RECEIPT of a receiving line, with the unit and precision of its guarded
      * product, and returns its internal key. Its evidence is Costing's, in this transaction:
      * the presence key refuses a commit without it (BR-INV-08).

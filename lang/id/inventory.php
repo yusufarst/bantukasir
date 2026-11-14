@@ -8,7 +8,8 @@
 // of the manual issue pages (COPY_DECK sections 4.1, 9.1, 9.4, 9.8 to 9.10
 // and 15), TASK-024 those of the adjustment (COPY_DECK sections 4.1, 9.2,
 // 9.3, 9.11 and 15), TASK-026 those of the reversal (COPY_DECK sections 4.1,
-// 9.4, 9.12 and 15).
+// 9.4, 9.12 and 15), TASK-035 those of the onboarding and the opening stock
+// (COPY_DECK sections 4.1, 4.3, 6.1, 9.13, 9.14 and 15).
 
 return [
     'state' => [
@@ -163,4 +164,60 @@ return [
         'disabled_unresolved' => 'Ada pembatalan mutasi yang statusnya belum pasti. Cek statusnya dulu.',
     ],
     'disabled_unresolved_posting' => 'Ada barang masuk, barang keluar, atau penyesuaian yang statusnya belum pasti. Cek statusnya dulu.',
+    'onboarding' => [
+        'title' => 'Stok awal',
+        'open' => 'Buka Stok awal',
+        'not_started' => 'Masa input stok awal belum dimulai.',
+        'active_since' => 'Masa input stok awal aktif sejak :waktu.',
+        'completed' => 'Masa input stok awal selesai pada :waktu. Halaman ini hanya untuk dilihat.',
+        'corrections_help' => 'Koreksi stok sekarang memakai Sesuaikan stok, Batalkan mutasi, atau Koreksi biaya.',
+        'start' => 'Mulai masa input stok awal',
+        'start_confirm' => [
+            'title' => 'Mulai masa input stok awal?',
+            'body' => 'Selama masa ini, penjualan dan pencatatan stok biasa berhenti sampai Anda mengakhirinya. Masa input stok awal hanya bisa dijalankan sekali untuk data usaha ini.',
+        ],
+        'started' => 'Masa input stok awal dimulai.',
+        'checklist' => 'Daftar periksa stok awal',
+        'filter_counted' => 'Sudah dihitung',
+        'filter_not_counted' => 'Belum dihitung',
+        'col_product' => 'Produk',
+        'col_counted' => 'Jumlah dihitung',
+        'col_cost' => 'Status biaya',
+        'zero_count' => 'Dihitung nol',
+        'checklist_empty' => 'Belum ada produk yang dihitung.',
+        'release' => 'Akhiri masa input stok awal',
+        'release_review' => [
+            'title' => 'Tinjau akhir masa input stok awal',
+            'checks' => 'Sebelum mengakhiri, periksa jumlah hitung semua produk, barcode dan stok minimum, serta biaya yang masih belum diketahui.',
+            'counts' => ':dihitung produk sudah dihitung, :belum belum dihitung, :biaya baris dengan biaya belum diketahui.',
+            'warning' => 'Setelah diakhiri, masa input stok awal tidak bisa dimulai lagi, juga setelah data dipulihkan dari cadangan lama.',
+        ],
+        'released' => 'Masa input stok awal selesai. Penjualan dan pencatatan stok bisa dilakukan lagi.',
+        'withdraw_zero' => 'Tarik hitungan nol',
+        'withdraw_zero_review' => [
+            'title' => 'Tarik hitungan nol?',
+            'body' => 'Hitungan nol ini tetap tercatat di riwayat, lalu produk ini bisa dihitung lagi.',
+            'reason' => 'Alasan',
+        ],
+        'zero_withdrawn' => 'Hitungan nol ditarik.',
+        'disabled_unresolved' => 'Ada permintaan masa input stok awal yang statusnya belum pasti. Cek statusnya dulu.',
+        'disabled_held' => 'Ditunda sampai rekonsiliasi pemulihan selesai.',
+    ],
+    'opening_entry' => [
+        'title' => 'Input stok awal',
+        'not_eligible' => 'Sudah punya mutasi stok; tidak bisa diisi stok awal.',
+        'already_zero' => 'Sudah dihitung nol.',
+        'replace' => 'Catat ulang stok awal',
+        'replace_eligible' => 'Stok awal dibatalkan; bisa dicatat ulang.',
+        'replace_reason' => 'Alasan',
+        'replace_review_title' => 'Tinjau stok awal pengganti',
+        'replace_success' => 'Stok awal pengganti tersimpan.',
+        'quantity_help' => 'Isi 0 untuk produk yang sudah dihitung tetapi tidak ada stoknya.',
+        'limit_note' => 'Paling banyak 100 baris. Semua baris disimpan bersama, atau tidak ada yang disimpan.',
+        'review_title' => 'Tinjau stok awal',
+        'confirm' => 'Konfirmasi stok awal',
+        'success' => 'Stok awal tersimpan.',
+        'disabled' => 'Isi 1 sampai 100 baris yang lengkap.',
+        'disabled_unresolved' => 'Ada input stok awal yang statusnya belum pasti. Cek statusnya dulu.',
+    ],
 ];

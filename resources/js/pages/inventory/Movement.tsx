@@ -44,7 +44,8 @@ import {
 // cancels (COPY_DECK section 9.4); and for the Owner "Batalkan mutasi" (UXI-227; TASK-026) for an
 // OPENING, a RECEIPT or a MANUAL_ISSUE, disabled with its reason when it is reversed, while a
 // reversal of the user is uncertain, or for a RECEIPT or a MANUAL_ISSUE while the onboarding freeze
-// is on. UXI-228, its OPENING during onboarding followed by the replacement, comes with TASK-035.
+// is on. For an OPENING while onboarding is active it is UXI-228, the correction of an onboarding entry
+// before the release (D-087), whose replacement UXP-412 then offers (RC-10 result; TASK-035).
 
 /** UXP-504 returns here. */
 const OPENER = 'movement';

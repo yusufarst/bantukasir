@@ -96,7 +96,8 @@ export const DESTINATIONS: Readonly<Partial<Record<DestinationId, DestinationEnt
  * The registered items of each sub-navigation: UXI-009 and UXI-010, from TASK-017; UXI-011,
  * from TASK-019; UXI-012 to UXI-014, from TASK-022; UXI-015 "Barang keluar", the Owner's explicit
  * entry of D-018, from TASK-023; UXI-021 "Biaya perlu dilengkapi" (CAP-20), from TASK-025, and
- * UXI-019 "Sesi kas" (CAP-22), from TASK-030, shown once the Laporan destination exists (TASK-041).
+ * UXI-019 "Sesi kas" (CAP-22), from TASK-030, shown once the Laporan destination exists (TASK-041);
+ * UXI-016 "Stok awal" (CAP-15), the Owner's, from TASK-035.
  */
 export const SUB_DESTINATIONS: Readonly<Record<AreaId, Readonly<Partial<Record<SubDestinationId, SubDestinationEntry>>>>> = {
     products: {
@@ -109,6 +110,7 @@ export const SUB_DESTINATIONS: Readonly<Record<AreaId, Readonly<Partial<Record<S
         history: { label: 'inventory.history.title', href: '/stock/history', capabilities: ['CAP-14'] },
         receipts: { label: 'inventory.receipts.title', href: '/stock/receivings', capabilities: ['CAP-11'] },
         issues: { label: 'inventory.issues.title', href: '/stock/issues', capabilities: ['CAP-13'] },
+        onboarding: { label: 'inventory.onboarding.title', href: '/stock/onboarding', capabilities: ['CAP-15'] },
     },
     reports: {
         sessions: { label: 'cash.sessions.title', href: '/cash-sessions', capabilities: ['CAP-22'] },

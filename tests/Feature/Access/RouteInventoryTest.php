@@ -179,6 +179,15 @@ final class RouteInventoryTest extends TestCase
         'POST /commands/sale_correction.drawer_funded' => ['commands.sale_correction.drawer_funded', 'RC-05', 'CAP-24', [...self::SIGNED_IN, 'capability:CAP-24', 'throttle:command', 'password.confirm']],
         'GET /sales/{sale}/refund' => ['sales.refund', 'RP-203', 'CAP-24', [...self::SIGNED_IN, 'capability:CAP-24', 'input.allow']],
         'GET /sales/{sale}/corrections/{correction}' => ['sales.correction', 'RP-204', 'CAP-24', [...self::SIGNED_IN, 'capability:CAP-24', 'input.allow']],
+        // TASK-035: RP-412 and RP-413 for CAP-15, each taking only its parameters; RC-11 without recent
+        // authentication, RC-12 to RC-14 and RC-48 with it.
+        'GET /stock/onboarding' => ['onboarding.show', 'RP-412', 'CAP-15', [...self::SIGNED_IN, 'capability:CAP-15', 'input.allow:filter,after,before']],
+        'GET /stock/onboarding/entry' => ['onboarding.entry', 'RP-413', 'CAP-15', [...self::SIGNED_IN, 'capability:CAP-15', 'input.allow:product']],
+        'POST /commands/opening_stock.confirm' => ['commands.opening_stock.confirm', 'RC-11', 'CAP-15', [...self::SIGNED_IN, 'capability:CAP-15', 'throttle:command']],
+        'POST /commands/onboarding.start' => ['commands.onboarding.start', 'RC-12', 'CAP-15', [...self::SIGNED_IN, 'capability:CAP-15', 'throttle:command', 'password.confirm']],
+        'POST /commands/onboarding.release' => ['commands.onboarding.release', 'RC-13', 'CAP-15', [...self::SIGNED_IN, 'capability:CAP-15', 'throttle:command', 'password.confirm']],
+        'POST /commands/onboarding.withdraw_zero_count' => ['commands.onboarding.withdraw_zero_count', 'RC-14', 'CAP-15', [...self::SIGNED_IN, 'capability:CAP-15', 'throttle:command', 'password.confirm']],
+        'POST /commands/opening_stock.replace' => ['commands.opening_stock.replace', 'RC-48', 'CAP-15', [...self::SIGNED_IN, 'capability:CAP-15', 'throttle:command', 'password.confirm']],
     ];
 
     public function test_the_routes_are_exactly_those_listed_each_with_its_gate(): void

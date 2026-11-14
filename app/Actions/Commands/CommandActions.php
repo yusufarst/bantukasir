@@ -39,8 +39,13 @@ use App\Actions\Documents\RecordReceiptPrint;
 use App\Actions\Documents\RecordSessionReportPrint;
 use App\Actions\Inventory\ConfirmAdjustment;
 use App\Actions\Inventory\ConfirmManualIssue;
+use App\Actions\Inventory\ConfirmOpeningStock;
 use App\Actions\Inventory\ConfirmReceiving;
 use App\Actions\Inventory\ConfirmReversal;
+use App\Actions\Inventory\ReleaseOnboarding;
+use App\Actions\Inventory\ReplaceOpeningStock;
+use App\Actions\Inventory\StartOnboarding;
+use App\Actions\Inventory\WithdrawZeroCount;
 use App\Actions\Sales\CheckoutSale;
 use App\Actions\Sales\RecordCorrection;
 use App\Actions\Sales\RecordDrawerFundedCorrection;
@@ -124,6 +129,12 @@ final class CommandActions
         RecordCorrection::OPERATION => RecordCorrection::class,
         // RC-05 (TASK-034).
         RecordDrawerFundedCorrection::OPERATION => RecordDrawerFundedCorrection::class,
+        // RC-11 to RC-14 and RC-48 (TASK-035).
+        ConfirmOpeningStock::OPERATION => ConfirmOpeningStock::class,
+        StartOnboarding::OPERATION => StartOnboarding::class,
+        ReleaseOnboarding::OPERATION => ReleaseOnboarding::class,
+        WithdrawZeroCount::OPERATION => WithdrawZeroCount::class,
+        ReplaceOpeningStock::OPERATION => ReplaceOpeningStock::class,
     ];
 
     /**

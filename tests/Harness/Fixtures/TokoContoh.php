@@ -20,8 +20,13 @@ use App\Actions\Commands\CommandContext;
 use App\Actions\Costing\CorrectCost;
 use App\Actions\Inventory\ConfirmAdjustment;
 use App\Actions\Inventory\ConfirmManualIssue;
+use App\Actions\Inventory\ConfirmOpeningStock;
 use App\Actions\Inventory\ConfirmReceiving;
 use App\Actions\Inventory\ConfirmReversal;
+use App\Actions\Inventory\ReleaseOnboarding;
+use App\Actions\Inventory\ReplaceOpeningStock;
+use App\Actions\Inventory\StartOnboarding;
+use App\Actions\Inventory\WithdrawZeroCount;
 use App\Actions\Sales\CheckoutSale;
 use App\Actions\Sales\RecordCorrection;
 use App\Actions\Sales\RecordDrawerFundedCorrection;
@@ -483,6 +488,147 @@ final class TokoContoh
     }
 
     /**
+     * The onboarding version as it stands (TASK-035), which every onboarding and opening command expects.
+     *
+     * @throws DatabaseRefused
+     */
+    public static function onboardingVersion(): int
+    {
+        self::build(DB::connection());
+        self::shop();
+        $version = DB::table('onboarding_state')->where('id', 1)->value('version');
+
+        return is_int($version) ? $version : throw new LogicException('The bootstrap inserts the onboarding state.');
+    }
+
+    /**
+     * The Owner's start of onboarding through RC-12's Action (TASK-035; EXECUTION_CONTEXT EXC-45), at the
+     * version it stands at. The recent authentication of RC-12 is its route's, which this fixture does
+     * not pass through.
+     *
+     * @throws DatabaseRefused
+     */
+    public static function startOnboarding(): void
+    {
+        self::runAsOwner(StartOnboarding::class, StartOnboarding::OPERATION, [], ['onboardingVersion' => self::onboardingVersion()]);
+    }
+
+    /**
+     * The Owner's release of onboarding through RC-13's Action (TASK-035), at the version it stands at.
+     *
+     * @throws DatabaseRefused
+     */
+    public static function releaseOnboarding(): void
+    {
+        self::runAsOwner(ReleaseOnboarding::class, ReleaseOnboarding::OPERATION, [], ['onboardingVersion' => self::onboardingVersion()]);
+    }
+
+    /**
+     * An opening stock entry of these rows, confirmed by the Owner through RC-11's Action (TASK-035;
+     * EXECUTION_CONTEXT EXC-45), at the versions that onboarding and its products stand at: its
+     * internal key.
+     *
+     * @param  list<array{productId: int, quantity: string, countReference?: string|null, cost?: array<string, string>}>  $rows
+     *
+     * @throws DatabaseRefused
+     */
+    public static function opening(array $rows): int
+    {
+        $versions = [];
+
+        foreach ($rows as $row) {
+            $version = DB::table('products')->where('id', $row['productId'])->value('version');
+            $versions[$row['productId']] = ['productId' => $row['productId'], 'version' => is_int($version) ? $version : 0];
+        }
+
+        return self::asOwner(ConfirmOpeningStock::class, ConfirmOpeningStock::OPERATION, ['rows' => $rows], ['onboardingVersion' => self::onboardingVersion(), 'products' => array_values($versions)]);
+    }
+
+    /**
+     * One positive row of a product through RC-11's Action (TASK-035), at a KNOWN cost, or UNKNOWN when
+     * the amount is null: its OPENING's internal key.
+     *
+     * @throws DatabaseRefused
+     */
+    public static function openingStock(int $product, string $quantity, ?string $amount = '1000', string $countReference = 'HIT-01'): int
+    {
+        self::opening([['productId' => $product, 'quantity' => $quantity, 'countReference' => $countReference, 'cost' => $amount === null ? ['status' => 'UNKNOWN'] : ['status' => 'KNOWN', 'amount' => $amount]]]);
+
+        return self::openingOf($product);
+    }
+
+    /**
+     * The latest OPENING of a product (TASK-035): its internal key.
+     */
+    public static function openingOf(int $product): int
+    {
+        $movement = DB::table('stock_movements')->where('product_id', $product)->where('movement_type', 'OPENING')->orderByDesc('id')->value('id');
+
+        return is_int($movement) ? $movement : throw new LogicException('The product has an OPENING.');
+    }
+
+    /**
+     * The opening line of an OPENING (TASK-035): its internal key.
+     */
+    public static function openingLineOf(int $movement): int
+    {
+        $line = DB::table('stock_movements')->where('id', $movement)->value('opening_line_id');
+
+        return is_int($line) ? $line : throw new LogicException('The movement is an OPENING.');
+    }
+
+    /**
+     * A zero count of a product on the checklist through RC-11's Action (TASK-035): its internal key.
+     *
+     * @throws DatabaseRefused
+     */
+    public static function zeroCount(int $product, ?string $countReference = null): int
+    {
+        self::opening([['productId' => $product, 'quantity' => '0', 'countReference' => $countReference]]);
+        $zeroCount = DB::table('onboarding_zero_counts')->where('product_id', $product)->orderByDesc('id')->value('id');
+
+        return is_int($zeroCount) ? $zeroCount : throw new LogicException('The row recorded its zero count.');
+    }
+
+    /**
+     * The Owner's withdrawal of a zero count through RC-14's Action (TASK-035). The recent
+     * authentication of RC-14 is its route's, which this fixture does not pass through.
+     *
+     * @throws DatabaseRefused
+     */
+    public static function withdrawZeroCount(int $zeroCount, string $reason = 'Salah hitung'): void
+    {
+        self::asOwner(WithdrawZeroCount::class, WithdrawZeroCount::OPERATION, ['zeroCountId' => $zeroCount, 'reason' => $reason], ['onboardingVersion' => self::onboardingVersion()]);
+    }
+
+    /**
+     * The Owner's replacement of a reversed OPENING's line through RC-48's Action (TASK-035), at a KNOWN
+     * cost, or UNKNOWN when the amount is null, at the versions that onboarding and the product stand at:
+     * the replacement OPENING's internal key. The recent authentication of RC-48 is its route's.
+     *
+     * @throws DatabaseRefused
+     */
+    public static function replaceOpening(int $line, string $quantity, ?string $amount = '1000', string $reason = 'Hitung ulang', string $countReference = 'HIT-02'): int
+    {
+        $product = DB::table('opening_stock_lines')->where('id', $line)->value('product_id');
+        $version = DB::table('products')->where('id', $product)->value('version');
+
+        if (! is_int($product) || ! is_int($version)) {
+            throw new LogicException('The line names its product.');
+        }
+
+        self::asOwner(ReplaceOpeningStock::class, ReplaceOpeningStock::OPERATION, [
+            'replacesLineId' => $line,
+            'quantity' => $quantity,
+            'countReference' => $countReference,
+            'cost' => $amount === null ? ['status' => 'UNKNOWN'] : ['status' => 'KNOWN', 'amount' => $amount],
+            'reason' => $reason,
+        ], ['onboardingVersion' => self::onboardingVersion(), 'productVersion' => $version]);
+
+        return self::openingOf($product);
+    }
+
+    /**
      * A cash register of the shop, created by the Owner through RC-33's Action (TASK-027;
      * EXECUTION_CONTEXT EXC-45): its internal key. The recent authentication of RC-33 is its
      * route's, which this fixture does not pass through.
@@ -746,14 +892,29 @@ final class TokoContoh
      */
     private static function asOwner(string $action, string $operation, array $payload, array $expected = []): int
     {
+        $id = self::runAsOwner($action, $operation, $payload, $expected)['id'] ?? null;
+
+        return is_int($id) ? $id : throw new LogicException(sprintf('The fixture of %s was not created.', $operation));
+    }
+
+    /**
+     * The result of a command that the Owner runs through its Action, also one that names no record, as
+     * the start and the release of onboarding (TASK-035).
+     *
+     * @param  class-string<CommandAction>  $action
+     * @param  array<string, mixed>  $payload
+     * @param  array<string, mixed>  $expected
+     * @return array<array-key, mixed>|null
+     */
+    private static function runAsOwner(string $action, string $operation, array $payload, array $expected = []): ?array
+    {
         self::build(DB::connection());
         self::shop();
 
         $owner = User::query()->where('role_super_admin', true)->where('status', 'ACTIVE')->firstOrFail();
         $envelope = new Envelope($operation, Operations::VERSION, (string) Str::uuid(), (string) Str::uuid(), self::recoveryEpoch(), $expected, $payload);
-        $id = app($action)->execute(new CommandContext($owner->id, $envelope, app(Clock::class)->now()))->result['id'] ?? null;
 
-        return is_int($id) ? $id : throw new LogicException(sprintf('The fixture of %s was not created.', $operation));
+        return app($action)->execute(new CommandContext($owner->id, $envelope, app(Clock::class)->now()))->result;
     }
 
     /**
