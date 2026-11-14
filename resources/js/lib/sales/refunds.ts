@@ -1,5 +1,5 @@
 import { blockingRequest, type Unresolved } from '@/lib/commands/families';
-import { compareExact, parseMoney, parseQuantity, sumMoney } from '@/lib/exact';
+import { compareExact, compareMoney, parseMoney, parseQuantity, sumMoney } from '@/lib/exact';
 import { formatMoney, formatQuantity } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import { draftQuantity } from '@/lib/inventory/stock';
@@ -208,6 +208,27 @@ export function lineProblem(draft: LineDraft, line: RefundLine): { readonly quan
     }
 
     return returnsGoods(draft, line) && draft.condition === null ? { condition: t('ux.validation.choose_one') } : {};
+}
+
+/**
+ * Whether a line shows "Uang dikembalikan": while money remains on it, and also while the draft holds an
+ * amount there or a reason stands at the field. A bound refused reads the lines again, and an amount that
+ * no longer fits — the rest of the line's money refunded meanwhile, say in another tab — still counts in
+ * the draft and its payload, so it stands at its field for the Owner to change, with its reason where the
+ * refusal names it; while that reason stands, the field stays as the Owner empties it. Emptied with no
+ * reason at it, the field goes, as any whose bound is nothing (UI_STATES UXS-35; NAVIGATION_CONTRACTS
+ * UXP-203; TASK-034 review R-10).
+ */
+export function showsAmount(draft: LineDraft, line: RefundLine, reasoned: boolean): boolean {
+    return compareMoney(line.remainingAmount, '0') > 0 || draft.amount !== null || reasoned;
+}
+
+/**
+ * Whether a line shows "Jumlah barang diretur" with its "Kondisi": while goods remain on it, and also while
+ * the draft holds a quantity there or a reason stands at the field, as for the amount (UXS-35, UXP-203).
+ */
+export function showsQuantity(draft: LineDraft, line: RefundLine, reasoned: boolean): boolean {
+    return positive(line.remainingQuantity, line.quantityPrecision) || draft.quantity !== '' || reasoned;
 }
 
 /** The money the draft refunds in all, the sum of its lines (G-06). */

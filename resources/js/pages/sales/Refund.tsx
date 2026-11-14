@@ -33,7 +33,6 @@ import {
     OWNER_SOURCE,
     paramText,
     payoutMethodWord,
-    positive,
     refundFieldMessage,
     refundPayload,
     refundRequest,
@@ -41,6 +40,8 @@ import {
     returnsGoods,
     sessionSource,
     sessionWord,
+    showsAmount,
+    showsQuantity,
     sourceSession,
     type Condition,
     type FundingSession,
@@ -428,7 +429,9 @@ function RefundForm({ title, sale, lines, sessions }: RefundProps & { title: str
 
 /**
  * One line of the Sale (UXI-122): its product, what remains on it, "Uang dikembalikan" while money remains,
- * "Jumlah barang diretur" while goods remain, and "Kondisi" for the goods, never chosen by default.
+ * "Jumlah barang diretur" while goods remain, and "Kondisi" for the goods, never chosen by default. A field
+ * whose bound was read again at nothing stays while the draft holds a value there or its reason stands, so
+ * that the Owner can change what is now refused (UXS-35, UXP-203).
  */
 function LineFields({
     line,
@@ -446,8 +449,8 @@ function LineFields({
     errors: { readonly amount: string | undefined; readonly quantity: string | undefined; readonly condition: string | undefined };
     onChange: (next: Partial<LineDraft>) => void;
 }) {
-    const moneyLeft = compareMoney(line.remainingAmount, '0') > 0;
-    const goodsLeft = positive(line.remainingQuantity, line.quantityPrecision);
+    const amountShown = showsAmount(draft, line, errors.amount !== undefined);
+    const goodsShown = showsQuantity(draft, line, errors.quantity !== undefined);
     const conditions: readonly SegmentedOption<Condition>[] = [
         { value: 'SALEABLE', label: conditionWord('SALEABLE'), disabled: frozen },
         { value: 'NOT_SALEABLE', label: conditionWord('NOT_SALEABLE'), disabled: frozen },
@@ -457,12 +460,12 @@ function LineFields({
         <fieldset className={'bk-stack'}>
             <legend className={'bk-h3'}>{line.name}</legend>
             <p className={'bk-meta'}>{line.sku}</p>
-            {moneyLeft && (
+            {amountShown && (
                 <Field id={ids.amount} label={t('sales.refund.amount')} hint={t('sales.refund.remaining_amount', { uang: formatMoney(line.remainingAmount) })} error={errors.amount}>
                     <MoneyInput value={draft.amount} disabled={frozen} onValueChange={(amount) => onChange({ amount })} />
                 </Field>
             )}
-            {goodsLeft && (
+            {goodsShown && (
                 <>
                     <Field id={ids.quantity} label={t('sales.refund.return_quantity')} hint={t('sales.refund.remaining_quantity', { jumlah: formatQuantity(line.remainingQuantity, line.quantityPrecision, line.unit) })} error={errors.quantity}>
                         <TextInput type={'text'} inputMode={'decimal'} autoComplete={'off'} numeric={true} suffix={line.unit} disabled={frozen} value={draft.quantity} onChange={(event) => onChange({ quantity: event.target.value })} />

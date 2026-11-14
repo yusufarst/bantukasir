@@ -1,5 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { BANK_TRANSFER, CASH, OWNER_SOURCE, refundPayload, refundRequest, sessionSource, type FundingSession, type SentLine } from '@/lib/sales/refunds';
+import {
+    BANK_TRANSFER,
+    CASH,
+    draftLines,
+    draftTotal,
+    EMPTY_LINE,
+    OWNER_SOURCE,
+    refundPayload,
+    refundRequest,
+    sessionSource,
+    showsAmount,
+    showsQuantity,
+    type FundingSession,
+    type LineDraft,
+    type RefundLine,
+    type SentLine,
+} from '@/lib/sales/refunds';
 
 // The payout that UXP-203 sends for the source the Owner chose (TASK-034 review R-01; SALES_CASH BR-RFD-05,
 // BR-RFD-06, BR-RFD-16; D-045, D-087; INTERACTION_CONTRACTS RC-05, RC-06): a listed OPEN session's drawer
@@ -35,5 +51,60 @@ describe('the payout of the refund page', () => {
         // The chosen session closed, so that the sessions read again no longer list it.
         expect(refundRequest(true, CASH, sessionSource(7), [LACI_2])).toBeNull();
         expect(refundRequest(true, CASH, sessionSource(7), [])).toBeNull();
+    });
+});
+
+// A line's fields after a bound refused (UI_STATES UXS-35; NAVIGATION_CONTRACTS UXP-203; the automated
+// reviewer's P2 finding on pull request #46): the lines read again may leave a line with nothing more to
+// refund, or to return, while the draft still holds what the Owner typed there, which its total and payload
+// still send. The field stays while the draft holds a value there or its reason stands, so that the Owner can
+// change it; without either, a field whose bound is nothing is not shown.
+
+const LINE: RefundLine = { saleLineId: 9, lineNo: 1, name: 'Pulpen Hitam', sku: 'PLP-01', unit: 'pcs', quantityPrecision: 0, quantity: '2', lineTotal: '20000', remainingAmount: '20000', remainingQuantity: '2' };
+
+describe('the fields of a line of the refund page', () => {
+    it('show what remains, and no field whose bound is nothing on an empty draft', () => {
+        expect(showsAmount(EMPTY_LINE, LINE, false)).toBe(true);
+        expect(showsQuantity(EMPTY_LINE, LINE, false)).toBe(true);
+        expect(showsAmount(EMPTY_LINE, { ...LINE, remainingAmount: '0' }, false)).toBe(false);
+        expect(showsQuantity(EMPTY_LINE, { ...LINE, remainingQuantity: '0' }, false)).toBe(false);
+    });
+
+    it('keep an amount that no longer fits at its field until the Owner empties it and reviews again (UXS-35)', () => {
+        // The rest of the line's money refunded in another tab: read again after REFUND_BOUND_EXCEEDED, the
+        // line has goods left only, and the draft still sends the amount typed.
+        const read: RefundLine = { ...LINE, remainingAmount: '0' };
+        const typed: LineDraft = { amount: '20000', quantity: '', condition: null };
+
+        expect(draftTotal({ 9: typed }, [read])).toBe('20000');
+        expect(draftLines({ 9: typed }, [read])).toEqual([{ saleLineId: 9, refundAmount: '20000', returnedSaleable: '0', returnedNotSaleable: '0' }]);
+        expect(showsAmount(typed, read, true)).toBe(true);
+        expect(showsAmount(typed, read, false)).toBe(true);
+
+        // Emptied while its reason stands, the field stays where the Owner types; with no reason at it — once
+        // reviewed again, or where the refusal names no reason there — it goes as soon as it is empty, and
+        // nothing of it is sent (review R-10).
+        const emptied: LineDraft = { ...typed, amount: null };
+
+        expect(showsAmount(emptied, read, true)).toBe(true);
+        expect(showsAmount(emptied, read, false)).toBe(false);
+        expect(draftTotal({ 9: emptied }, [read])).toBe('0');
+        expect(draftLines({ 9: emptied }, [read])).toEqual([]);
+    });
+
+    it('keep a quantity that no longer fits at its field, with its condition, as the amount (UXS-35)', () => {
+        // The rest of the line's goods returned meanwhile: read again after RETURN_BOUND_EXCEEDED.
+        const read: RefundLine = { ...LINE, remainingQuantity: '0' };
+        const typed: LineDraft = { amount: null, quantity: '1', condition: 'SALEABLE' };
+
+        expect(draftLines({ 9: typed }, [read])).toEqual([{ saleLineId: 9, refundAmount: '0', returnedSaleable: '1', returnedNotSaleable: '0' }]);
+        expect(showsQuantity(typed, read, true)).toBe(true);
+        expect(showsQuantity(typed, read, false)).toBe(true);
+
+        const emptied: LineDraft = { ...typed, quantity: '' };
+
+        expect(showsQuantity(emptied, read, true)).toBe(true);
+        expect(showsQuantity(emptied, read, false)).toBe(false);
+        expect(draftLines({ 9: emptied }, [read])).toEqual([]);
     });
 });
