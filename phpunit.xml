@@ -15,7 +15,8 @@
     list that together they hold every test of Postgres once; locally,
     composer test:postgres stays the whole suite. To balance the parts, a
     directory moves from one part to the other: it is added to Postgres2's
-    directories and to Postgres1's exclusions, or removed from both. A run
+    directories and to Postgres1's exclusions, or removed from both; D-129
+    moved tests/Feature/Inventory to Postgres2 this way. A run
     that names no suite takes the four suites of defaultTestSuite, as before
     the parts, so that no file is offered to two suites of one run, which
     PHPUnit refuses with a warning.
@@ -57,11 +58,13 @@
             <exclude>tests/Feature/Access</exclude>
             <exclude>tests/Feature/Audit</exclude>
             <exclude>tests/Feature/Catalog</exclude>
+            <exclude>tests/Feature/Inventory</exclude>
         </testsuite>
         <testsuite name="Postgres2">
             <directory>tests/Feature/Access</directory>
             <directory>tests/Feature/Audit</directory>
             <directory>tests/Feature/Catalog</directory>
+            <directory>tests/Feature/Inventory</directory>
         </testsuite>
         <testsuite name="Concurrency">
             <directory>tests/Concurrency</directory>
