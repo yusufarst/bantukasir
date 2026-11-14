@@ -115,6 +115,57 @@ export function sourceSession(source: string | null, sessions: readonly FundingS
     return sessions.find((session) => sessionSource(session.id) === source) ?? null;
 }
 
+/**
+ * What the draft pays out, as the Owner chose it: from the drawer of a listed OPEN session, sent by RC-05;
+ * from the Owner's own funds or by transfer, by RC-06 with the payout made; a return without money, by
+ * RC-06 without a payout.
+ */
+export type RefundRequest = { readonly kind: 'drawer'; readonly session: FundingSession } | { readonly kind: 'owner' } | { readonly kind: 'transfer' } | { readonly kind: 'return' };
+
+/**
+ * The request of the draft, or null while its payout is not chosen: no method for money refunded, or for
+ * Tunai no source — and a session that the sessions read again no longer list counts as none, never as
+ * the Owner's own funds or another session (BR-RFD-16, D-045; TASK-034 review R-01).
+ */
+export function refundRequest(money: boolean, method: Method | null, source: string | null, sessions: readonly FundingSession[]): RefundRequest | null {
+    if (!money) {
+        return { kind: 'return' };
+    }
+
+    if (method === BANK_TRANSFER) {
+        return { kind: 'transfer' };
+    }
+
+    if (method !== CASH) {
+        return null;
+    }
+
+    if (source === OWNER_SOURCE) {
+        return { kind: 'owner' };
+    }
+
+    const session = sourceSession(source, sessions);
+
+    return session === null ? null : { kind: 'drawer', session };
+}
+
+/**
+ * The payload of a request: RC-05 names only the session, whose payout the server makes (D-087); RC-06 the
+ * method and the reference of the payout made, or no payout for a return without money.
+ */
+export function refundPayload(request: RefundRequest, base: { readonly saleId: number; readonly lines: readonly SentLine[]; readonly reason: string }, reference: string): Readonly<Record<string, unknown>> {
+    switch (request.kind) {
+        case 'drawer':
+            return { ...base, payout: { sessionId: request.session.id } };
+        case 'owner':
+            return { ...base, payout: { method: CASH, reference } };
+        case 'transfer':
+            return { ...base, payout: { method: BANK_TRANSFER, reference } };
+        case 'return':
+            return base;
+    }
+}
+
 /** A line of the draft as typed: the money refunded, the quantity returned and its condition. */
 export interface LineDraft {
     readonly amount: string | null;

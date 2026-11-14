@@ -318,7 +318,8 @@ final class RecordDrawerFundedCorrectionTest extends DatabaseTestCase
         // writes 13 steps — the correction, the refund, its line, the return line, the Sale's running total,
         // the line's running total, the pen's balance and valuation, its RETURN_RECEIPT, its return allocation,
         // the session's activity version, the audit event and the result. A failure after each leaves
-        // nothing, the session's version among it.
+        // nothing, the session's version among it, and its receipt is not marked committed (TS-21; review
+        // R-02).
         $sale = TokoContoh::sell('Dewi', $this->other, [self::sold($this->pen, '2')]);
         $line = TokoContoh::saleLinesOf($sale)[0] ?? 0;
         $lines = [self::line($line, '30000', '1')];
@@ -332,6 +333,7 @@ final class RecordDrawerFundedCorrectionTest extends DatabaseTestCase
             $this->refund($this->envelopeOf($sale, $lines, $this->drawer))->assertStatus(500);
 
             $this->assertSame($before, $this->factsAndRows(), sprintf('after write step %d', $step));
+            $this->assertSame('PENDING', $this->watcher()->table('command_request_receipts')->where('operation', RecordDrawerFundedCorrection::OPERATION)->orderByDesc('id')->value('outcome'), (string) $step);
         }
 
         // The step after the last is no step of the command: it commits, through the locks of TR §7.1 in

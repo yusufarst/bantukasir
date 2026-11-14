@@ -35,6 +35,8 @@ import {
     payoutMethodWord,
     positive,
     refundFieldMessage,
+    refundPayload,
+    refundRequest,
     refundsMoney,
     returnsGoods,
     sessionSource,
@@ -180,8 +182,12 @@ function RefundForm({ title, sale, lines, sessions }: RefundProps & { title: str
     const total = draftTotal(drafts, lines);
     const money = compareMoney(total, '0') > 0;
     const goods = lines.some((line) => returnsGoods(drafts[line.saleLineId] ?? EMPTY_LINE, line));
-    const chosenSession = method === CASH ? sourceSession(source, sessions) : null;
-    const viaDrawer = money && chosenSession !== null;
+    // The payout as the Owner chose it, or null while it is not chosen: a session no longer listed is no
+    // source, never another one (BR-RFD-16; review R-01).
+    const request = refundRequest(money, method, source, sessions);
+    const chosenSession = request?.kind === 'drawer' ? request.session : null;
+    const ownerFunds = request?.kind === 'owner';
+    const viaDrawer = chosenSession !== null;
     const control = activeControl(drawer, other, viaDrawer);
     const { phase } = control;
     const refusal = phase.kind === 'rejected' ? phase.refusal : null;
@@ -194,7 +200,7 @@ function RefundForm({ title, sale, lines, sessions }: RefundProps & { title: str
     const trimmedReason = reason.trim();
     const trimmedReference = reference.trim();
     const typed = money || goods || trimmedReason !== '' || method !== null;
-    const referenceNeeded = money && (method === BANK_TRANSFER || (method === CASH && source === OWNER_SOURCE));
+    const referenceNeeded = ownerFunds || request?.kind === 'transfer';
 
     useUnsavedChanges(typed && phase.kind !== 'committed', t('ux.state.unsaved.body'));
 
@@ -230,6 +236,14 @@ function RefundForm({ title, sale, lines, sessions }: RefundProps & { title: str
             setSource(null);
         }
     }, [code]);
+
+    // A session that the sessions read again no longer list is no longer chosen: the Owner chooses the
+    // source again, and nothing is sent meanwhile (BR-RFD-16; review R-01).
+    useEffect(() => {
+        if (source !== null && source !== OWNER_SOURCE && sourceSession(source, sessions) === null) {
+            setSource(null);
+        }
+    }, [source, sessions]);
 
     const change = (line: RefundLine, next: Partial<LineDraft>): void => {
         setDrafts((current) => ({ ...current, [line.saleLineId]: { ...(current[line.saleLineId] ?? EMPTY_LINE), ...next } }));
@@ -280,7 +294,7 @@ function RefundForm({ title, sale, lines, sessions }: RefundProps & { title: str
             : code === 'SESSION_NOT_OPEN'
               ? t('ux.state.session_closed.refund.body')
               : undefined;
-    const sourceError = sourceRefused ?? (checked && money && method === CASH && source === null ? t('ux.validation.choose_one') : undefined) ?? sourceInvalid;
+    const sourceError = sourceRefused ?? (checked && money && method === CASH && request === null ? t('ux.validation.choose_one') : undefined) ?? sourceInvalid;
     const referenceError = (checked && referenceNeeded && trimmedReference === '' ? t('ux.validation.required') : undefined) ?? referenceInvalid;
     const reasonError = (checked && trimmedReason === '' ? t('ux.validation.required') : undefined) ?? reasonInvalid;
     const linesValid = lines.every((line) => {
@@ -288,7 +302,7 @@ function RefundForm({ title, sale, lines, sessions }: RefundProps & { title: str
 
         return problem.quantity === undefined && problem.condition === undefined;
     });
-    const valid = (money || goods) && linesValid && !(money && method === null) && !(money && method === CASH && source === null) && !(referenceNeeded && trimmedReference === '') && trimmedReason !== '';
+    const valid = (money || goods) && linesValid && request !== null && !(referenceNeeded && trimmedReference === '') && trimmedReason !== '';
     const reviewReason: ReactNode = valid ? undefined : t('sales.refund.disabled');
 
     const methodId = `${ids}-method`;
@@ -317,18 +331,22 @@ function RefundForm({ title, sale, lines, sessions }: RefundProps & { title: str
         }
     };
 
+    // Only the payout that the Owner chose is sent: RC-05 for a listed drawer, RC-06 otherwise; with none
+    // chosen nothing is sent (BR-RFD-16; review R-01).
     const confirm = (): void => {
+        if (request === null) {
+            return;
+        }
+
         const payloadLines = draftLines(drafts, lines);
-        const base = { saleId: sale.id, lines: payloadLines, reason: trimmedReason };
+        const payload = refundPayload(request, { saleId: sale.id, lines: payloadLines, reason: trimmedReason }, trimmedReference);
 
         setSent(payloadLines.map((line) => line.saleLineId));
 
-        if (viaDrawer && chosenSession !== null) {
-            drawer.submit({ ...base, payout: { sessionId: chosenSession.id } });
-        } else if (money && method !== null) {
-            other.submit({ ...base, payout: { method, reference: trimmedReference } });
+        if (request.kind === 'drawer') {
+            drawer.submit(payload);
         } else {
-            other.submit(base);
+            other.submit(payload);
         }
     };
 
@@ -401,7 +419,7 @@ function RefundForm({ title, sale, lines, sessions }: RefundProps & { title: str
                 </div>
             </CommandForm>
             <ReviewDialog open={review && (phase.kind === 'idle' || busy || throttled)} onOpenChange={setReview} title={t('sales.refund.review_title')} confirmLabel={t('sales.refund.confirm')} busy={busy} onConfirm={confirm}>
-                <ReviewContent drafts={drafts} lines={lines} total={total} method={money ? method : null} session={viaDrawer ? chosenSession : null} owner={money && method === CASH && source === OWNER_SOURCE} reason={trimmedReason} />
+                <ReviewContent drafts={drafts} lines={lines} total={total} method={money ? method : null} session={chosenSession} owner={ownerFunds} reason={trimmedReason} />
             </ReviewDialog>
             {!invalid && <CommandPanels control={control} />}
         </CommandLayout>
