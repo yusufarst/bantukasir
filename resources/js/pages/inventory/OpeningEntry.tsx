@@ -604,7 +604,9 @@ function EntryForm({ title, onboardingVersion, categories, stale }: { title: str
             }
         }
 
-        return { row, positive: !isZeroCount(row.quantity), productError, quantityError, costError, evidenceError, countReferenceError, marked: named.includes(row.product.id) };
+        const costIds = { cost: fieldId(row.key, 'cost'), evidence: fieldId(row.key, 'evidence') };
+
+        return { row, positive: !isZeroCount(row.quantity), costIds, productError, quantityError, costError, evidenceError, countReferenceError, marked: named.includes(row.product.id) };
     });
 
     const refusalState = refusal === null ? undefined : REFUSAL_STATES[refusal.code];
@@ -692,7 +694,7 @@ function EntryForm({ title, onboardingVersion, categories, stale }: { title: str
                     {rowViews.length > 0 && <h2 className={'bk-sr-only'}>{t('inventory.line.product')}</h2>}
                     {rowViews.length > 0 && (
                         <ul className={'bk-stack'} aria-label={title}>
-                            {rowViews.map(({ row, positive, productError, quantityError, costError, evidenceError, countReferenceError, marked }) => (
+                            {rowViews.map(({ row, positive, costIds, productError, quantityError, costError, evidenceError, countReferenceError, marked }) => (
                                 <li key={row.key}>
                                     <Section title={row.product.name} level={3} card={false}>
                                         <div className={'bk-stack'} data-marked={marked}>
@@ -709,7 +711,7 @@ function EntryForm({ title, onboardingVersion, categories, stale }: { title: str
                                             {positive && (
                                                 <CostFields
                                                     cost={row}
-                                                    ids={{ cost: fieldId(row.key, 'cost'), evidence: fieldId(row.key, 'evidence') }}
+                                                    ids={costIds}
                                                     frozen={frozen}
                                                     costError={costError}
                                                     evidenceError={evidenceError}

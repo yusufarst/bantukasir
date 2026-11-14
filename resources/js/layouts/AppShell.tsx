@@ -693,6 +693,8 @@ const ONBOARDING_PAGE = '/stock/onboarding';
 
 const ONBOARDING_CAPABILITY = 'CAP-15';
 
+const ONBOARDING_STATE: StateId = 'UXS-27';
+
 /**
  * The banner of UXS-27 on every page while onboarding is active (UXI-030; UI_STATES UXS-27; G-10;
  * TASK-035), from the onboarding state of RD-03: its text for every role, and for the Owner "Buka
@@ -703,7 +705,7 @@ function OnboardingBanner({ phase, owner, onPage, onNavigate }: { phase: Onboard
         return null;
     }
 
-    return <StateNotice state={'UXS-27'} {...(owner && !onPage ? { actions: <ButtonLink href={ONBOARDING_PAGE} label={t('inventory.onboarding.open')} variant={'secondary'} onClick={onNavigate} /> } : {})} />;
+    return <StateNotice state={ONBOARDING_STATE} {...(owner && !onPage ? { actions: <ButtonLink href={ONBOARDING_PAGE} label={t('inventory.onboarding.open')} variant={'secondary'} onClick={onNavigate} /> } : {})} />;
 }
 
 /**
