@@ -176,7 +176,10 @@ final class OpeningStock
     }
 
     /**
-     * A zero count with its product and whether it is withdrawn, or null when it does not exist.
+     * A zero count with its product and whether it is withdrawn, or null when it does not exist. A read
+     * of what may change between two calls: the Actions read it again under the product's guard.
+     *
+     * @phpstan-impure
      */
     public function zeroCount(int $id): ?ZeroCount
     {
@@ -203,7 +206,10 @@ final class OpeningStock
 
     /**
      * An opening line with its product, its OPENING, whether a reversal cancelled that OPENING and
-     * whether a later line replaces it, or null when it does not exist.
+     * whether a later line replaces it, or null when it does not exist. A read of what may change
+     * between two calls: the Action reads it again under the product's guard.
+     *
+     * @phpstan-impure
      */
     public function line(int $id): ?OpeningLine
     {

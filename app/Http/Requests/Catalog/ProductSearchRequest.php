@@ -51,9 +51,9 @@ final class ProductSearchRequest extends RefusingRequest
     public const array CONTEXTS = ['till', 'catalog', 'receiving', 'issue', 'adjustment', 'opening', 'stock', 'correction'];
 
     /**
-     * The contexts already provided, each with its capability; every later Task
-     * adds its own here (TRACEABILITY section 7), and refuses `status` for it, which
-     * is the catalog's alone (INTERACTION_CONTRACTS section 3.1).
+     * Every context with its capability, since TASK-035 provided `opening`, the last of
+     * TRACEABILITY section 7; `status` is the catalog's alone (INTERACTION_CONTRACTS
+     * section 3.1).
      *
      * @var array<string, Capability>
      */
@@ -79,10 +79,9 @@ final class ProductSearchRequest extends RefusingRequest
             return true;
         }
 
-        $capability = self::PROVIDED[$context] ?? null;
         $user = $this->user();
 
-        return $capability !== null && $user instanceof User && Capabilities::allows($user, $capability);
+        return $user instanceof User && Capabilities::allows($user, self::PROVIDED[$context]);
     }
 
     /**
