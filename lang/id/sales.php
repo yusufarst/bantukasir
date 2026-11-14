@@ -5,7 +5,7 @@
 // from COPY_DECK by the first Task that uses them; TASK-003 adds none. TASK-027
 // adds the title of the Kasir destination (UXI-002; section 4.3). TASK-029 adds
 // the till, the payment screen and the receipt page (sections 4.1, 7.1 to 7.3
-// and 15).
+// and 15). TASK-034 adds the refund pages (sections 7.7 to 7.9 and 15).
 
 return [
     'till' => [
@@ -104,5 +104,49 @@ return [
         'reference' => 'Referensi',
         'reprint' => 'Cetak ulang struk',
         'session_link' => 'Sesi kas :nomor',
+        // UXI-120, the Owner's linked refunds and returns (COPY_DECK section 7.7; TASK-034).
+        'refunds' => 'Pengembalian uang dan retur',
+        'refund_entry' => ':uang · :cara · :sumber · :waktu',
+        'return_entry' => ':jumlah :produk · :kondisi · :waktu',
+        'refund_reason' => 'Alasan: :alasan',
+    ],
+    // UXP-203 and UXI-118 (COPY_DECK sections 4.1, 7.7, 7.8 and 15; TASK-034).
+    'refund' => [
+        'title' => 'Pengembalian uang dan retur',
+        'intro' => 'Pilih barang dan uang yang dikembalikan untuk penjualan :nomor. Penjualan asli tidak berubah.',
+        'return_quantity' => 'Jumlah barang diretur',
+        'condition' => 'Kondisi',
+        'condition_saleable' => 'Layak jual',
+        'condition_damaged' => 'Tidak layak jual',
+        'condition_help' => 'Barang layak jual masuk lagi ke stok. Barang tidak layak jual tidak menambah stok.',
+        'amount' => 'Uang dikembalikan',
+        'remaining_quantity' => 'Sisa bisa diretur: :jumlah',
+        'remaining_amount' => 'Sisa bisa dikembalikan: :uang',
+        'method' => 'Cara pengembalian uang',
+        'source' => 'Sumber uang',
+        'source_session' => ':laci · :nama · uang seharusnya :uang',
+        'source_owner' => 'Dana Pemilik',
+        'source_help' => 'Pilih satu sumber uang. Tidak ada pilihan otomatis, dan satu pengembalian tidak dibagi ke beberapa sumber.',
+        'reference' => 'Referensi pengembalian uang',
+        'reason' => 'Alasan',
+        'review_title' => 'Tinjau pengembalian uang dan retur',
+        'review_total' => 'Total dikembalikan: :uang',
+        'review_method' => 'Cara: :cara',
+        'review_source' => 'Sumber uang: :sumber',
+        'review_goods' => 'Barang diretur: :ringkasan',
+        'review_reason' => 'Alasan: :alasan',
+        'review_drawer_note' => 'Ambil uang dari laci hanya setelah pengembalian ini tercatat.',
+        'confirm' => 'Konfirmasi pengembalian',
+        'disabled' => 'Isi jumlah barang yang diretur atau uang yang dikembalikan, lalu lengkapi isian yang wajib.',
+        'disabled_fully_refunded' => 'Sudah dikembalikan seluruhnya.',
+        'disabled_unresolved' => 'Ada pengembalian uang yang statusnya belum pasti. Cek statusnya dulu.',
+    ],
+    // UXP-204 (COPY_DECK sections 4.1 and 7.9; TASK-034).
+    'refund_result' => [
+        'title' => 'Pengembalian tercatat',
+        'take_cash' => 'Ambil :uang dari :laci sekarang dan serahkan kepada pelanggan.',
+        'take_cash_before' => 'Serahkan sebelum modal awal sesi berikutnya di laci kas ini dihitung.',
+        'recorded' => 'Pengembalian uang :uang tercatat.',
+        'return_recorded' => 'Retur barang tercatat.',
     ],
 ];

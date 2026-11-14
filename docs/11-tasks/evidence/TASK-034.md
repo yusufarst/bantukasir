@@ -1,0 +1,112 @@
+# TASK-034 evidence — Drawer-funded refunds and the refund pages
+
+| | |
+| --- | --- |
+| Task | [TASK-034](../tasks/TASK-034-drawer-refunds.md), review class A |
+| Instruction | Continuous execution, D-101, as the delegation of the tick printed it (EXECUTION_CONTEXT CE-01) |
+| Executor | Agent `bk-executor-max`, model `claude-opus-5-5`, effort Max from the table of EXECUTION_CONTEXT section 19; review by `bk-reviewer-max`, verification by `bk-reviewer-xhigh` |
+| Branch and base | `task/TASK-034-drawer-refunds`, from `31faaf5c69698f85e9c023e1481217c2fffe820f` (origin/develop, the squash merge of TASK-033) |
+| Preflight (EXC-20, EXC-21, EXC-23) | The tree clean but for `Claude outputs/` and `plan-p0-p11-review.patch`, which this Task leaves alone; no branch or pull request of TASK-034 and no open pull request; the executor state at `BUILD` for TASK-034 with this session's lock, the previous merge verified by the tick (`MERGE_VERIFIED`, `develop` CI run 43585705889 green after the Owner re-ran its failed job); TASK-033 and TASK-032 `DONE`, no gate. PHP is not on this machine, and its `node_modules` has no `.bin` links, so `tsc` and ESLint do not run here either: every check but the guard runs in CI (D-108, D-117) |
+| Owner's directives in force | Forwarded by the host at the start (14 November 2026), adding no permission: his FINAL DIRECTIVE of 14 November, "FULL V1, ACCELERATE EXECUTION", recorded by this Task as D-130 (section 10); the efficiency rules — the contract built directly, the cheap relevant checks before each push, evidence reused, one review; the safety boundary unchanged — every gate, retry limit, RBAC, atomicity, stock and payment integrity, no weakened test, timeout or baseline, a new CVE a stop; the known flaky axe check of `tests/Browser/configuration/profile.spec.ts:245`, left unchanged and reported as known if it fails; commit and pull request texts without tool or vendor names, attribution or agent wording |
+
+## 1. Checks
+
+Every check runs in CI, on GitHub's hosted runner, with the local environment's containers and synthetic data, started by the executor's push, except the guard, which runs natively (EXC-61, CE-31, CE-44, CE-46). Times are Asia/Jakarta.
+
+| Check | Where it ran | Time | Duration | Result |
+| --- | --- | --- | --- | --- |
+| `npm run typecheck`, `npx tsc --noEmit`, `npx eslint`, PHP's checks | Local | — | — | `NOT_RUN`: PHP is not on this machine, and `node_modules` has no `.bin` links for `tsc` and `eslint`; the fast runs run them |
+| The whole of `test:postgres` in its two parts, `test:race`, the browser suite with `tests/Browser/sales/refund.spec.ts`, the build and the image checks, with the unchanged files that the change reaches (F-3) | CI on the pull request's final head (CE-41, CE-44, D-117) | — | — | `NOT_RUN` until then |
+
+## 2. What was built (contract section 4.1)
+
+| Item | Where |
+| --- | --- |
+| 1. RC-05 `sale_correction.drawer_funded` on the correction engine of TASK-033: CAP-24 at the route with recent authentication and the command throttle; a reason; the selected session under its update lock at step 4 (`FOR NO KEY UPDATE`, as a Sale's), NOT_FOUND when it does not exist and SESSION_NOT_OPEN, with the refund's message, when CLOSED; the amount at most the session's expected cash computed under that lock from its facts — the opening cash, the applied CASH of its Sales and the drawer-funded refunds already paid from it — else DRAWER_CASH_INSUFFICIENT with the drawer and its expected cash, Rp0 reachable; the source never switched or split; the payout CASH from that drawer with the reference `<Sale number>/<k>`, k the correction's ordinal on the Sale, under the Sale's lock; the session's activity version one on by a relative increment; the audit event naming the session; idempotent | `App\Actions\Sales\RecordDrawerFundedCorrection`; `App\Http\Requests\Sales\RecordDrawerFundedCorrectionRequest` on `CorrectionRequest`, the base drawn from RC-06's request; `App\Http\Controllers\Sales\RecordDrawerFundedCorrectionController`; `App\Domain\Cash\Sessions::lockForRefund`, `FundingSession`; `App\Domain\Sales\Corrections\SaleCorrections::nextOrdinal`, `drawerRefundsOf`; `App\Actions\Commands\CommandActions`; `routes/web.php` |
+| 2. The drawer-funded refunds apart in the session report (DC-02 row 8, DC-03) and on RP-206: frozen at the close as the report's `drawer_refunds`, each with its Sale's number, its payout's reference, its amount, its time and the Owner as actor, their total and `source_ids.drawerRefundIds`; expected cash with them taken out at RC-03, RC-04 and their previews (G-05); listed in the close previews with the reminder of D-068 (UXI-101, UXI-149), beside the variance on RP-206 for every role (UXI-143), with the Owner's guidance for a variance above zero (D-068), in the print view and in the CSV | `App\Domain\Cash\DrawerRefunds`, `SessionSales`, `SessionReports`; `App\Actions\Cash\CloseCashSession`, `CloseCashSessionAssisted`; `App\Http\Controllers\Cash\CloseSessionController`, `AssistedCloseController`, `SessionsController`; `App\Queries\Cash\SessionRecords`; `App\Domain\Documents\SessionReports\SessionReportDocuments`, `SessionReportCsv`; `resources/js/lib/cash/Parts.tsx`, `sessions.ts`; `resources/js/pages/cash/CloseSession.tsx`, `AssistedClose.tsx`, `Session.tsx`; `resources/js/lib/documents/SessionReportDocument.tsx` |
+| 3. RP-203 "Pengembalian uang dan retur": each line with something left, what remains to refund and to return on it, the money, the quantity and its condition chosen explicitly; "Cara pengembalian uang", Tunai or Transfer bank; for Tunai "Sumber uang", every OPEN session's drawer with its expected cash or "Dana Pemilik", one, never a default; the reference typed for a transfer or the Owner's funds; the reason; "Tinjau" and its review with the drawer note; RC-05 for a drawer and RC-06 otherwise, after recent authentication; RP-204 "Pengembalian tercatat" with, for a drawer-funded refund, the instruction to take the cash now from the named drawer first (D-068), and the committed correction; RP-202's linked corrections for the Owner (UXI-120) and "Pengembalian uang dan retur" (UXI-118) | `App\Http\Controllers\Sales\RefundController`, `SalesController`; `App\Queries\Sales\CorrectionRecords`; `App\Queries\Cash\OpenSessions::all`; `resources/js/pages/sales/Refund.tsx`, `RefundRecorded.tsx`, `Show.tsx`; `resources/js/lib/sales/refunds.ts`, `Corrections.tsx`; `resources/js/components/ui/Choices.tsx`, `resources/css/components.css` (the source as a full-width list); `resources/js/pages/commands/Requests.tsx` (UXI-056's "Lihat hasil" for both families); `lang/id/sales.php`, `cash.php`, `documents.php`; `resources/js/types/translation-keys.ts` |
+| 4. RACE-15 in the interface: an uncertain refund freezes the form on its panel, which says that no cash may leave the drawer and no new refund be made; "Pengembalian uang dan retur" waits while the Owner holds an unresolved refund of either family (NC-13); "Cek status" or "Kirim ulang" resolves it, and only a committed refund leads to RP-204 and its instruction to take the cash | `resources/js/pages/sales/Refund.tsx`, `Show.tsx`; `resources/js/lib/sales/refunds.ts` (`unresolvedRefund`) |
+
+## 3. Readings and technical choices
+
+| Reading | Why |
+| --- | --- |
+| RC-05's lock order: the identity, the actor, the onboarding state (share) only when a saleable return is received, the selected session (step 4), the original Sale's guard row (5), the products (6), their balances and projections (7), then the writes. The session is locked `FOR NO KEY UPDATE`, as a Sale takes it, so that refunds and Sales of one session serialize on it and a close, which takes `FOR UPDATE`, serializes with both (RACE-13, RACE-14) | TECHNICAL_RULES sections 7.1 and 7.2; BR-RFD-07 |
+| Expected cash is computed in RC-05, RC-03, RC-04 and their previews from the session's facts, as G-05 states it: the opening cash, plus the applied CASH of its Sales, less its drawer-funded refunds. The Cash module never reads the Sales module (STK-10): the Actions and the controllers pass it the Sales module's reads, `Sales::ofSession` and `SaleCorrections::drawerRefundsOf`, and `CashCount::due` computes it | SCHEMA G-05; STACK_AND_MODULES STK-10 |
+| k of `<Sale number>/<k>` is the number of the Sale's corrections, drawer-funded or not, plus one, read under the Sale's lock, which every correction takes before it is added: no ordinal is given twice | INTERACTION_CONTRACTS RC-05; D-087 |
+| A drawer-funded refund names no reference typed by the Owner (UXI-125 only for a transfer or the Owner's own funds): COPY_DECK left it to RF-5 whether it is typed or generated, and D-087 generates it | COPY_DECK section 7.8, UXI-125's note; D-087 |
+| RC-05 refunds money above zero: no money, with goods moving, is VALIDATION_FAILED without a field, as COPY_DECK names no text for it and no page sends it, and the Action refuses it too, which every caller reaches (ARC-30); a payout takes only `sessionId`, and the allowlist refuses anything else | INTERACTION_CONTRACTS RC-05; TR-VAL-03 |
+| The report's `drawer_refunds` holds each refund as the report froze it, with the Owner's name frozen with the correction (G-16), so that RP-206, the print view and the CSV render it without reading a later state. The template `session_report.1` gains row 8's lines: no report held a drawer-funded refund before this Task — TASK-031's renderer refused one — so every earlier report renders as it did, and no new template version is needed | DOCUMENT_CONTRACTS DC-02, DC-03; ARC-45; TASK-031 evidence |
+| The CSV's refund lines follow the header line that TASK-031 wrote: the Sale's number, the payout's reference, the amount in whole rupiah, the time in Asia/Jakarta and the Owner | DC-03; TASK-031 evidence F-1 |
+| RP-203 reads every OPEN session with its expected cash without a lock: RC-05 checks it again under the session's lock. After DRAWER_CASH_INSUFFICIENT or SESSION_NOT_OPEN the page reads the sessions again, and after a bound refused the lines; a closed session is no longer chosen, and the page never chooses another source itself | BR-RFD-15, BR-RFD-16; NAVIGATION_CONTRACTS UXP-203 |
+| The page sends one command for the chosen source: RC-05 for a drawer, RC-06 for "Dana Pemilik", a transfer or a return without money. Its panels follow the control that is not idle, so that a request adopted from the Owner's unresolved ones shows its own family's panel | INTERACTION_CONTRACTS RC-05, RC-06, section 2.6; NC-13 |
+| The summary of errors lists the fields that the server found invalid, as every command page does; the page's own checks stand at their fields after a first "Tinjau", with the button's reason, so that typing never moves the focus; a refusal that the page explains — a bound, the drawer, a closed session, onboarding, a block, an inactive product — stands in its notice and at its field | UI_STATES UXS-05, UXS-27, UXS-28, UXS-30, UXS-32, UXS-35, UXS-36 |
+| RP-204 has one way back, "Kembali ke Detail penjualan" (UXI-134), below the correction: no link stands above the instruction to take the cash, the first element after the page's title | NAVIGATION_CONTRACTS UXP-204; INTERACTION_INVENTORY UXI-133, UXI-134 |
+| The source of a refund's money is a list at full width (`layout` "list" of the segmented control), its options one under another, since a drawer's name with its responsible user and expected cash is long | NAVIGATION_CONTRACTS UXP-203, mobile behaviour; DESIGN_SYSTEM 8.4 |
+| A page whose list props carry rows only with data has a variant `<component>#<variant>` in the channel allowlists, so that each test asserts the exact paths of its case: RP-206 and RP-206P with refunds, the close previews with refunds, RP-202 with corrections | SECURITY_MODEL SEC-CH-01; TASK-033 review R-03 |
+| UXI-101's list of the drawer-funded refunds in the close preview and UXI-143 beside the variance for every role are built here, as TASK-032 built the review notes that OPEN_ITEMS T-45 handed it; the change control of TRACEABILITY section 9.2 that T-45 names stays open (F-1) | OPEN_ITEMS T-45; TASK-032 evidence F-2 |
+| RP-203's and RP-204's controller composes the Sales module's reads with the Cash module's `OpenSessions` and `CashCount`, and the close controllers and RP-206's now read `SaleCorrections::drawerRefundsOf`, further instances of OPEN_ITEMS T-46, which this Task does not reword (F-2) | OPEN_ITEMS T-46; EXC-35 |
+
+## 4. Findings
+
+| ID | Finding | Outcome |
+| --- | --- | --- |
+| F-1 | OPEN_ITEMS T-45: UXI-101 and UXI-143 are listed under TASK-030 in TRACEABILITY section 9.2, and this Task's contract names DC-02 and RP-206 for the Owner but neither the preview's list nor UXI-143 for the other roles | Built here (section 3); the change control of TRACEABILITY and of the contracts that T-45 names stays open |
+| F-2 | OPEN_ITEMS T-46: further page controllers that read more than one module (section 3) | Recorded; for the planning agent or the Owner with T-46 |
+| F-3 | Unchanged files reach changed code, so no fast run runs them: the close and its report — `CloseCashSessionTest`, `AssistedCloseTest`, `CashCloseTablesTest`, `SessionReportDocumentsTest`, `CloseRaceTest`, `AssistedCloseRaceTest` and every file whose fixture closes a session through `TokoContoh::closeSession`; RC-50's worker, `CommandRaceTest` through `ResolveScenario`; every channel assertion through the changed `ChannelInspector` and `Allowlists`; and the browser files `close.spec.ts`, `assisted-close.spec.ts`, `sessions.spec.ts` and `documents.spec.ts` | They run in the whole of `test:postgres`, `test:race` and the browser suite on the pull request's final head (CE-44, D-117), the `NOT_RUN` row of section 1 |
+| F-4 | Self-review before the first push: an identifier of a line's fields written as a literal inside a JSX attribute that the lint rule of ADR-005 refuses; the summary of errors that moved the focus while a field was typed; a link above RP-204's instruction | Fixed before the first push: the identifiers computed outside JSX; the summary as on every command page (section 3); the link removed (section 3) |
+
+## 5. Tests (contract section 7)
+
+| Test | Where |
+| --- | --- |
+| L1 expected cash with drawer-funded refunds, Rp0 reachable and never below; the CSV's refund lines; RC-05 among the built Actions; the session pages' helpers | `tests/Unit/Cash/CashCountTest.php`, `tests/Unit/Documents/SessionReportCsvTest.php`, `tests/Unit/Commands/OperationsTest.php`, `tests/Unit/Cash/sessions.test.ts` |
+| L2 the scenario of D-068: the refund recorded, the cash still in the drawer at the count, the close with a variance of +R and nothing else created, a payout against the CLOSED session still refused; the SESSION04 example with a refund of Rp10.000 (expected Rp110.000, Rp108.000 counted, −Rp2.000) and a refund after the preview recounted; failure injection after every write step | `tests/Feature/Sales/RecordDrawerFundedCorrectionTest.php` |
+| L3 RACE-13 in both orders, RACE-14 with two refunds and with a Sale, RACE-15 with the status check first and the refund first, RACE-01 and RACE-02 with the ordinals of D-087 | `tests/Concurrency/DrawerRefundRaceTest.php`; `tests/Harness/Commands/ResolveScenario.php` (RC-50's worker for an operation named) |
+| L4 RC-05: the commit with every record and the session's version; the Owner alone, every other role and the combined account refused; recent authentication; the bound, Rp0, never switched; a CLOSED and a missing session; the refusals before any lock; the envelope, a repeat and the status check; the channels; RP-203, RP-204, RP-202's corrections, the previews, RP-206, RP-206P and the CSV with refunds; the route inventory and the capability matrix; the one writer of each table, with the read-only `CorrectionRecords` | `RecordDrawerFundedCorrectionTest`, `tests/Feature/Sales/RefundPagesTest.php`, `tests/Feature/Cash/SessionPagesTest.php`, `AssistedClosePagesTest.php`, `tests/Feature/Access/RouteInventoryTest.php`, `CapabilityMatrixTest.php`, `tests/Feature/Sales/RecordCorrectionTest.php`, `CheckoutSaleTest.php`, `tests/Harness/Channels/Allowlists.php` |
+| L5 RP-203 and RP-204 at every width of KEY_SCREENS section 4 and 1440 px with axe, contrast, targets and no sideways scrolling: the drawer-funded refund from a cashier's drawer to the instruction to take the cash, the unsaved-changes guard, RP-202's corrections and RP-206's refunds — the critical path of EXC-34; and the lost answer resolved before any cash with a new refund blocked meanwhile (RACE-15), the drawer at Rp0 refusing the next refund with the source kept, "Dana Pemilik", and a session closed meanwhile | `tests/Browser/sales/refund.spec.ts`; `tests/Harness/Browser/FixturesController.php` and `tests/Browser/support/cash.ts` (the Sales of a fixture session by key and number) |
+| Fixtures through the Actions (EXC-45) | `TokoContoh::refundFromDrawer` (RC-05's Action), `TokoContoh::closeSession` with the drawer-funded refunds taken out of expected cash |
+
+## 6. Acceptance criteria
+
+The PostgreSQL and concurrency files that this branch changes run in its fast runs; the whole suites and the browser suite run in CI on the pull request's final head (CE-44).
+
+| Criterion | Test | Result |
+| --- | --- | --- |
+| AC-034-01 For CASH the Owner chooses one OPEN session's drawer or "Dana Pemilik"; a BANK_TRANSFER refund affects no drawer | `RefundPagesTest` (RP-203's sessions), `RecordDrawerFundedCorrectionTest`, `refund.spec.ts` | Pending the fast run |
+| AC-034-02 A drawer-funded refund reduces that session's expected cash, appears separately in its report with the Owner as actor and increases the activity version; a CLOSED session is refused | `RecordDrawerFundedCorrectionTest`, `RefundPagesTest`, `DrawerRefundRaceTest` RACE-13, `refund.spec.ts` | Pending the fast run |
+| AC-034-03 With expected cash Rp80.000, a Rp100.000 drawer refund is refused `DRAWER_CASH_INSUFFICIENT` with nothing written; Rp80.000 leaves Rp0; two racing refunds never take it below zero (RACE-14) | `RecordDrawerFundedCorrectionTest`, `DrawerRefundRaceTest` RACE-14 | Pending the fast run |
+| AC-034-04 No cash before commit: a refusal comes before any cash leaves; an uncertain refund is resolved before cash is taken and never replaced (RACE-15); RACE-13 gives its outcome in both orders | `DrawerRefundRaceTest` RACE-13, RACE-15, `RecordDrawerFundedCorrectionTest`, `refund.spec.ts` | Pending the fast run; the browser part on the final head |
+| AC-034-05 The scenario of D-068 closes the session with variance +R and nothing else; a payout against the CLOSED session stays refused; the payout reference is `<Sale number>/<k>` | `RecordDrawerFundedCorrectionTest` (D-068), `DrawerRefundRaceTest` (the ordinals) | Pending the fast run |
+| AC-034-06 With a drawer-funded refund of Rp10.000 added to the SESSION04 example, expected cash is Rp110.000 and Rp108.000 counted gives −Rp2.000; a drawer refund after the close preview makes the close refuse `RECOUNT_REQUIRED` | `RecordDrawerFundedCorrectionTest` (SESSION04) | Pending the fast run |
+| AC-034-07 RP-203 and RP-204 follow the approved artifacts | `RefundPagesTest`, `refund.spec.ts` | Pending; the browser suite on the final head |
+
+## 7. Database (EXC-41 to EXC-47)
+
+| Item | Record |
+| --- | --- |
+| Migration | None: the tables of TASK-033 and the report columns of TASK-030 (`drawer_refund_total`, `drawer_refunds`, `source_ids`, with their checks) hold everything this Task writes |
+| Tests on the database (EXC-45) | Fixtures through RC-01's, RC-02's, RC-03's and RC-05's Actions |
+| Backup impact (EXC-47) | None: no new table, file or procedure |
+
+## 8. Definition of Done
+
+| Dimension | Result | Reason |
+| --- | --- | --- |
+| Business | Pending | AC-034-01 to AC-034-07 by their tests (section 6); REQ-RFD-03, REQ-RFD-04, REQ-RFD-08 and REQ-RFD-09 built |
+| UI and UX | Pending | UXP-203 and UXP-204, RP-202's corrections and RP-206's refunds from the approved P7 artifacts, the copy verbatim from COPY_DECK; L5 on the final head |
+| Backend | Pending | The FormRequest allowlists with their per-field keys, CAP-24 at the gate with recent authentication, the guards under the locks, the result rebuilt per viewer; L4 tests |
+| Database | N/A | No migration (section 7) |
+| Security | Pending | CAP-24 the Owner's alone; every other role and the combined account refused; recent authentication; channel allowlists exact; no secret; the guard |
+| Data integrity | Pending | Append-only facts; the correction all or nothing with failure injection after each write step; RACE-13 to RACE-15; identity, repeats and the status check |
+| Performance | PASS | Bounded: at most 200 lines, at most 500 corrections of a Sale listed; the reads by key and by the partial index of a session's drawer-funded refunds; the budgets are TASK-048's |
+| Operations | N/A | No backup, runbook or status impact |
+| Verification | Pending | The fast runs, the review of class A (section 9), the heavy checks on the final head |
+
+## 9. Review (EXECUTION_CONTEXT CE-40)
+
+Pending.
+
+## 10. Record (CE-50)
+
+Pending.

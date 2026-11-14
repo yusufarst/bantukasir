@@ -99,7 +99,7 @@ describe('the session pages', () => {
 
     it('say the session closed meanwhile when the close is refused so or the preview read again is none or another session (UXS-30; F-6)', () => {
         const figures = { openingCash: '0', saleCount: 0, saleValue: '0', cashPayments: '0', transferPayments: '0', drawerRefunds: '0', expectedCash: '0' };
-        const own: ClosePreview = { sessionId: 7, activityVersion: 0, figures, unresolvedCheckouts: 0 };
+        const own: ClosePreview = { sessionId: 7, activityVersion: 0, figures, drawerRefunds: [], unresolvedCheckouts: 0 };
         const other: ClosePreview = { ...own, sessionId: 8 };
 
         expect(closedMeanwhile(7, own, null)).toBe(false);
@@ -128,7 +128,7 @@ describe('the Owner-assisted close and the review notes', () => {
 
     it('say the session closed meanwhile under the assisted preview as under the own one (UXS-30)', () => {
         const figures = { openingCash: '0', saleCount: 0, saleValue: '0', cashPayments: '0', transferPayments: '0', drawerRefunds: '0', expectedCash: '0' };
-        const preview: AssistedClosePreview = { sessionId: 7, activityVersion: 0, figures, unresolvedCheckouts: [{ sourceIntentId: 'a', receivedAt: '2026-11-13T03:00:00.000000Z' }] };
+        const preview: AssistedClosePreview = { sessionId: 7, activityVersion: 0, figures, drawerRefunds: [], unresolvedCheckouts: [{ sourceIntentId: 'a', receivedAt: '2026-11-13T03:00:00.000000Z' }] };
 
         expect(closedMeanwhile(7, preview, null)).toBe(false);
         expect(closedMeanwhile(7, preview, 'SESSION_NOT_OPEN')).toBe(true);

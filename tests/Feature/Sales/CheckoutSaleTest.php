@@ -789,7 +789,9 @@ final class CheckoutSaleTest extends DatabaseTestCase
         // RP-202 read Sales with their payments and snapshots, and RP-403's SaleSources a SALE_ISSUE's Sale (UXI-224); RP-201's
         // controller names its page prop `sales`, no table.
         $reader = 'Queries/Sales/Receipts.php';
-        $readers = ['Actions/Documents/RecordReceiptPrint.php', 'Http/Controllers/Sales/SalesController.php', 'Queries/Sales/SaleRecords.php', 'Queries/Sales/SaleSources.php'];
+        // The refund pages' query reads a Sale's lines, their receipt and their running totals (TASK-034).
+        $corrections = 'Queries/Sales/CorrectionRecords.php';
+        $readers = ['Actions/Documents/RecordReceiptPrint.php', 'Http/Controllers/Sales/SalesController.php', $corrections, 'Queries/Sales/SaleRecords.php', 'Queries/Sales/SaleSources.php'];
         $this->assertSame(['Actions/Documents/RecordReceiptPrint.php', 'Domain/Sales/Corrections/SaleCorrections.php', 'Domain/Sales/Sales.php', 'Http/Controllers/Sales/SalesController.php', $reader, 'Queries/Sales/SaleRecords.php', 'Queries/Sales/SaleSources.php', 'Support/Localization/Dictionary.php'], self::filesNaming('sales'));
         $this->assertDoesNotMatchRegularExpression('/DB::|->table\(|->insert|->update/', (string) file_get_contents(app_path('Support/Localization/Dictionary.php')));
 
@@ -797,13 +799,13 @@ final class CheckoutSaleTest extends DatabaseTestCase
             $this->assertDoesNotMatchRegularExpression('/->(?:insert|insertGetId|insertOrIgnore|update|upsert|delete|increment|decrement|truncate|lockForUpdate)\(|DB::(?:statement|insert|update|delete|unprepared)/', (string) file_get_contents(app_path($file)), $file);
         }
 
-        $this->assertSame(['Domain/Sales/Corrections/SaleCorrections.php', 'Domain/Sales/Sales.php', 'Queries/Sales/SaleSources.php'], self::filesNaming('sale_lines'));
+        $this->assertSame(['Domain/Sales/Corrections/SaleCorrections.php', 'Domain/Sales/Sales.php', $corrections, 'Queries/Sales/SaleSources.php'], self::filesNaming('sale_lines'));
         $this->assertSame(['Domain/Sales/Sales.php', 'Queries/Sales/SaleRecords.php'], self::filesNaming('payments'));
         $this->assertSame(['Domain/Sales/Corrections/SaleCorrections.php', 'Domain/Sales/Sales.php'], self::filesNaming('sale_correction_totals'));
 
-        $this->assertSame(['Domain/Sales/Sales.php', $reader, 'Queries/Sales/SaleRecords.php'], self::filesNaming('receipt_snapshots'));
+        $this->assertSame(['Domain/Sales/Sales.php', $corrections, $reader, 'Queries/Sales/SaleRecords.php'], self::filesNaming('receipt_snapshots'));
 
-        $this->assertSame(['Domain/Sales/Corrections/SaleCorrections.php'], self::filesNaming('sale_line_correction_totals'));
+        $this->assertSame(['Domain/Sales/Corrections/SaleCorrections.php', $corrections], self::filesNaming('sale_line_correction_totals'));
         $this->assertDoesNotMatchRegularExpression('/->(?:update|upsert|delete|increment|decrement|truncate)\(/', (string) file_get_contents(app_path('Domain/Sales/Sales.php')));
         $this->assertSame([CheckoutSale::OPERATION], array_values(array_filter(array_keys(Operations::FAMILIES), static fn (string $operation): bool => str_starts_with($operation, 'sale.'))));
     }

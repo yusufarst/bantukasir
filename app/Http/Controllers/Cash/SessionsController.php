@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Cash;
 
 use App\Domain\Access\Capabilities;
 use App\Domain\Access\Capability;
+use App\Domain\Cash\DrawerRefunds;
 use App\Domain\Cash\ReviewNotes;
 use App\Domain\Cash\Sessions;
 use App\Domain\Cash\SessionSales;
+use App\Domain\Sales\Corrections\SaleCorrections;
 use App\Domain\Sales\Sales;
 use App\Http\Requests\Cash\SessionsPageRequest;
 use App\Models\User;
@@ -31,9 +33,9 @@ use Inertia\Response;
  * (UXI-139), and, for the Owner, whether he may close it with an Owner-assisted close — another
  * user's (UXI-140); a CLOSED session with its immutable report (BR-CASH-19) and, for the Owner, its
  * review notes as a deferred prop (UXI-144). The print and export controls are TASK-031's, the
- * Owner's review notes and assisted close TASK-032's, and the list of the drawer-funded refunds beside
- * the variance (UXI-143) TASK-034's, which pays the first one: until then their total is Rp0 in the
- * figures.
+ * Owner's review notes and assisted close TASK-032's, and the drawer-funded refunds — their total in an
+ * OPEN session's figures and, beside a CLOSED session's variance, each refund as the report froze it
+ * (UXI-143) — TASK-034's.
  */
 final class SessionsController
 {
@@ -65,7 +67,7 @@ final class SessionsController
     /**
      * @throws NotFound
      */
-    public function show(Request $request, string $session, SessionRecords $sessions, Sales $sales, ReviewNotes $notes): Response
+    public function show(Request $request, string $session, SessionRecords $sessions, Sales $sales, SaleCorrections $corrections, ReviewNotes $notes): Response
     {
         $viewer = self::viewer($request);
         $read = $sessions->detail($session, $viewer);
@@ -86,9 +88,12 @@ final class SessionsController
                 // UXI-140: another user's OPEN session, for the Owner (CAP-23; TASK-032).
                 'canAssistedClose' => $found['status'] === Sessions::OPEN && ! $found['own'] && Capabilities::allows($viewer, Capability::Cap23),
             ],
-            'figures' => $report === null ? SessionSales::of($sales->ofSession($found['id']))->figures($read['openingCash']) : $report['figures'],
+            'figures' => $report === null ? SessionSales::of($sales->ofSession($found['id']))->figures($read['openingCash'], DrawerRefunds::of($corrections->drawerRefundsOf($found['id']))) : $report['figures'],
             // The count of the report, every field null while the session is OPEN.
             'count' => $report === null ? ['physicalCash' => null, 'variance' => null, 'closedBy' => null, 'closeReason' => null, 'notes' => null] : $report['count'],
+            // UXI-143: the report's drawer-funded refunds beside the variance, each as it was frozen; none
+            // while the session is OPEN, whose figures hold their total (TASK-034; OPEN_ITEMS T-45).
+            'drawerRefunds' => $report === null ? [] : $report['refunds'],
         ];
 
         // UXI-144: the Owner's review notes of a CLOSED session, a deferred prop that the page reads

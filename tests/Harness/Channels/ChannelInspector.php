@@ -19,16 +19,20 @@ use Symfony\Component\HttpFoundation\Response;
 trait ChannelInspector
 {
     /**
+     * A page's props for this kind of account; `variant` names the list of the page with its data of that
+     * case, `<component>#<variant>` in Allowlists, where a list prop's rows appear only with data, as a
+     * session's drawer-funded refunds (TASK-034).
+     *
      * @param  TestResponse<Response>  $response
      * @param  list<string>  $secrets
      */
-    protected function assertPageChannel(TestResponse $response, string $actor, array $secrets = []): void
+    protected function assertPageChannel(TestResponse $response, string $actor, array $secrets = [], ?string $variant = null): void
     {
         $page = $this->inertiaPage($response);
         $component = $page['component'] ?? null;
         $this->assertIsString($component);
 
-        $allowed = Allowlists::page($component, $actor);
+        $allowed = Allowlists::page($variant === null ? $component : $component.'#'.$variant, $actor);
         $this->assertNotNull($allowed, sprintf('%s is not a page that %s may open (Allowlists::PAGES).', $component, $actor));
 
         $props = $page['props'] ?? null;
@@ -72,13 +76,13 @@ trait ChannelInspector
      * @param  TestResponse<Response>  $response
      * @param  list<string>  $secrets
      */
-    protected function assertDeferredChannel(TestResponse $response, string $actor, array $secrets = []): void
+    protected function assertDeferredChannel(TestResponse $response, string $actor, array $secrets = [], ?string $variant = null): void
     {
         $page = $this->inertiaPage($response);
         $component = $page['component'] ?? null;
         $this->assertIsString($component);
 
-        $allowed = Allowlists::deferred($component, $actor);
+        $allowed = Allowlists::deferred($variant === null ? $component : $component.'#'.$variant, $actor);
         $this->assertNotNull($allowed, sprintf('%s has no deferred props that %s may read (Allowlists::DEFERRED).', $component, $actor));
 
         $props = $page['props'] ?? null;

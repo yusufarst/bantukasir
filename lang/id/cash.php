@@ -30,6 +30,11 @@ return [
         'success' => 'Sesi kas :nomor ditutup.',
         'disabled' => 'Isi uang fisik di laci.',
         'disabled_unresolved' => 'Ada permintaan tutup sesi yang statusnya belum pasti. Cek statusnya dulu.',
+        // UXI-101, the drawer-funded refunds of the preview with the reminder of D-068 (COPY_DECK
+        // section 7.5; TASK-034).
+        'drawer_refunds' => 'Pengembalian dari laci kas di sesi ini',
+        'drawer_refunds_reminder' => 'Uang pengembalian ini seharusnya sudah tidak ada di laci.',
+        'drawer_refund_row' => ':uang · penjualan :nomor · :waktu',
     ],
     'figure' => [
         'opening_cash' => 'Modal awal',
@@ -75,6 +80,9 @@ return [
         'note' => 'Catatan',
         'save_note' => 'Simpan catatan',
         'note_saved' => 'Catatan tinjauan disimpan.',
+        // UXI-143, the drawer-funded refunds beside the variance (COPY_DECK section 7.11; TASK-034).
+        'drawer_refunds' => 'Pengembalian dari laci kas',
+        'positive_variance_guidance' => 'Selisih lebih bisa berasal dari uang pengembalian yang masih ada di laci saat dihitung. Jika begitu, ambil uang itu dari laci ini dan serahkan kepada pelanggan sebelum modal awal sesi berikutnya dihitung, lalu jelaskan dengan catatan tinjauan.',
     ],
     // UXP-207 "Tutup sesi oleh Pemilik" (COPY_DECK sections 4.1, 7.12 and 15; TASK-032).
     'assisted_close' => [

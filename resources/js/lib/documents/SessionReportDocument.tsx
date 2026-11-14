@@ -1,6 +1,6 @@
 import type { ComponentType } from 'react';
 import { PaperRow, PaperRule, PaperShop, PaperTitle, ReceiptPaper } from '@/components/ui/ReceiptPaper';
-import { refundsText, registerText } from '@/lib/cash/sessions';
+import { refundsText, registerText, type ReportRefund } from '@/lib/cash/sessions';
 import { formatCount, formatDateTime, formatMoney, formatVariance } from '@/lib/format';
 import { t } from '@/lib/i18n';
 
@@ -8,7 +8,8 @@ import { t } from '@/lib/i18n';
 // BR-CASH-19, BR-CASH-20; COPY_DECK section 17.2; TASK-031 scope items 1 and 2): rendered on A4 from the
 // CashSessionReportSnapshot only, rows 1 to 12 in their order, never a cost, a margin or a profit, and
 // without a copy marker. A template a report names is never changed in place: a change is a new version
-// beside `session_report.1` in SESSION_REPORT_TEMPLATES.
+// beside `session_report.1` in SESSION_REPORT_TEMPLATES. Row 8's lines, one per drawer-funded refund with the
+// Owner as actor, are TASK-034's: no report held one before it, so every earlier report renders as it did.
 
 /** The report as its snapshot froze it (App\Domain\Documents\SessionReports\SessionReportDocuments). */
 export interface SessionReportSnapshot {
@@ -26,6 +27,8 @@ export interface SessionReportSnapshot {
     readonly cashPayments: string;
     readonly transferPayments: string;
     readonly drawerRefunds: string;
+    /** Each drawer-funded refund separately, as the snapshot froze it (DC-02 row 8). */
+    readonly refunds: readonly ReportRefund[];
     readonly expectedCash: string;
     readonly physicalCash: string;
     readonly variance: string;
@@ -67,6 +70,9 @@ export function SessionReportV1({ report, issuer, label }: SessionReportProps) {
             <PaperRow label={t('documents.session_report.cash_payments')} value={formatMoney(report.cashPayments)} />
             <PaperRow label={t('documents.session_report.transfer_payments')} value={formatMoney(report.transferPayments)} />
             <PaperRow label={t('documents.session_report.drawer_refunds')} value={refundsText(report.drawerRefunds)} />
+            {report.refunds.map((refund) => (
+                <p key={refund.reference}>{t('documents.session_report.drawer_refund_row', { uang: formatMoney(refund.amount), nomor: refund.saleNumber, waktu: formatDateTime(refund.recordedAt), nama: refund.owner })}</p>
+            ))}
             <PaperRule />
             <PaperRow label={t('documents.session_report.expected_cash')} value={formatMoney(report.expectedCash)} />
             <PaperRow label={t('documents.session_report.physical_cash')} value={formatMoney(report.physicalCash)} />

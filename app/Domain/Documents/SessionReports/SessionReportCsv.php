@@ -15,7 +15,7 @@ use LogicException;
  *   regional settings; CRLF line ends;
  * - the line `Laporan sesi kas;<number>`, then one line `<label>;<value>` per field of DC-02 rows 3
  *   to 11 — the reason and the notes only when the report holds them — then the time-zone line, an
- *   empty line and the header line of the drawer-funded refunds' table;
+ *   empty line, the header line of the drawer-funded refunds' table and one line per refund (TASK-034);
  * - the labels of COPY_DECK section 17.2, a money label with " (Rp)";
  * - money as whole rupiah, plain integers, unquoted and without separators, a negative variance a
  *   negative number with its word in the next field; the count of Sales a plain integer;
@@ -23,9 +23,6 @@ use LogicException;
  * - every text field quoted with `"`, an inner `"` doubled, and one that begins with `=`, `+`, `-`,
  *   `@`, a tab or a carriage return prefixed with an apostrophe, so that no spreadsheet reads it as a
  *   formula.
- *
- * The rows of the drawer-funded refunds' table are TASK-034's: no report holds a refund before it
- * (SessionReportDocuments).
  *
  * @phpstan-import-type Report from SessionReportDocuments
  * @phpstan-import-type LocalTimes from SessionReportDocuments
@@ -62,7 +59,11 @@ final class SessionReportCsv
             throw new LogicException('Only session_report.1 is rendered here (ARC-45).');
         }
 
-        foreach ($local as $time) {
+        if (count($local['refunds']) !== count($report['refunds'])) {
+            throw new LogicException('Each drawer-funded refund of the CSV has its time in Asia/Jakarta (DC-03).');
+        }
+
+        foreach ([$local['openedAt'], $local['cutoffAt'], $local['closedAt'], ...$local['refunds']] as $time) {
             if (preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}$/D', $time) !== 1) {
                 throw new LogicException('A time of the CSV is YYYY-MM-DD HH:MM in Asia/Jakarta (DC-03).');
             }
@@ -104,8 +105,9 @@ final class SessionReportCsv
 
         // Then an empty line and the drawer-funded refunds as a table with its header line, also without
         // a row (review R-01). Section 17.2 has no keys for these headers; the keys of exactly these words
-        // are used, a reading for the next change control of COPY_DECK (evidence F-1). Its rows are
-        // TASK-034's, which pays the first refund; no report holds one before (SessionReportDocuments).
+        // are used, a reading for the next change control of COPY_DECK (evidence F-1). One line per
+        // refund, in the order the report froze them: the Sale's number, the payout's reference, the
+        // amount, the time in Asia/Jakarta and the Owner's name (TASK-034).
         $lines[] = [];
         $lines[] = [
             self::text(self::label(__('sales.list.title'))),
@@ -114,6 +116,11 @@ final class SessionReportCsv
             self::text(self::label(__('sales.list.col_time'))),
             self::text(self::label(__('inventory.history.col_actor'))),
         ];
+
+        foreach ($report['refunds'] as $index => $refund) {
+            $time = $local['refunds'][$index] ?? throw new LogicException('Each drawer-funded refund of the CSV has its time (DC-03).');
+            $lines[] = [self::text($refund['saleNumber']), self::text($refund['reference']), self::integer($refund['amount']), self::text($time), self::text($refund['owner'])];
+        }
 
         return self::BOM.implode('', array_map(static fn (array $fields): string => implode(self::SEPARATOR, $fields).self::LINE_END, $lines));
     }

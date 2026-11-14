@@ -19,7 +19,9 @@ export interface SegmentedOption<V extends string> {
  * The segmented control of DESIGN_SYSTEM 8.4 for two or three exclusive
  * options — the payment method, the receipt size, the cash register — with
  * radio semantics: Tab enters the group, the arrow keys move and choose.
- * Built on the Radix radio group of shadcn/ui.
+ * Built on the Radix radio group of shadcn/ui. With `layout` "list" the same
+ * options stand one under another at full width, for a longer choice such as
+ * the source of a refund's money (UXI-124; NAVIGATION_CONTRACTS UXP-203).
  */
 export function SegmentedControl<V extends string>({
     legend,
@@ -28,6 +30,8 @@ export function SegmentedControl<V extends string>({
     onValueChange,
     size = 'md',
     legendHidden = false,
+    layout = 'row',
+    describedBy,
 }: {
     legend: string;
     options: readonly SegmentedOption<V>[];
@@ -36,6 +40,9 @@ export function SegmentedControl<V extends string>({
     size?: 'md' | 'xl';
     /** The legend for assistive technology only, where the dialog above already asks the question (UXI-173). */
     legendHidden?: boolean;
+    layout?: 'row' | 'list';
+    /** The id of a hint or an error that explains the choice. */
+    describedBy?: string;
 }) {
     const legendId = useId();
 
@@ -48,7 +55,9 @@ export function SegmentedControl<V extends string>({
                 className={'bk-seg'}
                 data-size={size}
                 data-count={options.length}
+                data-layout={layout}
                 aria-labelledby={legendId}
+                aria-describedby={describedBy}
                 value={value ?? ''}
                 onValueChange={(next) => {
                     const chosen = options.find((option) => option.value === next);

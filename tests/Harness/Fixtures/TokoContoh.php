@@ -24,6 +24,7 @@ use App\Actions\Inventory\ConfirmReceiving;
 use App\Actions\Inventory\ConfirmReversal;
 use App\Actions\Sales\CheckoutSale;
 use App\Actions\Sales\RecordCorrection;
+use App\Actions\Sales\RecordDrawerFundedCorrection;
 use App\Database\DatabaseRefused;
 use App\Database\EnvironmentMarker;
 use App\Domain\Access\Accounts;
@@ -31,6 +32,7 @@ use App\Domain\Access\OneTimeLinks;
 use App\Domain\Access\Role;
 use App\Domain\Access\StaffRoles;
 use App\Domain\Cash\CashCount;
+use App\Domain\Cash\DrawerRefunds;
 use App\Domain\Cash\SessionSales;
 use App\Domain\Commands\CommandIdentities;
 use App\Domain\Commands\Envelope;
@@ -42,6 +44,7 @@ use App\Domain\Configuration\BusinessProfiles;
 use App\Domain\Configuration\ProfileFields;
 use App\Domain\Inventory\OnboardingState;
 use App\Domain\Inventory\PostingBlocks;
+use App\Domain\Sales\Corrections\SaleCorrections;
 use App\Domain\Sales\Sales;
 use App\Models\User;
 use App\Support\Numbers\Money;
@@ -513,8 +516,8 @@ final class TokoContoh
     /**
      * The close of a session by its responsible user through RC-03's Action (TASK-030; EXECUTION_CONTEXT
      * EXC-45), against its activity version now, with the physical cash given or, by default, the
-     * session's expected cash, a variance of Rp0: the session's internal key. The user must hold no
-     * unresolved checkout receipt (G-27).
+     * session's expected cash, its drawer-funded refunds taken out (TASK-034), a variance of Rp0: the
+     * session's internal key. The user must hold no unresolved checkout receipt (G-27).
      *
      * @throws DatabaseRefused
      */
@@ -532,7 +535,8 @@ final class TokoContoh
         }
 
         $sales = SessionSales::of(app(Sales::class)->ofSession($session));
-        $physical = $physicalCash ?? CashCount::due(Money::fromDatabase($opening), $sales->cashApplied, Money::zero())->toCanonical();
+        $refunds = DrawerRefunds::of(app(SaleCorrections::class)->drawerRefundsOf($session));
+        $physical = $physicalCash ?? CashCount::due(Money::fromDatabase($opening), $sales->cashApplied, $refunds->total)->toCanonical();
         $envelope = new Envelope(CloseCashSession::OPERATION, Operations::VERSION, (string) Str::uuid(), (string) Str::uuid(), self::recoveryEpoch(), ['activityVersion' => $version], ['sessionId' => $session, 'physicalCash' => $physical]);
         $id = app(CloseCashSession::class)->execute(new CommandContext($actor, $envelope, app(Clock::class)->now()))->result['id'] ?? null;
 
@@ -617,6 +621,33 @@ final class TokoContoh
         ];
 
         return self::asOwner(RecordCorrection::class, RecordCorrection::OPERATION, $payload);
+    }
+
+    /**
+     * The Owner's CASH refund paid from the drawer of an OPEN session, with or without a return, through
+     * RC-05's Action (TASK-034; EXECUTION_CONTEXT EXC-45): its correction's internal key. A line's returns
+     * default to zero. The recent authentication of RC-05 is its route's, which this fixture does not pass
+     * through.
+     *
+     * @param  list<array{saleLineId: int, refundAmount: string, returnedSaleable?: string, returnedNotSaleable?: string}>  $lines
+     *
+     * @throws DatabaseRefused
+     */
+    public static function refundFromDrawer(int $sale, int $session, array $lines, string $reason = 'Uang dikembalikan dari laci'): int
+    {
+        $payload = [
+            'saleId' => $sale,
+            'lines' => array_map(static fn (array $line): array => [
+                'saleLineId' => $line['saleLineId'],
+                'refundAmount' => $line['refundAmount'],
+                'returnedSaleable' => $line['returnedSaleable'] ?? '0',
+                'returnedNotSaleable' => $line['returnedNotSaleable'] ?? '0',
+            ], $lines),
+            'reason' => $reason,
+            'payout' => ['sessionId' => $session],
+        ];
+
+        return self::asOwner(RecordDrawerFundedCorrection::class, RecordDrawerFundedCorrection::OPERATION, $payload);
     }
 
     /**

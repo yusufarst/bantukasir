@@ -74,6 +74,28 @@ final class SessionReportCsvTest extends TestCase
         $this->assertStringContainsString("\r\n\"Selisih (Rp)\";0;\"sesuai\"\r\n", SessionReportCsv::render(self::report([]), self::local()));
     }
 
+    public function test_each_drawer_funded_refund_is_one_line_of_the_table_in_the_order_the_report_froze_them(): void
+    {
+        // AC-034-02; DC-03 "one line per refund"; BR-CASH-20, BR-CASH-22 (TASK-034): the Sale's number, the
+        // payout's reference, the amount a plain integer, the time in Asia/Jakarta and the Owner's name, each
+        // text quoted and neutralized.
+        $refunds = [
+            ['saleNumber' => '20261112-000004', 'reference' => '20261112-000004/1', 'amount' => '10000', 'recordedAt' => '2026-11-12T04:05:00.000000Z', 'owner' => 'Hendra'],
+            ['saleNumber' => '20261112-000007', 'reference' => '20261112-000007/2', 'amount' => '2500', 'recordedAt' => '2026-11-12T06:10:00.000000Z', 'owner' => '=Hendra'],
+        ];
+        $file = SessionReportCsv::render(self::report(['drawerRefunds' => '12500', 'expectedCash' => '107500', 'physicalCash' => '107500', 'refunds' => $refunds]), [...self::local(), 'refunds' => ['2026-11-12 11:05', '2026-11-12 13:10']]);
+
+        $this->assertStringContainsString("\r\n\"Pengembalian dari laci kas (Rp)\";12500\r\n", $file);
+        $this->assertStringEndsWith(
+            "\"Penjualan\";\"Referensi\";\"Jumlah (Rp)\";\"Waktu\";\"Oleh\"\r\n\"20261112-000004\";\"20261112-000004/1\";10000;\"2026-11-12 11:05\";\"Hendra\"\r\n\"20261112-000007\";\"20261112-000007/2\";2500;\"2026-11-12 13:10\";\"'=Hendra\"\r\n",
+            $file,
+        );
+
+        // A refund without its time in Asia/Jakarta is refused.
+        $this->assertThrows(fn () => SessionReportCsv::render(self::report(['refunds' => $refunds]), [...self::local(), 'refunds' => ['2026-11-12 11:05']]), LogicException::class);
+        $this->assertThrows(fn () => SessionReportCsv::render(self::report(['refunds' => $refunds]), [...self::local(), 'refunds' => ['2026-11-12 11:05', '2026-11-12T06:10:00Z']]), LogicException::class);
+    }
+
     public function test_the_file_name_keeps_letters_digits_and_hyphens_only(): void
     {
         $this->assertSame('laporan-sesi-20261112-1.csv', SessionReportCsv::fileName('20261112-1'));
@@ -90,11 +112,11 @@ final class SessionReportCsvTest extends TestCase
      * A report of DC-02 as SessionReportDocuments reads one, with these fields changed.
      *
      * @param  array<string, mixed>  $changes
-     * @return array{sessionId: int, number: string, registerCode: string, registerLabel: string, responsible: string, openedAt: string, cutoffAt: string, closedAt: string, openingCash: string, saleCount: int, saleValue: string, cashPayments: string, transferPayments: string, drawerRefunds: string, expectedCash: string, physicalCash: string, variance: string, closedBy: string, closeReason: string|null, notes: string|null, template: string}
+     * @return array{sessionId: int, number: string, registerCode: string, registerLabel: string, responsible: string, openedAt: string, cutoffAt: string, closedAt: string, openingCash: string, saleCount: int, saleValue: string, cashPayments: string, transferPayments: string, drawerRefunds: string, refunds: list<array{saleNumber: string, reference: string, amount: string, recordedAt: string, owner: string}>, expectedCash: string, physicalCash: string, variance: string, closedBy: string, closeReason: string|null, notes: string|null, template: string}
      */
     private static function report(array $changes): array
     {
-        /** @var array{sessionId: int, number: string, registerCode: string, registerLabel: string, responsible: string, openedAt: string, cutoffAt: string, closedAt: string, openingCash: string, saleCount: int, saleValue: string, cashPayments: string, transferPayments: string, drawerRefunds: string, expectedCash: string, physicalCash: string, variance: string, closedBy: string, closeReason: string|null, notes: string|null, template: string} $report */
+        /** @var array{sessionId: int, number: string, registerCode: string, registerLabel: string, responsible: string, openedAt: string, cutoffAt: string, closedAt: string, openingCash: string, saleCount: int, saleValue: string, cashPayments: string, transferPayments: string, drawerRefunds: string, refunds: list<array{saleNumber: string, reference: string, amount: string, recordedAt: string, owner: string}>, expectedCash: string, physicalCash: string, variance: string, closedBy: string, closeReason: string|null, notes: string|null, template: string} $report */
         $report = [
             'sessionId' => 1,
             'number' => '20261112-1',
@@ -110,6 +132,7 @@ final class SessionReportCsvTest extends TestCase
             'cashPayments' => '100000',
             'transferPayments' => '50000',
             'drawerRefunds' => '0',
+            'refunds' => [],
             'expectedCash' => '120000',
             'physicalCash' => '120000',
             'variance' => '0',
@@ -124,10 +147,10 @@ final class SessionReportCsvTest extends TestCase
     }
 
     /**
-     * @return array{openedAt: string, cutoffAt: string, closedAt: string}
+     * @return array{openedAt: string, cutoffAt: string, closedAt: string, refunds: list<string>}
      */
     private static function local(): array
     {
-        return ['openedAt' => '2026-11-12 08:00', 'cutoffAt' => '2026-11-12 17:30', 'closedAt' => '2026-11-12 17:30'];
+        return ['openedAt' => '2026-11-12 08:00', 'cutoffAt' => '2026-11-12 17:30', 'closedAt' => '2026-11-12 17:30', 'refunds' => []];
     }
 }

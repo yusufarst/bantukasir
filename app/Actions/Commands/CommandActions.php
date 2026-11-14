@@ -43,6 +43,7 @@ use App\Actions\Inventory\ConfirmReceiving;
 use App\Actions\Inventory\ConfirmReversal;
 use App\Actions\Sales\CheckoutSale;
 use App\Actions\Sales\RecordCorrection;
+use App\Actions\Sales\RecordDrawerFundedCorrection;
 use App\Domain\Commands\Operations;
 use LogicException;
 
@@ -121,6 +122,8 @@ final class CommandActions
         AddReviewNote::OPERATION => AddReviewNote::class,
         // RC-06 (TASK-033).
         RecordCorrection::OPERATION => RecordCorrection::class,
+        // RC-05 (TASK-034).
+        RecordDrawerFundedCorrection::OPERATION => RecordDrawerFundedCorrection::class,
     ];
 
     /**

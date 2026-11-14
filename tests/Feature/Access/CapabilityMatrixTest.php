@@ -441,6 +441,17 @@ final class CapabilityMatrixTest extends DatabaseTestCase
         'RC-06' => ['method' => 'POST', 'path' => '/commands/sale_correction.other', 'json' => true, 'answers' => [
             'guest' => [401, null], 'owner' => [423, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
         ]],
+        // TASK-034: RC-05, RP-203 and RP-204 for CAP-24, the Owner's alone: RC-05 answers 423 without a recent
+        // confirmation, before anything runs; the pages NOT_FOUND for a Sale that the path does not name.
+        'RC-05' => ['method' => 'POST', 'path' => '/commands/sale_correction.drawer_funded', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [423, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RP-203' => ['method' => 'GET', 'path' => '/sales/{sale}/refund', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [404, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RP-204' => ['method' => 'GET', 'path' => '/sales/{sale}/corrections/{correction}', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [404, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
     ];
 
     /** @var array<string, array{id: int, email: string, password: string}> */

@@ -38,11 +38,17 @@ async function token(context: BrowserContext): Promise<string> {
     return decodeURIComponent(cookie?.value ?? '');
 }
 
+/** A Sale that the fixture made in the new session, by its key and number (TASK-034). */
+export interface FixtureSale {
+    readonly id: number;
+    readonly number: string;
+}
+
 /** The person's unresolved requests settled and their OPEN session closed, then what the request asks. */
-export async function cashSession(context: BrowserContext, person: Person, request: SessionRequest = {}): Promise<{ session: FixtureSession | null; register: FixtureRegister | null }> {
+export async function cashSession(context: BrowserContext, person: Person, request: SessionRequest = {}): Promise<{ session: FixtureSession | null; register: FixtureRegister | null; sales: readonly FixtureSale[] }> {
     const answer = await context.request.post('/testing/browser/session', { data: { person, ...request }, headers: { 'X-XSRF-TOKEN': await token(context), Accept: 'application/json' } });
 
     expect(answer.status(), await answer.text()).toBe(200);
 
-    return (await answer.json()) as { session: FixtureSession | null; register: FixtureRegister | null };
+    return (await answer.json()) as { session: FixtureSession | null; register: FixtureRegister | null; sales: readonly FixtureSale[] };
 }

@@ -3,6 +3,7 @@
 namespace App\Queries\Cash;
 
 use App\Domain\Cash\Sessions;
+use App\Support\Numbers\Money;
 use Illuminate\Support\Facades\DB;
 use LogicException;
 
@@ -54,6 +55,44 @@ final class OpenSessions
         }
 
         return ['id' => $id, 'number' => $number, 'register' => $label];
+    }
+
+    /**
+     * Every OPEN session, the sources of a drawer-funded refund that the Owner chooses from (UXI-124;
+     * ROUTE_CONTRACTS RP-203; BR-RFD-07; TASK-034): its internal key, its number, its register's code and
+     * label, which do not change while it is OPEN (BR-CASH-02), its responsible user's frozen name and its
+     * opening cash, from which, with the Sales module's facts, its expected cash is derived (G-05). By its
+     * register's code; one per register at most (BR-CASH-06).
+     *
+     * @return list<array{id: int, number: string, registerCode: string, registerLabel: string, responsible: string, openingCash: Money}>
+     */
+    public function all(): array
+    {
+        $sessions = [];
+
+        foreach (DB::table('cash_sessions as s')
+            ->join('cash_registers as r', 'r.id', '=', 's.register_id')
+            ->where('s.status', Sessions::OPEN)
+            ->orderBy('r.code')
+            ->orderBy('s.id')
+            ->limit(self::BOUND)
+            ->get(['s.id', 's.session_number', 's.responsible_display_name', 's.opening_cash', 'r.code', 'r.label']) as $row) {
+            $values = (array) $row;
+            $id = $values['id'] ?? null;
+            $number = $values['session_number'] ?? null;
+            $responsible = $values['responsible_display_name'] ?? null;
+            $opening = $values['opening_cash'] ?? null;
+            $code = $values['code'] ?? null;
+            $label = $values['label'] ?? null;
+
+            if (! is_int($id) || ! is_string($number) || ! is_string($responsible) || (! is_int($opening) && ! is_string($opening)) || ! is_string($code) || ! is_string($label)) {
+                throw new LogicException('An OPEN session holds its number, its register and its opening cash (SCHEMA section 5.10).');
+            }
+
+            $sessions[] = ['id' => $id, 'number' => $number, 'registerCode' => $code, 'registerLabel' => $label, 'responsible' => $responsible, 'openingCash' => Money::fromDatabase($opening)];
+        }
+
+        return $sessions;
     }
 
     /**

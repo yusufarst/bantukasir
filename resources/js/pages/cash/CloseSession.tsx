@@ -14,7 +14,7 @@ import { CommandLayout, PageHeader } from '@/layouts/Page';
 import { leaveSavedNote } from '@/lib/access/users';
 import { cashFieldMessage } from '@/lib/cash/registers';
 import { CHECKOUT_FAMILY, CLOSE_SESSION_COMMAND, closedMeanwhile, refundsText, sessionPage, TILL_PAGE, UNRESOLVED_PAGE, type ClosePreview, type SessionFigures } from '@/lib/cash/sessions';
-import { VarianceWord } from '@/lib/cash/Parts';
+import { PreviewRefunds, VarianceWord } from '@/lib/cash/Parts';
 import { blockingRequest } from '@/lib/commands/families';
 import { CommandPanels } from '@/lib/commands/Panels';
 import { useUnresolved } from '@/lib/commands/unresolved';
@@ -235,7 +235,10 @@ function CloseFlow({ title, session, preview }: CloseSessionProps & { title: str
                         ) : preview === undefined || previewRead === 'reading' ? (
                             <Loading lines={3} />
                         ) : (
-                            <PreviewFigures figures={preview?.figures ?? null} />
+                            <div className={'bk-stack'}>
+                                <PreviewFigures figures={preview?.figures ?? null} />
+                                <PreviewRefunds refunds={preview?.drawerRefunds ?? []} />
+                            </div>
                         )}
                     </Section>
                     <div className={'bk-actions'}>
