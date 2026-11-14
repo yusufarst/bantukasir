@@ -211,7 +211,7 @@ final class RecordDrawerFundedCorrectionTest extends DatabaseTestCase
 
         $this->postJson('/commands/cash_session.close', $this->envelope(['sessionId' => $session, 'physicalCash' => '108000'], ['operation' => 'cash_session.close', 'expected' => ['activityVersion' => $preview + 1]]))->assertStatus(201);
         $report = (array) $this->watcher()->table('cash_session_reports')->where('session_id', $session)->sole();
-        $this->assertSame([20000, 110000, 50000, 10000, 110000, 108000, -2000], [$report['opening_cash'], $report['cash_applied'], $report['bank_transfer_applied'], $report['drawer_refund_total'], $report['expected_cash'], $report['physical_cash'], $report['variance']]);
+        $this->assertSame([20000, 100000, 50000, 10000, 110000, 108000, -2000], [$report['opening_cash'], $report['cash_applied'], $report['bank_transfer_applied'], $report['drawer_refund_total'], $report['expected_cash'], $report['physical_cash'], $report['variance']]);
         $saleNumber = self::text($this->watcher()->table('sales')->where('id', $cash)->value('sale_number'));
         $this->assertSame([['amount' => '10000', 'owner' => 'Hendra', 'recordedAt' => '2026-11-14T04:00:00.000000Z', 'reference' => $saleNumber.'/1', 'saleNumber' => $saleNumber]], self::dataOf($report['drawer_refunds']));
         $sources = self::dataOf($report['source_ids']);
