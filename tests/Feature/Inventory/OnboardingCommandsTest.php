@@ -268,7 +268,7 @@ final class OnboardingCommandsTest extends DatabaseTestCase
 
         foreach ([
             [[], 'payload.rows', 'ux.validation.lines_min', []],
-            [array_fill(0, 101, self::zero($this->pen)), 'payload.rows', 'ux.validation.lines_max', ['maks' => 100]],
+            [array_map(static fn (int $product): array => self::zero($product), range(1, 101)), 'payload.rows', 'ux.validation.lines_max', ['maks' => 100]],
             [[self::positive($this->pen, '-1', $known)], 'payload.rows.0.quantity', 'ux.validation.quantity_positive', []],
             [[self::positive($this->pen, '1,5', $known)], 'payload.rows.0.quantity', 'ux.validation.quantity_positive', []],
             [[self::positive($this->pen, '100000000', $known)], 'payload.rows.0.quantity', 'ux.validation.quantity_max', []],
