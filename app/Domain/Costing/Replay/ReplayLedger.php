@@ -15,17 +15,20 @@ use LogicException;
  * Costing reads the ledger), under the product's guard, which every writer of its movements, cost
  * evidence, corrections and projections holds, so that what it reads cannot change meanwhile.
  *
- * The movement types whose writers exist are RECEIPT, SALE_ISSUE, MANUAL_ISSUE, ADJUSTMENT and
- * REVERSAL (TASK-021 to TASK-024, TASK-026, TASK-028). The ledger read is the logical ledger (ADR-008
- * section 4.1): every pair of an OPENING, RECEIPT or MANUAL_ISSUE with the REVERSAL of its reversal is
- * left out — of the zero point, of the state before the start and of the movements from it — and only
- * the valuation skips them; the physical ledger keeps both (BR-COST-32). A cancelled pair sums to
- * zero, so the logical quantity at the end is still the stock on hand. A SALE_ISSUE is an issue like
- * the others: the replay recomputes its projection at its point, validates it against the logical
- * quantity there and counts it against the movement cap, and never reads or writes its Sale, its line,
- * its Payment, its receipt or its session (D-060, REQ-COST-09); it is never reversed (BR-INV-36).
- * TASK-033 and TASK-035 extend the replay with RETURN_RECEIPT with its linked return projections, and
- * OPENING; until then a logical movement of another type is a defect.
+ * The movement types whose writers exist are RECEIPT, SALE_ISSUE, MANUAL_ISSUE, ADJUSTMENT, REVERSAL
+ * and RETURN_RECEIPT (TASK-021 to TASK-024, TASK-026, TASK-028, TASK-033). The ledger read is the
+ * logical ledger (ADR-008 section 4.1): every pair of an OPENING, RECEIPT or MANUAL_ISSUE with the
+ * REVERSAL of its reversal is left out — of the zero point, of the state before the start and of the
+ * movements from it — and only the valuation skips them; the physical ledger keeps both (BR-COST-32).
+ * A cancelled pair sums to zero, so the logical quantity at the end is still the stock on hand. A
+ * SALE_ISSUE is an issue like the others: the replay recomputes its projection at its point, validates
+ * it against the logical quantity there and counts it against the movement cap, and never reads or
+ * writes its Sale, its line, its Payment, its receipt or its session (D-060, REQ-COST-09); it is never
+ * reversed (BR-INV-36). A RETURN_RECEIPT is an increase whose cost is its return projection before the
+ * start position and, from it on, the cost recomputed from its link to the SALE_ISSUE allocation
+ * (ReturnLink; ADR-008 section 3; D-061); it is never reversed either, and never reads or writes its
+ * correction, refund or return line. TASK-035 extends the replay with OPENING; until then a logical
+ * movement of another type is a defect.
  *
  * The cost values are sums and differences of stored values only, which PostgreSQL's numeric adds
  * exactly; every value computed by multiplication or division is the application's (ADR-008
@@ -49,12 +52,19 @@ final class ReplayLedger
     private const string LOGICAL = "m.movement_type <> 'REVERSAL' and not exists (select 1 from reversals r where r.original_movement_id = m.id)";
 
     /**
+     * R(k−1) of a RETURN_RECEIPT's return allocation `ra`: the quantity that the saleable returns linked
+     * to the same issue allocation took back before it, in the order of the ledger (ADR-008 section 5).
+     */
+    private const string RETURNED_BEFORE = '(select coalesce(sum(o.returned_quantity), 0) from return_cost_allocations o where o.issue_allocation_id = ra.issue_allocation_id and o.product_sequence < ra.product_sequence)';
+
+    /**
      * The state before the start position (ADR-008 section 4.3): Q is the sum of the movements since
      * the last point before the start at which the running quantity became zero — or since the
-     * product's first movement — V the sum of their increases' effective costs less the sum of their
-     * issues' current projections, and UNKNOWN when any of those is UNKNOWN. Nothing before the start
-     * position changes during a replay, so this is exact. This read covers the history back to that
-     * point and lies outside the movement cap; PERF01 measures it with the replay.
+     * product's first movement — V the sum of their increases' effective costs and of their returns'
+     * current projections (TASK-033) less the sum of their issues' current projections, and UNKNOWN
+     * when any of those is UNKNOWN. Nothing before the start position changes during a replay, so this
+     * is exact. This read covers the history back to that point and lies outside the movement cap;
+     * PERF01 measures it with the replay.
      *
      * @throws ReplayRefused UNSAFE_HISTORY when the stored history gives no valid state
      */
@@ -95,21 +105,29 @@ final class ReplayLedger
             join issue_cost_allocations a on a.movement_id = m.id
             join issue_cost_allocation_projections p on p.allocation_id = a.id
             where m.product_id = ? and m.product_sequence > ? and m.product_sequence < ? and ".self::LOGICAL, $window);
+        $returns = DB::selectOne("
+            select count(*) filter (where rp.current_status = 'UNKNOWN') as unknown, coalesce(sum(rp.current_amount) filter (where rp.current_status = 'KNOWN'), 0) as total
+            from stock_movements m
+            join return_cost_allocations ra on ra.movement_id = m.id
+            join return_cost_allocation_projections rp on rp.allocation_id = ra.id
+            where m.product_id = ? and m.product_sequence > ? and m.product_sequence < ? and ".self::LOGICAL, $window);
 
         $unknownIncreases = self::field($increases, 'unknown');
         $unknownIssues = self::field($issues, 'unknown');
+        $unknownReturns = self::field($returns, 'unknown');
         $increaseTotal = self::field($increases, 'total');
         $issueTotal = self::field($issues, 'total');
+        $returnTotal = self::field($returns, 'total');
 
-        if (! is_string($quantity) || ! is_int($unknownIncreases) || ! is_int($unknownIssues) || ! is_string($increaseTotal) || ! is_string($issueTotal)) {
+        if (! is_string($quantity) || ! is_int($unknownIncreases) || ! is_int($unknownIssues) || ! is_int($unknownReturns) || ! is_string($increaseTotal) || ! is_string($issueTotal) || ! is_string($returnTotal)) {
             throw new LogicException('The sums before the start hold their types.');
         }
 
         try {
             $before = Quantity::fromDatabase($quantity, $precision)->assertStock();
-            $value = $unknownIncreases > 0 || $unknownIssues > 0
+            $value = $unknownIncreases > 0 || $unknownIssues > 0 || $unknownReturns > 0
                 ? Cost::unknown()
-                : Cost::fromDatabase($increaseTotal)->minus(Cost::fromDatabase($issueTotal))->assertValue();
+                : Cost::fromDatabase($increaseTotal)->plus(Cost::fromDatabase($returnTotal))->minus(Cost::fromDatabase($issueTotal))->assertValue();
         } catch (NumberOutOfRange|NonCanonicalNumber) {
             throw ReplayRefused::unsafeHistory();
         }
@@ -130,13 +148,22 @@ final class ReplayLedger
             ->leftJoin('acquisition_cost_evidence as e', 'e.movement_id', '=', 'm.id')
             ->leftJoin('issue_cost_allocations as a', 'a.movement_id', '=', 'm.id')
             ->leftJoin('issue_cost_allocation_projections as p', 'p.allocation_id', '=', 'a.id')
+            ->leftJoin('return_cost_allocations as ra', 'ra.movement_id', '=', 'm.id')
+            ->leftJoin('return_cost_allocation_projections as rp', 'rp.allocation_id', '=', 'ra.id')
+            ->leftJoin('issue_cost_allocations as li', 'li.id', '=', 'ra.issue_allocation_id')
+            ->leftJoin('issue_cost_allocation_projections as lp', 'lp.allocation_id', '=', 'li.id')
             ->where('m.product_id', $productId)
             ->where('m.product_sequence', '>=', $startSequence)
             ->whereRaw(self::LOGICAL)
             ->orderBy('m.product_sequence')
             ->limit($limit)
-            ->select(['m.product_sequence', 'm.movement_type', 'm.quantity', 'e.id as evidence_id', 'e.cost_status', 'e.total_amount', 'a.id as allocation_id', 'p.current_status', 'p.current_amount'])
+            ->select([
+                'm.product_sequence', 'm.movement_type', 'm.quantity', 'e.id as evidence_id', 'e.cost_status', 'e.total_amount', 'a.id as allocation_id', 'p.current_status', 'p.current_amount',
+                'ra.id as return_allocation_id', 'ra.issue_allocation_id', 'rp.current_status as return_status', 'rp.current_amount as return_amount',
+                'li.issued_quantity as linked_issued', 'lp.current_status as linked_status', 'lp.current_amount as linked_amount',
+            ])
             ->selectRaw(self::CORRECTED.' as corrected_amount')
+            ->selectRaw(self::RETURNED_BEFORE.' as returned_before')
             ->get();
         $entries = [];
 
@@ -227,7 +254,39 @@ final class ReplayLedger
             return LedgerEntry::issue($sequence, $signed, $allocation, Cost::fromDatabase($amount, $status));
         }
 
+        if ($signed->isPositive() && $type === 'RETURN_RECEIPT') {
+            return self::returnEntry($values, $sequence, $signed, $precision);
+        }
+
         throw new LogicException(sprintf('The replay does not apply a %s yet: the Task that writes it extends the replay (TASK-025 section 12).', $type));
+    }
+
+    /**
+     * A RETURN_RECEIPT with its return allocation and projection, and its link to its SALE_ISSUE
+     * allocation: that allocation's issued quantity and current projection, and R(k−1) of the cumulative
+     * rule (ADR-008 sections 3 and 5; TASK-033).
+     *
+     * @param  array<array-key, mixed>  $values
+     */
+    private static function returnEntry(array $values, int $sequence, Quantity $quantity, int $precision): LedgerEntry
+    {
+        $allocation = $values['return_allocation_id'] ?? null;
+        $status = $values['return_status'] ?? null;
+        $amount = $values['return_amount'] ?? null;
+        $issue = $values['issue_allocation_id'] ?? null;
+        $issued = $values['linked_issued'] ?? null;
+        $issueStatus = $values['linked_status'] ?? null;
+        $issueAmount = $values['linked_amount'] ?? null;
+        $before = $values['returned_before'] ?? null;
+
+        if (! is_int($allocation) || ! in_array($status, [AcquisitionCost::KNOWN, AcquisitionCost::UNKNOWN], true) || ($amount !== null && ! is_string($amount))
+            || ! is_int($issue) || ! is_string($issued) || ! in_array($issueStatus, [AcquisitionCost::KNOWN, AcquisitionCost::UNKNOWN], true) || ($issueAmount !== null && ! is_string($issueAmount)) || ! is_string($before)) {
+            throw new LogicException('A RETURN_RECEIPT carries its return allocation, its projection and its link to a SALE_ISSUE allocation (BR-INV-08; ADR-008 section 3).');
+        }
+
+        $link = new ReturnLink($issue, Quantity::fromDatabase($issued, $precision), Cost::fromDatabase($issueAmount, $issueStatus), Quantity::fromDatabase($before, $precision));
+
+        return LedgerEntry::returnReceipt($sequence, $quantity, $allocation, Cost::fromDatabase($amount, $status), $link);
     }
 
     /**

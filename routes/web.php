@@ -85,6 +85,7 @@ use App\Http\Controllers\Media\MediaController;
 use App\Http\Controllers\Reporting\CostWorklistController;
 use App\Http\Controllers\Sales\CheckoutSaleController;
 use App\Http\Controllers\Sales\ReceiptController;
+use App\Http\Controllers\Sales\RecordCorrectionController;
 use App\Http\Controllers\Sales\SalesController;
 use App\Http\Controllers\Sales\TillController;
 use App\Http\Controllers\Testing\SpecimenController;
@@ -366,6 +367,11 @@ Route::middleware(['auth', 'signin.session', 'throttle:authenticated', 'cache.he
     });
 
     Route::post('/commands/review_note.add', AddReviewNoteController::class)->middleware(['capability:CAP-22', 'throttle:command'])->name('commands.review_note.add');
+
+    // The Owner's refunds and returns (TASK-033): RC-06 for CAP-24, the Owner's alone, in the bucket of
+    // every command, with recent authentication; the Sale and its lines are its Action's to check. RC-05
+    // and the refund pages RP-203 and RP-204 are TASK-034's.
+    Route::post('/commands/sale_correction.other', RecordCorrectionController::class)->middleware(['capability:CAP-24', 'throttle:command', 'password.confirm'])->name('commands.sale_correction.other');
 
     // The receipt (TASK-029): RP-103 for the Sale's own cashier (CAP-21) and the Owner (CAP-22), whose
     // scope its query checks; it takes only its path.

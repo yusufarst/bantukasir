@@ -411,6 +411,14 @@ final class Allowlists
         // PRICE_CHANGED of RC-01 with each changed line by its product, its price in force and that
         // price's revision (INTERACTION_CONTRACTS section 1.6; TASK-028).
         'commands.refused.price' => ['*' => ['outcome', 'code', 'messageKey', 'params', 'fields', 'lines', 'lines.*', 'lines.*.productId', 'lines.*.price', 'lines.*.price.amount', 'lines.*.price.revisionId']],
+        // REFUND_BOUND_EXCEEDED and RETURN_BOUND_EXCEEDED of RC-05 and RC-06, with the first line's remainder
+        // in the message and each line concerned with what remains refundable and returnable (UXS-35;
+        // INTERACTION_CONTRACTS section 1.6; TASK-033).
+        'commands.refused.refund_bound' => ['owner' => ['outcome', 'code', 'messageKey', 'params', 'params.uang', 'fields', 'lines', 'lines.*', 'lines.*.saleLineId', 'lines.*.remainingAmount', 'lines.*.remainingQuantity']],
+        'commands.refused.return_bound' => ['owner' => ['outcome', 'code', 'messageKey', 'params', 'params.jumlah', 'fields', 'lines', 'lines.*', 'lines.*.saleLineId', 'lines.*.remainingAmount', 'lines.*.remainingQuantity']],
+        // VALIDATION_FAILED of RC-05 and RC-06 for a Sale line named twice, each line that repeats it by
+        // that Sale line (INTERACTION_CONTRACTS section 1.6; TASK-033).
+        'commands.refused.sale_lines' => ['owner' => ['outcome', 'code', 'messageKey', 'params', 'fields', 'lines', 'lines.*', 'lines.*.saleLineId']],
         // RD-03, the shell's indicators (TASK-009), with the stock-attention count of the
         // badge, null for a cashier (TASK-022).
         'data.shell' => ['*' => ['unresolvedRequests', 'stockAttention', 'asOf']],

@@ -10,7 +10,9 @@ use LogicException;
  * One movement of a product's logical ledger as the replay applies it (ADR-008 section 4.1): its
  * place in the product's sequence and its signed quantity; for an increase, the effective cost of
  * its evidence — the original amount, the new amount of its latest correction, or UNKNOWN; for an
- * issue, its allocation and that allocation's current projection, which the replay recomputes.
+ * issue, its allocation and that allocation's current projection, which the replay recomputes; for a
+ * RETURN_RECEIPT, its return allocation, that allocation's current projection and the link to its
+ * SALE_ISSUE allocation, from which the replay recomputes it (ADR-008 section 3; TASK-033).
  */
 final readonly class LedgerEntry
 {
@@ -20,6 +22,7 @@ final readonly class LedgerEntry
         public ?Cost $cost,
         public ?int $allocationId,
         public ?Cost $projection,
+        public ?ReturnLink $link = null,
     ) {}
 
     /**
@@ -47,8 +50,24 @@ final readonly class LedgerEntry
         return new self($sequence, $quantity, null, $allocationId, $projection);
     }
 
+    /**
+     * A RETURN_RECEIPT with its return allocation, that allocation's current projection, KNOWN or
+     * UNKNOWN, and its link to the SALE_ISSUE allocation whose cost it restores.
+     */
+    public static function returnReceipt(int $sequence, Quantity $quantity, int $allocationId, Cost $projection, ReturnLink $link): self
+    {
+        if (! $quantity->isPositive()) {
+            throw new LogicException('A saleable return adds stock.');
+        }
+
+        return new self($sequence, $quantity, null, $allocationId, $projection, $link);
+    }
+
+    /**
+     * Whether the movement adds stock: an increase with its evidence, or a RETURN_RECEIPT.
+     */
     public function isIncrease(): bool
     {
-        return $this->cost !== null;
+        return $this->cost !== null || $this->link !== null;
     }
 }

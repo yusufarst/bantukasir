@@ -172,6 +172,8 @@ final class RouteInventoryTest extends TestCase
         'GET /cash-sessions/{session}/assisted-close' => ['sessions.assisted_close', 'RP-207', 'CAP-23', [...self::SIGNED_IN, 'capability:CAP-23', 'input.allow']],
         'POST /commands/cash_session.close_assisted' => ['commands.cash_session.close_assisted', 'RC-04', 'CAP-23', [...self::SIGNED_IN, 'capability:CAP-23', 'throttle:command', 'password.confirm']],
         'POST /commands/review_note.add' => ['commands.review_note.add', 'RC-43', 'CAP-22', [...self::SIGNED_IN, 'capability:CAP-22', 'throttle:command']],
+        // TASK-033: RC-06 for CAP-24, with recent authentication.
+        'POST /commands/sale_correction.other' => ['commands.sale_correction.other', 'RC-06', 'CAP-24', [...self::SIGNED_IN, 'capability:CAP-24', 'throttle:command', 'password.confirm']],
     ];
 
     public function test_the_routes_are_exactly_those_listed_each_with_its_gate(): void

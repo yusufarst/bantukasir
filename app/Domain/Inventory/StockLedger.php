@@ -29,6 +29,11 @@ final class StockLedger
 
     public const string REVERSAL = 'REVERSAL';
 
+    public const string RETURN_RECEIPT = 'RETURN_RECEIPT';
+
+    /** The condition of a return line that posts a RETURN_RECEIPT (SCHEMA section 5.7; BR-INV-39). */
+    public const string SALEABLE = 'SALEABLE';
+
     /**
      * Whether the product has a movement, by the unique key of its sequence (BR-CAT-07).
      */
@@ -237,6 +242,37 @@ final class StockLedger
             'quantity' => $inverse->toCanonical(),
             'reversal_id' => $reversalId,
             'line_quantity' => null,
+            'recorded_at' => $at,
+            'actor_user_id' => $actorUserId,
+            'command_id' => $commandId,
+        ]);
+    }
+
+    /**
+     * Appends the RETURN_RECEIPT of a saleable return line, the line's positive quantity back into
+     * stock, with the unit and precision of its guarded product, and returns its internal key. Its key
+     * to the line holds that it moves exactly a saleable line's product and quantity; its return
+     * allocation is Costing's, in this transaction: the presence key refuses a commit without it
+     * (BR-INV-39, BR-INV-08; ADR-008 section 3; TASK-033).
+     */
+    public function appendReturnReceipt(GuardedProduct $product, int $sequence, Quantity $quantity, int $returnLineId, int $actorUserId, int $commandId, string $at): int
+    {
+        self::requireTransaction();
+
+        if (! $quantity->isPositive()) {
+            throw new LogicException('A saleable return line puts a positive quantity back into stock.');
+        }
+
+        return DB::table('stock_movements')->insertGetId([
+            'product_id' => $product->id,
+            'base_unit' => $product->baseUnit,
+            'quantity_precision' => $product->quantityPrecision,
+            'product_sequence' => $sequence,
+            'movement_type' => self::RETURN_RECEIPT,
+            'quantity' => $quantity->toCanonical(),
+            'return_line_id' => $returnLineId,
+            'line_quantity' => $quantity->toCanonical(),
+            'return_condition' => self::SALEABLE,
             'recorded_at' => $at,
             'actor_user_id' => $actorUserId,
             'command_id' => $commandId,

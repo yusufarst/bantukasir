@@ -854,13 +854,13 @@ Inserted with its fact and equal to it (G-14); afterwards written only by a repl
 | `product_id`, `sale_line_id` | `bigint` | |
 | `return_condition` | `text` | `CHECK (return_condition = 'SALEABLE')`; `(return_line_id, sale_line_id, return_condition, returned_quantity)` → `return_lines (id, sale_line_id, condition, quantity)`: only a saleable return line has a return allocation (BR-COST-19) |
 | `issue_allocation_id` | `bigint` | `(issue_allocation_id, sale_line_id, product_id)` → `issue_cost_allocations (id, sale_line_id, product_id)`: the link names the SALE_ISSUE allocation of the same SaleLine and product (D-061) |
-| `returned_quantity` | `numeric(13,3)` | `> 0` |
+| `returned_quantity` | `numeric(13,3)` | `> 0 AND <= 99999999.999`, the range of a line quantity (section 3.2), which its return line's quantity holds too (TASK-033) |
 | `at_commit_status`, `at_commit_amount` | | Section 3.2 pattern with `numeric(21,6)`: the cost restored when the return committed, by the cumulative rule of ADR-008 section 5 |
 | `product_sequence`; `based_on_publication_no`; `recorded_at` | | As for issue allocations |
 
 `FOREIGN KEY (id) REFERENCES return_cost_allocation_projections (allocation_id) DEFERRABLE INITIALLY DEFERRED`. Runtime privileges: `SELECT`, `INSERT`.
 
-**`return_cost_allocation_projections`** — class P. Columns `allocation_id` (primary key, → `return_cost_allocations`), `current_status` (`KNOWN` or `UNKNOWN`), `current_amount` (`numeric(21,6)` null, `BETWEEN 0 AND 999999999999999.999999`, present exactly when `KNOWN`), `publication_no`, `updated_at`. Recomputed together with the linked issue projection by every replay that reaches it (D-061). Runtime privileges: `SELECT`, `INSERT`; `UPDATE` of `current_status`, `current_amount`, `publication_no`, `updated_at`.
+**`return_cost_allocation_projections`** — class P. Columns `allocation_id` (primary key, → `return_cost_allocations`), `current_status` (`KNOWN` or `UNKNOWN`), `current_amount` (`numeric(21,6)` null, `BETWEEN 0 AND 999999999999999.999999`, present exactly when `KNOWN`), `publication_no` (`>= 1`, the publication that last wrote it, as for issue projections; TASK-033), `updated_at`. Recomputed together with the linked issue projection by every replay that reaches it (D-061). Runtime privileges: `SELECT`, `INSERT`; `UPDATE` of `current_status`, `current_amount`, `publication_no`, `updated_at`.
 
 **`cost_incomplete_marks`** and **`cost_incomplete_mark_clearances`** — class F. The mark that affected reporting is incomplete after a refused cost correction (D-034; BR-COST-27; T-17 i).
 

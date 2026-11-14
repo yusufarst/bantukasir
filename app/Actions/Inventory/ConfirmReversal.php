@@ -15,6 +15,7 @@ use App\Domain\Commands\CommandRefused;
 use App\Domain\Commands\ErrorCode;
 use App\Domain\Commands\StoredResult;
 use App\Domain\Costing\Allocations\IssueAllocations;
+use App\Domain\Costing\Allocations\ReturnAllocations;
 use App\Domain\Costing\CostIncompleteMarks;
 use App\Domain\Costing\InventoryValuations;
 use App\Domain\Costing\ProductValuation;
@@ -87,6 +88,7 @@ final class ConfirmReversal extends CommandAction
         private readonly IssueAllocations $allocations,
         private readonly CostIncompleteMarks $marks,
         private readonly ProductReplay $replay,
+        private readonly ReturnAllocations $returns,
     ) {
         parent::__construct($services);
     }
@@ -160,6 +162,7 @@ final class ConfirmReversal extends CommandAction
         $before = $this->ledger->lockPositions([$source->productId => $product])[$source->productId] ?? throw new LogicException('A position is read for its product.');
         $valuation = $this->valuations->lock([$source->productId])[$source->productId] ?? throw new LogicException('A valuation is read for its product.');
         $this->allocations->lockProjectionsFrom($source->productId, $source->productSequence);
+        $this->returns->lockProjectionsFrom($source->productId, $source->productSequence);
         $this->services->points->afterLock('7');
 
         if (! $before->stored || ! $valuation->stored) {
@@ -212,7 +215,10 @@ final class ConfirmReversal extends CommandAction
         $this->valuations->publish(new ProductValuation($source->productId, $result->value, $number, $after->lastSequence, true), $at);
         $this->written();
 
+        // The issue projections and the return projections linked to them, recomputed together, are one
+        // publication (D-061; TASK-033).
         $this->allocations->republish($result->changes, $number, $at);
+        $this->returns->republish($result->returnChanges, $number, $at);
         $this->written();
 
         $cleared = $this->marks->activeOfMovement($source->movementId);
@@ -234,7 +240,7 @@ final class ConfirmReversal extends CommandAction
             ],
             [
                 'publicationNo' => $number,
-                'projectionsRewritten' => count($result->changes),
+                'projectionsRewritten' => count($result->changes) + count($result->returnChanges),
                 'marksCleared' => count($cleared),
             ],
             subject: ['type' => self::REVERSAL, 'id' => $reversal],

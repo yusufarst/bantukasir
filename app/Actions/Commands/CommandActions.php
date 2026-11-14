@@ -42,6 +42,7 @@ use App\Actions\Inventory\ConfirmManualIssue;
 use App\Actions\Inventory\ConfirmReceiving;
 use App\Actions\Inventory\ConfirmReversal;
 use App\Actions\Sales\CheckoutSale;
+use App\Actions\Sales\RecordCorrection;
 use App\Domain\Commands\Operations;
 use LogicException;
 
@@ -118,6 +119,8 @@ final class CommandActions
         // RC-04 and RC-43 (TASK-032).
         CloseCashSessionAssisted::OPERATION => CloseCashSessionAssisted::class,
         AddReviewNote::OPERATION => AddReviewNote::class,
+        // RC-06 (TASK-033).
+        RecordCorrection::OPERATION => RecordCorrection::class,
     ];
 
     /**

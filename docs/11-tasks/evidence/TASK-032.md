@@ -147,3 +147,7 @@ Agent `bk-reviewer-high`, model `claude-opus-5-5`, effort High, mode `verify`; p
 - TASK_PLAN: TASK-032 `DONE`; no dependent becomes `READY` — TASK-034 waits for TASK-033, TASK-041 for TASK-039 and TASK-040; the totals TODO 16, READY 2, DONE 32; CURRENT_HANDOFF last. No decision taken; the next free decision stays D-129.
 - For later Tasks: TASK-034, the drawer-funded refunds beside the variance on RP-206 and in RC-04's expected cash; OPEN_ITEMS T-45 for the next change control of TRACEABILITY section 9.2 (F-2).
 - Next Task: TASK-033, Refunds and returns: correction core (server), effort Max (agent `bk-executor-max`; review `bk-reviewer-max`; verification `bk-reviewer-xhigh`).
+
+## 11. Merge
+
+Recorded by TASK-033 (EXECUTION_CONTEXT CE-50, CE-61). Pull request #43, its final head `1f8ddb696589befa331e5478618a785a50fce223`, passed CI in run 43419935221. The tick squash-merged it under D-105 as `8eda3a86c08569658a31b602d626d810c8c42339` on `develop` on 13 November 2026, after the automated review's window ended with the status DONE; the squash commit's tree, `15513b7`, equals the head's, its parent is `296998f` and its author the Owner's identity. CI on `develop` at the merge, run 43425191481, passed, and the tick verified the merge. TASK-032 is `DONE`.

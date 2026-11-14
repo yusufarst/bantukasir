@@ -207,6 +207,9 @@ final class LedgerTablesTest extends DatabaseTestCase
                 'original_movement_id' => $receipt, 'product_id' => $this->product, 'original_type' => 'RECEIPT', 'original_quantity' => '5', 'inverse_quantity' => '-5',
                 'reason' => 'Salah catat', 'recorded_at' => now(), 'actor_user_id' => $this->owner, 'actor_display_name' => 'Hendra', 'command_id' => $this->command,
             ]);
+            // TASK-033 completed the key of a return line, so the RETURN_RECEIPT names a real one: a
+            // saleable return of the sold unit, the third movement of its product.
+            [$returnLine, $soldProduct] = $this->insertReturnLine($runtime, $sold);
             $presences = [
                 'RECEIPT' => $this->presenceOf($runtime, $receipt),
                 'OPENING' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('OPENING', '1', ['opening_line_id' => 7, 'line_quantity' => '1', 'opening_replacement' => true, 'product_sequence' => 2]))),
@@ -216,7 +219,7 @@ final class LedgerTablesTest extends DatabaseTestCase
                 'SALE_ISSUE' => $this->presenceOf($runtime, $sold),
                 // TASK-023 completed the key of a manual issue line, so the movement names a real one.
                 'MANUAL_ISSUE' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('MANUAL_ISSUE', '-1', ['manual_issue_line_id' => $this->insertIssueLine($runtime), 'line_quantity' => '1', 'product_sequence' => 6]))),
-                'RETURN_RECEIPT' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('RETURN_RECEIPT', '1', ['return_line_id' => 7, 'line_quantity' => '1', 'return_condition' => 'SALEABLE', 'product_sequence' => 7]))),
+                'RETURN_RECEIPT' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('RETURN_RECEIPT', '1', ['product_id' => $soldProduct, 'return_line_id' => $returnLine, 'line_quantity' => '1', 'return_condition' => 'SALEABLE', 'product_sequence' => 3]))),
                 'REVERSAL' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('REVERSAL', '-5', ['reversal_id' => $reversal, 'product_sequence' => 8]))),
             ];
         } finally {
@@ -645,6 +648,32 @@ final class LedgerTablesTest extends DatabaseTestCase
         $session = TokoContoh::openSession('Hendra', TokoContoh::register());
 
         return TokoContoh::saleIssueOf(TokoContoh::sell('Hendra', $session, [['productId' => $product, 'quantity' => '1']]));
+    }
+
+    /**
+     * A correction with one saleable return line of one unit of the Sale line that this SALE_ISSUE
+     * issued, written directly (TASK-033): the return line's key and its product.
+     *
+     * @return array{0: int, 1: int}
+     */
+    private function insertReturnLine(Connection $c, int $saleIssue): array
+    {
+        $line = (array) $c->table('stock_movements as m')->join('sale_lines as l', 'l.id', '=', 'm.sale_line_id')->where('m.id', $saleIssue)->first(['l.id', 'l.sale_id', 'l.product_id']);
+        $saleLine = $line['id'] ?? null;
+        $sale = $line['sale_id'] ?? null;
+        $product = $line['product_id'] ?? null;
+
+        if (! is_int($saleLine) || ! is_int($sale) || ! is_int($product)) {
+            $this->fail('The SALE_ISSUE names its Sale line.');
+        }
+
+        $correction = $c->table('sale_corrections')->insertGetId([
+            'sale_id' => $sale, 'business_date' => '2026-11-13', 'reason' => 'Retur pembeli', 'recorded_at' => now(), 'actor_user_id' => $this->owner, 'actor_display_name' => 'Hendra',
+            'command_id' => $this->command,
+        ]);
+        $returnLine = $c->table('return_lines')->insertGetId(['correction_id' => $correction, 'sale_id' => $sale, 'sale_line_id' => $saleLine, 'product_id' => $product, 'quantity' => '1', 'condition' => 'SALEABLE']);
+
+        return [$returnLine, $product];
     }
 
     /**
