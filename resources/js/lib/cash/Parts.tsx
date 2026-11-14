@@ -26,7 +26,7 @@ export function PreviewRefunds({ refunds }: { refunds: readonly PreviewRefund[] 
                 <p className={'bk-hint'}>{t('cash.close.drawer_refunds_reminder')}</p>
                 <ul className={'bk-stack'} role={'list'}>
                     {refunds.map((refund) => (
-                        <li key={`${refund.saleNumber}-${refund.recordedAt}`}>{t('cash.close.drawer_refund_row', { uang: formatMoney(refund.amount), nomor: refund.saleNumber, waktu: formatDateTime(refund.recordedAt) })}</li>
+                        <li key={refund.saleNumber + refund.recordedAt}>{t('cash.close.drawer_refund_row', { uang: formatMoney(refund.amount), nomor: refund.saleNumber, waktu: formatDateTime(refund.recordedAt) })}</li>
                     ))}
                 </ul>
             </div>

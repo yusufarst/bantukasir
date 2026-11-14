@@ -334,11 +334,11 @@ function RefundForm({ title, sale, lines, sessions }: RefundProps & { title: str
 
     const header = <PageHeader title={title} subtitle={sale.number} back={{ href: back, page: t('sales.detail.title'), onNavigate: guard }} />;
 
-    // Nothing remains to refund or to return on any line (BR-RFD-03).
+    // Nothing remains to refund or to return on any line (BR-RFD-03); the way back is the header's (UXI-132).
     if (lines.length === 0) {
         return (
             <CommandLayout header={header}>
-                <Notice tone={'neutral'} urgency={'none'} actions={<ButtonLink href={back} label={t('ux.action.back_to', { halaman: t('sales.detail.title') })} variant={'secondary'} />}>
+                <Notice tone={'neutral'} urgency={'none'}>
                     <p>{t('sales.refund.disabled_fully_refunded')}</p>
                 </Notice>
             </CommandLayout>
