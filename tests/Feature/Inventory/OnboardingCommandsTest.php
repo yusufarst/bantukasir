@@ -131,6 +131,53 @@ final class OnboardingCommandsTest extends DatabaseTestCase
         $this->assertSame($after, $this->factsAndRows());
     }
 
+    public function test_a_restore_hold_waiting_for_its_reconciliation_refuses_every_onboarding_command(): void
+    {
+        // G-26, D-072; TECHNICAL_RULES section 7.2: while a restore hold — which TASK-037's after-restore
+        // procedure sets — waits for its reconciliation, no start, entry, correction or release runs, each
+        // STALE_VERSION with nothing written; once the Owner has reconciled it, each runs again.
+        $this->owner();
+        $hold = $this->hold('NOT_STARTED');
+        $before = $this->factsAndRows();
+        $this->send($this->envelopeOf(StartOnboarding::OPERATION, [], ['onboardingVersion' => 1]))->assertStatus(409)->assertJsonPath('code', 'STALE_VERSION');
+        $this->assertSame($before, $this->factsAndRows());
+
+        $this->reconcile($hold);
+        $this->send($this->envelopeOf(StartOnboarding::OPERATION, [], ['onboardingVersion' => 1]))->assertStatus(201);
+        $zeroCount = TokoContoh::zeroCount($this->book);
+        $opening = TokoContoh::openingStock($this->pen, '3');
+        TokoContoh::reverse($opening);
+        $replacement = ['replacesLineId' => TokoContoh::openingLineOf($opening), 'quantity' => '2', 'countReference' => 'LH-02', 'cost' => ['status' => 'UNKNOWN'], 'reason' => 'Hitung ulang'];
+        $commands = [
+            ConfirmOpeningStock::OPERATION => fn (): array => $this->entryOf([self::zero($this->rice)]),
+            WithdrawZeroCount::OPERATION => fn (): array => $this->envelopeOf(WithdrawZeroCount::OPERATION, ['zeroCountId' => $zeroCount, 'reason' => 'Salah hitung'], ['onboardingVersion' => 2]),
+            ReplaceOpeningStock::OPERATION => fn (): array => $this->envelopeOf(ReplaceOpeningStock::OPERATION, $replacement, ['onboardingVersion' => 2, 'productVersion' => $this->versionOf($this->pen)]),
+            ReleaseOnboarding::OPERATION => fn (): array => $this->envelopeOf(ReleaseOnboarding::OPERATION, [], ['onboardingVersion' => 2]),
+        ];
+
+        $hold = $this->hold('ACTIVE');
+        $before = $this->factsAndRows();
+
+        foreach ($commands as $operation => $envelope) {
+            $this->send($envelope())->assertStatus(409)->assertJsonPath('code', 'STALE_VERSION');
+            $this->assertSame($before, $this->factsAndRows(), $operation);
+        }
+
+        // Reconciled, each runs, the release last.
+        $this->reconcile($hold);
+
+        foreach ($commands as $envelope) {
+            $this->send($envelope())->assertStatus(201);
+        }
+
+        $this->assertSame(['RELEASED', 1, 1, 1], [
+            $this->watcher()->table('onboarding_state')->value('state'),
+            $this->watcher()->table('onboarding_zero_counts')->where('product_id', $this->rice)->count(),
+            $this->watcher()->table('onboarding_zero_count_withdrawals')->where('zero_count_id', $zeroCount)->count(),
+            $this->watcher()->table('opening_stock_lines')->where('product_id', $this->pen)->whereNotNull('replaces_line_id')->count(),
+        ]);
+    }
+
     public function test_an_entry_posts_each_positive_row_as_an_opening_and_records_each_zero_row_on_the_checklist(): void
     {
         // AC-035-02, WF-25; BR-INV-25 to BR-INV-27; BR-COST-02 to BR-COST-04; ADR-008 section 4.2: 12 pens
@@ -664,6 +711,21 @@ final class OnboardingCommandsTest extends DatabaseTestCase
     private function versionOf(int $product): int
     {
         return self::number($this->watcher()->table('products')->where('id', $product)->value('version'));
+    }
+
+    /**
+     * A restore hold waiting for its reconciliation, as the after-restore procedure of TASK-037 sets it
+     * for the state that the restored backup held (D-072).
+     */
+    private function hold(string $restoredState): int
+    {
+        return $this->runtime()->table('onboarding_restore_holds')->insertGetId(['restored_state' => $restoredState, 'recovery_epoch' => '\x00112233445566778899aabbccddeeff', 'set_at' => now()]);
+    }
+
+    /** The Owner's reconciliation of a restore hold (D-072). */
+    private function reconcile(int $hold): void
+    {
+        $this->runtime()->table('onboarding_restore_reconciliations')->insert(['hold_id' => $hold, 'outcome' => 'NEVER_RELEASED', 'decided_by_user_id' => $this->people['Hendra']['id'], 'operator_note' => 'Belum pernah diakhiri', 'recorded_at' => now()]);
     }
 
     /**

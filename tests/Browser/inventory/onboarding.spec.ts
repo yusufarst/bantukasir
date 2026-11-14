@@ -14,7 +14,8 @@ const expect = baseExpect.configure({ timeout: ACCESS_WAIT });
 // onboarding period after its confirmation and the password once, and the banner of UXS-27 shows; he
 // enters a counted product with its cost and count reference and a product counted zero, reviewed and
 // confirmed; the checklist shows them; he withdraws the zero count with a reason; he ends the period after
-// its review of BR-INV-28, and the hub is read only. The draft is never in the browser's storage. These
+// its review of BR-INV-28, and the hub is read only. The entry, its review and the hub fit the 200 % zoom
+// of 1280 x 800 and 320 px as well (KEY_SCREENS section 4). The draft is never in the browser's storage. These
 // tests sign in the people of Toko Contoh, so they run one at a time (playwright.config.ts). Every product
 // of a test gets new random texts, because the local database keeps its products; their names begin with
 // "AA" so that they lead the checklist, in name order. The onboarding period runs once per database
@@ -61,6 +62,20 @@ async function checked(page: Page): Promise<void> {
     expect(measured.overflow.scrollWidth, 'no sideways scrolling of the page').toBeLessThanOrEqual(measured.overflow.innerWidth);
     expect(measured.smallTargets).toEqual([]);
     expect(measured.texts.filter((text) => text.ratio < (text.large ? 3 : 4.5))).toEqual([]);
+}
+
+/**
+ * The same checks at the widths of KEY_SCREENS section 4 that the other pages of Stok are checked at — the
+ * 200 % zoom of 1280 x 800, as its 640 px, and 320 px — then 1440 px again. The period runs once per
+ * database, so its pages are measured inside this one test.
+ */
+async function fitsNarrow(page: Page): Promise<void> {
+    for (const width of [WIDTHS[4]!, WIDTHS[7]!]) {
+        await page.setViewportSize({ width: width.width, height: width.height });
+        await checked(page);
+    }
+
+    await page.setViewportSize({ width: WIDTHS[0]!.width, height: WIDTHS[0]!.height });
 }
 
 async function signedIn(context: BrowserContext, page: Page, person: Person): Promise<string> {
@@ -191,6 +206,7 @@ test('the Owner starts onboarding, enters the opening stock, corrects a zero cou
         await expect(zeroRow.getByLabel('Biaya', { exact: true })).toHaveCount(0);
         await expect(zeroRow.getByLabel('Referensi hitung', { exact: true })).toHaveCount(0);
         await checked(page);
+        await fitsNarrow(page);
         expect(await page.evaluate(() => JSON.stringify([window.sessionStorage, window.localStorage]))).not.toContain('LH-01');
 
         // UXI-295 to UXI-297: the review, which Enter never confirms, then UXP-412 with its success.
@@ -200,6 +216,7 @@ test('the Owner starts onboarding, enters the opening stock, corrects a zero cou
         await expect(review).toContainText(counted.name);
         await expect(review).toContainText('Dihitung nol');
         await checked(page);
+        await fitsNarrow(page);
         await Promise.all([page.waitForURL((url) => url.pathname === HUB), review.getByRole('button', { name: /^Konfirmasi stok awal/ }).click()]);
         await expect(page.getByText('Stok awal tersimpan.')).toBeVisible();
 
@@ -212,6 +229,7 @@ test('the Owner starts onboarding, enters the opening stock, corrects a zero cou
         const zeroLine = rows.filter({ hasText: zero.name });
         await expect(zeroLine).toContainText('Dihitung nol');
         await checked(page);
+        await fitsNarrow(page);
 
         // UXI-291: "Tarik hitungan nol", with its reason and the password not asked again within its time.
         await zeroLine.getByRole('button', { name: `Tarik hitungan nol ${zero.name}` }).click();
@@ -235,6 +253,8 @@ test('the Owner starts onboarding, enters the opening stock, corrects a zero cou
         await expect(page.getByText('Koreksi stok sekarang memakai Sesuaikan stok, Batalkan mutasi, atau Koreksi biaya.')).toBeVisible();
         await expect(page.getByRole('button', { name: 'Mulai masa input stok awal' })).toHaveCount(0);
         await expect(page.getByRole('link', { name: 'Input stok awal', exact: true })).toHaveCount(0);
+        await checked(page);
+        await fitsNarrow(page);
         await page.goto('/stock');
         await expect(page.getByText('Masa input stok awal aktif', { exact: true })).toHaveCount(0);
         await checked(page);

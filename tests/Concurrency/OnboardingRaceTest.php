@@ -23,7 +23,9 @@ use Tests\Harness\Race\Worker;
  *   refused with nothing written — and a withdrawal against a new entry of its product, which then counts;
  * - RACE-11 from an OPENING: the completion of an OPENING's cost holds the product's guard for its whole
  *   replay, and a manual issue and a checkout of the product wait and take their allocation from the
- *   valuation it published.
+ *   valuation it published;
+ * - RACE-01 and RACE-02 for each of the five operations (EXECUTION_CONTEXT section 10, a command): the
+ *   same key, or another key of the same intent, waits on the original's identity and answers its result.
  *
  * No lock is held while people count (AC-035-05; TR-TX-03): every lock is a command's, to its commit.
  */
@@ -213,6 +215,64 @@ final class OnboardingRaceTest extends DatabaseTestCase
         $this->assertSame([['MANUAL_ISSUE', 'KNOWN', '10000.000000', 'KNOWN', '10000.000000'], ['SALE_ISSUE', 'KNOWN', '15000.000000', 'KNOWN', '15000.000000']], array_values($this->watcher()->table('issue_cost_allocations as a')->join('issue_cost_allocation_projections as p', 'p.allocation_id', '=', 'a.id')
             ->where('a.product_id', $this->product)->orderBy('a.product_sequence')->get(['a.issue_type', 'a.at_commit_status', 'a.at_commit_amount', 'p.current_status', 'p.current_amount'])->map(static fn (object $row): array => array_values((array) $row))->all()));
         $this->assertSame(['KNOWN', '25000.000000'], array_values((array) $this->watcher()->table('inventory_valuations')->where('product_id', $this->product)->first(['value_status', 'value'])));
+    }
+
+    public function test_race_01_each_onboarding_command_sent_twice_with_its_key_runs_once(): void
+    {
+        $this->assertEachRunsOnce(true);
+    }
+
+    public function test_race_02_each_onboarding_command_sent_again_under_another_key_of_its_intent_runs_once(): void
+    {
+        $this->assertEachRunsOnce(false);
+    }
+
+    /**
+     * RACE-01 or RACE-02 for each of the five operations, in the order of one period: the start, an entry,
+     * the withdrawal of a zero count, the replacement of a reversed OPENING and the release (ADR-007).
+     */
+    private function assertEachRunsOnce(bool $sameKey): void
+    {
+        $this->assertRunsOnce($this->command('onboarding.start', [], ['onboardingVersion' => 1]), $sameKey);
+        $this->assertRunsOnce($this->entry($this->product, '5'), $sameKey);
+
+        $other = TokoContoh::product('RACE-O2', ['categoryId' => TokoContoh::category('Lain'), 'name' => 'Produk Lain']);
+        $this->assertRunsOnce($this->withdrawal(TokoContoh::zeroCount($other)), $sameKey);
+
+        $opening = TokoContoh::openingOf($this->product);
+        TokoContoh::reverse($opening);
+        $this->assertRunsOnce($this->replacement(TokoContoh::openingLineOf($opening), '4'), $sameKey);
+        $this->assertRunsOnce($this->command('onboarding.release', [], ['onboardingVersion' => 2]), $sameKey);
+
+        $this->assertSame(['OPENING', 'REVERSAL', 'OPENING'], $this->watcher()->table('stock_movements')->where('product_id', $this->product)->orderBy('product_sequence')->pluck('movement_type')->all());
+        $this->assertSame([1, 1, ['RELEASED', 3]], [
+            $this->watcher()->table('onboarding_zero_count_withdrawals')->count(),
+            $this->watcher()->table('onboarding_releases')->count(),
+            array_values((array) $this->watcher()->table('onboarding_state')->first(['state', 'version'])),
+        ]);
+    }
+
+    /**
+     * RACE-01 with the same key, or RACE-02 with another key of the same intent: the repeat waits on the
+     * original's identity, then answers its result, and the command ran once.
+     *
+     * @param  array<string, mixed>  $original
+     */
+    private function assertRunsOnce(array $original, bool $sameKey): void
+    {
+        $operation = is_string($original['operation'] ?? null) ? $original['operation'] : '';
+        $first = $this->start($original, ['after_identity']);
+        $repeat = $this->start([...$original, 'key' => $sameKey ? ($original['key'] ?? null) : (string) Str::uuid()]);
+        Worker::ready($first, $repeat);
+
+        $first->run()->awaitBarrier('after_identity');
+        $repeat->run()->awaitBlocked($this->watcher());
+        $first->release();
+
+        $committed = $first->finish()->result ?? [];
+        $this->assertSame(['COMMITTED', false], [$committed['outcome'] ?? null, $committed['repeated'] ?? null], $operation);
+        $this->assertSame(['outcome' => 'COMMITTED', 'repeated' => true, 'commandId' => $committed['commandId'] ?? null], $repeat->finish()->result, $operation);
+        $this->assertSame(1, $this->watcher()->table('command_identities')->where('source_intent_id', $original['intent'] ?? null)->count(), $operation);
     }
 
     /**
