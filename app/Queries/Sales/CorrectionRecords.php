@@ -47,8 +47,9 @@ final class CorrectionRecords
         $snapshot = DB::table('receipt_snapshots')->where('sale_id', $saleId)->value('lines');
         $frozen = [];
 
+        // By line number: the snapshot holds it as a text of decimal digits (SCHEMA section 5.9).
         foreach (SaleRecords::lines(is_string($snapshot) ? $snapshot : throw new LogicException('A Sale has its receipt snapshot (SCHEMA section 5.9).')) as $line) {
-            $frozen[$line['lineNo']] = $line;
+            $frozen[(int) $line['lineNo']] = $line;
         }
 
         $lines = [];
@@ -62,7 +63,7 @@ final class CorrectionRecords
             $values = (array) $row;
             $lineNo = Read::int($values, 'line_no');
             $precision = Read::int($values, 'quantity_precision');
-            $names = $frozen[(string) $lineNo] ?? throw new LogicException('A Sale line is frozen in its receipt (SCHEMA section 5.9).');
+            $names = $frozen[$lineNo] ?? throw new LogicException('A Sale line is frozen in its receipt (SCHEMA section 5.9).');
             $total = self::money($values['line_total'] ?? null);
             $issued = Quantity::fromDatabase(Read::text($values, 'quantity'), $precision);
             $refunded = ($values['refunded_amount'] ?? null) === null ? Money::zero() : self::money($values['refunded_amount']);

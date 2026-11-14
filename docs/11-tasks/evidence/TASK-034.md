@@ -16,6 +16,8 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Check | Where it ran | Time | Duration | Result |
 | --- | --- | --- | --- | --- |
 | `npm run typecheck`, `npx tsc --noEmit`, `npx eslint`, PHP's checks | Local | — | — | `NOT_RUN`: PHP is not on this machine, and `node_modules` has no `.bin` links for `tsc` and `eslint`; the fast runs run them |
+| Guard (Gitleaks 8.30.1, the secret scan of the tree and the commits, identity, candidates) | Local, on `efdde53` (checkpoint 1) | 14 Nov, 20:38 to 20:41 | about 3 min | `PASS`, no candidate |
+| `composer validate`, `composer lint` (Pint, the translation keys and their types, the migration review and the rest), then `composer analyse` | Fast run 1, 43601078074 on `efdde53` | 20:42 to 20:45 | 3 min 20 s for the run | `FAIL`: `composer validate` and `composer lint` `PASS`; PHPStan found three errors in two new files (F-5); the later steps did not run |
 | The whole of `test:postgres` in its two parts, `test:race`, the browser suite with `tests/Browser/sales/refund.spec.ts`, the build and the image checks, with the unchanged files that the change reaches (F-3) | CI on the pull request's final head (CE-41, CE-44, D-117) | — | — | `NOT_RUN` until then |
 
 ## 2. What was built (contract section 4.1)
@@ -55,6 +57,7 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | F-2 | OPEN_ITEMS T-46: further page controllers that read more than one module (section 3) | Recorded; for the planning agent or the Owner with T-46 |
 | F-3 | Unchanged files reach changed code, so no fast run runs them: the close and its report — `CloseCashSessionTest`, `AssistedCloseTest`, `CashCloseTablesTest`, `SessionReportDocumentsTest`, `CloseRaceTest`, `AssistedCloseRaceTest` and every file whose fixture closes a session through `TokoContoh::closeSession`; RC-50's worker, `CommandRaceTest` through `ResolveScenario`; every channel assertion through the changed `ChannelInspector` and `Allowlists`; and the browser files `close.spec.ts`, `assisted-close.spec.ts`, `sessions.spec.ts` and `documents.spec.ts` | They run in the whole of `test:postgres`, `test:race` and the browser suite on the pull request's final head (CE-44, D-117), the `NOT_RUN` row of section 1 |
 | F-4 | Self-review before the first push: an identifier of a line's fields written as a literal inside a JSX attribute that the lint rule of ADR-005 refuses; the summary of errors that moved the focus while a field was typed; a link above RP-204's instruction | Fixed before the first push: the identifiers computed outside JSX; the summary as on every command page (section 3); the link removed (section 3) |
+| F-5 | Fast run 1, two defects of the code's types that PHPStan found: RC-05's `payout()` declared nullable though it always pays (`return.unusedType`); and `CorrectionRecords` keyed the receipt's frozen lines by their numbers as texts, which PHP stores as integer keys, so that PHPStan read the lookup by a decimal text as never finding one (`nullCoalesce.offset`) and the code after it as unreachable — at run time PHP converts the key, so no behaviour was wrong | Fixed in checkpoint 2: `payout()` returns a `Payout`; the frozen lines keyed by their numbers as integers; PHPStan in fast run 2 is the check, and `RefundPagesTest` covers the lookup |
 
 ## 5. Tests (contract section 7)
 

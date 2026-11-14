@@ -133,7 +133,7 @@ final class RecordDrawerFundedCorrection extends CorrectionAction
      * Under the Sale's lock: the payout in cash from the selected drawer, with the reference that the server
      * generates as `<Sale number>/<k>` (BR-RFD-05; D-087).
      */
-    protected function payout(CorrectionPayload $request, CorrectedSale $sale, Money $refund): ?Payout
+    protected function payout(CorrectionPayload $request, CorrectedSale $sale, Money $refund): Payout
     {
         $session = $this->session ?? throw new LogicException('A drawer-funded refund holds its session (step 4).');
 
