@@ -118,7 +118,7 @@ final class OnboardingChecklist
         $row = (array) self::joined()
             ->selectRaw('count(*) filter (where '.self::IS_COUNTED.') as counted')
             ->selectRaw('count(*) filter (where '.self::IS_NOT_COUNTED.') as not_counted')
-            ->selectRaw("count(*) filter (where f.line_id is not null and (".self::COST_STATUS.") = 'UNKNOWN') as unknown_cost")
+            ->selectRaw('count(*) filter (where f.line_id is not null and ('.self::COST_STATUS.") = 'UNKNOWN') as unknown_cost")
             ->first();
 
         return ['counted' => Read::int($row, 'counted'), 'notCounted' => Read::int($row, 'not_counted'), 'unknownCost' => Read::int($row, 'unknown_cost')];
