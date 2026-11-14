@@ -28,6 +28,9 @@ final class SaleCorrections
 
     public const string NOT_SALEABLE = 'NOT_SALEABLE';
 
+    /** A correction's time as the pages and the report receive one: an instant in UTC with its microseconds. */
+    private const string RECORDED_AT = "to_char(c.recorded_at at time zone 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') as recorded_at";
+
     /**
      * The path of RP-204, UXP-204 "Pengembalian tercatat", of a correction of a Sale by their internal
      * keys (ROUTE_CONTRACTS RP-204; TASK-034): the result page of RC-05 and RC-06.
@@ -271,6 +274,62 @@ final class SaleCorrections
         $sale = DB::table('sale_corrections')->where('id', $correctionId)->value('sale_id');
 
         return is_int($sale) ? $sale : null;
+    }
+
+    /**
+     * The ordinal of the next correction of the Sale whose lock the caller holds: one more than the
+     * corrections the Sale holds (INTERACTION_CONTRACTS RC-05; BR-RFD-05; D-087). Every correction of the
+     * Sale, drawer-funded or not, takes that lock before it is added, so none can be added meanwhile and
+     * the ordinal of a drawer-funded payout's reference `<Sale number>/<k>` is never given twice.
+     */
+    public function nextOrdinal(int $saleId): int
+    {
+        self::requireTransaction();
+
+        return DB::table('sale_corrections')->where('sale_id', $saleId)->count() + 1;
+    }
+
+    /**
+     * The drawer-funded refunds paid from a cash session, in the order they were recorded: the Sales
+     * module's query of a session's only drawer outflow (STACK_AND_MODULES STK-10; BR-CASH-07, BR-CASH-12,
+     * BR-CASH-20, BR-RFD-08; G-05; D-035; TASK-034), through the partial index of the drawer-funded refunds
+     * of a session (SCHEMA section 11). Each with its internal key, its Sale's number, its payout's
+     * reference, its amount, its correction's time as an instant in UTC and the Owner's name frozen with it
+     * (G-16). A close and RC-05 read it under the session's lock, which every drawer-funded refund of the
+     * session takes too (RACE-13, RACE-14); a page reads it without a lock.
+     *
+     * @return list<array{id: int, saleNumber: string, reference: string, amount: Money, recordedAt: string, owner: string}>
+     */
+    public function drawerRefundsOf(int $sessionId): array
+    {
+        $refunds = [];
+
+        foreach (DB::table('refunds as r')
+            ->join('sale_corrections as c', 'c.id', '=', 'r.correction_id')
+            ->join('sales as s', 's.id', '=', 'r.sale_id')
+            ->where('r.cash_session_id', $sessionId)
+            ->where('r.funding_source', Payout::DRAWER)
+            ->orderBy('c.recorded_at')
+            ->orderBy('r.id')
+            ->select(['r.id', 's.sale_number', 'r.payout_reference', 'r.amount', 'c.actor_display_name'])
+            ->selectRaw(self::RECORDED_AT)
+            ->get() as $row) {
+            $values = (array) $row;
+            $id = $values['id'] ?? null;
+            $number = $values['sale_number'] ?? null;
+            $reference = $values['payout_reference'] ?? null;
+            $amount = $values['amount'] ?? null;
+            $owner = $values['actor_display_name'] ?? null;
+            $at = $values['recorded_at'] ?? null;
+
+            if (! is_int($id) || ! is_string($number) || ! is_string($reference) || (! is_int($amount) && ! is_string($amount)) || ! is_string($owner) || ! is_string($at)) {
+                throw new LogicException('A drawer-funded refund holds its columns (SCHEMA section 5.9).');
+            }
+
+            $refunds[] = ['id' => $id, 'saleNumber' => $number, 'reference' => $reference, 'amount' => Money::fromDatabase($amount), 'recordedAt' => $at, 'owner' => $owner];
+        }
+
+        return $refunds;
     }
 
     private static function requireTransaction(): void

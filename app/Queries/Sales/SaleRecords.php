@@ -261,11 +261,12 @@ final class SaleRecords
     }
 
     /**
-     * The frozen lines, in the order of the cart, every value a string (SCHEMA section 5.9).
+     * The frozen lines, in the order of the cart, every value a string (SCHEMA section 5.9); the refund
+     * pages name a Sale's lines by them too (TASK-034).
      *
      * @return list<array{lineNo: string, sku: string, name: string, unit: string, quantity: string, unitPrice: string, lineTotal: string}>
      */
-    private static function lines(string $json): array
+    public static function lines(string $json): array
     {
         $decoded = json_decode($json, true, 4, JSON_THROW_ON_ERROR);
 

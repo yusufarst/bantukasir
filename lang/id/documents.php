@@ -40,6 +40,8 @@ return [
         'number' => 'No. sesi: :nomor',
         'time_zone' => 'Zona waktu: WIB (Asia/Jakarta)',
         'money_header' => ':kolom (Rp)',
+        // DC-02 row 8, each drawer-funded refund with the Owner as actor (COPY_DECK section 17.2; TASK-034).
+        'drawer_refund_row' => ':uang · penjualan :nomor · :waktu · oleh :nama',
     ],
     'receipt' => [
         'number' => 'No. :nomor',

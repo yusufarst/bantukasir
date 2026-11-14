@@ -18,8 +18,8 @@ use LogicException;
  * ties to the close; the shop identity by reference to the BusinessProfile revision in force, with
  * that revision's logo, and the template version; the register's code and label; the completed
  * Sales and their applied payments, CASH and BANK_TRANSFER separately; the drawer-funded refunds of
- * the session, each separately (populated from TASK-034); and the internal keys of every source. It
- * holds no cost, margin, profit or security data (BR-CASH-20).
+ * the session, each separately (TASK-034); and the internal keys of every source. It holds no cost,
+ * margin, profit or security data (BR-CASH-20).
  */
 final class SessionReports
 {
@@ -61,13 +61,15 @@ final class SessionReports
 
     /**
      * Adds the report of the close just added (G-17): every figure of BR-CASH-20 as it was counted,
-     * the drawer-funded refunds of the session — none before TASK-034 pays one — the keys of the
-     * Sales, Payments and refunds it was derived from (BR-CASH-13), and the close's reason as the close
-     * recorded it, an Owner-assisted close's (BR-CASH-20; G-17).
+     * the drawer-funded refunds of the session, their total and each separately, with its Sale's number,
+     * its payout's reference, its amount, its time and the Owner's frozen name (BR-CASH-20; D-035;
+     * TASK-034), the keys of the Sales, Payments and refunds it was derived from (BR-CASH-13), and the
+     * close's reason as the close recorded it, an Owner-assisted close's (BR-CASH-20; G-17). Its check
+     * ties expected cash to the opening cash, the applied CASH and the refunds' total (G-05).
      *
      * @param  array{code: string, label: string}  $register
      */
-    public function freeze(ClosingSession $session, array $register, ProfileRevision $revision, SessionSales $sales, CashCount $count, string $actorDisplayName, string $at, ?string $assistedReason = null): void
+    public function freeze(ClosingSession $session, array $register, ProfileRevision $revision, SessionSales $sales, DrawerRefunds $refunds, CashCount $count, string $actorDisplayName, string $at, ?string $assistedReason = null): void
     {
         self::requireTransaction();
 
@@ -92,9 +94,9 @@ final class SessionReports
             'completed_sale_value' => $sales->value->toCanonical(),
             'cash_applied' => $sales->cashApplied->toCanonical(),
             'bank_transfer_applied' => $sales->transferApplied->toCanonical(),
-            'drawer_refund_total' => 0,
-            'drawer_refunds' => '[]',
-            'source_ids' => json_encode(['saleIds' => $sales->saleIds, 'paymentIds' => $sales->paymentIds, 'drawerRefundIds' => []], JSON_THROW_ON_ERROR),
+            'drawer_refund_total' => $refunds->total->toCanonical(),
+            'drawer_refunds' => json_encode($refunds->entries, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
+            'source_ids' => json_encode(['saleIds' => $sales->saleIds, 'paymentIds' => $sales->paymentIds, 'drawerRefundIds' => $refunds->ids], JSON_THROW_ON_ERROR),
             'close_reason' => $assistedReason,
             'notes' => null,
         ]);

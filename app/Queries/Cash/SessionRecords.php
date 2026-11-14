@@ -38,6 +38,7 @@ use LogicException;
  * @phpstan-type SessionRow array{id: int, number: string, status: string, registerCode: string, registerLabel: string, responsible: string, openedAt: string, closedAt: string|null, variance: string|null}
  * @phpstan-type Figures array{openingCash: string, saleCount: int, saleValue: string, cashPayments: string, transferPayments: string, drawerRefunds: string, expectedCash: string}
  * @phpstan-type Count array{physicalCash: string, variance: string, closedBy: string, closeReason: string|null, notes: string|null}
+ * @phpstan-type Refund array{saleNumber: string, reference: string, amount: string, recordedAt: string, owner: string}
  */
 final class SessionRecords
 {
@@ -129,11 +130,49 @@ final class SessionRecords
     }
 
     /**
-     * One session in the viewer's scope (RP-206): its identity and state, whether the viewer is its
-     * responsible user, its opening cash, and, once CLOSED, the figures and the count of its report
-     * as they were frozen (BR-CASH-19, BR-CASH-20).
+     * The drawer-funded refunds of a report as it froze them (SCHEMA section 5.10, `drawer_refunds`;
+     * BR-CASH-20; TASK-034), in their order: each with its Sale's number, its payout's reference, its
+     * amount, its time and the Owner's frozen name.
      *
-     * @return array{session: array{id: int, number: string, status: string, registerCode: string, registerLabel: string, responsible: string, openedAt: string, closedAt: string|null, own: bool}, openingCash: Money, report: array{figures: Figures, count: Count}|null}
+     * @return list<Refund>
+     */
+    public static function refunds(string $json): array
+    {
+        $decoded = json_decode($json, true, 3, JSON_THROW_ON_ERROR);
+
+        if (! is_array($decoded) || ! array_is_list($decoded)) {
+            throw new LogicException('A report holds its drawer-funded refunds as a list (SCHEMA section 5.10).');
+        }
+
+        $refunds = [];
+
+        foreach ($decoded as $entry) {
+            $values = is_array($entry) ? $entry : [];
+            $refund = [];
+
+            foreach (['saleNumber', 'reference', 'amount', 'recordedAt', 'owner'] as $field) {
+                $value = $values[$field] ?? null;
+
+                if (! is_string($value)) {
+                    throw new LogicException('A report\'s drawer-funded refund holds every value as a text (SCHEMA section 5.10).');
+                }
+
+                $refund[$field] = $value;
+            }
+
+            /** @var Refund $refund */
+            $refunds[] = $refund;
+        }
+
+        return $refunds;
+    }
+
+    /**
+     * One session in the viewer's scope (RP-206): its identity and state, whether the viewer is its
+     * responsible user, its opening cash, and, once CLOSED, the figures, the count and the drawer-funded
+     * refunds of its report as they were frozen (BR-CASH-19, BR-CASH-20).
+     *
+     * @return array{session: array{id: int, number: string, status: string, registerCode: string, registerLabel: string, responsible: string, openedAt: string, closedAt: string|null, own: bool}, openingCash: Money, report: array{figures: Figures, count: Count, drawerRefunds: list<Refund>}|null}
      *
      * @throws NotFound
      */
@@ -148,7 +187,7 @@ final class SessionRecords
             ->select([
                 's.id', 's.session_number', 's.status', 's.responsible_user_id', 's.responsible_display_name', 's.opening_cash', 'r.code', 'r.label',
                 'rep.session_id as report_id', 'rep.register_code', 'rep.register_label', 'rep.completed_sale_count', 'rep.completed_sale_value', 'rep.cash_applied',
-                'rep.bank_transfer_applied', 'rep.drawer_refund_total', 'rep.expected_cash', 'rep.physical_cash', 'rep.variance', 'rep.close_actor_display_name',
+                'rep.bank_transfer_applied', 'rep.drawer_refund_total', 'rep.drawer_refunds', 'rep.expected_cash', 'rep.physical_cash', 'rep.variance', 'rep.close_actor_display_name',
                 'rep.close_reason', 'rep.notes',
             ])
             ->selectRaw(self::OPENED_AT)
@@ -182,6 +221,7 @@ final class SessionRecords
                     'closeReason' => self::nullableText($values, 'close_reason'),
                     'notes' => self::nullableText($values, 'notes'),
                 ],
+                'drawerRefunds' => self::refunds(self::text($values, 'drawer_refunds')),
             ];
         }
 

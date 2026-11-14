@@ -438,12 +438,15 @@ final class RecordCorrectionTest extends DatabaseTestCase
 
     public function test_each_new_table_has_its_one_writer(): void
     {
-        // STK-12, ARC-20, ARC-21; ADR-008 section 4.3: the Sales module's writer of corrections alone names
+        // STK-12, ARC-20, ARC-21; ADR-008 section 4.3: the Sales module's writer of corrections alone writes
         // the correction's tables, and changes the running totals by relative increments only (SCH-33);
-        // the Costing module's writer alone writes the return allocations, which the replay reads.
+        // besides it only the refund pages' query reads them, writing nothing (TASK-034); the Costing
+        // module's writer alone writes the return allocations, which the replay reads.
         foreach (['sale_corrections', 'refunds', 'refund_lines', 'return_lines'] as $table) {
-            $this->assertSame(['Domain/Sales/Corrections/SaleCorrections.php'], self::filesNaming($table), $table);
+            $this->assertSame(['Domain/Sales/Corrections/SaleCorrections.php', 'Queries/Sales/CorrectionRecords.php'], self::filesNaming($table), $table);
         }
+
+        $this->assertDoesNotMatchRegularExpression('/->(?:insert|insertGetId|insertOrIgnore|update|upsert|delete|increment|decrement|truncate|lock|lockForUpdate|sharedLock)\(|DB::(?:statement|insert|update|delete|unprepared)/', (string) file_get_contents(app_path('Queries/Sales/CorrectionRecords.php')));
 
         foreach (['return_cost_allocations', 'return_cost_allocation_projections'] as $table) {
             $this->assertSame(['Domain/Costing/Allocations/ReturnAllocations.php', 'Domain/Costing/Replay/ReplayLedger.php'], self::filesNaming($table), $table);

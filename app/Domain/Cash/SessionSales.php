@@ -39,23 +39,21 @@ final readonly class SessionSales
     /**
      * The running figures of an OPEN session as its close preview and its detail page show them
      * (BR-CASH-13 step 1; COPY_DECK section 7.5): the opening cash, the number of Sales, the applied
-     * CASH and BANK_TRANSFER, the drawer-funded refunds — none before TASK-034 pays one — and
-     * expected cash (G-05), every amount a canonical string of whole rupiah. Never a cost (BR-CASH-20).
+     * CASH and BANK_TRANSFER, the total of the drawer-funded refunds paid from it (BR-RFD-08; TASK-034)
+     * and expected cash (G-05), every amount a canonical string of whole rupiah. Never a cost (BR-CASH-20).
      *
      * @return array{openingCash: string, saleCount: int, saleValue: string, cashPayments: string, transferPayments: string, drawerRefunds: string, expectedCash: string}
      */
-    public function figures(Money $openingCash): array
+    public function figures(Money $openingCash, DrawerRefunds $refunds): array
     {
-        $refunds = Money::zero();
-
         return [
             'openingCash' => $openingCash->toCanonical(),
             'saleCount' => $this->count,
             'saleValue' => $this->value->toCanonical(),
             'cashPayments' => $this->cashApplied->toCanonical(),
             'transferPayments' => $this->transferApplied->toCanonical(),
-            'drawerRefunds' => $refunds->toCanonical(),
-            'expectedCash' => CashCount::due($openingCash, $this->cashApplied, $refunds)->toCanonical(),
+            'drawerRefunds' => $refunds->total->toCanonical(),
+            'expectedCash' => CashCount::due($openingCash, $this->cashApplied, $refunds->total)->toCanonical(),
         ];
     }
 }

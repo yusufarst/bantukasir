@@ -11,6 +11,7 @@ use App\Domain\Access\Capability;
 use App\Domain\Audit\Actor;
 use App\Domain\Audit\AuditCategory;
 use App\Domain\Cash\CashCount;
+use App\Domain\Cash\DrawerRefunds;
 use App\Domain\Cash\Registers;
 use App\Domain\Cash\SessionReports;
 use App\Domain\Cash\Sessions;
@@ -20,6 +21,7 @@ use App\Domain\Commands\ErrorCode;
 use App\Domain\Commands\StoredResult;
 use App\Domain\Configuration\BusinessProfiles;
 use App\Domain\Configuration\ProfileRevision;
+use App\Domain\Sales\Corrections\SaleCorrections;
 use App\Domain\Sales\Sales;
 use App\Models\User;
 use App\Support\Numbers\Money;
@@ -46,8 +48,9 @@ use LogicException;
  *   `sale.checkout` receipts, read after the lock, any PENDING or HELD one refusing
  *   RECOUNT_REQUIRED (G-27, RACE-35; D-088), a settled one no longer counting (D-089);
  * - expected cash from the session's facts under the lock — the opening cash, the applied CASH of
- *   its Sales, which the Sales module's query gives (STK-10), and its drawer-funded refunds, none
- *   before TASK-034 pays one — and the variance (G-05; BR-CASH-12);
+ *   its Sales and its drawer-funded refunds, which the Sales module's queries give (STK-10), every
+ *   drawer-funded refund of the session taking the same lock (RACE-13; TASK-034) — and the variance
+ *   (G-05; BR-CASH-12);
  * - at step 8, the time, then the session CLOSED, its close, its report, the audit event and the
  *   result, all or nothing (TR-TX-01): a failure at any of them leaves the session OPEN and nothing
  *   written (BR-CASH-17). There is no CLOSING state.
@@ -74,6 +77,7 @@ final class CloseCashSession extends CommandAction
         private readonly Registers $registers,
         private readonly SessionReports $reports,
         private readonly Sales $sales,
+        private readonly SaleCorrections $corrections,
     ) {
         parent::__construct($services);
     }
@@ -144,10 +148,11 @@ final class CloseCashSession extends CommandAction
 
         $register = $this->registers->find($session->registerId) ?? throw new LogicException('A session names its register (SCHEMA section 5.10).');
         $sales = SessionSales::of($this->sales->ofSession($session->id));
+        // The drawer-funded refunds paid from the session, under its lock (D-035; RACE-13).
+        $refunds = DrawerRefunds::of($this->corrections->drawerRefundsOf($session->id));
 
         try {
-            // The drawer-funded refunds of the session, none before TASK-034 pays one (D-035).
-            $count = CashCount::of(CashCount::expected($session->openingCash, $sales->cashApplied, Money::zero()), Money::of($physical));
+            $count = CashCount::of(CashCount::expected($session->openingCash, $sales->cashApplied, $refunds->total), Money::of($physical));
         } catch (NumberOutOfRange) {
             // TECHNICAL_RULES section 11.1: a computed amount above the range refuses the command.
             throw CommandRefused::of(ErrorCode::ValidationFailed);
@@ -162,7 +167,7 @@ final class CloseCashSession extends CommandAction
         $this->reports->record($session, $count, $actor->id, $actor->display_name, $at, $commandId);
         $this->written();
 
-        $this->reports->freeze($session, ['code' => $register->code, 'label' => $register->label], $revision, $sales, $count, $actor->display_name, $at);
+        $this->reports->freeze($session, ['code' => $register->code, 'label' => $register->label], $revision, $sales, $refunds, $count, $actor->display_name, $at);
         $this->written();
 
         $this->services->audit->record(

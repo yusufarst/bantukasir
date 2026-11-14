@@ -65,6 +65,8 @@ final class AssistedClosePagesTest extends DatabaseTestCase
             'sessionId' => $session,
             'activityVersion' => 1,
             'figures' => ['openingCash' => '20000', 'saleCount' => 1, 'saleValue' => '50000', 'cashPayments' => '50000', 'transferPayments' => '0', 'drawerRefunds' => '0', 'expectedCash' => '70000'],
+            // Its drawer-funded refunds, none here (UXI-149; TASK-034).
+            'drawerRefunds' => [],
             'unresolvedCheckouts' => [],
         ], $this->previewOf($path, $version));
 
@@ -83,6 +85,7 @@ final class AssistedClosePagesTest extends DatabaseTestCase
             'sessionId' => $session,
             'activityVersion' => 1,
             'figures' => ['openingCash' => '20000', 'saleCount' => 1, 'saleValue' => '50000', 'cashPayments' => '50000', 'transferPayments' => '0', 'drawerRefunds' => '0', 'expectedCash' => '70000'],
+            'drawerRefunds' => [],
             'unresolvedCheckouts' => [['sourceIntentId' => $intent, 'receivedAt' => '2026-11-13T03:00:00.000000Z']],
         ], $this->previewOf($path, $version));
         $this->assertDeferredChannel($this->previewReload($path, $version), 'owner', $this->secrets());

@@ -106,7 +106,10 @@ final class Allowlists
             'cashier' => self::SESSION_LIST,
             'combined' => self::SESSION_LIST,
         ],
-        'cash/Session' => ['*' => [...self::SESSION, ...self::SESSION_FIGURES]],
+        // A CLOSED session's drawer-funded refunds beside the variance (UXI-143; TASK-034), each as the report
+        // froze it with the Owner as actor; an empty list while OPEN or without one, the full rows apart.
+        'cash/Session' => ['*' => [...self::SESSION, ...self::SESSION_FIGURES, 'drawerRefunds']],
+        'cash/Session#refunds' => ['*' => [...self::SESSION, ...self::SESSION_FIGURES, ...self::REPORT_REFUNDS]],
         // UXP-207, the Owner's alone (TASK-032): the session's header with its responsible user; its close
         // preview a deferred prop read apart.
         'cash/AssistedClose' => ['owner' => ['session', 'session.id', 'session.number', 'session.registerCode', 'session.registerLabel', 'session.responsible']],
@@ -134,20 +137,40 @@ final class Allowlists
             'issuer', 'issuer.name', 'issuer.identity', 'issuer.address', 'issuer.contact', 'issuer.email', 'issuer.header', 'issuer.footer', 'issuer.logo',
             'template', 'size', 'copy',
         ]],
-        'documents/SessionReportPrint' => ['*' => [
-            'report', 'report.sessionId', 'report.number', 'report.registerCode', 'report.registerLabel', 'report.responsible', 'report.openedAt', 'report.cutoffAt', 'report.closedAt',
-            'report.openingCash', 'report.saleCount', 'report.saleValue', 'report.cashPayments', 'report.transferPayments', 'report.drawerRefunds', 'report.expectedCash',
-            'report.physicalCash', 'report.variance', 'report.closedBy', 'report.closeReason', 'report.notes', 'report.template', 'issuer', 'issuer.name', 'issuer.identity',
+        'documents/SessionReportPrint' => ['*' => [...self::REPORT_PRINT, 'report.drawerRefundRows']],
+        // DC-02 row 8 with its rows, each drawer-funded refund as the snapshot froze it (TASK-034).
+        'documents/SessionReportPrint#refunds' => ['*' => [
+            ...self::REPORT_PRINT, 'report.drawerRefundRows', 'report.drawerRefundRows.*', 'report.drawerRefundRows.*.saleNumber', 'report.drawerRefundRows.*.reference',
+            'report.drawerRefundRows.*.amount', 'report.drawerRefundRows.*.recordedAt', 'report.drawerRefundRows.*.owner',
         ]],
         'sales/Index' => [
             'owner' => [...self::SALE_LIST, 'registers.*', 'registers.*.id', 'registers.*.code', 'registers.*.label', 'cashiers.*', 'cashiers.*.id', 'cashiers.*.displayName'],
             'cashier' => self::SALE_LIST,
             'combined' => self::SALE_LIST,
         ],
-        'sales/Show' => ['*' => [
-            'sale', 'sale.id', 'sale.number', 'sale.committedAt', 'sale.cashier', 'sale.customerName', 'sale.total', 'sale.sessionId', 'sale.sessionNumber',
-            'lines', 'lines.*', 'lines.*.lineNo', 'lines.*.sku', 'lines.*.name', 'lines.*.unit', 'lines.*.quantity', 'lines.*.unitPrice', 'lines.*.lineTotal',
-            'payment', 'payment.method', 'payment.tendered', 'payment.change', 'payment.reference',
+        // For the Owner also the linked corrections (UXI-120) and whether anything remains to correct
+        // (UXI-118; TASK-034): an empty list without one, its entries apart.
+        'sales/Show' => [
+            'owner' => [...self::SALE_DETAIL, 'corrections', 'refundable'],
+            'cashier' => self::SALE_DETAIL,
+            'combined' => self::SALE_DETAIL,
+        ],
+        'sales/Show#corrections' => ['owner' => [...self::SALE_DETAIL, ...self::CORRECTIONS, 'refundable']],
+        // UXP-203 and UXP-204, the Owner's alone (TASK-034): the Sale's lines with what remains on each and
+        // every OPEN session with its expected cash; the committed correction, here a drawer-funded one with
+        // its session and its returns. Never a cost.
+        'sales/Refund' => ['owner' => [
+            'sale', 'sale.id', 'sale.number',
+            'lines', 'lines.*', 'lines.*.saleLineId', 'lines.*.lineNo', 'lines.*.name', 'lines.*.sku', 'lines.*.unit', 'lines.*.quantityPrecision', 'lines.*.quantity',
+            'lines.*.lineTotal', 'lines.*.remainingAmount', 'lines.*.remainingQuantity',
+            'sessions', 'sessions.*', 'sessions.*.id', 'sessions.*.number', 'sessions.*.registerCode', 'sessions.*.registerLabel', 'sessions.*.responsible', 'sessions.*.expectedCash',
+        ]],
+        'sales/RefundRecorded' => ['owner' => [
+            'sale', 'sale.id', 'sale.number', 'correction', 'correction.id', 'correction.recordedAt', 'correction.reason', 'correction.actor', 'correction.refund',
+            'correction.refund.amount', 'correction.refund.method', 'correction.refund.fundingSource', 'correction.refund.reference', 'correction.refund.drawer',
+            'correction.refund.drawer.sessionId', 'correction.refund.drawer.sessionNumber', 'correction.refund.drawer.registerCode', 'correction.refund.drawer.registerLabel',
+            'correction.lines', 'correction.lines.*', 'correction.lines.*.saleLineId', 'correction.lines.*.lineNo', 'correction.lines.*.name', 'correction.lines.*.unit',
+            'correction.lines.*.quantityPrecision', 'correction.lines.*.refundAmount', 'correction.lines.*.returnedSaleable', 'correction.lines.*.returnedNotSaleable',
         ]],
         'access/UserCreate' => ['owner' => []],
         // UXP-604 also names the account's OPEN cash session, null without one (UXI-340; TASK-030).
@@ -336,10 +359,54 @@ final class Allowlists
         'session.openedAt', 'session.closedAt', 'session.canClose', 'session.canAssistedClose',
     ];
 
+    /** A report's drawer-funded refunds beside the variance on UXP-206 (UXI-143; TASK-034). */
+    private const array REPORT_REFUNDS = [
+        'drawerRefunds', 'drawerRefunds.*', 'drawerRefunds.*.saleNumber', 'drawerRefunds.*.reference', 'drawerRefunds.*.amount', 'drawerRefunds.*.recordedAt', 'drawerRefunds.*.owner',
+    ];
+
+    /** RP-206P's report and issuer (TASK-031), before its refunds' rows (TASK-034). */
+    private const array REPORT_PRINT = [
+        'report', 'report.sessionId', 'report.number', 'report.registerCode', 'report.registerLabel', 'report.responsible', 'report.openedAt', 'report.cutoffAt', 'report.closedAt',
+        'report.openingCash', 'report.saleCount', 'report.saleValue', 'report.cashPayments', 'report.transferPayments', 'report.drawerRefunds', 'report.expectedCash',
+        'report.physicalCash', 'report.variance', 'report.closedBy', 'report.closeReason', 'report.notes', 'report.template', 'issuer', 'issuer.name', 'issuer.identity',
+    ];
+
+    /** UXP-202's Sale with its frozen lines and its payment (TASK-031). */
+    private const array SALE_DETAIL = [
+        'sale', 'sale.id', 'sale.number', 'sale.committedAt', 'sale.cashier', 'sale.customerName', 'sale.total', 'sale.sessionId', 'sale.sessionNumber',
+        'lines', 'lines.*', 'lines.*.lineNo', 'lines.*.sku', 'lines.*.name', 'lines.*.unit', 'lines.*.quantity', 'lines.*.unitPrice', 'lines.*.lineTotal',
+        'payment', 'payment.method', 'payment.tendered', 'payment.change', 'payment.reference',
+    ];
+
+    /** UXP-202's linked corrections, the Owner's (UXI-120; TASK-034): a drawer-funded one among them, with its session. */
+    private const array CORRECTIONS = [
+        'corrections', 'corrections.*', 'corrections.*.id', 'corrections.*.recordedAt', 'corrections.*.reason', 'corrections.*.actor', 'corrections.*.refund',
+        'corrections.*.refund.amount', 'corrections.*.refund.method', 'corrections.*.refund.fundingSource', 'corrections.*.refund.reference', 'corrections.*.refund.drawer',
+        'corrections.*.refund.drawer.sessionId', 'corrections.*.refund.drawer.sessionNumber', 'corrections.*.refund.drawer.registerCode', 'corrections.*.refund.drawer.registerLabel',
+        'corrections.*.lines', 'corrections.*.lines.*', 'corrections.*.lines.*.saleLineId', 'corrections.*.lines.*.lineNo', 'corrections.*.lines.*.name', 'corrections.*.lines.*.unit',
+        'corrections.*.lines.*.quantityPrecision', 'corrections.*.lines.*.refundAmount', 'corrections.*.lines.*.returnedSaleable', 'corrections.*.lines.*.returnedNotSaleable',
+    ];
+
+    /** A close preview's drawer-funded refunds, each row of UXI-101 and UXI-149 (TASK-034). */
+    private const array PREVIEW_REFUNDS = ['preview.drawerRefunds.*', 'preview.drawerRefunds.*.saleNumber', 'preview.drawerRefunds.*.amount', 'preview.drawerRefunds.*.recordedAt'];
+
     /** UXP-206 (TASK-030): the running figures of an OPEN session or its report's, and the count, null fields while OPEN. */
     private const array SESSION_FIGURES = [
         'figures', 'figures.openingCash', 'figures.saleCount', 'figures.saleValue', 'figures.cashPayments', 'figures.transferPayments', 'figures.drawerRefunds',
         'figures.expectedCash', 'count', 'count.physicalCash', 'count.variance', 'count.closedBy', 'count.closeReason', 'count.notes',
+    ];
+
+    /** UXP-105's close preview (TASK-030), with its drawer-funded refunds' list (TASK-034). */
+    private const array CLOSE_PREVIEW = [
+        'preview', 'preview.sessionId', 'preview.activityVersion', 'preview.figures', 'preview.figures.openingCash', 'preview.figures.saleCount', 'preview.figures.saleValue',
+        'preview.figures.cashPayments', 'preview.figures.transferPayments', 'preview.figures.drawerRefunds', 'preview.figures.expectedCash', 'preview.drawerRefunds', 'preview.unresolvedCheckouts',
+    ];
+
+    /** UXP-207's close preview (TASK-032), with its drawer-funded refunds' list (TASK-034). */
+    private const array ASSISTED_PREVIEW = [
+        'preview', 'preview.sessionId', 'preview.activityVersion', 'preview.figures', 'preview.figures.openingCash', 'preview.figures.saleCount', 'preview.figures.saleValue',
+        'preview.figures.cashPayments', 'preview.figures.transferPayments', 'preview.figures.drawerRefunds', 'preview.figures.expectedCash', 'preview.drawerRefunds', 'preview.unresolvedCheckouts',
+        'preview.unresolvedCheckouts.*', 'preview.unresolvedCheckouts.*.sourceIntentId', 'preview.unresolvedCheckouts.*.receivedAt',
     ];
 
     /** The categories of a catalogue page. */
@@ -360,18 +427,15 @@ final class Allowlists
      * @var array<string, array<string, list<string>>>
      */
     public const array DEFERRED = [
-        'cash/CloseSession' => ['*' => [
-            'preview', 'preview.sessionId', 'preview.activityVersion', 'preview.figures', 'preview.figures.openingCash', 'preview.figures.saleCount', 'preview.figures.saleValue',
-            'preview.figures.cashPayments', 'preview.figures.transferPayments', 'preview.figures.drawerRefunds', 'preview.figures.expectedCash', 'preview.unresolvedCheckouts',
-        ]],
+        // TASK-034: the preview's drawer-funded refunds (UXI-101), an empty list without one, its rows apart.
+        'cash/CloseSession' => ['*' => self::CLOSE_PREVIEW],
+        'cash/CloseSession#refunds' => ['*' => [...self::CLOSE_PREVIEW, ...self::PREVIEW_REFUNDS]],
         // TASK-032: UXP-207's close preview, the Owner's alone, with the responsible user's unresolved
         // checkouts by intent, never a payload or an amount of them (ADR-009 section 2); UXP-206's review
-        // notes of a CLOSED session, the Owner's alone, with their authors' frozen names.
-        'cash/AssistedClose' => ['owner' => [
-            'preview', 'preview.sessionId', 'preview.activityVersion', 'preview.figures', 'preview.figures.openingCash', 'preview.figures.saleCount', 'preview.figures.saleValue',
-            'preview.figures.cashPayments', 'preview.figures.transferPayments', 'preview.figures.drawerRefunds', 'preview.figures.expectedCash', 'preview.unresolvedCheckouts',
-            'preview.unresolvedCheckouts.*', 'preview.unresolvedCheckouts.*.sourceIntentId', 'preview.unresolvedCheckouts.*.receivedAt',
-        ]],
+        // notes of a CLOSED session, the Owner's alone, with their authors' frozen names. TASK-034: its
+        // drawer-funded refunds (UXI-149), as UXP-105's.
+        'cash/AssistedClose' => ['owner' => self::ASSISTED_PREVIEW],
+        'cash/AssistedClose#refunds' => ['owner' => [...self::ASSISTED_PREVIEW, ...self::PREVIEW_REFUNDS]],
         'cash/Session' => ['owner' => ['notes', 'notes.*', 'notes.*.id', 'notes.*.text', 'notes.*.recordedAt', 'notes.*.author']],
     ];
 
@@ -419,6 +483,9 @@ final class Allowlists
         // VALIDATION_FAILED of RC-05 and RC-06 for a Sale line named twice, each line that repeats it by
         // that Sale line (INTERACTION_CONTRACTS section 1.6; TASK-033).
         'commands.refused.sale_lines' => ['owner' => ['outcome', 'code', 'messageKey', 'params', 'fields', 'lines', 'lines.*', 'lines.*.saleLineId']],
+        // DRAWER_CASH_INSUFFICIENT of RC-05 with the drawer and its expected cash for the message (UXS-36;
+        // TASK-034).
+        'commands.refused.drawer_short' => ['owner' => ['outcome', 'code', 'messageKey', 'params', 'params.laci', 'params.uang', 'fields', 'lines']],
         // RD-03, the shell's indicators (TASK-009), with the stock-attention count of the
         // badge, null for a cashier (TASK-022).
         'data.shell' => ['*' => ['unresolvedRequests', 'stockAttention', 'asOf']],

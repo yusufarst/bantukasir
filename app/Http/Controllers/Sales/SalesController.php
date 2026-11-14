@@ -8,6 +8,7 @@ use App\Http\Requests\Sales\SalesPageRequest;
 use App\Models\User;
 use App\Policies\NotFound;
 use App\Queries\Cash\CashRegisterRows;
+use App\Queries\Sales\CorrectionRecords;
 use App\Queries\Sales\SaleRecords;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -23,8 +24,8 @@ use Inertia\Response;
  * the page keeps in its address when it pages (NC-10); for the Owner also the registers and the
  * people of the filters "Laci kas" and "Kasir" (UXI-114). RP-202: one Sale in scope, NOT_FOUND
  * otherwise (TR-ERR-03), with its lines, one per product, its payment and its session (UXI-119); its
- * reprint is RC-44 (UXI-117). The Owner's linked refunds and returns (UXI-120) are TASK-034's, whose
- * records TASK-033 creates.
+ * reprint is RC-44 (UXI-117). For the Owner, its linked refunds and returns (UXI-120) and whether
+ * anything remains to refund or return (UXI-118; TASK-034).
  */
 final class SalesController
 {
@@ -53,9 +54,20 @@ final class SalesController
     /**
      * @throws NotFound
      */
-    public function show(Request $request, string $sale, SaleRecords $sales): Response
+    public function show(Request $request, string $sale, SaleRecords $sales, CorrectionRecords $corrections): Response
     {
-        return Inertia::render('sales/Show', $sales->detail($sale, self::viewer($request)));
+        $viewer = self::viewer($request);
+        $props = $sales->detail($sale, $viewer);
+
+        // The Owner's alone (TASK-034): the linked refunds and returns (UXI-120), and whether anything
+        // remains to refund or return, for "Pengembalian uang dan retur" (UXI-118; BR-RFD-03).
+        if (Capabilities::allows($viewer, Capability::Cap22) && Capabilities::allows($viewer, Capability::Cap24)) {
+            $lines = $corrections->lines($props['sale']['id']);
+            $props['corrections'] = $corrections->corrections($props['sale']['id'], $lines);
+            $props['refundable'] = CorrectionRecords::anyRemaining($lines);
+        }
+
+        return Inertia::render('sales/Show', $props);
     }
 
     private static function viewer(Request $request): User

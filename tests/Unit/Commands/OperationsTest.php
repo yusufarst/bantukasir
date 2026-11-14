@@ -44,6 +44,7 @@ use App\Actions\Inventory\ConfirmReceiving;
 use App\Actions\Inventory\ConfirmReversal;
 use App\Actions\Sales\CheckoutSale;
 use App\Actions\Sales\RecordCorrection;
+use App\Actions\Sales\RecordDrawerFundedCorrection;
 use App\Domain\Commands\Operations;
 use LogicException;
 use Tests\Harness\Commands\Probe;
@@ -158,6 +159,7 @@ final class OperationsTest extends TestCase
             'cash_session.close_assisted' => CloseCashSessionAssisted::class,
             'review_note.add' => AddReviewNote::class,
             'sale_correction.other' => RecordCorrection::class,
+            'sale_correction.drawer_funded' => RecordDrawerFundedCorrection::class,
         ], CommandActions::built());
     }
 

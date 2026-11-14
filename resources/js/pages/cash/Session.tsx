@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button';
 import { Section } from '@/components/ui/Card';
 import { KeyValueList, type KeyValue } from '@/components/ui/Data';
 import { CommandForm, Field, TextArea } from '@/components/ui/Field';
+import { Notice } from '@/components/ui/Notice';
 import { StatusWord } from '@/components/ui/Status';
 import { Committed, EmptyState, Loading } from '@/components/ui/States';
 import { AppShell, useUnsavedChanges } from '@/layouts/AppShell';
@@ -11,7 +12,7 @@ import { PageContainer, PageHeader } from '@/layouts/Page';
 import { takeSavedNote } from '@/lib/access/users';
 import { cashFieldMessage } from '@/lib/cash/registers';
 import { CloseSessionEntry, VarianceWord } from '@/lib/cash/Parts';
-import { assistedClosePage, OPEN, REVIEW_NOTE_COMMAND, refundsText, registerText, sessionsListFrom, sessionsShell, statusWord, type ReviewNote, type SessionFigures } from '@/lib/cash/sessions';
+import { assistedClosePage, OPEN, REVIEW_NOTE_COMMAND, refundsText, registerText, sessionsListFrom, sessionsShell, statusWord, type ReportRefund, type ReviewNote, type SessionFigures } from '@/lib/cash/sessions';
 import { CommandPanels } from '@/lib/commands/Panels';
 import { useCommand } from '@/lib/commands/useCommand';
 import { ExportControl, PrintControl } from '@/lib/documents/Printing';
@@ -35,8 +36,9 @@ import { personaOf, type RoleCode } from '@/lib/navigation';
 // request; a CLOSED session has the section "Catatan tinjauan Pemilik" (UXI-144), every note in order with
 // its author and time and no edit or delete, read as a deferred prop, with "Tambah catatan tinjauan"
 // (UXI-145), which opens the inline form — "Catatan", "Simpan catatan" (UXI-146, RC-43) and "Batal"
-// (UXI-147), which discards the text; after the save the new note appears in the list. The list of the
-// drawer-funded refunds beside the variance is TASK-034's.
+// (UXI-147), which discards the text; after the save the new note appears in the list. A CLOSED session's
+// drawer-funded refunds stand beside the variance, as the report froze them, with the Owner's guidance of
+// D-068 when the variance is over (UXI-143; TASK-034).
 
 /** The Owner's deferred prop of the review notes (UXI-144), read again after a save. */
 const NOTES_PROP = 'notes';
@@ -68,6 +70,8 @@ interface SessionProps {
         readonly closeReason: string | null;
         readonly notes: string | null;
     };
+    /** The report's drawer-funded refunds beside the variance (UXI-143; TASK-034); none while the session is OPEN. */
+    readonly drawerRefunds: readonly ReportRefund[];
     /** The Owner's review notes of a CLOSED session, a deferred prop: absent while they load, and for every other viewer. */
     readonly notes?: readonly ReviewNote[];
 }
@@ -88,7 +92,7 @@ export default function Session(props: SessionProps) {
     );
 }
 
-function SessionDetail({ title, owner, session, figures, count, notes }: SessionProps & { title: string; owner: boolean }) {
+function SessionDetail({ title, owner, session, figures, count, drawerRefunds, notes }: SessionProps & { title: string; owner: boolean }) {
     const [note] = useState(takeSavedNote);
     const [back] = useState(() => sessionsListFrom(document.referrer, window.location.origin));
     const open = session.status === OPEN;
@@ -132,6 +136,7 @@ function SessionDetail({ title, owner, session, figures, count, notes }: Session
                                 <ExportControl sessionId={session.id} number={session.number} />
                             </div>
                             <ReportFigures session={session} figures={figures} count={count} />
+                            <ReportRefunds refunds={drawerRefunds} guidance={owner && count.variance !== null && positiveVariance(count.variance)} />
                         </div>
                     </Section>
                 )}
@@ -245,6 +250,40 @@ function NoteForm({ sessionId, onSaved, onCancel }: { sessionId: number; onSaved
             </CommandForm>
             <CommandPanels control={control} />
         </div>
+    );
+}
+
+/** Whether a recorded variance is over: more counted than expected. */
+function positiveVariance(variance: string): boolean {
+    return /^[0-9]+$/.test(variance) && !/^0+$/.test(variance);
+}
+
+/**
+ * UXI-143: the report's drawer-funded refunds beside the variance, each as it was frozen, with the Owner as
+ * actor (BR-CASH-20; D-035); for the Owner, when the variance is over, the guidance of D-068 that it may be a
+ * refund's cash still in the drawer at the count, to hand over before the next opening count and explain with
+ * a review note. Nothing when the session paid no refund from its drawer.
+ */
+function ReportRefunds({ refunds, guidance }: { refunds: readonly ReportRefund[]; guidance: boolean }) {
+    if (refunds.length === 0) {
+        return null;
+    }
+
+    return (
+        <Section title={t('cash.session_detail.drawer_refunds')} level={3} card={false}>
+            <div className={'bk-stack'}>
+                <ul className={'bk-stack'} role={'list'}>
+                    {refunds.map((refund) => (
+                        <li key={refund.reference}>{t('documents.session_report.drawer_refund_row', { uang: formatMoney(refund.amount), nomor: refund.saleNumber, waktu: formatDateTime(refund.recordedAt), nama: refund.owner })}</li>
+                    ))}
+                </ul>
+                {guidance && (
+                    <Notice tone={'warning'} urgency={'none'}>
+                        <p>{t('cash.session_detail.positive_variance_guidance')}</p>
+                    </Notice>
+                )}
+            </div>
+        </Section>
     );
 }
 

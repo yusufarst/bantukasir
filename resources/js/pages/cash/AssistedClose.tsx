@@ -15,7 +15,7 @@ import { CommandLayout, PageHeader } from '@/layouts/Page';
 import { leaveSavedNote } from '@/lib/access/users';
 import { cashFieldMessage } from '@/lib/cash/registers';
 import { ASSISTED_CLOSE_COMMAND, CHECKOUT_FAMILY, closedMeanwhile, refundsText, registerText, sessionPage, sessionsShell, type AssistedClosePreview, type SessionFigures, type UnresolvedCheckout } from '@/lib/cash/sessions';
-import { VarianceWord } from '@/lib/cash/Parts';
+import { PreviewRefunds, VarianceWord } from '@/lib/cash/Parts';
 import { familyLabel } from '@/lib/commands/families';
 import { CommandPanels } from '@/lib/commands/Panels';
 import { CheckNote, useRowCheck } from '@/lib/commands/RowCheck';
@@ -256,7 +256,10 @@ function CloseFlow({ title, session, preview }: AssistedCloseProps & { title: st
                             ) : preview === undefined || previewRead === 'reading' ? (
                                 <Loading lines={3} />
                             ) : (
-                                <PreviewFigures figures={preview?.figures ?? null} />
+                                <>
+                                    <PreviewFigures figures={preview?.figures ?? null} />
+                                    <PreviewRefunds refunds={preview?.drawerRefunds ?? []} />
+                                </>
                             )}
                         </div>
                     </Section>

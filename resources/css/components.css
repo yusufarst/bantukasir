@@ -631,6 +631,16 @@
         --seg-n: 3;
     }
 
+    /* A longer choice, one option under another at full width (UXI-124; TASK-034). */
+    .bk-seg[data-layout='list'] {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .bk-seg[data-layout='list'] .bk-seg__opt {
+        justify-content: flex-start;
+        text-align: start;
+    }
+
     .bk-seg__opt {
         display: flex;
         align-items: center;

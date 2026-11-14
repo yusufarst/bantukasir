@@ -3,6 +3,7 @@
 namespace Tests\Unit\Cash;
 
 use App\Domain\Cash\CashCount;
+use App\Domain\Cash\DrawerRefunds;
 use App\Domain\Cash\SessionSales;
 use App\Support\Numbers\Money;
 use App\Support\Numbers\NumberOutOfRange;
@@ -26,12 +27,34 @@ final class CashCountTest extends TestCase
 
         $this->assertSame(['120000', '118000', '-2000'], [$count->expected->toCanonical(), $count->physical->toCanonical(), $count->variance->toCanonical()]);
 
-        // The running figures, BANK_TRANSFER apart and never in expected cash, the refunds Rp0 until
-        // TASK-034 pays one; the opening cash is no sale.
+        // The running figures, BANK_TRANSFER apart and never in expected cash, no drawer-funded refund; the
+        // opening cash is no sale.
         $this->assertSame(
             ['openingCash' => '20000', 'saleCount' => 2, 'saleValue' => '150000', 'cashPayments' => '100000', 'transferPayments' => '50000', 'drawerRefunds' => '0', 'expectedCash' => '120000'],
-            $sales->figures(Money::of('20000')),
+            $sales->figures(Money::of('20000'), DrawerRefunds::of([])),
         );
+    }
+
+    public function test_the_session04_example_with_a_drawer_funded_refund_gives_expected_rp110000_and_a_variance_of_minus_rp2000(): void
+    {
+        // AC-034-06; BR-CASH-12, SALES_CASH section 6.1's example under D-035; G-05: a drawer-funded refund of
+        // Rp10.000 comes out of the drawer, so expected cash is Rp110.000 and Rp108.000 counted is −Rp2.000;
+        // each refund is kept separately, in its order, with its key for the report's sources.
+        $sales = new SessionSales(2, Money::of('150000'), Money::of('100000'), Money::of('50000'), [1, 2], [3, 4]);
+        $refunds = DrawerRefunds::of([
+            ['id' => 9, 'saleNumber' => '20261111-000001', 'reference' => '20261111-000001/1', 'amount' => Money::of('6000'), 'recordedAt' => '2026-11-11T03:00:00.000000Z', 'owner' => 'Hendra'],
+            ['id' => 11, 'saleNumber' => '20261111-000002', 'reference' => '20261111-000002/2', 'amount' => Money::of('4000'), 'recordedAt' => '2026-11-11T04:00:00.000000Z', 'owner' => 'Hendra'],
+        ]);
+        $count = CashCount::of(CashCount::expected(Money::of('20000'), $sales->cashApplied, $refunds->total), Money::of('108000'));
+
+        $this->assertSame(['110000', '108000', '-2000'], [$count->expected->toCanonical(), $count->physical->toCanonical(), $count->variance->toCanonical()]);
+        $this->assertSame(
+            ['openingCash' => '20000', 'saleCount' => 2, 'saleValue' => '150000', 'cashPayments' => '100000', 'transferPayments' => '50000', 'drawerRefunds' => '10000', 'expectedCash' => '110000'],
+            $sales->figures(Money::of('20000'), $refunds),
+        );
+        $this->assertSame([9, 11], $refunds->ids);
+        $this->assertSame(['20261111-000001/1', '20261111-000002/2'], array_column($refunds->entries, 'reference'));
+        $this->assertSame([['saleNumber' => '20261111-000001', 'amount' => '6000', 'recordedAt' => '2026-11-11T03:00:00.000000Z'], ['saleNumber' => '20261111-000002', 'amount' => '4000', 'recordedAt' => '2026-11-11T04:00:00.000000Z']], $refunds->previewRows());
     }
 
     public function test_a_count_over_or_even_gives_its_variance_and_a_refund_lowers_expected_cash(): void

@@ -32,7 +32,7 @@ import { t } from '@/lib/i18n';
 // committed says so here, with "Lihat hasil" (UXI-056) to its result page
 // where one exists: RP-406 of a receiving (TASK-022), RP-409 of a manual issue
 // (TASK-023), RP-103 of a Sale (TASK-029), RP-206 of a close (TASK-030) and of
-// an Owner-assisted close (TASK-032); the Tasks of the other result pages add
+// an Owner-assisted close (TASK-032), RP-204 of a refund or return (TASK-034); the Tasks of the other result pages add
 // their operations to RESULT_PAGES. The result page is authorized again when
 // it opens (SEC-AZ-06). Each card's status check is lib/commands/RowCheck.tsx.
 
@@ -45,8 +45,12 @@ interface SharedProps {
 /** The home of every role (RN-01), named "halaman awal" (NC-12). */
 const HOME = '/';
 
-/** The operations whose result page exists (UXI-056; INTERACTION_CONTRACTS section 9): RP-206 of a close since TASK-030, of an assisted one since TASK-032. */
-const RESULT_PAGES: readonly string[] = ['receiving.confirm', 'manual_issue.confirm', 'sale.checkout', 'cash_session.close', 'cash_session.close_assisted'];
+/**
+ * The operations whose result page exists (UXI-056; INTERACTION_CONTRACTS section 9): RP-206 of a close since TASK-030, of an
+ * assisted one since TASK-032; RP-204 of a refund or return, drawer-funded or not, since TASK-034, where a drawer-funded
+ * refund's cash is taken only now (RACE-15; D-068).
+ */
+const RESULT_PAGES: readonly string[] = ['receiving.confirm', 'manual_issue.confirm', 'sale.checkout', 'cash_session.close', 'cash_session.close_assisted', 'sale_correction.drawer_funded', 'sale_correction.other'];
 
 /** The result page of a committed request, from its answer's location, or null. */
 function resultPageOf(operation: string, result: CommandResult | null): string | null {

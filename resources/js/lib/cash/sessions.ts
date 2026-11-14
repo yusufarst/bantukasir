@@ -22,11 +22,29 @@ export interface SessionFigures {
     readonly expectedCash: string;
 }
 
+/** A drawer-funded refund of the session in a close preview (UXI-101, UXI-149; TASK-034). */
+export interface PreviewRefund {
+    readonly saleNumber: string;
+    readonly amount: string;
+    readonly recordedAt: string;
+}
+
+/** A drawer-funded refund as a session's report froze it (BR-CASH-20; UXI-143, DC-02 row 8; TASK-034). */
+export interface ReportRefund {
+    readonly saleNumber: string;
+    readonly reference: string;
+    readonly amount: string;
+    readonly recordedAt: string;
+    readonly owner: string;
+}
+
 /** The close preview of RP-105, a deferred prop; null once the session is no longer OPEN. */
 export interface ClosePreview {
     readonly sessionId: number;
     readonly activityVersion: number;
     readonly figures: SessionFigures;
+    /** The drawer-funded refunds of the session, each with the reminder of D-068 (UXI-101; TASK-034). */
+    readonly drawerRefunds: readonly PreviewRefund[];
     /** The user's checkout receipts that the server holds PENDING or HELD (G-27). */
     readonly unresolvedCheckouts: number;
 }
@@ -42,6 +60,8 @@ export interface AssistedClosePreview {
     readonly sessionId: number;
     readonly activityVersion: number;
     readonly figures: SessionFigures;
+    /** The drawer-funded refunds of the session, each with the reminder of D-068 (UXI-149; TASK-034). */
+    readonly drawerRefunds: readonly PreviewRefund[];
     /** The responsible user's checkouts that the server holds PENDING or HELD, for the Owner's "Cek status" (G-27). */
     readonly unresolvedCheckouts: readonly UnresolvedCheckout[];
 }

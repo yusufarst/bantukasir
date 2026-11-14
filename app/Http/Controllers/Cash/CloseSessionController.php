@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Cash;
 
 use App\Actions\Sales\CheckoutSale;
 use App\Domain\Access\Homes;
+use App\Domain\Cash\DrawerRefunds;
 use App\Domain\Cash\SessionSales;
 use App\Domain\Commands\RequestReceipts;
+use App\Domain\Sales\Corrections\SaleCorrections;
 use App\Domain\Sales\Sales;
 use App\Models\User;
 use App\Queries\Cash\SessionRecords;
@@ -21,10 +23,11 @@ use Inertia\Support\Header;
  * every holder of CAP-21 on their own OPEN session: the session's header, and the close preview as a
  * deferred prop, which the page reloads on RECOUNT_REQUIRED — the session, the activity version that
  * the close compares, the running figures with expected cash (G-05), the drawer-funded refunds' total
- * among them (Rp0 until TASK-034 pays one and lists them, UXI-101), and how many of the user's
- * checkouts the server holds unresolved (G-27). The version is read before the Sales module's totals (STK-10): a Sale between the
- * two reads is counted in the figures but not in the version, so its close is refused
- * RECOUNT_REQUIRED, never recorded against figures the user did not review. No lock is held while the
+ * among them and each refund, for UXI-101's list with the reminder of D-068 (TASK-034; OPEN_ITEMS T-45),
+ * and how many of the user's checkouts the server holds unresolved (G-27). The version is read before
+ * the Sales module's totals and refunds (STK-10): a Sale or a drawer-funded refund between the reads is
+ * counted in the figures but not in the version, so its close is refused RECOUNT_REQUIRED, never
+ * recorded against figures the user did not review (RACE-13). No lock is held while the
  * cash is counted (BR-CASH-13). Without an OPEN session of the user's own, 302 to RP-101, which leads
  * on to Buka sesi kas; but the page's own read of its preview then answers a null preview, so that the
  * page says the session closed meanwhile (UXS-30) rather than being led away (NAVIGATION_CONTRACTS
@@ -38,7 +41,7 @@ final class CloseSessionController
     /** The page's component, which the page's own partial reload names. */
     private const string COMPONENT = 'cash/CloseSession';
 
-    public function show(Request $request, SessionRecords $sessions, Sales $sales, RequestReceipts $receipts): Response|RedirectResponse
+    public function show(Request $request, SessionRecords $sessions, Sales $sales, SaleCorrections $corrections, RequestReceipts $receipts): Response|RedirectResponse
     {
         $user = $request->user();
 
@@ -55,7 +58,7 @@ final class CloseSessionController
         return Inertia::render(self::COMPONENT, [
             // The header, which a partial reload of the preview never reads.
             'session' => static fn (): ?array => $session === null ? null : ['id' => $session['id'], 'number' => $session['number'], 'registerCode' => $session['registerCode'], 'registerLabel' => $session['registerLabel']],
-            self::PREVIEW => Inertia::defer(static fn (): ?array => $session === null ? null : self::preview($user, $session['id'], $sessions, $sales, $receipts)),
+            self::PREVIEW => Inertia::defer(static fn (): ?array => $session === null ? null : self::preview($user, $session['id'], $sessions, $sales, $corrections, $receipts)),
         ]);
     }
 
@@ -64,9 +67,9 @@ final class CloseSessionController
      * that session is no longer OPEN — closed meanwhile, by the user elsewhere or by the Owner — which
      * the page says (UXS-30).
      *
-     * @return array{sessionId: int, activityVersion: int, figures: array{openingCash: string, saleCount: int, saleValue: string, cashPayments: string, transferPayments: string, drawerRefunds: string, expectedCash: string}, unresolvedCheckouts: int}|null
+     * @return array{sessionId: int, activityVersion: int, figures: array{openingCash: string, saleCount: int, saleValue: string, cashPayments: string, transferPayments: string, drawerRefunds: string, expectedCash: string}, drawerRefunds: list<array{saleNumber: string, amount: string, recordedAt: string}>, unresolvedCheckouts: int}|null
      */
-    private static function preview(User $user, int $sessionId, SessionRecords $sessions, Sales $sales, RequestReceipts $receipts): ?array
+    private static function preview(User $user, int $sessionId, SessionRecords $sessions, Sales $sales, SaleCorrections $corrections, RequestReceipts $receipts): ?array
     {
         $session = $sessions->openOf($user->id);
 
@@ -74,10 +77,13 @@ final class CloseSessionController
             return null;
         }
 
+        $refunds = DrawerRefunds::of($corrections->drawerRefundsOf($session['id']));
+
         return [
             'sessionId' => $session['id'],
             'activityVersion' => $session['activityVersion'],
-            'figures' => SessionSales::of($sales->ofSession($session['id']))->figures($session['openingCash']),
+            'figures' => SessionSales::of($sales->ofSession($session['id']))->figures($session['openingCash'], $refunds),
+            'drawerRefunds' => $refunds->previewRows(),
             'unresolvedCheckouts' => $receipts->unresolvedOf($user->id, CheckoutSale::OPERATION),
         ];
     }
