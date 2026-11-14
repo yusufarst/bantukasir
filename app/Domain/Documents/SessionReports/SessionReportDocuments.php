@@ -34,11 +34,12 @@ use LogicException;
  * not exist or is still OPEN and so has no report, is NOT_FOUND (TR-ERR-03).
  *
  * The drawer-funded refunds are each one row of DC-02 row 8 and of DC-03's table, as the snapshot froze
- * them, with their times in Asia/Jakarta for the CSV (TASK-034).
+ * them (`drawerRefundRows`, beside their total `drawerRefunds`), with their times in Asia/Jakarta for the
+ * CSV (`refundTimes`; TASK-034).
  *
  * @phpstan-type Refund array{saleNumber: string, reference: string, amount: string, recordedAt: string, owner: string}
- * @phpstan-type Report array{sessionId: int, number: string, registerCode: string, registerLabel: string, responsible: string, openedAt: string, cutoffAt: string, closedAt: string, openingCash: string, saleCount: int, saleValue: string, cashPayments: string, transferPayments: string, drawerRefunds: string, refunds: list<Refund>, expectedCash: string, physicalCash: string, variance: string, closedBy: string, closeReason: string|null, notes: string|null, template: string}
- * @phpstan-type LocalTimes array{openedAt: string, cutoffAt: string, closedAt: string, refunds: list<string>}
+ * @phpstan-type Report array{sessionId: int, number: string, registerCode: string, registerLabel: string, responsible: string, openedAt: string, cutoffAt: string, closedAt: string, openingCash: string, saleCount: int, saleValue: string, cashPayments: string, transferPayments: string, drawerRefunds: string, drawerRefundRows: list<Refund>, expectedCash: string, physicalCash: string, variance: string, closedBy: string, closeReason: string|null, notes: string|null, template: string}
+ * @phpstan-type LocalTimes array{openedAt: string, cutoffAt: string, closedAt: string, refundTimes: list<string>}
  */
 final class SessionReportDocuments
 {
@@ -113,7 +114,7 @@ final class SessionReportDocuments
                 'cashPayments' => self::money($values, 'cash_applied'),
                 'transferPayments' => self::money($values, 'bank_transfer_applied'),
                 'drawerRefunds' => self::money($values, 'drawer_refund_total'),
-                'refunds' => $refunds,
+                'drawerRefundRows' => $refunds,
                 'expectedCash' => self::money($values, 'expected_cash'),
                 'physicalCash' => self::money($values, 'physical_cash'),
                 'variance' => self::money($values, 'variance'),
@@ -127,7 +128,7 @@ final class SessionReportDocuments
                 'openedAt' => Read::text($values, 'opened_local'),
                 'cutoffAt' => Read::text($values, 'closed_local'),
                 'closedAt' => Read::text($values, 'closed_local'),
-                'refunds' => array_map(static fn (array $refund): string => self::local($refund['recordedAt']), $refunds),
+                'refundTimes' => array_map(static fn (array $refund): string => self::local($refund['recordedAt']), $refunds),
             ],
         ];
     }

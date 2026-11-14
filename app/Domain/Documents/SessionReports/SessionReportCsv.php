@@ -59,11 +59,11 @@ final class SessionReportCsv
             throw new LogicException('Only session_report.1 is rendered here (ARC-45).');
         }
 
-        if (count($local['refunds']) !== count($report['refunds'])) {
+        if (count($local['refundTimes']) !== count($report['drawerRefundRows'])) {
             throw new LogicException('Each drawer-funded refund of the CSV has its time in Asia/Jakarta (DC-03).');
         }
 
-        foreach ([$local['openedAt'], $local['cutoffAt'], $local['closedAt'], ...$local['refunds']] as $time) {
+        foreach ([$local['openedAt'], $local['cutoffAt'], $local['closedAt'], ...$local['refundTimes']] as $time) {
             if (preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}$/D', $time) !== 1) {
                 throw new LogicException('A time of the CSV is YYYY-MM-DD HH:MM in Asia/Jakarta (DC-03).');
             }
@@ -117,8 +117,8 @@ final class SessionReportCsv
             self::text(self::label(__('inventory.history.col_actor'))),
         ];
 
-        foreach ($report['refunds'] as $index => $refund) {
-            $time = $local['refunds'][$index] ?? throw new LogicException('Each drawer-funded refund of the CSV has its time (DC-03).');
+        foreach ($report['drawerRefundRows'] as $index => $refund) {
+            $time = $local['refundTimes'][$index] ?? throw new LogicException('Each drawer-funded refund of the CSV has its time (DC-03).');
             $lines[] = [self::text($refund['saleNumber']), self::text($refund['reference']), self::integer($refund['amount']), self::text($time), self::text($refund['owner'])];
         }
 

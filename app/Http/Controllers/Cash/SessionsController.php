@@ -93,7 +93,7 @@ final class SessionsController
             'count' => $report === null ? ['physicalCash' => null, 'variance' => null, 'closedBy' => null, 'closeReason' => null, 'notes' => null] : $report['count'],
             // UXI-143: the report's drawer-funded refunds beside the variance, each as it was frozen; none
             // while the session is OPEN, whose figures hold their total (TASK-034; OPEN_ITEMS T-45).
-            'drawerRefunds' => $report === null ? [] : $report['refunds'],
+            'drawerRefunds' => $report === null ? [] : $report['drawerRefunds'],
         ];
 
         // UXI-144: the Owner's review notes of a CLOSED session, a deferred prop that the page reads

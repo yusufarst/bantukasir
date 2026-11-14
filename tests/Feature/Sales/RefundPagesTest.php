@@ -182,7 +182,7 @@ final class RefundPagesTest extends DatabaseTestCase
         $print = self::number($this->postJson('/commands/document.print_session_report', $this->envelope(['sessionId' => $this->drawer], ['operation' => 'document.print_session_report']))->assertStatus(201)->json('commandId'));
         $view = $this->get('/cash-sessions/'.$this->drawer.'/report/print/'.$print)->assertOk();
         $this->assertPageChannel($view, 'owner', $this->secrets(), 'refunds');
-        $this->assertSame([$frozen], ((array) ($this->propsOf($view)['report'] ?? []))['refunds'] ?? null);
+        $this->assertSame([$frozen], ((array) ($this->propsOf($view)['report'] ?? []))['drawerRefundRows'] ?? null);
 
         $file = (string) $this->postJson('/commands/document.export_session_report', $this->envelope(['sessionId' => $this->drawer], ['operation' => 'document.export_session_report']))->assertStatus(201)->getContent();
         $this->assertStringEndsWith("\"Penjualan\";\"Referensi\";\"Jumlah (Rp)\";\"Waktu\";\"Oleh\"\r\n\"{$number}\";\"{$number}/1\";30000;\"2026-11-14 11:00\";\"Hendra\"\r\n", $file);

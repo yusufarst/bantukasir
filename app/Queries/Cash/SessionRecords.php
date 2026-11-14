@@ -172,7 +172,7 @@ final class SessionRecords
      * responsible user, its opening cash, and, once CLOSED, the figures, the count and the drawer-funded
      * refunds of its report as they were frozen (BR-CASH-19, BR-CASH-20).
      *
-     * @return array{session: array{id: int, number: string, status: string, registerCode: string, registerLabel: string, responsible: string, openedAt: string, closedAt: string|null, own: bool}, openingCash: Money, report: array{figures: Figures, count: Count, refunds: list<Refund>}|null}
+     * @return array{session: array{id: int, number: string, status: string, registerCode: string, registerLabel: string, responsible: string, openedAt: string, closedAt: string|null, own: bool}, openingCash: Money, report: array{figures: Figures, count: Count, drawerRefunds: list<Refund>}|null}
      *
      * @throws NotFound
      */
@@ -221,7 +221,7 @@ final class SessionRecords
                     'closeReason' => self::nullableText($values, 'close_reason'),
                     'notes' => self::nullableText($values, 'notes'),
                 ],
-                'refunds' => self::refunds(self::text($values, 'drawer_refunds')),
+                'drawerRefunds' => self::refunds(self::text($values, 'drawer_refunds')),
             ];
         }
 

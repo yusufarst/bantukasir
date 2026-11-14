@@ -137,11 +137,11 @@ final class Allowlists
             'issuer', 'issuer.name', 'issuer.identity', 'issuer.address', 'issuer.contact', 'issuer.email', 'issuer.header', 'issuer.footer', 'issuer.logo',
             'template', 'size', 'copy',
         ]],
-        'documents/SessionReportPrint' => ['*' => [...self::REPORT_PRINT, 'report.refunds']],
+        'documents/SessionReportPrint' => ['*' => [...self::REPORT_PRINT, 'report.drawerRefundRows']],
         // DC-02 row 8 with its rows, each drawer-funded refund as the snapshot froze it (TASK-034).
         'documents/SessionReportPrint#refunds' => ['*' => [
-            ...self::REPORT_PRINT, 'report.refunds', 'report.refunds.*', 'report.refunds.*.saleNumber', 'report.refunds.*.reference', 'report.refunds.*.amount',
-            'report.refunds.*.recordedAt', 'report.refunds.*.owner',
+            ...self::REPORT_PRINT, 'report.drawerRefundRows', 'report.drawerRefundRows.*', 'report.drawerRefundRows.*.saleNumber', 'report.drawerRefundRows.*.reference',
+            'report.drawerRefundRows.*.amount', 'report.drawerRefundRows.*.recordedAt', 'report.drawerRefundRows.*.owner',
         ]],
         'sales/Index' => [
             'owner' => [...self::SALE_LIST, 'registers.*', 'registers.*.id', 'registers.*.code', 'registers.*.label', 'cashiers.*', 'cashiers.*.id', 'cashiers.*.displayName'],

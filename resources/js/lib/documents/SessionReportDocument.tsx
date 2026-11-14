@@ -28,7 +28,7 @@ export interface SessionReportSnapshot {
     readonly transferPayments: string;
     readonly drawerRefunds: string;
     /** Each drawer-funded refund separately, as the snapshot froze it (DC-02 row 8). */
-    readonly refunds: readonly ReportRefund[];
+    readonly drawerRefundRows: readonly ReportRefund[];
     readonly expectedCash: string;
     readonly physicalCash: string;
     readonly variance: string;
@@ -70,7 +70,7 @@ export function SessionReportV1({ report, issuer, label }: SessionReportProps) {
             <PaperRow label={t('documents.session_report.cash_payments')} value={formatMoney(report.cashPayments)} />
             <PaperRow label={t('documents.session_report.transfer_payments')} value={formatMoney(report.transferPayments)} />
             <PaperRow label={t('documents.session_report.drawer_refunds')} value={refundsText(report.drawerRefunds)} />
-            {report.refunds.map((refund) => (
+            {report.drawerRefundRows.map((refund) => (
                 <p key={refund.reference}>{t('documents.session_report.drawer_refund_row', { uang: formatMoney(refund.amount), nomor: refund.saleNumber, waktu: formatDateTime(refund.recordedAt), nama: refund.owner })}</p>
             ))}
             <PaperRule />
