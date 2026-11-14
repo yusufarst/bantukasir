@@ -30,6 +30,10 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | `composer validate`, `lint`, `analyse`, `test:unit` (929 tests); `npm run lint`, `typecheck`, `test:unit` | Fast run 5, 43606528191 on `d070f4b`, the reviewed head | 21:45 to 21:50 | about 5 min | `PASS` |
 | The changed PostgreSQL and concurrency files: `DrawerRefundRaceTest` (6 tests), `CapabilityMatrixTest` (7), `RouteInventoryTest` (8), `AssistedClosePagesTest` (3), `SessionPagesTest` (5), `CheckoutSaleTest` (13), `RecordCorrectionTest` (10), `RecordDrawerFundedCorrectionTest` (9), `RefundPagesTest` (4) | Same run | 21:50 to 21:56 | 5 min 46 s; the run 11 min 10 s in all | `PASS`, every file |
 | The review, round 1 (section 9.1) | On `d070f4b`, tree `0959c81` | 21:58 to 22:20 | about 22 min | `PASS`: no MUST-FIX; two SHOULD-FIX, fixed in checkpoint 6, and six NOTEs |
+| Guard | Local, on `9e0818b` (checkpoint 6: R-01, R-02) | 22:25 to 22:30 | about 5 min | `PASS`, no candidate |
+| `composer validate`, `lint`, `analyse`, `test:unit` (929 tests); `npm run lint`, `typecheck`, `test:unit` (611 tests in 29 files, `refunds.test.ts` among them) | Fast run 6, 43610564231 on `9e0818b`, the review's fixes | 22:31 to 22:37 | about 6 min | `PASS` |
+| The changed PostgreSQL and concurrency files, the nine of fast run 5: `DrawerRefundRaceTest` (6 tests), `CapabilityMatrixTest` (7), `RouteInventoryTest` (8), `AssistedClosePagesTest` (3), `SessionPagesTest` (5), `CheckoutSaleTest` (13), `RecordCorrectionTest` (10), `RecordDrawerFundedCorrectionTest` (9, with R-02's receipt after each step), `RefundPagesTest` (4) | Same run | 22:37 to 22:44 | 6 min 41 s; the run 12 min 58 s in all | `PASS`, every file |
+| Guard, `--preview` of the uncommitted record (section 10) | Local, on `9e0818b` | 22:38 to 22:39 | under 1 min | `PASS`, no candidate |
 | The whole of `test:postgres` in its two parts, `test:race`, the browser suite with `tests/Browser/sales/refund.spec.ts`, the build and the image checks, with the unchanged files that the change reaches (F-3) | CI on the pull request's final head (CE-41, CE-44, D-117) | — | — | `NOT_RUN` until then |
 
 ## 2. What was built (contract section 4.1)
@@ -90,7 +94,7 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 
 ## 6. Acceptance criteria
 
-The PostgreSQL and concurrency files that this branch changes run in its fast runs; the whole suites and the browser suite run in CI on the pull request's final head (CE-44).
+The PostgreSQL and concurrency files that this branch changes run in its fast runs; the whole suites and the browser suite run in CI on the pull request's final head (CE-44). Fast run 6 (43610564231 on `9e0818b`), on the review's fixes, passed every one of these files again.
 
 | Criterion | Test | Result |
 | --- | --- | --- |
@@ -122,7 +126,7 @@ The PostgreSQL and concurrency files that this branch changes run in its fast ru
 | Data integrity | PASS, subject to CI on the final head | Append-only facts; the correction all or nothing with failure injection after each of its 13 write steps; RACE-13 to RACE-15; identity, repeats and the status check; the unchanged files that the change reaches on the final head (F-3) |
 | Performance | PASS | Bounded by the data: at most 200 lines a correction; RP-202 lists at most 500 corrections of a Sale; a session's drawer-funded refunds are read whole, through the partial index of them, by RC-05, the close, its previews and RP-203 — two reads per OPEN session on RP-203, the sessions one per register; the budgets are TASK-048's (review R-05) |
 | Operations | N/A | No backup, runbook or status impact |
-| Verification | PASS, subject to CI on the final head | Fast run 5 green on the reviewed head (section 1), the review of class A (section 9); the heavy checks on the final head |
+| Verification | PASS, subject to CI on the final head | Fast run 5 green on the reviewed head and fast run 6 on the review's fixes (section 1), the review of class A (section 9); the heavy checks on the final head |
 
 ## 9. Review (EXECUTION_CONTEXT CE-40)
 
@@ -143,8 +147,14 @@ Agent `bk-reviewer-max`, model `claude-opus-5-5`, effort Max, mode `review`; pac
 | R-07 | NOTE | RP-204's facts reuse `sales.detail.reference`, `cash.sessions.title` and `sales.detail.session_link` for elements that COPY_DECK section 7.9 does not list, and the session's row says "Sesi kas" twice, as RP-202's does | Recorded for the next change control of COPY_DECK; the rows stay as RP-202 has them since TASK-031 |
 | R-08 | NOTE | No test asserts the printed lines of DC-02 row 8 | Recorded: L4 asserts RP-206P's rows and the CSV's lines, L5 RP-206's; the printed paper's lines for the browser suite of a later change of the print view |
 
-The fixes change one page and its helper, with their unit test, one test and the evidence. They run in fast run 6 (section 1); the browser suite with `refund.spec.ts` runs on the final head (CE-45, CE-46). No MUST-FIX was raised, so no targeted verification is due (CE-40).
+The fixes change one page and its helper, with their unit test, one test and the evidence. They passed in fast run 6 (43610564231 on `9e0818b`, section 1); the browser suite with `refund.spec.ts` runs on the final head (CE-45, CE-46). No MUST-FIX was raised, so no targeted verification is due (CE-40).
 
 ## 10. Record (CE-50)
 
-Pending.
+- Guard: `guard.sh` `PASS` with no candidate on every pushed head (section 1); `guard.sh --preview` of the uncommitted record, on 14 November 2026 at 22:39, `PASS` with no candidate, so nothing to judge.
+- Backup impact (EXC-47): none — no table, stored file or procedure (section 7).
+- The previous merge, TASK-033's pull request #44, is recorded in [its evidence](TASK-033.md) section 12 and in CURRENT_HANDOFF.
+- Documents: DECISIONS D-130, the Owner's directive "FULL V1, ACCELERATE EXECUTION" as the host relayed it at the start, recorded here with no separate pull request (review R-06); TASK_PLAN: TASK-034 `DONE`, TASK-035, TASK-036 and TASK-040 `READY` — their last dependency this Task, every other `DONE`, no gate — the totals TODO 12, READY 4, DONE 34; CURRENT_HANDOFF last. The next free decision is D-131.
+- Fast runs: six of the ten of CE-46 before the pull request, four failing on proven defects of this change, each fixed (F-5 to F-8); no CI run was repeated.
+- For later Tasks: F-1 and R-03, the next change control of TRACEABILITY section 9.2, of INTERACTION_CONTRACTS RC-05's result and of the contracts that OPEN_ITEMS T-45 names, UXI-120 among them; R-04, the planning agent's next change control — ARC-45 and `session_report.1`'s refund lines; R-07, the next change control of COPY_DECK — RP-204's fact rows; F-2, OPEN_ITEMS T-46; R-05, TASK-048 — RP-203's reads per OPEN session and a session's refunds read whole; R-08, a later change of the print view — the printed refund lines in the browser suite.
+- Next Task: TASK-035, Onboarding and opening stock, effort Max (agent `bk-executor-max`; review `bk-reviewer-max`; verification `bk-reviewer-xhigh`).
