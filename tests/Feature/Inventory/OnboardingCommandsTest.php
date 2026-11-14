@@ -506,7 +506,8 @@ final class OnboardingCommandsTest extends DatabaseTestCase
         // TS-21. RC-11 of a positive row and a zero row writes 9 steps — the balance, the valuation, the
         // entry, the line, the OPENING, its evidence, the zero count, the audit event, the result; RC-12
         // 3 — the state, the audit event, the result; RC-48 8 — the balance, the valuation, the entry, the
-        // line, the OPENING, its evidence, the audit event, the result.
+        // line, the OPENING, its evidence, the audit event, the result; RC-14 3 — the withdrawal, the audit
+        // event, the result; RC-13 3 — the release record with the state, the audit event, the result.
         $this->owner();
         $this->assertWriteSteps(StartOnboarding::OPERATION, fn (): array => $this->envelopeOf(StartOnboarding::OPERATION, [], ['onboardingVersion' => 1]), ['after_lock:2.1', 'after_lock:2.3'], 3);
         $this->assertSame('ACTIVE', $this->watcher()->table('onboarding_state')->value('state'));
@@ -520,6 +521,13 @@ final class OnboardingCommandsTest extends DatabaseTestCase
         $payload = ['replacesLineId' => TokoContoh::openingLineOf($opening), 'quantity' => '2', 'countReference' => 'LH-02', 'cost' => ['status' => 'UNKNOWN'], 'reason' => 'Hitung ulang'];
         $this->assertWriteSteps(ReplaceOpeningStock::OPERATION, fn (): array => $this->envelopeOf(ReplaceOpeningStock::OPERATION, $payload, ['onboardingVersion' => 2, 'productVersion' => 1]), ['after_lock:2.1', 'after_lock:2.3', 'after_lock:6', 'after_lock:7'], 8);
         $this->assertSame(['2.000', 3], $this->balanceOf($this->pen));
+
+        $zeroCount = self::number($this->watcher()->table('onboarding_zero_counts')->where('product_id', $this->book)->value('id'));
+        $this->assertWriteSteps(WithdrawZeroCount::OPERATION, fn (): array => $this->envelopeOf(WithdrawZeroCount::OPERATION, ['zeroCountId' => $zeroCount, 'reason' => 'Salah hitung'], ['onboardingVersion' => 2]), ['after_lock:2.1', 'after_lock:2.3', 'after_lock:6'], 3);
+        $this->assertSame(1, $this->watcher()->table('onboarding_zero_count_withdrawals')->where('zero_count_id', $zeroCount)->count());
+
+        $this->assertWriteSteps(ReleaseOnboarding::OPERATION, fn (): array => $this->envelopeOf(ReleaseOnboarding::OPERATION, [], ['onboardingVersion' => 2]), ['after_lock:2.1', 'after_lock:2.3'], 3);
+        $this->assertSame(['RELEASED', 3, 1], [$this->watcher()->table('onboarding_state')->value('state'), $this->onboardingVersion(), $this->watcher()->table('onboarding_releases')->count()]);
     }
 
     public function test_each_table_of_the_onboarding_has_its_one_writer(): void
