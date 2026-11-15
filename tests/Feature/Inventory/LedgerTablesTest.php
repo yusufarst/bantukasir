@@ -194,12 +194,16 @@ final class LedgerTablesTest extends DatabaseTestCase
         // TASK-028 completed the key of a Sale line, so the SALE_ISSUE is a real one, of a product of
         // its own, committed by RC-01's Action through the fixtures (EXC-45).
         $sold = $this->saleIssue();
+        // TASK-035 completed the key of an opening line, so the OPENING names a real one: the
+        // original line of a product of its own, at that product's first place.
+        $opened = TokoContoh::product('AWAL-01', ['categoryId' => TokoContoh::category('Awal')]);
         $runtime = $this->runtime();
         $runtime->beginTransaction();
 
         try {
             // SCHEMA section 3.7. Within this one transaction the deferred keys wait, and it
             // rolls back; the keys of the other presence columns follow their tables (EXC-44).
+            $openingLine = $this->insertOpeningLine($runtime, $this->insertOpeningEntry($runtime), ['product_id' => $opened]);
             $adjustment = $this->insertAdjustmentLines($runtime);
             $receipt = $this->insertReceipt($runtime);
             // TASK-026 completed the key of a reversal, so the REVERSAL names a real one: the receipt's.
@@ -212,7 +216,7 @@ final class LedgerTablesTest extends DatabaseTestCase
             [$returnLine, $soldProduct] = $this->insertReturnLine($runtime, $sold);
             $presences = [
                 'RECEIPT' => $this->presenceOf($runtime, $receipt),
-                'OPENING' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('OPENING', '1', ['opening_line_id' => 7, 'line_quantity' => '1', 'opening_replacement' => true, 'product_sequence' => 2]))),
+                'OPENING' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('OPENING', '1', ['product_id' => $opened, 'opening_line_id' => $openingLine, 'line_quantity' => '1', 'opening_replacement' => false]))),
                 // TASK-024 completed the key of an adjustment line, so the movements name real ones.
                 'an increase' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('ADJUSTMENT', '1', ['adjustment_line_id' => $adjustment[0], 'line_quantity' => '1', 'product_sequence' => 3]))),
                 'a decrease' => $this->presenceOf($runtime, $this->insertMovement($runtime, $this->movementOf('ADJUSTMENT', '-1', ['adjustment_line_id' => $adjustment[1], 'line_quantity' => '-1', 'product_sequence' => 4]))),
@@ -240,13 +244,22 @@ final class LedgerTablesTest extends DatabaseTestCase
 
     public function test_an_original_opening_comes_first_and_a_replacement_later(): void
     {
-        // The check of BR-INV-26 that admits what it must: TASK-035 writes these rows.
+        // The check of BR-INV-26 that admits what it must: TASK-035 writes these rows. With the key of
+        // an opening line complete (TASK-035), each OPENING names its own line, and the replacement's
+        // line names the line it replaces, that line's OPENING and its reversal (D-087, G-24).
         $runtime = $this->runtime();
         $runtime->beginTransaction();
 
         try {
-            $this->insertMovement($runtime, $this->movementOf('OPENING', '1', ['opening_line_id' => 7, 'line_quantity' => '1', 'opening_replacement' => false]));
-            $this->insertMovement($runtime, $this->movementOf('OPENING', '1', ['opening_line_id' => 8, 'line_quantity' => '1', 'opening_replacement' => true, 'product_sequence' => 2]));
+            $entry = $this->insertOpeningEntry($runtime, ['row_count' => 2]);
+            $original = $this->insertOpeningLine($runtime, $entry);
+            $opening = $this->insertMovement($runtime, $this->movementOf('OPENING', '1', ['opening_line_id' => $original, 'line_quantity' => '1', 'opening_replacement' => false]));
+            $runtime->table('reversals')->insert([
+                'original_movement_id' => $opening, 'product_id' => $this->product, 'original_type' => 'OPENING', 'original_quantity' => '1', 'inverse_quantity' => '-1',
+                'reason' => 'Salah hitung', 'recorded_at' => now(), 'actor_user_id' => $this->owner, 'actor_display_name' => 'Hendra', 'command_id' => $this->command,
+            ]);
+            $replacement = $this->insertOpeningLine($runtime, $entry, ['row_no' => 2, 'replaces_line_id' => $original, 'replaces_movement_id' => $opening, 'replacement_reason' => 'Hitung ulang']);
+            $this->insertMovement($runtime, $this->movementOf('OPENING', '1', ['opening_line_id' => $replacement, 'line_quantity' => '1', 'opening_replacement' => true, 'product_sequence' => 2]));
             $this->assertSame(2, $runtime->table('stock_movements')->count());
         } finally {
             $runtime->rollBack();
@@ -430,10 +443,13 @@ final class LedgerTablesTest extends DatabaseTestCase
         // AC-021-08, BR-INV-08: every statement is accepted, and the commit refuses them.
         $this->assertFailsAtCommit(fn (Connection $c) => $this->insertReceipt($c), 'stock_movements_cost_evidence_presence_fk', ['receiving_documents', 'receiving_lines', 'stock_movements']);
 
-        // An OPENING needs its evidence too (SCHEMA section 5.7); an increase, now that its line's
-        // key exists, is AdjustmentTablesTest's (TASK-024).
-        $opening = $this->movementOf('OPENING', '1', ['opening_line_id' => 7, 'line_quantity' => '1', 'opening_replacement' => false]);
-        $this->assertFailsAtCommit(fn (Connection $c) => $this->insertMovement($c, $opening), 'stock_movements_cost_evidence_presence_fk', ['stock_movements']);
+        // An OPENING needs its evidence too (SCHEMA section 5.7), and names its line now that the
+        // line's key exists (TASK-035); an increase, now that its line's key exists, is
+        // AdjustmentTablesTest's (TASK-024).
+        $this->assertFailsAtCommit(function (Connection $c): void {
+            $line = $this->insertOpeningLine($c, $this->insertOpeningEntry($c));
+            $this->insertMovement($c, $this->movementOf('OPENING', '1', ['opening_line_id' => $line, 'line_quantity' => '1', 'opening_replacement' => false]));
+        }, 'stock_movements_cost_evidence_presence_fk', ['opening_stock_entries', 'opening_stock_lines', 'stock_movements']);
     }
 
     public function test_a_receiving_line_without_its_movement_fails_at_commit_and_leaves_nothing(): void
@@ -707,6 +723,32 @@ final class LedgerTablesTest extends DatabaseTestCase
             $c->table('adjustment_lines')->insertGetId(['adjustment_id' => $adjustment, 'line_no' => 1, 'product_id' => $this->product, 'quantity' => '1']),
             $c->table('adjustment_lines')->insertGetId(['adjustment_id' => $adjustment, 'line_no' => 2, 'product_id' => $this->product, 'quantity' => '-1']),
         ];
+    }
+
+    /**
+     * An opening entry of one row by the Owner, written directly (TASK-035), unless $values says
+     * otherwise.
+     *
+     * @param  array<string, mixed>  $values
+     */
+    private function insertOpeningEntry(Connection $c, array $values = []): int
+    {
+        return $c->table('opening_stock_entries')->insertGetId([
+            'row_count' => 1, 'confirmed_at' => now(), 'actor_user_id' => $this->owner, 'actor_display_name' => 'Hendra', 'command_id' => $this->command, ...$values,
+        ]);
+    }
+
+    /**
+     * The original line of one unit of the product at row 1 of an entry, written directly
+     * (TASK-035), unless $values says otherwise: the key that an OPENING names.
+     *
+     * @param  array<string, mixed>  $values
+     */
+    private function insertOpeningLine(Connection $c, int $entry, array $values = []): int
+    {
+        return $c->table('opening_stock_lines')->insertGetId([
+            'opening_stock_entry_id' => $entry, 'row_no' => 1, 'product_id' => $this->product, 'quantity' => '1', 'count_reference' => 'HIT-1', ...$values,
+        ]);
     }
 
     /**

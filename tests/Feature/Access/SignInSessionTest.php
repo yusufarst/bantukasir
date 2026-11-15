@@ -257,6 +257,8 @@ final class SignInSessionTest extends DatabaseTestCase
                 'sale_correction_totals' => 'sale_id',
                 'sale_line_correction_totals' => 'sale_line_id',
                 'cash_session_closes', 'cash_session_reports' => 'session_id',
+                'onboarding_zero_count_withdrawals' => 'zero_count_id',
+                'onboarding_restore_reconciliations' => 'hold_id',
                 default => 'id',
             });
         }
