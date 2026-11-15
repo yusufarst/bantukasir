@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect as baseExpect, test, type BrowserContext, type Page } from '@playwright/test';
+import { expect as baseExpect, test, type BrowserContext, type Locator, type Page } from '@playwright/test';
 import { ACCESS_TIMEOUT, ACCESS_WAIT, resetPeople, SECURE_LOCAL_ORIGIN, signIn, type Person } from '../support/access';
 import { injected, prepareCommands } from '../support/commands';
 import { measure } from '../support/measure';
@@ -13,9 +13,11 @@ const expect = baseExpect.configure({ timeout: ACCESS_WAIT });
 // OPEN01, AUTH03; TASK-035, L5): the Owner reaches the hub from the sub-navigation, starts the one
 // onboarding period after its confirmation and the password once, and the banner of UXS-27 shows; he
 // enters a counted product with its cost and count reference and a product counted zero, reviewed and
-// confirmed; the checklist shows them; he withdraws the zero count with a reason; he ends the period after
-// its review of BR-INV-28, and the hub is read only. The entry, its review and the hub fit the 200 % zoom
-// of 1280 x 800 and 320 px as well (KEY_SCREENS section 4). The draft is never in the browser's storage. These
+// confirmed; the checklist shows them; he reverses the counted product's OPENING from UXP-403 and records
+// its replacement on UXP-413, reviewed and confirmed by the keyboard; he withdraws the zero count with a
+// reason; he ends the period after its review of BR-INV-28, and the hub is read only. The entry, the
+// replacement, their reviews and the hub fit the 200 % zoom of 1280 x 800 and 320 px as well (KEY_SCREENS
+// section 4). The draft is never in the browser's storage. These
 // tests sign in the people of Toko Contoh, so they run one at a time (playwright.config.ts). Every product
 // of a test gets new random texts, because the local database keeps its products; their names begin with
 // "AA" so that they lead the checklist, in name order. The onboarding period runs once per database
@@ -121,6 +123,19 @@ async function confirmPassword(page: Page, password: string): Promise<void> {
     await dialog.getByLabel('Kata sandi', { exact: true }).fill(password);
     await dialog.getByRole('button', { name: 'Konfirmasi' }).click();
     await expect(dialog).toHaveCount(0);
+}
+
+/** Waits for what a command leads to, after the password of UXS-11 when its recent authentication has lapsed. */
+async function afterPassword(page: Page, password: string, done: Locator): Promise<void> {
+    const dialog = page.getByRole('dialog', { name: 'Konfirmasi kata sandi' });
+
+    await expect(dialog.or(done).first()).toBeVisible();
+
+    if (await dialog.isVisible()) {
+        await confirmPassword(page, password);
+    }
+
+    await expect(done).toBeVisible();
 }
 
 /** Ends a period that a failed step left running, through UXI-289, so that the tests after it post. */
@@ -230,6 +245,48 @@ test('the Owner starts onboarding, enters the opening stock, corrects a zero cou
         await expect(zeroLine).toContainText('Dihitung nol');
         await checked(page);
         await fitsNarrow(page);
+
+        // UXI-288 and UXI-228: the counted product's OPENING, from its row to UXP-403, whose way back is the
+        // checklist, reversed there while the period is active (D-087).
+        await Promise.all([page.waitForURL((url) => /^\/stock\/movements\/\d+$/.test(url.pathname)), countedLine.getByRole('link', { name: `Detail mutasi stok ${counted.name}` }).click()]);
+        await expect(page.getByRole('link', { name: 'Kembali ke Stok awal' })).toHaveAttribute('href', HUB);
+        await Promise.all([page.waitForURL((url) => /^\/stock\/movements\/\d+\/reverse$/.test(url.pathname)), page.getByRole('main').getByRole('link', { name: 'Batalkan mutasi', exact: true }).click()]);
+        await page.getByLabel('Alasan', { exact: true }).fill('Salah hitung');
+        await page.getByRole('button', { name: 'Tinjau' }).click();
+        await page.getByRole('dialog', { name: 'Tinjau pembatalan mutasi' }).getByRole('button', { name: /^Konfirmasi pembatalan/ }).click();
+        await afterPassword(page, password, page.getByText('Mutasi dibatalkan.'));
+
+        // UXI-291: "Catat ulang stok awal" on its row, the replacement entry of RC-48 on UXP-413 (UXI-292).
+        await page.goto(HUB);
+        await expect(countedLine).toContainText('Stok awal dibatalkan; bisa dicatat ulang.');
+        await Promise.all([page.waitForURL((url) => url.pathname === '/stock/onboarding/entry'), countedLine.getByRole('link', { name: `Catat ulang stok awal ${counted.name}` }).click()]);
+        const replacement = page.getByRole('main');
+        await expect(replacement.getByRole('heading', { level: 2, name: counted.name })).toBeVisible();
+        await expect(replacement.getByText('Stok awal dibatalkan; bisa dicatat ulang.')).toBeVisible();
+        await replacement.getByLabel('Jumlah', { exact: true }).fill('5');
+        await replacement.getByLabel('Biaya', { exact: true }).fill('5000');
+        await replacement.getByLabel('Referensi hitung', { exact: true }).fill('LH-02');
+        await replacement.getByLabel('Alasan', { exact: true }).fill('Hitung ulang');
+
+        // Enter in a field sends nothing (UXA-10); Ctrl+Enter is "Tinjau" (UXI-295) and, on the review, whose
+        // confirmation Enter never activates, "Konfirmasi stok awal" (UXI-296).
+        await replacement.getByLabel('Alasan', { exact: true }).press('Enter');
+        await expect(page.getByRole('dialog')).toHaveCount(0);
+        await checked(page);
+        await fitsNarrow(page);
+        await page.keyboard.press('Control+Enter');
+        const replacementReview = page.getByRole('dialog', { name: 'Tinjau stok awal pengganti' });
+        await expect(replacementReview.getByRole('button', { name: /^Kembali ubah/ })).toBeFocused();
+        await expect(replacementReview).toContainText('Hitung ulang');
+        await checked(page);
+        await fitsNarrow(page);
+        await replacementReview.getByRole('button', { name: /^Konfirmasi stok awal/ }).focus();
+        await page.keyboard.press('Enter');
+        await expect(replacementReview).toBeVisible();
+        await replacementReview.getByRole('button', { name: /^Kembali ubah/ }).focus();
+        await page.keyboard.press('Control+Enter');
+        await afterPassword(page, password, page.getByText('Stok awal pengganti tersimpan.'));
+        await expect(countedLine).toContainText('5 pcs');
 
         // UXI-291: "Tarik hitungan nol", with its reason and the password not asked again within its time.
         await zeroLine.getByRole('button', { name: `Tarik hitungan nol ${zero.name}` }).click();

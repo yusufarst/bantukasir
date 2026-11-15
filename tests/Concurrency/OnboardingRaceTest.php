@@ -103,6 +103,46 @@ final class OnboardingRaceTest extends DatabaseTestCase
         $this->assertSame(0, $this->watcher()->table('command_identities')->where('source_intent_id', $waiting['intent'])->count());
     }
 
+    public function test_race_04_a_checkout_that_holds_the_onboarding_lock_first_commits_and_the_start_follows(): void
+    {
+        // G-10, TR §7.1 (review R-05): a Sale holds the share lock of the onboarding state (2.3), then the
+        // price revision (2.4), its session (4), its products (6) and positions (7), to its commit; the start
+        // waits for its update lock, then starts from NOT_STARTED. Both commit.
+        $session = $this->sellable();
+        $selling = $this->start($this->checkout($session), ['after_lock:7']);
+        $starting = $this->start($this->command('onboarding.start', [], ['onboardingVersion' => 1]));
+        Worker::ready($selling, $starting);
+
+        $selling->run()->awaitBarrier('after_lock:7');
+        $starting->run()->awaitBlocked($this->watcher());
+        $selling->release();
+
+        $this->assertSame('COMMITTED', ($selling->finish()->result ?? [])['outcome'] ?? null);
+        $this->assertSame('COMMITTED', ($starting->finish()->result ?? [])['outcome'] ?? null);
+        $this->assertSame(['ACTIVE', 2], array_values((array) $this->watcher()->table('onboarding_state')->first(['state', 'version'])));
+        $this->assertSame([1, 1], [$this->watcher()->table('sales')->count(), $this->watcher()->table('stock_movements')->where('movement_type', 'SALE_ISSUE')->count()]);
+    }
+
+    public function test_race_04_a_checkout_that_waited_for_the_start_is_refused_with_nothing_written(): void
+    {
+        // G-10: the start holds the update lock of the onboarding state; the checkout waits for its share
+        // lock, then reads ACTIVE: ONBOARDING_FREEZE, no Sale, no movement, no identity.
+        $session = $this->sellable();
+        $starting = $this->start($this->command('onboarding.start', [], ['onboardingVersion' => 1]), ['after_lock:2.3']);
+        $waiting = $this->checkout($session);
+        $selling = $this->start($waiting);
+        Worker::ready($starting, $selling);
+
+        $starting->run()->awaitBarrier('after_lock:2.3');
+        $selling->run()->awaitBlocked($this->watcher());
+        $starting->release();
+
+        $this->assertSame('COMMITTED', ($starting->finish()->result ?? [])['outcome'] ?? null);
+        $this->assertSame(['refused' => 'ONBOARDING_FREEZE'], $selling->finish()->result);
+        $this->assertSame([0, 0], [$this->watcher()->table('sales')->count(), $this->watcher()->table('stock_movements')->where('movement_type', 'SALE_ISSUE')->count()]);
+        $this->assertSame(0, $this->watcher()->table('command_identities')->where('source_intent_id', $waiting['intent'])->count());
+    }
+
     public function test_race_32_one_start_and_one_release_at_most_also_against_each_other(): void
     {
         // D-071: the first of two starts commits; the second waits for the update lock and finds ACTIVE.
@@ -330,6 +370,28 @@ final class OnboardingRaceTest extends DatabaseTestCase
     private function replacement(int $line, string $quantity): array
     {
         return $this->command('opening_stock.replace', ['replacesLineId' => $line, 'quantity' => $quantity, 'countReference' => 'HIT-02', 'cost' => ['status' => 'UNKNOWN'], 'reason' => 'Hitung ulang'], ['onboardingVersion' => $this->onboardingVersion(), 'productVersion' => $this->versionOf($this->product)]);
+    }
+
+    /**
+     * The product in stock, 5 received before onboarding, and the Owner's OPEN session: a Sale can run.
+     */
+    private function sellable(): int
+    {
+        TokoContoh::stock($this->product, '5', '1000');
+
+        return TokoContoh::openSession('Hendra', TokoContoh::register());
+    }
+
+    /**
+     * RC-01 of one unit of the product by the Owner in his OPEN session, paid in cash at its price in force.
+     *
+     * @return array<string, mixed>
+     */
+    private function checkout(int $session): array
+    {
+        $revision = $this->watcher()->table('products')->where('id', $this->product)->value('current_price_revision_id');
+
+        return $this->command('sale.checkout', ['sessionId' => $session, 'lines' => [['productId' => $this->product, 'quantity' => '1']], 'payment' => ['method' => 'CASH', 'tendered' => '7500']], ['lines' => [['priceRevisionId' => is_int($revision) ? $revision : 0]]]);
     }
 
     /**

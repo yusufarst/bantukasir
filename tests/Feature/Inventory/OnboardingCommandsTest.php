@@ -466,6 +466,122 @@ final class OnboardingCommandsTest extends DatabaseTestCase
         $this->assertSame($facts, $this->factsAndRows());
     }
 
+    public function test_a_product_whose_opening_was_reversed_takes_a_zero_count_or_its_replacement_never_both(): void
+    {
+        // AC-035-03; G-22, G-24; INTERACTION_CONTRACTS RC-11 and RC-48, "Under locks" (review R-01): once its
+        // OPENING is reversed, a product takes no positive row, since only RC-48 records it again; a zero row
+        // records its zero count, and while that is effective RC-48 is refused; once it is withdrawn, RC-48
+        // records the replacement. Each refusal writes nothing.
+        TokoContoh::startOnboarding();
+        $opening = TokoContoh::openingStock($this->pen, '10', '100000');
+        TokoContoh::reverse($opening);
+        $line = TokoContoh::openingLineOf($opening);
+        $this->owner();
+        $known = ['status' => 'KNOWN', 'amount' => '1000'];
+        $replacement = ['replacesLineId' => $line, 'quantity' => '8', 'countReference' => 'LH-09', 'cost' => ['status' => 'KNOWN', 'amount' => '96000'], 'reason' => 'Hitung ulang'];
+        $before = $this->factsAndRows();
+
+        // A positive row of it is not eligible, and the row beside it is not posted either.
+        $refused = $this->send($this->entryOf([self::positive($this->rice, '1', $known), self::positive($this->pen, '8', $known)]))->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
+        $this->assertSame(['payload.rows.1.productId' => [['key' => 'inventory.opening_entry.not_eligible', 'params' => []]]], $refused->json('fields'));
+        $this->assertSame($before, $this->factsAndRows());
+
+        // A zero row of it records its zero count, with no movement.
+        $this->send($this->entryOf([self::zero($this->pen)]))->assertStatus(201);
+        $zeroCount = self::number($this->watcher()->table('onboarding_zero_counts')->where('product_id', $this->pen)->value('id'));
+        $this->assertSame(['OPENING', 'REVERSAL'], $this->watcher()->table('stock_movements')->where('product_id', $this->pen)->orderBy('product_sequence')->pluck('movement_type')->all());
+
+        // While that zero count is effective, the replacement is not eligible (G-22).
+        $counted = $this->factsAndRows();
+        $refused = $this->send($this->envelopeOf(ReplaceOpeningStock::OPERATION, $replacement, ['onboardingVersion' => 2, 'productVersion' => $this->versionOf($this->pen)]))->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
+        $this->assertSame(['payload.replacesLineId' => [['key' => 'inventory.opening_entry.not_eligible', 'params' => []]]], $refused->json('fields'));
+        $this->assertSame($counted, $this->factsAndRows());
+
+        // Once it is withdrawn, the replacement is recorded at the product's third place.
+        $this->send($this->envelopeOf(WithdrawZeroCount::OPERATION, ['zeroCountId' => $zeroCount, 'reason' => 'Salah hitung'], ['onboardingVersion' => 2]))->assertStatus(201);
+        $this->send($this->envelopeOf(ReplaceOpeningStock::OPERATION, $replacement, ['onboardingVersion' => 2, 'productVersion' => $this->versionOf($this->pen)]))->assertStatus(201);
+        $this->assertSame(['OPENING', 'REVERSAL', 'OPENING'], $this->watcher()->table('stock_movements')->where('product_id', $this->pen)->orderBy('product_sequence')->pluck('movement_type')->all());
+        $this->assertSame(['8.000', 3], $this->balanceOf($this->pen));
+    }
+
+    public function test_the_refusals_of_a_withdrawal_and_a_replacement_write_nothing_and_settle_their_receipts(): void
+    {
+        // EXECUTION_CONTEXT section 10, a command and a route (review R-02); TR-VAL-01 to TR-VAL-07; COPY_DECK
+        // section 16.1; INTERACTION_CONTRACTS RC-11, RC-14 and RC-48, "Under locks"; G-25: each field refused
+        // with its key, each refusal under the locks, a guessed product NOT_FOUND; every receipt REJECTED.
+        TokoContoh::startOnboarding();
+        $zeroCount = TokoContoh::zeroCount($this->book);
+        $penOpening = TokoContoh::openingStock($this->pen, '10', '100000');
+        TokoContoh::reverse($penOpening);
+        $glue = TokoContoh::product('LEM-01', ['categoryId' => $this->category, 'name' => 'Lem']);
+        $glueOpening = TokoContoh::openingStock($glue, '2');
+        TokoContoh::reverse($glueOpening);
+        TokoContoh::postingBlock($glue);
+        $sugar = TokoContoh::product('GULA-01', ['categoryId' => $this->category, 'name' => 'Gula']);
+        $sugarOpening = TokoContoh::openingStock($sugar, '2');
+        TokoContoh::reverse($sugarOpening);
+        $this->owner();
+        $this->command('product.deactivate', ['productId' => $sugar], ['productVersion' => $this->versionOf($sugar)])->assertStatus(201);
+        $before = $this->factsAndRows();
+
+        // RC-48's fields, each with its key before any lock.
+        foreach ([
+            [['quantity' => '0'], 'payload.quantity', 'ux.validation.quantity_positive', []],
+            [['quantity' => '100000000'], 'payload.quantity', 'ux.validation.quantity_max', []],
+            [['countReference' => null], 'payload.countReference', 'ux.validation.required', []],
+            [['countReference' => str_repeat('c', 101)], 'payload.countReference', 'ux.validation.text_max', ['maks' => 100]],
+            [['reason' => null], 'payload.reason', 'ux.validation.required', []],
+            [['reason' => str_repeat('r', 1001)], 'payload.reason', 'ux.validation.text_max', ['maks' => 1000]],
+            [['cost' => null], 'payload.cost', 'ux.validation.required', []],
+            [['cost' => ['status' => 'KNOWN']], 'payload.cost.amount', 'ux.validation.required', []],
+            [['cost' => ['status' => 'KNOWN', 'amount' => '0']], 'payload.cost.zeroEvidence', 'ux.validation.zero_evidence', []],
+        ] as $index => [$change, $path, $key, $params]) {
+            $fields = (array) $this->send($this->replacementOf($penOpening, $this->pen, $change))->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED')->json('fields');
+            $this->assertSame(['key' => $key, 'params' => $params], ((array) ($fields[$path] ?? []))[0] ?? null, sprintf('case %d at %s', $index, $path));
+        }
+
+        // What no page sends: another field, a key as a text, a quantity as a number, UNKNOWN with an
+        // amount, a control character.
+        foreach ([['supplier' => 'Toko Lain'], ['replacesLineId' => (string) TokoContoh::openingLineOf($penOpening)], ['quantity' => 2], ['cost' => ['status' => 'UNKNOWN', 'amount' => '5']], ['reason' => "Salah\nhitung"]] as $change) {
+            $this->send($this->replacementOf($penOpening, $this->pen, $change))->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
+        }
+
+        // Under the locks: a blocked product, an inactive one, a version that changed, a quantity beyond
+        // the product's precision.
+        $this->send($this->replacementOf($glueOpening, $glue))->assertStatus(422)->assertJsonPath('code', 'POSTING_BLOCKED');
+        $this->send($this->replacementOf($sugarOpening, $sugar))->assertStatus(422)->assertJsonPath('code', 'PRODUCT_INACTIVE');
+        $this->send($this->replacementOf($penOpening, $this->pen, [], 1))->assertStatus(409)->assertJsonPath('code', 'STALE_VERSION');
+        $precision = $this->send($this->replacementOf($penOpening, $this->pen, ['quantity' => '2.5']))->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
+        $this->assertSame(['payload.quantity' => [['key' => 'ux.validation.quantity_whole', 'params' => []]]], $precision->json('fields'));
+
+        // RC-14's fields; and RC-11 of a product that does not exist (TR-ERR-03).
+        foreach ([[['reason' => null], 'ux.validation.required', []], [['reason' => str_repeat('r', 1001)], 'ux.validation.text_max', ['maks' => 1000]]] as $index => [$change, $key, $params]) {
+            $fields = (array) $this->send($this->envelopeOf(WithdrawZeroCount::OPERATION, [...['zeroCountId' => $zeroCount, 'reason' => 'Salah hitung'], ...$change], ['onboardingVersion' => 2]))->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED')->json('fields');
+            $this->assertSame(['key' => $key, 'params' => $params], ((array) ($fields['payload.reason'] ?? []))[0] ?? null, sprintf('case %d', $index));
+        }
+
+        foreach ([['zeroCountId' => (string) $zeroCount], ['zeroCountId' => 0], ['supplier' => 'Toko Lain']] as $change) {
+            $this->send($this->envelopeOf(WithdrawZeroCount::OPERATION, [...['zeroCountId' => $zeroCount, 'reason' => 'Salah hitung'], ...$change], ['onboardingVersion' => 2]))->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
+        }
+
+        $this->send($this->envelopeOf(ConfirmOpeningStock::OPERATION, ['rows' => [self::zero(999999)]], ['onboardingVersion' => 2, 'products' => [['productId' => 999999, 'version' => 1]]]))->assertStatus(404)->assertJsonPath('code', 'NOT_FOUND');
+
+        // Nothing was written, and every receipt of the three is REJECTED (G-25).
+        $this->assertSame($before, $this->factsAndRows());
+
+        foreach ([ReplaceOpeningStock::OPERATION, WithdrawZeroCount::OPERATION, ConfirmOpeningStock::OPERATION] as $operation) {
+            $this->assertSame(['REJECTED'], $this->watcher()->table('command_request_receipts')->where('operation', $operation)->distinct()->pluck('outcome')->all(), $operation);
+        }
+
+        // The same commands, as the page sends them, commit, and their receipts say so.
+        $this->send($this->envelopeOf(WithdrawZeroCount::OPERATION, ['zeroCountId' => $zeroCount, 'reason' => 'Salah hitung'], ['onboardingVersion' => 2]))->assertStatus(201);
+        $this->send($this->replacementOf($penOpening, $this->pen))->assertStatus(201);
+
+        foreach ([ReplaceOpeningStock::OPERATION, WithdrawZeroCount::OPERATION] as $operation) {
+            $this->assertSame(1, $this->watcher()->table('command_request_receipts')->where('operation', $operation)->where('outcome', 'COMMITTED')->count(), $operation);
+        }
+    }
+
     public function test_the_release_ends_every_entry_and_every_correction_and_the_postings_run_again(): void
     {
         // AC-035-04; BR-INV-29, BR-INV-47; D-071, D-087; G-10, G-26: after the release no entry, zero count,
@@ -711,6 +827,20 @@ final class OnboardingCommandsTest extends DatabaseTestCase
     private function versionOf(int $product): int
     {
         return self::number($this->watcher()->table('products')->where('id', $product)->value('version'));
+    }
+
+    /**
+     * An envelope of RC-48 for the line of this OPENING of a product, at the versions as they stand, the
+     * product's moved on by the step, with these changes to the payload as a page sends it.
+     *
+     * @param  array<string, mixed>  $change
+     * @return array<string, mixed>
+     */
+    private function replacementOf(int $opening, int $product, array $change = [], int $versionStep = 0): array
+    {
+        $payload = [...['replacesLineId' => TokoContoh::openingLineOf($opening), 'quantity' => '2', 'countReference' => 'LH-09', 'cost' => ['status' => 'UNKNOWN'], 'reason' => 'Hitung ulang'], ...$change];
+
+        return $this->envelopeOf(ReplaceOpeningStock::OPERATION, $payload, ['onboardingVersion' => $this->onboardingVersion(), 'productVersion' => $this->versionOf($product) + $versionStep]);
     }
 
     /**
