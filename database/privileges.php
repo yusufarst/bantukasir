@@ -237,6 +237,33 @@ return [
             'runtime' => ['select' => true, 'insert' => true],
         ],
 
+        // Inventory, the onboarding entries and the restore hold of onboarding (SCHEMA section 5.7;
+        // TASK-035): facts, never changed or removed.
+        'opening_stock_entries' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'opening_stock_lines' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'onboarding_zero_counts' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'onboarding_zero_count_withdrawals' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'onboarding_restore_holds' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+        'onboarding_restore_reconciliations' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
+
         // Costing, the issue allocation (SCHEMA section 5.8; ADR-008; TASK-023).
         'issue_cost_allocations' => [
             'class' => 'F',

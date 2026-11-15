@@ -233,11 +233,11 @@ final class ProductSearchTest extends DatabaseTestCase
         $observer = $this->observer();
         $refusals = static fn (): int => $observer->table('security_log_entries')->where('event_type', 'AUTHORIZATION_REFUSED')->count();
 
-        // `correction` opened with TASK-020, for CAP-07, and `adjustment` with TASK-024, for CAP-16,
-        // both the Owner's alone; `receiving` and `stock` with TASK-022, for CAP-11 and CAP-14, and
-        // `issue` with TASK-023, for CAP-13, which all three hold; `till` with TASK-028, for CAP-21,
-        // which Operations does not hold.
-        $closed = ['Hendra' => ['opening'], 'Agus' => ['till', 'adjustment', 'opening', 'correction'], 'Dewi' => ['adjustment', 'opening', 'correction']];
+        // `correction` opened with TASK-020, for CAP-07, `adjustment` with TASK-024, for CAP-16, and
+        // `opening` with TASK-035, for CAP-15, all the Owner's alone; `receiving` and `stock` with
+        // TASK-022, for CAP-11 and CAP-14, and `issue` with TASK-023, for CAP-13, which all three hold;
+        // `till` with TASK-028, for CAP-21, which Operations does not hold.
+        $closed = ['Hendra' => [], 'Agus' => ['till', 'adjustment', 'opening', 'correction'], 'Dewi' => ['adjustment', 'opening', 'correction']];
 
         foreach (['Hendra', 'Agus', 'Dewi'] as $person) {
             $this->as($person);
@@ -248,7 +248,7 @@ final class ProductSearchTest extends DatabaseTestCase
                 $this->assertSame($before + 1, $refusals(), $context.' is recorded (SEC-LOG-03).');
             }
 
-            foreach ($person === 'Hendra' ? ['receiving', 'issue', 'stock', 'adjustment'] : ['receiving', 'issue', 'stock'] as $context) {
+            foreach ($person === 'Hendra' ? ['receiving', 'issue', 'stock', 'adjustment', 'opening'] : ['receiving', 'issue', 'stock'] as $context) {
                 $this->getJson(self::SEARCH.'?context='.$context.'&q=PEN')->assertOk();
             }
 

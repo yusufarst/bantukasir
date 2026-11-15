@@ -72,15 +72,21 @@ use App\Http\Controllers\Documents\SessionReportPrintController;
 use App\Http\Controllers\Inventory\AdjustmentsController;
 use App\Http\Controllers\Inventory\ConfirmAdjustmentController;
 use App\Http\Controllers\Inventory\ConfirmManualIssueController;
+use App\Http\Controllers\Inventory\ConfirmOpeningStockController;
 use App\Http\Controllers\Inventory\ConfirmReceivingController;
 use App\Http\Controllers\Inventory\ConfirmReversalController;
 use App\Http\Controllers\Inventory\HistoryController;
 use App\Http\Controllers\Inventory\IssuesController;
 use App\Http\Controllers\Inventory\MovementsController;
+use App\Http\Controllers\Inventory\OnboardingController;
 use App\Http\Controllers\Inventory\ReceivingsController;
+use App\Http\Controllers\Inventory\ReleaseOnboardingController;
+use App\Http\Controllers\Inventory\ReplaceOpeningStockController;
 use App\Http\Controllers\Inventory\ReversalsController;
+use App\Http\Controllers\Inventory\StartOnboardingController;
 use App\Http\Controllers\Inventory\StockController;
 use App\Http\Controllers\Inventory\StockDataController;
+use App\Http\Controllers\Inventory\WithdrawZeroCountController;
 use App\Http\Controllers\Media\MediaController;
 use App\Http\Controllers\Reporting\CostWorklistController;
 use App\Http\Controllers\Sales\CheckoutSaleController;
@@ -308,6 +314,19 @@ Route::middleware(['auth', 'signin.session', 'throttle:authenticated', 'cache.he
     Route::middleware('capability:CAP-17')->group(function (): void {
         Route::post('/commands/reversal.confirm', ConfirmReversalController::class)->middleware(['throttle:command', 'password.confirm'])->name('commands.reversal.confirm');
         Route::get('/stock/movements/{movement}/reverse', [ReversalsController::class, 'create'])->middleware('input.allow:from_page')->name('stock.reverse');
+    });
+
+    // The onboarding and the opening stock (TASK-035), the Owner's alone (CAP-15): RP-412 and RP-413, each
+    // taking only its parameters of ROUTE_CONTRACTS; RC-11 in the bucket of every command, without recent
+    // authentication; RC-12, RC-13, RC-14 and RC-48 in it, with recent authentication.
+    Route::middleware('capability:CAP-15')->group(function (): void {
+        Route::get('/stock/onboarding', [OnboardingController::class, 'show'])->middleware('input.allow:filter,after,before')->name('onboarding.show');
+        Route::get('/stock/onboarding/entry', [OnboardingController::class, 'entry'])->middleware('input.allow:product')->name('onboarding.entry');
+        Route::post('/commands/opening_stock.confirm', ConfirmOpeningStockController::class)->middleware('throttle:command')->name('commands.opening_stock.confirm');
+        Route::post('/commands/onboarding.start', StartOnboardingController::class)->middleware(['throttle:command', 'password.confirm'])->name('commands.onboarding.start');
+        Route::post('/commands/onboarding.release', ReleaseOnboardingController::class)->middleware(['throttle:command', 'password.confirm'])->name('commands.onboarding.release');
+        Route::post('/commands/onboarding.withdraw_zero_count', WithdrawZeroCountController::class)->middleware(['throttle:command', 'password.confirm'])->name('commands.onboarding.withdraw_zero_count');
+        Route::post('/commands/opening_stock.replace', ReplaceOpeningStockController::class)->middleware(['throttle:command', 'password.confirm'])->name('commands.opening_stock.replace');
     });
 
     // The cost correction (TASK-025), the Owner's alone: RC-15 in the bucket of every command, with

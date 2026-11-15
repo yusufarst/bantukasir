@@ -2,17 +2,19 @@
 
 namespace App\Domain\Inventory;
 
+use App\Domain\Inventory\Onboarding\OnboardingStatus;
 use App\Support\Time\Clock;
 use Illuminate\Support\Facades\DB;
 use LogicException;
 
 /**
- * The installation's onboarding state (SCHEMA section 5.7; BR-INV-24;
- * D-071, D-072), a service of the Inventory module, which alone writes it.
- * The bootstrap procedure inserts it NOT_STARTED (SEC-OP-01); the onboarding
- * commands of TASK-035 start and release it under its update lock, and the
- * restore procedures of TASK-037 hold it. Its presence key makes RELEASED
- * possible only with the durable release record of `onboarding_releases`.
+ * The installation's onboarding state (SCHEMA section 5.7; BR-INV-24; D-071, D-072), a service of the
+ * Inventory module, which alone writes it. The bootstrap procedure inserts it NOT_STARTED (SEC-OP-01);
+ * the onboarding commands of TASK-035 start and release it under its update lock, and the restore
+ * procedures of TASK-037 hold it. Its presence key makes RELEASED possible only with the durable
+ * release record of `onboarding_releases`, which this service writes with the release (RC-13), and
+ * which, travelling with the business data, keeps onboarding final after a reinstallation, a server
+ * migration or the restore of an earlier backup (G-26).
  */
 final class OnboardingState
 {
@@ -21,6 +23,17 @@ final class OnboardingState
     public const string ACTIVE = 'ACTIVE';
 
     public const string RELEASED = 'RELEASED';
+
+    /** The kind of the release record that RC-13 writes (SCHEMA section 5.7). */
+    private const string RELEASE = 'RELEASE';
+
+    /** A restore hold that waits for its reconciliation (D-072; G-26). */
+    private const string UNRECONCILED_HOLD = 'exists (select 1 from onboarding_restore_holds h where not exists (select 1 from onboarding_restore_reconciliations r where r.hold_id = h.id))';
+
+    /** The times of RP-412, in UTC as the pages read every instant. */
+    private const string CHANGED_AT = "to_char(changed_at at time zone 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') as changed_at";
+
+    private const string RELEASED_AT = "to_char(released_at at time zone 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') as released_at";
 
     public function __construct(private readonly Clock $clock) {}
 
@@ -68,5 +81,133 @@ final class OnboardingState
         $state = DB::table('onboarding_state')->where('id', 1)->sharedLock()->value('state');
 
         return is_string($state) ? $state : null;
+    }
+
+    /**
+     * The status under the share lock of an opening command (TR §7.2, "Opening stock"; step 2.3),
+     * with the hold and the release record read after it: the after-restore procedure sets a hold and
+     * the release writes its record under the update lock of the same row, so neither changes while
+     * this lock is held (SCH-31).
+     */
+    public function lockForEntry(): OnboardingStatus
+    {
+        self::requireTransaction();
+
+        return $this->statusOf(DB::table('onboarding_state')->where('id', 1)->sharedLock()->first(['state', 'version']));
+    }
+
+    /**
+     * The status under the update lock of a start or a release (TR §7.2, "Onboarding set or release";
+     * step 2.3), which waits for every posting and opening command that holds the share lock, and which
+     * they then wait for (RACE-04, RACE-32).
+     */
+    public function lockForChange(): OnboardingStatus
+    {
+        self::requireTransaction();
+
+        return $this->statusOf(DB::table('onboarding_state')->where('id', 1)->lock('for no key update')->first(['state', 'version']));
+    }
+
+    /**
+     * The status, read without a lock, for a page; null before the bootstrap.
+     */
+    public function status(): ?OnboardingStatus
+    {
+        $row = DB::table('onboarding_state')->where('id', 1)->first(['state', 'version']);
+
+        return $row === null ? null : $this->statusOf($row);
+    }
+
+    /**
+     * When the period started — the time of the state's last change while it is ACTIVE, the cutover
+     * that the audit of the start records too — and when the release record was written; null where
+     * there is none.
+     *
+     * @return array{changedAt: string|null, releasedAt: string|null}
+     */
+    public function times(): array
+    {
+        $changed = ((array) DB::table('onboarding_state')->where('id', 1)->selectRaw(self::CHANGED_AT)->first())['changed_at'] ?? null;
+        $released = ((array) DB::table('onboarding_releases')->where('id', 1)->selectRaw(self::RELEASED_AT)->first())['released_at'] ?? null;
+
+        return ['changedAt' => is_string($changed) ? $changed : null, 'releasedAt' => is_string($released) ? $released : null];
+    }
+
+    /**
+     * RC-12: the state ACTIVE at the next version, from the version that the caller holds under the
+     * update lock; the cutover is this time and actor (SCHEMA section 5.7).
+     */
+    public function start(OnboardingStatus $held, int $actorUserId, string $at): void
+    {
+        if (! $held->canStart()) {
+            throw new LogicException('Onboarding starts only from NOT_STARTED, never released and not held (G-26).');
+        }
+
+        $this->change($held, self::ACTIVE, $actorUserId, $at);
+    }
+
+    /**
+     * RC-13: the durable release record, then the state RELEASED at the next version; the deferred
+     * presence key refuses a commit of RELEASED without the record (G-26).
+     */
+    public function release(OnboardingStatus $held, int $actorUserId, int $commandId, string $at): void
+    {
+        if (! $held->isOpen()) {
+            throw new LogicException('Onboarding is released only from ACTIVE, never released and not held (G-26).');
+        }
+
+        DB::table('onboarding_releases')->insert([
+            'id' => 1,
+            'released_at' => $at,
+            'kind' => self::RELEASE,
+            'actor_user_id' => $actorUserId,
+            'command_id' => $commandId,
+        ]);
+
+        $this->change($held, self::RELEASED, $actorUserId, $at);
+    }
+
+    /**
+     * The update of the locked row to this state at the next version.
+     */
+    private function change(OnboardingStatus $held, string $state, int $actorUserId, string $at): void
+    {
+        self::requireTransaction();
+
+        $changed = DB::table('onboarding_state')->where('id', 1)->where('version', $held->version)->update([
+            'state' => $state,
+            'version' => $held->version + 1,
+            'changed_at' => $at,
+            'changed_by_user_id' => $actorUserId,
+        ]);
+
+        if ($changed !== 1) {
+            throw new LogicException('The locked onboarding state is at the version read under its lock.');
+        }
+    }
+
+    /**
+     * The status of a row of `onboarding_state`, with its hold and its release record.
+     */
+    private function statusOf(?object $row): OnboardingStatus
+    {
+        $values = $row === null ? [] : (array) $row;
+        $state = $values['state'] ?? null;
+        $version = $values['version'] ?? null;
+
+        if (! is_string($state) || ! is_int($version)) {
+            throw new LogicException('The bootstrap inserts the onboarding state (SEC-OP-01).');
+        }
+
+        $flags = (array) DB::selectOne('select '.self::UNRECONCILED_HOLD.' as held, exists (select 1 from onboarding_releases) as released');
+
+        return new OnboardingStatus($state, $version, ($flags['held'] ?? null) === true, ($flags['released'] ?? null) === true);
+    }
+
+    private static function requireTransaction(): void
+    {
+        if (DB::transactionLevel() === 0) {
+            throw new LogicException('The onboarding state is locked in the transaction of its command (TR-TX-01).');
+        }
     }
 }

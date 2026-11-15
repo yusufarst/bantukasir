@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Access;
 use App\Domain\Access\Capabilities;
 use App\Domain\Access\Capability;
 use App\Domain\Access\Grant;
+use App\Domain\Inventory\OnboardingState;
 use App\Models\User;
 use App\Queries\Access\ShellIndicators;
 use App\Queries\Inventory\StockAttention;
@@ -21,11 +22,13 @@ use LogicException;
  * Inventory module's, of the one definition that RD-02 uses too, so that the
  * badge and the list agree (BR-INV-41, ARC-22); it is read only for a full
  * holder of CAP-14 — never a cashier, whose restricted cell is the stock at
- * checkout.
+ * checkout. The onboarding state is the Inventory module's too, for every role:
+ * the banner of UXS-27 tells each one that Sales and ordinary postings stop
+ * (UXI-030; TASK-035).
  */
 final class ShellDataController
 {
-    public function __invoke(Request $request, ShellIndicators $indicators, StockAttention $attention): JsonResponse
+    public function __invoke(Request $request, ShellIndicators $indicators, StockAttention $attention, OnboardingState $onboarding): JsonResponse
     {
         $user = $request->user();
 
@@ -35,6 +38,6 @@ final class ShellDataController
 
         $count = Capabilities::of($user, Capability::Cap14) === Grant::Full ? $attention->count() : null;
 
-        return new JsonResponse($indicators($user)->withStockAttention($count)->toArray(), 200);
+        return new JsonResponse($indicators($user)->withStockAttention($count)->withOnboarding($onboarding->current())->toArray(), 200);
     }
 }

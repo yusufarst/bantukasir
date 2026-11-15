@@ -452,6 +452,31 @@ final class CapabilityMatrixTest extends DatabaseTestCase
         'RP-204' => ['method' => 'GET', 'path' => '/sales/{sale}/corrections/{correction}', 'json' => true, 'answers' => [
             'guest' => [401, null], 'owner' => [404, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
         ]],
+        // TASK-035: the onboarding for CAP-15, the Owner's alone (AC-035-01): RP-412; RP-413, which sends the
+        // Owner to RP-412 while onboarding has not started; RC-11, refused before its Action without a body;
+        // RC-12 to RC-14 and RC-48, which answer 423 without a recent confirmation, before anything runs;
+        // every other role and the combined account refused.
+        'RP-412' => ['method' => 'GET', 'path' => '/stock/onboarding', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RP-413' => ['method' => 'GET', 'path' => '/stock/onboarding/entry', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [302, '/stock/onboarding'], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RC-11' => ['method' => 'POST', 'path' => '/commands/opening_stock.confirm', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [422, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RC-12' => ['method' => 'POST', 'path' => '/commands/onboarding.start', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [423, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RC-13' => ['method' => 'POST', 'path' => '/commands/onboarding.release', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [423, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RC-14' => ['method' => 'POST', 'path' => '/commands/onboarding.withdraw_zero_count', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [423, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RC-48' => ['method' => 'POST', 'path' => '/commands/opening_stock.replace', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [423, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
     ];
 
     /** @var array<string, array{id: int, email: string, password: string}> */

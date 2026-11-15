@@ -15,8 +15,13 @@ use LogicException;
  * Costing reads the ledger), under the product's guard, which every writer of its movements, cost
  * evidence, corrections and projections holds, so that what it reads cannot change meanwhile.
  *
- * The movement types whose writers exist are RECEIPT, SALE_ISSUE, MANUAL_ISSUE, ADJUSTMENT, REVERSAL
- * and RETURN_RECEIPT (TASK-021 to TASK-024, TASK-026, TASK-028, TASK-033). The ledger read is the
+ * The movement types whose writers exist are every type of SCHEMA section 5.7: OPENING, RECEIPT,
+ * SALE_ISSUE, MANUAL_ISSUE, ADJUSTMENT, REVERSAL and RETURN_RECEIPT (TASK-021 to TASK-024, TASK-026,
+ * TASK-028, TASK-033, TASK-035). An OPENING is an increase at the effective cost of its evidence, as a
+ * RECEIPT is — the original amount, the new amount of its latest correction, or UNKNOWN — and a
+ * correction or completion of its cost starts the replay at it (ADR-008 sections 4.1 and 4.3); a
+ * reversed OPENING and its REVERSAL are a cancelled pair like any other, and a replacement OPENING
+ * enters at its own place (BR-COST-32, D-087). The ledger read is the
  * logical ledger (ADR-008 section 4.1): every pair of an OPENING, RECEIPT or MANUAL_ISSUE with the
  * REVERSAL of its reversal is left out — of the zero point, of the state before the start and of the
  * movements from it — and only the valuation skips them; the physical ledger keeps both (BR-COST-32).
@@ -27,8 +32,7 @@ use LogicException;
  * reversed (BR-INV-36). A RETURN_RECEIPT is an increase whose cost is its return projection before the
  * start position and, from it on, the cost recomputed from its link to the SALE_ISSUE allocation
  * (ReturnLink; ADR-008 section 3; D-061); it is never reversed either, and never reads or writes its
- * correction, refund or return line. TASK-035 extends the replay with OPENING; until then a logical
- * movement of another type is a defect.
+ * correction, refund or return line. A logical movement of any other type or sign is a defect.
  *
  * The cost values are sums and differences of stored values only, which PostgreSQL's numeric adds
  * exactly; every value computed by multiplication or division is the application's (ADR-008
@@ -36,8 +40,8 @@ use LogicException;
  */
 final class ReplayLedger
 {
-    /** The movement types of an increase, with their cost evidence. */
-    private const array INCREASES = ['RECEIPT', 'ADJUSTMENT'];
+    /** The movement types of an increase, with their cost evidence (TASK-035: the OPENING's). */
+    private const array INCREASES = ['OPENING', 'RECEIPT', 'ADJUSTMENT'];
 
     /** The movement types of an issue, with their allocation (TASK-028: the Sale's). */
     private const array ISSUES = ['SALE_ISSUE', 'MANUAL_ISSUE', 'ADJUSTMENT'];
@@ -258,7 +262,7 @@ final class ReplayLedger
             return self::returnEntry($values, $sequence, $signed, $precision);
         }
 
-        throw new LogicException(sprintf('The replay does not apply a %s yet: the Task that writes it extends the replay (TASK-025 section 12).', $type));
+        throw new LogicException(sprintf('A logical %s of this sign is no movement of SCHEMA section 5.7.', $type));
     }
 
     /**

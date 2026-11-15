@@ -10,6 +10,7 @@ import { CORRECT_CAPABILITY } from '@/lib/costing/costs';
 import { CorrectionButton } from '@/lib/costing/Parts';
 import { formatCost, formatCount, formatDateTime } from '@/lib/format';
 import { t } from '@/lib/i18n';
+import { ONBOARDING_PAGE } from '@/lib/inventory/onboarding';
 import { ReversalButton } from '@/lib/inventory/Reversal';
 import {
     HISTORY_PAGE,
@@ -40,11 +41,12 @@ import {
 // reason, as it is after the Owner's corrections, with how many there were, and "Koreksi biaya" or
 // "Lengkapi biaya" (UXI-226; TASK-025), disabled with its reason while a cost correction of the
 // user is uncertain (UXS-13; NC-13). "Kembali ke …" names the page that opened it, UXP-402 by
-// default (UXI-229). Its reversal links: the REVERSAL that cancelled it, or the movement a REVERSAL
+// default (UXI-229), UXP-412's checklist among them since TASK-035. Its reversal links: the REVERSAL that cancelled it, or the movement a REVERSAL
 // cancels (COPY_DECK section 9.4); and for the Owner "Batalkan mutasi" (UXI-227; TASK-026) for an
 // OPENING, a RECEIPT or a MANUAL_ISSUE, disabled with its reason when it is reversed, while a
 // reversal of the user is uncertain, or for a RECEIPT or a MANUAL_ISSUE while the onboarding freeze
-// is on. UXI-228, its OPENING during onboarding followed by the replacement, comes with TASK-035.
+// is on. For an OPENING while onboarding is active it is UXI-228, the correction of an onboarding entry
+// before the release (D-087), whose replacement UXP-412 then offers (RC-10 result; TASK-035).
 
 /** UXP-504 returns here. */
 const OPENER = 'movement';
@@ -120,6 +122,11 @@ function backOf(): { readonly href: string; readonly page: string } {
 
     if (opener !== null && path === REQUESTS_PAGE) {
         return { href: REQUESTS_PAGE, page: t('commands.unresolved.title') };
+    }
+
+    // A checklist row of UXP-412, with its filter and page (NAVIGATION_CONTRACTS UXP-403; TASK-035).
+    if (opener !== null && path === ONBOARDING_PAGE) {
+        return { href: `${path}${opener.search}`, page: t('inventory.onboarding.title') };
     }
 
     return { href: opener !== null && path === HISTORY_PAGE ? `${path}${opener.search}` : HISTORY_PAGE, page: t('inventory.history.title') };

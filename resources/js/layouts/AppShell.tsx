@@ -13,7 +13,7 @@ import { useWidthClass } from '@/layouts/widthClass';
 import { NO_CONNECTION, retrySeconds, stateOfStatus } from '@/lib/answers';
 import { clearBrowserData, followOtherTab, leaveSignedInSession, listenToOtherTabs, reportActivity, shareDeadlines, signOut } from '@/lib/browserSession';
 import { USER_REQUEST_EVENT } from '@/lib/commands/client';
-import { countOf, refreshIndicators, useShellRefresh, useUnresolved } from '@/lib/commands/unresolved';
+import { countOf, refreshIndicators, useShellRefresh, useUnresolved, type OnboardingPhase } from '@/lib/commands/unresolved';
 import { formatCount, formatDateTime, formatDuration, formatTimeOfDay } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import { DESTINATIONS, SUB_DESTINATIONS, navigationFor, subNavigationFor, type AreaId, type DestinationId, type RoleCode, type SubDestinationId } from '@/lib/navigation';
@@ -688,6 +688,26 @@ function UnresolvedBanner({ count, hidden: onPage, onNavigate }: { count: number
     );
 }
 
+/** RP-412, the onboarding hub (TASK-035), and CAP-15, the Owner's onboarding, which its link needs. */
+const ONBOARDING_PAGE = '/stock/onboarding';
+
+const ONBOARDING_CAPABILITY = 'CAP-15';
+
+const ONBOARDING_STATE: StateId = 'UXS-27';
+
+/**
+ * The banner of UXS-27 on every page while onboarding is active (UXI-030; UI_STATES UXS-27; G-10;
+ * TASK-035), from the onboarding state of RD-03: its text for every role, and for the Owner "Buka
+ * Stok awal", except on UXP-412 itself.
+ */
+function OnboardingBanner({ phase, owner, onPage, onNavigate }: { phase: OnboardingPhase | null; owner: boolean; onPage: boolean; onNavigate: (event: MouseEvent<HTMLAnchorElement>) => void }) {
+    if (phase !== 'ACTIVE') {
+        return null;
+    }
+
+    return <StateNotice state={ONBOARDING_STATE} {...(owner && !onPage ? { actions: <ButtonLink href={ONBOARDING_PAGE} label={t('inventory.onboarding.open')} variant={'secondary'} onClick={onNavigate} /> } : {})} />;
+}
+
 /**
  * A failed read of the shell's indicators (INTERACTION_CONTRACTS section 3.3):
  * the last data stay, with their time (UXS-21); without an earlier read, the
@@ -876,7 +896,8 @@ function SignedInShell({
     // account-menu item, the banner and the sign-out warning (TASK-009).
     useShellRefresh(signedIn.user.id, leaveOnce);
     const requests = useUnresolved();
-    const onUnresolvedPage = usePage().url.split('?')[0] === UNRESOLVED_PAGE;
+    const path = usePage().url.split('?')[0];
+    const onUnresolvedPage = path === UNRESOLVED_PAGE;
     const [warnSignOut, setWarnSignOut] = useState(false);
     const unresolvedCount = countOf(requests.serverCount, requests.union);
 
@@ -914,6 +935,7 @@ function SignedInShell({
             {!online && <StateNotice state={SHELL_STATES.offline} />}
             {unhandled !== null && <UnhandledNotice unhandled={unhandled} />}
             {view !== null && view.kind !== 'ended' && view.absoluteNotice && <StateNotice state={SHELL_STATES.absoluteLimit} body={absoluteBody} />}
+            <OnboardingBanner phase={requests.onboarding} owner={user.capabilities.includes(ONBOARDING_CAPABILITY)} onPage={path === ONBOARDING_PAGE} onNavigate={guard.onLink} />
             <UnresolvedBanner count={unresolvedCount} hidden={onUnresolvedPage} onNavigate={guard.onLink} />
             <IndicatorsNotice asOf={requests.asOf} failed={requests.failed} />
         </>
