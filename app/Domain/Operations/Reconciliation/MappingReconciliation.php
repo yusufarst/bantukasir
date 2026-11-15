@@ -81,6 +81,30 @@ final class MappingReconciliation
     }
 
     /**
+     * The token's last mapping, retired or not, with its product, or null: the mapping that RC-30
+     * corrects, whose product's guard a correction takes (TASK-036 review of pull request #50).
+     *
+     * @return array{mapping: int, product: int}|null
+     */
+    public function lastOf(int $token): ?array
+    {
+        $values = (array) DB::selectOne('select id, product_id from barcode_mappings where token_id = ? order by id desc limit 1', [$token]);
+
+        if ($values === []) {
+            return null;
+        }
+
+        $mapping = $values['id'] ?? null;
+        $product = $values['product_id'] ?? null;
+
+        if (! is_int($mapping) || ! is_int($product)) {
+            throw new LogicException('A mapping has its key and its product.');
+        }
+
+        return ['mapping' => $mapping, 'product' => $product];
+    }
+
+    /**
      * Whether this one token's active mapping differs from the facts.
      */
     public function differs(int $token): bool

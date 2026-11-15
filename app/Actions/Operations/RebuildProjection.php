@@ -41,8 +41,8 @@ use Throwable;
  *   every issue and return projection from its replay by the application's arithmetic (ADR-008 section
  *   5); a projection rewritten carries the valuation's next publication number (ADR-008 section 4.3);
  * - a Sale: the original Sale's lock (step 5); its running totals from its refund and return lines;
- * - a token: the guards of the products of its active row and of its unretired mapping, ascending
- *   (step 6); its active row from its mapping facts.
+ * - a token: the guards of the products of its active row, of its unretired mapping and of its last
+ *   mapping, which RC-30 corrects, ascending (step 6); its active row from its mapping facts.
  *
  * Facts are never changed. When the facts themselves fail validation — a history that cannot be replayed,
  * a refund that is not the sum of its lines, a running total beyond its bound, two unretired mappings of a
@@ -212,10 +212,12 @@ final class RebuildProjection
             throw new RepairRefused('No such token: nothing was changed.');
         }
 
-        // The facts and the active row as they stand choose the guards; both are read again under them.
+        // The facts and the active row as they stand choose the guards; all are read again under them. The
+        // last mapping is among them even when retired: RC-30 corrects it under its product's guard, so a
+        // correction cannot add an active row between these reads and the rebuild's.
         $products = [];
 
-        foreach ([...$this->mappings->unretiredOf($tokenId), ...array_filter([$this->barcodes->activeRowOf($tokenId)])] as $row) {
+        foreach ([...$this->mappings->unretiredOf($tokenId), ...array_filter([$this->barcodes->activeRowOf($tokenId), $this->mappings->lastOf($tokenId)])] as $row) {
             $products[$row['product']] = $row['product'];
         }
 
@@ -230,7 +232,7 @@ final class RebuildProjection
             throw new RepairRefused('The token has more than one mapping without a retirement, a fact that should not exist: nothing was changed; this is a security incident (RB-04 step 3).');
         }
 
-        foreach ([...$unretired, ...array_filter([$current])] as $row) {
+        foreach ([...$unretired, ...array_filter([$current, $this->mappings->lastOf($tokenId)])] as $row) {
             if (! array_key_exists($row['product'], $products)) {
                 throw new RepairRefused('The token changed while the rebuild took its guards: nothing was changed; run it again.');
             }

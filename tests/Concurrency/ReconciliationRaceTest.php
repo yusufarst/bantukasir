@@ -2,12 +2,15 @@
 
 namespace Tests\Concurrency;
 
+use App\Actions\Operations\RebuildProjection;
+use App\Domain\Operations\Reconciliation\RepairRefused;
 use Illuminate\Database\Connection;
 use Illuminate\Support\Str;
 use Tests\Harness\Access\UserCommandScenario;
 use Tests\Harness\DatabaseTestCase;
 use Tests\Harness\Fixtures\TokoContoh;
 use Tests\Harness\Operations\BlockPostingsScenario;
+use Tests\Harness\Operations\RebuildProjectionScenario;
 use Tests\Harness\Race\Worker;
 
 /**
@@ -16,7 +19,8 @@ use Tests\Harness\Race\Worker;
  * control: the reconciliation's `posting_block.block` against a posting of the same product, in both orders —
  * the block first, the posting waits on the product's guard and is refused POSTING_BLOCKED; the posting
  * first, the block waits and its comparison under the guard sees the posting — and RC-16's reopening against
- * a posting, in both orders.
+ * a posting, in both orders; and OP-07's rebuild of a token against RC-30's correction of its retired
+ * mapping, in both orders.
  */
 final class ReconciliationRaceTest extends DatabaseTestCase
 {
@@ -161,6 +165,91 @@ final class ReconciliationRaceTest extends DatabaseTestCase
             $this->assertSame(1, $this->watcher()->table('inventory_posting_block_reopenings')->where('block_id', $block)->count(), $case);
             $this->assertSame(1, $this->watcher()->table('audit_events')->where('action', 'POSTING_REOPEN')->where('subject_id', $block)->count(), $case);
         }
+    }
+
+    public function test_a_token_rebuild_and_a_correction_of_its_retired_mapping_serialize_in_both_orders(): void
+    {
+        // Review of pull request #50: a token retired as a misassignment has no unretired mapping and no
+        // active row, so the rebuild takes the guard of its last mapping's product, which RC-30 takes too.
+        $wrong = TokoContoh::product('RR-06', ['categoryId' => $this->category]);
+        $right = TokoContoh::product('RR-07', ['categoryId' => $this->category]);
+        $this->assertLessThan($right, $wrong);
+
+        // The rebuild first: the correction waits for the guard, then commits; the rebuild changed nothing.
+        $token = $this->retiredToken($wrong);
+        $rebuild = $this->startRebuild($token, ['after_lock:6']);
+        $correction = $this->start($this->correction($token, $wrong, $right));
+        Worker::ready($rebuild, $correction);
+
+        $rebuild->run()->awaitBarrier('after_lock:6');
+        $correction->run()->awaitBlocked($this->watcher());
+        $rebuild->release();
+
+        $this->assertSame(['changed' => false], $rebuild->finish()->result);
+        $this->assertSame('COMMITTED', ($correction->finish()->result ?? [])['outcome'] ?? null);
+        $this->assertActiveOnlyOn($token, $right);
+
+        // The correction first: the rebuild waits for the guard, then finds the token moved, and refuses
+        // with nothing changed; the correction's active row stays.
+        $token = $this->retiredToken($wrong);
+        $correction = $this->start($this->correction($token, $wrong, $right), ['after_lock:6']);
+        $rebuild = $this->startRebuild($token);
+        Worker::ready($correction, $rebuild);
+
+        $correction->run()->awaitBarrier('after_lock:6');
+        $rebuild->run()->awaitBlocked($this->watcher());
+        $correction->release();
+
+        $this->assertSame('COMMITTED', ($correction->finish()->result ?? [])['outcome'] ?? null);
+        $this->assertSame(RepairRefused::class, $rebuild->finish()->failureClass());
+        $this->assertActiveOnlyOn($token, $right);
+        $this->assertSame(0, $this->watcher()->table('audit_events')->where('action', 'PROJECTION_REBUILT')->where('subject_type', 'token')->where('subject_id', $token)->count());
+    }
+
+    /**
+     * A manufacturer token of the product, retired as a misassignment: its internal key.
+     */
+    private function retiredToken(int $product): int
+    {
+        $token = 'R-'.Str::random(8);
+        TokoContoh::retireBarcode(TokoContoh::barcode($product, $token), 'MISASSIGNMENT');
+        $id = $this->watcher()->table('barcode_tokens')->where('token', $token)->value('id');
+
+        return is_int($id) ? $id : 0;
+    }
+
+    /**
+     * RC-30's re-attachment of the token to the target, as RD-05 showed it retired from the product.
+     *
+     * @return array<string, mixed>
+     */
+    private function correction(int $token, int $from, int $target): array
+    {
+        $text = $this->watcher()->table('barcode_tokens')->where('id', $token)->value('token');
+
+        return $this->command('barcode.correct_misassignment', ['token' => is_string($text) ? $text : '', 'targetProductId' => $target, 'reason' => 'Salah pasang'], ['mapping' => ['productId' => $from, 'state' => 'RETIRED_MISASSIGNMENT']]);
+    }
+
+    /**
+     * The token is active on this product alone, through its correction (G-09).
+     */
+    private function assertActiveOnlyOn(int $token, int $product): void
+    {
+        $this->assertSame([$product], $this->watcher()->table('barcode_active_mappings')->where('token_id', $token)->pluck('product_id')->all());
+        $this->assertSame(2, $this->watcher()->table('barcode_mappings')->where('token_id', $token)->count());
+    }
+
+    /**
+     * OP-07's rebuild of the token, for a run of its own (RebuildProjectionScenario).
+     *
+     * @param  list<string>  $barriers
+     */
+    private function startRebuild(int $token, array $barriers = []): Worker
+    {
+        $worker = Worker::start(RebuildProjectionScenario::class, ['subject' => RebuildProjection::TOKEN, 'id' => $token], $barriers);
+        $this->workers[] = $worker;
+
+        return $worker;
     }
 
     /**

@@ -120,8 +120,10 @@ test('the Owner finds the incident, reads what did not match and reopens its pos
     await checked(page);
     await fitsNarrow(page);
 
-    // UXI-303 and UXI-223: the product's history, and the way back to the incident.
-    await Promise.all([page.waitForURL((url) => url.pathname === '/stock/history'), page.getByRole('main').getByRole('link', { name: 'Riwayat stok', exact: true }).click()]);
+    // UXI-303 and UXI-223: the product's history, and the way back to the incident. The page's own link, not
+    // the sub-navigation's of the same name.
+    const history = page.getByRole('main').getByRole('link', { name: 'Riwayat stok', exact: true }).and(page.locator('[href*="from_page=incident"]'));
+    await Promise.all([page.waitForURL((url) => url.pathname === '/stock/history'), history.click()]);
     await Promise.all([page.waitForURL((url) => url.pathname === `${LIST}/${String(found.blockId)}`), page.getByRole('link', { name: 'Kembali ke Detail insiden' }).click()]);
 
     // UXI-304: the confirmation, which Enter never confirms and "Batal" closes with nothing sent.
