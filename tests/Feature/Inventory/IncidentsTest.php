@@ -20,6 +20,7 @@ use Tests\Harness\Commands\CommandRequests;
 use Tests\Harness\DatabaseTestCase;
 use Tests\Harness\Fixtures\TokoContoh;
 use Tests\Harness\Race\FailurePoints;
+use Throwable;
 
 /**
  * RP-414, RP-415, the open incidents of RD-03 and RC-16 `posting_block.reopen` (AC-036-03; ROUTE_CONTRACTS
@@ -190,12 +191,16 @@ final class IncidentsTest extends DatabaseTestCase
         $this->assertSame(0, $this->watcher()->table('inventory_posting_block_reopenings')->count());
 
         // The product stays blocked: its postings are refused (G-11).
+        $refusal = null;
+
         try {
             TokoContoh::stock($this->pen, '1');
-            $this->fail('A posting of a blocked product was accepted.');
-        } catch (CommandRefused $refusal) {
-            $this->assertSame(ErrorCode::PostingBlocked, $refusal->error);
+        } catch (Throwable $thrown) {
+            $refusal = $thrown;
         }
+
+        $this->assertInstanceOf(CommandRefused::class, $refusal, 'A posting of a blocked product was accepted.');
+        $this->assertSame(ErrorCode::PostingBlocked, $refusal->error);
     }
 
     public function test_a_failure_after_every_write_step_leaves_nothing_and_the_receipt_pending(): void

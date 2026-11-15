@@ -23,6 +23,7 @@ use Tests\Harness\DatabaseTestCase;
 use Tests\Harness\Fixtures\TokoContoh;
 use Tests\Harness\Race\FailurePoints;
 use Tests\Harness\Race\InjectedFailure;
+use Throwable;
 
 /**
  * SC-01 `reconciliation:run` and its `posting_block.block` (AC-036-01, AC-036-06, AC-036-07; ROUTE_CONTRACTS
@@ -117,12 +118,16 @@ final class ReconciliationTest extends DatabaseTestCase
         $this->assertSame($before['movements'], $this->facts()['movements']);
 
         // The blocked product's postings are refused POSTING_BLOCKED; the clean one posts.
+        $refusal = null;
+
         try {
             TokoContoh::stock($balance, '1');
-            $this->fail('A posting of a blocked product was accepted.');
-        } catch (CommandRefused $refusal) {
-            $this->assertSame(ErrorCode::PostingBlocked, $refusal->error);
+        } catch (Throwable $thrown) {
+            $refusal = $thrown;
         }
+
+        $this->assertInstanceOf(CommandRefused::class, $refusal, 'A posting of a blocked product was accepted.');
+        $this->assertSame(ErrorCode::PostingBlocked, $refusal->error);
 
         TokoContoh::stock($clean, '1');
 

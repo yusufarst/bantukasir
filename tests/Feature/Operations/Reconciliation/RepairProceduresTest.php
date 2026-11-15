@@ -12,6 +12,7 @@ use Tests\Harness\DatabaseTestCase;
 use Tests\Harness\Fixtures\TokoContoh;
 use Tests\Harness\Race\FailurePoints;
 use Tests\Harness\Race\InjectedFailure;
+use Throwable;
 
 /**
  * OP-07 `projection:rebuild` and OP-06 `costing:recover` (AC-036-04 to AC-036-06; ROUTE_CONTRACTS OP-06,
@@ -256,12 +257,16 @@ final class RepairProceduresTest extends DatabaseTestCase
         $evidence = TokoContoh::evidenceOf(TokoContoh::movementOf($document));
         config(['costing.replay.movement_cap' => 2]);
 
+        $refusal = null;
+
         try {
             TokoContoh::correctCost($evidence, '20000');
-            $this->fail('The correction passed the movement cap.');
-        } catch (CommandRefused $refusal) {
-            $this->assertSame(ErrorCode::ReplayRejected, $refusal->error);
+        } catch (Throwable $thrown) {
+            $refusal = $thrown;
         }
+
+        $this->assertInstanceOf(CommandRefused::class, $refusal, 'The correction passed the movement cap.');
+        $this->assertSame(ErrorCode::ReplayRejected, $refusal->error);
 
         $mark = $this->watcher()->table('cost_incomplete_marks')->where('evidence_id', $evidence)->value('id');
         $this->assertIsInt($mark);
@@ -330,7 +335,7 @@ final class RepairProceduresTest extends DatabaseTestCase
     /**
      * The product's facts: its movements, cost evidence and issue allocations, as committed.
      *
-     * @return list<list<array<string, mixed>>>
+     * @return array<int, mixed>
      */
     private function factsOf(int $product): array
     {
