@@ -58,6 +58,14 @@ abstract class OperatorProcedure extends Command
     protected ?int $sessionsEndedOf = null;
 
     /**
+     * Every account whose sign-in sessions this run ended, one security log entry each (SEC-LOG-03): the
+     * after-restore procedure revokes every session (SEC-OP-04).
+     *
+     * @var list<int>
+     */
+    protected array $sessionsEndedOfAccounts = [];
+
+    /**
      * The named procedure, the actor of its audit events and of its security
      * log entry (SCHEMA section 3.4).
      */
@@ -137,6 +145,10 @@ abstract class OperatorProcedure extends Command
 
         if ($this->sessionsEndedOf !== null) {
             $securityLog->recordRun(SecurityEvent::SessionRevoked, SecurityActor::operatorProcedure($this->process()), SecurityOutcome::Succeeded, $run, $this->sessionsEndedOf);
+        }
+
+        foreach ($this->sessionsEndedOfAccounts as $account) {
+            $securityLog->recordRun(SecurityEvent::SessionRevoked, SecurityActor::operatorProcedure($this->process()), SecurityOutcome::Succeeded, $run, $account);
         }
 
         $this->info(sprintf('Run %s recorded in the security log.', $run));

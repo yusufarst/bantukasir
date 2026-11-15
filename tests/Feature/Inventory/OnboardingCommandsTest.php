@@ -696,15 +696,16 @@ final class OnboardingCommandsTest extends DatabaseTestCase
     public function test_each_table_of_the_onboarding_has_its_one_writer(): void
     {
         // STK-12, ARC-20, ARC-21: the onboarding's tables are named by the Inventory module's writers
-        // alone, and the checklist reads the lines; the restore holds are TASK-037's to write.
+        // alone, and the checklist reads the lines; the restore holds and their reconciliations are written
+        // by the same service, for TASK-037's OP-04 and OP-05.
         $this->assertSame(['Domain/Inventory/Onboarding/OpeningStock.php'], self::filesNaming('opening_stock_entries'));
         $this->assertSame(['Domain/Inventory/Onboarding/OpeningStock.php', 'Queries/Inventory/OnboardingChecklist.php'], self::filesNaming('opening_stock_lines'));
         $this->assertSame(['Domain/Inventory/Onboarding/OpeningStock.php'], self::filesNaming('onboarding_zero_counts'));
         $this->assertSame(['Domain/Inventory/Onboarding/OpeningStock.php'], self::filesNaming('onboarding_zero_count_withdrawals'));
         $this->assertSame(['Domain/Inventory/OnboardingState.php'], self::filesNaming('onboarding_releases'));
         $this->assertSame(['Domain/Inventory/OnboardingState.php'], self::filesNaming('onboarding_state'));
-        $this->assertSame([], self::filesNaming('onboarding_restore_holds'));
-        $this->assertSame([], self::filesNaming('onboarding_restore_reconciliations'));
+        $this->assertSame(['Domain/Inventory/OnboardingState.php'], self::filesNaming('onboarding_restore_holds'));
+        $this->assertSame(['Domain/Inventory/OnboardingState.php'], self::filesNaming('onboarding_restore_reconciliations'));
         $this->assertSame(['onboarding.release', 'onboarding.start', 'onboarding.withdraw_zero_count', 'opening_stock.confirm', 'opening_stock.replace'], self::operationsOf(['onboarding.', 'opening_stock.']));
     }
 

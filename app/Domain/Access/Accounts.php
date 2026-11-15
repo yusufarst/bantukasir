@@ -213,6 +213,47 @@ final class Accounts
         return $sessions->delete();
     }
 
+    /**
+     * Revokes every sign-in session of the installation — removes every row of
+     * the session store, a signed-out visitor's included — and returns, for each
+     * account whose sessions were removed, how many (SECURITY_MODEL SEC-OP-04:
+     * the after-restore procedure of TASK-037). Called inside the caller's
+     * transaction.
+     *
+     * @return array<int, int>
+     */
+    public function revokeEverySession(): array
+    {
+        self::requireTransaction();
+
+        $revoked = [];
+        $rows = DB::select(<<<'SQL'
+            with removed as (delete from sessions returning user_id)
+            select user_id, count(*) as sessions from removed where user_id is not null group by user_id order by user_id
+            SQL);
+
+        foreach ($rows as $row) {
+            $values = (array) $row;
+
+            if (is_int($values['user_id'] ?? null) && is_int($values['sessions'] ?? null)) {
+                $revoked[$values['user_id']] = $values['sessions'];
+            }
+        }
+
+        return $revoked;
+    }
+
+    /**
+     * The internal key of the one ACTIVE SUPER_ADMIN account, read without a
+     * lock, or null when there is none (SCHEMA guard G-08).
+     */
+    public function activeOwnerId(): ?int
+    {
+        $id = DB::table('users')->where('role_super_admin', true)->where('status', 'ACTIVE')->value('id');
+
+        return is_int($id) ? $id : null;
+    }
+
     private static function requireTransaction(): void
     {
         if (DB::transactionLevel() === 0) {

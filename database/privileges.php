@@ -395,6 +395,12 @@ return [
             'class' => 'F',
             'runtime' => ['select' => true, 'insert' => true],
         ],
+        // Operations (SCHEMA section 5.12; TASK-037): one row per production restore drill, written once
+        // by OP-08 as the runtime role, never changed or removed.
+        'restore_drills' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
 
     ],
 

@@ -54,17 +54,33 @@ final class RecoveryEpoch
     }
 
     /**
-     * Replaces the epoch with a new random value, in the caller's transaction
-     * (the after-restore procedure of TASK-037).
+     * The current epoch under the update lock of the after-restore procedure
+     * (SCHEMA section 7, step 2.3; TASK-037), in the caller's transaction, or
+     * null when the installation holds none.
+     */
+    public function lockForReplacement(): ?string
+    {
+        self::requireTransaction();
+        $epoch = DB::scalar("select encode(epoch, 'hex') from recovery_epoch where id = 1 for no key update");
+
+        return is_string($epoch) ? $epoch : null;
+    }
+
+    /**
+     * Replaces the epoch with a new random value of 256 bits, in the caller's
+     * transaction (the after-restore procedure of TASK-037, SEC-OP-04): never
+     * the value it replaces, and, at that size, never one issued before, so
+     * that a second restore of the same backup issues another one (ADR-007
+     * section 6; RACE-12).
      */
     public function replace(): string
     {
         self::requireTransaction();
         $epoch = bin2hex(random_bytes(self::BYTES));
-        $changed = DB::update("update recovery_epoch set epoch = decode(?, 'hex'), set_at = ? where id = 1", [$epoch, $this->now()]);
+        $changed = DB::update("update recovery_epoch set epoch = decode(?, 'hex'), set_at = ? where id = 1 and epoch <> decode(?, 'hex')", [$epoch, $this->now(), $epoch]);
 
         if ($changed !== 1) {
-            throw new LogicException('There is no recovery epoch to replace.');
+            throw new LogicException('There is no recovery epoch to replace, or the new value is the current one.');
         }
 
         return $epoch;
