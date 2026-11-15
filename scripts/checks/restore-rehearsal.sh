@@ -85,11 +85,12 @@ target_sql() {
     operator -e PGPASSWORD="$DRILL_MIGRATION_PASSWORD" -e PGHOST=127.0.0.1 -e PGPORT="$TUNNEL_PORT" -e PGUSER=bk_migration -e PGDATABASE=bantukasir operator "$@"
 }
 
-DRILL_STARTED="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-
 begin "1. The source's synthetic data (Toko Contoh, a stored file, a closed session with Sales)"
 docker compose run --rm -T -e E2E_BASE_URL=http://bantukasir-app:8080 playwright npx playwright test --config=playwright.rehearsal.config.ts tests/Rehearsal/source.spec.ts
 end
+
+# The drill begins with its target (RB-02 step 2); the source's data are not part of it.
+DRILL_STARTED="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 begin "2. The target off the source: its PostgreSQL with the marker drill, its SSH gateway, its application"
 docker compose --profile rehearsal up -d --build --wait drill-db drill-gateway operator drill-app
@@ -107,9 +108,11 @@ end
 
 begin "4. The backup of the source, to the recipient alone (SC-03 on demand)"
 operator operator curl --silent --show-error --fail --aws-sigv4 'aws:amz:us-east-1:s3' --user "${STORE_KEY_ID}:${STORE_KEY}" -X PUT -H 'x-amz-bucket-object-lock-enabled: true' "${STORE_ENDPOINT}/${BUCKET}"
-BACKUP_LINE="$(docker compose exec -T -e APP_PROCESS_ROLE=backup -e BACKUP_STORE_ENDPOINT="$STORE_ENDPOINT" -e BACKUP_STORE_BUCKET="$BUCKET" -e BACKUP_STORE_KEY_ID="$STORE_KEY_ID" -e BACKUP_STORE_KEY="$STORE_KEY" -e BACKUP_RECIPIENT="$RECIPIENT" app php artisan backup:run --reason=ON_DEMAND | grep -E '^BACKUP_SUCCEEDED ')"
-echo "$BACKUP_LINE"
-BACKUP_ID="$(cut -d' ' -f2 <<< "$BACKUP_LINE")"
+BACKUP_OUTPUT="$(docker compose exec -T -e APP_PROCESS_ROLE=backup -e BACKUP_STORE_ENDPOINT="$STORE_ENDPOINT" -e BACKUP_STORE_BUCKET="$BUCKET" -e BACKUP_STORE_KEY_ID="$STORE_KEY_ID" -e BACKUP_STORE_KEY="$STORE_KEY" -e BACKUP_RECIPIENT="$RECIPIENT" app php artisan backup:run --reason=ON_DEMAND)" \
+    || { echo "$BACKUP_OUTPUT"; exit 1; }
+echo "$BACKUP_OUTPUT"
+BACKUP_ID="$(grep -E '^BACKUP_SUCCEEDED ' <<< "$BACKUP_OUTPUT" | cut -d' ' -f2)"
+[[ "$BACKUP_ID" =~ ^[0-9]{8}T[0-9]{6}Z-[A-Za-z0-9]{8}$ ]] || { echo "the backup did not succeed"; exit 1; }
 end
 
 RESTORE_STARTED="$(date +%s)"
@@ -128,7 +131,9 @@ done
 end
 
 begin "6. RB-01 step 9: pg_restore through the SSH tunnel as the migration role, the grants, the privilege test"
-operator operator ssh -f -N -o ExitOnForwardFailure=yes -L "127.0.0.1:${TUNNEL_PORT}:drill-db:5432" drill-gateway
+# ssh -f keeps its standard streams, which would hold the exec open: they go to /dev/null once the tunnel
+# stands, and pg_isready then proves it.
+operator operator sh -c "ssh -f -N -o ExitOnForwardFailure=yes -L 127.0.0.1:${TUNNEL_PORT}:drill-db:5432 drill-gateway < /dev/null > /dev/null 2>&1"
 target_sql pg_isready -q -t 30
 target_sql pg_restore --no-owner --no-privileges --exit-on-error --single-transaction --dbname=bantukasir "$WORK/plain/dump.pgcustom"
 docker compose exec -T -e DB_MIGRATION_PASSWORD="$DRILL_MIGRATION_PASSWORD" drill-app php artisan db:apply-grants --environment=drill

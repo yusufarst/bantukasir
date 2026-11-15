@@ -13,16 +13,20 @@ RUN go install -trimpath filippo.io/age/cmd/age@v1.3.2 filippo.io/age/cmd/age-ke
 FROM postgres:18.6-trixie@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336
 
 # The gateway accepts the operator's key only, for one tunnel to the target's database and for the copy
-# of the files into the target's file volume (ENVIRONMENTS section 9; RB-01 steps 9 and 10).
+# of the files into the target's file volume (ENVIRONMENTS section 9; RB-01 steps 9 and 10). The account
+# has no password and is not locked, so that its key alone signs it in; sshd runs without PAM, whose
+# session modules a container does not serve.
 RUN set -eux; \
     export DEBIAN_FRONTEND=noninteractive; \
     apt-get update; \
     apt-get install -y --no-install-recommends ca-certificates curl openssh-client openssh-server; \
     rm -rf /var/lib/apt/lists/*; \
     useradd --create-home --uid 1000 --shell /bin/bash operator; \
+    usermod --password '*' operator; \
     install -d -m 0700 -o operator -g operator /home/operator/.ssh; \
     install -d -m 0755 /run/sshd; \
     printf '%s\n' \
+        'UsePAM no' \
         'PasswordAuthentication no' \
         'KbdInteractiveAuthentication no' \
         'PermitRootLogin no' \

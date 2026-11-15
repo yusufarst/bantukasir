@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Storage;
 use Tests\Harness\Backup\BackupTestCase;
 use Tests\Harness\Backup\TestStore;
 use Tests\Harness\Fixtures\TokoContoh;
+use Tests\Harness\Restore\TestRestore;
 
 /**
  * The operator's scripts of RB-01 phase C and RB-02 steps 3 and 5 (TASK-037 scope item 7; BACKUP_RECOVERY
@@ -66,6 +67,12 @@ final class OperatorScriptsTest extends BackupTestCase
         $this->assertNull($outcome->failure, $outcome->diagnostic);
         $manifest = $this->area.'/manifest.json';
         file_put_contents($manifest, $this->decrypted('db/6h/'.$outcome->backupId.'.manifest.age'));
+
+        // The run's own row is written after its snapshot, so the counts are those of its dump, restored
+        // as RB-01 step 9 restores it (TS-24).
+        $dump = $this->area.'/dump.pgcustom';
+        file_put_contents($dump, $this->decrypted('db/6h/'.$outcome->backupId.'.dump.age'));
+        TestRestore::restore($dump);
 
         $equal = $this->compare($manifest, 'test', 'pgsql_migration');
         $this->assertTrue($equal->successful(), $equal->errorOutput());

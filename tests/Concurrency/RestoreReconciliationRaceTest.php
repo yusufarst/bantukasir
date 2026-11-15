@@ -109,6 +109,24 @@ final class RestoreReconciliationRaceTest extends DatabaseTestCase
         $this->assertSame(1, $this->observer()->table('stale_intent_reports')->where('source_intent_id', $intent)->count());
     }
 
+    public function test_two_reconciliations_of_one_report_record_it_once(): void
+    {
+        // EXECUTION_CONTEXT section 10, an operator procedure: no overlap.
+        [$intent, $report] = $this->reported();
+        $first = $this->start(ReconcileIntentScenario::class, ['report' => $report], ['after_identity']);
+        $second = $this->start(ReconcileIntentScenario::class, ['report' => $report]);
+        Worker::ready($first, $second);
+
+        $first->run()->awaitBarrier('after_identity');
+        $second->run()->awaitBlocked($this->observer());
+        $first->release();
+
+        $this->assertSame(['reconciled' => true, 'settled' => 1], $first->finish()->result);
+        $this->assertSame(['refused' => 'RESTORE_REFUSED'], $second->finish()->result);
+        $this->assertNeverCommitted($intent);
+        $this->assertSame(1, $this->observer()->table('audit_events')->where('action', 'RESTORE_RECONCILIATION')->count());
+    }
+
     /**
      * Agus's probe of an earlier epoch whose request reached the server, PENDING, and was reported by a
      * refused status check, as the restored data hold such a request: its intent and its report's key.
