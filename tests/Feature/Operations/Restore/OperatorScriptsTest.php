@@ -116,10 +116,12 @@ final class OperatorScriptsTest extends BackupTestCase
         $this->assertTrue($equal->successful(), $equal->errorOutput());
         $this->assertMatchesRegularExpression('/BantuKasir counts equal to the manifest: [0-9]+ tables/', $equal->errorOutput());
 
+        // A new category, whose command also writes its identity, result and audit event: each table
+        // that differs is named, in the order of the names.
         TokoContoh::category('Rak baru');
         $differs = $this->compare($manifest, 'test', 'pgsql_migration');
         $this->assertFalse($differs->successful());
-        $this->assertMatchesRegularExpression('/BantuKasir counts differ from the manifest: categories: manifest [0-9]+, restored [0-9]+/', $differs->errorOutput());
+        $this->assertMatchesRegularExpression('/BantuKasir counts differ from the manifest: (?:[a-z_]+: manifest [0-9]+, restored [0-9]+; )*categories: manifest [0-9]+, restored [0-9]+/', $differs->errorOutput());
 
         $this->assertStringContainsString('the typed environment is not the marker of this database', $this->compare($manifest, 'staging', 'pgsql_migration')->errorOutput());
         $this->assertStringContainsString('the session is not the migration role of this database', $this->compare($manifest, 'test', 'pgsql')->errorOutput());
