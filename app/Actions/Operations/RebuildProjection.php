@@ -160,7 +160,7 @@ final class RebuildProjection
             AuditCategory::Business,
             'PROJECTION_REBUILT',
             Actor::operatorProcedure(self::PROCESS),
-            ['subject' => self::PRODUCT, 'balanceRebuilt' => $balanceDiffers, 'valuationRebuilt' => $valuationDiffers, 'publicationNo' => $number, 'issueProjections' => count($facts->issueChanges), 'returnProjections' => count($facts->returnChanges)],
+            ['subject' => self::PRODUCT, 'balanceRebuilt' => $balanceDiffers, 'valuationRebuilt' => $valuationDiffers, 'publicationNo' => $valuationDiffers || $projections > 0 ? $number : null, 'issueProjections' => count($facts->issueChanges), 'returnProjections' => count($facts->returnChanges)],
             // The values are cost, the Owner's alone (BR-AUD-02, D-047).
             ['valueBefore' => self::valueOf($valuation->stored ? $valuation->value : null), 'valueAfter' => self::valueOf($facts->value)],
             subject: ['type' => self::PRODUCT, 'id' => $productId],

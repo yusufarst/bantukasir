@@ -7,6 +7,7 @@ use App\Domain\Commands\CommandRefused;
 use App\Domain\Commands\ErrorCode;
 use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Tests\Harness\DatabaseTestCase;
 use Tests\Harness\Fixtures\TokoContoh;
@@ -105,6 +106,25 @@ final class RepairProceduresTest extends DatabaseTestCase
         $this->assertSame(0, Artisan::call('reconciliation:run'), Artisan::output());
     }
 
+    public function test_a_projection_of_a_status_its_movement_cannot_have_is_reported_and_rebuilt(): void
+    {
+        // Review R-01; G-03, SEC-OP-07: a manual issue never reversed whose projection reads CANCELLED is a
+        // projection, never a fact: the reconciliation blocks the product ISSUE_PROJECTION_MISMATCH, and the
+        // rebuild rewrites it from the facts, after which the product reconciles clean.
+        $product = TokoContoh::product('RP-06', ['categoryId' => $this->category]);
+        TokoContoh::stock($product, '9', '10000');
+        TokoContoh::issue([['productId' => $product, 'quantity' => '2']]);
+        $expected = self::withoutPublications($this->projectionsOf($product));
+        $this->migration()->table('issue_cost_allocation_projections')->whereIn('allocation_id', $this->migration()->table('issue_cost_allocations')->where('product_id', $product)->select('id'))->update(['current_status' => 'CANCELLED', 'current_amount' => null]);
+
+        $this->assertSame(1, Artisan::call('reconciliation:run', ['--operator' => true, '--environment' => 'test', '--product' => (string) $product]));
+        $this->assertSame('ISSUE_PROJECTION_MISMATCH', $this->watcher()->table('inventory_posting_blocks')->where('product_id', $product)->value('detail_code'));
+
+        $this->assertSame(0, $this->rebuild(['--product' => (string) $product]), Artisan::output());
+        $this->assertSame($expected, self::withoutPublications($this->projectionsOf($product)));
+        $this->assertSame(0, Artisan::call('reconciliation:run', ['--operator' => true, '--environment' => 'test', '--product' => (string) $product]), Artisan::output());
+    }
+
     public function test_the_rebuild_refuses_with_no_change_when_the_facts_fail_validation(): void
     {
         // SEC-OP-07, RB-04 step 5: a refund that is not the sum of its lines; a history that cannot be
@@ -115,7 +135,9 @@ final class RepairProceduresTest extends DatabaseTestCase
         $sale = TokoContoh::sell('Hendra', TokoContoh::openSession('Hendra', TokoContoh::register()), [['productId' => $product, 'quantity' => '3']]);
         TokoContoh::correct($sale, [['saleLineId' => TokoContoh::saleLinesOf($sale)[0] ?? 0, 'refundAmount' => '7500']], ['method' => 'BANK_TRANSFER', 'reference' => 'TRF-01']);
         $this->migration()->table('refunds')->where('sale_id', $sale)->update(['amount' => 7000]);
-        $this->migration()->table('issue_cost_allocation_projections')->whereIn('allocation_id', $this->migration()->table('issue_cost_allocations')->where('product_id', $product)->where('issue_type', 'MANUAL_ISSUE')->select('id'))->update(['current_status' => 'CANCELLED', 'current_amount' => null]);
+        // The receipt's movement moved behind the issues by the schema's owner, a fact that should not
+        // exist: the manual issue at place 2 then takes stock that the history does not hold (review R-01).
+        $this->migration()->table('stock_movements')->where('product_id', $product)->where('movement_type', 'RECEIPT')->update(['product_sequence' => 9]);
         $before = [$this->snapshot('sale_correction_totals', 'sale_id'), $this->projectionsOf($product)];
 
         $this->assertSame(1, $this->rebuild(['--sale' => (string) $sale]));
@@ -196,6 +218,16 @@ final class RepairProceduresTest extends DatabaseTestCase
         $this->assertSame(1, $this->recover($mark, $evidence, '20000'));
         $this->assertStringContainsString('larger bound was refused (MOVEMENT_CAP)', Artisan::output());
         config(['reconciliation.recovery_factor' => 10]);
+
+        // Review R-05: the time bound — a budget no longer than the publication's reserve — refuses
+        // TIME_BUDGET with nothing written, and the session's own limits are back afterwards.
+        $limits = fn (): array => array_values((array) DB::selectOne("select current_setting('transaction_timeout') as t, current_setting('statement_timeout') as s, current_setting('idle_in_transaction_session_timeout') as i"));
+        $session = $limits();
+        config(['reconciliation.recovery_budget' => config()->integer('costing.replay.publication_reserve')]);
+        $this->assertSame(1, $this->recover($mark, $evidence, '20000'));
+        $this->assertStringContainsString('larger bound was refused (TIME_BUDGET)', Artisan::output());
+        $this->assertSame($session, $limits());
+        config(['reconciliation.recovery_budget' => 600]);
 
         $unsafe = $this->migration()->table('cost_incomplete_marks')->insertGetId([
             ...(array) $this->migration()->table('cost_incomplete_marks')->where('id', $mark)->first(['evidence_id', 'product_id', 'evidence_movement_id', 'rejected_operation', 'corrections_seen', 'recorded_at', 'actor_user_id', 'actor_display_name']),

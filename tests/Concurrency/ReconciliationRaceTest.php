@@ -134,6 +134,35 @@ final class ReconciliationRaceTest extends DatabaseTestCase
         $this->assertSame(2, $this->movementsOf($product));
     }
 
+    public function test_race_01_and_race_02_a_reopening_runs_once_for_the_same_key_or_the_same_intent(): void
+    {
+        // Review R-02; EXECUTION_CONTEXT section 10, a command: the second request waits on the first's
+        // identity, then answers its result; one reopening and one audit event per intent.
+        $product = TokoContoh::product('RR-05', ['categoryId' => $this->category]);
+        TokoContoh::stock($product, '5', '5000');
+
+        foreach (['same key' => true, 'another key' => false] as $case => $sameKey) {
+            $block = TokoContoh::postingBlock($product);
+            $intent = (string) Str::uuid();
+            $key = (string) Str::uuid();
+            $payload = ['blockId' => $block, 'reason' => null];
+            $original = $this->start($this->command('posting_block.reopen', $payload, [], $intent, $key), ['after_identity']);
+            $repeat = $this->start($this->command('posting_block.reopen', $payload, [], $intent, $sameKey ? $key : (string) Str::uuid()));
+            Worker::ready($original, $repeat);
+
+            $original->run()->awaitBarrier('after_identity');
+            $repeat->run()->awaitBlocked($this->watcher());
+            $original->release();
+
+            $committed = $original->finish()->result ?? [];
+            $this->assertSame(['COMMITTED', false], [$committed['outcome'] ?? null, $committed['repeated'] ?? null], $case);
+            $this->assertSame(['outcome' => 'COMMITTED', 'repeated' => true, 'commandId' => $committed['commandId'] ?? null], $repeat->finish()->result, $case);
+            $this->assertSame(1, $this->watcher()->table('command_identities')->where('source_intent_id', $intent)->count(), $case);
+            $this->assertSame(1, $this->watcher()->table('inventory_posting_block_reopenings')->where('block_id', $block)->count(), $case);
+            $this->assertSame(1, $this->watcher()->table('audit_events')->where('action', 'POSTING_REOPEN')->where('subject_id', $block)->count(), $case);
+        }
+    }
+
     /**
      * A product with one receipt whose balance the schema's owner changed on the test database.
      */
@@ -168,13 +197,13 @@ final class ReconciliationRaceTest extends DatabaseTestCase
      * @param  array<string, mixed>  $expected
      * @return array<string, mixed>
      */
-    private function command(string $operation, array $payload, array $expected = []): array
+    private function command(string $operation, array $payload, array $expected = [], ?string $intent = null, ?string $key = null): array
     {
         return [
             'operation' => $operation,
             'actor' => $this->owner,
-            'intent' => (string) Str::uuid(),
-            'key' => (string) Str::uuid(),
+            'intent' => $intent ?? (string) Str::uuid(),
+            'key' => $key ?? (string) Str::uuid(),
             'epoch' => $this->epoch,
             'expected' => $expected,
             'payload' => $payload,

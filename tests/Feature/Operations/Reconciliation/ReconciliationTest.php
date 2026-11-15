@@ -14,6 +14,7 @@ use GuzzleHttp\Promise\Create;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Psr\Http\Message\RequestInterface;
 use RecursiveDirectoryIterator;
@@ -82,6 +83,55 @@ final class ReconciliationTest extends DatabaseTestCase
         // SECURITY_MODEL section 14: the run's security log entry names the scheduled command.
         $entry = (array) $this->watcher()->table('security_log_entries')->orderByDesc('id')->first();
         $this->assertSame(['OPERATOR_PROCEDURE_RUN', 'SCHEDULED_COMMAND', 'reconciliation', 'SUCCEEDED'], [$entry['event_type'], $entry['actor_kind'], $entry['actor_process'], $entry['outcome_code']]);
+    }
+
+    public function test_a_valid_history_of_every_movement_type_reconciles_clean(): void
+    {
+        // Review R-03; BR-INV-45, ADR-008 sections 4.1 and 4.3: OPENINGs, a reversed and replaced OPENING,
+        // reversed RECEIPT and MANUAL_ISSUE pairs, positive and negative ADJUSTMENTs, a completion of an
+        // UNKNOWN cost and a correction of a KNOWN one, a damaged and a saleable return, a pool taken to zero
+        // and restocked — no false positive, no block.
+        $p = fn (string $sku): int => TokoContoh::product($sku, ['categoryId' => $this->category]);
+        [$opening, $replaced, $reversed, $adjusted, $corrected, $returned, $zero] = [$p('MV-01'), $p('MV-02'), $p('MV-03'), $p('MV-04'), $p('MV-05'), $p('MV-06'), $p('MV-07')];
+
+        TokoContoh::startOnboarding();
+        TokoContoh::openingStock($opening, '6', '6000');
+        $first = TokoContoh::openingStock($replaced, '4', '4000');
+        TokoContoh::reverse($first);
+        TokoContoh::replaceOpening(TokoContoh::openingLineOf($first), '3', '3300');
+        TokoContoh::releaseOnboarding();
+
+        TokoContoh::stock($reversed, '5', '5000');
+        TokoContoh::reverse(TokoContoh::movementOf(TokoContoh::stock($reversed, '3', '4500')));
+        TokoContoh::reverse(TokoContoh::movementOf(TokoContoh::issue([['productId' => $reversed, 'quantity' => '2']]), 'MANUAL_ISSUE'));
+        TokoContoh::issue([['productId' => $reversed, 'quantity' => '1']]);
+
+        TokoContoh::stock($adjusted, '5', '5000');
+        TokoContoh::adjust([['productId' => $adjusted, 'direction' => 'INCREASE', 'quantity' => '2', 'cost' => ['status' => 'KNOWN', 'amount' => '2200']]]);
+        TokoContoh::adjust([['productId' => $adjusted, 'direction' => 'DECREASE', 'quantity' => '3']]);
+
+        $unknown = TokoContoh::receive([['productId' => $corrected, 'quantity' => '4', 'cost' => ['status' => 'UNKNOWN']]]);
+        TokoContoh::issue([['productId' => $corrected, 'quantity' => '1']]);
+        TokoContoh::correctCost(TokoContoh::evidenceOf(TokoContoh::movementOf($unknown)), '4400');
+        $known = TokoContoh::stock($corrected, '2', '2000');
+        TokoContoh::issue([['productId' => $corrected, 'quantity' => '2']]);
+        TokoContoh::correctCost(TokoContoh::evidenceOf(TokoContoh::movementOf($known)), '2600');
+
+        TokoContoh::stock($returned, '6', '6000');
+        $sale = TokoContoh::sell('Hendra', TokoContoh::openSession('Hendra', TokoContoh::register()), [['productId' => $returned, 'quantity' => '4']]);
+        $line = TokoContoh::saleLinesOf($sale)[0] ?? 0;
+        TokoContoh::correct($sale, [['saleLineId' => $line, 'returnedNotSaleable' => '1']]);
+        TokoContoh::correct($sale, [['saleLineId' => $line, 'returnedSaleable' => '2']]);
+
+        TokoContoh::stock($zero, '3', '3000');
+        TokoContoh::issue([['productId' => $zero, 'quantity' => '3']]);
+        TokoContoh::stock($zero, '2', '2600');
+
+        $exit = Artisan::call('reconciliation:run');
+        $output = Artisan::output();
+        $this->assertSame(0, $exit, $output);
+        $this->assertStringContainsString('RECONCILIATION_CLEAN', $output);
+        $this->assertSame(0, $this->watcher()->table('inventory_posting_blocks')->count());
     }
 
     public function test_each_induced_mismatch_blocks_its_product_whose_postings_are_refused_while_others_post(): void
@@ -187,6 +237,15 @@ final class ReconciliationTest extends DatabaseTestCase
         }
 
         $this->assertSame(1, $this->watcher()->table('reconciliation_runs')->count());
+
+        // Review R-04, TR-RUN-04: a run while another holds the command's own no-overlap lock is refused
+        // with no row and no block.
+        $lock = Cache::lock('reconciliation:run', 60);
+        $this->assertTrue($lock->get());
+        $this->assertSame(1, Artisan::call('reconciliation:run', ['--operator' => true, '--environment' => 'test']));
+        $this->assertStringContainsString('RECONCILIATION_ALREADY_RUNNING', Artisan::output());
+        $lock->release();
+        $this->assertSame([1, 0], [$this->watcher()->table('reconciliation_runs')->count(), $this->watcher()->table('inventory_posting_blocks')->count()]);
     }
 
     public function test_a_run_that_does_not_complete_is_recorded_failed_and_never_pings(): void

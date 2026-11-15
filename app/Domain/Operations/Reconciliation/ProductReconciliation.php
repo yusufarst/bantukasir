@@ -63,7 +63,8 @@ final class ProductReconciliation
 
         try {
             $start = $this->ledger->before($productId, $precision, 1);
-            $entries = $this->ledger->from($productId, $precision, 1, $movements);
+            // Compared, not used: a stored projection that cannot be read is one to rewrite (R-01).
+            $entries = $this->ledger->from($productId, $precision, 1, $movements, true);
             $result = ValuationReplay::recompute($start, $entries, $onHand, static function (): void {});
             $cancelled = array_map(static fn (int $allocation): ProjectionChange => ProjectionChange::cancelled($allocation), $this->ledger->cancelledIssues($productId, 1));
         } catch (LogicException) {

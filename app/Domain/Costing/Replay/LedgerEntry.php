@@ -39,9 +39,10 @@ final readonly class LedgerEntry
 
     /**
      * A SALE_ISSUE, a MANUAL_ISSUE or a negative ADJUSTMENT with its allocation and that
-     * allocation's current projection, KNOWN or UNKNOWN.
+     * allocation's current projection, KNOWN or UNKNOWN; null only for the reconciliation's comparison,
+     * where a projection missing or of a status its movement cannot have is one to rewrite (TASK-036).
      */
-    public static function issue(int $sequence, Quantity $quantity, int $allocationId, Cost $projection): self
+    public static function issue(int $sequence, Quantity $quantity, int $allocationId, ?Cost $projection): self
     {
         if (! $quantity->isNegative()) {
             throw new LogicException('An issue takes stock out.');
@@ -52,9 +53,10 @@ final readonly class LedgerEntry
 
     /**
      * A RETURN_RECEIPT with its return allocation, that allocation's current projection, KNOWN or
-     * UNKNOWN, and its link to the SALE_ISSUE allocation whose cost it restores.
+     * UNKNOWN — null only for the reconciliation's comparison, as for an issue — and its link to the
+     * SALE_ISSUE allocation whose cost it restores.
      */
-    public static function returnReceipt(int $sequence, Quantity $quantity, int $allocationId, Cost $projection, ReturnLink $link): self
+    public static function returnReceipt(int $sequence, Quantity $quantity, int $allocationId, ?Cost $projection, ReturnLink $link): self
     {
         if (! $quantity->isPositive()) {
             throw new LogicException('A saleable return adds stock.');

@@ -65,6 +65,9 @@ final class RecoverCost
 
     private const array IDENTITY_KEYS = ['command_identities_intent_unique', 'command_identities_process_key'];
 
+    /** The session's three limits, set before BEGIN and after the transaction, never inside it. */
+    private const string SET_LIMITS = 'select pg_catalog.set_config(\'transaction_timeout\', ?, false), pg_catalog.set_config(\'statement_timeout\', ?, false), pg_catalog.set_config(\'idle_in_transaction_session_timeout\', ?, false)';
+
     private int $writeStep = 0;
 
     public function __construct(
@@ -258,27 +261,43 @@ final class RecoverCost
             throw new LogicException('The recovery\'s transaction is the only one on its connection (TR-TX-01).');
         }
 
+        // The session's own limits, put back afterwards as they were (review R-05).
+        $previous = (array) $connection->selectOne("select current_setting('transaction_timeout') as t, current_setting('statement_timeout') as s, current_setting('idle_in_transaction_session_timeout') as i");
+
         try {
-            $connection->statement('select pg_catalog.set_config(\'transaction_timeout\', ?, false), pg_catalog.set_config(\'statement_timeout\', ?, false)', [$seconds.'s', $seconds.'s']);
+            // The idle limit too, so that a long step of the replay in PHP is not ended as idle (review R-05).
+            $connection->statement(self::SET_LIMITS, [$seconds.'s', $seconds.'s', $seconds.'s']);
 
             return $connection->transaction(static fn (): int => $work(), 1);
         } finally {
-            self::reset($connection);
+            self::restore($connection, $previous);
         }
     }
 
-    private static function reset(Connection $connection): void
+    /**
+     * @param  array<array-key, mixed>  $previous
+     */
+    private static function restore(Connection $connection, array $previous): void
     {
         if ($connection->getRawPdo() === null) {
             return;
         }
 
         try {
-            $connection->statement('reset transaction_timeout');
-            $connection->statement('reset statement_timeout');
+            $connection->statement(self::SET_LIMITS, [self::setting($previous, 't'), self::setting($previous, 's'), self::setting($previous, 'i')]);
         } catch (Throwable) {
             $connection->disconnect();
         }
+    }
+
+    /**
+     * @param  array<array-key, mixed>  $values
+     */
+    private static function setting(array $values, string $name): string
+    {
+        $value = $values[$name] ?? null;
+
+        return is_string($value) ? $value : throw new LogicException('A session setting reads as text.');
     }
 
     private function written(): void
