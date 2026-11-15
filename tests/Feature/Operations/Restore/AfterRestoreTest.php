@@ -114,6 +114,7 @@ final class AfterRestoreTest extends DatabaseTestCase
         $reversedLine = TokoContoh::openingLineOf(TokoContoh::openingStock($reversed, '3'));
         TokoContoh::reverse(TokoContoh::openingOf($reversed));
         $state = $this->stateRow();
+        $version = self::whole($state['version'] ?? null);
         $dump = TestRestore::dump($this->area);
         TokoContoh::releaseOnboarding();
         $this->assertSame('RELEASED', $this->stateRow()['state']);
@@ -127,13 +128,14 @@ final class AfterRestoreTest extends DatabaseTestCase
             // change and author as restored (RP-412's "aktif sejak", TASK-035 R-10).
             $hold = (array) $this->observer()->selectOne("select id, restored_state, encode(recovery_epoch, 'hex') as epoch from onboarding_restore_holds");
             $this->assertSame(['ACTIVE', TokoContoh::recoveryEpoch()], [$hold['restored_state'], $hold['epoch']]);
-            $this->assertSame([...$state, 'version' => $state['version'] + 1], $this->stateRow());
+            $this->assertSame([...$state, 'version' => $version + 1], $this->stateRow());
+            $holdKey = (string) self::whole($hold['id'] ?? null);
             $event = (array) $this->observer()->table('audit_events')->where('action', 'ONBOARDING_RESTORE_HOLD')->sole();
             $this->assertSame(['OPERATOR_PROCEDURE', 'restore_after', self::NOTE, 'onboarding', 1], [$event['actor_kind'], $event['actor_process'], $event['operator_note'], $event['subject_type'], $event['subject_id']]);
 
             $this->assertEveryOnboardingCommandRefused($other, $zeroCount, $reversedLine);
 
-            $this->assertSame(0, $this->reconcile(['--hold' => (string) $hold['id'], '--outcome' => $outcome]), Artisan::output());
+            $this->assertSame(0, $this->reconcile(['--hold' => $holdKey, '--outcome' => $outcome]), Artisan::output());
             $reconciliation = (array) $this->observer()->table('onboarding_restore_reconciliations')->sole();
             $this->assertSame([$hold['id'], $outcome, $this->people['Hendra']['id'], self::NOTE], [$reconciliation['hold_id'], $reconciliation['outcome'], $reconciliation['decided_by_user_id'], $reconciliation['operator_note']]);
             $decision = (array) $this->observer()->table('audit_events')->where('action', 'RESTORE_RECONCILIATION')->sole();
@@ -141,14 +143,14 @@ final class AfterRestoreTest extends DatabaseTestCase
 
             if ($outcome === 'RELEASED_BEFORE_RESTORE') {
                 // Released before the restore: it stays released, and nothing starts it again (D-071).
-                $this->assertSame(['state' => 'RELEASED', 'version' => $state['version'] + 2, 'changed_by_user_id' => null], array_diff_key($this->stateRow(), ['changed_at' => 0]));
+                $this->assertSame(['state' => 'RELEASED', 'version' => $version + 2, 'changed_by_user_id' => null], array_diff_key($this->stateRow(), ['changed_at' => 0]));
                 $this->assertSame(['RESTORE_RECONCILIATION', $this->people['Hendra']['id'], null], array_values((array) $this->observer()->table('onboarding_releases')->first(['kind', 'actor_user_id', 'command_id'])));
                 $this->assertRefused(ErrorCode::StaleVersion, static fn () => TokoContoh::startOnboarding());
                 $this->assertRefused(ErrorCode::StaleVersion, static fn () => TokoContoh::openingStock($other, '2'));
                 TokoContoh::stock($other, '2');
             } else {
                 // Never released: the restored period continues as the same period (D-072).
-                $this->assertSame([...$state, 'version' => $state['version'] + 1], $this->stateRow());
+                $this->assertSame([...$state, 'version' => $version + 1], $this->stateRow());
                 TokoContoh::openingStock($other, '2');
                 TokoContoh::withdrawZeroCount($zeroCount);
                 TokoContoh::replaceOpening($reversedLine, '4');
@@ -157,7 +159,7 @@ final class AfterRestoreTest extends DatabaseTestCase
             }
 
             // A second decision of the same hold is refused with nothing written.
-            $this->assertSame(1, $this->reconcile(['--hold' => (string) $hold['id'], '--outcome' => $outcome]));
+            $this->assertSame(1, $this->reconcile(['--hold' => $holdKey, '--outcome' => $outcome]));
             $this->assertSame(1, $this->observer()->table('onboarding_restore_reconciliations')->count());
         }
     }
@@ -173,12 +175,12 @@ final class AfterRestoreTest extends DatabaseTestCase
 
         TestRestore::restore($dump);
         $this->restoreAfter();
-        $hold = $this->observer()->table('onboarding_restore_holds')->value('id');
+        $hold = (string) self::whole($this->observer()->table('onboarding_restore_holds')->value('id'));
         $this->assertSame('NOT_STARTED', $this->observer()->table('onboarding_restore_holds')->value('restored_state'));
         $this->assertRefused(ErrorCode::StaleVersion, static fn () => TokoContoh::startOnboarding());
 
         // Released before the restore: it can never be started again.
-        $this->assertSame(0, $this->reconcile(['--hold' => (string) $hold, '--outcome' => 'RELEASED_BEFORE_RESTORE']), Artisan::output());
+        $this->assertSame(0, $this->reconcile(['--hold' => $hold, '--outcome' => 'RELEASED_BEFORE_RESTORE']), Artisan::output());
         $this->assertSame('RELEASED', $this->stateRow()['state']);
         $this->assertRefused(ErrorCode::StaleVersion, static fn () => TokoContoh::startOnboarding());
         TokoContoh::stock($other, '1');
@@ -282,6 +284,16 @@ final class AfterRestoreTest extends DatabaseTestCase
     private function stateRow(): array
     {
         return (array) $this->observer()->table('onboarding_state')->where('id', 1)->first(['state', 'version', 'changed_at', 'changed_by_user_id']);
+    }
+
+    /**
+     * A whole number that the database returned, as an internal key or a version is.
+     */
+    private static function whole(mixed $value): int
+    {
+        self::assertIsInt($value);
+
+        return $value;
     }
 
     private function restoreAfter(): void

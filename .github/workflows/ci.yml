@@ -218,6 +218,40 @@ jobs:
               if: always()
               run: docker compose down
 
+    # The local rehearsal of the restore runbooks (TASK-037 scope item 7; BACKUP_RECOVERY RB-01 phases C
+    # to F and RB-02; TEST_STRATEGY section 2, L6), with synthetic data only, on its own runner and local
+    # environment: the drill's target, its SSH gateway and the operator's machine are the services of the
+    # profile rehearsal of compose.yaml, and every password and key is made at run time
+    # (scripts/checks/restore-rehearsal.sh). No store, key or server of staging or production is reached.
+    restore-rehearsal:
+        name: Restore rehearsal
+        runs-on: ubuntu-24.04
+        timeout-minutes: 45
+        steps:
+            - name: Check out the repository
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            - name: Start the local environment (one command)
+              run: docker compose up -d --build --wait
+
+            - name: Install the npm dependencies from the lockfile
+              run: docker compose run --rm node npm ci
+
+            - name: npm run build
+              run: docker compose run --rm node npm run build
+
+            - name: Migrate the local database, the rehearsal's source
+              run: docker compose exec -T app php artisan migrate --database=pgsql_migration --force
+
+            - name: Rehearse RB-01 phases C to F and RB-02
+              run: bash scripts/checks/restore-rehearsal.sh
+
+            - name: Stop the local environment and the rehearsal's services
+              if: always()
+              run: docker compose --profile rehearsal down
+
     # The image checks of RELEASE_PROCESS section 4 items 1 to 4 (TASK-012), on the
     # release stage of the image's definition, which this job builds and never
     # publishes; TASK-014's release workflow publishes it. The tick and a merge

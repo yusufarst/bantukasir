@@ -140,7 +140,7 @@ final class RestoreDrillsTest extends BackupTestCase
     {
         $this->atJakarta('2026-11-17 07:00:00');
         $outcome = $this->runBackup();
-        $this->assertNull($outcome->failure, $outcome->diagnostic ?? '');
+        $this->assertNull($outcome->failure, $outcome->diagnostic);
         $this->atJakarta('2026-11-17 08:30:00');
 
         return [$outcome->backupId, $this->readText($this->rowOf($outcome->backupId)['manifest'] ?? null)];

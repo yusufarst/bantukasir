@@ -149,7 +149,7 @@ final class RestoreReconciliationRaceTest extends DatabaseTestCase
      */
     private function outcomesOf(string $intent): array
     {
-        return $this->observer()->table('command_request_receipts')->where('source_intent_id', $intent)->orderBy('id')->pluck('outcome')->all();
+        return array_values($this->observer()->table('command_request_receipts')->where('source_intent_id', $intent)->orderBy('id')->pluck('outcome')->all());
     }
 
     /**

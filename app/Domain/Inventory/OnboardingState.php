@@ -198,7 +198,7 @@ final class OnboardingState
         $id = DB::table('onboarding_restore_holds')->insertGetId(['restored_state' => $held->state, 'recovery_epoch' => '\\x'.$recoveryEpoch, 'set_at' => $at]);
         $this->moveVersion($held);
 
-        return is_int($id) ? $id : throw new LogicException('The database returned no key for the hold.');
+        return $id;
     }
 
     /**

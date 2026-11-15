@@ -33,12 +33,12 @@ final class OperatorScriptsTest extends BackupTestCase
         $key = $this->storeLogo();
         $this->atJakarta('2026-11-17 07:00:00');
         $outcome = $this->runBackup();
-        $this->assertNull($outcome->failure, $outcome->diagnostic ?? '');
-        $row = $this->rowOf($outcome->backupId);
+        $this->assertNull($outcome->failure, $outcome->diagnostic);
+        $manifestHash = $this->readText($this->rowOf($outcome->backupId)['manifest'] ?? null);
 
         $result = $this->fetch($outcome->backupId, $this->area.'/fetched', $this->identity);
         $this->assertTrue($result->successful(), $result->errorOutput());
-        $this->assertSame('FETCHED '.$outcome->backupId.' files=1 manifest_sha256='.$row['manifest'], trim($result->output()));
+        $this->assertSame('FETCHED '.$outcome->backupId.' files=1 manifest_sha256='.$manifestHash, trim($result->output()));
 
         $plain = $this->area.'/fetched/plain';
         $manifest = (array) json_decode((string) file_get_contents($plain.'/manifest.json'), true);
@@ -63,7 +63,7 @@ final class OperatorScriptsTest extends BackupTestCase
     {
         $this->atJakarta('2026-11-17 07:00:00');
         $outcome = $this->runBackup();
-        $this->assertNull($outcome->failure, $outcome->diagnostic ?? '');
+        $this->assertNull($outcome->failure, $outcome->diagnostic);
         $manifest = $this->area.'/manifest.json';
         file_put_contents($manifest, $this->decrypted('db/6h/'.$outcome->backupId.'.manifest.age'));
 

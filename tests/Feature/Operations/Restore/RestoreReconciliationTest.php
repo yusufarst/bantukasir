@@ -8,6 +8,7 @@ use App\Domain\Commands\CommandRefused;
 use App\Domain\Commands\ErrorCode;
 use App\Domain\Commands\RequestReceipts;
 use App\Support\Time\Clock;
+use Closure;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
@@ -207,14 +208,18 @@ final class RestoreReconciliationTest extends DatabaseTestCase
 
     private function assertCloseRefused(int $session): void
     {
-        try {
-            TokoContoh::closeSession($session);
-            $this->fail('The close was not refused while a checkout receipt of Rina is unresolved (G-27).');
-        } catch (CommandRefused $refusal) {
-            $this->assertSame(ErrorCode::RecountRequired, $refusal->error);
-        }
-
+        $this->assertRefusedWith(ErrorCode::RecountRequired, static fn (): int => TokoContoh::closeSession($session));
         $this->assertSame('OPEN', $this->observer()->table('cash_sessions')->where('id', $session)->value('status'));
+    }
+
+    private function assertRefusedWith(ErrorCode $code, Closure $command): void
+    {
+        try {
+            $command();
+            $this->fail('The command was not refused; expected '.$code->value.' (G-27).');
+        } catch (CommandRefused $refusal) {
+            $this->assertSame($code, $refusal->error);
+        }
     }
 
     /**

@@ -15,4 +15,7 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 
 | Check | Where it ran | Time | Duration | Result |
 | --- | --- | --- | --- | --- |
-| `npm run typecheck`, `npx tsc --noEmit`, `npx eslint`, PHP's checks | Local | 21:46 | — | `NOT_RUN`: PHP is not on this machine; the fast runs run them |
+| `npm run typecheck`, `npx tsc --noEmit`, `npx eslint`, PHP's checks | Local | 21:46, 22:10 | — | `NOT_RUN`: PHP is not on this machine, and `tsc` is not found; the fast runs run them |
+| Guard preview | Local, on the working tree against `origin/develop` | 21:47 | under 1 min | First one candidate, the placeholder text of an endpoint in `fetch-backup.sh`'s comment, rephrased; then `PASS` |
+| Guard (Gitleaks 8.30.1, the secret scan of the tree and the commits, identity, candidates) | Local, on `8632a00` (checkpoint 1: the procedures, the drill record, the scripts and their tests) | 21:48 to 21:51 | about 3 min | `PASS`, no candidate |
+| `composer validate`, `lint`, then `composer analyse` | Fast run 1, 43726663288 on `8632a00` | 21:52 to 21:55 | about 3 min for the job | `FAIL`: `validate` and `lint` `PASS`; PHPStan 18 errors of types in three classes and six test files (F-1); the later steps did not run |

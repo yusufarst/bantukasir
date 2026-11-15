@@ -60,7 +60,7 @@ final class RestoreReconcile extends OperatorProcedure
                 return null;
             }
 
-            if ($hold === null || $outcome === null) {
+            if ($hold === null) {
                 throw new ProcedureRefused('Name exactly one decision: --report alone, or --hold with --outcome.');
             }
 

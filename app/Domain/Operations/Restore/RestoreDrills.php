@@ -41,7 +41,7 @@ final class RestoreDrills
             throw new LogicException('A drill is recorded in the transaction of its procedure.');
         }
 
-        $id = DB::table('restore_drills')->insertGetId([
+        return DB::table('restore_drills')->insertGetId([
             'kind' => $drill['kind'],
             'backup_id' => $drill['backupId'],
             'manifest_sha256' => '\\x'.$drill['manifestSha256'],
@@ -55,7 +55,5 @@ final class RestoreDrills
             'actor_user_id' => null,
             'actor_process' => self::PROCESS,
         ]);
-
-        return is_int($id) ? $id : throw new LogicException('The database returned no key for the drill.');
     }
 }

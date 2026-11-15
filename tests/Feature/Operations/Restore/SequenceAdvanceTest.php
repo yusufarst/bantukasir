@@ -113,7 +113,7 @@ final class SequenceAdvanceTest extends DatabaseTestCase
      */
     private function saleNumbers(): array
     {
-        return $this->observer()->table('sales')->pluck('sale_number')->all();
+        return array_values($this->observer()->table('sales')->pluck('sale_number')->all());
     }
 
     /**
@@ -121,7 +121,7 @@ final class SequenceAdvanceTest extends DatabaseTestCase
      */
     private function sessionNumbers(): array
     {
-        return $this->observer()->table('cash_sessions')->pluck('session_number')->all();
+        return array_values($this->observer()->table('cash_sessions')->pluck('session_number')->all());
     }
 
     private static function counterOf(string $number): int
