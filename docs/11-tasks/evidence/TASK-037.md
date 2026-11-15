@@ -8,6 +8,7 @@
 | Branch and base | `task/TASK-037-restore-tooling`, from `5e2eae52ea47801e0a962e897d08bef9ed834dfc` (origin/develop, the squash merge of TASK-036's pull request #50) |
 | Preflight (EXC-20, EXC-21, EXC-23) | The tree clean but for `Claude outputs/` and `plan-p0-p11-review.patch`, which this Task leaves alone; no branch or pull request of TASK-037 and no open pull request; the executor state at `BUILD` for TASK-037 with this session's lock, the merge of #50 verified; TASK-013 and TASK-035 `DONE`, no gate. PHP and the native `tsc` are not on this machine, so every check but the guard runs in CI (D-108, D-117) |
 | Owner's directives in force | Forwarded by the host, adding no permission: FULL V1 (D-130), the contract built directly with the cheap relevant checks before each push, evidence reused, one review; the safety boundary unchanged — no restore, recovery or destructive operation against a real, staging or production database or backup store, everything exercised in CI's test environment only; no weakened test, timeout or baseline, a new CVE a stop; PostgreSQL in four parts (D-131); the known flakes classified only on log evidence; commit and pull request texts without tool or vendor names, attribution or agent wording |
+| Resume | 15 November 2026 22:56, resume 1 of 3 at the phase `BUILD`, after the Owner's indefinite pause (`OWNER_STOP` at 22:16, the checkpoint of CURRENT_HANDOFF section 0). His note: finish TASK-037 from that checkpoint, keeping `e461475` and the uncommitted drafts; the evidence, the guard, the checks and the review; push and open the pull request; his `/stop` goes on it before any merge, so that he merges it; after the merge and green CI on `develop` the loop stops `OWNER_STOP`, and TASK-038 does not start (CE-62, CE-72). The tree, HEAD and the state matched the checkpoint. The drafts of TASK_PLAN and CURRENT_HANDOFF, which record `DONE`, stay uncommitted until the commit of the record, because a checkpoint commit never records `DONE` (CE-30, CE-50) |
 
 ## 1. Checks
 
@@ -18,10 +19,12 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | `npm run typecheck`, `npx tsc --noEmit`, `npx eslint`, PHP's checks | Local | 21:46, 22:10 | — | `NOT_RUN`: PHP is not on this machine, and `tsc` is not found; the fast runs run them |
 | Guard preview | Local, on the working tree against `origin/develop` | 21:47 | under 1 min | First one candidate, the placeholder text of an endpoint in `fetch-backup.sh`'s comment, rephrased; then `PASS` |
 | Guard (Gitleaks 8.30.1, the secret scan of the tree and the commits, identity, candidates) | Local, on `8632a00` (checkpoint 1: the procedures, the drill record, the scripts and their tests) | 21:48 to 21:51 | about 3 min | `PASS`, no candidate |
-| `composer validate`, `lint`, then `composer analyse` | Fast run 1, 43726663288 on `8632a00` | 21:52 to 21:55 | about 3 min for the job | `FAIL`: `validate` and `lint` `PASS`; PHPStan 18 errors of types in three classes and six test files (F-1); the later steps did not run |
-| Guard preview | Local, on the working tree against `origin/develop` | 21:59 | under 1 min | 10 candidates, judged in section 6: none is a real finding |
-| Guard | Local, on `b26eb76` (checkpoint 2: the rehearsal, the checklists, F-1) | 22:00 to 22:06 | about 6 min with its accepted rerun | The same 10 candidates (SHA-256 `ed1cc40f…0127c`), accepted (section 6) |
-| `composer validate`, `lint`, `analyse` (no error), then `composer test:unit` | Fast run 2, 43727958465 on `b26eb76` | 22:06 to 22:16 | about 10 min for the job | `FAIL`: every step before `test:unit` `PASS`; `test:unit` 936 of 937, `PostgresPartsTest` pins the jobs of `ci.yml` and their conditions, which the new job changes (F-4); the later steps did not run |
+| `composer validate`, `lint`, then `composer analyse` | Fast run 1, 43726663288 on `8632a00` | 21:51:52 to 21:55:17 | 3 min 25 s for the run | `FAIL`: `validate` and `lint` `PASS`; PHPStan 18 errors of types in three classes and six test files (F-1); the later steps did not run |
+| Guard preview | Local, on the working tree against `origin/develop` | 21:59 | under 1 min | 10 candidates, judged in section 9: none is a real finding |
+| Guard | Local, on `b26eb76` (checkpoint 2: the rehearsal, the checklists, F-1) | 21:59 to 22:05 | about 6 min with its accepted rerun | The same 10 candidates (SHA-256 `ed1cc40f…0127c`), accepted (section 9) |
+| `composer validate`, `lint`, `analyse` (no error), then `composer test:unit` | Fast run 2, 43727958465 on `b26eb76` | 22:05:57 to 22:09:39 | 3 min 42 s for the run | `FAIL`: every step before `test:unit` `PASS`; `test:unit` 936 of 937, `PostgresPartsTest` pins the jobs of `ci.yml` and their conditions, which the new job changes (F-4); the later steps did not run |
+| Guard | Local, on `e461475` (checkpoint 3: F-4 to F-6, the records) | after 22:11:36, ended 22:15:43 | under 4 min 10 s | `REVIEW`: 5 candidates (SHA-256 `0f634e35…d2ff49`), the evidence's quotations in section 9 of candidates already judged; not accepted before the Owner's stop at 22:16 |
+| Guard preview | Local, on the working tree against `origin/develop`, after the resume | 22:58 to 22:59 | under 1 min | 15 candidates: the 10 of the code accepted on `b26eb76` and the 5 quotations of the evidence; none new from the drafts, none a real finding (section 9) |
 
 ## 2. What was built (contract section 4.1)
 
@@ -75,11 +78,50 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | L2: the common rules of OP-04, OP-05 and OP-08 (typed environment, typed options, the note, the security log); the failure after every write step of each (TS-21) | `AfterRestoreTest.php`, `RestoreReconciliationTest.php`, `RestoreDrillsTest.php` |
 | L6: the local rehearsal of RB-01 phases C to F and RB-02 with its durations | The job `Restore rehearsal`: `scripts/checks/restore-rehearsal.sh` |
 
-## 6. The guard's candidates (CE-31; D-076, D-097, D-098)
+## 6. Acceptance criteria
+
+| Criterion | Proof | Status |
+| --- | --- | --- |
+| AC-037-01 | `AfterRestoreTest::test_op04_fences_the_old_world_also_when_the_same_backup_is_restored_twice` | `PASS` in the fast run of the reviewed head (section 1); the whole suite on the pull request's final head |
+| AC-037-02 | `SequenceAdvanceTest` | As AC-037-01 |
+| AC-037-03 | `RestoreReconciliationTest::test_op05_records_a_reported_request_not_committed_with_a_fence_that_settles_its_receipts`; `AfterRestoreTest` (COMMITTED from the restored data; EPOCH_STALE with one report); `RestoreReconciliationRaceTest` (RACE-34) | As AC-037-01; the race file in the fast run and in `test:race` on the final head |
+| AC-037-04 | `RestoreReconciliationTest::test_the_owners_user_management_request_is_reconciled_before_its_security_change_is_applied_again`; `AfterRestoreTest::test_a_hold_refuses_every_onboarding_and_opening_command_until_op05_records_either_outcome`, `test_a_restored_state_not_started_is_held_and_released_data_need_no_hold` | As AC-037-01 |
+| AC-037-05 | `RestoreReconciliationTest::test_an_earlier_epoch_checkout_receipt_keeps_the_close_refused_until_it_is_answered_or_settled` | As AC-037-01 |
+| AC-037-06 | The job `Restore rehearsal`: `scripts/checks/restore-rehearsal.sh`, its durations in its log; the recovery key and the decrypted copy only on the operator's container, checked absent from both application containers | `NOT_RUN` until the pull request's final head (CE-44) |
+| AC-037-07 | `AfterRestoreTest::test_both_restore_procedures_follow_the_common_rules_of_the_operator_procedures`; `RestoreDrillsTest::test_op08_refuses_with_nothing_written_what_the_drill_cannot_have_measured`; the security log and audit assertions of every procedure test | As AC-037-01 |
+
+## 7. Database (EXC-41 to EXC-47)
+
+| Rule | This Task |
+| --- | --- |
+| EXC-41 | One new migration, additive, dated after TASK-036's; none edited |
+| EXC-42 | The checks of `restore_drills` as explicit SQL, the actor's check among them, proven on PostgreSQL 18.6 by `RestoreDrillsTest` |
+| EXC-43 | The grants in the migration (runtime `SELECT`, `INSERT`; backup `SELECT` on the table and its sequence) and the table in `database/privileges.php`; `db:check-privileges` compares them, and every TS-24 restore runs it |
+| EXC-44 | No key completed: `restore_drills` refers only to `users` |
+| EXC-45 | The constraint, privilege and retention families of `restore_drills`; the drill's backup made by `backup:run`, the holds by OP-04, the reconciliations by OP-05, every fixture through its Action |
+| EXC-46 | Class additive; well under a second; no lock on an existing table; the rehearsal on the provisional dataset is TASK-043's (REL-21) |
+| EXC-47 | `restore_drills` is of class F, so every backup counts it in its manifest (`BackupRunner::COUNTED_CLASSES`) and `compare-counts.sql` compares it; no new kind of stored file |
+
+## 8. Definition of Done
+
+| Dimension | Status |
+| --- | --- |
+| Business | `PASS` on the fast run's tests; the final head's suites and the rehearsal before the merge |
+| UI and UX | N/A — no page or control; the rehearsal's browser steps open existing pages |
+| Backend | `PASS` — console procedures with typed, validated options, the common rules of SECURITY_MODEL section 14, the in-transaction guards under the locks of step 2.3; no route, FormRequest or DTO is added |
+| Database | `PASS` — section 7 |
+| Security | `PASS` — no secret in the repository or the log (the rehearsal's passwords, keys and link made at run time and masked); the recovery key and the decrypted copy only on the operator's machine; the procedures refuse another environment; the guard's candidates judged (section 9) |
+| Data integrity | `PASS` — append-only records, the decision, its fence, its settlement and its audit in one transaction (TS-21), RACE-12 and RACE-34, no number issued twice after a restore |
+| Performance | N/A for budgets, measured at TASK-048; OP-04 removes the session store's rows, which a backup never holds, OP-05 decides one item per run |
+| Operations | `PASS` — `restore_drills` in the manifest's counts; `RESTORE_CHECKLISTS.md`; the system status of TASK-039 reads the newest drill; BACKUP_RECOVERY unchanged, no step found wrong in the rehearsal's code |
+| Verification | Self-review and the class-A review (section 10); the command contract, the image checks and the rehearsal on the pull request's final head before the merge (CE-41) |
+
+## 9. The guard's candidates (CE-31; D-076, D-097, D-098)
 
 | Candidates | Judgment |
 | --- | --- |
 | `/home/operator` in `compose.yaml`, `docker/rehearsal/Dockerfile` and `scripts/checks/restore-rehearsal.sh` | The home folder of the synthetic account `operator` that the rehearsal image creates, inside a container; no person's home folder. Not a finding |
 | `http://127.0.0.1:8080/local-start-check` in `compose.yaml` | The loopback address of the health check that the service `app` already uses, copied to `drill-app`. Not a finding |
 | `http://drill-app:8080`, `/up` and `/set-password#u=` in `compose.yaml` and `restore-rehearsal.sh`; `http://backup-store:9000` and `http://bantukasir-app:8080` in `restore-rehearsal.sh` | Names of services on the internal networks of the local environment and CI, as `tests/Harness/Backup/TestStore.php` and the service `playwright` already name them; no host of any environment, client or provider. Not a finding |
+| `/home/operator`, `http://127.0.0.1:8080/local-start-check`, `http://backup-store:9000`, `http://bantukasir-app:8080` and `http://drill-app:8080` in this evidence file (the 5 candidates on `e461475`, SHA-256 `0f634e35…d2ff49`) | The quotations, in the rows above, of the candidates already judged; nothing else. Not a finding |
 

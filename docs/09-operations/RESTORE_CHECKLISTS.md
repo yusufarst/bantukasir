@@ -22,7 +22,7 @@ Phases A and B (the Owner's authorization, writes stopped, the original preserve
   bash scripts/operations/restore/fetch-backup.sh <backup id> <new empty work folder>
   ```
 
-  It checks every SHA-256 against the manifest and prints `FETCHED <backup id> files=<n> manifest_sha256=<hash>`. On `FETCH_FAILED`, take the next older backup.
+  It checks every SHA-256 against the manifest and prints `FETCHED <backup id> files=<n> manifest_sha256=<hash>`. On `FETCH_FAILED`, take the next older backup. While a rotation of the recovery key is under way (BKP-22; the object `state/files-recipient` reads `ROTATING …`), some files are still encrypted to the old recipient: the identity file then holds both private keys, the old one from its custody, one per line, which age tries in turn.
 - [ ] **Step 9 — the tunnel, the restore, the grants, the privilege test.** Open the SSH tunnel to the target database, whose port stays unpublished (ENVIRONMENTS section 9), with the target's host key verified by its fingerprint:
 
   ```sh
