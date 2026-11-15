@@ -68,8 +68,11 @@ final class ReconciliationTest extends DatabaseTestCase
         // saleable return, and a barcode — every projection equals its facts.
         $this->shopWithHistory();
 
-        $this->assertSame(0, Artisan::call('reconciliation:run'), Artisan::output());
-        $this->assertStringContainsString('RECONCILIATION_CLEAN', Artisan::output());
+        // Artisan::output() empties its buffer, so it is read once.
+        $exit = Artisan::call('reconciliation:run');
+        $output = Artisan::output();
+        $this->assertSame(0, $exit, $output);
+        $this->assertStringContainsString('RECONCILIATION_CLEAN', $output);
 
         $run = (array) $this->watcher()->table('reconciliation_runs')->sole();
         $this->assertSame(['CLEAN', 5, 0, 0, 'ALL', 'SCHEDULE'], [$run['outcome'], $run['products_checked'], $run['blocks_written'], $run['other_differences'], $run['scope'], $run['run_trigger']]);
@@ -92,8 +95,10 @@ final class ReconciliationTest extends DatabaseTestCase
         $this->migration()->table('return_cost_allocation_projections')->whereIn('allocation_id', $this->migration()->table('return_cost_allocations')->where('product_id', $return)->select('id'))->update(['current_amount' => '9.000000']);
         $before = $this->facts();
 
-        $this->assertSame(1, Artisan::call('reconciliation:run'), Artisan::output());
-        $this->assertStringContainsString('RECONCILIATION_MISMATCH', Artisan::output());
+        $exit = Artisan::call('reconciliation:run');
+        $output = Artisan::output();
+        $this->assertSame(1, $exit, $output);
+        $this->assertStringContainsString('RECONCILIATION_MISMATCH', $output);
 
         $run = (array) $this->watcher()->table('reconciliation_runs')->sole();
         $this->assertSame(['MISMATCH', 5, 4, 0], [$run['outcome'], $run['products_checked'], $run['blocks_written'], $run['other_differences']]);

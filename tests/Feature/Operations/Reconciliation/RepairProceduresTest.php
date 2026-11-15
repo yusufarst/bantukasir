@@ -53,8 +53,11 @@ final class RepairProceduresTest extends DatabaseTestCase
         $this->corrupt($product);
         $this->assertNotSame($expected, $this->projectionsOf($product));
 
-        $this->assertSame(0, $this->rebuild(['--product' => (string) $product]), Artisan::output());
-        $this->assertStringContainsString('were rebuilt from its facts', Artisan::output());
+        // Artisan::output() empties its buffer, so it is read once.
+        $exit = $this->rebuild(['--product' => (string) $product]);
+        $output = Artisan::output();
+        $this->assertSame(0, $exit, $output);
+        $this->assertStringContainsString('were rebuilt from its facts', $output);
         $this->assertSame(self::withoutPublications($expected), self::withoutPublications($this->projectionsOf($product)));
         $this->assertSame($facts, $this->factsOf($product), 'A rebuild never changes a fact.');
 
