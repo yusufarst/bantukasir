@@ -15,13 +15,15 @@ FROM postgres:18.6-trixie@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b
 # The gateway accepts the operator's key only, for one tunnel to the target's database and for the copy
 # of the files into the target's file volume (ENVIRONMENTS section 9; RB-01 steps 9 and 10). The account
 # has no password and is not locked, so that its key alone signs it in; sshd runs without PAM, whose
-# session modules a container does not serve.
+# session modules a container does not serve. Debian's base-passwd already gives the base image the system
+# group operator, so the account is made in that group: told to make a group of its own name, the build
+# stops on that group (TASK-037 fix cycle 1; tests/Unit/StaticChecks/RehearsalImageTest.php).
 RUN set -eux; \
     export DEBIAN_FRONTEND=noninteractive; \
     apt-get update; \
     apt-get install -y --no-install-recommends ca-certificates curl openssh-client openssh-server; \
     rm -rf /var/lib/apt/lists/*; \
-    useradd --create-home --uid 1000 --shell /bin/bash operator; \
+    useradd --create-home --uid 1000 --gid operator --shell /bin/bash operator; \
     usermod --password '*' operator; \
     install -d -m 0700 -o operator -g operator /home/operator/.ssh; \
     install -d -m 0755 /run/sshd; \
