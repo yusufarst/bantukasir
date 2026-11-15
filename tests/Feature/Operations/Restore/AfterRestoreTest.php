@@ -187,10 +187,10 @@ final class AfterRestoreTest extends DatabaseTestCase
 
         // The restore of data released already: no hold and no audit event of one.
         TestRestore::restore($released);
-        $this->restoreAfter();
+        $output = $this->restoreAfter();
         $this->assertSame(0, $this->observer()->table('onboarding_restore_holds')->count());
         $this->assertSame(0, $this->observer()->table('audit_events')->where('action', 'ONBOARDING_RESTORE_HOLD')->count());
-        $this->assertStringContainsString('no hold is needed', Artisan::output());
+        $this->assertStringContainsString('no hold is needed', $output);
     }
 
     public function test_both_restore_procedures_follow_the_common_rules_of_the_operator_procedures(): void
@@ -296,9 +296,16 @@ final class AfterRestoreTest extends DatabaseTestCase
         return $value;
     }
 
-    private function restoreAfter(): void
+    /**
+     * OP-04 on the restored test database: its output, read once, because reading it empties it.
+     */
+    private function restoreAfter(): string
     {
-        $this->assertSame(0, Artisan::call('restore:after', ['--environment' => 'test', '--note' => self::NOTE]), Artisan::output());
+        $status = Artisan::call('restore:after', ['--environment' => 'test', '--note' => self::NOTE]);
+        $output = Artisan::output();
+        $this->assertSame(0, $status, $output);
+
+        return $output;
     }
 
     /**
