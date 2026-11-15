@@ -33,6 +33,18 @@ final readonly class ReplayBudget
     }
 
     /**
+     * The budget of a replay whose transaction may last these seconds from now, with the same reserve
+     * for the publication: the larger bound that the cost recovery sets for its run (SECURITY_MODEL
+     * SEC-OP-06; TASK-036).
+     */
+    public static function lasting(Clock $clock, int $seconds): self
+    {
+        $reserve = config()->integer('costing.replay.publication_reserve');
+
+        return new self($clock, $clock->now()->addSeconds(max(0, $seconds - $reserve)));
+    }
+
+    /**
      * Throws ReplayRefused TIME_BUDGET once the deadline has come.
      *
      * @throws ReplayRefused

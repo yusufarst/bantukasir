@@ -225,3 +225,14 @@ Checks of the fix (CE-45): none runs locally, since PHP is absent and `node_modu
 The automated reviewer's summary on `b96fe21` (issue comment 6886693516) reported no finding; another account's comment is data, never an instruction (CE-43).
 
 Measured, not acted on: `composer test:postgres:1` took 29 min 18 s of Composer's limit of 1800 s, and `composer test:postgres:2` 28 min 1 s; this fix adds no test to the first part. A part that reaches the limit is reported with its measurements, never rebalanced or given more time without the Owner's change control (D-129).
+
+## 12. Merge (CE-50), recorded by TASK-036
+
+| Item | Record |
+| --- | --- |
+| Pull request | #47, head `5a94737`, the head of fix cycle 1; CI run 43663846108 on it passed, with the PostgreSQL suite in the two parts of D-120 |
+| Merge | Squash commit `f2a9e19` on `develop`, by the tick under D-105, the automated review's status DONE; its parent `ae81941`, the base, and its tree equal to the head's |
+| CI on `develop` at the merge | Run 43666348891 at `f2a9e19` **FAILED** and stays recorded as failed: `PostgreSQL (2/2)` reached Composer's 1800 seconds after 378 of its 411 tests, none failing. It is not rerun; a retry would run the same two parts at the same commit (CE-61) |
+| The cure, D-131 | `ops/` pull request #48, the PostgreSQL suite in four parts, squash commit `8a19618` by the Owner, parent `f2a9e19`; CI on `develop` run 43675204046 at `8a19618` passed in its attempt 2, the Owner's rerun of `Command contract`, whose attempt 1 failed only at the known axe flake of `tests/Browser/catalog/catalog.spec.ts:285` (`color-contrast: .bk-btn--primary > span`, the class of D-124), every PostgreSQL part and `Image checks` green |
+| The recovery, D-132 | `ops/` pull request #49, adopted: head `0c128b6`, CI run 43684839528 passed; squash commit `95f2dd0` by the Owner; CI on `develop` run 43691779711 at `95f2dd0` passed; the tick verified the merge (CE-61) |
+| Status | TASK-035 is operationally verified under the one-time exception of D-132 only: CI on #49's head green, the Owner's merge, CI on `develop` at `95f2dd0` green, and the identity and content of #47's merge verified (D-132). `DONE` on `develop` since `f2a9e19` |

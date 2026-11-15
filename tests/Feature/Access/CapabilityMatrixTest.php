@@ -477,6 +477,18 @@ final class CapabilityMatrixTest extends DatabaseTestCase
         'RC-48' => ['method' => 'POST', 'path' => '/commands/opening_stock.replace', 'json' => true, 'answers' => [
             'guest' => [401, null], 'owner' => [423, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
         ]],
+        // TASK-036: the reconciliation incidents for CAP-18, the Owner's alone: RP-414; RP-415 of an identifier
+        // that does not exist; RC-16, which answers 423 without a recent confirmation, before anything runs;
+        // every other role and the combined account refused (AC-036-03).
+        'RP-414' => ['method' => 'GET', 'path' => '/stock/incidents', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RP-415' => ['method' => 'GET', 'path' => '/stock/incidents/{block}', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [404, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RC-16' => ['method' => 'POST', 'path' => '/commands/posting_block.reopen', 'json' => true, 'answers' => [
+            'guest' => [401, null], 'owner' => [423, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
     ];
 
     /** @var array<string, array{id: int, email: string, password: string}> */

@@ -920,10 +920,19 @@ function SignedInShell({
         current: id === current,
         ...(id === 'stock' && attention !== null && attention > 0 ? { badge: { count: formatCount(attention), label: t('ux.nav.stock_badge.label', { jumlah: formatCount(attention) }) } } : {}),
     }));
+    // The count of "Insiden rekonsiliasi" (UXI-017; TASK-036): the open incidents of the last successful
+    // read, the Owner's alone; none when no incident is open.
+    const incidents = requests.openIncidents;
     const subItems: SubNavItem[] =
         area === undefined
             ? []
-            : subNavigationFor(area, user.roles, user.capabilities, SUB_DESTINATIONS[area]).map(({ id, entry }) => ({ id, label: t(entry.label), href: entry.href, current: id === subCurrent }));
+            : subNavigationFor(area, user.roles, user.capabilities, SUB_DESTINATIONS[area]).map(({ id, entry }) => ({
+                  id,
+                  label: t(entry.label),
+                  href: entry.href,
+                  current: id === subCurrent,
+                  ...(id === 'incidents' && incidents !== null && incidents > 0 ? { badge: { count: formatCount(incidents), label: t('ux.nav.incidents_badge.label', { jumlah: formatCount(incidents) }) } } : {}),
+              }));
     const areaEntry = area === undefined ? undefined : DESTINATIONS[area];
     // "Keluar" (UXI-026): with an unresolved request the sign-out warning opens
     // first (IC-10; SEC-CH-05).

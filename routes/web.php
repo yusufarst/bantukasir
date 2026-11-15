@@ -76,11 +76,13 @@ use App\Http\Controllers\Inventory\ConfirmOpeningStockController;
 use App\Http\Controllers\Inventory\ConfirmReceivingController;
 use App\Http\Controllers\Inventory\ConfirmReversalController;
 use App\Http\Controllers\Inventory\HistoryController;
+use App\Http\Controllers\Inventory\IncidentsController;
 use App\Http\Controllers\Inventory\IssuesController;
 use App\Http\Controllers\Inventory\MovementsController;
 use App\Http\Controllers\Inventory\OnboardingController;
 use App\Http\Controllers\Inventory\ReceivingsController;
 use App\Http\Controllers\Inventory\ReleaseOnboardingController;
+use App\Http\Controllers\Inventory\ReopenPostingsController;
 use App\Http\Controllers\Inventory\ReplaceOpeningStockController;
 use App\Http\Controllers\Inventory\ReversalsController;
 use App\Http\Controllers\Inventory\StartOnboardingController;
@@ -327,6 +329,15 @@ Route::middleware(['auth', 'signin.session', 'throttle:authenticated', 'cache.he
         Route::post('/commands/onboarding.release', ReleaseOnboardingController::class)->middleware(['throttle:command', 'password.confirm'])->name('commands.onboarding.release');
         Route::post('/commands/onboarding.withdraw_zero_count', WithdrawZeroCountController::class)->middleware(['throttle:command', 'password.confirm'])->name('commands.onboarding.withdraw_zero_count');
         Route::post('/commands/opening_stock.replace', ReplaceOpeningStockController::class)->middleware(['throttle:command', 'password.confirm'])->name('commands.opening_stock.replace');
+    });
+
+    // The reconciliation incidents (TASK-036), the Owner's alone (CAP-18): RP-414, taking only its
+    // parameters of ROUTE_CONTRACTS, and RP-415, taking only its path; RC-16 in the bucket of every
+    // command, with recent authentication.
+    Route::middleware('capability:CAP-18')->group(function (): void {
+        Route::get('/stock/incidents', [IncidentsController::class, 'index'])->middleware('input.allow:status,after,perPage')->name('incidents.index');
+        Route::get('/stock/incidents/{block}', [IncidentsController::class, 'show'])->middleware('input.allow')->name('incidents.show');
+        Route::post('/commands/posting_block.reopen', ReopenPostingsController::class)->middleware(['throttle:command', 'password.confirm'])->name('commands.posting_block.reopen');
     });
 
     // The cost correction (TASK-025), the Owner's alone: RC-15 in the bucket of every command, with

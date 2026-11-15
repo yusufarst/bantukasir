@@ -70,16 +70,27 @@ final class ProcessScheduleTest extends TestCase
 
     public function test_an_entry_runs_only_once_its_command_exists(): void
     {
-        [$event] = $this->eventsOf('web');
+        // SC-02, whose command TASK-038 adds.
+        [, $event] = $this->eventsOf('web');
 
-        $this->assertStringEndsWith('reconciliation:run', (string) $event->command);
-        $this->assertArrayNotHasKey('reconciliation:run', Artisan::all());
+        $this->assertStringEndsWith('housekeeping:run', (string) $event->command);
+        $this->assertArrayNotHasKey('housekeeping:run', Artisan::all());
         $this->assertFalse($event->filtersPass($this->app));
 
-        Artisan::registerCommand(new ClosureCommand('reconciliation:run', function (): int {
+        Artisan::registerCommand(new ClosureCommand('housekeeping:run', function (): int {
             return 0;
         }));
 
+        $this->assertTrue($event->filtersPass($this->app));
+    }
+
+    public function test_sc_01_exists_and_runs_when_due(): void
+    {
+        // TASK-036: reconciliation:run.
+        [$event] = $this->eventsOf('web');
+
+        $this->assertStringEndsWith('reconciliation:run', (string) $event->command);
+        $this->assertArrayHasKey('reconciliation:run', Artisan::all());
         $this->assertTrue($event->filtersPass($this->app));
     }
 

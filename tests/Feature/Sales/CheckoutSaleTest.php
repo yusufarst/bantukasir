@@ -791,8 +791,11 @@ final class CheckoutSaleTest extends DatabaseTestCase
         $reader = 'Queries/Sales/Receipts.php';
         // The refund pages' query reads a Sale's lines, their receipt and their running totals (TASK-034).
         $corrections = 'Queries/Sales/CorrectionRecords.php';
-        $readers = ['Actions/Documents/RecordReceiptPrint.php', 'Http/Controllers/Sales/SalesController.php', $corrections, 'Queries/Sales/SaleRecords.php', 'Queries/Sales/SaleSources.php'];
-        $this->assertSame(['Actions/Documents/RecordReceiptPrint.php', 'Domain/Sales/Corrections/SaleCorrections.php', 'Domain/Sales/Sales.php', 'Http/Controllers/Sales/SalesController.php', $reader, 'Queries/Sales/SaleRecords.php', 'Queries/Sales/SaleSources.php', 'Support/Localization/Dictionary.php'], self::filesNaming('sales'));
+        // SC-01's command names `sales` as the key of its log context, the Sales whose running totals differ
+        // (TASK-036, RB-04), no table, and writes none.
+        $reconciliation = 'Console/Commands/ReconciliationRun.php';
+        $readers = ['Actions/Documents/RecordReceiptPrint.php', 'Http/Controllers/Sales/SalesController.php', $corrections, 'Queries/Sales/SaleRecords.php', 'Queries/Sales/SaleSources.php', $reconciliation];
+        $this->assertSame(['Actions/Documents/RecordReceiptPrint.php', $reconciliation, 'Domain/Sales/Corrections/SaleCorrections.php', 'Domain/Sales/Sales.php', 'Http/Controllers/Sales/SalesController.php', $reader, 'Queries/Sales/SaleRecords.php', 'Queries/Sales/SaleSources.php', 'Support/Localization/Dictionary.php'], self::filesNaming('sales'));
         $this->assertDoesNotMatchRegularExpression('/DB::|->table\(|->insert|->update/', (string) file_get_contents(app_path('Support/Localization/Dictionary.php')));
 
         foreach ([$reader, ...$readers] as $file) {

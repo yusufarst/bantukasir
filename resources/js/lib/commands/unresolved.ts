@@ -233,6 +233,12 @@ export interface UnresolvedState {
      * has none. A failed read keeps the last state.
      */
     readonly onboarding: OnboardingPhase | null;
+    /**
+     * The count of UXI-017 "Insiden rekonsiliasi" (TASK-036): the open incidents of the last successful
+     * read of RD-03, the Owner's alone; null before one and for every other role. A failed read keeps
+     * the last number.
+     */
+    readonly openIncidents: number | null;
 }
 
 /** The onboarding states of SCHEMA section 5.7, as RD-03 gives them (BR-INV-23). */
@@ -240,7 +246,7 @@ export type OnboardingPhase = 'NOT_STARTED' | 'ACTIVE' | 'RELEASED';
 
 const ONBOARDING_PHASES: readonly OnboardingPhase[] = ['NOT_STARTED', 'ACTIVE', 'RELEASED'];
 
-let state: UnresolvedState = { userId: null, union: [], serverCount: null, asOf: null, failed: false, stockAttention: null, onboarding: null };
+let state: UnresolvedState = { userId: null, union: [], serverCount: null, asOf: null, failed: false, stockAttention: null, onboarding: null, openIncidents: null };
 let rows: readonly ReceiptRow[] = [];
 const listeners = new Set<() => void>();
 let reading: Promise<void> | null = null;
@@ -262,7 +268,7 @@ function subscribe(listener: () => void): () => void {
 export function setUser(userId: number): void {
     if (state.userId !== userId) {
         rows = [];
-        state = { userId, union: [], serverCount: null, asOf: null, failed: false, stockAttention: null, onboarding: null };
+        state = { userId, union: [], serverCount: null, asOf: null, failed: false, stockAttention: null, onboarding: null, openIncidents: null };
     }
 
     publish({ userId });
@@ -300,9 +306,12 @@ export function setStockAttention(count: number): void {
     publish({ stockAttention: count });
 }
 
-/** What an answer of RD-03 means for the shell; `stockAttention` is null without the stock pages, `onboarding` without its state. */
+/**
+ * What an answer of RD-03 means for the shell; `stockAttention` is null without the stock pages, `onboarding` without its
+ * state, `openIncidents` for every role but the Owner.
+ */
 export type IndicatorsAnswer =
-    | { readonly kind: 'read'; readonly count: number; readonly asOf: string; readonly stockAttention: number | null; readonly onboarding: OnboardingPhase | null }
+    | { readonly kind: 'read'; readonly count: number; readonly asOf: string; readonly stockAttention: number | null; readonly onboarding: OnboardingPhase | null; readonly openIncidents: number | null }
     | { readonly kind: 'ended' }
     | { readonly kind: 'failed' };
 
@@ -340,8 +349,11 @@ export function indicatorsOf(arrived: Arrived | null): IndicatorsAnswer {
     const asOf = body !== null && typeof body.asOf === 'string' ? body.asOf : null;
     const stockAttention = body === null ? undefined : countOrNull(body.stockAttention);
     const onboarding = body === null ? undefined : phaseOrNull(body.onboarding);
+    const openIncidents = body === null ? undefined : countOrNull(body.openIncidents);
 
-    return count === null || asOf === null || stockAttention === undefined || onboarding === undefined ? { kind: 'failed' } : { kind: 'read', count, asOf, stockAttention, onboarding };
+    return count === null || asOf === null || stockAttention === undefined || onboarding === undefined || openIncidents === undefined
+        ? { kind: 'failed' }
+        : { kind: 'read', count, asOf, stockAttention, onboarding, openIncidents };
 }
 
 /** What the shell does when a read of its indicators finds the sign-in session ended. */
@@ -389,19 +401,19 @@ export function refreshIndicators(): Promise<void> {
             return;
         }
 
-        const { count, asOf, stockAttention, onboarding } = answer;
+        const { count, asOf, stockAttention, onboarding, openIncidents } = answer;
 
         if (count === 0) {
             rows = [];
         } else if (!(await refreshReceipts(true, leaving.signal))) {
             if (!leaving.signal.aborted) {
-                publish({ failed: true, stockAttention, onboarding });
+                publish({ failed: true, stockAttention, onboarding, openIncidents });
             }
 
             return;
         }
 
-        publish({ serverCount: count, asOf, failed: false, stockAttention, onboarding });
+        publish({ serverCount: count, asOf, failed: false, stockAttention, onboarding, openIncidents });
     })().finally(() => {
         reading = null;
     });

@@ -147,6 +147,10 @@ return [
         'stock_badge' => [
             'label' => ':jumlah produk perlu restok',
         ],
+        // The count of "Insiden rekonsiliasi" (UXI-017; TASK-036; COPY_DECK section 4.3).
+        'incidents_badge' => [
+            'label' => ':jumlah insiden perlu ditangani',
+        ],
     ],
     'announce' => [
         'added' => 'Ditambahkan: :produk, jumlah :jumlah.',

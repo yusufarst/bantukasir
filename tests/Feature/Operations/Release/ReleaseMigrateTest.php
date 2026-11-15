@@ -69,7 +69,7 @@ final class ReleaseMigrateTest extends DatabaseTestCase
 
         $positions = [];
 
-        foreach (['JOB_STEP preflight', 'PREFLIGHT_PASSED test migrations=1', 'JOB_STEP migrations', self::NOTE, 'JOB_STEP verification', 'VERIFY_COUNT users before=0 after=0', 'Privilege check passed', 'VERIFY_NOT_AVAILABLE reconciliation:run', 'JOB_PASSED'] as $step) {
+        foreach (['JOB_STEP preflight', 'PREFLIGHT_PASSED test migrations=1', 'JOB_STEP migrations', self::NOTE, 'JOB_STEP verification', 'VERIFY_COUNT users before=0 after=0', 'Privilege check passed', 'RECONCILIATION_CLEAN run=', 'JOB_PASSED'] as $step) {
             $position = strpos($output, $step);
             $this->assertIsInt($position, $step.' is missing: '.$output);
             $positions[] = $position;

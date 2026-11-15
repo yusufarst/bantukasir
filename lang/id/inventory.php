@@ -9,7 +9,8 @@
 // and 15), TASK-024 those of the adjustment (COPY_DECK sections 4.1, 9.2,
 // 9.3, 9.11 and 15), TASK-026 those of the reversal (COPY_DECK sections 4.1,
 // 9.4, 9.12 and 15), TASK-035 those of the onboarding and the opening stock
-// (COPY_DECK sections 4.1, 4.3, 6.1, 9.13, 9.14 and 15).
+// (COPY_DECK sections 4.1, 4.3, 6.1, 9.13, 9.14 and 15), TASK-036 those of the
+// reconciliation incidents (COPY_DECK sections 4.1, 9.15 and 9.16).
 
 return [
     'state' => [
@@ -219,5 +220,32 @@ return [
         'success' => 'Stok awal tersimpan.',
         'disabled' => 'Isi 1 sampai 100 baris yang lengkap.',
         'disabled_unresolved' => 'Ada input stok awal yang statusnya belum pasti. Cek statusnya dulu.',
+    ],
+    // UXP-414 and UXP-415, the reconciliation incidents (TASK-036; COPY_DECK sections 4.1, 9.15 and
+    // 9.16).
+    'incidents' => [
+        'title' => 'Insiden rekonsiliasi',
+        'filter_status' => 'Status',
+        'col_product' => 'Produk',
+        'col_detected' => 'Ditemukan',
+        'col_status' => 'Status',
+        'empty' => 'Tidak ada insiden rekonsiliasi.',
+    ],
+    'incident_detail' => [
+        'title' => 'Detail insiden',
+        'subtitle' => ':produk',
+    ],
+    'incident' => [
+        'status_blocked' => 'Mutasi diblokir',
+        'status_reopened' => 'Mutasi dibuka kembali',
+        'detected' => 'Ditemukan',
+        'mismatch' => 'Yang tidak cocok',
+        'blocked_product' => 'Produk yang diblokir',
+        'reopen' => 'Buka kembali mutasi',
+        'reopen_confirm' => [
+            'title' => 'Buka kembali mutasi :produk?',
+            'body' => 'Lakukan ini hanya setelah fakta-faktanya diperiksa dan direkonsiliasi. Setelah dibuka kembali, produk ini bisa dijual dan dicatat lagi.',
+        ],
+        'reopened' => 'Mutasi dibuka kembali.',
     ],
 ];

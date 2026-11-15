@@ -160,6 +160,62 @@ final class Barcodes
     }
 
     /**
+     * The token's active row as it stands — its mapping and product — or null: what the
+     * projection rebuild reads to choose the products' guards (SEC-OP-07; TASK-036).
+     *
+     * @return array{mapping: int, product: int}|null
+     */
+    public function activeRowOf(int $tokenId): ?array
+    {
+        $values = (array) DB::table('barcode_active_mappings')->where('token_id', $tokenId)->first(['mapping_id', 'product_id']);
+
+        if ($values === []) {
+            return null;
+        }
+
+        $mapping = $values['mapping_id'] ?? null;
+        $product = $values['product_id'] ?? null;
+
+        if (! is_int($mapping) || ! is_int($product)) {
+            throw new LogicException('An active mapping holds its columns (SCHEMA section 5.6).');
+        }
+
+        return ['mapping' => $mapping, 'product' => $product];
+    }
+
+    /**
+     * The projection rebuild of a token's active row (SECURITY_MODEL SEC-OP-07; SCHEMA guard G-03 and
+     * G-09; TASK-036): the row becomes that of the token's one mapping without a retirement, or none,
+     * under the guards of the products of both that the caller holds, so that no barcode command of
+     * either product runs meanwhile. Returns whether the row changed. The mappings and retirements, the
+     * facts, never change.
+     */
+    public function rebuildActive(int $tokenId, ?int $mappingId, ?int $productId): bool
+    {
+        self::requireTransaction();
+
+        $current = $this->activeRowOf($tokenId);
+
+        if ($current !== null && $current['mapping'] === $mappingId) {
+            return false;
+        }
+
+        if ($current === null && $mappingId === null) {
+            return false;
+        }
+
+        if ($current !== null) {
+            DB::table('barcode_active_mappings')->where('token_id', $tokenId)->delete();
+        }
+
+        if ($mappingId !== null && $productId !== null) {
+            DB::table('barcode_active_mappings')->insert(['token_id' => $tokenId, 'mapping_id' => $mappingId, 'product_id' => $productId]);
+        }
+
+        return true;
+    }
+
+    /**
      * The mapping as committed, without a lock, or null: what a retirement reads to
      * choose its product's lock. A mapping never moves to another product.
      */

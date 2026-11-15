@@ -29,6 +29,66 @@ final class CostIncompleteMarks
 
     public const string SOURCE_REVERSED = 'SOURCE_REVERSED';
 
+    public const string RECOVERY_PROCEDURE = 'RECOVERY_PROCEDURE';
+
+    /**
+     * A mark as it was recorded, with whether it is still active, or null when there is no such mark
+     * (the cost recovery, SEC-OP-06; TASK-036).
+     *
+     * @return array{id: int, evidenceId: int, productId: int, rejectionCode: string, active: bool}|null
+     */
+    public function markOf(int $markId): ?array
+    {
+        $values = (array) DB::table('cost_incomplete_marks', 'k')
+            ->where('k.id', $markId)
+            ->select(['k.id', 'k.evidence_id', 'k.product_id', 'k.rejection_code'])
+            ->selectRaw('not exists (select 1 from cost_incomplete_mark_clearances x where x.mark_id = k.id) as active')
+            ->first();
+
+        if ($values === []) {
+            return null;
+        }
+
+        $id = $values['id'] ?? null;
+        $evidence = $values['evidence_id'] ?? null;
+        $product = $values['product_id'] ?? null;
+        $code = $values['rejection_code'] ?? null;
+        $active = $values['active'] ?? null;
+
+        if (! is_int($id) || ! is_int($evidence) || ! is_int($product) || ! is_string($code) || ! is_bool($active)) {
+            throw new LogicException('A mark holds its columns (SCHEMA section 5.8).');
+        }
+
+        return ['id' => $id, 'evidenceId' => $evidence, 'productId' => $product, 'rejectionCode' => $code, 'active' => $active];
+    }
+
+    /**
+     * Clears these marks of the cost source by the cost recovery procedure (SECURITY_MODEL SEC-OP-06;
+     * SCHEMA section 5.8, clearing (c); TASK-036), in its transaction, which holds the product's guard and
+     * publishes the Owner's correction of that source.
+     *
+     * @param  list<int>  $markIds
+     */
+    public function clearByRecovery(array $markIds, CostSource $source, Actor $actor, int $commandId, string $at): void
+    {
+        self::requireTransaction();
+
+        foreach ($markIds as $mark) {
+            DB::table('cost_incomplete_mark_clearances')->insert([
+                'mark_id' => $mark,
+                'evidence_id' => $source->evidenceId,
+                'evidence_movement_id' => $source->movementId,
+                'clearing_kind' => self::RECOVERY_PROCEDURE,
+                'cleared_at' => $at,
+                'actor_kind' => $actor->kind,
+                'actor_user_id' => $actor->userId,
+                'actor_process' => $actor->process,
+                'actor_display_name' => $actor->displayName,
+                'command_id' => $commandId,
+            ]);
+        }
+    }
+
     /**
      * Whether the refused intent already has its mark, so that a repeat of it writes none.
      */

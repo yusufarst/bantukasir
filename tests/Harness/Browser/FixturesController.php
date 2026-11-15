@@ -268,6 +268,24 @@ final class FixturesController
     }
 
     /**
+     * A reconciliation incident for the browser suite (TASK-036): a new product of its own category with
+     * stock received through RC-07's Action, and a posting block of it as the reconciliation writes one,
+     * through the Inventory module's block service (TokoContoh::postingBlock; EXECUTION_CONTEXT EXC-45). The
+     * name and SKU are new, because the local database keeps its products; the name begins with "AA".
+     */
+    public function incident(): JsonResponse
+    {
+        EnvironmentMarker::require(DB::connection(), ['local', 'test']);
+
+        $suffix = strtoupper(Str::random(8));
+        $name = 'AA Insiden '.$suffix;
+        $product = TokoContoh::product('IN-'.$suffix, ['categoryId' => TokoContoh::category('Uji insiden '.$suffix), 'name' => $name]);
+        TokoContoh::stock($product, '5', '5000');
+
+        return new JsonResponse(['blockId' => TokoContoh::postingBlock($product, 'BALANCE_MISMATCH'), 'productId' => $product, 'name' => $name, 'sku' => 'IN-'.$suffix]);
+    }
+
+    /**
      * Turns the application's real maintenance mode on or off (RELEASE_PROCESS
      * RB-20 step 7; TASK-014), on the local or test database only. The browser
      * suite runs the tests that use it after every other test, alone

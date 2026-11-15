@@ -144,9 +144,14 @@ final class ReplayLedger
      * most $limit of them: the caller reads one more than the cap to know that the cap is passed. A
      * cancelled pair is not among them, and does not count against the cap (TR-TIME-01).
      *
+     * `$compared` is the reconciliation's full replay from the first movement (TASK-036), where a stored
+     * projection is only compared with the replay, never used: a projection missing or of a status its
+     * movement cannot have is then read as none, a projection to rewrite, rather than a defect. A replay
+     * of RC-15 or a reversal reads stored projections as its input and keeps refusing them.
+     *
      * @return list<LedgerEntry>
      */
-    public function from(int $productId, int $precision, int $startSequence, int $limit): array
+    public function from(int $productId, int $precision, int $startSequence, int $limit, bool $compared = false): array
     {
         $rows = DB::table('stock_movements as m')
             ->leftJoin('acquisition_cost_evidence as e', 'e.movement_id', '=', 'm.id')
@@ -172,7 +177,7 @@ final class ReplayLedger
         $entries = [];
 
         foreach ($rows as $row) {
-            $entries[] = self::entry((array) $row, $precision);
+            $entries[] = self::entry((array) $row, $precision, $compared);
         }
 
         return $entries;
@@ -220,7 +225,7 @@ final class ReplayLedger
     /**
      * @param  array<array-key, mixed>  $values
      */
-    private static function entry(array $values, int $precision): LedgerEntry
+    private static function entry(array $values, int $precision, bool $compared): LedgerEntry
     {
         $sequence = $values['product_sequence'] ?? null;
         $type = $values['movement_type'] ?? null;
@@ -251,15 +256,17 @@ final class ReplayLedger
             $status = $values['current_status'] ?? null;
             $amount = $values['current_amount'] ?? null;
 
-            if (! is_int($allocation) || ! in_array($status, [AcquisitionCost::KNOWN, AcquisitionCost::UNKNOWN], true) || ($amount !== null && ! is_string($amount))) {
+            $valid = in_array($status, [AcquisitionCost::KNOWN, AcquisitionCost::UNKNOWN], true);
+
+            if (! is_int($allocation) || (! $valid && ! $compared) || ($amount !== null && ! is_string($amount))) {
                 throw new LogicException('An issue carries its allocation and its projection (BR-INV-08; ADR-008 section 1).');
             }
 
-            return LedgerEntry::issue($sequence, $signed, $allocation, Cost::fromDatabase($amount, $status));
+            return LedgerEntry::issue($sequence, $signed, $allocation, $valid ? Cost::fromDatabase($amount, $status) : null);
         }
 
         if ($signed->isPositive() && $type === 'RETURN_RECEIPT') {
-            return self::returnEntry($values, $sequence, $signed, $precision);
+            return self::returnEntry($values, $sequence, $signed, $precision, $compared);
         }
 
         throw new LogicException(sprintf('A logical %s of this sign is no movement of SCHEMA section 5.7.', $type));
@@ -272,7 +279,7 @@ final class ReplayLedger
      *
      * @param  array<array-key, mixed>  $values
      */
-    private static function returnEntry(array $values, int $sequence, Quantity $quantity, int $precision): LedgerEntry
+    private static function returnEntry(array $values, int $sequence, Quantity $quantity, int $precision, bool $compared): LedgerEntry
     {
         $allocation = $values['return_allocation_id'] ?? null;
         $status = $values['return_status'] ?? null;
@@ -283,14 +290,19 @@ final class ReplayLedger
         $issueAmount = $values['linked_amount'] ?? null;
         $before = $values['returned_before'] ?? null;
 
-        if (! is_int($allocation) || ! in_array($status, [AcquisitionCost::KNOWN, AcquisitionCost::UNKNOWN], true) || ($amount !== null && ! is_string($amount))
-            || ! is_int($issue) || ! is_string($issued) || ! in_array($issueStatus, [AcquisitionCost::KNOWN, AcquisitionCost::UNKNOWN], true) || ($issueAmount !== null && ! is_string($issueAmount)) || ! is_string($before)) {
+        // In the reconciliation's comparison (from()), a stored projection is read as none when it cannot be
+        // read; the linked issue's is not used there, since the full replay recomputed that issue first.
+        $valid = in_array($status, [AcquisitionCost::KNOWN, AcquisitionCost::UNKNOWN], true);
+        $issueValid = in_array($issueStatus, [AcquisitionCost::KNOWN, AcquisitionCost::UNKNOWN], true);
+
+        if (! is_int($allocation) || (! $valid && ! $compared) || ($amount !== null && ! is_string($amount))
+            || ! is_int($issue) || ! is_string($issued) || (! $issueValid && ! $compared) || ($issueAmount !== null && ! is_string($issueAmount)) || ! is_string($before)) {
             throw new LogicException('A RETURN_RECEIPT carries its return allocation, its projection and its link to a SALE_ISSUE allocation (BR-INV-08; ADR-008 section 3).');
         }
 
-        $link = new ReturnLink($issue, Quantity::fromDatabase($issued, $precision), Cost::fromDatabase($issueAmount, $issueStatus), Quantity::fromDatabase($before, $precision));
+        $link = new ReturnLink($issue, Quantity::fromDatabase($issued, $precision), $issueValid ? Cost::fromDatabase($issueAmount, $issueStatus) : Cost::unknown(), Quantity::fromDatabase($before, $precision));
 
-        return LedgerEntry::returnReceipt($sequence, $quantity, $allocation, Cost::fromDatabase($amount, $status), $link);
+        return LedgerEntry::returnReceipt($sequence, $quantity, $allocation, $valid ? Cost::fromDatabase($amount, $status) : null, $link);
     }
 
     /**

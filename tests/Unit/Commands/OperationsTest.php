@@ -44,6 +44,7 @@ use App\Actions\Inventory\ConfirmOpeningStock;
 use App\Actions\Inventory\ConfirmReceiving;
 use App\Actions\Inventory\ConfirmReversal;
 use App\Actions\Inventory\ReleaseOnboarding;
+use App\Actions\Inventory\ReopenPostings;
 use App\Actions\Inventory\ReplaceOpeningStock;
 use App\Actions\Inventory\StartOnboarding;
 use App\Actions\Inventory\WithdrawZeroCount;
@@ -170,6 +171,7 @@ final class OperationsTest extends TestCase
             'onboarding.release' => ReleaseOnboarding::class,
             'onboarding.withdraw_zero_count' => WithdrawZeroCount::class,
             'opening_stock.replace' => ReplaceOpeningStock::class,
+            'posting_block.reopen' => ReopenPostings::class,
         ], CommandActions::built());
     }
 
