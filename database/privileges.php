@@ -389,6 +389,12 @@ return [
             'runtime' => ['select' => true],
             'backup' => ['insert' => true],
         ],
+        // Operations (SCHEMA section 5.12; TASK-036): one row per run of the reconciliation, written
+        // once by the runtime role, never changed or removed.
+        'reconciliation_runs' => [
+            'class' => 'F',
+            'runtime' => ['select' => true, 'insert' => true],
+        ],
 
     ],
 

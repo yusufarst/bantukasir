@@ -259,17 +259,20 @@ describe('the unresolved requests and their number', () => {
     it("reads RD-03's answer: 401 ends the sign-in session, anything unreadable is a failed read, never a zero", () => {
         const arrived = (status: number, body: unknown): Arrived => ({ status, body, retryAfter: null });
 
-        expect(indicatorsOf(arrived(200, { unresolvedRequests: 2, asOf: '2026-10-28T03:00:00.000000Z' }))).toEqual({ kind: 'read', count: 2, asOf: '2026-10-28T03:00:00.000000Z', stockAttention: null, onboarding: null });
+        expect(indicatorsOf(arrived(200, { unresolvedRequests: 2, asOf: '2026-10-28T03:00:00.000000Z' }))).toEqual({ kind: 'read', count: 2, asOf: '2026-10-28T03:00:00.000000Z', stockAttention: null, onboarding: null, openIncidents: null });
         // The badge of "Stok" (TASK-022): a count, or null for a cashier; anything else fails.
-        expect(indicatorsOf(arrived(200, { unresolvedRequests: 0, stockAttention: 4, asOf: '2026-10-28T03:00:00.000000Z' }))).toEqual({ kind: 'read', count: 0, asOf: '2026-10-28T03:00:00.000000Z', stockAttention: 4, onboarding: null });
-        expect(indicatorsOf(arrived(200, { unresolvedRequests: 0, stockAttention: null, asOf: '2026-10-28T03:00:00.000000Z' }))).toEqual({ kind: 'read', count: 0, asOf: '2026-10-28T03:00:00.000000Z', stockAttention: null, onboarding: null });
+        expect(indicatorsOf(arrived(200, { unresolvedRequests: 0, stockAttention: 4, asOf: '2026-10-28T03:00:00.000000Z' }))).toEqual({ kind: 'read', count: 0, asOf: '2026-10-28T03:00:00.000000Z', stockAttention: 4, onboarding: null, openIncidents: null });
+        expect(indicatorsOf(arrived(200, { unresolvedRequests: 0, stockAttention: null, asOf: '2026-10-28T03:00:00.000000Z' }))).toEqual({ kind: 'read', count: 0, asOf: '2026-10-28T03:00:00.000000Z', stockAttention: null, onboarding: null, openIncidents: null });
         expect(indicatorsOf(arrived(200, { unresolvedRequests: 0, stockAttention: -1, asOf: '2026-10-28T03:00:00.000000Z' }))).toEqual({ kind: 'failed' });
         expect(indicatorsOf(arrived(200, { unresolvedRequests: 0, stockAttention: '4', asOf: '2026-10-28T03:00:00.000000Z' }))).toEqual({ kind: 'failed' });
         // The onboarding state of every role (TASK-035): one of SCHEMA section 5.7, or absent; anything else fails.
-        expect(indicatorsOf(arrived(200, { unresolvedRequests: 0, stockAttention: null, onboarding: 'ACTIVE', asOf: '2026-10-28T03:00:00.000000Z' }))).toEqual({ kind: 'read', count: 0, asOf: '2026-10-28T03:00:00.000000Z', stockAttention: null, onboarding: 'ACTIVE' });
-        expect(indicatorsOf(arrived(200, { unresolvedRequests: 0, onboarding: 'RELEASED', asOf: '2026-10-28T03:00:00.000000Z' }))).toEqual({ kind: 'read', count: 0, asOf: '2026-10-28T03:00:00.000000Z', stockAttention: null, onboarding: 'RELEASED' });
+        expect(indicatorsOf(arrived(200, { unresolvedRequests: 0, stockAttention: null, onboarding: 'ACTIVE', asOf: '2026-10-28T03:00:00.000000Z' }))).toEqual({ kind: 'read', count: 0, asOf: '2026-10-28T03:00:00.000000Z', stockAttention: null, onboarding: 'ACTIVE', openIncidents: null });
+        expect(indicatorsOf(arrived(200, { unresolvedRequests: 0, onboarding: 'RELEASED', asOf: '2026-10-28T03:00:00.000000Z' }))).toEqual({ kind: 'read', count: 0, asOf: '2026-10-28T03:00:00.000000Z', stockAttention: null, onboarding: 'RELEASED', openIncidents: null });
         expect(indicatorsOf(arrived(200, { unresolvedRequests: 0, onboarding: 'active', asOf: '2026-10-28T03:00:00.000000Z' }))).toEqual({ kind: 'failed' });
         expect(indicatorsOf(arrived(200, { unresolvedRequests: 0, onboarding: 1, asOf: '2026-10-28T03:00:00.000000Z' }))).toEqual({ kind: 'failed' });
+        // The open incidents of UXI-017 (TASK-036): a count for the Owner, null for every other role; anything else fails.
+        expect(indicatorsOf(arrived(200, { unresolvedRequests: 0, openIncidents: 2, asOf: '2026-10-28T03:00:00.000000Z' }))).toEqual({ kind: 'read', count: 0, asOf: '2026-10-28T03:00:00.000000Z', stockAttention: null, onboarding: null, openIncidents: 2 });
+        expect(indicatorsOf(arrived(200, { unresolvedRequests: 0, openIncidents: '2', asOf: '2026-10-28T03:00:00.000000Z' }))).toEqual({ kind: 'failed' });
         expect(indicatorsOf(arrived(401, { code: 'UNAUTHENTICATED' }))).toEqual({ kind: 'ended' });
         expect(indicatorsOf(arrived(419, null))).toEqual({ kind: 'failed' });
         expect(indicatorsOf(arrived(503, null))).toEqual({ kind: 'failed' });

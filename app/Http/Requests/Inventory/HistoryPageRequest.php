@@ -16,13 +16,13 @@ use Illuminate\Contracts\Validation\Validator;
  * movement type of INVENTORY section 2; `from` and `to`, days of Asia/Jakarta, `from` never
  * after `to` (`ux.validation.date_order`); `after` or `before`, never both, the opaque cursor of
  * a page's boundary row; `perPage`, 1 to 100, 25 by default; `from_page`, the page that opened
- * this one for its way back (UXI-223): `stock`, `product` or `requests`. Any other parameter is
- * refused.
+ * this one for its way back (UXI-223): `stock`, `product`, `requests` or `incident` (UXP-415,
+ * TASK-036). Any other parameter is refused.
  */
 final class HistoryPageRequest extends RefusingRequest
 {
-    /** The openers whose way back UXI-223 names (NAVIGATION_CONTRACTS UXP-402); UXP-415 joins with TASK-036. */
-    public const array OPENERS = ['stock', 'product', 'requests'];
+    /** The openers whose way back UXI-223 names (NAVIGATION_CONTRACTS UXP-402). */
+    public const array OPENERS = ['stock', 'product', 'requests', 'incident'];
 
     /** The most products of the filter: those of one adjustment (TECHNICAL_RULES section 11.2). */
     public const int MAX_PRODUCTS = 200;

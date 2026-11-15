@@ -21,13 +21,15 @@ final class ProductReplay
     public function __construct(private readonly ReplayLedger $ledger) {}
 
     /**
-     * The replay of the product from the movement at this place of its sequence.
+     * The replay of the product from the movement at this place of its sequence, within the movement
+     * cap — that of config costing.replay.movement_cap, or the larger one that the cost recovery sets for
+     * its run, at most ten times it (SECURITY_MODEL SEC-OP-06; TASK-036).
      *
      * @throws ReplayRefused MOVEMENT_CAP, TIME_BUDGET or UNSAFE_HISTORY
      */
-    public function recompute(int $productId, int $precision, int $startSequence, ReplayBudget $budget): ReplayResult
+    public function recompute(int $productId, int $precision, int $startSequence, ReplayBudget $budget, ?int $movementCap = null): ReplayResult
     {
-        $cap = config()->integer('costing.replay.movement_cap');
+        $cap = $movementCap ?? config()->integer('costing.replay.movement_cap');
         $start = $this->ledger->before($productId, $precision, $startSequence);
         $budget->check();
         $entries = $this->ledger->from($productId, $precision, $startSequence, $cap + 1);

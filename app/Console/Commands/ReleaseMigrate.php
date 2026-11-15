@@ -9,7 +9,7 @@ use App\Domain\Operations\Release\Verification;
 use Illuminate\Console\Command;
 use Illuminate\Database\Connection;
 use Illuminate\Database\DatabaseManager;
-use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\Console\Command\Command as SymfonyCommand;
 use Throwable;
 
@@ -142,12 +142,16 @@ final class ReleaseMigrate extends Command
 
         $privileges = $this->call('db:check-privileges', ['--database' => Preflight::CONNECTION]);
 
-        // reconciliation:run belongs to TASK-036, which sets how it runs here.
-        if (array_key_exists('reconciliation:run', Artisan::all())) {
-            $reconciled = $this->call('reconciliation:run');
-        } else {
-            $this->line('VERIFY_NOT_AVAILABLE reconciliation:run (TASK-036)');
-            $reconciled = SymfonyCommand::SUCCESS;
+        // A clean reconciliation:run (REL-20; TASK-036, OPEN_ITEMS T-39 (a)): the job's container holds
+        // the migration role's credential only, so the run reads and records on the job's connection,
+        // as the operator's run of the environment that the operator typed, which the preflight checked.
+        $default = DB::getDefaultConnection();
+        DB::setDefaultConnection(Preflight::CONNECTION);
+
+        try {
+            $reconciled = $this->call('reconciliation:run', ['--operator' => true, '--environment' => $this->option('environment')]);
+        } finally {
+            DB::setDefaultConnection($default);
         }
 
         if ($findings !== [] || $privileges !== SymfonyCommand::SUCCESS || $reconciled !== SymfonyCommand::SUCCESS) {

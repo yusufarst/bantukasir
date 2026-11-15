@@ -267,6 +267,69 @@ final class SaleCorrections
     }
 
     /**
+     * Whether the Sale's refunds are each the sum of their lines (G-06), the facts that its running
+     * totals are rebuilt from (SEC-OP-07; TASK-036).
+     */
+    public function refundsAgreeWithLines(int $saleId): bool
+    {
+        return DB::scalar(<<<'SQL'
+            select not exists (
+                select 1 from refunds r
+                where r.sale_id = ? and r.amount <> (select coalesce(sum(rl.amount), 0) from refund_lines rl where rl.refund_id = r.id)
+            )
+            SQL, [$saleId]) === true;
+    }
+
+    /**
+     * The projection rebuild of the Sale's running totals (SECURITY_MODEL SEC-OP-07; SCHEMA guard G-03,
+     * G-06 and section 5.9; TASK-036), under the original Sale's lock that the caller holds, which every
+     * writer of them holds too: each total that differs from the sum of its refund or return lines is
+     * moved to it by a relative increment of the difference in one statement (SCH-33), and a line that has
+     * lines but no row gets its row. The check constraints still judge every value, so lines beyond their
+     * bounds refuse the write. Returns how many rows changed; the corrections, the facts, never change.
+     */
+    public function rebuildTotals(int $saleId, string $at): int
+    {
+        self::requireTransaction();
+
+        $changed = DB::update(<<<'SQL'
+            update sale_correction_totals t
+            set refunded_amount = t.refunded_amount + (s.total - t.refunded_amount), updated_at = ?::timestamptz
+            from (select coalesce(sum(r.amount), 0) as total from refunds r where r.sale_id = ?) s
+            where t.sale_id = ? and t.refunded_amount <> s.total
+            SQL, [$at, $saleId, $saleId]);
+
+        $changed += DB::update(<<<'SQL'
+            update sale_line_correction_totals lt
+            set refunded_amount = lt.refunded_amount + (x.refunded - lt.refunded_amount),
+                returned_quantity = lt.returned_quantity + (x.returned - lt.returned_quantity),
+                updated_at = ?::timestamptz
+            from (
+                select l.id,
+                       coalesce((select sum(rl.amount) from refund_lines rl where rl.sale_line_id = l.id), 0) as refunded,
+                       coalesce((select sum(rt.quantity) from return_lines rt where rt.sale_line_id = l.id), 0) as returned
+                from sale_lines l
+                where l.sale_id = ?
+            ) x
+            where lt.sale_line_id = x.id and (lt.refunded_amount <> x.refunded or lt.returned_quantity <> x.returned)
+            SQL, [$at, $saleId]);
+
+        return $changed + DB::affectingStatement(<<<'SQL'
+            insert into sale_line_correction_totals (sale_line_id, line_total, issued_quantity, refunded_amount, returned_quantity, updated_at)
+            select x.id, x.line_total, x.quantity, x.refunded, x.returned, ?::timestamptz
+            from (
+                select l.id, l.line_total, l.quantity,
+                       coalesce((select sum(rl.amount) from refund_lines rl where rl.sale_line_id = l.id), 0) as refunded,
+                       coalesce((select sum(rt.quantity) from return_lines rt where rt.sale_line_id = l.id), 0) as returned
+                from sale_lines l
+                where l.sale_id = ? and not exists (select 1 from sale_line_correction_totals e where e.sale_line_id = l.id)
+            ) x
+            where x.refunded <> 0 or x.returned <> 0
+            order by x.id
+            SQL, [$at, $saleId]);
+    }
+
+    /**
      * The Sale of a committed correction, a fact read without a lock; null when it does not exist.
      */
     public function saleOf(int $correctionId): ?int

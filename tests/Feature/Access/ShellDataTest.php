@@ -64,8 +64,9 @@ final class ShellDataTest extends DatabaseTestCase
         $answer = $this->getJson('/data/shell')->assertOk();
         // The stock-attention count (TASK-022) is tested in tests/Feature/Inventory/StockAttentionTest.php;
         // the shop of this test has no product. The onboarding state of every role (TASK-035) is tested in
-        // tests/Feature/Inventory/OnboardingPagesTest.php; it has not started here.
-        $answer->assertExactJson(['unresolvedRequests' => 2, 'stockAttention' => 0, 'onboarding' => 'NOT_STARTED', 'asOf' => '2026-10-28T03:00:00.250000Z']);
+        // tests/Feature/Inventory/OnboardingPagesTest.php; it has not started here. The open incidents
+        // are the Owner's alone (TASK-036; tests/Feature/Inventory/IncidentsTest.php).
+        $answer->assertExactJson(['unresolvedRequests' => 2, 'stockAttention' => 0, 'onboarding' => 'NOT_STARTED', 'openIncidents' => null, 'asOf' => '2026-10-28T03:00:00.250000Z']);
         $this->assertJsonChannel($answer, 'data.shell', 'ops');
         $this->assertStringContainsString('no-store', (string) $answer->headers->get('Cache-Control'));
 

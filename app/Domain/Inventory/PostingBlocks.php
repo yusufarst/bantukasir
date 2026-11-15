@@ -15,8 +15,9 @@ use LogicException;
  * block and a posting of one product serialize (RACE-24); this service takes no lock and
  * opens no transaction (TR-TX-01). Blocks and reopenings are only ever added.
  *
- * TASK-036 writes them from the reconciliation and from RC-16; until then the fixtures of
- * the tests call this service (TASK-021 scope item 7; EXC-45).
+ * TASK-036 writes them from the reconciliation's `posting_block.block` (App\Actions\Operations\
+ * BlockPostings) and from RC-16 (App\Actions\Inventory\ReopenPostings); the fixtures of the tests
+ * call this service too (TASK-021 scope item 7; EXC-45).
  */
 final class PostingBlocks
 {
@@ -49,6 +50,25 @@ final class PostingBlocks
         }
 
         return $blocked;
+    }
+
+    /**
+     * The product of a block, a fact that never changes and so is read without a lock (SCH-31), or
+     * null when there is no such block.
+     */
+    public function productOf(int $blockId): ?int
+    {
+        $product = DB::table('inventory_posting_blocks')->where('id', $blockId)->value('product_id');
+
+        return is_int($product) ? $product : null;
+    }
+
+    /**
+     * Whether the block has its reopening, read under its product's guard (RC-16).
+     */
+    public function isReopened(int $blockId): bool
+    {
+        return DB::table('inventory_posting_block_reopenings')->where('block_id', $blockId)->exists();
     }
 
     /**

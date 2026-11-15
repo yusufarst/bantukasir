@@ -8,6 +8,7 @@ use App\Domain\Access\Grant;
 use App\Domain\Inventory\OnboardingState;
 use App\Models\User;
 use App\Queries\Access\ShellIndicators;
+use App\Queries\Inventory\Incidents;
 use App\Queries\Inventory\StockAttention;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -24,11 +25,12 @@ use LogicException;
  * holder of CAP-14 — never a cashier, whose restricted cell is the stock at
  * checkout. The onboarding state is the Inventory module's too, for every role:
  * the banner of UXS-27 tells each one that Sales and ordinary postings stop
- * (UXI-030; TASK-035).
+ * (UXI-030; TASK-035). The open reconciliation incidents of UXI-017 are the Inventory module's
+ * too, for a holder of CAP-18, the Owner, alone (TASK-036).
  */
 final class ShellDataController
 {
-    public function __invoke(Request $request, ShellIndicators $indicators, StockAttention $attention, OnboardingState $onboarding): JsonResponse
+    public function __invoke(Request $request, ShellIndicators $indicators, StockAttention $attention, OnboardingState $onboarding, Incidents $incidents): JsonResponse
     {
         $user = $request->user();
 
@@ -37,7 +39,8 @@ final class ShellDataController
         }
 
         $count = Capabilities::of($user, Capability::Cap14) === Grant::Full ? $attention->count() : null;
+        $open = Capabilities::allows($user, Capability::Cap18) ? $incidents->openCount() : null;
 
-        return new JsonResponse($indicators($user)->withStockAttention($count)->withOnboarding($onboarding->current())->toArray(), 200);
+        return new JsonResponse($indicators($user)->withStockAttention($count)->withOnboarding($onboarding->current())->withOpenIncidents($open)->toArray(), 200);
     }
 }

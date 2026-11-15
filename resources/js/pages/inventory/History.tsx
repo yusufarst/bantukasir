@@ -13,6 +13,7 @@ import { blockingRequest } from '@/lib/commands/families';
 import { useUnresolved } from '@/lib/commands/unresolved';
 import { formatDateTime } from '@/lib/format';
 import { t } from '@/lib/i18n';
+import { INCIDENTS_PAGE, isIncidentPage } from '@/lib/inventory/incidents';
 import { postingBlockedReason } from '@/lib/inventory/Parts';
 import {
     ADJUST_CAPABILITY,
@@ -45,7 +46,7 @@ import {
 // never in the wrong order (`ux.validation.date_order`). A row leads to its movement (UXI-220);
 // its source, a receiving document or a manual issue, to that page (UXI-224). The filters and the page stand
 // in the address (NC-10). "Kembali ke …" only when another page opened it (UXI-223), naming
-// that page. The list may also be filtered to the products of an adjustment, RC-09's location
+// that page — since TASK-036 also UXP-415, whose "Riwayat stok" (UXI-303) opens it. The list may also be filtered to the products of an adjustment, RC-09's location
 // (TASK-024), shown by their names in the filter. "Sesuaikan stok" (UXI-221; TASK-024), the
 // Owner's alone, with one product filtered, opens UXP-410 with it; it is disabled with its reason
 // while the onboarding freeze is on or an unresolved receiving, manual issue or adjustment of the
@@ -91,6 +92,9 @@ function backOf(opener: HistoryOpener | null, products: readonly number[]): { re
             return product === null ? undefined : { href: productPage(product), page: t('catalog.product_detail.title') };
         case 'requests':
             return { href: REQUESTS_PAGE, page: t('commands.unresolved.title') };
+        case 'incident':
+            // UXP-415 (UXI-303; TASK-036): back to the incident that opened this page.
+            return { href: backFrom(document.referrer, window.location.origin, isIncidentPage, INCIDENTS_PAGE), page: t('inventory.incident_detail.title') };
         default:
             return undefined;
     }

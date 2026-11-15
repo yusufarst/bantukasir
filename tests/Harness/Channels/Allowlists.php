@@ -307,6 +307,18 @@ final class Allowlists
             'product.price.revisionId', 'product.active', 'product.thumbnail', 'product.activeBarcode', 'product.version', 'product.stock', 'product.stock.onHand',
             'product.stock.minimum', 'product.stock.state', 'product.opening', 'product.opening.eligibility', 'product.opening.zeroCountId', 'product.opening.replacesLineId',
         ]],
+        // UXP-414 and UXP-415, the Owner's alone (TASK-036): the incidents with their product, time and
+        // state; one incident with what did not match and the blocked product, never a cost; `#empty` with
+        // no row.
+        'inventory/Incidents' => ['owner' => [
+            'filters', 'filters.status', 'incidents', 'incidents.rows', 'incidents.nextCursor', 'incidents.previousCursor',
+            'incidents.rows.*', 'incidents.rows.*.id', 'incidents.rows.*.detectedAt', 'incidents.rows.*.status', 'incidents.rows.*.product', 'incidents.rows.*.product.id', 'incidents.rows.*.product.name',
+        ]],
+        'inventory/Incidents#empty' => ['owner' => ['filters', 'filters.status', 'incidents', 'incidents.rows', 'incidents.nextCursor', 'incidents.previousCursor']],
+        'inventory/Incident' => ['owner' => [
+            'incident', 'incident.id', 'incident.detectedAt', 'incident.detailCode', 'incident.status', 'incident.reopenedAt',
+            'incident.product', 'incident.product.id', 'incident.product.name', 'incident.product.sku',
+        ]],
     ];
 
     /** RP-412 without the rows of its checklist (TASK-035). */
@@ -515,8 +527,9 @@ final class Allowlists
         // TASK-034).
         'commands.refused.drawer_short' => ['owner' => ['outcome', 'code', 'messageKey', 'params', 'params.laci', 'params.uang', 'fields', 'lines']],
         // RD-03, the shell's indicators (TASK-009), with the stock-attention count of the
-        // badge, null for a cashier (TASK-022), and the onboarding state for every role (TASK-035).
-        'data.shell' => ['*' => ['unresolvedRequests', 'stockAttention', 'onboarding', 'asOf']],
+        // badge, null for a cashier (TASK-022), the onboarding state for every role (TASK-035), and the
+        // open incidents, null for every role but the Owner (TASK-036).
+        'data.shell' => ['*' => ['unresolvedRequests', 'stockAttention', 'onboarding', 'openIncidents', 'asOf']],
         // RD-02, the stock list (TASK-022): no cost.
         'data.stock' => [
             'owner' => self::STOCK_LIST,

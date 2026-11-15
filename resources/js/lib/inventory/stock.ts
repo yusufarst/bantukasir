@@ -282,8 +282,8 @@ export interface HistoryFilters {
     readonly to: string | null;
 }
 
-/** The pages that may open UXP-402 for its way back (UXI-223); UXP-415 joins with TASK-036. */
-export type HistoryOpener = 'stock' | 'product' | 'requests';
+/** The pages that may open UXP-402 for its way back (UXI-223); UXP-415, `incident`, since TASK-036 (UXI-303). */
+export type HistoryOpener = 'stock' | 'product' | 'requests' | 'incident';
 
 /** The address of UXP-402 with its filters, a cursor and its opener; what is not set is absent. */
 export function historyAddress(filters: HistoryFilters, cursor: { readonly after?: string; readonly before?: string } = {}, opener: HistoryOpener | null = null): string {
