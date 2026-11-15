@@ -187,4 +187,21 @@ The targeted verification (CE-42, CE-43): agent `bk-reviewer-high`, model `claud
 | `Command contract` on `5e2a221` | Same run | 17:14 to 17:43 | 28 min 37 s | `FAIL`: `composer validate`, `lint`, `analyse`, `test:unit`, `test:race`, `npm run lint`, `typecheck`, `test:unit`, `build` `PASS`; `test:e2e` 334 `PASS`, 1 `FAIL` (R-17) |
 | `npm run typecheck`, PHP's checks | Local | 17:35 | — | `NOT_RUN`: no PHP and no `.bin` links on this machine (section 1) |
 | Guard preview | Local, on the working tree | 17:47 | under 1 min | `PASS`, no candidate |
-| The fast checks and the whole command contract, the race test and the image checks with it | CI on this cycle's head | — | — | `NOT_RUN` at this writing |
+| The fast checks and the whole command contract, the race test and the image checks with it | CI on this cycle's head | — | — | Ran on `4c48270`: section 12 |
+
+## 12. Fix cycle 2 on pull request #50 (CE-42, CE-43)
+
+The delegation's reason was CI run 43706034392 on the head `4c48270`, red only in `Command contract`, fix cycle 2 of 3. The failed step's log was read before any change; no comment by another account (`pr.sh comments`: 0).
+
+| ID | Source | Finding | Outcome |
+| --- | --- | --- | --- |
+| R-18 | CI 43706034392, `Command contract`, `npm run test:e2e` | `incidents.spec.ts:154`: the page watch held one problem, `Failed to load resource: the server responded with a status of 409 (Conflict)`, after every step of the flow had passed — the reopening committed and the incident shown as reopened. The watch started before `signIn()`, whose Inertia form post is answered with Inertia's location answer, a 409 that the browser logs as a failed load (`Responses::fullPageLoad`; `tests/Browser/support/access.ts`, `unexpected`); every other spec that signs in through the page filters it (`unexpected` or `injected`), so the assertion could never pass. A defect of this Task's test, not of the code nor a flake | Fixed, test only: the page is watched from after the sign-in, so every answer of the incident's pages still counts, a 409 of RC-16 (STALE_VERSION) among them. No production change, so no targeted verification is due (CE-43) |
+
+| Check | Where it ran | Time | Duration | Result |
+| --- | --- | --- | --- | --- |
+| Fast checks on `4c48270` | CI run 43705877905 | 17:48 to 18:00 | 11 min 20 s | `PASS` |
+| `PostgreSQL (1/4)` to `(4/4)` on `4c48270` | CI run 43706034392 | 17:50 to 18:07 | 16 min 32 s, 10 min 58 s, 13 min 44 s and 13 min 23 s | `PASS`; valid, this cycle touches no PHP |
+| `Image checks` on `4c48270` | Same run | 17:50 to 17:57 | 6 min 55 s | `PASS`: R-14's fix held, the job ending `JOB_PASSED`; valid, this cycle touches no image input |
+| `Command contract` on `4c48270` | Same run | 17:50 to 18:30 | 40 min 6 s | `FAIL`: every step before `test:e2e` `PASS`; `test:e2e` 334 `PASS`, 1 `FAIL` (R-18), 2 did not run |
+| `npx eslint`, `npx tsc --noEmit` of the spec | Local | 18:34 | — | `NOT_RUN`: no `.bin` links on this machine (section 1); the fast run and the command contract run them |
+| The fast checks and the whole command contract with the browser suite | CI on this cycle's head | — | — | `NOT_RUN` at this writing |

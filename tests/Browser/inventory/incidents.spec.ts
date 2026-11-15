@@ -87,10 +87,12 @@ async function fitsNarrow(page: Page): Promise<void> {
 test('the Owner finds the incident, reads what did not match and reopens its postings with the password', async ({ browser }) => {
     const context = await contextAt(browser, WIDTHS[0]!);
     const page = await context.newPage();
-    const watched = await watch(page);
     const accounts = await resetPeople(context, ['Hendra']);
     await prepareCommands(context, ['Hendra']);
     await signIn(page, accounts.Hendra);
+    // Watched from the first page after the sign-in, whose Inertia location answer (409) the browser logs as a
+    // failed load (tests/Browser/support/access.ts, `unexpected`): every answer of the incident's pages counts.
+    const watched = await watch(page);
     const found = await incident(context);
 
     // UXI-017: "Insiden rekonsiliasi" in the sub-navigation of Stok, with the count of open incidents.
