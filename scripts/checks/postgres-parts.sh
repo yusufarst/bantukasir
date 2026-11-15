@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
-# The two parts of the PostgreSQL suite (TEST_STRATEGY sections 6 and 7, D-120):
+# The parts of the PostgreSQL suite (TEST_STRATEGY sections 6 and 7, D-120, D-131):
 # postgres-parts.sh [<configuration>]. CI runs `composer test:postgres` as its parts
-# `composer test:postgres:1` and `composer test:postgres:2`, the suites Postgres1 and
-# Postgres2 of phpunit.xml, each in its own job on its own runner and test database.
-# This check lists the tests of Postgres, Postgres1 and Postgres2 with PHPUnit itself
-# and proves that the two parts together hold exactly the tests of Postgres, each test
-# in one part and once, and that neither part is empty. It runs no test and needs no
-# database. The status is 0 when the parts cover the suite, 1 when they do not, and 2
-# when a list cannot be read, so that an unreadable list never passes.
+# `composer test:postgres:1` to `composer test:postgres:<n>`, the suites Postgres1 to
+# Postgres<n> of phpunit.xml, each in its own job on its own runner and test database.
+# The parts are the suites named Postgres followed by a number; they are numbered
+# from 1 without a gap, and there are at least two. This check lists the tests of
+# Postgres and of each part with PHPUnit itself and proves that the parts together
+# hold exactly the tests of Postgres, each test in one part and once, and that no
+# part is empty. It runs no test and needs no database. The status is 0 when the
+# parts cover the suite, 1 when they do not, and 2 when a list cannot be read, so
+# that an unreadable list never passes.
 set -uo pipefail
 
 configuration="${1:-phpunit.xml}"
@@ -38,11 +40,24 @@ report() {
     fi
 }
 
-for suite in Postgres Postgres1 Postgres2; do
-    list "$suite"
+list Postgres
+
+# The parts, in the order of their numbers: the suites Postgres<number> of the
+# configuration, which must be Postgres1 to Postgres<n> with n of at least 2.
+numbers="$(grep -oE '<testsuite[[:space:]]+name="Postgres[0-9]+"' "$configuration" | grep -oE '[0-9]+"$' | tr -d '"' | LC_ALL=C sort -n)"
+n="$(printf '%s\n' "$numbers" | grep -c .)"
+if [ "$n" -lt 2 ] || [ "$numbers" != "$(seq 1 "$n")" ]; then
+    echo "POSTGRES_PARTS_NUMBERING the parts of $configuration are not Postgres1 to Postgres<n> with n of at least 2: $(printf '%s ' $numbers)"
+    exit 1
+fi
+
+parts=()
+for k in $(seq 1 "$n"); do
+    parts+=("Postgres$k")
 done
 
-for part in Postgres1 Postgres2; do
+for part in "${parts[@]}"; do
+    list "$part"
     if [ ! -s "$work/$part" ]; then
         echo "POSTGRES_PARTS_EMPTY $part holds no test"
         problems=1
@@ -51,19 +66,26 @@ for part in Postgres1 Postgres2; do
     report "$work/$part.twice" POSTGRES_PARTS_TWICE "listed twice in $part"
 done
 
-LC_ALL=C comm -12 "$work/Postgres1" "$work/Postgres2" > "$work/both"
-LC_ALL=C sort -u "$work/Postgres1" "$work/Postgres2" > "$work/parts"
+# A test of two parts appears once in each part's list, so twice among them all.
+for part in "${parts[@]}"; do
+    LC_ALL=C sort -u "$work/$part"
+done | LC_ALL=C sort | LC_ALL=C uniq -d > "$work/several"
+for part in "${parts[@]}"; do cat "$work/$part"; done | LC_ALL=C sort -u > "$work/parts"
 LC_ALL=C sort -u "$work/Postgres" > "$work/suite"
 LC_ALL=C comm -23 "$work/suite" "$work/parts" > "$work/neither"
 LC_ALL=C comm -13 "$work/suite" "$work/parts" > "$work/outside"
 
-report "$work/both" POSTGRES_PARTS_OVERLAP "in both parts"
-report "$work/neither" POSTGRES_PARTS_GAP "of Postgres in neither part"
+report "$work/several" POSTGRES_PARTS_OVERLAP "in more than one part"
+report "$work/neither" POSTGRES_PARTS_GAP "of Postgres in no part"
 report "$work/outside" POSTGRES_PARTS_OUTSIDE "in a part but not in Postgres"
 
 if [ "$problems" -ne 0 ]; then
     exit 1
 fi
 
-echo "POSTGRES_PARTS_COMPLETE Postgres1 $(count Postgres1) + Postgres2 $(count Postgres2) = Postgres $(count Postgres) tests, each in one part"
+sum=""
+for part in "${parts[@]}"; do
+    sum="${sum:+$sum + }$part $(count "$part")"
+done
+echo "POSTGRES_PARTS_COMPLETE $sum = Postgres $(count Postgres) tests, each in one part"
 exit 0

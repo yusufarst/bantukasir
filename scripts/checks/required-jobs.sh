@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # The required jobs of a run of the ci workflow (TEST_STRATEGY section 7, D-120):
 # required-jobs.sh <job name>.... The job `Command contract` runs it as its last
-# step, with the names of the jobs `PostgreSQL (1/2)` and `PostgreSQL (2/2)`. The
+# step, with the names of the jobs `PostgreSQL (1/4)` to `PostgreSQL (4/4)` (D-131). The
 # tick and pr.sh read a head as green only when `Command contract` passed and no
 # other check run failed (scripts/executor/lib.sh, ci_result), and a job that is
 # skipped, or missing from the run, fails no check run of its own: this step makes
