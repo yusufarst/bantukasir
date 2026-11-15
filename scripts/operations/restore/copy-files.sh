@@ -9,7 +9,9 @@
 # The restored database is reached through the SSH tunnel of RB-01 step 9 with psql's own environment —
 # PGHOST, PGPORT, PGUSER (the migration role), PGPASSWORD and PGDATABASE — and the SSH destination with the
 # operator's own key. A file is never overwritten: one already on the target stays and is checked like the
-# others. Any row whose file is missing or differs from its sha256 stops it with an error.
+# others. Any row whose file is missing or differs from its sha256 stops it with an error, and so does a
+# check of fewer rows than the restored database holds. Every ssh runs with -n, because the SSH client
+# otherwise reads this script's standard input, which feeds the loop over the rows.
 set -euo pipefail
 
 fail() {
@@ -31,7 +33,7 @@ for file in "$work"/plain/files/*; do
     key="$(basename "$file")"
     [[ "$key" =~ ^[A-Za-z0-9_-]{32,128}$ ]] || fail "a file name is no storage key"
 
-    if ssh "$destination" test -e "$volume/$key"; then
+    if ssh -n "$destination" test -e "$volume/$key"; then
         continue
     fi
 
@@ -42,13 +44,15 @@ done
 rows="$(psql -X -At -v ON_ERROR_STOP=1 -c "select storage_key || '|' || encode(sha256, 'hex') from stored_files order by id")" \
     || fail "the restored database cannot be read"
 
+expected="$(grep -c . <<< "$rows" || true)"
 checked=0
 while IFS='|' read -r key sha256; do
     [ -n "$key" ] || continue
     [[ "$key" =~ ^[A-Za-z0-9_-]{32,128}$ ]] || fail "a storage key of the restored data has another form"
-    remote="$(ssh "$destination" sha256sum "$volume/$key" 2>/dev/null | cut -d' ' -f1 || true)"
+    remote="$(ssh -n "$destination" sha256sum "$volume/$key" 2>/dev/null | cut -d' ' -f1 || true)"
     [ "$remote" = "$sha256" ] || fail "the file of a row of stored_files is missing on the target or differs from its sha256"
     checked=$((checked + 1))
 done <<< "$rows"
 
+[ "$checked" -eq "$expected" ] || fail "$checked of the $expected rows of stored_files were checked"
 echo "COPIED files=$copied checked=$checked"

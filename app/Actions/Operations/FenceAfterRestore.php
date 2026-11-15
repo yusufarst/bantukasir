@@ -37,7 +37,8 @@ use Illuminate\Support\Facades\DB;
  */
 final class FenceAfterRestore
 {
-    public const string PROCESS = 'restore_after';
+    /** The procedure's name in the allowlist of SCHEMA section 3.4 (App\Domain\Audit\Actor). */
+    public const string PROCESS = 'after_restore';
 
     public function __construct(
         private readonly RecoveryEpoch $epoch,

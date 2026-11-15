@@ -2,11 +2,13 @@
 
 namespace Tests\Harness\Restore;
 
+use App\Database\Identifier;
 use App\Domain\Operations\Backup\BackupTools;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Process;
 use RuntimeException;
+use Tests\Harness\Commands\Probe;
 use Tests\Harness\TestDatabase;
 
 /**
@@ -22,6 +24,12 @@ use Tests\Harness\TestDatabase;
  * the migration role may not create; then the grants procedure, because the dump holds no privilege;
  * then the privilege test. The sessions of the harness end before and after it, so that no session holds
  * a lock or a plan of the tables it replaced.
+ *
+ * The test-only tables of the probe (tests/Harness/Commands/Probe.php) are no part of an installation:
+ * the dump leaves them out, as the backup role reads none of them; the restore drops them first, because
+ * their key on command_identities would keep pg_restore from dropping that table, and creates them again,
+ * empty, after the privilege test, which holds the restored database to the matrix alone. Any other
+ * test-only table is refused, because the restore would lose it.
  */
 final class TestRestore
 {
@@ -45,6 +53,7 @@ final class TestRestore
             '--no-owner',
             '--no-privileges',
             '--enable-row-security',
+            '--exclude-table=public.harness_*',
         ];
 
         foreach (BackupTools::EXCLUDED_TABLES as $table) {
@@ -62,7 +71,7 @@ final class TestRestore
      */
     public static function restore(string $dump): void
     {
-        TestDatabase::requireTestDatabase();
+        $harness = self::dropProbeTables();
         self::endSessions();
 
         $listing = Process::timeout(60)->run([self::PG_RESTORE, '--list', $dump])->throw()->output();
@@ -95,7 +104,46 @@ final class TestRestore
         }
 
         self::endSessions();
+
+        if ($harness !== []) {
+            Probe::ensureTables(DB::connection(TestDatabase::MIGRATION));
+            self::endSessions();
+        }
+
         TestDatabase::requireTestDatabase();
+    }
+
+    /**
+     * Drops the probe's test-only tables before a restore, after the marker check, and returns their names;
+     * refuses any other test-only table.
+     *
+     * @return list<string>
+     */
+    private static function dropProbeTables(): array
+    {
+        $migration = DB::connection(TestDatabase::MIGRATION);
+        TestDatabase::requireTestDatabase($migration);
+        $tables = [];
+
+        foreach ($migration->select("select tablename from pg_catalog.pg_tables where schemaname = 'public' and pg_catalog.starts_with(tablename::text, 'harness_') order by tablename") as $row) {
+            $name = ((array) $row)['tablename'] ?? null;
+
+            if (is_string($name)) {
+                $tables[] = $name;
+            }
+        }
+
+        $other = array_diff($tables, Probe::TABLES);
+
+        if ($other !== []) {
+            throw new RuntimeException('A TS-24 restore keeps only the probe\'s test-only tables, and would lose '.implode(', ', $other).'.');
+        }
+
+        if ($tables !== []) {
+            $migration->statement('DROP TABLE '.implode(', ', array_map(static fn (string $table): string => Identifier::quote($table), $tables)));
+        }
+
+        return $tables;
     }
 
     /**

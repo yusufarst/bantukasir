@@ -74,7 +74,7 @@ final class AfterRestoreTest extends DatabaseTestCase
 
         $issued[] = $this->epoch = TokoContoh::recoveryEpoch();
         $this->assertNotContains($this->epoch, [$issued[0]]);
-        $revoked = $this->observer()->table('security_log_entries')->where('actor_process', 'restore_after')->orderBy('id')->get(['event_type', 'outcome_code', 'subject_user_id'])->map(static fn (object $row): array => array_values((array) $row))->all();
+        $revoked = $this->observer()->table('security_log_entries')->where('actor_process', 'after_restore')->orderBy('id')->get(['event_type', 'outcome_code', 'subject_user_id'])->map(static fn (object $row): array => array_values((array) $row))->all();
         $this->assertSame([['OPERATOR_PROCEDURE_RUN', 'SUCCEEDED', null], ['SESSION_REVOKED', 'SUCCEEDED', $this->people['Agus']['id']]], $revoked);
 
         // The lost intent, of the earlier epoch: refused, also its status check, with one report.
@@ -131,7 +131,7 @@ final class AfterRestoreTest extends DatabaseTestCase
             $this->assertSame([...$state, 'version' => $version + 1], $this->stateRow());
             $holdKey = (string) self::whole($hold['id'] ?? null);
             $event = (array) $this->observer()->table('audit_events')->where('action', 'ONBOARDING_RESTORE_HOLD')->sole();
-            $this->assertSame(['OPERATOR_PROCEDURE', 'restore_after', self::NOTE, 'onboarding', 1], [$event['actor_kind'], $event['actor_process'], $event['operator_note'], $event['subject_type'], $event['subject_id']]);
+            $this->assertSame(['OPERATOR_PROCEDURE', 'after_restore', self::NOTE, 'onboarding', 1], [$event['actor_kind'], $event['actor_process'], $event['operator_note'], $event['subject_type'], $event['subject_id']]);
 
             $this->assertEveryOnboardingCommandRefused($other, $zeroCount, $reversedLine);
 
@@ -219,7 +219,7 @@ final class AfterRestoreTest extends DatabaseTestCase
 
         $this->assertSame($epoch, TokoContoh::recoveryEpoch());
         $this->assertSame(0, $this->observer()->table('audit_events')->whereIn('action', ['ONBOARDING_RESTORE_HOLD', 'RESTORE_RECONCILIATION'])->count());
-        $this->assertSame(['REFUSED'], $this->observer()->table('security_log_entries')->whereIn('actor_process', ['restore_after', 'restore_reconciliation'])->distinct()->pluck('outcome_code')->all());
+        $this->assertSame(['REFUSED'], $this->observer()->table('security_log_entries')->whereIn('actor_process', ['after_restore', 'restore_reconciliation'])->distinct()->pluck('outcome_code')->all());
     }
 
     public function test_a_failure_after_every_write_step_of_op04_leaves_nothing(): void

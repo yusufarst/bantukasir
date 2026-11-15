@@ -16,14 +16,17 @@ use Tests\Harness\Restore\TestRestore;
  * The operator's scripts of RB-01 phase C and RB-02 steps 3 and 5 (TASK-037 scope item 7; BACKUP_RECOVERY
  * BKP-07, BKP-08, sections 4 and 5): `fetch-backup.sh` downloads a backup that backup:run stored on the test
  * server, checks every SHA-256 against its manifest and decrypts it with the recovery key, which only the
- * harness holds, and refuses a key that is not the backup's; `compare-counts.sql` finds the counts of a
- * database equal to its manifest and names each table that differs, and refuses another environment or
- * role. Here they run in the test process's container with the harness's synthetic key; the rehearsal of
+ * harness holds, and refuses a key that is not the backup's; `copy-files.sh` checks every row of
+ * stored_files against its file on the target; `compare-counts.sql` finds the counts of a database equal
+ * to its manifest and names each table that differs, and refuses another environment or role. Here they
+ * run in the test process's container with the harness's synthetic key; the rehearsal of
  * scripts/checks/restore-rehearsal.sh runs them on a container of their own, the operator's machine.
  */
 final class OperatorScriptsTest extends BackupTestCase
 {
     private const string FETCH = 'scripts/operations/restore/fetch-backup.sh';
+
+    private const string COPY = 'scripts/operations/restore/copy-files.sh';
 
     private const string COUNTS = 'scripts/operations/restore/compare-counts.sql';
 
@@ -58,6 +61,41 @@ final class OperatorScriptsTest extends BackupTestCase
         $this->assertStringContainsString('FETCH_FAILED the manifest does not decrypt with this recovery key', $refused->errorOutput());
         $this->assertStringContainsString('the work folder is not empty', $this->fetch($outcome->backupId, $this->area.'/fetched', $this->identity)->errorOutput());
         $this->assertStringContainsString('the backup identifier has another form', $this->fetch('20261117T000000Z', $this->area.'/x', $this->identity)->errorOutput());
+    }
+
+    public function test_the_file_copy_checks_every_row_of_stored_files_on_the_target(): void
+    {
+        // RB-01 step 10, each file checked: two stored files, copied into the target's file volume over
+        // SSH. The SSH client here reads its standard input unless -n is given, as OpenSSH's does, and
+        // runs the command on this machine, where the target's volume is a folder; scp copies here too.
+        $keys = [$this->storeLogo(), $this->storeLogo()];
+        $work = $this->area.'/copied';
+        $volume = $this->area.'/volume';
+        File::ensureDirectoryExists($work.'/plain/files', 0700);
+        File::ensureDirectoryExists($volume, 0700);
+        File::ensureDirectoryExists($this->area.'/bin', 0700);
+
+        foreach ($keys as $key) {
+            file_put_contents($work.'/plain/files/'.$key, (string) $this->media()->get($key));
+        }
+
+        $this->toolStub('bin/ssh', 'if [ "${1:-}" = -n ]; then shift; else cat > /dev/null; fi; shift; exec bash -c "$*"');
+        $this->toolStub('bin/scp', 'if [ "${1:-}" = -q ]; then shift; fi; exec cp "$1" "${2#*:}"');
+
+        $copied = $this->copy($work, $volume);
+        $this->assertTrue($copied->successful(), $copied->errorOutput());
+        $this->assertSame('COPIED files=2 checked=2', trim($copied->output()));
+
+        foreach ($keys as $key) {
+            $this->assertSame(hash('sha256', (string) $this->media()->get($key)), hash_file('sha256', $volume.'/'.$key));
+        }
+
+        // The file of the last row damaged on the target: the check stops, and nothing is overwritten.
+        file_put_contents($volume.'/'.$keys[1], 'rusak');
+        $damaged = $this->copy($work, $volume);
+        $this->assertFalse($damaged->successful());
+        $this->assertStringContainsString('COPY_FAILED the file of a row of stored_files is missing on the target or differs from its sha256', $damaged->errorOutput());
+        $this->assertSame('rusak', file_get_contents($volume.'/'.$keys[1]));
     }
 
     public function test_the_count_comparison_finds_the_manifests_counts_and_names_each_difference(): void
@@ -97,6 +135,25 @@ final class OperatorScriptsTest extends BackupTestCase
             'BANTUKASIR_STORE_KEY' => TestStore::KEY,
             'BANTUKASIR_RECOVERY_KEY' => $identity,
         ])->run(['bash', base_path(self::FETCH), $backupId, $work]);
+    }
+
+    /**
+     * copy-files.sh with this test's ssh and scp first on its PATH, then the PostgreSQL client of the
+     * server's major version, and the restored database reached as the migration role.
+     */
+    private function copy(string $work, string $volume): ProcessResult
+    {
+        $value = static fn (string $name): string => is_scalar($setting = config('database.connections.pgsql_migration.'.$name)) ? (string) $setting : '';
+        $path = getenv('PATH');
+
+        return Process::timeout(60)->env([
+            'PATH' => $this->area.'/bin:'.dirname(self::PSQL).':'.(is_string($path) ? $path : '/usr/bin:/bin'),
+            'PGHOST' => $value('host'),
+            'PGPORT' => $value('port'),
+            'PGUSER' => $value('username'),
+            'PGPASSWORD' => $value('password'),
+            'PGDATABASE' => $value('database'),
+        ])->run(['bash', base_path(self::COPY), $work, 'operator@drill-gateway', $volume]);
     }
 
     private function compare(string $manifest, string $environment, string $connection): ProcessResult
