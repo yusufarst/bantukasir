@@ -4,7 +4,7 @@ The single log of decisions for BantuKasir. A decision made in conversation does
 
 ## 1. How to use this log
 
-- Identifiers are permanent and continue the original numbering. The next free identifier is **D-132**.
+- Identifiers are permanent and continue the original numbering. The next free identifier is **D-133**.
 - "Source" says who decided: **Owner**, or **Planner** (a planning agent acting on its own authority under the rules of the time).
 - "Status" says whether the decision is in force today. `REVALIDATION PENDING` means the decision still applies but the Owner has been asked to re-confirm it; the item number refers to [OPEN_ITEMS](OPEN_ITEMS.md).
 - D-001 to D-018 were recorded on 2 and 3 October 2026 in the former register, now [legacy/10-DECISIONS.md](legacy/10-DECISIONS.md). The table below summarizes them in English. For the exact meaning of D-001 to D-018 the original Indonesian wording governs; for whether a decision is in force, this log governs.
@@ -151,6 +151,7 @@ All by the Owner (Asia/Jakarta). D-019 to D-025 answer the questions of the [re-
 | D-129 | 14 November 2026: the parts of D-120 rebalanced. `tests/Feature/Inventory` moves from the suite `Postgres1` to `Postgres2` of `phpunit.xml`, after measurement of the directories' times in CI runs 43425191481 and 43480226862. `Postgres1` had reached Composer's 1800 seconds: 28 minutes 5 seconds on `develop` `8eda3a8`, and a stop at the limit on pull request #44's head `7e29d36` with about 504 of 640 tests run, all passing. No test, assertion, check or timeout changes, and `scripts/checks/postgres-parts.sh` proves the new parts complete and without overlap. One exception to CE-23: this `ops/` pull request may be open beside pull request #44 until it is merged or closed. It is not adopted, and its merge is the Owner's. | Governance, the Owner's `ops/` instruction (CE-82) after TASK-033's stop `CI_INFRA_RERUN`. No executor script, `.claude/` file, application code, business rule, test or timeout changes. Terms in section 6. |
 | D-130 | 14 November 2026: FULL V1. Every one of the 50 Tasks of the V1 baseline is required: the deferral of TASK-038, TASK-040, TASK-041, TASK-042 and TASK-048 is rejected, and no cut of scope is proposed. Continuous execution goes on with no hold for each Task: after the verified merge of a Task and green CI on `develop`, the next eligible Task starts on its own, one executor at a time. The Owner is asked only for a mandatory gate, a permission, a safety decision or an operational blocker. Nothing changes in production. | Governance, given in the host session and relayed to TASK-034's start, recorded by TASK-034 in its documentation update (EXC-35), with no separate pull request. No rule, gate, failure limit, review, CI or safety check changes. Terms in section 6. |
 | D-131 | 15 November 2026: the PostgreSQL suite runs as four parts instead of two. `Postgres2` reached Composer's 1800 seconds on `develop` `f2a9e19`, CI run 43666348891, with 378 of its 411 tests run and none failing, while the same tree passed on pull request #47. Runners differ in speed by up to 1.6 times, so two parts of about 25 minutes each leave no margin. `phpunit.xml` gains `Postgres3` and `Postgres4`. Composer gains `test:postgres:3` and `test:postgres:4`, and the ci workflow gains the jobs `PostgreSQL (3/4)` and `PostgreSQL (4/4)`. The jobs are renamed `PostgreSQL (1/4)` to `PostgreSQL (4/4)`, and `Command contract` waits for all four. `scripts/checks/postgres-parts.sh` proves any number of parts complete, without overlap and numbered from 1. No test, assertion, check or timeout changes. | Ops, the Owner's choice in the host session, by an `ops/` pull request whose merge is the Owner's (CE-82). TEST_STRATEGY sections 6 and 7, STACK_AND_MODULES and EXECUTION_CONTEXT CE-41 follow. Not adopted. |
+| D-132 | 15 November 2026: a one-time recovery of CE-61 for pull request #47 (TASK-035), on the precedent of D-115 and D-119. The failure of CI run 43666348891 on `develop` at `f2a9e19` stays recorded as failed; it ran the two parts that D-131 replaced, and a retry would run them again at that commit. The adoption of this `ops/` pull request (`state.sh adopt`, CE-82) moves the tick's check of CE-61 to its own merge, and CE-82's rule that an `ops/` change made while a Task is stopped from a phase in flight is not adopted is set aside for this pull request alone. TASK-035 is operationally verified only when: CI on this pull request's head is green; the Owner has merged it; CI on `develop` at its squash commit is green with the four parts; and the identity and content of pull request #47's merge are verified, which they are. | Ops, the Owner's directive "ONE-TIME CI RECOVERY" in the host session, by an `ops/` pull request whose merge is the Owner's. Adopted. No rule, gate, test, timeout or executor script changes. |
 
 ## 4. Facts supplied by the Owner
 
@@ -2387,3 +2388,46 @@ The Owner made this choice on 15 November 2026 in the host session, after the st
   - The split is still by directory, so the parts' times drift as the suite grows. A directory moves, or a part is added the same way.
   - The four parts use four runners instead of two. They run at the same time, so a run finishes sooner.
   - What makes each test slow is not settled here.
+
+### D-132 — A one-time recovery of CE-61 for pull request #47 (TASK-035)
+
+The Owner gave this directive on 15 November 2026, in the host session of CE-03. It followed the stop `DEVELOP_CI_RED` on TASK-035's squash commit `f2a9e19`, the merge of D-131 by the Owner, and a resume after which the tick stopped again on the same run. His words, in English, as he gave them:
+
+> OWNER DIRECTIVE — ONE-TIME CI RECOVERY
+> TASK: Prepare a narrowly scoped D-132 recovery for TASK-035.
+> GOAL: Unblock TASK-036 without repeatedly running the obsolete two-shard CI.
+> 1. Preserve TASK-035, its merge, and all existing evidence.
+> 2. Verify PR #47's merge identity/content and the successful four-shard CI on D-131's merge.
+> 3. Prepare a one-time CE-61 recovery decision, following the approved D-115/D-119 precedent.
+> 4. Keep the original failed CI recorded as FAILED.
+> 5. Use the authorized ops PR workflow; do not bypass existing gates or alter executor scripts.
+> 6. Request Owner approval for the ops merge.
+> 7. After authorized merge, successful CI, and official recovery, immediately resume TASK-036 and subsequent eligible V1 Tasks automatically.
+> STOP IF: Any required evidence is missing or the exception cannot be implemented within existing governance.
+
+- **Why.** CE-61 reads CI on `develop` at the merge commit itself, and that run checks out its own commit. CI run 43666348891 at `f2a9e19` ran the PostgreSQL suite as the two parts of D-120, and `Postgres2` reached Composer's 1800 seconds after 378 of its 411 tests, none failing (D-131). A retry would run the same two parts at the same commit, which is the case CE-61 names: "a retry cannot help when the cure is a later commit". The cure, D-131, is the later commit `8a19618`.
+- **The evidence, verified by the host session before this pull request.**
+  - **Pull request #47's merge.** `f2a9e19` is on `origin/develop`. Its parent is `ae81941`, the base of the pull request, so `develop` did not move. Its tree equals the head `5a94737` (`git diff` is empty). Its author is the Owner's GitHub no-reply identity, the same as on every merge of continuous execution.
+  - **CI on the pull request's head.** CI run 43663846108 on `5a94737` passed with the two parts. The tick recorded `CI PASS` and the merge.
+  - **The four parts on TASK-035's tree.** `8a19618`, the squash commit of D-131's pull request #48, has the parent `f2a9e19`. It changes only the ten files of D-131, none under `app/`, `resources/`, `database/` or `tests/Browser/`. CI run 43675204046 on `develop` at `8a19618` passed in its attempt 2.
+    - In attempt 1, `PostgreSQL (1/4)` to `PostgreSQL (4/4)` and `Image checks` passed.
+    - `Command contract` failed at one browser test, `tests/Browser/catalog/catalog.spec.ts:227`, in its accessibility check at line 285. The finding was `color-contrast: .bk-btn--primary > span`. This is the same class as the known check at `tests/Browser/configuration/profile.spec.ts:245` (D-124): a colour transition caught midway. Neither TASK-035 nor D-131 changes that test or any style.
+    - The Owner reran that job, and attempt 2 passed.
+  - **The failed run stands.** Run 43666348891 is not rerun, and history is not rewritten. The run is not claimed to pass.
+- **The exception, on the precedent of D-115 and D-119.**
+  - The tick's check of CE-61 reads run 43666348891. The adoption of this pull request (`state.sh adopt --kind ops`, CE-82) moves that check to the merge of this pull request. CI on `develop` at that merge runs the four parts on a tree that holds all of TASK-035.
+  - CE-82 says an `ops/` change made while a Task is stopped from a phase in flight is not adopted. That is set aside for this pull request alone, because TASK-035's pull request is already merged and only its CE-61 check is open.
+  - TASK-035 may be treated as operationally verified only when all of the following hold:
+    - CI on this pull request's head is green;
+    - the Owner has merged it;
+    - CI on `develop` at its squash commit is green;
+    - the identity and content of the merge of pull request #47 are verified.
+
+    The last condition is met above. The next Task records the rest in TASK-035 evidence (CE-50), with run 43666348891 as failed and this decision as its recovery.
+- **The change.** This decision and its row in this log, and nothing else.
+- **Unchanged.**
+  - CE-61 for every other merge, and CE-82 for every other `ops/` change.
+  - The guard, the independent review, the merge rules of D-105 and D-109, and the Owner's merge of `ops/` pull requests.
+  - No executor script, `.claude/` file, test, assertion, timeout or required check changes, and the executor state changes only through its scripts.
+  - Every safeguard of production data, security, cost and destructive operations. No deployment to staging or production is authorized.
+- **After the merge.** The tick verifies the merge (CE-61) and selects the next Task (CE-10), TASK-036, which starts on its own (D-130).
