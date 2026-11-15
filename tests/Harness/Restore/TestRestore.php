@@ -139,8 +139,8 @@ final class TestRestore
             throw new RuntimeException('A TS-24 restore keeps only the probe\'s test-only tables, and would lose '.implode(', ', $other).'.');
         }
 
-        if ($tables !== []) {
-            $migration->statement('DROP TABLE '.implode(', ', array_map(static fn (string $table): string => Identifier::quote($table), $tables)));
+        foreach ($tables as $table) {
+            $migration->statement('DROP TABLE '.Identifier::quote($table));
         }
 
         return $tables;
