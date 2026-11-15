@@ -23,7 +23,10 @@ use Tests\Harness\TestDatabase;
  * dump, the extension excepted, which the database keeps from its setup (ENVIRONMENTS ENV-33) and which
  * the migration role may not create; then the grants procedure, because the dump holds no privilege;
  * then the privilege test. The sessions of the harness end before and after it, so that no session holds
- * a lock or a plan of the tables it replaced.
+ * a lock or a plan of the tables it replaced. They are disconnected, never purged: each connection stays
+ * the one object that the application's long-lived services hold — the password broker's token
+ * repository, the session handler, the cache store — so that none of them reconnects later through the
+ * database manager, which would end the session of a command's transaction in the middle of it.
  *
  * The test-only tables of the probe (tests/Harness/Commands/Probe.php) are no part of an installation:
  * the dump leaves them out, as the backup role reads none of them; the restore drops them first, because
@@ -176,14 +179,14 @@ final class TestRestore
     }
 
     /**
-     * Ends the sessions of the harness's three connections; an observer of the test opened before the
-     * restore stays idle outside any transaction, so it holds no lock, and the test opens a new one to
-     * read the restored data.
+     * Ends the sessions of the harness's three connections, keeping their objects, which reconnect at
+     * their next statement; an observer of the test opened before the restore stays idle outside any
+     * transaction, so it holds no lock, and the test opens a new one to read the restored data.
      */
     private static function endSessions(): void
     {
         foreach ([TestDatabase::RUNTIME, TestDatabase::MIGRATION, TestDatabase::BACKUP] as $name) {
-            DB::purge($name);
+            DB::disconnect($name);
         }
     }
 
