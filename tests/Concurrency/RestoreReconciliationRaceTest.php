@@ -92,6 +92,26 @@ final class RestoreReconciliationRaceTest extends DatabaseTestCase
         $this->assertSame(1, $this->observer()->table('stale_intent_reports')->where('source_intent_id', $intent)->count());
     }
 
+    public function test_without_a_receipt_the_actors_check_after_the_reconciliation_answers_not_committed(): void
+    {
+        // Review R-01: the restore lost the request's receipt, and only its status check reported it.
+        [$intent, $report] = $this->reported(false);
+        $reconciliation = $this->start(ReconcileIntentScenario::class, ['report' => $report], ['after_identity']);
+        $check = $this->start(ResolveScenario::class, ['checker' => $this->agus, 'intent' => $intent, 'epoch' => $this->earlier]);
+        Worker::ready($reconciliation, $check);
+
+        $reconciliation->run()->awaitBarrier('after_identity');
+        $this->assertSame(['refused' => 'EPOCH_STALE'], $check->run()->finish()->result);
+        $reconciliation->release();
+        $this->assertSame(['reconciled' => true, 'settled' => 0], $reconciliation->finish()->result);
+
+        $after = $this->start(ResolveScenario::class, ['checker' => $this->agus, 'intent' => $intent, 'epoch' => $this->earlier]);
+        Worker::ready($after);
+        $this->assertSame(['outcome' => 'NOT_COMMITTED', 'commandId' => null], $after->run()->finish()->result);
+        $this->assertNeverCommitted($intent);
+        $this->assertSame([], $this->outcomesOf($intent));
+    }
+
     public function test_a_repeat_first_is_refused_epoch_stale_and_the_waiting_reconciliation_then_commits(): void
     {
         [$intent, $report] = $this->reported();
@@ -129,14 +149,19 @@ final class RestoreReconciliationRaceTest extends DatabaseTestCase
 
     /**
      * Agus's probe of an earlier epoch whose request reached the server, PENDING, and was reported by a
-     * refused status check, as the restored data hold such a request: its intent and its report's key.
+     * refused status check, as the restored data hold such a request — or, without a receipt, one that
+     * reached the server only after the backup point: its intent and its report's key.
      *
      * @return array{string, int}
      */
-    private function reported(): array
+    private function reported(bool $withReceipt = true): array
     {
         $intent = (string) Str::uuid();
-        app(RequestReceipts::class)->record($this->agus, Probe::OPERATION, $intent, (string) Str::uuid(), $this->earlier, now()->format('Y-m-d H:i:s.uP'));
+
+        if ($withReceipt) {
+            app(RequestReceipts::class)->record($this->agus, Probe::OPERATION, $intent, (string) Str::uuid(), $this->earlier, now()->format('Y-m-d H:i:s.uP'));
+        }
+
         DB::transaction(fn (): bool => app(StaleIntentReports::class)->reportIfAbsent(Probe::OPERATION, $intent, $this->agus, $this->earlier));
         $report = $this->observer()->table('stale_intent_reports')->where('source_intent_id', $intent)->value('id');
         $this->assertIsInt($report);

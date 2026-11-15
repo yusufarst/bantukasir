@@ -118,7 +118,8 @@ end
 RESTORE_STARTED="$(date +%s)"
 
 begin "5. RB-01 step 8: download, hashes and decryption on the operator's machine"
-FETCHED="$(operator -e BANTUKASIR_STORE_ENDPOINT="$STORE_ENDPOINT" -e BANTUKASIR_STORE_BUCKET="$BUCKET" -e BANTUKASIR_STORE_KEY_ID="$STORE_KEY_ID" -e BANTUKASIR_STORE_KEY="$STORE_KEY" -e BANTUKASIR_RECOVERY_KEY="$KEY" operator bash /workspace/scripts/operations/restore/fetch-backup.sh "$BACKUP_ID" "$WORK")"
+# The local test server answers over plain HTTP, which only the rehearsal's own setting admits.
+FETCHED="$(operator -e BANTUKASIR_STORE_ENDPOINT="$STORE_ENDPOINT" -e BANTUKASIR_STORE_PLAIN_HTTP=local-test-store -e BANTUKASIR_STORE_BUCKET="$BUCKET" -e BANTUKASIR_STORE_KEY_ID="$STORE_KEY_ID" -e BANTUKASIR_STORE_KEY="$STORE_KEY" -e BANTUKASIR_RECOVERY_KEY="$KEY" operator bash /workspace/scripts/operations/restore/fetch-backup.sh "$BACKUP_ID" "$WORK")"
 echo "$FETCHED"
 MANIFEST_SHA256="$(sed -E 's/^.*manifest_sha256=([0-9a-f]{64})$/\1/' <<< "$FETCHED")"
 # No application container holds the recovery key or a decrypted copy.

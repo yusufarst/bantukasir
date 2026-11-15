@@ -61,6 +61,42 @@ final class OperatorScriptsTest extends BackupTestCase
         $this->assertStringContainsString('FETCH_FAILED the manifest does not decrypt with this recovery key', $refused->errorOutput());
         $this->assertStringContainsString('the work folder is not empty', $this->fetch($outcome->backupId, $this->area.'/fetched', $this->identity)->errorOutput());
         $this->assertStringContainsString('the backup identifier has another form', $this->fetch('20261117T000000Z', $this->area.'/x', $this->identity)->errorOutput());
+
+        // Plain HTTP only with the rehearsal's own setting, refused before any folder is made (review R-07).
+        $plain = $this->fetch($outcome->backupId, $this->area.'/plain-http', $this->identity, false);
+        $this->assertStringContainsString('FETCH_FAILED the store endpoint is not HTTPS', $plain->errorOutput());
+        $this->assertFalse(File::exists($this->area.'/plain-http'));
+
+        // A changed object is refused before anything is restored from it (THR-17; review R-06): a file,
+        // then the dump.
+        $store = TestStore::open();
+        file_put_contents($this->area.'/changed', 'rusak');
+        $store->put('files/'.$key.'.age', $this->area.'/changed');
+        $this->assertStringContainsString('FETCH_FAILED a file does not decrypt with this recovery key', $this->fetch($outcome->backupId, $this->area.'/changed-file', $this->identity)->errorOutput());
+        $store->put('db/6h/'.$outcome->backupId.'.dump.age', $this->area.'/changed');
+        $this->assertStringContainsString('FETCH_FAILED the encrypted dump differs from the manifest', $this->fetch($outcome->backupId, $this->area.'/changed-dump', $this->identity)->errorOutput());
+    }
+
+    public function test_the_fetch_takes_an_older_backup_from_the_tier_that_still_holds_it(): void
+    {
+        // Review R-02: an older backup's copies under db/6h/ are gone after its days there (BACKUP_RECOVERY
+        // section 6), while its weekly copy stays; the manifest and the dump come from the weekly tier.
+        $key = $this->storeLogo();
+        // Sunday the 6th of January 2030, at 00.00: the tiers 6h and weekly.
+        $this->atJakarta('2030-01-06 00:00:10');
+        $outcome = $this->runBackup();
+        $this->assertNull($outcome->failure, $outcome->diagnostic);
+        $this->assertSame('6h,weekly', $this->rowOf($outcome->backupId)['tiers'] ?? null);
+
+        foreach (['dump', 'manifest'] as $kind) {
+            TestStore::hide($this->bucket, 'db/6h/'.$outcome->backupId.'.'.$kind.'.age');
+        }
+
+        $result = $this->fetch($outcome->backupId, $this->area.'/older', $this->identity);
+        $this->assertTrue($result->successful(), $result->errorOutput());
+        $this->assertSame('FETCHED '.$outcome->backupId.' files=1 manifest_sha256='.$this->readText($this->rowOf($outcome->backupId)['manifest'] ?? null), trim($result->output()));
+        $this->assertSame(hash('sha256', (string) $this->media()->get($key)), hash_file('sha256', $this->area.'/older/plain/files/'.$key));
+        $this->assertSame(0, Process::run([self::PG_RESTORE, '--list', $this->area.'/older/plain/dump.pgcustom'])->exitCode());
     }
 
     public function test_the_file_copy_checks_every_row_of_stored_files_on_the_target(): void
@@ -127,7 +163,11 @@ final class OperatorScriptsTest extends BackupTestCase
         $this->assertStringContainsString('the session is not the migration role of this database', $this->compare($manifest, 'test', 'pgsql')->errorOutput());
     }
 
-    private function fetch(string $backupId, string $work, string $identity): ProcessResult
+    /**
+     * fetch-backup.sh against the test server, which it reaches over plain HTTP only with the
+     * rehearsal's own setting.
+     */
+    private function fetch(string $backupId, string $work, string $identity, bool $plainHttp = true): ProcessResult
     {
         return Process::timeout(120)->env([
             'BANTUKASIR_STORE_ENDPOINT' => TestStore::ENDPOINT,
@@ -136,6 +176,7 @@ final class OperatorScriptsTest extends BackupTestCase
             'BANTUKASIR_STORE_KEY_ID' => TestStore::KEY_ID,
             'BANTUKASIR_STORE_KEY' => TestStore::KEY,
             'BANTUKASIR_RECOVERY_KEY' => $identity,
+            'BANTUKASIR_STORE_PLAIN_HTTP' => $plainHttp ? 'local-test-store' : '',
         ])->run(['bash', base_path(self::FETCH), $backupId, $work]);
     }
 

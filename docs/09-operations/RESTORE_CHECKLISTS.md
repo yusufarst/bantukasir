@@ -22,7 +22,7 @@ Phases A and B (the Owner's authorization, writes stopped, the original preserve
   bash scripts/operations/restore/fetch-backup.sh <backup id> <new empty work folder>
   ```
 
-  It checks every SHA-256 against the manifest and prints `FETCHED <backup id> files=<n> manifest_sha256=<hash>`. On `FETCH_FAILED`, take the next older backup. While a rotation of the recovery key is under way (BKP-22; the object `state/files-recipient` reads `ROTATING …`), some files are still encrypted to the old recipient: the identity file then holds both private keys, the old one from its custody, one per line, which age tries in turn.
+  It checks every SHA-256 against the manifest and prints `FETCHED <backup id> files=<n> manifest_sha256=<hash>`; it takes the manifest and the dump from the first tier that still holds them, so an older backup comes from its weekly or monthly copy. The endpoint is HTTPS: the script refuses plain HTTP. On `FETCH_FAILED`, destroy that work folder, which may already hold part of the backup decrypted (BKP-07), and take the next older backup into a new empty one. While a rotation of the recovery key is under way (BKP-22; the object `state/files-recipient` reads `ROTATING …`), some files are still encrypted to the old recipient: the identity file then holds both private keys, the old one from its custody, one per line, which age tries in turn.
 - [ ] **Step 9 — the tunnel, the restore, the grants, the privilege test.** Open the SSH tunnel to the target database, whose port stays unpublished (ENVIRONMENTS section 9), with the target's host key verified by its fingerprint:
 
   ```sh
@@ -63,10 +63,21 @@ Phases A and B (the Owner's authorization, writes stopped, the original preserve
 
 **E. Reconcile with the Owner, with traffic closed to everyone else**
 
-- [ ] **Step 15.** The Owner alone signs in again on each device; each held request is checked and the earlier-epoch ones are reported.
+- [ ] **Step 15.** The Owner alone signs in again on each device; each held request is checked and the earlier-epoch ones are reported. The reports still to decide, each with its key, its operation, its actor and when it was first reported, are listed read only, with the psql environment of step 9:
+
+  ```sh
+  psql -X -v ON_ERROR_STOP=1 -c "select s.id, s.operation, s.source_intent_id, s.actor_user_id, u.display_name, s.first_reported_at from stale_intent_reports s join users u on u.id = s.actor_user_id where not exists (select 1 from intent_reconciliations r where r.report_id = s.id) order by s.id"
+  ```
+
 - [ ] **Step 16 — first, the Owner's own user-management requests.** For each, on the Owner's decision: `php artisan restore:reconcile --environment=<name> --report=<key of its stale_intent_reports row> --note="<the Owner's decision>"`. The Owner's status check then answers NOT_COMMITTED and releases the block of its family.
 - [ ] **Step 17.** The security-relevant account changes after the backup point are applied again through the product's own commands and procedures (OP-02 for the Owner, the Owner's links for staff).
-- [ ] **Step 18 — the onboarding hold, if step 12 set one.** `php artisan restore:reconcile --environment=<name> --hold=<its key> --outcome=RELEASED_BEFORE_RESTORE` or `--outcome=NEVER_RELEASED`, as the Owner decided, `--note="<the Owner's decision>"`.
+- [ ] **Step 18 — every onboarding hold without a decision**: the one step 12 set, and any of an earlier restore that the restored data still hold, which keeps onboarding held too. They are listed read only:
+
+  ```sh
+  psql -X -v ON_ERROR_STOP=1 -c "select h.id, h.restored_state, h.set_at from onboarding_restore_holds h where not exists (select 1 from onboarding_restore_reconciliations r where r.hold_id = h.id) order by h.id"
+  ```
+
+  For each, `php artisan restore:reconcile --environment=<name> --hold=<its key> --outcome=RELEASED_BEFORE_RESTORE` or `--outcome=NEVER_RELEASED`, as the Owner decided, `--note="<the Owner's decision>"`.
 - [ ] **Step 19.** The Owner's remaining reported requests, one `--report` each.
 
 **F. Review the gap and reopen**

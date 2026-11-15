@@ -102,6 +102,29 @@ final class RestoreReconciliationTest extends DatabaseTestCase
         $this->assertSame($before, [$this->snapshot('intent_reconciliations', 'report_id'), $this->snapshot('command_identities')]);
     }
 
+    public function test_the_actors_own_check_answers_not_committed_also_when_no_receipt_survived_the_restore(): void
+    {
+        // Review R-01, D-073: a request that reached the server only after the backup point leaves no
+        // receipt in the restored data; after the restore only its status check reaches the server, which
+        // reports it with its actor. OP-05's fence names the Owner who decided.
+        $this->as('Agus');
+        $dump = TestRestore::dump($this->area);
+        $lost = $this->envelope();
+        $this->probe($lost)->assertStatus(201);
+        $this->restoreAndFence($dump);
+
+        $this->browse($this->signInBrowser($this->people['Agus']['email'], $this->people['Agus']['password']));
+        $this->check($lost)->assertStatus(409)->assertJsonPath('code', 'EPOCH_STALE');
+        $this->assertSame([], $this->receiptsOf($lost));
+        $this->assertSame(0, $this->reconcile($this->reportOf($lost)), Artisan::output());
+
+        // Another user's check finds nothing; the actor's own answers NOT_COMMITTED and releases it.
+        $this->browse($this->signInBrowser($this->people['Rina']['email'], $this->people['Rina']['password']));
+        $this->check($lost)->assertStatus(404)->assertJsonPath('code', 'NOT_FOUND');
+        $this->browse($this->signInBrowser($this->people['Agus']['email'], $this->people['Agus']['password']));
+        $this->check($lost)->assertOk()->assertExactJson(['outcome' => 'NOT_COMMITTED', 'operation' => $lost['operation']]);
+    }
+
     public function test_the_owners_user_management_request_is_reconciled_before_its_security_change_is_applied_again(): void
     {
         // AC-037-04, RB-01 steps 16 and 17: the Owner deactivated Sari after the backup point.

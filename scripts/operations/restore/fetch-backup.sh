@@ -7,15 +7,22 @@
 #
 # with, in the environment of the operator's shell (never written anywhere by this script):
 #
-#     BANTUKASIR_STORE_ENDPOINT   the store's S3 endpoint over HTTPS (plain HTTP only in the local rehearsal)
+#     BANTUKASIR_STORE_ENDPOINT   the store's S3 endpoint, over HTTPS
 #     BANTUKASIR_STORE_REGION     its region; us-east-1 when empty
 #     BANTUKASIR_STORE_BUCKET     the environment's bucket
 #     BANTUKASIR_STORE_KEY_ID     the operator's storage access, read only
 #     BANTUKASIR_STORE_KEY
 #     BANTUKASIR_RECOVERY_KEY     the file of the age identity, the recovery key of BKP-20
 #
-# It downloads the manifest of the backup from the first tier that holds it, then the dump and every file
-# the manifest names, into the empty work folder; checks the SHA-256 of the encrypted dump and of every
+# An endpoint over plain HTTP is refused: age does not authenticate who encrypted an object, so anyone on
+# the way could replace a whole backup with one encrypted to the same recipient. Only the local rehearsal
+# and its tests reach the test server over HTTP, with BANTUKASIR_STORE_PLAIN_HTTP=local-test-store, which
+# the operator never sets.
+#
+# It downloads the manifest of the backup from the first tier that holds it, then the dump from the first
+# tier that still holds a copy of it — an older backup's copy under db/6h/ is gone after its days there,
+# while its weekly or monthly copy stays (BACKUP_RECOVERY section 6) — and every file the manifest names,
+# into the empty work folder; checks the SHA-256 of the encrypted dump and of every
 # decrypted object against the manifest; and leaves, under <work>/plain, manifest.json, dump.pgcustom and
 # files/<storage key>, with the encrypted objects removed. It prints the SHA-256 of the manifest object,
 # for the drill's record (OP-08), and nothing secret. Any difference stops it with an error: take the next
@@ -38,14 +45,20 @@ done
 [ -r "$BANTUKASIR_RECOVERY_KEY" ] || fail "the recovery key cannot be read"
 [[ "$BANTUKASIR_STORE_BUCKET" =~ ^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$ ]] || fail "the bucket has another form"
 
+region="${BANTUKASIR_STORE_REGION:-}"
+region="${region:-us-east-1}"
+endpoint="${BANTUKASIR_STORE_ENDPOINT%/}"
+proto='=https'
+if [ "${BANTUKASIR_STORE_PLAIN_HTTP:-}" = local-test-store ]; then
+    proto='=https,http'
+elif [[ ! "$endpoint" =~ ^https:// ]]; then
+    fail "the store endpoint is not HTTPS"
+fi
+
 mkdir -p "$work"
 [ -z "$(ls -A "$work")" ] || fail "the work folder is not empty"
 chmod 700 "$work"
 mkdir -p "$work/encrypted" "$work/plain/files"
-
-region="${BANTUKASIR_STORE_REGION:-}"
-region="${region:-us-east-1}"
-endpoint="${BANTUKASIR_STORE_ENDPOINT%/}"
 
 # One object of the bucket, signed with Signature Version 4; the credentials reach curl on its standard
 # input, never in its arguments.
@@ -53,7 +66,7 @@ download() {
     local key="$1" target="$2"
     [[ "$key" =~ ^(db/(6h|weekly|monthly)/[0-9]{8}T[0-9]{6}Z-[A-Za-z0-9]{8}\.(dump|manifest)\.age|files/[A-Za-z0-9_-]{32,128}\.age)$ ]] || fail "an object key has another form"
     printf 'user = "%s:%s"\n' "$BANTUKASIR_STORE_KEY_ID" "$BANTUKASIR_STORE_KEY" \
-        | curl --config - --silent --show-error --fail --location --proto '=https,http' \
+        | curl --config - --silent --show-error --fail --location --proto "$proto" --proto-redir "$proto" \
             --aws-sigv4 "aws:amz:${region}:s3" \
             --output "$target" "${endpoint}/${BANTUKASIR_STORE_BUCKET}/${key}"
 }
@@ -84,11 +97,21 @@ grep -Eq '^\{"format":1,"backupId":"'"$backup"'",' <<< "$manifest" || fail "the 
 # The dump: its encrypted hash, then its plaintext hash, as the manifest records them.
 dump_part="$(grep -oE '"dump":\{"objectKey":"[^"]+","objectKeys":\[[^]]*\],"size":[0-9]+,"sha256":"[0-9a-f]{64}","plaintextSha256":"[0-9a-f]{64}"' <<< "$manifest")" \
     || fail "the manifest names no dump"
-dump_key="$(sed -E 's/^"dump":\{"objectKey":"([^"]+)".*$/\1/' <<< "$dump_part")"
 dump_sha256="$(sed -E 's/^.*,"sha256":"([0-9a-f]{64})".*$/\1/' <<< "$dump_part")"
 dump_plain_sha256="$(sed -E 's/^.*"plaintextSha256":"([0-9a-f]{64})"$/\1/' <<< "$dump_part")"
 
-download "$dump_key" "$work/encrypted/dump.age" || fail "the dump cannot be downloaded"
+# Every tier's copy is the same encrypted dump; the first one that the store still serves, in the order of
+# the manifest's object keys.
+dump_copies="$(grep -oE '"objectKeys":\[[^]]*\]' <<< "$dump_part" | grep -oE "db/(6h|weekly|monthly)/${backup}\.dump\.age")" \
+    || fail "the manifest names no copy of the dump"
+dump_fetched=""
+while IFS= read -r dump_key; do
+    if download "$dump_key" "$work/encrypted/dump.age" 2>/dev/null; then
+        dump_fetched="$dump_key"
+        break
+    fi
+done <<< "$dump_copies"
+[ -n "$dump_fetched" ] || fail "no tier holds the dump of this backup"
 [ "$(hash_of "$work/encrypted/dump.age")" = "$dump_sha256" ] || fail "the encrypted dump differs from the manifest"
 decrypt "$work/encrypted/dump.age" "$work/plain/dump.pgcustom" || fail "the dump does not decrypt with this recovery key"
 [ "$(hash_of "$work/plain/dump.pgcustom")" = "$dump_plain_sha256" ] || fail "the decrypted dump differs from the manifest"

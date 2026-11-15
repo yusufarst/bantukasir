@@ -211,7 +211,12 @@ final class ResolveIntent
     /**
      * Whether the identity is the checker's own intent: a COMMAND of the
      * checker; a FENCE written by the checker, or one of an intent whose
-     * receipts are the checker's — and no other user's receipt.
+     * receipts or stale-intent report are the checker's — and no other user's
+     * receipt. The report counts for the fence of a restore reconciliation,
+     * whose actor is the Owner who decided and whose intent may have lost its
+     * receipts with the restore, so that its actor's own check answers
+     * NOT_COMMITTED and releases the reference (ADR-009 section 3; D-073;
+     * TASK-037 review R-01).
      */
     private function checksOwn(User $checker, StoredIdentity $identity): bool
     {
@@ -221,7 +226,10 @@ final class ResolveIntent
 
         $actors = $this->services->receipts->actorsOf($identity->operation, $identity->sourceIntentId);
 
-        return array_diff($actors, [$checker->id]) === [] && ($identity->actorUserId === $checker->id || in_array($checker->id, $actors, true));
+        return array_diff($actors, [$checker->id]) === []
+            && ($identity->actorUserId === $checker->id
+                || in_array($checker->id, $actors, true)
+                || $this->services->reports->actorOf($identity->operation, $identity->sourceIntentId) === $checker->id);
     }
 
     private function settle(StoredIdentity $identity, string $outcome, User $checker): void

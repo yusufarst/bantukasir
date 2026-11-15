@@ -190,6 +190,7 @@ P7 is being rebuilt (D-024) as three checkpoints, RF-4A, RF-4B and RF-4C, ending
 | [OPERATIONS_RUNBOOK.md](../09-operations/OPERATIONS_RUNBOOK.md) | Operator procedures, scheduled commands, monitoring and alerts, the evidence of the system status, incident response and runbooks, maintenance, the routine calendar | CURRENT (RF-6, D-088) | — |
 | [legacy/09-DEPLOYMENT-OPS.md](../09-operations/legacy/09-DEPLOYMENT-OPS.md) | Operations, production data protection, backup and recovery | LEGACY — SUPERSEDED by the three documents above, PRODUCTION_DATA_SAFETY and RELEASE_PROCESS | RF-6; removal in a later authorized step |
 | [legacy/P9-OPERATIONS.md](../09-operations/legacy/P9-OPERATIONS.md) | Phase summary | LEGACY — SUPERSEDED by the three documents above | RF-6; removal in a later authorized step |
+| [RESTORE_CHECKLISTS.md](../09-operations/RESTORE_CHECKLISTS.md) | The operator's checklists of BACKUP_RECOVERY RB-01 phases C to F and RB-02, with the restore scripts of `scripts/operations/restore/` | CURRENT (TASK-037) | — |
 
 Production data protection is CURRENT in [PRODUCTION_DATA_SAFETY](PRODUCTION_DATA_SAFETY.md); who operates production is decided there in section 5 (D-088, question 20).
 
