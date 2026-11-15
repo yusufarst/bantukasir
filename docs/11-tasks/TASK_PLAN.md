@@ -104,9 +104,9 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-034](tasks/TASK-034-drawer-refunds.md) | Drawer-funded refunds and the refund pages | 6 | S | L | A | TASK-033, TASK-032 | — | `DONE` |
 | [TASK-035](tasks/TASK-035-onboarding.md) | Onboarding and opening stock | 7 | I | L | A | TASK-026, TASK-034 | — | `DONE` |
 | [TASK-036](tasks/TASK-036-reconciliation-repair.md) | Reconciliation, incidents and data-repair procedures | 7 | O | L | A | TASK-034, TASK-020, TASK-013 | — | `DONE` |
-| [TASK-037](tasks/TASK-037-restore-tooling.md) | Restore tooling and recovery procedures | 7 | O | L | A | TASK-013, TASK-035 | — | `READY` |
+| [TASK-037](tasks/TASK-037-restore-tooling.md) | Restore tooling and recovery procedures | 7 | O | L | A | TASK-013, TASK-035 | — | `DONE` |
 | [TASK-038](tasks/TASK-038-housekeeping.md) | Housekeeping and retention | 7 | O | M | A | TASK-019, TASK-018, TASK-011 | — | `READY` |
-| [TASK-039](tasks/TASK-039-system-status.md) | System status and monitoring | 7 | O | M | A | TASK-037, TASK-036 | — | `TODO` |
+| [TASK-039](tasks/TASK-039-system-status.md) | System status and monitoring | 7 | O | M | A | TASK-037, TASK-036 | — | `READY` |
 | [TASK-040](tasks/TASK-040-finance-report.md) | Finance report | 8 | R | L | A | TASK-034, TASK-025 | — | `READY` |
 | [TASK-041](tasks/TASK-041-owner-home-daily.md) | Owner home and daily summary | 8 | R | L | A | TASK-039, TASK-040, TASK-032 | — | `TODO` |
 | [TASK-042](tasks/TASK-042-audit-views.md) | Audit log and security log views | 8 | R | M | A | TASK-036, TASK-035 | — | `READY` |
@@ -119,7 +119,7 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-049](tasks/TASK-049-release-readiness.md) | Release readiness: staging, UAT and first installation | 10 | R | L | V | TASK-045, TASK-047, TASK-048 | G1, G2, G3, G4, DEVICES, TARGET, GATE-PUBLISH | `TODO` |
 | [TASK-050](tasks/TASK-050-production-pilot.md) | Production release, cutover and pilot acceptance | 10 | R | L | V | TASK-049 | RELEASE, GATE-PUBLISH, G4 | `TODO` |
 
-Totals: `TODO` 10; `READY` 4; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 36; `SUPERSEDED` 0.
+Totals: `TODO` 9; `READY` 4; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 37; `SUPERSEDED` 0.
 
 ## 5. Implementation sequence
 

@@ -37,6 +37,10 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | The steps of fast run 3 | Fast run 7, 43738827606 on `09d681f` | 00:02:30 to 00:09:57 (16 November) | 7 min 27 s for the job | `FAIL`: every step before the targeted files `PASS`; targeted: the race file, `SetupTest`, `OnboardingCommandsTest`, `AfterRestoreTest` 5 of 5, `OperatorScriptsTest` 3 of 3 and `RestoreDrillsTest` 5 of 5 `PASS`; `RestoreReconciliationTest` 3 of 4, the fourth's last request answered 500 inside the TS-24 helper's reconnection (F-13), so `SequenceAdvanceTest` did not run |
 | Guard preview, then guard | Local: the working tree against `origin/develop`, then `20b30e3` (checkpoint 9: F-13) | 00:15 to 00:17 | about 2 min | Preview: the same 15 candidates, none new; guard `PASS`, no candidate |
 | The steps of fast run 3 | Fast run 8, 43740284892 on `20b30e3`, the reviewed head | 00:17:44 to 00:25:45 | 8 min 1 s for the job | `PASS`: `composer validate`, `lint`, `analyse` (no error), `test:unit` 937 tests; `npm run lint`, `typecheck`, `test:unit` 30 files; the eight changed PostgreSQL and concurrency files — `RestoreReconciliationRaceTest` 4, `SetupTest` 10, `OnboardingCommandsTest` 13, `AfterRestoreTest` 5, `OperatorScriptsTest` 3, `RestoreDrillsTest` 5, `RestoreReconciliationTest` 4, `SequenceAdvanceTest` 1, every test passing |
+| Review round 1 (section 10.1) | `bk-reviewer-max`, on the package of tree `3a8c46f` | 00:26 to 00:50 | about 24 min | `FAIL`: R-01 and R-02 MUST-FIX, fixed with the SHOULD-FIX R-05 to R-08 in checkpoint 10 |
+| Guard preview, then guard | Local: the working tree against `origin/develop`, then `5201ca4` (checkpoint 10: the review's fixes) | 01:03 to 01:05 | about 2 min | Preview: the same 15 candidates, none new; guard `PASS`, no candidate |
+| The steps of fast run 3 | Fast run 9, 43744802192 on `5201ca4`, the review's fixes | 01:06:03 to 01:15:31 | 9 min 28 s for the job | `PASS`: `composer validate`, `lint`, `analyse` (no error), `test:unit` 937 tests; `npm run lint`, `typecheck`, `test:unit` 30 files; the eight changed PostgreSQL and concurrency files — `RestoreReconciliationRaceTest` 5, `SetupTest` 10, `OnboardingCommandsTest` 13, `AfterRestoreTest` 5, `OperatorScriptsTest` 4, `RestoreDrillsTest` 5, `RestoreReconciliationTest` 5, `SequenceAdvanceTest` 1, every test passing, the regression tests of R-01 and R-02 among them |
+| Verification round 2 (section 10.2) | `bk-reviewer-xhigh`, on the package of tree `4ab9b47` | 01:16 to 01:22 | about 6 min | `PASS`: R-01 and R-02 fixed, no MUST-FIX left |
 | The whole PostgreSQL suite in four parts, `composer test:race`, the browser suite, `npm run build`, the image checks, the job `Restore rehearsal` | CI on the pull request's final head | — | — | `NOT_RUN` until then (CE-44, D-117) |
 
 ## 2. What was built (contract section 4.1)
@@ -134,7 +138,7 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Data integrity | `PASS` — append-only records, the decision, its fence, its settlement and its audit in one transaction (TS-21), RACE-12 and RACE-34, no number issued twice after a restore |
 | Performance | `PASS` for what applies — bounded work: OP-04 removes only the session store's rows, which a backup never holds, OP-05 decides one item per run, OP-08 writes one row; the budgets are measured at TASK-048, and `copy-files.sh`'s two SSH connections per stored file inside the measured restore time at TASK-045 (review R-12) |
 | Operations | `PASS` — `restore_drills` in the manifest's counts; `RESTORE_CHECKLISTS.md`; the system status of TASK-039 reads the newest drill; BACKUP_RECOVERY unchanged, no step found wrong in the rehearsal's code |
-| Verification | Self-review and the class-A review (section 10); the command contract, the image checks and the rehearsal on the pull request's final head before the merge (CE-41) |
+| Verification | `PASS` for what runs before the pull request: the self-review; the class-A review, round 1 `FAIL` with two MUST-FIX, both fixed and verified in round 2 `PASS` (section 10); fast runs 8 and 9 green. The command contract, the image checks and the rehearsal run on the pull request's final head before the merge (CE-41) |
 
 ## 9. The guard's candidates (CE-31; D-076, D-097, D-098)
 
@@ -172,4 +176,31 @@ Agent `bk-reviewer-max`, model `claude-opus-5-5`, effort Max, mode `review`; pac
 | R-15 | NOTE | TOOLCHAIN's row of the rehearsal image named the wrong row for age | Fixed |
 
 The fixes change `ResolveIntent`, `fetch-backup.sh` and the rehearsal's call of it, the harness's `TestStore` and the tests named; fast run 9 is their check (section 1). Two MUST-FIX were raised, so round 2 verifies their fixes.
+
+### 10.2 Round 2, the targeted verification of R-01 and R-02
+
+Agent `bk-reviewer-xhigh`, model `claude-opus-5-5`, effort XHigh, mode `verify`; package `review/TASK-037/r2`, base `5e2eae5`, tree `4ab9b47`, previous package `r1` (tree `3a8c46f`), HEAD `5201ca4`; 16 November, 01:16 to 01:22; `review-pack.sh --check` `UNCHANGED` after it. Verdict `PASS`, no MUST-FIX left.
+
+| ID | Severity | Finding | Outcome |
+| --- | --- | --- | --- |
+| R-01 | MUST-FIX | As in section 10.1 | `FIXED`: for a FENCE, `checksOwn` also accepts the stale-intent report's actor, still with no other user's receipt; a report means an earlier epoch, so the new path reaches only OP-05's fences; the L2 test with a TS-24 restore and the L3 test without a receipt discriminate |
+| R-02 | MUST-FIX | As in section 10.1 | `FIXED`: the dump from the first served copy in the order of `objectKeys`, its hashes checked; every tier holds the same encrypted dump and manifest; the weekly-tier test with the `db/6h/` objects hidden discriminates |
+| R-03, R-04 | SHOULD-FIX | As in section 10.1 | Not fixed, their reasons recorded and found to hold (T-49; the update lock of `recovery_epoch` taken first) |
+| R-05 to R-08, R-15 | SHOULD-FIX, NOTE | As in section 10.1 | `FIXED`: the listings match the schema, and onboarding stays held while any hold lacks its decision; the changed objects refused; plain HTTP refused before any folder, redirects held to the same protocols, and only the rehearsal and the tests set the setting; the document map; TOOLCHAIN's row |
+| R-16 | NOTE | The dump's loop hides curl's error, so a failure of every copy for authentication, TLS, network or a server error reads "no tier holds the dump", as the manifest's loop already did | Recorded for TASK-045's rehearsal on staging: the operator then sees the cause by downloading the object once by hand |
+| R-17 | NOTE | No test runs the refusal of a file validly encrypted to the recipient whose plaintext differs from the manifest; the check is correct by reading | Recorded, with R-14 and OPEN_ITEMS T-50 |
+| R-18 | NOTE | RESTORE_CHECKLISTS still said the rehearsal covers the whole of it and that its durations are in this evidence | Fixed in the record: phases C and D and RB-02 rehearsed, E and F proven by the tests, the durations in the CI run that the record of the merge names |
+
+No further round is due: each MUST-FIX is fixed, proven by its regression test and this targeted check (CE-40).
+
+## 11. Record (CE-50)
+
+- Guard: on every pushed head `guard.sh` `PASS`, or its candidates — this evidence's quotations of the candidates judged in section 9 — accepted by their hash (section 1); `guard.sh --preview` of the record's change: the same 15 candidates, none new.
+- Backup impact (EXC-47): `restore_drills` joins the backup manifest's counts through its class in the privilege matrix (section 7).
+- The previous merge: TASK-036's pull request #50, head `4cfc45a`, CI run 43709972643; squash commit `5e2eae5` on `develop` by the tick under D-105, the automated review's status DONE; CI on `develop` run 43713448937 — recorded in [its evidence](TASK-036.md) section 13 and in CURRENT_HANDOFF.
+- Documents: TASK_PLAN — TASK-037 `DONE`, TASK-039 `READY`, its dependencies TASK-036 and TASK-037 `DONE` and no gate, the totals TODO 9, READY 4, DONE 37; OPEN_ITEMS T-48, T-49 and T-50; SOURCE_OF_TRUTH's map; TOOLCHAIN's row of the rehearsal image; STACK_AND_MODULES' folders; RESTORE_CHECKLISTS; CURRENT_HANDOFF last, with the Owner's stop after this Task in its section 0. No decision is recorded: the stop is CE-62's; the next free decision is D-133.
+- Fast runs: nine of the ten of CE-46 before the pull request; runs 1 to 7 failed on proven defects of the change, each fixed (F-1, F-4, F-8 to F-13); no CI run was repeated.
+- Not verified before the pull request's final head: the whole PostgreSQL suite in four parts, `test:race`, the browser suite, the build, the image checks, and the job `Restore rehearsal` with its durations (AC-037-06).
+- The Owner's directive: his `/stop` goes on this pull request before any merge, so that he merges it himself; after that merge and green CI on `develop` the loop stops at `OWNER_STOP`, and TASK-038 does not start until he explicitly says "lanjutkan" and resumes the loop (CE-62, CE-72).
+- Next eligible Task, not authorized to start: TASK-038, Housekeeping and retention, effort High (agent `bk-executor-high`; review and verification `bk-reviewer-high`).
 
