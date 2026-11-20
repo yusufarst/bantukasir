@@ -71,6 +71,8 @@ SC-01 to SC-04 are ENVIRONMENTS section 13. The operator does not run them by ha
 
 The heartbeat monitor alerts the operator by email; the operator may add the Owner as a second recipient. The application itself sends no email (D-049).
 
+`monitor:heartbeat` (SC-04) pings the web check only after the public `/up` answered 200. `/up` answers in maintenance mode too, and SC-04 alone of the scheduled commands runs in it, so a release's window (RELEASE_PROCESS RB-20) raises no web alert while the application and its database answer (TASK-039; OPEN_ITEMS T-39 (b)). The other scheduled commands do not run during a window: one that covers 03.00 skips that night's reconciliation, whose check then alerts, and the operator runs it by hand after the window (RB-04).
+
 ## 5. Evidence behind the system status (UXP-611)
 
 COPY_DECK section 11.11 names the five items and their values; this section fixes the evidence behind each (COPY_DECK section 21.2). The page reads all five in one request; a failed read is UXS-22, never a passing look. An item that is failed or "Belum Terverifikasi" also raises the attention item "Status sistem perlu dicek" on Beranda (UXI-064).

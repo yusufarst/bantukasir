@@ -3,8 +3,10 @@
 namespace App\Providers;
 
 use App\Console\LocalDiskSpace;
+use App\Console\LocalVolumeSpace;
 use App\Domain\Operations\Backup\DiskSpace;
 use App\Domain\Operations\DatabaseHealth;
+use App\Domain\Operations\VolumeSpace;
 use Illuminate\Foundation\Events\DiagnosingHealth;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
@@ -15,13 +17,14 @@ use Illuminate\Support\ServiceProvider;
  * route RH-01 listens to the framework's DiagnosingHealth event. The
  * framework discovers listeners only in app/Listeners, so the module's
  * listener is registered here (STK-22). TASK-013 binds the measure of the
- * backup's free space.
+ * backup's free space, TASK-039 that of the file volume for the system status.
  */
 final class OperationsServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
         $this->app->bind(DiskSpace::class, LocalDiskSpace::class);
+        $this->app->bind(VolumeSpace::class, LocalVolumeSpace::class);
     }
 
     public function boot(): void

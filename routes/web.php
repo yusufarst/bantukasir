@@ -90,6 +90,7 @@ use App\Http\Controllers\Inventory\StockController;
 use App\Http\Controllers\Inventory\StockDataController;
 use App\Http\Controllers\Inventory\WithdrawZeroCountController;
 use App\Http\Controllers\Media\MediaController;
+use App\Http\Controllers\Operations\StatusController;
 use App\Http\Controllers\Reporting\CostWorklistController;
 use App\Http\Controllers\Sales\CheckoutSaleController;
 use App\Http\Controllers\Sales\ReceiptController;
@@ -352,6 +353,10 @@ Route::middleware(['auth', 'signin.session', 'throttle:authenticated', 'cache.he
         Route::get('/reports/costs-to-complete', [CostWorklistController::class, 'index'])->middleware('input.allow:product,after,before,perPage')->name('reports.costs');
         Route::get('/products/{product}/cost-history', [CostHistoryController::class, 'show'])->middleware('input.allow:from_page')->name('products.cost_history');
     });
+
+    // The system status (TASK-039), the Owner's alone: RP-611 for CAP-32, taking only its path; its link to the
+    // reconciliation incidents (UXI-375) is shown to a holder of CAP-18 only.
+    Route::get('/settings/system-status', [StatusController::class, 'show'])->middleware(['capability:CAP-32', 'input.allow'])->name('system.status');
 
     // The cash registers (TASK-027), the Owner's alone: RP-609 and RP-610 for CAP-31, each taking only
     // its path, and RC-33 and RC-34 in the bucket of every command, with recent authentication.

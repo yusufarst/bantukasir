@@ -5,7 +5,6 @@ namespace Tests\Unit\Console;
 use App\Console\ProcessSchedule;
 use Illuminate\Console\Scheduling\Event;
 use Illuminate\Console\Scheduling\Schedule;
-use Illuminate\Foundation\Console\ClosureCommand;
 use Illuminate\Support\Facades\Artisan;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -13,8 +12,8 @@ use Tests\TestCase;
 /**
  * The scheduled commands per process role (AC-012-02; ENVIRONMENTS section 13;
  * ADR-010 item 6): role web registers SC-01, SC-02 and SC-04; role backup only
- * SC-03; another role none; in the scheduler's time zone and without overlap. An
- * entry whose command does not exist yet is skipped when due.
+ * SC-03; another role none; in the scheduler's time zone and without overlap.
+ * Every entry's command exists since TASK-039 and runs when due.
  */
 final class ProcessScheduleTest extends TestCase
 {
@@ -68,20 +67,32 @@ final class ProcessScheduleTest extends TestCase
         $this->assertSame($expected, $registered);
     }
 
-    public function test_an_entry_runs_only_once_its_command_exists(): void
+    public function test_sc_04_exists_and_runs_when_due(): void
     {
-        // SC-04, whose command TASK-039 adds.
+        // TASK-039: monitor:heartbeat, every 5 minutes and without overlap. It was the last entry whose
+        // command did not exist yet, skipped when due until then; every entry's command now exists.
         [, , $event] = $this->eventsOf('web');
 
         $this->assertStringEndsWith('monitor:heartbeat', (string) $event->command);
-        $this->assertArrayNotHasKey('monitor:heartbeat', Artisan::all());
-        $this->assertFalse($event->filtersPass($this->app));
-
-        Artisan::registerCommand(new ClosureCommand('monitor:heartbeat', function (): int {
-            return 0;
-        }));
-
+        $this->assertArrayHasKey('monitor:heartbeat', Artisan::all());
         $this->assertTrue($event->filtersPass($this->app));
+
+        foreach (ProcessSchedule::COMMANDS as [, $command]) {
+            $this->assertArrayHasKey($command, Artisan::all());
+        }
+    }
+
+    public function test_only_sc_04_runs_in_maintenance_mode(): void
+    {
+        // OPEN_ITEMS T-39 (b): RH-01 answers during a release's window, so the heartbeat keeps pinging; the
+        // commands that write data wait for its end.
+        $running = [];
+
+        foreach ([...$this->eventsOf('web'), ...$this->eventsOf('backup')] as $event) {
+            $running[(string) $event->description] = $event->runsInMaintenanceMode();
+        }
+
+        $this->assertSame(['SC-01' => false, 'SC-02' => false, 'SC-04' => true, 'SC-03' => false], $running);
     }
 
     public function test_sc_02_exists_and_runs_when_due(): void
