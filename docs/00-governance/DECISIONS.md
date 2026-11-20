@@ -4,7 +4,7 @@ The single log of decisions for BantuKasir. A decision made in conversation does
 
 ## 1. How to use this log
 
-- Identifiers are permanent and continue the original numbering. The next free identifier is **D-133**.
+- Identifiers are permanent and continue the original numbering. The next free identifier is **D-134**.
 - "Source" says who decided: **Owner**, or **Planner** (a planning agent acting on its own authority under the rules of the time).
 - "Status" says whether the decision is in force today. `REVALIDATION PENDING` means the decision still applies but the Owner has been asked to re-confirm it; the item number refers to [OPEN_ITEMS](OPEN_ITEMS.md).
 - D-001 to D-018 were recorded on 2 and 3 October 2026 in the former register, now [legacy/10-DECISIONS.md](legacy/10-DECISIONS.md). The table below summarizes them in English. For the exact meaning of D-001 to D-018 the original Indonesian wording governs; for whether a decision is in force, this log governs.
@@ -152,6 +152,7 @@ All by the Owner (Asia/Jakarta). D-019 to D-025 answer the questions of the [re-
 | D-130 | 14 November 2026: FULL V1. Every one of the 50 Tasks of the V1 baseline is required: the deferral of TASK-038, TASK-040, TASK-041, TASK-042 and TASK-048 is rejected, and no cut of scope is proposed. Continuous execution goes on with no hold for each Task: after the verified merge of a Task and green CI on `develop`, the next eligible Task starts on its own, one executor at a time. The Owner is asked only for a mandatory gate, a permission, a safety decision or an operational blocker. Nothing changes in production. | Governance, given in the host session and relayed to TASK-034's start, recorded by TASK-034 in its documentation update (EXC-35), with no separate pull request. No rule, gate, failure limit, review, CI or safety check changes. Terms in section 6. |
 | D-131 | 15 November 2026: the PostgreSQL suite runs as four parts instead of two. `Postgres2` reached Composer's 1800 seconds on `develop` `f2a9e19`, CI run 43666348891, with 378 of its 411 tests run and none failing, while the same tree passed on pull request #47. Runners differ in speed by up to 1.6 times, so two parts of about 25 minutes each leave no margin. `phpunit.xml` gains `Postgres3` and `Postgres4`. Composer gains `test:postgres:3` and `test:postgres:4`, and the ci workflow gains the jobs `PostgreSQL (3/4)` and `PostgreSQL (4/4)`. The jobs are renamed `PostgreSQL (1/4)` to `PostgreSQL (4/4)`, and `Command contract` waits for all four. `scripts/checks/postgres-parts.sh` proves any number of parts complete, without overlap and numbered from 1. No test, assertion, check or timeout changes. | Ops, the Owner's choice in the host session, by an `ops/` pull request whose merge is the Owner's (CE-82). TEST_STRATEGY sections 6 and 7, STACK_AND_MODULES and EXECUTION_CONTEXT CE-41 follow. Not adopted. |
 | D-132 | 15 November 2026: a one-time recovery of CE-61 for pull request #47 (TASK-035), on the precedent of D-115 and D-119. The failure of CI run 43666348891 on `develop` at `f2a9e19` stays recorded as failed; it ran the two parts that D-131 replaced, and a retry would run them again at that commit. The adoption of this `ops/` pull request (`state.sh adopt`, CE-82) moves the tick's check of CE-61 to its own merge, and CE-82's rule that an `ops/` change made while a Task is stopped from a phase in flight is not adopted is set aside for this pull request alone. TASK-035 is operationally verified only when: CI on this pull request's head is green; the Owner has merged it; CI on `develop` at its squash commit is green with the four parts; and the identity and content of pull request #47's merge are verified, which they are. | Ops, the Owner's directive "ONE-TIME CI RECOVERY" in the host session, by an `ops/` pull request whose merge is the Owner's. Adopted. No rule, gate, test, timeout or executor script changes. |
+| D-133 | 20 November 2026: execution efficiency. The fast run of CI runs every check once its local environment has started, so that one red run reports every failure. The executor pushes for a fast run when the change is ready for its review, not after every stage. Each failure gets one fix and one targeted retest; a failure that its fix did not cure is recorded with its exact output and is the stop `RETEST_FAILED`. A SHOULD-FIX of the review, and a valid P2 finding of the automated reviewer, that bears on no acceptance criterion and touches none of the protected areas — sales, payments, refunds, stock, authorization, concurrency, database integrity, restoration and release safety — is deferred to a named later Task or open item. A Task blocked on a failed check stays unmerged and never `DONE`; only an Owner decision may set it aside. Every mandatory check, gate and limit of CE-44 stays. | Ops, the Owner's directive "ACCELERATE FULL V1 EXECUTION" in the host session, by an `ops/` pull request whose merge is the Owner's. EXECUTION_CONTEXT CE-30, CE-40, CE-42, CE-43, CE-46, CE-70 and CE-71, TEST_STRATEGY section 7, the workflow `fast-checks`, `scripts/checks/targeted-tests.sh` and the four executor agents' instructions follow. Adopted. |
 
 ## 4. Facts supplied by the Owner
 
@@ -2431,3 +2432,64 @@ The Owner gave this directive on 15 November 2026, in the host session of CE-03.
   - No executor script, `.claude/` file, test, assertion, timeout or required check changes, and the executor state changes only through its scripts.
   - Every safeguard of production data, security, cost and destructive operations. No deployment to staging or production is authorized.
 - **After the merge.** The tick verifies the merge (CE-61) and selects the next Task (CE-10), TASK-036, which starts on its own (D-130).
+
+### D-133 — Execution efficiency: one run that reports every failure, one targeted retest, noncritical findings deferred
+
+The Owner gave this directive on 20 November 2026 in the host session of CE-03, while TASK-037's pull request #51 waited for his merge under his `/stop`. His words, in English, as he gave them:
+
+> OWNER DIRECTIVE — ACCELERATE FULL V1 EXECUTION
+> TASK: Resume BantuKasir execution and prepare the D-133 execution-efficiency change.
+> GOAL: Complete all 50 V1 Tasks as efficiently as possible. Target release readiness: Sunday, 22 November 2026. No scope reduction.
+> 1. Preserve the current state, commits, evidence, locks, and existing approvals.
+> 2. TASK-037 PR #51 has `/stop`. Verify its final CI and request Owner manual merge. Do not bypass `/stop`. Verify develop CI afterward.
+> 3. At the safe checkpoint, prepare a narrowly scoped D-133 governance change through the authorized change-control workflow.
+> 4. Proposed policy: run required checks once on the final relevant head. Reuse valid PASS evidence. On failure, diagnose and fix the specific cause, then perform only one targeted retest.
+> 5. If the retest still fails, record the exact failure. Defer noncritical findings and continue independent eligible work only through approved governance. Never falsely mark a failed Task DONE or merge with failed mandatory CI.
+> 6. Preserve mandatory checks for sales, payments, refunds, stock, authorization, concurrency, database integrity, restoration, and release safety.
+> 7. No repeated full reviews, redundant checks, unnecessary refactoring, idle polling, or duplicate agents.
+> 8. Retain one executor and all 50 V1 Tasks. Resume automatic sequential execution after D-133 is approved and its required gates pass.
+> 9. Do not deploy, push to main, or authorize production automatically.
+> STOP IF: An active lock, missing Owner approval, mandatory failed gate, or production-data risk prevents safe continuation.
+
+- **Why.** The fast run of D-117 stopped at its first failure. A Task therefore found its defects one per run, and each run took about 3 to 17 minutes before the next fix could start.
+  - TASK-034 used 6 fast runs before its pull request. Runs 1 to 4 failed in turn on PHPStan, ESLint, the one-writer scan and one test expectation.
+  - TASK-035 used 9. Runs 1 to 4 failed in turn on Pint, PHPStan, ESLint and one test.
+  - TASK-037 used 10, the limit of CE-46. Runs 1 and 2 failed on PHPStan and one unit test, and runs 3 to 7 failed in turn on the defects F-8 to F-13 of its evidence.
+  - A red fast run had shown only the first of those defects. Running every check in one run shows them all, so their fixes can go out together, with one retest.
+- **What it decides.**
+  - **One run that reports every failure.** The workflow `fast-checks` runs each check once the local environment has started, even after an earlier check failed. The npm checks also need the npm install. A cancelled run runs no further check. `scripts/checks/targeted-tests.sh` likewise runs every changed PostgreSQL or concurrency test file, even after an earlier file failed, and names every file that failed. The job still fails when any check fails, and its time on a red run is at most that of a green run. The checks themselves, their order, the 30 minutes of the job and the triggers are unchanged.
+  - **A fast run when it is needed.** The executor pushes for a fast run when the change is ready for its review, or when the fixes of a red run are ready for their retest, not after every stage (CE-30, CE-46).
+  - **One targeted retest.** On a red fast run, or a red CI on the pull request, the executor diagnoses every failure from its log and fixes each cause in the same push. The next run is their one targeted retest: a fast run before the pull request, or the pull request's CI on the new head, which the merge needs anyway.
+    - A failure that its fix did not cure — the same test, or the same finding of a check, failing again on that retest — is recorded in the evidence with its exact output and is the stop `RETEST_FAILED` (CE-42, CE-46, CE-70). The Task stays unmerged and is never `DONE`.
+    - A new failure that the retest shows is a new cause, with its own single retest.
+    - The limits stay: 10 fast runs (`CHECKPOINT_LIMIT`), three fix cycles (`CI_FAILURE_LIMIT`), and one re-run per head for a failure of the infrastructure (CE-23, CE-42).
+  - **Noncritical findings deferred.** A finding that bears on no acceptance criterion of the contract and touches none of the protected areas is deferred to a named later Task or an open item and recorded there, instead of being fixed in the Task. The protected areas are sales, payments, refunds, stock, authorization, concurrency, database integrity, restoration and release safety. This covers:
+    - a SHOULD-FIX of the review (CE-40);
+    - a valid P2 finding of the automated reviewer (CE-43). Its fix cycle then ends without a push when it has no fix to push, and the next Task records the deferral with this merge (CE-50).
+
+    Every MUST-FIX, every P0 and P1 finding, every Owner change request, and every finding in a protected area or on an acceptance criterion is handled as before.
+  - **A blocked Task.** A Task stopped on a failed check or gate stays unmerged and never `DONE`. Only the Owner's decision, recorded as the next free decision with any exception to CE-23 it needs, may set it aside so that the loop continues with an independent eligible Task (CE-71). This decision grants no such exception.
+- **What it does not change.**
+  - Every check of CE-44 still passes before a merge:
+    - on the pull request's final head: the whole command contract, the four PostgreSQL parts, concurrency, the browser suite, the build, the image checks with their vulnerability gate, and the restore rehearsal;
+    - on `develop` at the merge (CE-61).
+  - No test, assertion, suite, baseline, timeout, required check, scanner or vulnerability gate changes, and nothing is merged with a failed mandatory check.
+  - These rules stand:
+    - the review once and never repeated in full (CE-40);
+    - the reuse of valid results (CE-45);
+    - one executor and one watcher (D-105);
+    - no polling in model turns;
+    - all 50 Tasks of the V1 baseline (D-130);
+    - the Owner's merges, gates and approvals.
+  - No executor script and no reviewer agent changes. No deployment, push to `main` or production action is authorized.
+- **How it is carried out.**
+  - The workflow `fast-checks` and `scripts/checks/targeted-tests.sh` change as above.
+  - These follow: EXECUTION_CONTEXT CE-30, CE-40, CE-42, CE-43, CE-46, CE-70 and CE-71; TEST_STRATEGY section 7; and the steps "Checks", "Review" and mode `fix` of the four executor agents, whose bodies stay identical.
+  - This `ops/` pull request is adopted while the loop is stopped between Tasks, after TASK-037's merge (CE-82). Its merge is the Owner's, and the Owner's stop holds after it until he resumes the loop (CE-72).
+- **Limits.**
+  - The time of the pull request's CI is unchanged.
+  - Two causes of repeated runs are not settled here:
+    - the tick's 60 minutes of CE-41, which keep counting from the push across a re-run and so stop the loop after most re-runs;
+    - the two known flaky checks: the download of the PostgreSQL archive's key during the image build (OPEN_ITEMS T-41), and the accessibility check that catches a colour transition (D-124).
+
+    Each needs its own decision.
