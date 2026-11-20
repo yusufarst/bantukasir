@@ -99,23 +99,23 @@ final class StatusPageTest extends DatabaseTestCase
     public function test_the_incident_flag_follows_the_open_incidents(): void
     {
         $this->as('Hendra');
-        $this->assertFalse($this->statusOf()['incidentsOpen'] ?? null);
+        $this->assertFalse($this->incidentsOpen());
 
         $product = TokoContoh::product('PEN-01', ['categoryId' => TokoContoh::category(), 'name' => 'Pulpen Hitam']);
         TokoContoh::stock($product, '5', '5000');
         $block = TokoContoh::postingBlock($product);
-        $this->assertTrue($this->statusOf()['incidentsOpen'] ?? null);
+        $this->assertTrue($this->incidentsOpen());
 
         TokoContoh::reopenPostings($block);
-        $this->assertFalse($this->statusOf()['incidentsOpen'] ?? null);
+        $this->assertFalse($this->incidentsOpen());
     }
 
-    /**
-     * @return array<array-key, mixed>
-     */
-    private function statusOf(): array
+    /** The page's flag of UXI-375, as the Owner's page carries it. */
+    private function incidentsOpen(): mixed
     {
-        return (array) ($this->propsOf($this->get(self::PAGE)->assertOk())['status'] ?? []);
+        $status = (array) ($this->propsOf($this->get(self::PAGE)->assertOk())['status'] ?? []);
+
+        return array_key_exists('incidentsOpen', $status) ? $status['incidentsOpen'] : 'missing';
     }
 
     /**

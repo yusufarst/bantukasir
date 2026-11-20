@@ -66,7 +66,7 @@ final class SystemStatusTest extends DatabaseTestCase
     public function test_without_any_evidence_every_item_is_unverified_and_the_signal_is_raised(): void
     {
         $this->volume = null;
-        $status = $this->status();
+        $status = $this->read();
 
         foreach (SystemStatus::ITEMS as $item) {
             $this->assertSame(['state' => SystemStatus::UNVERIFIED, 'at' => null, 'ageMinutes' => null, 'bytes' => null, 'totalBytes' => null], $status[$item], $item);
@@ -81,7 +81,7 @@ final class SystemStatusTest extends DatabaseTestCase
         $this->provenBackup(self::HOUR);
         $this->drill('PASS', self::DAY);
         $this->reconciliation('CLEAN', self::HOUR);
-        $status = $this->status();
+        $status = $this->read();
 
         $this->assertSame(['state' => SystemStatus::OK, 'at' => '2026-11-22T04:00:00.000000Z', 'ageMinutes' => 60, 'bytes' => null, 'totalBytes' => null], $status['backup']);
         $this->assertSame(['state' => SystemStatus::OK, 'at' => '2026-11-21T05:00:00.000000Z', 'ageMinutes' => 1440, 'bytes' => null, 'totalBytes' => null], $status['restore']);
@@ -99,7 +99,7 @@ final class SystemStatusTest extends DatabaseTestCase
 
         $this->clock->advanceSeconds(1);
         $this->assertSame([SystemStatus::UNVERIFIED, 420], $this->stateAndAge('backup'));
-        $this->assertSame('2026-11-21T22:00:00.000000Z', $this->status()['backup']['at']);
+        $this->assertSame('2026-11-21T22:00:00.000000Z', $this->read()['backup']['at']);
     }
 
     public function test_the_newest_backup_failed_is_failed_whatever_succeeded_before(): void
@@ -107,16 +107,16 @@ final class SystemStatusTest extends DatabaseTestCase
         $this->provenBackup(2 * self::HOUR);
         $this->backupRun(self::HOUR, 'FAILED');
 
-        $this->assertSame(['state' => SystemStatus::FAILED, 'at' => '2026-11-22T04:00:00.000000Z', 'ageMinutes' => null, 'bytes' => null, 'totalBytes' => null], $this->status()['backup']);
+        $this->assertSame(['state' => SystemStatus::FAILED, 'at' => '2026-11-22T04:00:00.000000Z', 'ageMinutes' => null, 'bytes' => null, 'totalBytes' => null], $this->read()['backup']);
         // The store's usage is still that of the newest successful run.
-        $this->assertSame(SystemStatus::OK, $this->status()['backupStore']['state']);
+        $this->assertSame(SystemStatus::OK, $this->read()['backupStore']['state']);
     }
 
     public function test_the_backup_needs_a_weekly_re_verification_that_passed_within_8_days(): void
     {
         // A recent success alone proves nothing without the weekly re-verification.
         $this->backupRun(self::HOUR);
-        $this->assertSame(['state' => SystemStatus::UNVERIFIED, 'at' => null, 'ageMinutes' => null, 'bytes' => null, 'totalBytes' => null], $this->status()['backup']);
+        $this->assertSame(['state' => SystemStatus::UNVERIFIED, 'at' => null, 'ageMinutes' => null, 'bytes' => null, 'totalBytes' => null], $this->read()['backup']);
 
         // One second within 8 days, then exactly 8 days: it has not run for 8 days.
         $this->reverified(8 * self::DAY - 1);
@@ -147,7 +147,7 @@ final class SystemStatusTest extends DatabaseTestCase
         $this->assertSame([SystemStatus::UNVERIFIED, 35 * 1440], $this->stateAndAge('restore'));
 
         $this->drill('FAIL', self::DAY);
-        $this->assertSame(['state' => SystemStatus::FAILED, 'at' => '2026-11-21T05:00:01.000000Z', 'ageMinutes' => null, 'bytes' => null, 'totalBytes' => null], $this->status()['restore']);
+        $this->assertSame(['state' => SystemStatus::FAILED, 'at' => '2026-11-21T05:00:01.000000Z', 'ageMinutes' => null, 'bytes' => null, 'totalBytes' => null], $this->read()['restore']);
 
         $this->drill('PASS', self::HOUR);
         $this->assertSame([SystemStatus::OK, 60], $this->stateAndAge('restore'));
@@ -156,14 +156,14 @@ final class SystemStatusTest extends DatabaseTestCase
     public function test_the_disk_needs_20_percent_free_and_a_measurement(): void
     {
         $this->volume = ['free' => 20_000_000_000, 'total' => 100_000_000_000];
-        $this->assertSame(SystemStatus::OK, $this->status()['disk']['state']);
+        $this->assertSame(SystemStatus::OK, $this->read()['disk']['state']);
 
         $this->volume = ['free' => 19_999_999_999, 'total' => 100_000_000_000];
-        $this->assertSame(['state' => SystemStatus::FAILED, 'at' => null, 'ageMinutes' => null, 'bytes' => 19_999_999_999, 'totalBytes' => 100_000_000_000], $this->status()['disk']);
+        $this->assertSame(['state' => SystemStatus::FAILED, 'at' => null, 'ageMinutes' => null, 'bytes' => 19_999_999_999, 'totalBytes' => 100_000_000_000], $this->read()['disk']);
 
         $this->volume = null;
-        $this->assertSame(SystemStatus::UNVERIFIED, $this->status()['disk']['state']);
-        $this->assertNull($this->status()['disk']['bytes']);
+        $this->assertSame(SystemStatus::UNVERIFIED, $this->read()['disk']['state']);
+        $this->assertNull($this->read()['disk']['bytes']);
     }
 
     public function test_the_daily_reconciliation_passes_up_to_26_hours_and_a_run_for_one_product_never_stands_for_it(): void
@@ -187,7 +187,7 @@ final class SystemStatusTest extends DatabaseTestCase
     public function test_a_failed_or_mismatching_run_since_the_daily_run_is_failed(): void
     {
         $this->reconciliation('MISMATCH', 3 * self::HOUR);
-        $this->assertSame(['state' => SystemStatus::FAILED, 'at' => '2026-11-22T02:00:00.000000Z', 'ageMinutes' => null, 'bytes' => null, 'totalBytes' => null], $this->status()['reconciliation']);
+        $this->assertSame(['state' => SystemStatus::FAILED, 'at' => '2026-11-22T02:00:00.000000Z', 'ageMinutes' => null, 'bytes' => null, 'totalBytes' => null], $this->read()['reconciliation']);
 
         // A newer clean run for one product does not clear the daily run's mismatch.
         $this->reconciliation('CLEAN', 2 * self::HOUR, ReconciliationRuns::PRODUCT);
@@ -208,17 +208,17 @@ final class SystemStatusTest extends DatabaseTestCase
 
     public function test_the_backup_store_fails_at_80_percent_of_the_allowance(): void
     {
-        $this->assertSame(SystemStatus::UNVERIFIED, $this->status()['backupStore']['state']);
+        $this->assertSame(SystemStatus::UNVERIFIED, $this->read()['backupStore']['state']);
 
         // A failed run records no usage.
         $this->backupRun(3 * self::HOUR, 'FAILED');
-        $this->assertSame(SystemStatus::UNVERIFIED, $this->status()['backupStore']['state']);
+        $this->assertSame(SystemStatus::UNVERIFIED, $this->read()['backupStore']['state']);
 
         $this->backupRun(2 * self::HOUR, 'SUCCEEDED', ['store_bytes' => 7_999_999_999]);
-        $this->assertSame(['state' => SystemStatus::OK, 'at' => null, 'ageMinutes' => null, 'bytes' => 7_999_999_999, 'totalBytes' => 10_000_000_000], $this->status()['backupStore']);
+        $this->assertSame(['state' => SystemStatus::OK, 'at' => null, 'ageMinutes' => null, 'bytes' => 7_999_999_999, 'totalBytes' => 10_000_000_000], $this->read()['backupStore']);
 
         $this->backupRun(self::HOUR, 'SUCCEEDED', ['store_bytes' => 8_000_000_000]);
-        $this->assertSame(SystemStatus::FAILED, $this->status()['backupStore']['state']);
+        $this->assertSame(SystemStatus::FAILED, $this->read()['backupStore']['state']);
     }
 
     public function test_evidence_dated_ahead_of_the_clock_beyond_the_drift_proves_nothing(): void
@@ -242,10 +242,10 @@ final class SystemStatusTest extends DatabaseTestCase
         TokoContoh::stock($product, '5', '5000');
 
         $block = TokoContoh::postingBlock($product);
-        $this->assertTrue($this->status()['incidentsOpen']);
+        $this->assertTrue($this->read()['incidentsOpen']);
 
         TokoContoh::reopenPostings($block);
-        $this->assertFalse($this->status()['incidentsOpen']);
+        $this->assertFalse($this->read()['incidentsOpen']);
     }
 
     public function test_the_read_writes_nothing(): void
@@ -253,7 +253,7 @@ final class SystemStatusTest extends DatabaseTestCase
         $this->provenBackup(self::HOUR);
         $before = [DB::table('backup_runs')->count(), DB::table('restore_drills')->count(), DB::table('reconciliation_runs')->count()];
 
-        $this->status();
+        $this->read();
         app(SystemStatus::class)->attention();
 
         $this->assertSame($before, [DB::table('backup_runs')->count(), DB::table('restore_drills')->count(), DB::table('reconciliation_runs')->count()]);
@@ -262,7 +262,7 @@ final class SystemStatusTest extends DatabaseTestCase
     /**
      * @return array{backup: array{state: string, at: string|null, ageMinutes: int|null, bytes: int|null, totalBytes: int|null}, restore: array{state: string, at: string|null, ageMinutes: int|null, bytes: int|null, totalBytes: int|null}, disk: array{state: string, at: string|null, ageMinutes: int|null, bytes: int|null, totalBytes: int|null}, reconciliation: array{state: string, at: string|null, ageMinutes: int|null, bytes: int|null, totalBytes: int|null}, backupStore: array{state: string, at: string|null, ageMinutes: int|null, bytes: int|null, totalBytes: int|null}, incidentsOpen: bool}
      */
-    private function status(): array
+    private function read(): array
     {
         return app(SystemStatus::class)->read();
     }
@@ -273,7 +273,7 @@ final class SystemStatusTest extends DatabaseTestCase
      */
     private function stateAndAge(string $item): array
     {
-        $read = $this->status()[$item];
+        $read = $this->read()[$item];
 
         return [$read['state'], $read['ageMinutes']];
     }

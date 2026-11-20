@@ -17,8 +17,7 @@ use LogicException;
  *   most 7 hours ago and the newest weekly re-verification of the last 8 days passed; otherwise UNVERIFIED —
  *   no run at all, a success older than 7 hours (with its age), or a re-verification that failed or did not
  *   run in 8 days. A re-verification is a Sunday run's `reverified_backup_id`; its failure is a Sunday run that
- *   failed REMOTE_MISMATCH, which BackupRunner also gives a weekly copy it could not confirm, so that case
- *   counts too, never as a pass.
+ *   failed REMOTE_MISMATCH, the code BackupRunner gives only to a weekly copy gone or changed in the store.
  * - "Uji pemulihan terakhir": the newest `restore_drills` row: FAIL is FAILED; PASS at most 35 days ago OK,
  *   older UNVERIFIED with its age; none UNVERIFIED.
  * - "Ruang penyimpanan": the free and total space of the file system of the file volume, the disk `media`,
@@ -61,8 +60,6 @@ final class SystemStatus
 
     /** How far a record may lie ahead of the clock, the drift of two synchronized clocks. */
     private const int SKEW_SECONDS = 300;
-
-    private const string FINISHED = "to_char(finished_at at time zone 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') as finished, floor(extract(epoch from finished_at))::bigint as epoch";
 
     public function __construct(
         private readonly Clock $clock,
@@ -109,7 +106,14 @@ final class SystemStatus
      */
     private function backup(int $now): array
     {
-        $newest = self::row('select outcome, '.self::FINISHED.' from backup_runs order by finished_at desc, id desc limit 1');
+        $newest = self::row(DB::selectOne(<<<'SQL'
+            select outcome,
+                   to_char(finished_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as finished,
+                   floor(extract(epoch from finished_at))::bigint as epoch
+            from backup_runs
+            order by finished_at desc, id desc
+            limit 1
+            SQL));
 
         if ($newest === null) {
             return self::item(self::UNVERIFIED);
@@ -128,14 +132,14 @@ final class SystemStatus
         }
 
         // The newest re-verification of the last 8 days, passed or failed (BACKUP_RECOVERY section 4 step 7).
-        $reverification = self::row(<<<'SQL'
+        $reverification = self::row(DB::selectOne(<<<'SQL'
             select reverified_backup_id is not null as passed
             from backup_runs
             where finished_at > to_timestamp(?)
               and (reverified_backup_id is not null or (failure_code = 'REMOTE_MISMATCH' and tiers like '%weekly%'))
             order by finished_at desc, id desc
             limit 1
-            SQL, [$now - self::REVERIFICATION_SECONDS]);
+            SQL, [$now - self::REVERIFICATION_SECONDS]));
 
         if ($reverification === null || ($reverification['passed'] ?? null) !== true) {
             return self::item(self::UNVERIFIED);
@@ -149,7 +153,14 @@ final class SystemStatus
      */
     private function restore(int $now): array
     {
-        $newest = self::row('select result, '.self::FINISHED.' from restore_drills order by finished_at desc, id desc limit 1');
+        $newest = self::row(DB::selectOne(<<<'SQL'
+            select result,
+                   to_char(finished_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as finished,
+                   floor(extract(epoch from finished_at))::bigint as epoch
+            from restore_drills
+            order by finished_at desc, id desc
+            limit 1
+            SQL));
 
         if ($newest === null) {
             return self::item(self::UNVERIFIED);
@@ -188,20 +199,27 @@ final class SystemStatus
      */
     private function reconciliation(int $now): array
     {
-        $bad = self::row(<<<'SQL'
+        $bad = self::row(DB::selectOne(<<<'SQL'
             select to_char(finished_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as finished
             from reconciliation_runs
             where outcome <> 'CLEAN'
               and finished_at >= coalesce((select max(finished_at) from reconciliation_runs where scope = 'ALL'), '-infinity'::timestamptz)
             order by finished_at desc, id desc
             limit 1
-            SQL);
+            SQL));
 
         if ($bad !== null) {
             return self::item(self::FAILED, self::text($bad, 'finished'));
         }
 
-        $daily = self::row('select '.self::FINISHED." from reconciliation_runs where scope = 'ALL' order by finished_at desc, id desc limit 1");
+        $daily = self::row(DB::selectOne(<<<'SQL'
+            select to_char(finished_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as finished,
+                   floor(extract(epoch from finished_at))::bigint as epoch
+            from reconciliation_runs
+            where scope = 'ALL'
+            order by finished_at desc, id desc
+            limit 1
+            SQL));
 
         if ($daily === null) {
             return self::item(self::UNVERIFIED);
@@ -217,7 +235,7 @@ final class SystemStatus
      */
     private function backupStore(): array
     {
-        $newest = self::row("select store_bytes from backup_runs where outcome = 'SUCCEEDED' order by finished_at desc, id desc limit 1");
+        $newest = self::row(DB::selectOne("select store_bytes from backup_runs where outcome = 'SUCCEEDED' order by finished_at desc, id desc limit 1"));
 
         if ($newest === null) {
             return self::item(self::UNVERIFIED);
@@ -252,13 +270,12 @@ final class SystemStatus
     }
 
     /**
-     * @param  list<int>  $bindings
+     * A row of a read, or null when there is none.
+     *
      * @return array<array-key, mixed>|null
      */
-    private static function row(string $query, array $bindings = []): ?array
+    private static function row(mixed $row): ?array
     {
-        $row = DB::selectOne($query, $bindings);
-
         return $row === null ? null : (array) $row;
     }
 

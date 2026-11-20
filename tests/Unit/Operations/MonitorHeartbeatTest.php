@@ -9,12 +9,13 @@ use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Promise\Create;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Psr7\Response;
+use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Log;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\RequestInterface;
 use Symfony\Component\Console\Exception\InvalidOptionException;
 use Tests\TestCase;
+use Throwable;
 
 /**
  * SC-04 `monitor:heartbeat` against a local stand-in of the public address (AC-039-03; ROUTE_CONTRACTS SC-04
@@ -31,6 +32,9 @@ final class MonitorHeartbeatTest extends TestCase
 
     /** @var list<string> */
     private array $requests = [];
+
+    /** @var list<array{string, string, string}> each entry of the log: its level, its message and its context */
+    private array $logged = [];
 
     /** @var int|null the stand-in's answer to /up; null for no answer */
     private ?int $answer = 200;
@@ -71,12 +75,17 @@ final class MonitorHeartbeatTest extends TestCase
     public function test_any_other_public_answer_sends_no_ping(?int $answer, string $line): void
     {
         $this->answer = $answer;
-        Log::spy();
+        $this->app['events']->listen(MessageLogged::class, function (MessageLogged $event): void {
+            $this->logged[] = [$event->level, $event->message, (string) json_encode($event->context)];
+        });
 
         $this->assertSame(1, Artisan::call('monitor:heartbeat'));
         $this->assertSame([self::PUBLIC.'/up'], $this->requests);
         $this->assertSame($line."\n", Artisan::output());
-        Log::shouldHaveReceived('warning')->once()->withArgs(static fn (mixed $message, mixed $context): bool => $message === 'monitor.heartbeat' && ! str_contains((string) json_encode($context), 'stand-in'));
+        $this->assertCount(1, $this->logged);
+        [$level, $message, $context] = $this->logged[0] ?? ['', '', ''];
+        $this->assertSame(['warning', 'monitor.heartbeat'], [$level, $message]);
+        $this->assertStringNotContainsString('stand-in', $context);
     }
 
     public function test_a_ping_the_monitor_does_not_take_fails_without_its_address(): void
@@ -139,7 +148,7 @@ final class MonitorHeartbeatTest extends TestCase
 
         try {
             Artisan::call('monitor:heartbeat', ['--url' => 'https://elsewhere.stand-in.test']);
-        } catch (InvalidOptionException $thrown) {
+        } catch (Throwable $thrown) {
             $refusal = $thrown;
         }
 
