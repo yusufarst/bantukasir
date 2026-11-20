@@ -63,7 +63,9 @@ final class FinancePageTest extends DatabaseTestCase
         $this->assertSame(['kind' => 'this_month', 'from' => null, 'to' => null], $props['period'] ?? null);
         $this->assertSame($today->toString(), $props['today'] ?? null);
         $report = (array) ($props['report'] ?? []);
-        $this->assertMatchesRegularExpression('/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{6}Z$/D', (string) ($report['asOf'] ?? ''));
+        $asOf = $report['asOf'] ?? null;
+        $this->assertIsString($asOf);
+        $this->assertMatchesRegularExpression('/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{6}Z$/D', $asOf);
         $this->assertSame(['kind' => 'this_month', 'from' => $today->firstOfMonth()->toString(), 'to' => $today->toString()], $report['period'] ?? null);
 
         // Every other role and the combined account: refused (UXS-07).

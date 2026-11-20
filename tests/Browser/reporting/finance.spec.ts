@@ -229,11 +229,12 @@ test('at 200 % zoom the report fits and its trend works from the keyboard', asyn
     await page.keyboard.press('End');
     await expect(page.getByTestId('trend-tip')).toHaveText(/^\d{2} \w+ \d{4}: −?Rp[0-9.]+$/);
 
-    // "Tampilkan sebagai tabel" by Enter: seven days and the header row.
+    // "Tampilkan sebagai tabel" by Enter: seven days, as rows or, in a narrow container, as cards (DESIGN_SYSTEM 8.11).
     const toggle = page.getByRole('button', { name: 'Tampilkan sebagai tabel' });
     await toggle.focus();
     await page.keyboard.press('Enter');
-    await expect(page.getByRole('main').getByRole('table', { name: 'Grafik tren Penjualan neto' }).getByRole('row')).toHaveCount(8);
+    await expect(page.getByRole('button', { name: 'Tampilkan sebagai grafik' })).toBeVisible();
+    await expect(page.getByRole('main').locator('.bk-table tbody tr')).toHaveCount(7);
     await checked(page);
 
     expect(injected(watched.problems)).toEqual([]);
