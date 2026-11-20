@@ -245,6 +245,53 @@ final class HousekeepingTest extends DatabaseTestCase
         $this->assertSame([], $disk->files());
     }
 
+    public function test_referenced_files_never_use_up_the_limit_of_a_run(): void
+    {
+        // Review R-01; AC-038-02: more old referenced files than a run may remove, and one unreferenced file
+        // whose key sorts after all of them, the disk being walked in the order of its names.
+        config(['housekeeping.batch_size' => 2, 'housekeeping.max_batches' => 2]);
+        $disk = Storage::disk(MediaStore::DISK);
+        $referenced = [];
+
+        for ($logo = 1; $logo <= 5; $logo++) {
+            $referenced[] = $this->logo();
+        }
+
+        $last = str_repeat('z', 43);
+        $disk->put($last, 'isi');
+
+        foreach ([...$referenced, $last] as $name) {
+            $this->assertTrue(touch($disk->path($name), $this->now->getTimestamp() - 86400));
+        }
+
+        $this->assertStringContainsString('unreferenced_files=1', $this->housekeep());
+        $this->assertFalse($disk->exists($last));
+
+        foreach ($referenced as $key) {
+            $this->assertTrue($disk->exists($key), $key);
+        }
+
+        $this->assertSame(5, $this->observer()->table('stored_files')->count());
+    }
+
+    public function test_a_failed_run_keeps_what_it_removed_records_its_entry_and_frees_the_next_run(): void
+    {
+        // Review R-02; EXECUTION_CONTEXT section 10, a scheduled command: the table batches commit, then the
+        // media disk cannot be opened; the run fails with its entry, and the next run takes the rest.
+        $this->logAt('ancient', $this->now->subDays(400));
+        config(['filesystems.disks.'.MediaStore::DISK.'.driver' => 'unavailable']);
+        Storage::forgetDisk(MediaStore::DISK);
+
+        $this->assertSame(1, Artisan::call('housekeeping:run'));
+        $this->assertStringContainsString('HOUSEKEEPING_FAILED', Artisan::output());
+        $this->assertSame([], $this->logged(['ancient']));
+        $entry = (array) $this->observer()->table('security_log_entries')->orderByDesc('id')->first(['actor_process', 'outcome_code']);
+        $this->assertSame(['housekeeping', 'REFUSED'], array_values($entry));
+
+        Storage::fake(MediaStore::DISK);
+        $this->housekeep();
+    }
+
     public function test_the_command_never_overlaps_itself_and_takes_no_option_or_argument(): void
     {
         // AC-038-04; TR-RUN-04; THR-10.
@@ -377,13 +424,18 @@ final class HousekeepingTest extends DatabaseTestCase
     }
 
     /**
-     * The Owner's logo through RC-32 (EXC-45): a stored file that a row names. Its storage key.
+     * A new logo of the Owner's through RC-32 (EXC-45), replacing the one in force, whose file and row are
+     * kept (D-042): a stored file that a row names. Its storage key.
      */
     private function logo(): string
     {
-        $this->setUpCommands();
-        $this->as('Hendra');
-        $this->postJson('/user/confirm-password', ['password' => $this->people['Hendra']['password']])->assertStatus(201);
+        if ($this->people === []) {
+            $this->setUpCommands();
+            $this->as('Hendra');
+            $this->postJson('/user/confirm-password', ['password' => $this->people['Hendra']['password']])->assertStatus(201);
+        }
+
+        $known = $this->observer()->table('stored_files')->pluck('id')->all();
         $revision = TokoContoh::shop();
         $form = [
             'operation' => 'business_profile.change',
@@ -396,7 +448,7 @@ final class HousekeepingTest extends DatabaseTestCase
         ];
         $this->post('/commands/business_profile.change', $form, ['Accept' => 'application/json'])->assertStatus(201);
 
-        return $this->readText($this->observer()->table('stored_files')->where('purpose', 'LOGO')->value('storage_key'));
+        return $this->readText($this->observer()->table('stored_files')->where('purpose', 'LOGO')->whereNotIn('id', $known)->value('storage_key'));
     }
 
     /**

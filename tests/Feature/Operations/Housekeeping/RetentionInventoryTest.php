@@ -21,7 +21,9 @@ use Tests\TestCase;
  *   update a retained fact; db:check-privileges and the privilege family prove the database equals it.
  * - Every deletion in the application's code — SQL, the query builder, the file system — is in the reviewed
  *   inventory below with what it removes, and each table it names is of class E, L or P. A new deletion
- *   fails here until it is reviewed and listed.
+ *   fails here until it is reviewed and listed. The scan finds a file's tables only where the code names
+ *   them literally, so a further deletion in a file already listed that names none is not told apart
+ *   (review R-03): the scan supplements the privilege family, which stays the enforcement for tables.
  * - No route deletes: no DELETE method, no command operation of deletion, purge or archival, and no route
  *   reaches the housekeeping, which is a console command only (ROUTE_CONTRACTS section 7). The application's
  *   own console commands hold no such function either; housekeeping:run is its one cleanup.
@@ -29,7 +31,7 @@ use Tests\TestCase;
 final class RetentionInventoryTest extends TestCase
 {
     /** Any form of deletion in code, comments excluded. */
-    private const string DELETION = '/->delete\s*\(|::delete\s*\(|\bdelete\s+from\b|\btruncate\b|->destroy\s*\(|::destroy\s*\(|forceDelete|deleteDirectory|\bunlink\s*\(|\brmdir\s*\(/i';
+    private const string DELETION = '/->delete\s*\(|::delete\s*\(|\bdelete\s+from\b|\btruncate\b|->destroy\s*\(|::destroy\s*\(|forceDelete|deleteDirectory|cleanDirectory|\bunlink\s*\(|\brmdir\s*\(|\b(?:Mass)?Prunable\b|->detach\s*\(|->sync\s*\(/i';
 
     /** A table named by an SQL deletion. */
     private const string SQL_TARGET = '/\b(?:delete\s+from|truncate(?:\s+table)?)\s+([a-z_][a-z0-9_]*)\b/i';
@@ -132,6 +134,8 @@ final class RetentionInventoryTest extends TestCase
         $this->assertSame(['sales'], $this->targetsIn("<?php DB::delete('delete from sales where id = ?', [1]);"));
         $this->assertSame(['products'], $this->targetsIn("<?php DB::statement('TRUNCATE TABLE products');"));
         $this->assertSame([], $this->targetsIn('<?php File::delete($path);'));
+        $this->assertSame([], $this->targetsIn('<?php File::cleanDirectory($path);'));
+        $this->assertSame([], $this->targetsIn('<?php final class Sale extends Model { use Prunable; }'));
         $this->assertNull($this->targetsIn("<?php // delete from sales\n/* DB::table('sales')->delete(); */ \$a = 1;"));
     }
 

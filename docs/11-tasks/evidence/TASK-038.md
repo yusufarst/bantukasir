@@ -101,7 +101,24 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 
 ## 10. Review (EXECUTION_CONTEXT CE-40)
 
-Pending.
+Self-review before the review, on `373878e`, the head of fast run 2: each cleanup against its rule (SCHEMA sections 4, 5.1, 5.3 to 5.5; SEC-ACC-07, SEC-LOG-05; TR-TX-05; ARC-41, ARC-43; D-088), the strict bounds, the privileges each statement needs under the runtime role and row security, the locks against an issue, a consumption, a marking and a settlement, the order of RB-01 and the marker check, the obligations of EXECUTION_CONTEXT section 10 for a scheduled command, the module boundaries, and the findings carried from TASK-006, TASK-010, TASK-018 and TASK-019 (section 4).
+
+### 10.1 Round 1, the full review
+
+Agent `bk-reviewer-high`, model `claude-opus-5-5`, effort High, mode `review`; package `review/TASK-038/r1` of the executor state, base `9bdca62`, tree `0246c72`, HEAD `373878e`; 21 November, 01:53 to 02:01; `review-pack.sh --check` `UNCHANGED` after it. Verdict `FAIL`: one MUST-FIX, one SHOULD-FIX and six NOTEs, decided from the code and the documents, with no test run asked for.
+
+| ID | Severity | Finding | Outcome |
+| --- | --- | --- | --- |
+| R-01 | MUST-FIX | `MediaStore::removeUnreferenced` stopped collecting at the run's limit counting old key-named files whether referenced or not, and only then read `stored_files`; the disk is listed in the order of names, so with more old referenced files than the limit (10,000 by default) an unreferenced file whose key sorts later would never be removed by any run (AC-038-02, TR-TX-05) | Fixed: one walk of the disk, the rows read per batch of old keys as it goes, and the limit counts removals only. Regression test `HousekeepingTest::test_referenced_files_never_use_up_the_limit_of_a_run`: a limit of 4, five old referenced logos (RC-32, D-042 keeps the replaced ones) and one unreferenced file whose key sorts last; removed in the first run, no referenced file removed |
+| R-02 | SHOULD-FIX | The failure path — `HOUSEKEEPING_FAILED`, its security log entry, the lock freed — had no test, though the evidence claimed it (EXECUTION_CONTEXT section 10) | Fixed, within scope and cheap, bearing on the scheduled command's obligations: `HousekeepingTest::test_a_failed_run_keeps_what_it_removed_records_its_entry_and_frees_the_next_run` — the media disk made unavailable after the table batches; exit 1, `HOUSEKEEPING_FAILED`, the entry `REFUSED` of `housekeeping`, the earlier removal kept, the next run completed |
+| R-03 | NOTE | The static inventory names a file's tables only where the code names them literally; some forms (`cleanDirectory`, `Prunable`, `detach`, `sync`) were not searched | Hardened: those forms added, with samples; the test's docblock says that the scan supplements the privilege family, which stays the enforcement for tables |
+| R-04 | NOTE | The skipping of a locked link or receipt is reasoned, not proven by a lock held from another connection; the contract names no race | Recorded: no race is in the contract (section 5); TASK-043's harness or a later change may add one |
+| R-05 | NOTE | `RequestReceipts::removeResolved` refused a surrounding transaction with `InvalidArgumentException`, its siblings with `LogicException` | Fixed: `LogicException` |
+| R-06 | NOTE | The receipts' batch has no index on `outcome_at` | Recorded for TASK-048's budgets; the table holds about 30 days of receipts, and a migration is outside this Task |
+| R-07 | NOTE | A failure that repeats in the media cleanup ends every run before the CSV cleanup | Recorded for TASK-039: the system status should show repeated `HOUSEKEEPING_FAILED` runs, which their security log entries record |
+| R-08 | NOTE | The evidence's checks, criteria and Definition of Done still to be completed; STACK_AND_MODULES' Media row names the temporary CSV area, which the code and the Operations row place in Catalog | The record completes the evidence; the Media row is corrected |
+
+One MUST-FIX was raised, so round 2 verifies its fix.
 
 ## 11. Record (CE-50)
 

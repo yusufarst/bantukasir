@@ -40,11 +40,13 @@ final class MediaStore
      * were last written more than $graceSeconds before $now, and returns how
      * many it removed (TR-TX-05; ARCHITECTURE ARC-41; SCHEMA section 4; SC-02,
      * TASK-038). Only a file at the root of the disk whose name is a storage
-     * key counts; anything else is left as it is. The rows are read in
-     * batches of $batch keys just before their files are removed: a row for a
-     * key is inserted only by the transaction of the command that wrote its
-     * file, which ended long before the grace period (TR-TX-05), so a key
-     * without its row then never gains one.
+     * key counts; anything else is left as it is. The disk is walked once,
+     * and the rows are read in batches of $batch old keys just before their
+     * files are removed, so the limit counts removals only: referenced files,
+     * however many, never use it up (review R-01). A row for a key is inserted
+     * only by the transaction of the command that wrote its file, which ended
+     * long before the grace period (TR-TX-05), so a key without its row then
+     * never gains one.
      */
     public function removeUnreferenced(CarbonImmutable $now, int $graceSeconds, int $batch, int $limit): int
     {
@@ -54,10 +56,12 @@ final class MediaStore
 
         $disk = self::disk();
         $writtenBefore = $now->getTimestamp() - $graceSeconds;
-        $candidates = [];
+        $batch = max(1, $batch);
+        $removed = 0;
+        $keys = [];
 
         foreach ($disk->files() as $name) {
-            if (count($candidates) >= $limit) {
+            if ($removed >= $limit) {
                 break;
             }
 
@@ -67,22 +71,43 @@ final class MediaStore
 
             try {
                 if ($disk->lastModified($name) < $writtenBefore) {
-                    $candidates[] = $name;
+                    $keys[] = $name;
                 }
             } catch (FilesystemException) {
                 continue;
             }
+
+            if (count($keys) >= $batch) {
+                $removed += self::removeUnnamed($disk, $keys, $limit - $removed);
+                $keys = [];
+            }
         }
 
+        if ($keys !== [] && $removed < $limit) {
+            $removed += self::removeUnnamed($disk, $keys, $limit - $removed);
+        }
+
+        return $removed;
+    }
+
+    /**
+     * Removes, of these old keys, at most $room files that no `stored_files`
+     * row names, and returns how many it removed.
+     *
+     * @param  list<string>  $keys
+     */
+    private static function removeUnnamed(FilesystemAdapter $disk, array $keys, int $room): int
+    {
+        $referenced = array_filter(DB::table('stored_files')->whereIn('storage_key', $keys)->pluck('storage_key')->all(), is_string(...));
         $removed = 0;
 
-        foreach (array_chunk($candidates, max(1, $batch)) as $keys) {
-            $referenced = array_filter(DB::table('stored_files')->whereIn('storage_key', $keys)->pluck('storage_key')->all(), is_string(...));
+        foreach (array_diff($keys, $referenced) as $key) {
+            if ($removed >= $room) {
+                break;
+            }
 
-            foreach (array_diff($keys, $referenced) as $key) {
-                if ($disk->delete($key)) {
-                    $removed++;
-                }
+            if ($disk->delete($key)) {
+                $removed++;
             }
         }
 

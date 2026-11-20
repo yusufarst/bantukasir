@@ -7,6 +7,7 @@ use App\Support\Time\Clock;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
+use LogicException;
 
 /**
  * The command request receipts of ADR-009 section 1 (SCHEMA section 5.3,
@@ -256,7 +257,7 @@ final class RequestReceipts
     public function removeResolved(CarbonImmutable $now, int $limit): int
     {
         if (DB::transactionLevel() !== 0) {
-            throw new InvalidArgumentException('The housekeeping of receipts runs in a transaction of its own.');
+            throw new LogicException('The housekeeping of receipts runs in a transaction of its own.');
         }
 
         $resolvedBefore = $now->utc()->subDays(self::RETENTION_DAYS)->format('Y-m-d H:i:s.uP');
