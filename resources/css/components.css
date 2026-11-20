@@ -641,6 +641,25 @@
         text-align: start;
     }
 
+    /* The periods of a report, each as wide as its words, wrapping by the space they have (KS-10; TASK-040). */
+    .bk-seg[data-layout='wrap'] {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .bk-seg[data-layout='wrap'] .bk-seg__opt {
+        padding: 8px 16px;
+    }
+
+    /* The custom range of a report: its two dates and its buttons, side by side while they fit (KS-10). */
+    .bk-custom {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        align-items: end;
+        gap: 12px 16px;
+        margin-top: 16px;
+    }
+
     .bk-seg__opt {
         display: flex;
         align-items: center;

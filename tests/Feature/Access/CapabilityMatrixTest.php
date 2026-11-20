@@ -494,6 +494,11 @@ final class CapabilityMatrixTest extends DatabaseTestCase
         'RP-611' => ['method' => 'GET', 'path' => '/settings/system-status', 'json' => false, 'answers' => [
             'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
         ]],
+        // TASK-040: the finance report for CAP-20, the Owner's alone; every other role and the combined account
+        // refused (AC-040-05, THR-02).
+        'RP-502' => ['method' => 'GET', 'path' => '/reports/finance', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
     ];
 
     /** @var array<string, array{id: int, email: string, password: string}> */

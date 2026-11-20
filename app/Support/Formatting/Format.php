@@ -73,6 +73,27 @@ final class Format
     }
 
     /**
+     * A percentage, such as a margin: one decimal with a decimal comma, directly followed by the
+     * percent sign, "32,0%"; a negative one "−12,5%" (COPY_DECK section 1.3, CC-03; TASK-003 F-8,
+     * D-100). The figure is rounded half-up — ties away from zero, also for a negative figure — once,
+     * to one decimal (ADR-008 section 5); a figure that rounds to zero is "0,0%", with no sign. A
+     * figure with more than six decimals is refused, as the client refuses it.
+     */
+    public static function percent(BigDecimal $figure): string
+    {
+        if ($figure->getScale() > Cost::SCALE) {
+            throw NonCanonicalNumber::excessScale('percentage');
+        }
+
+        $rounded = $figure->toScale(1, RoundingMode::HalfUp);
+        $tenths = $rounded->getUnscaledValue()->abs()->toString();
+        $tenths = str_pad($tenths, 2, '0', STR_PAD_LEFT);
+        $sign = $rounded->isNegative() ? self::MINUS : '';
+
+        return $sign.self::group(substr($tenths, 0, -1)).','.substr($tenths, -1).'%';
+    }
+
+    /**
      * A date: "01 Oktober 2026".
      */
     public static function date(BusinessDate $date): string

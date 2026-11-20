@@ -324,6 +324,23 @@ final class Allowlists
         // address, a backup identifier, a hash or an operator's note.
         'operations/Status' => ['owner' => self::SYSTEM_STATUS],
         'operations/Status#failed' => ['owner' => ['status']],
+        // UXP-502, the Owner's alone (TASK-040): the applied period, today, and the report's figures, completeness
+        // and trend; `#failed` with a read that failed. Never a line, a product, a person or an allocation.
+        'reporting/Finance' => ['owner' => [...self::FINANCE_PERIOD, ...self::FINANCE_REPORT]],
+        'reporting/Finance#failed' => ['owner' => [...self::FINANCE_PERIOD, 'report']],
+    ];
+
+    /** The applied period of UXP-502 and today in Asia/Jakarta (TASK-040). */
+    private const array FINANCE_PERIOD = ['period', 'period.kind', 'period.from', 'period.to', 'today'];
+
+    /** The report of UXP-502 (TASK-040). */
+    private const array FINANCE_REPORT = [
+        'report', 'report.asOf', 'report.period', 'report.period.kind', 'report.period.from', 'report.period.to',
+        'report.figures', 'report.figures.grossSales', 'report.figures.refunds', 'report.figures.netSales', 'report.figures.saleCount', 'report.figures.paymentsCash',
+        'report.figures.paymentsTransfer', 'report.figures.refundPayoutsCash', 'report.figures.refundPayoutsTransfer', 'report.figures.quantitySold',
+        'report.figures.quantityReturned', 'report.figures.cogs', 'report.figures.grossProfit', 'report.figures.margin',
+        'report.completeness', 'report.completeness.complete', 'report.completeness.unknownLines', 'report.completeness.markedProducts', 'report.completeness.lastCorrectionAt',
+        'report.trend', 'report.trend.*', 'report.trend.*.date', 'report.trend.*.netSales', 'report.empty',
     ];
 
     /** The status of UXP-611 (TASK-039). */
@@ -494,6 +511,8 @@ final class Allowlists
         'cash/Session' => ['owner' => ['notes', 'notes.*', 'notes.*.id', 'notes.*.text', 'notes.*.recordedAt', 'notes.*.author']],
         // TASK-039: UXP-611's status read again by name (UXI-374).
         'operations/Status' => ['owner' => self::SYSTEM_STATUS],
+        // TASK-040: UXP-502's report read again by name ("Coba lagi", UXS-22).
+        'reporting/Finance' => ['owner' => self::FINANCE_REPORT],
     ];
 
     /**

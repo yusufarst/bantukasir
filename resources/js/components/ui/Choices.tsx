@@ -22,6 +22,8 @@ export interface SegmentedOption<V extends string> {
  * Built on the Radix radio group of shadcn/ui. With `layout` "list" the same
  * options stand one under another at full width, for a longer choice such as
  * the source of a refund's money (UXI-124; NAVIGATION_CONTRACTS UXP-203).
+ * With `layout` "wrap" the options keep their own width and wrap by the space
+ * they have, for the five periods of a report (UXI-308, UXI-309; KS-10).
  */
 export function SegmentedControl<V extends string>({
     legend,
@@ -40,7 +42,7 @@ export function SegmentedControl<V extends string>({
     size?: 'md' | 'xl';
     /** The legend for assistive technology only, where the dialog above already asks the question (UXI-173). */
     legendHidden?: boolean;
-    layout?: 'row' | 'list';
+    layout?: 'row' | 'list' | 'wrap';
     /** The id of a hint or an error that explains the choice. */
     describedBy?: string;
 }) {

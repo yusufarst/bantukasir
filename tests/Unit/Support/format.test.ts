@@ -7,6 +7,7 @@ import {
     formatDayName,
     formatDuration,
     formatMoney,
+    formatPercent,
     formatQuantity,
     formatTimeOfDay,
     formatVariance,
@@ -34,6 +35,8 @@ function format(entry: Case): string | null {
                 return formatQuantity(String(input), entry.precision ?? -1, entry.unit);
             case 'cost':
                 return formatCost(String(input));
+            case 'percent':
+                return formatPercent(String(input));
             case 'date':
                 return formatDate(String(input));
             case 'dateTime':

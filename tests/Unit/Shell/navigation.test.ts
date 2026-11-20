@@ -88,11 +88,13 @@ describe('the primary navigation of each role', () => {
         expect(SUB_DESTINATIONS.stock.receipts).toEqual({ label: 'inventory.receipts.title', href: '/stock/receivings', capabilities: ['CAP-11'] });
         expect(SUB_DESTINATIONS.stock.issues).toEqual({ label: 'inventory.issues.title', href: '/stock/issues', capabilities: ['CAP-13'] });
         expect(SUB_DESTINATIONS.stock.onboarding).toEqual({ label: 'inventory.onboarding.title', href: '/stock/onboarding', capabilities: ['CAP-15'] });
-        // UXI-021 "Biaya perlu dilengkapi", TASK-025's, and UXI-019 "Sesi kas", TASK-030's, which the Laporan destination shows once it exists (TASK-041).
-        expect(Object.keys(SUB_DESTINATIONS.reports)).toEqual(['sessions', 'worklist']);
+        // UXI-021 "Biaya perlu dilengkapi", TASK-025's, UXI-019 "Sesi kas", TASK-030's, and UXI-020 "Laporan keuangan", TASK-040's,
+        // which the Laporan destination shows once it exists (TASK-041).
+        expect(Object.keys(SUB_DESTINATIONS.reports)).toEqual(['sessions', 'finance', 'worklist']);
         expect(SUB_DESTINATIONS.reports.sessions).toEqual({ label: 'cash.sessions.title', href: '/cash-sessions', capabilities: ['CAP-22'] });
+        expect(SUB_DESTINATIONS.reports.finance).toEqual({ label: 'reporting.finance.title', href: '/reports/finance', capabilities: ['CAP-20'] });
         expect(SUB_DESTINATIONS.reports.worklist).toEqual({ label: 'costing.worklist.title', href: '/reports/costs-to-complete', capabilities: ['CAP-20'] });
-        expect(subNavigationFor('reports', ['SUPER_ADMIN'], FLAGS.owner, SUB_DESTINATIONS.reports).map((item) => item.id)).toEqual(['sessions', 'worklist']);
+        expect(subNavigationFor('reports', ['SUPER_ADMIN'], FLAGS.owner, SUB_DESTINATIONS.reports).map((item) => item.id)).toEqual(['sessions', 'finance', 'worklist']);
         expect(subNavigationFor('reports', ['OPERATIONS_ADMIN'], FLAGS.ops, SUB_DESTINATIONS.reports)).toEqual([]);
         // The Owner holds CAP-21 too, but his "Sesi kas" is under Laporan only.
         expect(navigationFor(['SUPER_ADMIN'], FLAGS.owner, DESTINATIONS).map((item) => item.id)).toEqual(['till', 'sales', 'stock', 'products', 'settings']);

@@ -92,6 +92,7 @@ use App\Http\Controllers\Inventory\WithdrawZeroCountController;
 use App\Http\Controllers\Media\MediaController;
 use App\Http\Controllers\Operations\StatusController;
 use App\Http\Controllers\Reporting\CostWorklistController;
+use App\Http\Controllers\Reporting\FinanceController;
 use App\Http\Controllers\Sales\CheckoutSaleController;
 use App\Http\Controllers\Sales\ReceiptController;
 use App\Http\Controllers\Sales\RecordCorrectionController;
@@ -349,7 +350,10 @@ Route::middleware(['auth', 'signin.session', 'throttle:authenticated', 'cache.he
         Route::get('/costs/{evidence}/correct', [CorrectionController::class, 'create'])->middleware('input.allow:from_page')->name('costs.correct');
     });
 
+    // The finance report (TASK-040), the Owner's alone: RP-502 for CAP-20, taking only its parameters of
+    // ROUTE_CONTRACTS.
     Route::middleware('capability:CAP-20')->group(function (): void {
+        Route::get('/reports/finance', [FinanceController::class, 'show'])->middleware('input.allow:period,from,to')->name('reports.finance');
         Route::get('/reports/costs-to-complete', [CostWorklistController::class, 'index'])->middleware('input.allow:product,after,before,perPage')->name('reports.costs');
         Route::get('/products/{product}/cost-history', [CostHistoryController::class, 'show'])->middleware('input.allow:from_page')->name('products.cost_history');
     });
