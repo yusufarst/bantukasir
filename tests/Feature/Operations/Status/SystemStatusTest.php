@@ -8,6 +8,7 @@ use App\Domain\Operations\VolumeSpace;
 use App\Queries\Operations\SystemStatus;
 use App\Support\Time\Clock;
 use App\Support\Time\TestClock;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Tests\Harness\DatabaseTestCase;
@@ -204,6 +205,32 @@ final class SystemStatusTest extends DatabaseTestCase
         $this->assertSame(SystemStatus::OK, $this->stateAndAge('reconciliation')[0]);
         $this->reconciliation('FAILED', 10 * 60);
         $this->assertSame(SystemStatus::FAILED, $this->stateAndAge('reconciliation')[0]);
+    }
+
+    /**
+     * The race of the automated review of pull request #54: a failed daily run recorded between two reads of
+     * the item would have lent its time to a pass. The item is one statement, so a run recorded right after
+     * it is read is simply not seen by that read, and the next read reports it.
+     */
+    public function test_a_run_recorded_during_the_read_never_passes_as_clean(): void
+    {
+        $this->reconciliation('CLEAN', self::HOUR);
+
+        $statements = 0;
+        DB::listen(function (QueryExecuted $query) use (&$statements): void {
+            if (! str_contains($query->sql, 'from reconciliation_runs')) {
+                return;
+            }
+
+            if (++$statements === 1) {
+                $this->reconciliation('FAILED', 30 * 60);
+            }
+        });
+
+        $this->assertSame(['state' => SystemStatus::OK, 'at' => '2026-11-22T04:00:00.000000Z', 'ageMinutes' => 60, 'bytes' => null, 'totalBytes' => null], $this->read()['reconciliation']);
+        $this->assertSame(1, $statements);
+
+        $this->assertSame(['state' => SystemStatus::FAILED, 'at' => '2026-11-22T04:30:00.000000Z', 'ageMinutes' => null, 'bytes' => null, 'totalBytes' => null], $this->read()['reconciliation']);
     }
 
     public function test_the_backup_store_fails_at_80_percent_of_the_allowance(): void

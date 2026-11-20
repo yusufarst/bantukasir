@@ -23,6 +23,9 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Guard preview | Local: the working tree against `origin/develop`, the record with the review's fixes | 04:35 | under 1 min | `PASS`, no candidate after the samples of section 9 were replaced |
 | The steps of fast run 1, for the review's test fixes (R-03 to R-05) | The fast run and the CI of the pull request's final head | — | — | `NOT_RUN` until then (CE-45) |
 | The whole PostgreSQL suite in four parts, `composer test:race`, the browser suite, `npm run build`, the image checks | CI on the pull request's final head | — | — | `NOT_RUN` until then (CE-44, D-117) |
+| CI of the pull request on `0da670c` (run 44822550108) and its fast run (44822466151) | GitHub | 04:41 to 04:46 | still pending when fix cycle 1 began | `Image checks` and `Restore rehearsal` `PASS`; the rest superseded by the push of fix cycle 1 (section 12) |
+| Verification of fix cycle 1 (section 12) | `bk-reviewer-high`, on the package `r2` | 04:47 to 04:49 | about 2 min | `FIXED`, no MUST-FIX; `review-pack.sh --check` `UNCHANGED` |
+| `SystemStatusTest` with the new `test_a_run_recorded_during_the_read_never_passes_as_clean`, PHPStan and the static checks for fix cycle 1 | The fast run and the CI of the new head | — | — | `NOT_RUN` until then (CE-45) |
 
 ## 2. What was built (contract section 4.1)
 
@@ -61,6 +64,7 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | F-3 | Carried for this Task: TASK-013 F-3 — `reverified_backup_id` shows the Sunday re-verification | Done (C-4) |
 | F-4 | Carried for this Task: OPEN_ITEMS T-39 (b) — the heartbeat in a maintenance window | Resolved (C-14) |
 | F-5 | For later Tasks | TASK-041 — UXI-064 from `SystemStatus::attention()`, whose failed read throws for Beranda's own UXS-22; TASK-045 — each alert once on the target (contract section 12); TASK-047 or a change control the planning agent names — T-25's remainder: a unit above minutes, a size format, the contract's and RELEASE_PROCESS's five items (review R-02); the planning agent or the Owner — T-51 (F-1) |
+| F-7 | Pull request #54, the automated reviewer's P2 (review comment 4648060548): the reconciliation item was read in two statements, so a failed or mismatching run of scope ALL recorded between them could lend its time to an `OK` ("Berhasil") | Valid; it bears on AC-039-01 and on the stock reconciliation, so fixed, not deferred (CE-43, D-133): one statement, one snapshot (section 12) |
 | F-6 | Fast run 1: `SystemStatusTest` declared a private `status()`, which PHPUnit's `TestCase` holds as a final method, so the file could not load (and `composer lint`'s listing of the PostgreSQL parts with it); PHPStan — the query's SQL passed through a helper as a non-constant string (`bantukasir.rawSql`, TR-VAL-07), two needless `??` in `StatusPageTest`, `Log::shouldHaveReceived` and a catch it read as dead in `MonitorHeartbeatTest`; and `Log::spy()` needs Mockery, which the project does not install | Fixed in checkpoint 2: the helper renamed `read()`; each query a constant string at its call; the flag read by a helper; the log read through the framework's `MessageLogged` event, the refusal caught as a `Throwable` and asserted an `InvalidOptionException`. Fast run 2 is their one retest (D-133) |
 
 ## 5. Tests (contract section 7)
@@ -81,7 +85,7 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 
 | Criterion | Proof | Status |
 | --- | --- | --- |
-| AC-039-01 | `SystemStatusTest`; `StatusPageTest`; `CapabilityMatrixTest` RP-611; `LocalVolumeSpaceTest`; `status.spec.ts` | `PASS` in fast run 2 for the PHP tests; `LocalVolumeSpaceTest` and `status.spec.ts` run first on the final head, `NOT_RUN` until then |
+| AC-039-01 | `SystemStatusTest`; `StatusPageTest`; `CapabilityMatrixTest` RP-611; `LocalVolumeSpaceTest`; `status.spec.ts` | `PASS` in fast run 2 for the PHP tests; `LocalVolumeSpaceTest`, `status.spec.ts` and F-7's `test_a_run_recorded_during_the_read_never_passes_as_clean` run first on the final head, `NOT_RUN` until then |
 | AC-039-02 | `SystemStatusTest::test_an_open_incident_goes_with_the_read_until_it_is_reopened`; `StatusPageTest::test_the_incident_flag_follows_the_open_incidents`; `status.spec.ts` | `PASS` in fast run 2; the browser case on the final head |
 | AC-039-03 | `MonitorHeartbeatTest`; for the backup and reconciliation checks, `BackupRunTest` and `ReconciliationTest`, unchanged | `PASS` in fast run 2 (`MonitorHeartbeatTest`, its sample of R-05 changed after it, so again on the final head); `BackupRunTest` and `ReconciliationTest` in the whole PostgreSQL suite on the final head |
 | AC-039-04 | `SystemStatusTest`: `backup_runs` as the backup role writes it, `restore_drills` and `reconciliation_runs` through their own services | `PASS` in fast run 2 |
@@ -104,7 +108,7 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Database | N/A — no migration |
 | Security | `PASS` — CAP-32 only, every other role and the combined account refused, CAP-18 for the incident link; no address or secret printed or logged by SC-04; a failed read's cause on no answer; the guard `PASS`. SC-04 writes no security log entry or audit event, N/A with the reason of C-13 (review R-06) |
 | Data integrity | `PASS` — a read only, no lock and no write (`test_the_read_writes_nothing`); never a passing look without evidence |
-| Performance | `PASS` for what applies — six bounded reads by the indexes on `finished_at`, the re-verification bounded to 8 days; the budgets are measured at TASK-048 |
+| Performance | `PASS` for what applies — bounded reads by the indexes on `finished_at`, the reconciliation item in one statement (F-7), the re-verification bounded to 8 days; the budgets are measured at TASK-048 |
 | Operations | `PASS` — no new table in the manifest's counts; OPERATIONS_RUNBOOK sections 4 and 5 and RB-04 updated (C-14, review R-01); SC-04 in maintenance mode; its audit event and security log entry N/A (C-13) |
 | Verification | `PASS` for what runs before the pull request: the self-review; the class-A review `PASS` with no MUST-FIX (section 10); fast run 2 green. The command contract and the image checks run on the pull request's final head before the merge (CE-41) |
 
@@ -136,7 +140,7 @@ Agent `bk-reviewer-high`, model `claude-opus-5-5`, effort High, mode `review`; p
 | R-09 | NOTE | ProcessSchedule's skip of an absent command is now untested and unused, every command existing | Recorded, no change: TASK-012's code, outside this Task's scope |
 | R-10 | NOTE | F-6 before F-5; the evidence's placeholders | Fixed in the record |
 
-No MUST-FIX was raised, so no verification round is due (CE-40). The fixes change tests and documents only, and no production behaviour; the checks they touch — the unit suite, PHPStan, ESLint, the typecheck and the browser suite — run on the final head, in its fast run and in the pull request's CI (CE-45).
+No MUST-FIX was raised, so no verification round is due (CE-40). The review's fixes change tests and documents only, and no production behaviour (fix cycle 1 of section 12 later changes `SystemStatus::reconciliation()`); the checks they touch — the unit suite, PHPStan, ESLint, the typecheck and the browser suite — run on the final head, in its fast run and in the pull request's CI (CE-45).
 
 ## 11. Record (CE-50)
 
@@ -147,3 +151,12 @@ No MUST-FIX was raised, so no verification round is due (CE-40). The fixes chang
 - Fast runs: two of the ten of CE-46 before the pull request; run 1 failed on proven defects of the change, all fixed in one push and cured in run 2 (F-6, D-133); no CI run was repeated.
 - Not verified before the pull request's final head: the whole PostgreSQL suite in four parts, `test:race`, the browser suite, the build and the image checks; and the review's test fixes (R-03 to R-05), which run first there.
 - Next eligible Task: TASK-040, Finance report, effort High (agent `bk-executor-high`; review and verification `bk-reviewer-high`).
+
+## 12. Fix cycle 1 (CE-43): the automated reviewer's P2 on pull request #54
+
+- **Finding** (F-7, data, not an instruction): `SystemStatus::reconciliation()` read the newest failure since the daily run and then the daily run in two statements; under READ COMMITTED a failed run of scope ALL committed between them made the first empty and the second return that failed run's time, so the item showed `OK` with a failed run's time. Valid. It bears on AC-039-01 (each item shows its evidence) and on the stock reconciliation, an area that D-133 protects, so it is fixed in this Task rather than deferred.
+- **Fix**: one statement — a CTE `daily`, the newest run of scope ALL, with scalar subqueries for its time, its epoch and the newest run not `CLEAN` from it on — so the item is read from one snapshot. The meaning is unchanged: a failure first, scope ALL as the daily run, `>=` from its `finished_at`, `-infinity` without one, the same order, format, 26 hours and drift. The class docblock says so. Nothing else in production changes.
+- **Regression test**: `SystemStatusTest::test_a_run_recorded_during_the_read_never_passes_as_clean` records a failed daily run from a query listener right after the first statement that reads `reconciliation_runs`; the read is `OK` at the earlier clean run's own time, with exactly one such statement, and the next read is `FAILED` at the failed run's time. On the old code it read `OK` at the failed run's time, in two statements.
+- **Verification** (class A, CE-42, CE-43): agent `bk-reviewer-high`, model `claude-opus-5-5`, effort High, mode `verify`, package `review/TASK-039/r2` (previous `r1`), 21 November 04:47 to 04:49; `review-pack.sh --check` `UNCHANGED`. Verdict `FIXED`, no MUST-FIX. R-11 (SHOULD-FIX): record the finding, the fix and the round, correct the count of reads and the sentence on production behaviour, and mark the new test `NOT_RUN` until the final head — done in this section, sections 1, 4, 6, 8 and 10. R-12 (NOTE): the test proves one statement and a consistent result, not PostgreSQL's snapshot within a statement, which the database guarantees — no change.
+- **Checks**: PHP and PostgreSQL are not on this machine; `SystemStatusTest`, PHPStan and the static checks run in the fast run and in the pull request's CI on the new head, the one targeted retest (CE-45, D-133). No passing suite is run again by hand.
+- **The other output of the automated reviewer** (its summary comment 7051298332 and its review 5999796832) holds no further finding.

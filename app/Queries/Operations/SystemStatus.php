@@ -25,7 +25,8 @@ use LogicException;
  * - "Rekonsiliasi harian": the daily run is the newest run of scope ALL; a run that failed or found a
  *   mismatch from that one on, of either scope, is FAILED; without a run of scope ALL UNVERIFIED; otherwise
  *   OK when that run is at most 26 hours old, UNVERIFIED with its age when older. A run for one product
- *   (RB-04) never stands for the daily run, so it never makes the item pass.
+ *   (RB-04) never stands for the daily run, so it never makes the item pass. The item is read in one
+ *   statement, one snapshot, so that a run recorded during the read never passes as clean.
  * - "Penyimpanan cadangan": `store_bytes` of the newest successful run against the store's free allowance
  *   of 10 GB: 80 % or more FAILED, below OK; no successful run UNVERIFIED.
  *
@@ -199,35 +200,37 @@ final class SystemStatus
      */
     private function reconciliation(int $now): array
     {
-        $bad = self::row(DB::selectOne(<<<'SQL'
-            select to_char(finished_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as finished
-            from reconciliation_runs
-            where outcome <> 'CLEAN'
-              and finished_at >= coalesce((select max(finished_at) from reconciliation_runs where scope = 'ALL'), '-infinity'::timestamptz)
-            order by finished_at desc, id desc
-            limit 1
-            SQL));
+        // One statement, so one snapshot: the daily run and the failures from it on are read together, and a
+        // run recorded during the read can never lend its time to a pass that its outcome would deny.
+        $read = self::row(DB::selectOne(<<<'SQL'
+            with daily as (
+                select finished_at
+                from reconciliation_runs
+                where scope = 'ALL'
+                order by finished_at desc, id desc
+                limit 1
+            )
+            select (select to_char(finished_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') from daily) as finished,
+                   (select floor(extract(epoch from finished_at))::bigint from daily) as epoch,
+                   (select to_char(r.finished_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')
+                    from reconciliation_runs r
+                    where r.outcome <> 'CLEAN'
+                      and r.finished_at >= coalesce((select finished_at from daily), '-infinity'::timestamptz)
+                    order by r.finished_at desc, r.id desc
+                    limit 1) as failed
+            SQL)) ?? throw new LogicException('A select without a table returns one row.');
 
-        if ($bad !== null) {
-            return self::item(self::FAILED, self::text($bad, 'finished'));
+        if (($read['failed'] ?? null) !== null) {
+            return self::item(self::FAILED, self::text($read, 'failed'));
         }
 
-        $daily = self::row(DB::selectOne(<<<'SQL'
-            select to_char(finished_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as finished,
-                   floor(extract(epoch from finished_at))::bigint as epoch
-            from reconciliation_runs
-            where scope = 'ALL'
-            order by finished_at desc, id desc
-            limit 1
-            SQL));
-
-        if ($daily === null) {
+        if (($read['finished'] ?? null) === null) {
             return self::item(self::UNVERIFIED);
         }
 
-        $age = $now - self::int($daily, 'epoch');
+        $age = $now - self::int($read, 'epoch');
 
-        return self::item(self::fresh($age, self::RECONCILIATION_SECONDS) ? self::OK : self::UNVERIFIED, self::text($daily, 'finished'), $age);
+        return self::item(self::fresh($age, self::RECONCILIATION_SECONDS) ? self::OK : self::UNVERIFIED, self::text($read, 'finished'), $age);
     }
 
     /**
