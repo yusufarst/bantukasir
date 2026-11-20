@@ -229,3 +229,13 @@ CI run 43746933217 on `1228cef`, the pull request's first head, passed every job
 
 **Guard** (CE-31). `guard.sh --preview` of this cycle's change, at 02:23 on 16 November: the same 15 candidates that section 9 judges, none new; the guard on the fix's commit runs before its push.
 
+## 13. Merge (CE-50), recorded by TASK-038
+
+| Item | Record |
+| --- | --- |
+| Pull request | #51, head `e0763fa`; CI run 43752651994 on it passed, with the PostgreSQL suite in four parts, the image checks and the job `Restore rehearsal` |
+| Merge | Squash commit `8f768bb` on `develop`, by the Owner on 20 November 2026 (14:55 Asia/Jakarta): his `/stop` withheld the tick's merge (CE-62) |
+| CI on `develop` at the merge | Run 44698518825 at `8f768bb` **FAILED** and stays recorded as failed: the image's vulnerability gate refused findings published after 15 November (D-134). It is not rerun; a retry would scan the same image at the same commit (CE-61) |
+| The cure and the recovery, D-133 and D-134 | `ops/` pull request #52, adopted: head `8311ad1`, CI run 44756500932 passed at its attempt 3; squash commit `9bdca62` by the Owner on 21 November (00:38); CI on `develop` run 44785289365 at `9bdca62` passed; the tick verified the merge (CE-61). PHP 8.5.13 fixes the PHP findings, and seven OpenSSL findings are accepted temporarily for development and CI only (D-134) |
+| Status | TASK-037 is operationally verified under the one-time recovery of D-134 only: CI on #52's head green, the Owner's merge, CI on `develop` at `9bdca62` green. `DONE` on `develop` since `8f768bb` |
+

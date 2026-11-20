@@ -17,6 +17,12 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | `npm run typecheck`, `npx eslint`, PHP's checks | Local | — | — | `NOT_RUN`: PHP is not on this machine, and the change holds no TypeScript; the fast run runs them |
 | Guard preview, then guard | Local: the working tree against `origin/develop`, then `4d818c6` (checkpoint 1: the command, the cleanups and the tests) | 01:34 to 01:36 | about 2 min | `PASS`, no candidate |
 | `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit`; the changed PostgreSQL files | Fast run 1, 44794418868 on `4d818c6` | 01:36:52 to 01:42:33 | 5 min 41 s for the job | `FAIL`: every step `PASS` but PHPStan, 3 errors, and `HousekeepingTest`, 9 of 10 (F-3); `RetentionInventoryTest` 4 of 4 `PASS` |
+| Guard | Local, on `373878e` (checkpoint 2: F-3) | 01:46 | under 1 min | `PASS`, no candidate |
+| The steps of fast run 1 | Fast run 2, 44796023234 on `373878e`, the reviewed head | 01:47:07 to 01:52:35 | 5 min 28 s for the job | `PASS`: every step; `HousekeepingTest` 10 of 10, `RetentionInventoryTest` 4 of 4; the retest of F-3, each failure cured |
+| Review round 1 (section 10.1) | `bk-reviewer-high`, on the package of tree `0246c72` | 01:53 to 02:01 | about 8 min | `FAIL`: R-01 MUST-FIX, fixed with R-02, R-03, R-05 and R-08 in checkpoint 3 |
+| Guard preview, then guard | Local: the working tree against `origin/develop`, then `85d5b52` (checkpoint 3: the review's fixes) | 02:04 to 02:06 | about 2 min | `PASS`, no candidate |
+| The steps of fast run 1 | Fast run 3, 44799012415 on `85d5b52`, the review's fixes | 02:06:25 to 02:12:14 | 5 min 49 s for the job | `PASS`: every step; `HousekeepingTest` 12 of 12 with the regression tests of R-01 and R-02, `RetentionInventoryTest` 4 of 4; the one targeted retest of the review's fixes |
+| Verification round 2 (section 10.2) | `bk-reviewer-high`, on the package of tree `78b35d5` | 02:07 to 02:09 | about 2 min | `PASS`: R-01 fixed, no MUST-FIX left |
 | The whole PostgreSQL suite in four parts, `composer test:race`, the browser suite, `npm run build`, the image checks | CI on the pull request's final head | — | — | `NOT_RUN` until then (CE-44, D-117) |
 
 ## 2. What was built (contract section 4.1)
@@ -67,8 +73,8 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 
 | Criterion | Proof | Status |
 | --- | --- | --- |
-| AC-038-01 | `HousekeepingTest`: the link, receipt, security log, file and CSV tests and the retention family | `NOT_RUN` until the fast run |
-| AC-038-02 | `HousekeepingTest::test_an_unreferenced_file_is_removed_after_its_grace_period_and_never_earlier_nor_a_referenced_one`, `test_a_temporary_csv_file_is_removed_after_24_hours_whatever_its_state_and_nothing_else_there` | As AC-038-01 |
+| AC-038-01 | `HousekeepingTest`: the link, receipt, security log, file and CSV tests and the retention family | `PASS` in fast run 3 on the final code (section 1); the whole suite on the pull request's final head |
+| AC-038-02 | `HousekeepingTest::test_an_unreferenced_file_is_removed_after_its_grace_period_and_never_earlier_nor_a_referenced_one`, `test_referenced_files_never_use_up_the_limit_of_a_run` (R-01), `test_a_temporary_csv_file_is_removed_after_24_hours_whatever_its_state_and_nothing_else_there` | As AC-038-01 |
 | AC-038-03 | `RetentionInventoryTest`; the retention family of `HousekeepingTest` | As AC-038-01 |
 | AC-038-04 | `HousekeepingTest::test_the_command_never_overlaps_itself_and_takes_no_option_or_argument`; `ProcessScheduleTest` | As AC-038-01 |
 
@@ -84,20 +90,21 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 
 | Dimension | Status |
 | --- | --- |
-| Business | `NOT_RUN` until the fast run |
+| Business | `PASS` — the criteria of section 6 in fast run 3; the final head's suites before the merge |
 | UI and UX | N/A — no page or control |
-| Backend | `NOT_RUN` until the fast run: a console command only, no route, FormRequest or DTO; its bounds from configuration |
+| Backend | `PASS` — a console command only, no route, FormRequest or DTO, so none of those apply; its bounds from configuration, refused out of range |
 | Database | N/A — no migration |
-| Security | `NOT_RUN` until the fast run: no option or stored value reaches a process; the marker check; the security log's database bound |
-| Data integrity | `NOT_RUN` until the fast run: the retention family; no unresolved receipt or referenced file removed; one short transaction per batch |
-| Performance | Bounded batches and one walk of each file area per run; the budgets are measured at TASK-048 |
-| Operations | No new table in the manifest's counts; OPERATIONS_RUNBOOK sections 3 and 9 (SC-02 hourly, never run by hand) unchanged; a failed run prints `HOUSEKEEPING_FAILED` with its class and records its security log entry, and the next hour's run takes what is left |
-| Verification | Pending the self-review, the fast run and the class-A review |
+| Security | `PASS` — no option or stored value reaches a process or a statement's text; the marker check before anything; the security log's database bound under both clocks; no secret; the guard's preview and every guard `PASS` |
+| Data integrity | `PASS` — the retention family; no unresolved receipt, referenced file or younger entry removed; one short transaction per batch, locked rows skipped; a failed run keeps what it removed (R-02) |
+| Performance | `PASS` for what applies — bounded batches and one walk of each file area per run; the budgets are measured at TASK-048, with the receipts' batch without an index on `outcome_at` (R-06) |
+| Operations | `PASS` — no new table in the manifest's counts; OPERATIONS_RUNBOOK sections 3 and 9 (SC-02 hourly, never run by hand) unchanged; a failed run prints `HOUSEKEEPING_FAILED` with its class and records its security log entry, and the next hour's run takes what is left |
+| Verification | `PASS` for what runs before the pull request: the self-review; the class-A review, round 1 `FAIL` with one MUST-FIX, fixed and verified in round 2 `PASS` (section 10); fast runs 2 and 3 green. The command contract and the image checks run on the pull request's final head before the merge (CE-41) |
 
 ## 9. The guard's candidates (CE-31; D-076, D-097, D-098)
 
 | Candidates | Judgment |
 | --- | --- |
+| None | Every `guard.sh --preview` and `guard.sh` of this Task found no candidate (section 1) |
 
 ## 10. Review (EXECUTION_CONTEXT CE-40)
 
@@ -120,6 +127,24 @@ Agent `bk-reviewer-high`, model `claude-opus-5-5`, effort High, mode `review`; p
 
 One MUST-FIX was raised, so round 2 verifies its fix.
 
+### 10.2 Round 2, the targeted verification of R-01
+
+Agent `bk-reviewer-high`, model `claude-opus-5-5`, effort High, mode `verify`; package `review/TASK-038/r2`, base `9bdca62`, tree `78b35d5`, previous package `r1` (tree `0246c72`), HEAD `85d5b52`; 21 November, 02:07 to 02:09; `review-pack.sh --check` `UNCHANGED` after it. Verdict `PASS`, no MUST-FIX left.
+
+| ID | Severity | Finding | Outcome |
+| --- | --- | --- | --- |
+| R-01 | MUST-FIX | As in section 10.1 | `FIXED`: one walk, the rows read per batch, the limit counting removals only; the regression test fails on round 1's code (its first four old key-named files are the referenced logos, so it removed none) and passes on the fix |
+| R-02, R-05 | SHOULD-FIX, NOTE | As in section 10.1 | `FIXED` |
+| R-09 | NOTE | The cut-off of `removeUnnamed` within a batch, when the removals so far are within one batch of the limit, runs in no test; the code reads correct | Recorded, no change |
+
+No further round is due: the MUST-FIX is fixed, proven by its regression test and this targeted check (CE-40).
+
 ## 11. Record (CE-50)
 
-Pending.
+- Guard: `guard.sh` `PASS` with no candidate on every pushed head; `guard.sh --preview` of the record's change before its commit (section 1).
+- Backup impact (EXC-47): none; no new table or kind of stored file.
+- The previous merge: the `ops/` pull request #52 of D-133 and D-134 (head `8311ad1`, CI 44756500932; squash `9bdca62` by the Owner, CI on `develop` 44785289365), which recovers TASK-037's pull request #51 (squash `8f768bb` by the Owner; CI on `develop` 44698518825 failed) — recorded in [TASK-037's evidence](TASK-037.md) section 13 and in CURRENT_HANDOFF.
+- Documents: TASK_PLAN — TASK-038 `DONE`; its one dependent, TASK-043, stays `TODO` (TASK-041 is not `DONE`); the totals TODO 9, READY 3, DONE 38. STACK_AND_MODULES section 2's Media row and section 2.1's Operations row; CURRENT_HANDOFF last, with the Owner's resume of 21 November in its section 0 and D-133 and D-134 in its section 5. No decision is recorded; the next free decision is D-135.
+- Fast runs: three of the ten of CE-46 before the pull request; run 1 failed on proven defects of the change, all fixed in one push and cured in run 2 (F-3, D-133); no CI run was repeated.
+- Not verified before the pull request's final head: the whole PostgreSQL suite in four parts, `test:race`, the browser suite, the build and the image checks.
+- Next eligible Task: TASK-039, System status and monitoring, effort High (agent `bk-executor-high`; review and verification `bk-reviewer-high`).
