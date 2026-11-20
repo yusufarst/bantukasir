@@ -24,6 +24,7 @@ use Tests\Harness\Commands\CommandRequests;
 use Tests\Harness\DatabaseTestCase;
 use Tests\Harness\Fixtures\TokoContoh;
 use Tests\Harness\Media\TestImages;
+use Throwable;
 
 /**
  * SC-02 `housekeeping:run` (AC-038-01, AC-038-02, AC-038-04; ROUTE_CONTRACTS SC-02; ENVIRONMENTS sections 13
@@ -260,12 +261,16 @@ final class HousekeepingTest extends DatabaseTestCase
         $this->assertSame([], $command->getNativeDefinition()->getArguments());
         $this->assertSame([], $command->getNativeDefinition()->getOptions());
 
+        $refusal = null;
+
         try {
             Artisan::call('housekeeping:run', ['--batch-size' => '1000000']);
-            $this->fail('An option was accepted.');
-        } catch (InvalidOptionException) {
-            $this->assertSame(['ancient'], $this->logged(['ancient']));
+        } catch (Throwable $thrown) {
+            $refusal = $thrown;
         }
+
+        $this->assertInstanceOf(InvalidOptionException::class, $refusal);
+        $this->assertSame(['ancient'], $this->logged(['ancient']));
 
         $this->housekeep();
         $this->assertSame([], $this->logged(['ancient']));
@@ -285,8 +290,9 @@ final class HousekeepingTest extends DatabaseTestCase
         config(['app.environment_name' => 'staging']);
         $this->assertSame(1, Artisan::call('housekeeping:run'));
         $this->assertStringContainsString('HOUSEKEEPING_REFUSED', Artisan::output());
-        $this->assertSame($entries, $this->observer()->table('security_log_entries')->count());
+        // The harness's observer checks the marker too, so the name is set back first.
         config(['app.environment_name' => 'test']);
+        $this->assertSame($entries, $this->observer()->table('security_log_entries')->count());
 
         foreach ([
             ['housekeeping.file_grace_seconds' => MediaStore::MIN_GRACE_SECONDS - 1],

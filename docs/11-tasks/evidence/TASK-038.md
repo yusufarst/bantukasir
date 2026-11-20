@@ -15,6 +15,8 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Check | Where it ran | Time | Duration | Result |
 | --- | --- | --- | --- | --- |
 | `npm run typecheck`, `npx eslint`, PHP's checks | Local | — | — | `NOT_RUN`: PHP is not on this machine, and the change holds no TypeScript; the fast run runs them |
+| Guard preview, then guard | Local: the working tree against `origin/develop`, then `4d818c6` (checkpoint 1: the command, the cleanups and the tests) | 01:34 to 01:36 | about 2 min | `PASS`, no candidate |
+| `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit`; the changed PostgreSQL files | Fast run 1, 44794418868 on `4d818c6` | 01:36:52 to 01:42:33 | 5 min 41 s for the job | `FAIL`: every step `PASS` but PHPStan, 3 errors, and `HousekeepingTest`, 9 of 10 (F-3); `RetentionInventoryTest` 4 of 4 `PASS` |
 | The whole PostgreSQL suite in four parts, `composer test:race`, the browser suite, `npm run build`, the image checks | CI on the pull request's final head | — | — | `NOT_RUN` until then (CE-44, D-117) |
 
 ## 2. What was built (contract section 4.1)
@@ -47,6 +49,9 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 
 | ID | Finding | Outcome |
 | --- | --- | --- |
+| F-1 | Carried for this Task: TASK-010 section 4 item 12 and TASK-018 F-4 — the files that a refused, rolled-back or repeated RC-25 or RC-32 leaves unreferenced, a photo and its thumbnail per RC-25; TASK-019 F-1 — the temporary CSV files that uncertain, held, refused or abandoned imports leave | Settled: `MediaStore::removeUnreferenced` removes a photo and its thumbnail alike once neither has a row, and `CsvImportFiles::removeExpired` every import file after 24 hours whatever its state; both tested at their boundaries |
+| F-2 | Carried for this Task: TASK-006 F-8 — `occurred_at` is the application's clock and the policy compares it with the database's `now()`, so a skew shifts the retention | Settled: the removal is bounded by both clocks (C-4); `HousekeepingTest::test_the_database_keeps_a_younger_entry_whatever_the_application_clock_says` runs it two days ahead and two days behind |
+| F-3 | Fast run 1: PHPStan — `array_diff()` given the `mixed` values of `pluck()` in `MediaStore::removeUnreferenced`, and a catch of `InvalidOptionException` read as dead in `HousekeepingTest`; and `HousekeepingTest::test_a_run_is_refused_before_anything_on_another_database_or_with_a_setting_out_of_range` erred in the harness, whose observer checks the database's marker against the configured name, which the test had set to `staging` and read before setting it back | Fixed in checkpoint 2: the referenced keys filtered to strings; the refusal caught as a `Throwable` and asserted an `InvalidOptionException`; the test sets the name back before it reads. Fast run 2 is their one retest (D-133) |
 
 ## 5. Tests (contract section 7)
 

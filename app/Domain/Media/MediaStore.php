@@ -77,7 +77,7 @@ final class MediaStore
         $removed = 0;
 
         foreach (array_chunk($candidates, max(1, $batch)) as $keys) {
-            $referenced = DB::table('stored_files')->whereIn('storage_key', $keys)->pluck('storage_key')->all();
+            $referenced = array_filter(DB::table('stored_files')->whereIn('storage_key', $keys)->pluck('storage_key')->all(), is_string(...));
 
             foreach (array_diff($keys, $referenced) as $key) {
                 if ($disk->delete($key)) {
