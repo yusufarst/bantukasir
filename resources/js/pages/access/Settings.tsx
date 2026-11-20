@@ -30,6 +30,8 @@ const ENTRIES: Readonly<Record<string, { readonly title: TranslationKey; readonl
     profile: { title: 'config.profile.title', description: 'config.settings.profile_desc', icon: 'image' },
     // UXI-328 "Laci kas" (TASK-027).
     registers: { title: 'cash.registers.title', description: 'config.settings.registers_desc', icon: 'drawer' },
+    // UXI-329 "Status sistem" (TASK-039).
+    status: { title: 'config.system_status.title', description: 'config.settings.status_desc', icon: 'info' },
 };
 
 export default function Settings({ entries }: { entries: readonly Entry[] }) {

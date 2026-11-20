@@ -8,6 +8,8 @@ use App\Domain\Access\Accounts;
 use App\Domain\Commands\CommandRefused;
 use App\Domain\Commands\Operations;
 use App\Domain\Commands\RequestReceipts;
+use App\Domain\Operations\Reconciliation\ReconciliationRuns;
+use App\Domain\Operations\Restore\RestoreDrills;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
@@ -283,6 +285,74 @@ final class FixturesController
         TokoContoh::stock($product, '5', '5000');
 
         return new JsonResponse(['blockId' => TokoContoh::postingBlock($product, 'BALANCE_MISMATCH'), 'productId' => $product, 'name' => $name, 'sku' => 'IN-'.$suffix]);
+    }
+
+    /**
+     * The evidence of the system status for the browser suite (TASK-039), written as each writer writes it
+     * (EXECUTION_CONTEXT EXC-45): `backup_runs` as the backup role inserts its rows (BackupRunner),
+     * `restore_drills` through RestoreDrills as OP-08 records a drill, `reconciliation_runs` through
+     * ReconciliationRuns as SC-01 records a run. Every row is the newest, because the local database keeps the
+     * earlier ones and each item reads its newest: `unverified`, a Sunday run whose re-verification failed and
+     * then a success, so that the backup is "Belum Terverifikasi"; `ok`, a Sunday run that re-verified its
+     * weekly copy, a passed drill and a clean daily reconciliation; `failed`, a failed backup.
+     */
+    public function status(Request $request): JsonResponse
+    {
+        EnvironmentMarker::require(DB::connection(), ['local', 'test']);
+
+        $state = $request->input('state');
+        $backup = DB::connection(TestDatabase::BACKUP);
+        /** @param array<string, mixed> $values */
+        $run = static function (array $values) use ($backup): void {
+            $at = CarbonImmutable::now('UTC')->format('Y-m-d H:i:s.uP');
+            $succeeded = ($values['outcome'] ?? 'SUCCEEDED') === 'SUCCEEDED';
+            $backup->table('backup_runs')->insert([
+                'backup_id' => CarbonImmutable::now('UTC')->format('Ymd\THis\Z').'-'.Str::random(8),
+                'reason' => 'SCHEDULED',
+                'started_at' => $at,
+                'finished_at' => $at,
+                'outcome' => 'SUCCEEDED',
+                'failure_code' => null,
+                'snapshot_at' => $at,
+                'tiers' => '6h',
+                'dump_bytes' => $succeeded ? 1_000_000 : null,
+                'files_uploaded' => $succeeded ? 0 : null,
+                'uploaded_bytes' => $succeeded ? 1_000_000 : null,
+                'store_bytes' => $succeeded ? 1_500_000_000 : null,
+                'dump_object_sha256' => $succeeded ? $backup->raw("decode(repeat('00', 32), 'hex')") : null,
+                'manifest_object_sha256' => $succeeded ? $backup->raw("decode(repeat('00', 32), 'hex')") : null,
+                'reverified_backup_id' => null,
+                ...$values,
+            ]);
+        };
+
+        switch ($state) {
+            case 'unverified':
+                $run(['outcome' => 'FAILED', 'failure_code' => 'REMOTE_MISMATCH', 'tiers' => '6h,weekly']);
+                $run([]);
+                break;
+            case 'ok':
+                $run(['tiers' => '6h,weekly', 'reverified_backup_id' => '20261115T000000Z-'.Str::random(8)]);
+                $now = CarbonImmutable::now('UTC');
+                DB::transaction(static fn (): int => app(RestoreDrills::class)->record([
+                    'kind' => 'ROUTINE',
+                    'backupId' => '20261115T000000Z-'.Str::random(8),
+                    'manifestSha256' => str_repeat('ab', 32),
+                    'startedAt' => $now->subMinutes(10)->format('Y-m-d H:i:s.uP'),
+                    'finishedAt' => $now->format('Y-m-d H:i:s.uP'),
+                    'result' => 'PASS',
+                    'restoreSeconds' => 600,
+                ], 'Uji pemulihan rutin', $now->format('Y-m-d H:i:s.uP')));
+                app(ReconciliationRuns::class)->record($now->subMinute()->format('Y-m-d H:i:s.uP'), $now->format('Y-m-d H:i:s.uP'), ReconciliationRuns::CLEAN, 1, 0, 0, ReconciliationRuns::ALL, ReconciliationRuns::SCHEDULE);
+                break;
+            case 'failed':
+                $run(['outcome' => 'FAILED', 'failure_code' => 'TIMEOUT']);
+                break;
+            default:
+                throw new InvalidArgumentException('The status fixture is unverified, ok or failed.');
+        }
+
+        return new JsonResponse(['state' => $state]);
     }
 
     /**

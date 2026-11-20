@@ -319,6 +319,21 @@ final class Allowlists
             'incident', 'incident.id', 'incident.detectedAt', 'incident.detailCode', 'incident.status', 'incident.reopenedAt',
             'incident.product', 'incident.product.id', 'incident.product.name', 'incident.product.sku',
         ]],
+        // UXP-611, the Owner's alone (TASK-039): each item's state, the time and age of its evidence and its
+        // sizes, and whether an incident is open; `#failed` with a read that failed. Never a path, an
+        // address, a backup identifier, a hash or an operator's note.
+        'operations/Status' => ['owner' => self::SYSTEM_STATUS],
+        'operations/Status#failed' => ['owner' => ['status']],
+    ];
+
+    /** The status of UXP-611 (TASK-039). */
+    private const array SYSTEM_STATUS = [
+        'status', 'status.incidentsOpen',
+        'status.backup', 'status.backup.state', 'status.backup.at', 'status.backup.ageMinutes', 'status.backup.bytes', 'status.backup.totalBytes',
+        'status.restore', 'status.restore.state', 'status.restore.at', 'status.restore.ageMinutes', 'status.restore.bytes', 'status.restore.totalBytes',
+        'status.disk', 'status.disk.state', 'status.disk.at', 'status.disk.ageMinutes', 'status.disk.bytes', 'status.disk.totalBytes',
+        'status.reconciliation', 'status.reconciliation.state', 'status.reconciliation.at', 'status.reconciliation.ageMinutes', 'status.reconciliation.bytes', 'status.reconciliation.totalBytes',
+        'status.backupStore', 'status.backupStore.state', 'status.backupStore.at', 'status.backupStore.ageMinutes', 'status.backupStore.bytes', 'status.backupStore.totalBytes',
     ];
 
     /** RP-412 without the rows of its checklist (TASK-035). */
@@ -477,6 +492,8 @@ final class Allowlists
         'cash/AssistedClose' => ['owner' => self::ASSISTED_PREVIEW],
         'cash/AssistedClose#refunds' => ['owner' => [...self::ASSISTED_PREVIEW, ...self::PREVIEW_REFUNDS]],
         'cash/Session' => ['owner' => ['notes', 'notes.*', 'notes.*.id', 'notes.*.text', 'notes.*.recordedAt', 'notes.*.author']],
+        // TASK-039: UXP-611's status read again by name (UXI-374).
+        'operations/Status' => ['owner' => self::SYSTEM_STATUS],
     ];
 
     /**

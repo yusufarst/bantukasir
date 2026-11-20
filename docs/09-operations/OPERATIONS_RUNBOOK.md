@@ -71,17 +71,21 @@ SC-01 to SC-04 are ENVIRONMENTS section 13. The operator does not run them by ha
 
 The heartbeat monitor alerts the operator by email; the operator may add the Owner as a second recipient. The application itself sends no email (D-049).
 
+`monitor:heartbeat` (SC-04) pings the web check only after the public `/up` answered 200. `/up` answers in maintenance mode too, and SC-04 alone of the scheduled commands runs in it, so a release's window (RELEASE_PROCESS RB-20) raises no web alert while the application and its database answer (TASK-039; OPEN_ITEMS T-39 (b)). The other scheduled commands do not run during a window: one that covers 03.00 skips that night's reconciliation, whose check then alerts, and the operator runs it by hand after the window (RB-04).
+
 ## 5. Evidence behind the system status (UXP-611)
 
 COPY_DECK section 11.11 names the five items and their values; this section fixes the evidence behind each (COPY_DECK section 21.2). The page reads all five in one request; a failed read is UXS-22, never a passing look. An item that is failed or "Belum Terverifikasi" also raises the attention item "Status sistem perlu dicek" on Beranda (UXI-064).
 
 | Item | Evidence | "Berhasil :waktu" and ":durasi yang lalu" | "Gagal :waktu" | "Belum Terverifikasi" |
 | --- | --- | --- | --- | --- |
-| Cadangan data terakhir (`config.system_status.backup`) | The newest `backup_runs` rows of the environment | The newest run succeeded, at most 7 hours ago | The newest run failed | No run has ever succeeded; or the newest success is older than 7 hours (shown with its age); or the Sunday re-verification failed or has not run for 8 days |
+| Cadangan data terakhir (`config.system_status.backup`) | The newest `backup_runs` rows of the environment | The newest run succeeded, at most 7 hours ago | The newest run failed | No run has ever succeeded; or the newest success is older than 7 hours (shown with its age); or the Sunday re-verification failed or has not run for 8 days — so a new installation shows it until the Sunday after its first weekly copy |
 | Uji pemulihan terakhir (`config.system_status.restore`) | The newest `restore_drills` row | The newest drill passed, at most 35 days ago | The newest drill failed | No drill has been recorded; or the newest pass is older than 35 days |
 | Ruang penyimpanan (`config.system_status.disk`) | Free and total space of the file system that holds the file volume, measured when the page is read | "Tersisa :ukuran dari :total", with at least 20 % free | "Tersisa :ukuran dari :total" shown in the failed state when less than 20 % is free | The measurement could not be made |
-| Rekonsiliasi harian (`config.system_status.reconciliation`) | The newest `reconciliation_runs` row | The newest run completed with no mismatch, at most 26 hours ago | The newest run failed or found a mismatch; "Insiden rekonsiliasi" links to UXP-414 while an incident is open (UXI-375) | No run has been recorded; or the newest is older than 26 hours |
+| Rekonsiliasi harian (`config.system_status.reconciliation`) | The newest `reconciliation_runs` row of every product (scope `ALL`), and every row of either scope after it | The newest run of every product completed with no mismatch, at most 26 hours ago, and no run since failed or found a mismatch | The newest run of every product, or a run of one product (RB-04) since, failed or found a mismatch; "Insiden rekonsiliasi" links to UXP-414 while an incident is open (UXI-375) | No run of every product has been recorded; or the newest is older than 26 hours (shown with its age). A run of one product never stands for the daily run |
 | Penyimpanan cadangan (`config.system_status.backup_store`) | `store_bytes` of the newest successful `backup_runs` row, against the store's free allowance of 10 GB (ADR-010 items 4 and 11; BACKUP_RECOVERY section 6) | "Terpakai :ukuran dari :total", below 80 % of the allowance | "Terpakai :ukuran dari :total" shown in the failed state at 80 % of the allowance or more, when the operator applies the reduced retention (BACKUP_RECOVERY section 6) | No successful run has recorded the usage |
+
+Each threshold is judged by the application's clock when the page is read (`App\Queries\Operations\SystemStatus`, TASK-039); a row dated more than five minutes after that clock, beyond the drift of two synchronized clocks, proves nothing and is "Belum Terverifikasi". An age is shown in minutes, the largest unit of COPY_DECK section 1.3 (OPEN_ITEMS T-25).
 
 The backup store's usage against its allowance is the fifth item, as ADR-010 item 11 says, by the Owner's answer of 19 October 2026 to the question of TASK-002 ("A — Tampilkan"); the operator also acts on the store's cap alerts (section 4).
 
@@ -116,6 +120,7 @@ Steps for every incident:
 5. **Owner:** request the rebuild. The operator runs OP-07 `projection:rebuild` for the product (or for the Sale whose running totals differ, or for the token whose active mapping differs). The procedure recomputes the projection from immutable facts under the same guards as the commands that write it, writes the corrected projection and an audit event, and never changes a fact (SEC-OP-07). If the facts themselves fail validation, it refuses and changes nothing; the incident stays open for the Owner to decide, and a restore (RB-01) is considered only with the Owner's authorization.
 6. Run `reconciliation:run` for the product again; it must be clean.
 7. **Owner:** reopen the product's postings with "Buka kembali mutasi" (UXI-304, RC-16, recent authentication).
+8. A clean run for one product does not stand for the daily run, so "Rekonsiliasi harian" on UXP-611 stays failed, and Beranda's "Status sistem perlu dicek" stays, until a run of every product is clean: the next 03.00 run, or the operator's `reconciliation:run` of every product after step 7 (section 5).
 
 ### RB-05 — Security incident or leaked secret (SEC-SECRET-04)
 

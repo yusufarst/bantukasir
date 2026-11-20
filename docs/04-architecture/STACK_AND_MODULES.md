@@ -79,7 +79,7 @@ A module may read from the modules listed for it; writes across modules happen o
 | Sales | Catalog, Inventory, Costing, Cash, Configuration, Media (read: the delivery path of a receipt's logo, RP-103, TASK-029), Audit, Commands, Access, shared kernel |
 | Documents | Sales, Cash, Catalog, Configuration (all read), Audit, Commands and Access (a print or export request is a command: TASK-018's RC-47), shared kernel |
 | Reporting | Every domain module, read only |
-| Operations | Inventory, Costing (reconciliation reads; the recovery and rebuild procedures call their services), Catalog (active mappings; the housekeeping of the temporary import files, TASK-038), Sales (running totals), Media, Commands, Access (actor; the housekeeping of expired links, TASK-038), Audit |
+| Operations | Inventory, Costing (reconciliation reads; the recovery and rebuild procedures call their services; the open reconciliation incidents of the system status, TASK-039), Catalog (active mappings; the housekeeping of the temporary import files, TASK-038), Sales (running totals), Media, Commands, Access (actor; the housekeeping of expired links, TASK-038), Audit |
 
 | ID | Rule | Source |
 | --- | --- | --- |
@@ -167,6 +167,10 @@ Folders added by TASK-037 for the restore tooling; the module boundaries do not 
 
 - `scripts/operations/restore/` holds the operator's scripts of BACKUP_RECOVERY RB-01 and RB-02, which run on the operator's own machine, never in an application container; `docs/09-operations/RESTORE_CHECKLISTS.md` is their checklist. `app/Domain/Operations/Restore/` holds the record of the restore drills.
 - `docker/rehearsal/` and the services of the profile `rehearsal` of `compose.yaml` are the operator's machine and the drill target's gateway of the restore rehearsal, which `scripts/checks/restore-rehearsal.sh` runs in CI; `tests/Rehearsal/` and `playwright.rehearsal.config.ts` are its browser steps, apart from the browser suite; `tests/Harness/Restore/` holds the restores of TEST_STRATEGY TS-24.
+
+Files added by TASK-039 for the system status; the module boundaries do not change:
+
+- `app/Queries/Operations/SystemStatus.php` reads the five items of OPERATIONS_RUNBOOK section 5 and the open incidents (`App\Queries\Inventory\Incidents`); `app/Http/Controllers/Operations/StatusController.php` is RP-611 and `resources/js/pages/operations/Status.tsx` UXP-611; `app/Domain/Operations/PublicHealth.php` and `app/Console/Commands/MonitorHeartbeat.php` are SC-04. PHP measures the free space of the file volume as a float, so `app/Console/LocalVolumeSpace.php` measures it behind the module's interface `VolumeSpace` (STK-22), as `LocalDiskSpace` does for the backup.
 
 | ID | Rule | Source |
 | --- | --- | --- |

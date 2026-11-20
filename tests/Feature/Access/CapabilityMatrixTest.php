@@ -489,6 +489,11 @@ final class CapabilityMatrixTest extends DatabaseTestCase
         'RC-16' => ['method' => 'POST', 'path' => '/commands/posting_block.reopen', 'json' => true, 'answers' => [
             'guest' => [401, null], 'owner' => [423, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
         ]],
+        // TASK-039: the system status for CAP-32, the Owner's alone; every other role and the combined account
+        // refused (AC-039-01).
+        'RP-611' => ['method' => 'GET', 'path' => '/settings/system-status', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
     ];
 
     /** @var array<string, array{id: int, email: string, password: string}> */

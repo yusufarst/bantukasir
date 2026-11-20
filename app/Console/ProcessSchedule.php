@@ -51,6 +51,13 @@ final class ProcessSchedule
             if ($identifier === 'SC-03') {
                 $event->appendOutputTo(storage_path(self::BACKUP_LOG));
             }
+
+            // RH-01 answers in maintenance mode too (bootstrap/app.php), so SC-04 keeps reading it and
+            // pinging the web check through a release's window, which then raises no alert of its own
+            // (OPEN_ITEMS T-39 (b); TASK-039). The others write data and wait for the window's end.
+            if ($identifier === 'SC-04') {
+                $event->evenInMaintenanceMode();
+            }
         }
     }
 }

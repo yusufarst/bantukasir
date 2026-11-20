@@ -193,6 +193,8 @@ final class RouteInventoryTest extends TestCase
         'GET /stock/incidents' => ['incidents.index', 'RP-414', 'CAP-18', [...self::SIGNED_IN, 'capability:CAP-18', 'input.allow:status,after,perPage']],
         'GET /stock/incidents/{block}' => ['incidents.show', 'RP-415', 'CAP-18', [...self::SIGNED_IN, 'capability:CAP-18', 'input.allow']],
         'POST /commands/posting_block.reopen' => ['commands.posting_block.reopen', 'RC-16', 'CAP-18', [...self::SIGNED_IN, 'capability:CAP-18', 'throttle:command', 'password.confirm']],
+        // TASK-039: RP-611 for CAP-32, taking only its path.
+        'GET /settings/system-status' => ['system.status', 'RP-611', 'CAP-32', [...self::SIGNED_IN, 'capability:CAP-32', 'input.allow']],
     ];
 
     public function test_the_routes_are_exactly_those_listed_each_with_its_gate(): void
