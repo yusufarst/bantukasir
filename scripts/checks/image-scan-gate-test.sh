@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# The regression tests of scripts/checks/image-scan-gate.sh (Owner decisions D-112, D-115, D-118, D-123, D-127, D-128),
+# The regression tests of scripts/checks/image-scan-gate.sh (Owner decisions D-112, D-115, D-118, D-123, D-127, D-128, D-134),
 # on synthetic reports, and of the accepted list that the decision records. They
 # need jq only, and run at the start of the scan in scripts/checks/image-checks.sh.
 set -uo pipefail
@@ -198,9 +198,9 @@ accepted_file="$list"
 check 'the accepted list is complete and exact, and accepts one of its findings' 0 'Scan gate: 1 accepted, 0 refused'
 unset accepted_file
 
-record 'the list names the 66 assessed CVEs' 66 "$(jq '.accepted | length' "$list")"
-record 'each CVE is listed once' 66 "$(jq '[.accepted[].id] | unique | length' "$list")"
-record 'the list holds the 166 findings of the assessed runs' 166 "$(jq '[.accepted[].packages[]] | length' "$list")"
+record 'the list names the 73 assessed CVEs' 73 "$(jq '.accepted | length' "$list")"
+record 'each CVE is listed once' 73 "$(jq '[.accepted[].id] | unique | length' "$list")"
+record 'the list holds the 187 findings of the assessed runs' 187 "$(jq '[.accepted[].packages[]] | length' "$list")"
 record 'D-112 accepted its 43 entries' 43 "$(jq '[.accepted[] | select(.decision == "D-112")] | length' "$list")"
 record 'D-115 accepted exactly its 13 entries' \
     'CVE-2026-107928 CVE-2026-107929 CVE-2026-84243 CVE-2026-86414 CVE-2026-87862 CVE-2026-87863 CVE-2026-87864 CVE-2026-87865 CVE-2026-92388 CVE-2026-92389 CVE-2026-92390 CVE-2026-92391 CVE-2026-94266' \
@@ -219,7 +219,14 @@ krb5_d128='libgssapi-krb5-2 1.21.3-5+deb13u1 libk5crypto3 1.21.3-5+deb13u1 libkr
 record 'D-128 accepted exactly its 2 entries, each in the four krb5 libraries at 1.21.3-5+deb13u1 alone' \
     "CVE-2026-112314 $krb5_d128 CVE-2026-112320 $krb5_d128" \
     "$(jq -r '[.accepted[] | select(.decision == "D-128") | "\(.id) \(.packages | map("\(.name) \(.version)") | join(" "))"] | sort | join(" ")' "$list")"
-record 'every entry is a Debian package' 166 "$(jq '[.accepted[].packages[] | select(.type == "deb")] | length' "$list")"
+# D-134: the seven OpenSSL findings, development and CI only, each in the three
+# packages of the source package openssl at 3.5.7-1~deb13u3 alone.
+openssl_d134='libssl3t64 3.5.7-1~deb13u3 openssl 3.5.7-1~deb13u3 openssl-provider-legacy 3.5.7-1~deb13u3'
+record 'D-134 accepted exactly its 7 entries, each in the three openssl packages at 3.5.7-1~deb13u3 alone' \
+    "CVE-2026-107493 $openssl_d134 CVE-2026-107496 $openssl_d134 CVE-2026-124709 $openssl_d134 CVE-2026-84786 $openssl_d134 CVE-2026-88823 $openssl_d134 CVE-2026-95691 $openssl_d134 CVE-2026-95692 $openssl_d134" \
+    "$(jq -r '[.accepted[] | select(.decision == "D-134") | "\(.id) \(.packages | map("\(.name) \(.version)") | join(" "))"] | sort | join(" ")' "$list")"
+record 'D-134 accepted no critical finding' 0 "$(jq '[.accepted[] | select(.decision == "D-134" and .severity != "High")] | length' "$list")"
+record 'every entry is a Debian package' 187 "$(jq '[.accepted[].packages[] | select(.type == "deb")] | length' "$list")"
 # A critical finding enters only by its own decision of the Owner, which adds its
 # identifier here.
 record 'the critical findings are exactly the nine that D-112 and D-115 assessed' \

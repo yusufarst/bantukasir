@@ -147,7 +147,7 @@ final class ReleaseWorkflowTest extends TestCase
         $report = (string) file_get_contents($output);
         $this->assertStringNotContainsString('{{', $report);
 
-        foreach (['# Release integrity report — v1.2.3-rc.4', str_repeat('a', 40), 'sha256:'.str_repeat('b', 64), 'https://github.test/run/1', 'composer.lock', 'package-lock.json', 'php:8.5.12-fpm-trixie@sha256:', '- Image checks: 280 passed, 0 failed', '- Scan gate tests: 50 passed, 0 failed', '- Critical: 9', '2026_10_31_000001_create_backup_runs_table`: additive', 'TO_BE_COMPLETED'] as $expected) {
+        foreach (['# Release integrity report — v1.2.3-rc.4', str_repeat('a', 40), 'sha256:'.str_repeat('b', 64), 'https://github.test/run/1', 'composer.lock', 'package-lock.json', 'php:8.5.13-fpm-trixie@sha256:', '- Image checks: 280 passed, 0 failed', '- Scan gate tests: 50 passed, 0 failed', '- Critical: 9', '2026_10_31_000001_create_backup_runs_table`: additive', 'TO_BE_COMPLETED'] as $expected) {
             $this->assertStringContainsString($expected, $report);
         }
     }

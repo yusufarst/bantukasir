@@ -1,12 +1,15 @@
 # The fast run of a task/ branch (EXECUTION_CONTEXT CE-46, TEST_STRATEGY section 7,
-# D-117): on every push, before and after the pull request, the static checks, the
-# unit tests and the PostgreSQL and concurrency test files that the branch changes,
-# in the containers of the local environment, stopping at the first failure. The
-# whole of PostgreSQL, concurrency, the browser suite, the build and the image
-# checks run in the ci workflow, on the pull request and on develop. It is its own
-# workflow so that a head never holds a skipped `Command contract`, which the tick
-# reads as red (scripts/executor/lib.sh). A newer push of the same branch cancels
-# its older run. It holds no secret and publishes nothing.
+# D-117, D-133): on every push, before and after the pull request, the static
+# checks, the unit tests and the PostgreSQL and concurrency test files that the
+# branch changes, in the containers of the local environment. Every check runs once
+# the local environment has started, even after an earlier check failed, so that
+# one run reports every failure (D-133); the job still fails when any check fails,
+# and a run that is cancelled runs no further check. The whole of PostgreSQL,
+# concurrency, the browser suite, the build and the image checks run in the ci
+# workflow, on the pull request and on develop. It is its own workflow so that a
+# head never holds a skipped `Command contract`, which the tick reads as red
+# (scripts/executor/lib.sh). A newer push of the same branch cancels its older run.
+# It holds no secret and publishes nothing.
 name: fast-checks
 
 on:
@@ -50,35 +53,49 @@ jobs:
                   echo "log_opts=$log_opts" >> "$GITHUB_OUTPUT"
 
             - name: Start the local environment (one command)
+              id: environment
               run: docker compose up -d --build --wait
 
+            # Each check below runs when the local environment started, whatever an
+            # earlier check gave, and none runs in a cancelled run (D-133).
             - name: composer validate
+              if: ${{ !cancelled() && steps.environment.outcome == 'success' }}
               run: docker compose exec -T app composer validate --strict --no-check-all
 
             - name: composer lint
+              if: ${{ !cancelled() && steps.environment.outcome == 'success' }}
               env:
                   SECRET_SCAN_LOG_OPTS: ${{ steps.commits.outputs.log_opts }}
               run: docker compose exec -T -e SECRET_SCAN_LOG_OPTS app composer lint
 
             - name: composer analyse
+              if: ${{ !cancelled() && steps.environment.outcome == 'success' }}
               run: docker compose exec -T app composer analyse
 
             - name: composer test:unit
+              if: ${{ !cancelled() && steps.environment.outcome == 'success' }}
               run: docker compose exec -T app composer test:unit
 
             - name: Install the npm dependencies from the lockfile
+              id: npm
+              if: ${{ !cancelled() && steps.environment.outcome == 'success' }}
               run: docker compose run --rm node npm ci
 
+            # The npm checks need the dependencies that the step above installed.
             - name: npm run lint
+              if: ${{ !cancelled() && steps.npm.outcome == 'success' }}
               run: docker compose run --rm node npm run lint
 
             - name: npm run typecheck
+              if: ${{ !cancelled() && steps.npm.outcome == 'success' }}
               run: docker compose run --rm node npm run typecheck
 
             - name: npm run test:unit
+              if: ${{ !cancelled() && steps.npm.outcome == 'success' }}
               run: docker compose run --rm node npm run test:unit
 
             - name: The PostgreSQL and concurrency test files that the branch changes
+              if: ${{ !cancelled() && steps.environment.outcome == 'success' }}
               run: bash scripts/checks/targeted-tests.sh origin/develop
 
             - name: Stop the local environment

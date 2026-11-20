@@ -49,7 +49,7 @@ FROM golang:1.27.3-trixie@sha256:c65ecfe613b539ac74c62a4c3b2c27e8f8a6076384c8f27
 ENV CGO_ENABLED=0
 RUN go install -trimpath filippo.io/age/cmd/age@v1.3.2 filippo.io/age/cmd/age-keygen@v1.3.2
 
-FROM php:8.5.12-fpm-trixie@sha256:da5d8e27ec238adc0804fd4194f98e59477db7116690d275b76679c1b84c813f AS runtime
+FROM php:8.5.13-fpm-trixie@sha256:7fd2766bd3bb6efcfb49591e4bf014e123c18f01149093bd508525c6bdf0cf9f AS runtime
 
 # Nginx comes from the nginx.org stable repository, whose package history keeps
 # every published version, so the pin below stays installable. The PostgreSQL

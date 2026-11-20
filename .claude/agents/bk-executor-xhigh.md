@@ -19,7 +19,7 @@ Tools (EXECUTION_CONTEXT CE-47, D-109), so that routine work needs no approval:
 1. Read AGENTS.md, docs/handoff/CURRENT_HANDOFF.md and docs/11-tasks/EXECUTION_CONTEXT.md, section 19 first; then TASK_PLAN sections 1 to 4, the Task's contract and what its "Read first" lists (EXC-01). Record your model identifier. If it is not `claude-opus-5-5`, run `bash scripts/executor/state.sh stop MODEL_MISMATCH --token <token> --detail "<model>"`, report and end (CE-13).
 2. Mode `start`: preflight (EXC-20 against the state and GitHub, EXC-21, EXC-23); `git switch -c <branch> <base>`; build the contract stage by stage, with `bash scripts/executor/state.sh heartbeat --token <token>` at each stage and before each test run; create the evidence file and keep it current.
 3. Checks (EXECUTION_CONTEXT CE-44 to CE-46):
-   - before the pull request, a fast run of CI. Commit `TASK-NNN: checkpoint — <stage>` with `commit.sh`, run `guard.sh`, then push with `push.sh`, each in its own Bash call. The push runs the workflow `fast-checks`: the static checks, the unit tests and the PostgreSQL and concurrency test files that the branch changes. Find the run with `gh run list --branch <branch> --commit <head>`, and wait for it with one background `timeout 2700 gh run watch <run> --exit-status`, with a heartbeat just before and just after it. Read a failure with `gh run view <run> --log-failed`;
+   - before the pull request, a fast run of CI, once the change is ready for its review, not after every stage (D-133). Commit `TASK-NNN: checkpoint — <stage>` with `commit.sh`, run `guard.sh`, then push with `push.sh`, each in its own Bash call. The push runs the workflow `fast-checks`: the static checks, the unit tests and the PostgreSQL and concurrency test files that the branch changes, every check running so that a red run reports every failure. Find the run with `gh run list --branch <branch> --commit <head>`, and wait for it with one background `timeout 2700 gh run watch <run> --exit-status`, with a heartbeat just before and just after it. Read a failure with `gh run view <run> --log-failed`, fix every failure it reports, and push the fixes together in one checkpoint, whose fast run is their one targeted retest; a failure that its fix did not cure is recorded with its exact output and is the stop `RETEST_FAILED` (CE-46, D-133);
    - the heavy ones of CE-44 — the whole of PostgreSQL and concurrency, the browser suite, the build and the image checks — run in CI on the pull request's final head, never in a container on this machine; until then each is `NOT_RUN` in the evidence, never `PASS`;
    - locally, only what needs no container, where its toolchain is installed natively;
    - reuse every result that no later change invalidated; never run a passing check again without such a change (CE-45).
@@ -30,7 +30,7 @@ Tools (EXECUTION_CONTEXT CE-47, D-109), so that routine work needs no approval:
    - `bash scripts/executor/review-pack.sh --base <base> --round 1`;
    - invoke the review agent that the delegation names, in the foreground, with the Task, its contract, its review class, the base, the tree and the package path;
    - `bash scripts/executor/review-pack.sh --check <package>` must print `UNCHANGED`;
-   - fix every MUST-FIX and each valid SHOULD-FIX that is within scope and cheap to fix safely, each with a regression test where code changes; record the other findings; run again only the checks of step 3 that the fixes affect, in a fast run where it covers them and otherwise on the final head (CE-45, CE-46); make no change beyond the findings;
+   - fix every MUST-FIX, and each valid SHOULD-FIX that is within scope, cheap to fix safely and bears on an acceptance criterion or on an area that D-133 protects (sales, payments, refunds, stock, authorization, concurrency, database integrity, restoration, release safety), each with a regression test where code changes; defer the other findings to a named later Task or an open item, and record them; run again only the checks of step 3 that the fixes affect, in a fast run where it covers them and otherwise on the final head (CE-45, CE-46); make no change beyond the findings;
    - only if the review raised a MUST-FIX: `bash scripts/executor/review-pack.sh --base <base> --round 2 --previous <package>`, then the verification agent that the delegation names, in mode `verify`, as a targeted check of the MUST-FIX fixes and their regression tests; then `--check` again;
    - a MUST-FIX that this check reports NOT FIXED, REGRESSED or new: fix it with a regression test, run the affected checks of step 3, write the round 3 package with `--previous` the round 2 package, and have the verification agent make one more targeted check of that fix alone; then `--check` again.
 
@@ -59,7 +59,7 @@ Mode `resume` (CE-24):
 
 Mode `fix`: the delegation's Reason names a red CI, or quotes change requests.
 - **A defect within the Task's scope:**
-  - fix it, with a regression test where code changes;
+  - diagnose every failure of the run from its log, and fix each cause in the same push, with a regression test where code changes; the run on the new head is their one targeted retest, and a failure that its fix did not cure is the stop `RETEST_FAILED` (CE-42, D-133);
   - run the checks of step 3 that the fix affects (CE-45);
   - when the fix changes the production behaviour of a class-A Task, have the verification agent make the targeted check of CE-42;
   - step 5 where it applies; step 6 without `pr.sh open`; then step 7.
@@ -69,6 +69,7 @@ Mode `fix`: the delegation's Reason names a red CI, or quotes change requests.
   - step 7.
 
   If the rerun is refused, treat the failure as a defect, or stop.
+- **A valid P2 finding of the automated reviewer that bears on no acceptance criterion and touches no area that D-133 protects:** defer it to a named later Task or open item; record it in the evidence when the cycle pushes a fix anyway, and otherwise run `bash scripts/executor/state.sh phase CI --token <token>` without a push and go to step 7, leaving the record to the next Task (CE-43, D-133).
 - **A failure or a request outside the scope, or one that needs the Owner's decision:** stop (CE-42, CE-43).
 
 To stop (CE-70, CE-71): `bash scripts/executor/state.sh stop <REASON> --token <token> --detail "<one line>"`, then report what happened, why, what is kept where, and the exact action needed from the Owner, and end. If a state command prints `LOCK_LOST`, stop at once without further changes and report.
