@@ -195,9 +195,11 @@ final class SetupTest extends DatabaseTestCase
         $compose = (string) file_get_contents(base_path('compose.yaml'));
         $local = (string) file_get_contents(base_path('database/setup/local.sh'));
 
+        // db and db-setup, and the restore rehearsal's drill-db and drill-db-setup (TASK-037), one image.
         preg_match_all('/image: (postgres:18\.6-trixie@sha256:[0-9a-f]{64})/', $compose, $images);
-        $this->assertCount(2, $images[1], 'db and db-setup');
-        $this->assertSame($images[1][0], $images[1][1]);
+        $this->assertCount(4, $images[1], 'db, db-setup, drill-db and drill-db-setup');
+        $this->assertSame([$images[1][0]], array_values(array_unique($images[1])));
+        $this->assertSame(4, substr_count($compose, 'image: postgres:'), 'every PostgreSQL image of compose.yaml is pinned by its digest');
         $this->assertStringContainsString('entrypoint: ["sh", "/setup/local.sh"]', $compose);
         $this->assertStringContainsString('- ./database/setup:/setup:ro', $compose);
         $this->assertStringContainsString("db-setup:\n                condition: service_completed_successfully", $compose);

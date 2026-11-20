@@ -141,6 +141,118 @@ services:
             timeout: 5s
             retries: 30
 
+    # The restore rehearsal of TASK-037 (scope item 7; BACKUP_RECOVERY RB-01 phases C to F and RB-02),
+    # profile rehearsal, started by scripts/checks/restore-rehearsal.sh in CI only. The drill's target —
+    # its own PostgreSQL, its SSH gateway and its application — is on the internal network drill, which
+    # the operator's machine reaches only through the gateway's SSH tunnel; the operator's machine, which
+    # alone holds the recovery key and decrypts, is a container of its own, never the application's.
+    # Every password and key is made at run time by the rehearsal and destroyed with these services.
+    drill-db:
+        image: postgres:18.6-trixie@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336
+        profiles: ["rehearsal"]
+        environment:
+            POSTGRES_DB: postgres
+            POSTGRES_PASSWORD: ${DRILL_SUPERUSER_PASSWORD:-}
+        networks:
+            - drill
+        healthcheck:
+            test: ["CMD", "pg_isready", "-U", "postgres", "-d", "postgres"]
+            interval: 2s
+            timeout: 5s
+            retries: 30
+
+    drill-db-setup:
+        # RB-02 step 2: the roles and the marker drill of the target, by the setup script of ENV-30.
+        image: postgres:18.6-trixie@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336
+        profiles: ["rehearsal"]
+        entrypoint: ["psql", "-X", "-v", "ON_ERROR_STOP=1", "-d", "postgres", "-f", "/setup/setup.sql"]
+        environment:
+            PGHOST: drill-db
+            PGUSER: postgres
+            PGPASSWORD: ${DRILL_SUPERUSER_PASSWORD:-}
+            BANTUKASIR_SETUP_DATABASE: bantukasir
+            BANTUKASIR_SETUP_MARKER: drill
+            BANTUKASIR_SETUP_MIGRATION_ROLE: bk_migration
+            BANTUKASIR_SETUP_RUNTIME_ROLE: bk_runtime
+            BANTUKASIR_SETUP_BACKUP_ROLE: bk_backup
+            BANTUKASIR_SETUP_MIGRATION_PASSWORD: ${DRILL_MIGRATION_PASSWORD:-}
+            BANTUKASIR_SETUP_RUNTIME_PASSWORD: ${DRILL_RUNTIME_PASSWORD:-}
+            BANTUKASIR_SETUP_BACKUP_PASSWORD: ${DRILL_BACKUP_PASSWORD:-}
+        volumes:
+            - ./database/setup:/setup:ro
+        networks:
+            - drill
+        depends_on:
+            drill-db:
+                condition: service_healthy
+        restart: "no"
+
+    drill-gateway:
+        # The target's SSH server: the tunnel to drill-db and the copy into the target's file volume.
+        build:
+            context: docker/rehearsal
+        image: bantukasir-rehearsal:local
+        profiles: ["rehearsal"]
+        command: ["sh", "-c", "ssh-keygen -A && exec /usr/sbin/sshd -D -e"]
+        volumes:
+            - drill-media:/srv/media
+        networks:
+            - default
+            - drill
+
+    operator:
+        # The operator's own machine: the store's access, the recovery key, the decrypted copy.
+        build:
+            context: docker/rehearsal
+        image: bantukasir-rehearsal:local
+        profiles: ["rehearsal"]
+        user: operator
+        working_dir: /home/operator
+        volumes:
+            - .:/workspace:ro
+        networks:
+            - default
+
+    drill-app:
+        # The application on the target, the development stage of the same image as the local
+        # environment (RB-02 step 7), its database the target's and its file volume its own.
+        image: bantukasir-app:local
+        profiles: ["rehearsal"]
+        environment:
+            APP_ENV: local
+            APP_PROCESS_ROLE: web
+            APP_DEBUG: "false"
+            APP_URL: "http://drill-app:8080"
+            LOG_CHANNEL: stderr
+            DB_CONNECTION: pgsql
+            DB_HOST: drill-db
+            DB_PORT: "5432"
+            DB_DATABASE: bantukasir
+            DB_USERNAME: bk_runtime
+            DB_PASSWORD: ${DRILL_RUNTIME_PASSWORD:-}
+            DB_MIGRATION_USERNAME: bk_migration
+            BACKUP_DB_USERNAME: bk_backup
+            APP_ENVIRONMENT_NAME: drill
+            SESSION_DRIVER: database
+            CACHE_STORE: database
+            SESSION_SECURE_COOKIE: "false"
+            APP_TRUSTED_HOSTS: "localhost,drill-app"
+        volumes:
+            - .:/var/www/html
+            - drill-media:/var/www/html/storage/app/private/media
+        networks:
+            - default
+            - drill
+        depends_on:
+            drill-db-setup:
+                condition: service_completed_successfully
+        healthcheck:
+            test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' -H 'Host: localhost' -H 'Accept: application/json' http://127.0.0.1:8080/local-start-check | grep -qx '404'"]
+            interval: 5s
+            timeout: 5s
+            retries: 12
+            start_period: 600s
+
     node:
         image: node:24.22.0-trixie-slim@sha256:7f486cabe892bff8fef04c0f7da8dba84a560be3e4e2740b7a86afc57ebec315
         profiles: ["tools"]
@@ -159,3 +271,10 @@ services:
 
 volumes:
     db-data:
+    # The file volume of the rehearsal's target, destroyed at the rehearsal's end.
+    drill-media:
+
+networks:
+    # The rehearsal's target, unreachable from the default network but through drill-gateway.
+    drill:
+        internal: true

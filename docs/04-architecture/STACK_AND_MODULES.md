@@ -163,6 +163,11 @@ Folders added by TASK-009 for the command client; the module boundaries do not c
 - `app/Queries/Access/ShellIndicators.php` and `app/DTO/Access/ShellIndicatorsData.php` are RD-03, which reads the count of the Commands module (`app/Queries/Commands/UnresolvedRequestCount.php`), a dependency that section 2.1 already lists.
 - The probe of `tests/Harness/Commands/` is also registered in the local environment, which the browser suite runs against (`Operations::PROBE_ENVIRONMENTS`), and `tests/Harness/Browser/` gives the browser tests the command platform's fixtures.
 
+Folders added by TASK-037 for the restore tooling; the module boundaries do not change:
+
+- `scripts/operations/restore/` holds the operator's scripts of BACKUP_RECOVERY RB-01 and RB-02, which run on the operator's own machine, never in an application container; `docs/09-operations/RESTORE_CHECKLISTS.md` is their checklist. `app/Domain/Operations/Restore/` holds the record of the restore drills.
+- `docker/rehearsal/` and the services of the profile `rehearsal` of `compose.yaml` are the operator's machine and the drill target's gateway of the restore rehearsal, which `scripts/checks/restore-rehearsal.sh` runs in CI; `tests/Rehearsal/` and `playwright.rehearsal.config.ts` are its browser steps, apart from the browser suite; `tests/Harness/Restore/` holds the restores of TEST_STRATEGY TS-24.
+
 | ID | Rule | Source |
 | --- | --- | --- |
 | STK-20 | Concurrency, constraint and rollback tests run against real PostgreSQL with committed fixtures and independent connections, never inside one wrapping transaction and never on SQLite or mocks. | TOOLCHAIN, L-P4 §Testing implications (input), L-P6 |

@@ -205,3 +205,12 @@ The delegation's reason was CI run 43706034392 on the head `4c48270`, red only i
 | `Command contract` on `4c48270` | Same run | 17:50 to 18:30 | 40 min 6 s | `FAIL`: every step before `test:e2e` `PASS`; `test:e2e` 334 `PASS`, 1 `FAIL` (R-18), 2 did not run |
 | `npx eslint`, `npx tsc --noEmit` of the spec | Local | 18:34 | — | `NOT_RUN`: no `.bin` links on this machine (section 1); the fast run and the command contract run them |
 | The fast checks and the whole command contract with the browser suite | CI on this cycle's head | — | — | `NOT_RUN` at this writing |
+
+## 13. Merge (CE-50), recorded by TASK-037
+
+| Item | Record |
+| --- | --- |
+| Pull request | #50, head `4cfc45a`, the head of fix cycle 2; CI run 43709972643 on it passed, with the PostgreSQL suite in the four parts of D-131 |
+| Merge | Squash commit `5e2eae5` on `develop`, by the tick under D-105, the automated review's status DONE |
+| CI on `develop` at the merge | Run 43713448937 at `5e2eae5` passed; the tick verified the merge (CE-61, `MERGE_VERIFIED pr=50`) |
+| Status | `DONE` on `develop` since `5e2eae5` |

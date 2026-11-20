@@ -55,6 +55,21 @@ final class TestStore
     }
 
     /**
+     * Hides an object of a test bucket as the store's lifecycle does once its days in a tier are over
+     * (BACKUP_RECOVERY section 6): a delete marker over its current version, which Object Lock keeps.
+     */
+    public static function hide(string $bucket, string $key): void
+    {
+        $path = '/'.$bucket.'/'.$key;
+        $signed = SigV4::sign('DELETE', self::HOST, $path, [], [], hash('sha256', ''), 'us-east-1', self::KEY_ID, self::KEY, gmdate('Ymd\THis\Z'));
+        $response = OutboundHttp::client()->request('DELETE', self::ENDPOINT.$path, ['headers' => $signed, 'timeout' => 30]);
+
+        if ($response->getStatusCode() !== 204) {
+            throw new RuntimeException('The test object was not hidden: HTTP '.$response->getStatusCode().' '.$response->getBody());
+        }
+    }
+
+    /**
      * A new recovery key in a file of the harness: its recipient.
      */
     public static function newRecoveryKey(string $path): string
