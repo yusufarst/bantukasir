@@ -148,3 +148,14 @@ No further round is due: the MUST-FIX is fixed, proven by its regression test an
 - Fast runs: three of the ten of CE-46 before the pull request; run 1 failed on proven defects of the change, all fixed in one push and cured in run 2 (F-3, D-133); no CI run was repeated.
 - Not verified before the pull request's final head: the whole PostgreSQL suite in four parts, `test:race`, the browser suite, the build and the image checks.
 - Next eligible Task: TASK-039, System status and monitoring, effort High (agent `bk-executor-high`; review and verification `bk-reviewer-high`).
+
+## 12. Merge
+
+Recorded by TASK-039 (CE-50), from the executor state and GitHub.
+
+| Item | Value |
+| --- | --- |
+| Pull request | #53, head `d70cd3116a274e2f6d6700ca902d53756f653745`; CI run 44800522582 passed on that head |
+| Merge | Squash commit `ad9a5009715cd1251047c4ac3297e36013a78f48` on `develop`, by the tick under D-105; the automated review's status DONE |
+| CI on `develop` | Run 44805266626 passed at the merge; verified by the tick on 21 November 2026 (`MERGE_VERIFIED pr=53`) |
+| R-07 | Taken by TASK-039 and moved to OPEN_ITEMS T-51: the status's five items have no place for housekeeping without a change control of COPY_DECK |

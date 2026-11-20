@@ -106,7 +106,7 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-036](tasks/TASK-036-reconciliation-repair.md) | Reconciliation, incidents and data-repair procedures | 7 | O | L | A | TASK-034, TASK-020, TASK-013 | — | `DONE` |
 | [TASK-037](tasks/TASK-037-restore-tooling.md) | Restore tooling and recovery procedures | 7 | O | L | A | TASK-013, TASK-035 | — | `DONE` |
 | [TASK-038](tasks/TASK-038-housekeeping.md) | Housekeeping and retention | 7 | O | M | A | TASK-019, TASK-018, TASK-011 | — | `DONE` |
-| [TASK-039](tasks/TASK-039-system-status.md) | System status and monitoring | 7 | O | M | A | TASK-037, TASK-036 | — | `READY` |
+| [TASK-039](tasks/TASK-039-system-status.md) | System status and monitoring | 7 | O | M | A | TASK-037, TASK-036 | — | `DONE` |
 | [TASK-040](tasks/TASK-040-finance-report.md) | Finance report | 8 | R | L | A | TASK-034, TASK-025 | — | `READY` |
 | [TASK-041](tasks/TASK-041-owner-home-daily.md) | Owner home and daily summary | 8 | R | L | A | TASK-039, TASK-040, TASK-032 | — | `TODO` |
 | [TASK-042](tasks/TASK-042-audit-views.md) | Audit log and security log views | 8 | R | M | A | TASK-036, TASK-035 | — | `READY` |
@@ -119,7 +119,7 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-049](tasks/TASK-049-release-readiness.md) | Release readiness: staging, UAT and first installation | 10 | R | L | V | TASK-045, TASK-047, TASK-048 | G1, G2, G3, G4, DEVICES, TARGET, GATE-PUBLISH | `TODO` |
 | [TASK-050](tasks/TASK-050-production-pilot.md) | Production release, cutover and pilot acceptance | 10 | R | L | V | TASK-049 | RELEASE, GATE-PUBLISH, G4 | `TODO` |
 
-Totals: `TODO` 9; `READY` 3; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 38; `SUPERSEDED` 0.
+Totals: `TODO` 9; `READY` 2; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 39; `SUPERSEDED` 0.
 
 ## 5. Implementation sequence
 
@@ -178,7 +178,7 @@ With more than one executor the Owner may run Tasks of different lanes at the sa
 | OPEN_ITEMS T-22 | TASK-013 | Capacity of the free allowance with staging counted |
 | OPEN_ITEMS T-23 | TASK-006 — RESOLVED, by row security (SCHEMA section 5.4); its consequences in TASK-013 (the dump, with `--enable-row-security`) and TASK-038 (the cleanup) | Database enforcement of the 365-day retention of the security log |
 | OPEN_ITEMS T-24 | RESOLVED in RF-7 (D-090) | The deadline of N-12 now reads: before TASK-001 |
-| OPEN_ITEMS T-25 | A change control before TASK-039; TASK-047 or an earlier P7 change control | COPY_DECK section 22.2: statements that later decisions overtook, among them four system-status items instead of five in RELEASE_PROCESS and the contract of TASK-039 |
+| OPEN_ITEMS T-25 | A change control before TASK-039, which did not happen: TASK-039 applied COPY_DECK section 22.2's readings, and what remains moves to TASK-047 or an earlier P7 change control | COPY_DECK section 22.2: statements that later decisions overtook, among them four system-status items instead of five in RELEASE_PROCESS and the contract of TASK-039 |
 | OPEN_ITEMS T-26 | TASK-008 | The error body of RT-07 never carries Laravel's English validation summary (AC-008-08) |
 | OPEN_ITEMS T-27 | TASK-015 — RESOLVED: SCH-14 records the framework's set | The trimming of input against the database's `[[:space:]]` (SCH-14; TASK-004 finding F-2) |
 | OPEN_ITEMS T-28 | TASK-012 (worker pool, RESOLVED); gate TARGET (proxy settings) | The two duties of TR-TIME-03 named for the foundation Task (TASK-004 review finding R-22) |

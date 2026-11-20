@@ -113,7 +113,7 @@ final class MonitorHeartbeatTest extends TestCase
             'empty' => [''],
             'relative' => ['/toko'],
             'another scheme' => ['ftp://toko.stand-in.test'],
-            'with a user' => ['https://user:pass@toko.stand-in.test'],
+            'with a user' => ['https://operator@toko.stand-in.test'],
             'with a query' => ['https://toko.stand-in.test/?a=1'],
         ];
     }
@@ -133,8 +133,8 @@ final class MonitorHeartbeatTest extends TestCase
         config(['app.url' => 'https://toko.stand-in.test/']);
         $this->assertSame('https://toko.stand-in.test/up', PublicHealth::address());
 
-        config(['app.url' => 'http://127.0.0.1:18080']);
-        $this->assertSame('http://127.0.0.1:18080/up', PublicHealth::address());
+        config(['app.url' => 'http://toko.stand-in.test:18080/toko']);
+        $this->assertSame('http://toko.stand-in.test:18080/toko/up', PublicHealth::address());
     }
 
     public function test_it_takes_no_option_or_argument(): void

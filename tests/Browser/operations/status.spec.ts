@@ -170,3 +170,36 @@ test('the Owner reads the system status, reloads it, sees a failed read and foll
     expect(injected(watched.problems)).toEqual([]);
     await context.close();
 });
+
+test('at 200 % zoom the status fits and its controls work from the keyboard', async ({ browser }) => {
+    // 640 × 400 at a scale of 2, the 200 % zoom of 1280 × 800 (EXC-53; TASK-039 review R-03).
+    const context = await contextAt(browser, WIDTHS[4]!);
+    const page = await context.newPage();
+    const accounts = await resetPeople(context, ['Hendra']);
+    await prepareCommands(context, ['Hendra']);
+    await signIn(page, accounts.Hendra);
+    const watched = await watch(page);
+    await evidence(context, 'ok');
+
+    await page.goto(PAGE);
+    await expect(page.getByRole('heading', { level: 1, name: 'Status sistem' })).toBeVisible();
+    await expect(page.getByRole('main').locator('[data-item]')).toHaveCount(5);
+    await checked(page);
+
+    // "Muat ulang" by Enter reads the status again.
+    const reloadButton = page.getByRole('button', { name: 'Muat ulang' });
+    await reloadButton.focus();
+    await expect(reloadButton).toBeFocused();
+    await Promise.all([page.waitForResponse((response) => new URL(response.url()).pathname === PAGE), page.keyboard.press('Enter')]);
+    await expect(page.getByRole('main').locator('[data-item]')).toHaveCount(5);
+
+    // "Kembali ke Pengaturan" by Enter.
+    const back = page.getByRole('link', { name: 'Kembali ke Pengaturan' });
+    await back.focus();
+    await expect(back).toBeFocused();
+    await Promise.all([page.waitForURL((url) => url.pathname === '/settings'), page.keyboard.press('Enter')]);
+    await expect(page.getByRole('heading', { level: 1, name: 'Pengaturan' })).toBeVisible();
+
+    expect(injected(watched.problems)).toEqual([]);
+    await context.close();
+});
