@@ -2,8 +2,12 @@
 
 namespace App\Domain\Media;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Filesystem\FilesystemAdapter;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use InvalidArgumentException;
+use League\Flysystem\FilesystemException;
 use LogicException;
 use RuntimeException;
 
@@ -16,9 +20,10 @@ use RuntimeException;
  * A file is written under a new random key of 256 bits — never derived from
  * a name, a declared type or any other input — before the command's
  * transaction (TR-TX-05), with an exclusive create, so that a stored file is
- * never overwritten; nothing here deletes a file (D-042, BR-CFG-03). A file
- * whose transaction rolled back stays unreferenced until the housekeeping of
- * TASK-038 removes it after its grace period.
+ * never overwritten, and a file that a `stored_files` row names is never
+ * deleted (D-042, BR-CFG-03). A file whose transaction rolled back stays
+ * unreferenced until the housekeeping of SC-02 removes it after its grace
+ * period (removeUnreferenced(), TASK-038).
  */
 final class MediaStore
 {
@@ -26,6 +31,63 @@ final class MediaStore
 
     /** The storage key's format (SCHEMA section 5.5). */
     public const string KEY_FORMAT = '/^[A-Za-z0-9_-]{32,128}$/D';
+
+    /** TR-TX-05: the grace period is at least one hour, well above the longest request. */
+    public const int MIN_GRACE_SECONDS = 3600;
+
+    /**
+     * Removes at most $limit files that no `stored_files` row names and that
+     * were last written more than $graceSeconds before $now, and returns how
+     * many it removed (TR-TX-05; ARCHITECTURE ARC-41; SCHEMA section 4; SC-02,
+     * TASK-038). Only a file at the root of the disk whose name is a storage
+     * key counts; anything else is left as it is. The rows are read in
+     * batches of $batch keys just before their files are removed: a row for a
+     * key is inserted only by the transaction of the command that wrote its
+     * file, which ended long before the grace period (TR-TX-05), so a key
+     * without its row then never gains one.
+     */
+    public function removeUnreferenced(CarbonImmutable $now, int $graceSeconds, int $batch, int $limit): int
+    {
+        if ($graceSeconds < self::MIN_GRACE_SECONDS) {
+            throw new InvalidArgumentException('The grace period of an unreferenced file is at least one hour (TR-TX-05).');
+        }
+
+        $disk = self::disk();
+        $writtenBefore = $now->getTimestamp() - $graceSeconds;
+        $candidates = [];
+
+        foreach ($disk->files() as $name) {
+            if (count($candidates) >= $limit) {
+                break;
+            }
+
+            if (preg_match(self::KEY_FORMAT, $name) !== 1) {
+                continue;
+            }
+
+            try {
+                if ($disk->lastModified($name) < $writtenBefore) {
+                    $candidates[] = $name;
+                }
+            } catch (FilesystemException) {
+                continue;
+            }
+        }
+
+        $removed = 0;
+
+        foreach (array_chunk($candidates, max(1, $batch)) as $keys) {
+            $referenced = DB::table('stored_files')->whereIn('storage_key', $keys)->pluck('storage_key')->all();
+
+            foreach (array_diff($keys, $referenced) as $key) {
+                if ($disk->delete($key)) {
+                    $removed++;
+                }
+            }
+        }
+
+        return $removed;
+    }
 
     /**
      * Writes the image under a new random key and returns what the

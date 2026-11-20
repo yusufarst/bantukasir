@@ -79,7 +79,7 @@ A module may read from the modules listed for it; writes across modules happen o
 | Sales | Catalog, Inventory, Costing, Cash, Configuration, Media (read: the delivery path of a receipt's logo, RP-103, TASK-029), Audit, Commands, Access, shared kernel |
 | Documents | Sales, Cash, Catalog, Configuration (all read), Audit, Commands and Access (a print or export request is a command: TASK-018's RC-47), shared kernel |
 | Reporting | Every domain module, read only |
-| Operations | Inventory, Costing (reconciliation reads; the recovery and rebuild procedures call their services), Catalog (active mappings), Sales (running totals), Media, Commands, Access (actor), Audit |
+| Operations | Inventory, Costing (reconciliation reads; the recovery and rebuild procedures call their services), Catalog (active mappings; the housekeeping of the temporary import files, TASK-038), Sales (running totals), Media, Commands, Access (actor; the housekeeping of expired links, TASK-038), Audit |
 
 | ID | Rule | Source |
 | --- | --- | --- |

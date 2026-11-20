@@ -3,6 +3,7 @@
 namespace App\Domain\Catalog\Import;
 
 use App\Support\Time\Clock;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Storage;
 use League\Flysystem\FilesystemException;
 use RuntimeException;
@@ -14,7 +15,7 @@ use RuntimeException;
  * the folder of the actor who previewed it, which binds the import to that actor: another
  * actor's request finds nothing. Neither its name nor its declared type is ever read
  * (SEC-UP-01). A file older than 24 hours counts as gone and is left for housekeeping
- * (TASK-038), which also removes what a removal here could not.
+ * (SC-02, TASK-038: removeExpired()), which also removes what a removal here could not.
  */
 final class CsvImportFiles
 {
@@ -25,6 +26,9 @@ final class CsvImportFiles
 
     /** The key of 256 random bits. */
     private const string KEY = '/^[0-9a-f]{64}$/D';
+
+    /** Where store() puts a file: the actor's internal key, then the import's key. */
+    private const string STORED_PATH = '/^[1-9][0-9]{0,18}\/[0-9a-f]{64}$/D';
 
     public function __construct(private readonly Clock $clock) {}
 
@@ -73,6 +77,38 @@ final class CsvImportFiles
         if (preg_match(self::KEY, $key) === 1) {
             Storage::disk(self::DISK)->delete(self::path($actorId, $key));
         }
+    }
+
+    /**
+     * Removes at most $limit import files last written more than MAX_AGE_SECONDS before $now, whatever the
+     * state of their import, and returns how many it removed (ARC-43; D-054; SC-02, TASK-038). Only a file
+     * that lies where store() puts one — an actor's folder and a key — counts; anything else is left as it is.
+     */
+    public function removeExpired(CarbonImmutable $now, int $limit): int
+    {
+        $disk = Storage::disk(self::DISK);
+        $writtenBefore = $now->getTimestamp() - self::MAX_AGE_SECONDS;
+        $removed = 0;
+
+        foreach ($disk->allFiles() as $path) {
+            if ($removed >= $limit) {
+                break;
+            }
+
+            if (preg_match(self::STORED_PATH, $path) !== 1) {
+                continue;
+            }
+
+            try {
+                if ($disk->lastModified($path) < $writtenBefore && $disk->delete($path)) {
+                    $removed++;
+                }
+            } catch (FilesystemException) {
+                continue;
+            }
+        }
+
+        return $removed;
     }
 
     private static function path(int $actorId, string $key): string

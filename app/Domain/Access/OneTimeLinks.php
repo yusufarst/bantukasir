@@ -113,6 +113,38 @@ final class OneTimeLinks
     }
 
     /**
+     * Removes at most $limit expired links, oldest first, in a transaction
+     * of its own, and returns how many it removed (SEC-ACC-07; SCHEMA section
+     * 5.1; SC-02, TASK-038). A link is expired at $now when it was created
+     * more than the configured minutes before, exactly as the broker judges
+     * it (DatabaseTokenRepository::tokenExpired() and deleteExpired()): such
+     * a row is no link (activeUntil()), so removing it changes no account.
+     * A row that an issue, a consumption or a revocation holds is skipped,
+     * never waited for, and a link created later is never older than the
+     * bound, so no link in force is removed.
+     */
+    public function removeExpired(CarbonImmutable $now, int $limit): int
+    {
+        if (DB::transactionLevel() !== 0) {
+            throw new LogicException('The housekeeping of expired links runs in a transaction of its own.');
+        }
+
+        $expiredBefore = $now->utc()->subMinutes(self::minutes())->format('Y-m-d H:i:s.uP');
+
+        return DB::transaction(static fn (): int => DB::delete(<<<'SQL'
+            delete from password_reset_tokens
+            where email in (
+                select email from password_reset_tokens
+                where created_at < ?
+                order by created_at, email
+                limit ?
+                for update skip locked
+            )
+            and created_at < ?
+            SQL, [$expiredBefore, max(1, $limit), $expiredBefore]));
+    }
+
+    /**
      * The address of the link page with the account's internal identity and
      * the token in the fragment, which browsers never send to the server
      * (ROUTE_CONTRACTS RP-002; SEC-ACC-05).

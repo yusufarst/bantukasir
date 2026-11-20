@@ -4,6 +4,7 @@ namespace App\Domain\Commands;
 
 use App\Database\CommandPoints;
 use App\Support\Time\Clock;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -26,7 +27,8 @@ use InvalidArgumentException;
  * - holdStale: on an EPOCH_STALE answer, the intent's PENDING receipts of an
  *   earlier epoch become HELD with that code, in the caller's transaction.
  *
- * A COMMITTED, REJECTED or NOT_COMMITTED receipt never changes outcome.
+ * A COMMITTED, REJECTED or NOT_COMMITTED receipt never changes outcome; the
+ * housekeeping removes it 30 days after its outcome (removeResolved()).
  */
 final class RequestReceipts
 {
@@ -39,6 +41,9 @@ final class RequestReceipts
     public const string HELD = 'HELD';
 
     public const string NOT_COMMITTED = 'NOT_COMMITTED';
+
+    /** D-088: housekeeping removes a resolved receipt this many days after its outcome. */
+    public const int RETENTION_DAYS = 30;
 
     /** An intent's row of unresolvedIntentsOf(): its identity and its first receipt's time in UTC. */
     private const string INTENT_ROW = <<<'SQL'
@@ -238,6 +243,35 @@ final class RequestReceipts
         }
 
         return $epochs;
+    }
+
+    /**
+     * Removes at most $limit resolved receipts, in a transaction of its own, and returns how many it
+     * removed (SCHEMA section 5.3; ADR-009 section 1; D-088; SC-02, TASK-038): only a receipt whose
+     * outcome is COMMITTED, REJECTED or NOT_COMMITTED — an outcome that never changes again — and whose
+     * outcome_at is more than RETENTION_DAYS before $now. A PENDING or HELD receipt is never removed,
+     * whatever its age (SCH-11): HELD carries an outcome_at too. A row that a marking or a settlement
+     * holds is skipped, never waited for.
+     */
+    public function removeResolved(CarbonImmutable $now, int $limit): int
+    {
+        if (DB::transactionLevel() !== 0) {
+            throw new InvalidArgumentException('The housekeeping of receipts runs in a transaction of its own.');
+        }
+
+        $resolvedBefore = $now->utc()->subDays(self::RETENTION_DAYS)->format('Y-m-d H:i:s.uP');
+
+        return DB::transaction(static fn (): int => DB::delete(<<<'SQL'
+            delete from command_request_receipts
+            where id in (
+                select id from command_request_receipts
+                where outcome in ('COMMITTED', 'REJECTED', 'NOT_COMMITTED') and outcome_at < ?
+                order by id
+                limit ?
+                for update skip locked
+            )
+            and outcome in ('COMMITTED', 'REJECTED', 'NOT_COMMITTED') and outcome_at < ?
+            SQL, [$resolvedBefore, max(1, $limit), $resolvedBefore]));
     }
 
     /**

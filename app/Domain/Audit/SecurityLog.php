@@ -3,6 +3,7 @@
 namespace App\Domain\Audit;
 
 use App\Support\Time\Clock;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\DB;
@@ -27,6 +28,9 @@ use LogicException;
  */
 final class SecurityLog
 {
+    /** SEC-LOG-05: 365 days as 8,760 hours, the bound of the database's policy, which no time zone shortens. */
+    public const int RETENTION_HOURS = 8760;
+
     public function __construct(private readonly Clock $clock) {}
 
     public function record(
@@ -70,6 +74,36 @@ final class SecurityLog
             'outcome_code' => $outcome->value,
             'client_address' => null,
         ]);
+    }
+
+    /**
+     * Removes at most $limit entries older than the retention at $now, oldest
+     * first, in a transaction of its own, and returns how many it removed
+     * (SEC-LOG-05; SCHEMA section 5.4; D-088; SC-02, TASK-038). The database
+     * holds the same bound by its own clock: the policy
+     * security_log_entries_retention admits the DELETE of an entry only when
+     * it is older than 8,760 hours by the database's now(), so an entry
+     * younger by either clock stays (OPEN_ITEMS T-23). Nothing else deletes
+     * an entry, and nothing changes one.
+     */
+    public function removeExpired(CarbonImmutable $now, int $limit): int
+    {
+        if (DB::transactionLevel() !== 0) {
+            throw new LogicException('The housekeeping of the security log runs in a transaction of its own.');
+        }
+
+        $olderThan = $now->utc()->subHours(self::RETENTION_HOURS)->format('Y-m-d H:i:s.uP');
+
+        return DB::transaction(static fn (): int => DB::delete(<<<'SQL'
+            delete from security_log_entries
+            where id in (
+                select id from security_log_entries
+                where occurred_at < ?
+                order by occurred_at, id
+                limit ?
+            )
+            and occurred_at < ?
+            SQL, [$olderThan, max(1, $limit), $olderThan]));
     }
 
     /**
