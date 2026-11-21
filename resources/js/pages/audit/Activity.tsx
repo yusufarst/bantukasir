@@ -147,7 +147,7 @@ function ActivityList({ title, filters, users, product, events }: ActivityProps 
                     <ProductFilter key={String(filters.product ?? '')} label={t('audit.activity.filter_product')} chosen={product === null ? null : { name: product.name }} onChoose={(picked) => apply({ product: picked === null ? null : picked.id })} />
                     <form role={'search'} onSubmit={searchSession}>
                         <Field label={t('audit.activity.filter_session')}>
-                            <TextInput type={'search'} inputMode={'numeric'} autoComplete={'off'} maxLength={40} value={session} onChange={(event) => setSession(event.target.value)} />
+                            <TextInput type={'search'} autoComplete={'off'} maxLength={40} value={session} onChange={(event) => setSession(event.target.value)} />
                         </Field>
                     </form>
                     <form role={'search'} onSubmit={searchReference}>

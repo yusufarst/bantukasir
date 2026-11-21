@@ -14,8 +14,10 @@ use Illuminate\Contracts\Validation\Validator;
  * The parameters of RP-612 (ROUTE_CONTRACTS RP-612, RT-08; INTERACTION_CONTRACTS section 9, UXI-377 and
  * UXI-380; TECHNICAL_RULES section 11.4; TASK-042 scope item 1), each an allowlist: `from` and `to`, days of
  * Asia/Jakarta, `from` never after `to`, refused at `to`; `user` and `product`, internal keys; `action`, one
- * of the codes of INTERACTION_CONTRACTS section 8; `session`, a cash session's number; `reference`, up to
- * 100 characters without a control character, matched exactly; `after` or `before`, never both, the opaque
+ * of the codes of INTERACTION_CONTRACTS section 8; `session`, a cash session's number as the Owner types it,
+ * up to 40 characters without a control character, matched exactly, so that a text no session has finds
+ * nothing and is no error (TR-PAGE-03); `reference`, up to 100 characters without a control character,
+ * matched exactly; `after` or `before`, never both, the opaque
  * cursor of a page's boundary row; `perPage`, 1 to 100, 25 by default. Any other parameter is refused.
  */
 final class ActivityPageRequest extends RefusingRequest
@@ -35,7 +37,7 @@ final class ActivityPageRequest extends RefusingRequest
             'user' => ['sometimes', 'string', self::KEY],
             'action' => ['sometimes', 'string', 'in:'.implode(',', array_keys(AuditActions::LABELS))],
             'product' => ['sometimes', 'string', self::KEY],
-            'session' => ['sometimes', 'string', 'regex:/^[0-9]{8}-[0-9]{6,19}$/D'],
+            'session' => ['sometimes', 'string', 'max:40', 'not_regex:/\p{Cc}/u'],
             'reference' => ['sometimes', 'string', 'max:100', 'not_regex:/\p{Cc}/u'],
             'after' => ['sometimes', 'string', Keyset::CURSOR],
             'before' => ['sometimes', 'string', Keyset::CURSOR],

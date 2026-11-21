@@ -99,7 +99,7 @@ final class AuditViewsTest extends DatabaseTestCase
     {
         $this->as('Hendra');
 
-        foreach (['x=1', 'action=NOPE', 'action=sale', 'user=0', 'user=abc', 'product=-1', 'session=2026', 'session=20261115-1', 'reference='.urlencode("A\tB"), 'reference='.str_repeat('a', 101), 'from=2026-11-31', 'after=abc', 'after=x&before=y', 'perPage=0', 'perPage=101'] as $query) {
+        foreach (['x=1', 'action=NOPE', 'action=sale', 'user=0', 'user=abc', 'product=-1', 'session='.str_repeat('1', 41), 'session='.urlencode("2026\n1"), 'reference='.urlencode("A\tB"), 'reference='.str_repeat('a', 101), 'from=2026-11-31', 'after=abc', 'after=x&before=y', 'perPage=0', 'perPage=101'] as $query) {
             $this->getJson(self::ACTIVITY.'?'.$query)->assertStatus(422)->assertJsonPath('code', 'VALIDATION_FAILED');
         }
 
@@ -162,6 +162,12 @@ final class AuditViewsTest extends DatabaseTestCase
         $empty = $this->get(self::ACTIVITY.'?session=20261115-999999')->assertOk();
         $this->assertSame([], $this->rowsIn($this->propsOf($empty), 'events'));
         $this->assertPageChannel($empty, 'owner', $this->secrets(), 'empty');
+
+        // A session number typed short or without its hyphen names no session: it finds nothing and is no
+        // error, so the page shows no results rather than UXS-22 (TR-PAGE-03; review R-01).
+        foreach (['2026', '20261115-1', '20261115999999', 'LACI 1'] as $typed) {
+            $this->assertSame([], $this->rowsIn($this->propsOf($this->get(self::ACTIVITY.'?session='.urlencode($typed))->assertOk()), 'events'));
+        }
 
         // Keyset pages both ways (TR-PAGE-01).
         $first = (array) ($this->propsOf($this->get(self::ACTIVITY.'?'.self::ON_DAY.'&perPage=2')->assertOk())['events'] ?? []);
