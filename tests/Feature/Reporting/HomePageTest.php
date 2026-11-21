@@ -33,6 +33,9 @@ final class HomePageTest extends DatabaseTestCase
 
     private const string PANELS = 'today,openSessions,attention';
 
+    /** The statement whose run the failure injection makes fail, none when null. */
+    private ?string $failing = null;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -96,17 +99,16 @@ final class HomePageTest extends DatabaseTestCase
 
         // The read of one panel fails: that panel alone is null (UXS-22), its cause reaches the page nowhere, and no
         // transaction stays open; the other panels stand.
-        $failing = null;
-        DB::listen(static function (QueryExecuted $query) use (&$failing): void {
-            if (is_string($failing) && str_contains($query->sql, $failing)) {
+        DB::listen(function (QueryExecuted $query): void {
+            if ($this->failing !== null && str_contains($query->sql, $this->failing)) {
                 throw new RuntimeException('panel failed at /secret/path');
             }
         });
 
         foreach (['today' => 'join payments p', 'openSessions' => '"r"."label"', 'attention' => 'from backup_runs'] as $panel => $marker) {
-            $failing = $marker;
+            $this->failing = $marker;
             $read = $this->panels($version);
-            $failing = null;
+            $this->failing = null;
             $props = $this->propsOf($read);
 
             foreach (['today', 'openSessions', 'attention'] as $other) {

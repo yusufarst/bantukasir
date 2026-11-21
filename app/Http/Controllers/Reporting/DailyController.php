@@ -25,7 +25,7 @@ final class DailyController
 
     public function show(DailySummaryRequest $request, DailySummary $summary, Clock $clock): Response
     {
-        $date = $request->date();
+        $date = $request->businessDate();
 
         return Inertia::render('reporting/Daily', [
             'date' => $date->toString(),

@@ -97,10 +97,10 @@ final class DailySummaryTest extends DatabaseTestCase
         // AC-041-01, BR-RPT-02: the night session once, with its full span from 31 October and its own variance; Rina's
         // return to work a session of its own; the Owner's, still open, apart.
         $this->assertSame([
-            self::session($night, 'CLOSED', 'LACI-1', 'Laci 1', 'Rina', '2026-10-31T13:00:00.000000Z', '2026-11-01T02:00:00.000000Z', '-2000', true),
-            self::session($again, 'CLOSED', 'LACI-1', 'Laci 1', 'Rina', '2026-11-01T04:30:00.000000Z', '2026-11-01T04:45:00.000000Z', '0', false),
+            self::sessionRow($night, 'CLOSED', 'LACI-1', 'Laci 1', 'Rina', '2026-10-31T13:00:00.000000Z', '2026-11-01T02:00:00.000000Z', '-2000', true),
+            self::sessionRow($again, 'CLOSED', 'LACI-1', 'Laci 1', 'Rina', '2026-11-01T04:30:00.000000Z', '2026-11-01T04:45:00.000000Z', '0', false),
         ], $november['sessions']);
-        $this->assertSame([self::session($owner, 'OPEN', 'LACI-2', 'Laci 2', 'Hendra', '2026-11-01T03:00:00.000000Z', null, null, false)], $november['active']);
+        $this->assertSame([self::sessionRow($owner, 'OPEN', 'LACI-2', 'Laci 2', 'Hendra', '2026-11-01T03:00:00.000000Z', null, null, false)], $november['active']);
 
         // 2 November, 10.00 WIB: nothing sold yet; the Owner's session, opened the day before, is still open, once,
         // marked as crossing midnight; the day before keeps its figures.
@@ -109,7 +109,7 @@ final class DailySummaryTest extends DatabaseTestCase
         $this->assertTrue($next['empty']);
         $this->assertSame(self::figures([]), $next['figures']);
         $this->assertSame([], $next['sessions']);
-        $this->assertSame([self::session($owner, 'OPEN', 'LACI-2', 'Laci 2', 'Hendra', '2026-11-01T03:00:00.000000Z', null, null, true)], $next['active']);
+        $this->assertSame([self::sessionRow($owner, 'OPEN', 'LACI-2', 'Laci 2', 'Hendra', '2026-11-01T03:00:00.000000Z', null, null, true)], $next['active']);
         $this->assertSame('25000', $this->summary('2026-11-01')['figures']['netSales']);
     }
 
@@ -177,7 +177,7 @@ final class DailySummaryTest extends DatabaseTestCase
      *
      * @return array<string, mixed>
      */
-    private static function session(int $id, string $status, string $code, string $label, string $responsible, string $openedAt, ?string $closedAt, ?string $variance, bool $crossesMidnight): array
+    private static function sessionRow(int $id, string $status, string $code, string $label, string $responsible, string $openedAt, ?string $closedAt, ?string $variance, bool $crossesMidnight): array
     {
         $number = DB::table('cash_sessions')->where('id', $id)->value('session_number');
 

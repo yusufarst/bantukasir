@@ -62,7 +62,7 @@ final class DailySummaryRequest extends RefusingRequest
     /**
      * The date of the query string, validated: today in Asia/Jakarta when none is given.
      */
-    public function date(): BusinessDate
+    public function businessDate(): BusinessDate
     {
         $date = $this->validatedInput()['date'] ?? null;
 
