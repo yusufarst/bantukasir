@@ -36,6 +36,9 @@ final class SettingsController
         ['id' => 'registers', 'href' => '/settings/cash-registers', 'capability' => Capability::Cap31],
         // UXI-329 "Status sistem" (TASK-039).
         ['id' => 'status', 'href' => '/settings/system-status', 'capability' => Capability::Cap32],
+        // UXI-330 "Riwayat aktivitas" and UXI-331 "Riwayat keamanan" (TASK-042).
+        ['id' => 'activity', 'href' => '/settings/activity', 'capability' => Capability::Cap32],
+        ['id' => 'security', 'href' => '/settings/security-log', 'capability' => Capability::Cap32],
     ];
 
     public function index(Request $request): Response

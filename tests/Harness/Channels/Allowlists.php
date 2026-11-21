@@ -334,6 +334,42 @@ final class Allowlists
         'reporting/Home' => ['owner' => []],
         'reporting/Daily' => ['owner' => [...self::DAILY_DATE, ...self::DAILY_SUMMARY]],
         'reporting/Daily#failed' => ['owner' => [...self::DAILY_DATE, 'summary']],
+        // UXP-612 and UXP-613, the Owner's alone (TASK-042): the filters, the accounts of "Pengguna", the chosen
+        // product and one page; each event with its time, action, actor as frozen, reference and reason, never the
+        // fields of its change data, whose names no copy key labels (OPEN_ITEMS T-56); each entry with its type,
+        // actor, the account concerned, outcome and address. Never a request identifier, a route, a command, a
+        // token or a password. `#product` with a
+        // product chosen, `#empty` with no row.
+        'audit/Activity' => ['owner' => [...self::ACTIVITY, ...self::ACTIVITY_ROWS]],
+        'audit/Activity#product' => ['owner' => [...self::ACTIVITY, ...self::ACTIVITY_ROWS, 'product.id', 'product.name', 'product.sku']],
+        'audit/Activity#empty' => ['owner' => self::ACTIVITY],
+        'audit/SecurityLog' => ['owner' => [...self::SECURITY_LOG, ...self::SECURITY_LOG_ROWS]],
+        'audit/SecurityLog#empty' => ['owner' => self::SECURITY_LOG],
+    ];
+
+    /** UXP-612 without its rows (TASK-042). */
+    private const array ACTIVITY = [
+        'filters', 'filters.from', 'filters.to', 'filters.user', 'filters.action', 'filters.product', 'filters.session', 'filters.reference', 'filters.perPage',
+        'users', 'users.*', 'users.*.id', 'users.*.displayName', 'product', 'events', 'events.rows', 'events.nextCursor', 'events.previousCursor',
+    ];
+
+    /** The events of UXP-612 (TASK-042). */
+    private const array ACTIVITY_ROWS = [
+        'events.rows.*', 'events.rows.*.id', 'events.rows.*.occurredAt', 'events.rows.*.action', 'events.rows.*.actor', 'events.rows.*.actor.kind',
+        'events.rows.*.actor.name', 'events.rows.*.reference', 'events.rows.*.reference.text', 'events.rows.*.reference.kind', 'events.rows.*.reference.id',
+        'events.rows.*.reason',
+    ];
+
+    /** UXP-613 without its rows (TASK-042). */
+    private const array SECURITY_LOG = [
+        'filters', 'filters.from', 'filters.to', 'filters.type', 'filters.user', 'filters.perPage',
+        'users', 'users.*', 'users.*.id', 'users.*.displayName', 'entries', 'entries.rows', 'entries.nextCursor', 'entries.previousCursor',
+    ];
+
+    /** The entries of UXP-613 (TASK-042). */
+    private const array SECURITY_LOG_ROWS = [
+        'entries.rows.*', 'entries.rows.*.id', 'entries.rows.*.occurredAt', 'entries.rows.*.type', 'entries.rows.*.actor', 'entries.rows.*.actor.kind',
+        'entries.rows.*.actor.name', 'entries.rows.*.subject', 'entries.rows.*.outcome', 'entries.rows.*.address',
     ];
 
     /** The applied date of UXP-501 and today in Asia/Jakarta (TASK-041). */

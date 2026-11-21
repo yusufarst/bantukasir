@@ -18,7 +18,7 @@ import { SECURE_LOCAL_ORIGIN } from './tests/Browser/support/access';
 // time, in their own project, while the other tests run beside them (TASK-007).
 // A new test that signs in a person belongs in one of these files or folders
 // (tests/Unit/StaticChecks/browser-projects.test.ts).
-const PEOPLE = ['access/**', 'security/**', 'shell/shell.spec.ts', 'shell/session.spec.ts', 'commands/**', 'configuration/**', 'catalog/**', 'inventory/**', 'costing/**', 'cash/**', 'sales/**', 'reporting/**', 'operations/status.spec.ts'];
+const PEOPLE = ['access/**', 'security/**', 'shell/shell.spec.ts', 'shell/session.spec.ts', 'commands/**', 'configuration/**', 'catalog/**', 'inventory/**', 'costing/**', 'cash/**', 'sales/**', 'reporting/**', 'operations/status.spec.ts', 'audit/**'];
 
 // Maintenance mode is the whole application's, so its tests run after every
 // other test, alone (TASK-014). A failure in another project skips them.

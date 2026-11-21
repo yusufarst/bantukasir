@@ -72,6 +72,16 @@ final class CopyDeckTest extends TestCase
             return trim($cells[1][0]);
         }
 
+        // A note that names a key with its copy in quotes after a comma: "Accessible name of the expander:
+        // `audit.activity.expand`, "Tampilkan rincian"" (TASK-042). Every such note gives the key the same copy.
+        $quoted = preg_match_all('/`'.preg_quote($key, '/').'`, "([^"|]*)"/', $deck, $quotes);
+
+        if ($quoted !== 0) {
+            $this->assertSame([trim($quotes[1][0])], array_values(array_unique(array_map(trim(...), $quotes[1]))), "COPY_DECK gives {$key} one copy.");
+
+            return trim($quotes[1][0]);
+        }
+
         $copies = [];
         // A field's key followed by " + `ux.action.optional`" holds the label alone; its copy cell
         // shows the label with the optional marker appended (COPY_DECK section 5; TASK-029).
@@ -95,7 +105,23 @@ final class CopyDeckTest extends TestCase
                 }
 
                 $named = explode('; ', $cell);
-                $keys = array_map(static fn (string $one): string => trim(str_replace($optional, '', $one), '`'), $named);
+                $keys = [];
+                $parent = '';
+
+                // A key that starts with a dot continues the group of the full key before it: "`audit.security.
+                // type.sign_in_succeeded`; `.sign_in_failed`" names audit.security.type.sign_in_failed (TASK-042).
+                foreach ($named as $one) {
+                    $bare = trim(str_replace($optional, '', $one), '`');
+
+                    if (str_starts_with($bare, '.') && $parent !== '') {
+                        $bare = $parent.$bare;
+                    } else {
+                        $parent = substr($bare, 0, (int) strrpos($bare, '.'));
+                    }
+
+                    $keys[] = $bare;
+                }
+
                 $position = array_search($key, $keys, true);
 
                 if ($position === false) {

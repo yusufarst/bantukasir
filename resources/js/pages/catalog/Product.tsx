@@ -15,6 +15,7 @@ import { StatusWord } from '@/components/ui/Status';
 import { AppShell } from '@/layouts/AppShell';
 import { PageContainer, PageHeader } from '@/layouts/Page';
 import { takeSavedNote } from '@/lib/access/users';
+import { activityBack } from '@/lib/audit/activity';
 import { blockedReason, CodeField, ProductThumb, visitInDocument } from '@/lib/catalog/Parts';
 import { cameFromCreate, CATALOG_COMMANDS, catalogFieldMessage, checkProduct, correctionPage, labelsPage, NEW_PRODUCT_PAGE, productPage, PRODUCTS_SHELL, productsListAddress, type ProductDetail, type ProductRow } from '@/lib/catalog/products';
 import { useScanCapture } from '@/lib/catalog/scanCapture';
@@ -36,7 +37,8 @@ import { productHistory, stateWord, type StockState } from '@/lib/inventory/stoc
 // correction (UXI-174; TASK-020). A command updates its section in place
 // with its message; each asks in a dialog or an inline form that Enter never confirms. No
 // control deletes anything (D-042). TASK-022 adds the section "Stok" (UXI-167); TASK-025 adds
-// the cost history, and TASK-042 the way back to UXP-612 (UXI-177).
+// the cost history, and TASK-042 the way back to UXP-612, with its filters and page, when it
+// opened this page (UXI-177).
 
 const STALE_STATE: StateId = 'UXS-17';
 
@@ -114,6 +116,8 @@ function ProductPage({ title, product, priceHistory, barcodes, canCorrectBarcode
     const [opening, setOpening] = useState(0);
     const [fromCreate] = useState(cameFromCreate);
     const [listPage] = useState(productsListAddress);
+    // UXI-177: back to UXP-612 with its filters and page when it opened this page (TASK-042).
+    const [activity] = useState(() => activityBack(document.referrer, window.location.origin));
     const unresolved = useUnresolved();
     // UXI-176, the Owner's: "Riwayat biaya" (CAP-20; TASK-025).
     const costHistory = usePage<{ readonly auth: { readonly user: { readonly capabilities: readonly string[] } }; readonly [key: string]: unknown }>().props.auth.user.capabilities.includes(COST_HISTORY_CAPABILITY);
@@ -171,7 +175,7 @@ function ProductPage({ title, product, priceHistory, barcodes, canCorrectBarcode
             <PageHeader
                 title={title}
                 subtitle={t('catalog.product_detail.subtitle', { produk: product.name })}
-                back={fromCreate ? { href: NEW_PRODUCT_PAGE, page: t('catalog.product_create.title') } : { href: listPage, page: t('catalog.products.title') }}
+                back={activity ?? (fromCreate ? { href: NEW_PRODUCT_PAGE, page: t('catalog.product_create.title') } : { href: listPage, page: t('catalog.products.title') })}
                 actions={
                     <>
                         <ButtonLink href={editPage} label={t('catalog.product_edit.title')} variant={'primary'} onClick={(event) => visitInDocument(event, editPage)} />

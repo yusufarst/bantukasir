@@ -167,3 +167,7 @@ No candidate on checkpoints 1 and 2, nor in the preview of the record's change b
 - CI on the pull request: the run on `5a319d0` cancelled by the push of F-7's fix; the run on `21007d7` red on F-8 only (failure 1 of 3, CE-42), fixed in one push of tests only; no rerun asked for.
 - Not verified before the pull request's final head: the whole PostgreSQL suite in four parts, `test:race`, the build, the browser suite (`reporting/home.spec.ts`, `daily.spec.ts`, every spec where the Owner signs in) and the image checks; and the review's fixes (R-01, R-03, R-08), whose TypeScript checks and unit tests run first in the record's fast run.
 - Next eligible Task: TASK-042, Audit log and security log views, effort High (agent `bk-executor-high`; review and verification `bk-reviewer-high`).
+
+## 12. Merge
+
+Recorded by TASK-042 (EXECUTION_CONTEXT CE-50): pull request #56, head `04bb67a613604ee7d76221cbae22bd88646c48c7`, CI run 44877595875 passed; squash-merged by the tick under D-105 as `14b6383675f72351f91f25b66ea0f36ffa5dfb58` on `develop`, the automated review's status DONE; CI on `develop` run 44880035022 passed; verified by the tick on 21 November 2026 (`MERGE_VERIFIED pr=56`). TASK-041 is `DONE`.

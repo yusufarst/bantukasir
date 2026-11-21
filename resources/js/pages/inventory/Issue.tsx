@@ -7,6 +7,7 @@ import { Committed } from '@/components/ui/States';
 import { AppShell } from '@/layouts/AppShell';
 import { PageContainer, PageHeader } from '@/layouts/Page';
 import { takeSavedNote } from '@/lib/access/users';
+import { activityBack } from '@/lib/audit/activity';
 import { formatDateTime, formatQuantity } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import { ReversalButton } from '@/lib/inventory/Reversal';
@@ -19,7 +20,7 @@ import { ISSUES_PAGE, ISSUES_SHELL, movementPage, openerOf, reasonWord, REQUESTS
 // shown: an allocation is the Owner's figure of the reports (ADR-008 section 6). The Owner has
 // "Batalkan mutasi" per line (UXI-266; TASK-026), disabled with its reason when the line's
 // MANUAL_ISSUE is reversed, while a reversal of the user is uncertain or while the onboarding freeze
-// is on. "Kembali ke …" names the page that opened it when that is UXP-403 or
+// is on. "Kembali ke …" names the page that opened it when that is UXP-403, UXP-612 (TASK-042) or
 // UXP-006, otherwise UXP-407 with its filters; after the success of UXP-408, UXP-407 (UXI-267).
 
 interface ManualIssue {
@@ -66,8 +67,14 @@ function movementLinkName(line: Line): string {
     return `${t('inventory.movement.title')} ${line.product.name}`;
 }
 
-/** The way back of UXI-267. */
+/** The way back of UXI-267; to UXP-612 with its filters and page since TASK-042. */
 function backOf(): { readonly href: string; readonly page: string } {
+    const activity = activityBack(document.referrer, window.location.origin);
+
+    if (activity !== null) {
+        return activity;
+    }
+
     const opener = openerOf(document.referrer, window.location.origin);
     const path = opener?.pathname ?? '';
 

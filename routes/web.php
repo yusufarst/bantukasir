@@ -18,6 +18,8 @@ use App\Http\Controllers\Access\SignInController;
 use App\Http\Controllers\Access\UpdateOwnerDetailsController;
 use App\Http\Controllers\Access\UpdateStaffAccountController;
 use App\Http\Controllers\Access\UsersController;
+use App\Http\Controllers\Audit\ActivityController;
+use App\Http\Controllers\Audit\SecurityLogController;
 use App\Http\Controllers\Cash\AddReviewNoteController;
 use App\Http\Controllers\Cash\AssistedCloseController;
 use App\Http\Controllers\Cash\CloseCashSessionAssistedController;
@@ -370,6 +372,13 @@ Route::middleware(['auth', 'signin.session', 'throttle:authenticated', 'cache.he
     // The system status (TASK-039), the Owner's alone: RP-611 for CAP-32, taking only its path; its link to the
     // reconciliation incidents (UXI-375) is shown to a holder of CAP-18 only.
     Route::get('/settings/system-status', [StatusController::class, 'show'])->middleware(['capability:CAP-32', 'input.allow'])->name('system.status');
+
+    // The audit views (TASK-042), the Owner's alone: RP-612, the business audit, and RP-613, the security log, for
+    // CAP-32, each taking only its parameters of ROUTE_CONTRACTS, which its FormRequest checks again.
+    Route::middleware('capability:CAP-32')->group(function (): void {
+        Route::get('/settings/activity', [ActivityController::class, 'index'])->middleware('input.allow:from,to,user,action,product,session,reference,after,before,perPage')->name('audit.index');
+        Route::get('/settings/security-log', [SecurityLogController::class, 'index'])->middleware('input.allow:from,to,type,user,after,before,perPage')->name('security.index');
+    });
 
     // The cash registers (TASK-027), the Owner's alone: RP-609 and RP-610 for CAP-31, each taking only
     // its path, and RC-33 and RC-34 in the bucket of every command, with recent authentication.

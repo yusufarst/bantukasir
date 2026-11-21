@@ -32,6 +32,9 @@ const ENTRIES: Readonly<Record<string, { readonly title: TranslationKey; readonl
     registers: { title: 'cash.registers.title', description: 'config.settings.registers_desc', icon: 'drawer' },
     // UXI-329 "Status sistem" (TASK-039).
     status: { title: 'config.system_status.title', description: 'config.settings.status_desc', icon: 'info' },
+    // UXI-330 "Riwayat aktivitas" and UXI-331 "Riwayat keamanan" (TASK-042).
+    activity: { title: 'audit.activity.title', description: 'config.settings.activity_desc', icon: 'clock' },
+    security: { title: 'audit.security.title', description: 'config.settings.security_desc', icon: 'eye' },
 };
 
 export default function Settings({ entries }: { entries: readonly Entry[] }) {
