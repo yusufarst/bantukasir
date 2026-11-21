@@ -4,7 +4,7 @@
 | --- | --- |
 | Task | [TASK-042](../tasks/TASK-042-audit-views.md), review class A |
 | Instruction | Continuous execution, D-101, as the delegation of the tick printed it (EXECUTION_CONTEXT CE-01); the Owner's directive of 21 November resuming the automatic execution of TASK-038 to TASK-050 under D-105, D-130 and D-133 |
-| Executor | Agent `bk-executor-high`, model `claude-opus-5-5`, effort High from the table of EXECUTION_CONTEXT section 19; review and verification by `bk-reviewer-high` |
+| Executor | Agent `bk-executor-high`, model `claude-opus-5-5`, effort High from the table of EXECUTION_CONTEXT section 19; review and verification by `bk-reviewer-high`. Resumed once (CE-24) by a successor executor of the same agent, model and effort after the laptop shut down at the phase `BUILD` on checkpoint 3 (`1248ca6`, pushed, fast run 2 green), the lock taken over at 18:19 (`INACTIVE BOOT`); it kept the record's uncommitted updates and finished the review, the record and the pull request |
 | Branch and base | `task/TASK-042-audit-views`, from `14b6383675f72351f91f25b66ea0f36ffa5dfb58` (origin/develop, the squash merge of TASK-041's pull request #56) |
 | Preflight (EXC-20, EXC-21, EXC-23) | The tree clean but for `Claude outputs/` and `plan-p0-p11-review.patch`, which this Task leaves alone; the stash of `plan/bantukasir-pos-v1` untouched; no branch or pull request of TASK-042 and no open pull request; the executor state at `BUILD` for TASK-042 with this session's lock, the merge of #56 verified; TASK-036 and TASK-035 `DONE`, no gate. PHP, the native `tsc` and ESLint are not on this machine (`npm run typecheck` answers that `tsc` is not recognized), so every check but the guard runs in CI (D-108, D-117) |
 
@@ -18,6 +18,11 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Guard | Local, on `b144268` (checkpoint 1) | 15:33 to 15:37 | about 4 min | One candidate, `192.0.2.7` in `AuditViewsTest`, the documentation range of RFC 5737 (TEST-NET-1), synthetic as in `SignInTest`: judged no finding (section 10). Its run with `--accept` stopped unfinished, superseded by checkpoint 2 |
 | Guard | Local, on `6557b94` (checkpoints 1 and 2) | 15:41 to 15:51 | about 10 min, two passes | The same one candidate, its hash changed with the range (`REFUSED HASH`), judged again no finding; `GUARD ACCEPTED` on the second pass |
 | `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit`; the changed PostgreSQL files | Fast run 1, 44886915703 on `6557b94` | 15:52 to 16:04 | 11 min 44 s for the job | `FAIL` (F-4): every step `PASS` — `composer lint`, `test:unit` (`AuditActionsTest`, `CopyDeckTest`), `npm run lint`, `typecheck` and `test:unit` (`activity.test.ts`), and the changed PostgreSQL files (`AuditViewsTest`, `CapabilityMatrixTest`, `RouteInventoryTest`, `SettingsPagesTest`) — except `composer analyse`, two PHPStan findings |
+| The same checks, the targeted retest of F-4 (D-133) | Fast run 2, 44888901868 on `1248ca6` (checkpoint 3) | 16:17 to 16:26 | 8 min 36 s for the job | `PASS`: every step, `composer analyse` included |
+| Guard | Local, on `3cdcdf3` (checkpoint 4, the fix of R-01) | 18:33 to 18:36 | about 3 min | `GUARD PASS`, no candidate |
+| The same checks, the targeted retest of R-01 (D-133) | Fast run 3, 44899927184 on `3cdcdf3` (checkpoint 4) | 18:36 to 18:48 | 12 min 10 s for the job | `PASS`: every step, `AuditViewsTest` with R-01's regression test among the changed PostgreSQL files |
+| Guard preview of the record | Local, the uncommitted record against `origin/develop` | 18:37 | under 1 min | Two candidates, judged no finding (section 10) |
+| `composer test:postgres` (four parts), `test:race`, the build, the browser suite, the image checks, the restore rehearsal | CI on the pull request's final head | — | — | `NOT_RUN` until then (CE-44, D-117) |
 
 ## 2. What was built (contract section 4.1)
 
@@ -47,10 +52,10 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 
 | Criterion | Proof | Status |
 | --- | --- | --- |
-| AC-042-01 | `AuditViewsTest` (the filters by date, user, type, product, session and reference, both views' refusals for Operations, the cashier and the combined account), `CapabilityMatrixTest` RP-612 and RP-613, `audit.spec.ts` | See section 1 |
-| AC-042-02 | `AuditViewsTest::test_an_event_keeps_the_name_of_its_moment_and_a_combined_account_names_one_identity` | See section 1 |
-| AC-042-03 | `tests/Unit/Audit/AuditActionsTest.php` (the codes and keys of section 8 and COPY_DECK section 11.14, every code the application writes, every event type and outcome), `tests/Unit/Audit/activity.test.ts`, `CopyDeckTest` | See section 1 |
-| AC-042-04 | `AuditViewsTest::test_the_owner_only_data_reaches_the_owner_alone_and_never_a_staff_payload`, the allowlists of both pages (`Allowlists`) | See section 1 |
+| AC-042-01 | `AuditViewsTest` (the filters by date, user, type, product, session and reference, both views' refusals for Operations, the cashier and the combined account; R-01's regression test), `CapabilityMatrixTest` RP-612 and RP-613, `audit.spec.ts` | `PASS` at L4 in fast run 3 (`3cdcdf3`); L5 `audit.spec.ts` `NOT_RUN` until the final head |
+| AC-042-02 | `AuditViewsTest::test_an_event_keeps_the_name_of_its_moment_and_a_combined_account_names_one_identity` | `PASS`, fast run 3 |
+| AC-042-03 | `tests/Unit/Audit/AuditActionsTest.php` (the codes and keys of section 8 and COPY_DECK section 11.14, every code the application writes, every event type and outcome), `tests/Unit/Audit/activity.test.ts`, `CopyDeckTest` | `PASS`, fast run 3 |
+| AC-042-04 | `AuditViewsTest::test_the_owner_only_data_reaches_the_owner_alone_and_never_a_staff_payload`, the allowlists of both pages (`Allowlists`) | `PASS`, fast run 3 |
 
 ## 5. Findings
 
@@ -59,7 +64,8 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | F-1 | Carried for this Task: TASK-017 F-7 and TASK-011 F-4 and R-8 — the openers of UXI-177 and UXI-349 | Done: UXP-612 opens UXP-302 and UXP-604, whose ways back return to it (C-8) |
 | F-2 | Carried for this Task: TASK-020 F-3 — `BARCODE_CORRECTION` with its reason and change data; TASK-035 — the labels of its five actions | Done: every code of section 8 labelled (AC-042-03); the reason and the change data in the details (C-5) |
 | F-3 | Carried for this Task: TASK-021 F-4 — the product filter and a document of several products | Read as C-9 |
-| F-4 | Fast run 1 (44886915703 on `6557b94`), `composer analyse`: `arrayValues.list` at `ActivityLog.php:98` (`array_values` of a list) and `argument.type` at `AuditViewsTest.php:197` (`array_unique` of `list<mixed>`) | Fixed in one push (checkpoint 3): the list returned as it is, the test's closure typed `string`; fast run 2 is their one targeted retest (D-133) |
+| F-4 | Fast run 1 (44886915703 on `6557b94`), `composer analyse`: `arrayValues.list` at `ActivityLog.php:98` (`array_values` of a list) and `argument.type` at `AuditViewsTest.php:197` (`array_unique` of `list<mixed>`) | Fixed in one push (checkpoint 3): the list returned as it is, the test's closure typed `string`; fast run 2, their one targeted retest (D-133), `PASS` |
+| F-5 | The review's findings R-01 to R-07 (section 9) | R-01 fixed (checkpoint 4); R-02 and R-03 fixed in this record; R-04 recorded as OPEN_ITEMS T-55; R-03's measurement for TASK-048; R-05 to R-07 kept as readings |
 
 ## 6. Tests (contract section 7)
 
@@ -73,7 +79,7 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 
 | Rule | This Task |
 | --- | --- |
-| EXC-41 to EXC-44 | No migration, no table, no key: N/A. The filters use the indexes of TASK-006 (`occurred_at, id`; `actor_user_id`, `product_id`, `cash_session_id` with `occurred_at, id`; `reference`) |
+| EXC-41 to EXC-44 | No migration, no table, no key: N/A. The filters by day, user, product, session and the event's own reference use the indexes of TASK-006 (`occurred_at, id`; `actor_user_id`, `product_id`, `cash_session_id` with `occurred_at, id`; `reference`); no index serves the action code of RP-612, the event type of RP-613 or the reference's branch of the Sale it names, which walk `(occurred_at, id)` within the page's limit (review R-03; measured at TASK-048, section 11) |
 | EXC-45 | The fixtures through the Actions: products, receipts, registers, sessions, Sales, a cost correction, the deactivation and anonymization, a category of the combined account (`TokoContoh` and the Actions) |
 | EXC-47 | No new table or kind of stored file; the backup counts and files are unchanged |
 
@@ -81,22 +87,53 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 
 | Dimension | Status |
 | --- | --- |
-| Business | `NOT_RUN` until the fast run |
-| UI and UX | `NOT_RUN` until the fast run and the final head |
+| Business | `PASS` — AC-042-01 to AC-042-04 at L1 and L4 in fast run 3; REQ-AUD-02 and REQ-RPT-05 by RP-612 and RP-613 |
+| UI and UX | `NOT_RUN` — the copy keys and labels `PASS` at L1 (fast run 3); the L5 tests of `audit.spec.ts` and `profile.spec.ts` on the pull request's final head |
 | Backend | N/A — no route or Action beyond RP-612 and RP-613 |
 | Database | N/A — no migration |
-| Security | `NOT_RUN` until the fast run |
+| Security | `PASS` — the gates, the refusals of Operations, the cashier and the combined account, the allowlists of parameters and payloads, no Owner-only data or SECURITY event outside CAP-32, the guard; the whole PostgreSQL suite on the final head |
 | Data integrity | N/A — writes no business fact |
-| Performance | Bounded queries and paging; the budgets are measured at TASK-048 |
+| Performance | `PASS` — every statement bounded by a page or a limit, keyset paging; the unindexed filters of R-03 and the budgets measured at TASK-048 |
 | Operations | N/A — no backup, runbook or status impact |
-| Verification | `NOT_RUN` |
+| Verification | `NOT_RUN` — self-review and the class-A review done (section 9), fast runs 2 and 3 `PASS`; the command contract and the image checks on the pull request's final head |
 
 ## 9. Review (EXECUTION_CONTEXT CE-40)
 
-Self-review before the review: both reads against BR-AUD-02 to BR-AUD-05, SEC-LOG-03, SCHEMA section 5.4 and RT-08 — every parameter an allowlist in the route and the FormRequest, keyset paging both ways with the cursor read again under the filters, every statement bounded by a page or a limit, the Owner-only data selected only for CAP-32 and the category SECURITY excluded for anyone else, no request identifier, route, operator's note or command on any channel; the gates of both routes and the entries of the index; the labels of section 8 held to the documents and to the Actions' codes; the copy keys verbatim; the controls of section 4.2 and the four extended ways back; the obligations of EXECUTION_CONTEXT section 10 for two routes, two reads and two pages.
+Self-review before the review: both reads against BR-AUD-02 to BR-AUD-05, SEC-LOG-03, SCHEMA section 5.4 and RT-08 — every parameter an allowlist in the route and the FormRequest, keyset paging both ways with the cursor read again under the filters, every statement bounded by a page or a limit, the Owner-only data selected only for CAP-32 and the category SECURITY excluded for anyone else, no request identifier, route, operator's note or command on any channel; the gates of both routes and the entries of the index; the labels of section 8 held to the documents and to the Actions' codes; the copy keys verbatim; the controls of section 4.2 and the four extended ways back; the obligations of EXECUTION_CONTEXT section 10 for two routes, two reads and two pages. Repeated by the successor executor on resume (the laptop shut down after checkpoint 3) over `ActivityLog` and its controller: the Owner-only column selected and shown only for CAP-32, the category SECURITY kept from any other reader, every statement bounded.
+
+Round 1, the independent adversarial review of class A (EXC-71), once:
+
+| | |
+| --- | --- |
+| Agent | `bk-reviewer-high`, model `claude-opus-5-5`, effort High, tools Read, Grep and Glob |
+| Package | `.git/bantukasir-executor/review/TASK-042/r1`, base `14b6383`, tree `cf5e490` (HEAD `1248ca6` with the uncommitted record), written 18:21; `--check` after the review: `UNCHANGED` |
+| Verdict | `PASS`, no MUST-FIX: 2 SHOULD-FIX, 5 NOTE; no test run asked for |
+| Verification | None: no MUST-FIX, so no round 2 (CE-40) |
+
+| ID | Class | Finding | Outcome |
+| --- | --- | --- | --- |
+| R-01 | SHOULD-FIX | AC-042-01: "Sesi kas" sent any text, RP-612 refused one not of the form `^[0-9]{8}-[0-9]{6,19}$` with 422, and the page showed UXS-22 "Coba lagi", which retried the same refusal; the field's numeric keypad had no hyphen | Fixed in checkpoint 4 (`3cdcdf3`): `session` is a text of up to 40 characters without a control character, matched exactly, so a number no session has finds nothing (TR-PAGE-03), as an unknown key does; the field without `inputMode` numeric. Regression test: `AuditViewsTest` — `2026`, `20261115-1`, `20261115999999` and `LACI 1` answer 200 with no rows; 41 characters and a control character stay refused. Fast run 3, its targeted retest, `PASS` |
+| R-02 | SHOULD-FIX | EXC-61, EXC-62, section 13: the Definition of Done and the criteria's statuses stale, without the vocabulary; the review record missing | Fixed in this record: sections 4, 8 and 9 |
+| R-03 | NOTE | No index serves the filters by action code, event type or the Sale's branch of the reference; bounded by the page's limit | Section 7 corrected; measured against the budgets at TASK-048 (section 11) |
+| R-04 | NOTE | UXI-379's "returns here" for seven pages, while only the four controls of the contract's section 4.2 name UXP-612 as an opener; UXP-202, UXP-206 and UXP-403 return to their usual openers | Recorded as OPEN_ITEMS T-55; nothing to change in this Task |
+| R-05 | NOTE | `ADJUSTMENT_CONFIRM`, `OPENING_STOCK_CONFIRM` and `COST_CORRECTION` with one product show its name as text, not a link | Kept as reading C-4: the reference is the event's subject; the text is accurate and nothing leaks |
+| R-06 | NOTE | "Akun terkait" and "Alamat jaringan" of UXP-613 in the details, not as columns; the keys of UXP-612 borrowed | Kept as reading C-5 ("Row, expandable", UXI-383) |
+| R-07 | NOTE | RP-613: after housekeeping removes every entry beyond an `after` cursor, an empty page offers no "Sebelumnya" | Recorded, no change: an edge of SEC-LOG-05's removal only; RP-612's audit is append-only |
+
+After the review the working tree, the index, HEAD and the executor state were as the package's manifest records them (`--check` `UNCHANGED`).
 
 ## 10. Guard's candidates (CE-31; D-076, D-097, D-098)
 
 | Candidate | Where | Judgment |
 | --- | --- | --- |
 | `192.0.2.7` (ipv4) | `tests/Feature/Audit/AuditViewsTest.php`, added in `b144268` | The documentation range of RFC 5737 (TEST-NET-1), the client address of a refused sign-in in the test, synthetic as `SignInTest`'s `192.0.2.x`: no real host, no person, no client datum. No finding |
+| `192.0.2.7` (ipv4) | This evidence file, added in `1248ca6`, where it quotes the candidate above | The same synthetic address, quoted. No finding |
+| — | Checkpoint 4 (`3cdcdf3`), the fix of R-01 | No candidate: `GUARD PASS` (18:36) |
+| `192.0.2.7` (ipv4), twice | `guard.sh --preview` of the record's change against `origin/develop` (18:37): this file and `AuditViewsTest` | The two candidates above, judged again: no finding |
+
+## 11. For later Tasks and the record
+
+- TASK-048: measure against the budgets the filters that no index serves — RP-612's action code and the reference's branch of the Sale it names, RP-613's event type (review R-03).
+- OPEN_ITEMS T-55: the way back to UXP-612 from UXP-202, UXP-206 and UXP-403 (review R-04), for the change control of the P7 artifacts.
+- The previous merge, recorded here (CE-50): TASK-041's pull request #56, head `04bb67a`, CI run 44877595875; squash commit `14b6383` on `develop`, CI run 44880035022; the tick's merge, the automated review DONE (TASK-041 evidence section 12).
+- Next eligible Task: TASK-043, Performance harness and provisional dataset, review class B, effort High (agent `bk-executor-high`; review and verification `bk-reviewer-high`).
