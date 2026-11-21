@@ -132,6 +132,7 @@ After the review the working tree, the index, HEAD and the executor state were a
 | — | Checkpoint 4 (`3cdcdf3`), the fix of R-01 | No candidate: `GUARD PASS` (18:36) |
 | `192.0.2.7` (ipv4), twice | `guard.sh --preview` of the record's change against `origin/develop` (18:37): this file and `AuditViewsTest` | The two candidates above, judged again: no finding |
 | `192.0.2.7` (ipv4), twice | `guard.sh --preview` of fix cycle 1 against `origin/develop` (19:15): this file and `AuditViewsTest` | The same synthetic address, judged again: no finding; the fix adds no new candidate |
+| `192.0.2.7` (ipv4), twice | `guard.sh --preview` of fix cycle 2 against `origin/develop` (21:31): this file and `AuditViewsTest` | The same synthetic address, judged again: no finding; fix cycle 2 adds no new candidate |
 
 ## 11. For later Tasks and the record
 
@@ -139,7 +140,7 @@ After the review the working tree, the index, HEAD and the executor state were a
 - OPEN_ITEMS T-55: the way back to UXP-612 from UXP-202, UXP-206 and UXP-403 (review R-04), for the change control of the P7 artifacts.
 - The previous merge, recorded here (CE-50): TASK-041's pull request #56, head `04bb67a`, CI run 44877595875; squash commit `14b6383` on `develop`, CI run 44880035022; the tick's merge, the automated review DONE (TASK-041 evidence section 12).
 - Next eligible Task: TASK-043, Performance harness and provisional dataset, review class B, effort High (agent `bk-executor-high`; review and verification `bk-reviewer-high`).
-- OPEN_ITEMS T-56: a label and a presentation for each field of an audit event's change data, for the change control of COPY_DECK (section 12).
+- OPEN_ITEMS T-56: a label and a presentation for each field of an audit event's change data, for a change control of COPY_DECK that the Owner approves (section 12); it blocks gate RELEASE (D-136, section 13).
 
 ## 12. Fix cycle 1 — the automated reviewer's P1 on pull request #57 (CE-43)
 
@@ -172,4 +173,33 @@ The verification's findings are numbered V- here to keep them apart from round 1
 | --- | --- | --- | --- | --- |
 | `npm run typecheck`, ESLint, PHP | Local | — | — | `NOT_RUN`: not installed natively (section 1); CI on the new head runs them |
 | `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit`; the changed PostgreSQL files, `AuditViewsTest` among them | Fast run and CI on the pull request's new head | — | — | `NOT_RUN` until that run, the fix's one targeted retest (D-133) |
-| The whole command contract, the browser suite with `audit.spec.ts`, the image checks | CI on the pull request's new head | — | — | `NOT_RUN` until then |
+| The whole command contract, the browser suite with `audit.spec.ts`, the image checks | CI run 44903440436 on the pull request's head `360a230` | 19:20 to 19:51 | about 31 min | `FAIL`, failure 1 of 3 (CE-42): the static checks, unit tests, `test:race`, the build, the restore rehearsal and PostgreSQL parts 1 and 2 `PASS`; the browser suite 342 passed, 2 failed; the four failed jobs below (section 13) |
+
+## 13. Fix cycle 2 — CI run 44903440436 on `360a230` (CE-42)
+
+The delegation of the tick (21 November, 19:51, token `c1b58396…`) handed over the red run; that cycle diagnosed it and stopped `OWNER_DECISION` for the image checks. The Owner decided D-135 and D-136 (`ops/` pull request #58, merged into `develop` as `d581e95`) and resumed the loop; the resumed executor (21:18, token `3ec7e11b…`, same agent, model and effort) fixed the three defects in one push.
+
+| Job | Failure | Cause | Fix |
+| --- | --- | --- | --- |
+| Image checks | The gate refused ten High findings already accepted (D-112 and D-115 glibc, D-134 OpenSSL) at the Debian point release's versions openssl 3.5.9-1~deb13u1 and glibc 2.41-12+deb13u5 | Not this Task's code: the accepted list named the earlier versions | The Owner's D-135 accepts them again at those versions; `develop` merged into the branch by the merge commit `8145f73` (EXC-36), so the image checks read D-135's list. No other change |
+| Command contract | `audit.spec.ts:74` and `:164`, axe `landmark-unique` on `form:nth-child(5)` | UXP-612's two `<form role="search">` ("Sesi kas" and "Referensi") had no accessible name, so the two search landmarks could not be told apart. `ProductFilter` renders no form or landmark | `Activity.tsx`: each form is named by its field's existing COPY_DECK label (`audit.activity.filter_session`, `audit.activity.filter_reference`); no new copy. `audit.spec.ts`: the six filters are found as their controls (the form now shares its field's name), and the two search landmarks by their names |
+| PostgreSQL (3/4) | `CheckoutSaleTest:798` (`sales`) and `RecordCorrectionTest:450` (`sale_corrections`) | The source scans of ARC-20 and ARC-21 found `Queries/Audit/ActivityLog.php`, a reader that neither test named | `ActivityLog` confirmed to only read (no insert, update, delete, increment, truncate, lock or `DB::statement` in `app/Queries/Audit/`); named as a reader in both tests, each of which now also holds it to no write |
+| PostgreSQL (4/4) | `ConfirmReceivingTest:660` (`receiving_documents`) | The same scan, the same reader | Named as a reader; held to no write |
+
+The P1 fix of fix cycle 1 stays: UXP-612's details show only "Alasan". OPEN_ITEMS T-56 now cites D-136: it blocks gate RELEASE.
+
+Verification (CE-42, class A, the form's accessible name being a change of the page): `bk-reviewer-high`, model `claude-opus-5-5`, effort High, package `.git/bantukasir-executor/review/TASK-042/r3` (tree `eb3f290`, HEAD `8145f73`, previous r2), 21:27 to 21:30, about 3 min; `--check` `UNCHANGED`. Verdict `PASS`: the landmark names and the three source scans FIXED, ActivityLog read-only, the P1 fix intact, no MUST-FIX.
+
+| ID | Class | Finding | Outcome |
+| --- | --- | --- | --- |
+| V-08 | SHOULD-FIX | D-136 asks the record in CURRENT_HANDOFF too; it named T-56 only for COPY_DECK's change control | Fixed: TASK-042's entry of CURRENT_HANDOFF cites D-136 and the block of RELEASE |
+| V-09 | SHOULD-FIX | T-56's route left decisions to the planning agent and named TASK-047 as if by default | Fixed: every decision the Owner's or a planning change he approves; TASK-047 only a possible vehicle |
+| V-10 | NOTE | The glibc finding CVE-2026-84243 was accepted by D-115 | Fixed in the row above |
+| V-11 | NOTE | Section 11 described T-56 without D-136 | Fixed |
+
+### 13.1 Checks of fix cycle 2
+
+| Check | Where it ran | Time | Duration | Result |
+| --- | --- | --- | --- | --- |
+| `npm run typecheck`, ESLint, PHP | Local | — | — | `NOT_RUN`: not installed natively (section 1) |
+| The whole command contract with `audit.spec.ts`, the four PostgreSQL parts with the three changed tests, the image checks with D-135's list | CI on the pull request's new head, the fix's one targeted retest (D-133) | — | — | `NOT_RUN` until that run |

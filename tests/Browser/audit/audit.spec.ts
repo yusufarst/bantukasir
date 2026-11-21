@@ -87,7 +87,12 @@ test('the Owner filters the activity, opens an event, follows its reference and 
     await expect(page.getByRole('heading', { level: 1, name: 'Riwayat aktivitas' })).toBeVisible();
     await expect(page).toHaveTitle('Riwayat aktivitas — Toko Contoh');
     for (const label of ['Tanggal', 'Pengguna', 'Jenis', 'Produk', 'Sesi kas', 'Referensi']) {
-        await expect(page.getByRole('main').getByLabel(label, { exact: true })).toBeVisible();
+        await expect(page.getByRole('main').locator('input, select').and(page.getByLabel(label, { exact: true }))).toBeVisible();
+    }
+
+    // The two search forms are landmarks each named by its field (axe landmark-unique).
+    for (const label of ['Sesi kas', 'Referensi']) {
+        await expect(page.getByRole('main').getByRole('search', { name: label, exact: true })).toBeVisible();
     }
 
     await checked(page);

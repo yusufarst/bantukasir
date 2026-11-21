@@ -145,12 +145,13 @@ function ActivityList({ title, filters, users, product, events }: ActivityProps 
                         </SelectInput>
                     </Field>
                     <ProductFilter key={String(filters.product ?? '')} label={t('audit.activity.filter_product')} chosen={product === null ? null : { name: product.name }} onChoose={(picked) => apply({ product: picked === null ? null : picked.id })} />
-                    <form role={'search'} onSubmit={searchSession}>
+                    {/* Two search landmarks on one page, each named by its field's label (axe landmark-unique). */}
+                    <form role={'search'} aria-label={t('audit.activity.filter_session')} onSubmit={searchSession}>
                         <Field label={t('audit.activity.filter_session')}>
                             <TextInput type={'search'} autoComplete={'off'} maxLength={40} value={session} onChange={(event) => setSession(event.target.value)} />
                         </Field>
                     </form>
-                    <form role={'search'} onSubmit={searchReference}>
+                    <form role={'search'} aria-label={t('audit.activity.filter_reference')} onSubmit={searchReference}>
                         <Field label={t('audit.activity.filter_reference')}>
                             <TextInput type={'search'} autoComplete={'off'} maxLength={100} value={reference} onChange={(event) => setReference(event.target.value)} />
                         </Field>

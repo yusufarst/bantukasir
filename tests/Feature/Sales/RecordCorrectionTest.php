@@ -443,14 +443,18 @@ final class RecordCorrectionTest extends DatabaseTestCase
         // besides it only the refund pages' query reads them, writing nothing (TASK-034), and the finance
         // report's query, which names the figure of its refunds and reads them in one read-only transaction
         // of its own, writing nothing (TASK-040; TR-TX-07); the Costing module's writer alone writes the
-        // return allocations, which the replay reads.
-        $readers = ['Queries/Reporting/FinanceReport.php'];
+        // return allocations, which the replay reads. RP-612's read of the business audit names a correction
+        // only to lead its event to the corrected Sale, and writes nothing either (TASK-042).
+        $audit = 'Queries/Audit/ActivityLog.php';
+        $readers = ['Queries/Reporting/FinanceReport.php', $audit];
 
         foreach (['sale_corrections', 'refunds', 'refund_lines', 'return_lines'] as $table) {
             $this->assertSame(['Domain/Sales/Corrections/SaleCorrections.php', 'Queries/Sales/CorrectionRecords.php'], array_values(array_diff(self::filesNaming($table), $readers)), $table);
         }
 
-        $this->assertDoesNotMatchRegularExpression('/->(?:insert|insertGetId|insertOrIgnore|update|upsert|delete|increment|decrement|truncate|lock|lockForUpdate|sharedLock)\(|DB::(?:statement|insert|update|delete|unprepared)/', (string) file_get_contents(app_path('Queries/Sales/CorrectionRecords.php')));
+        foreach (['Queries/Sales/CorrectionRecords.php', $audit] as $file) {
+            $this->assertDoesNotMatchRegularExpression('/->(?:insert|insertGetId|insertOrIgnore|update|upsert|delete|increment|decrement|truncate|lock|lockForUpdate|sharedLock)\(|DB::(?:statement|insert|update|delete|unprepared)/', (string) file_get_contents(app_path($file)), $file);
+        }
 
         $report = (string) file_get_contents(app_path('Queries/Reporting/FinanceReport.php'));
         $this->assertDoesNotMatchRegularExpression('/->(?:insert|insertGetId|insertOrIgnore|update|upsert|delete|increment|decrement|truncate|lock|lockForUpdate|sharedLock)\(|DB::(?:insert|update|delete|unprepared)|\b(?:insert\s+into|update\s+[a-z_]+\s+set|delete\s+from|for\s+update|for\s+share)\b/i', $report);
