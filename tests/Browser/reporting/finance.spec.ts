@@ -153,6 +153,19 @@ test('the Owner reads an incomplete report of today, its trend and its table, an
     await page.getByRole('button', { name: 'Tampilkan sebagai grafik' }).click();
     await expect(chart).toBeVisible();
 
+    // UXS-22 (AC-040-01; review R-01, R-02): a read of another period that fails shows no figure, the period choice
+    // stays on the period applied, and "Coba lagi" reads the report again.
+    await page.route((url) => url.pathname === PAGE, (route) => route.abort(), { times: 1 });
+    await page.getByRole('radio', { name: '7 Hari' }).click();
+    await expect(main.getByText('Gagal memuat')).toBeVisible();
+    await expect(main.getByText('Penjualan bruto', { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('radio', { name: 'Hari Ini' })).toHaveAttribute('aria-checked', 'true');
+    await expect(page).toHaveURL((url) => url.search === '?period=today');
+    await checked(page);
+    await Promise.all([page.waitForResponse((response) => new URL(response.url()).pathname === PAGE), main.getByRole('button', { name: 'Coba lagi' }).click()]);
+    await expect(main.getByText('Penjualan bruto', { exact: true })).toBeVisible();
+    await expect(main.getByText(/^Data per \d{2} \w+ \d{4}, \d{2}\.\d{2}\.\d{2} WIB$/)).toBeVisible();
+
     // UXI-309: the custom range is checked at its date fields; a refused range fetches nothing (AC-040-02).
     const fetched = reads(page);
     await page.getByRole('radio', { name: 'Rentang Kustom' }).click();

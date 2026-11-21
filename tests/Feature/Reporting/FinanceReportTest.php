@@ -135,6 +135,31 @@ final class FinanceReportTest extends DatabaseTestCase
         $this->assertSame(['50000', '15000', '35000', 2], [$month['figures']['grossSales'], $month['figures']['refunds'], $month['figures']['netSales'], $month['figures']['saleCount']]);
     }
 
+    public function test_non_sale_losses_and_a_not_saleable_return_are_never_cost_of_goods_sold_and_a_loss_shows_its_margin(): void
+    {
+        // BR-COST-39, BR-COST-19, BR-COST-34 (TASK-040 review R-03, R-11): on 3 November a negative adjustment of one
+        // glue (Rp8.000 of cost) and a manual issue of a product whose cost is UNKNOWN are not Sales: neither is cost of
+        // goods sold, nor a line of unknown cost. Two glues sold at Rp5.000 cost 72.000 × 2 / 9 = Rp16.000, a gross loss
+        // of Rp6.000 and a margin of −60,0 %; one of them returned not saleable adds to the quantity returned and
+        // restores no cost.
+        $this->clock->set('2026-11-03T03:00:00Z');
+        $glue = TokoContoh::product('LEM-01', ['categoryId' => $this->category, 'name' => 'Lem Kertas', 'sellingPrice' => '5000']);
+        $mystery = TokoContoh::product('MIS-01', ['categoryId' => $this->category, 'name' => 'Map Plastik', 'sellingPrice' => '3000']);
+        TokoContoh::stock($glue, '10', '80000');
+        TokoContoh::receive([['productId' => $mystery, 'quantity' => '5', 'cost' => ['status' => 'UNKNOWN']]]);
+        TokoContoh::adjust([['productId' => $glue, 'direction' => 'DECREASE', 'quantity' => '1']]);
+        TokoContoh::issue([['productId' => $mystery, 'quantity' => '1']]);
+        $sale = TokoContoh::sell('Rina', $this->session, [['productId' => $glue, 'quantity' => '2']]);
+        TokoContoh::correct($sale, [['saleLineId' => TokoContoh::saleLinesOf($sale)[0] ?? 0, 'returnedNotSaleable' => '1']]);
+
+        $today = $this->report(PeriodKind::Today);
+        $this->assertSame(self::figures([
+            'grossSales' => '10000', 'netSales' => '10000', 'saleCount' => 1, 'paymentsCash' => '10000', 'quantitySold' => '2.000', 'quantityReturned' => '1.000',
+            'cogs' => '16000.000000', 'grossProfit' => '-6000.000000', 'margin' => '-60.0',
+        ]), $today['figures']);
+        $this->assertSame(['complete' => true, 'unknownLines' => 0, 'markedProducts' => 0, 'lastCorrectionAt' => null], $today['completeness']);
+    }
+
     public function test_the_periods_are_half_open_asia_jakarta_ranges(): void
     {
         $pen = TokoContoh::product('PEN-01', ['categoryId' => $this->category, 'name' => 'Pulpen Hitam', 'sellingPrice' => '10000']);

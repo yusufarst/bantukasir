@@ -17,7 +17,10 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | `npm run typecheck`, `npx tsc --noEmit`, PHP's checks | Local | 06:12 | under 1 min | `NOT_RUN`: `tsc` is not installed natively and PHP is not on this machine; the fast run runs them |
 | Guard | Local, on `edd8ca4` (checkpoint 1: the query, the page and the tests) | 06:29 | under 1 min | `PASS`, no candidate |
 | `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit`; the changed PostgreSQL files | Fast run 1, 44837203417 on `edd8ca4` | 06:29 to 06:37 | 7 min 55 s for the job | `FAIL` (F-7): every step `PASS` — `composer test:unit` 971 tests, the targeted files `CapabilityMatrixTest` 7, `RouteInventoryTest` 8, `FinancePageTest` 3 and `FinanceReportTest` 4 tests — but `composer analyse`, 1 error: `FinancePageTest.php` line 66, "Cannot cast mixed to string" |
-| The steps of fast run 1 | Fast run 2 | — | — | `NOT_RUN` until then |
+| Guard | Local, on `45fa4ba` (checkpoint 2: F-7) | 06:41 | under 1 min | `PASS`, no candidate |
+| The steps of fast run 1 | Fast run 2, 44838706004 on `45fa4ba`, the reviewed head | 06:42 to 06:50 | 7 min 57 s for the job | `PASS`: every step, `composer analyse` included, and the four targeted PostgreSQL files; the retest of F-7, cured |
+| Review round 1 (section 10.1) | `bk-reviewer-high`, on the package `r1` of HEAD `45fa4ba` | 06:50 to 07:00 | about 10 min | `PASS`: no MUST-FIX; R-01 to R-05 fixed in the record's commit |
+| ESLint, the typecheck, the unit tests and `FinanceReportTest` for the review's fixes (R-01 to R-03) | The fast run of the record's push and the CI of the pull request's final head | — | — | `NOT_RUN` until then (CE-45) |
 | The whole PostgreSQL suite in four parts, `composer test:race`, the browser suite with `tests/Browser/reporting/finance.spec.ts`, `npm run build`, the image checks | CI on the pull request's final head | — | — | `NOT_RUN` until then (CE-44, D-117) |
 
 ## 2. What was built (contract section 4.1)
@@ -44,6 +47,8 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | C-11 | **The applied period** stands in the address and is kept in the session storage, which the shell clears at sign-out (SEC-CH-05), so that "Laporan keuangan" opened without a period shows the period applied last in the sign-in session (NAVIGATION_CONTRACTS UXP-502); Bulan Ini otherwise |
 | C-12 | **A failed read** is `report: null`, on the page and on "Coba lagi", shown as UXS-22 with no figure, its cause in the log only; the period choice stays usable |
 | C-13 | **UXI-020** is registered in the sub-navigation of Laporan, which shows once the Laporan destination exists (TASK-041), as UXI-019 and UXI-021 are |
+| C-14 | **Why the end-after-today message is no stop** (EXECUTION_CONTEXT section 14 item 7; review R-04). Item 7 stops a Task when a needed text has no key, so that no text ships without COPY_DECK. Here no new text ships: the field shows an existing approved key, the title of UXS-05, which is what that state says of a refused field, and EXC-51 holds; what is missing is a more precise wording, which the change control decides (OPEN_ITEMS T-52). The refusal, its place at the field and the absence of any fetch follow INTERACTION_CONTRACTS section 3.4 as written |
+| C-15 | **A failed visit to another period** shows UXS-22 and starts the period choice again from the period applied, which the address keeps, so the choice never names a period that was not read; "Coba lagi" reads the applied period's report again (review R-02) |
 
 ## 4. Findings
 
@@ -61,22 +66,22 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 
 | Test | Where |
 | --- | --- |
-| L2 report figures on fixtures with corrections and returns: Sales by business date and corrections by posting date; refunds by method, a drawer-funded one included; saleable returns restoring cost; UNKNOWN issue and return projections counted and never summed; corrected figures after two cost corrections, an earlier period included; the margin and its rounding; net sales below zero; the half-open periods at Asia/Jakarta midnight; 366 days; an active mark, its scope and its clearance; one read-only REPEATABLE READ snapshot | `tests/Feature/Reporting/FinanceReportTest.php` |
+| L2 report figures on fixtures with corrections and returns: Sales by business date and corrections by posting date; refunds by method, a drawer-funded one included; saleable returns restoring cost; UNKNOWN issue and return projections counted and never summed; corrected figures after two cost corrections, an earlier period included; the margin and its rounding; net sales below zero; the half-open periods at Asia/Jakarta midnight; 366 days; a negative adjustment, a manual issue of UNKNOWN cost and a not-saleable return never cost of goods sold, and a gross loss's negative margin (review R-03, R-11); an active mark, its scope and its clearance; one read-only REPEATABLE READ snapshot | `tests/Feature/Reporting/FinanceReportTest.php` |
 | L4 period validation and access: only the Owner, with only the allowlisted props, never stored; every other role and the combined account refused; each period of RP-502 read; every refused range and parameter `VALIDATION_FAILED` with no figure read; the report reloaded by name; a failed read null, with its cause on neither answer | `tests/Feature/Reporting/FinancePageTest.php`; `tests/Feature/Access/RouteInventoryTest.php`, `CapabilityMatrixTest.php`; `tests/Harness/Channels/Allowlists.php` |
 | L4 the custom range's checks in the page and the kept period | `tests/Unit/Reporting/finance.test.ts` |
 | L1 the percent format on both sides from one table | `tests/Unit/Support/cases/formatting.json` with `FormatCasesTest.php` and `format.test.ts` |
 | L1 UXI-020 in the registry | `tests/Unit/Shell/navigation.test.ts` |
-| L5 KS-10 and the chart (the figure values of the `default` state are FinanceReportTest's, since the local database's other Sales make them vary): `incomplete` with the counts, the link and no margin; the chart by keyboard with its point; the table and back; the three refusals at the fields with nothing fetched; "Batal"; an empty range; the kept period; a preset; axe, contrast, targets, 1366 px, 320 px and 200 % zoom | `tests/Browser/reporting/finance.spec.ts`, with the fixture `finance` of `tests/Harness/Browser/FixturesController.php` |
+| L5 KS-10 and the chart (the figure values of the `default` state are FinanceReportTest's, since the local database's other Sales make them vary): `incomplete` with the counts, the link and no margin; a failed read of another period, the period choice kept on the applied one, and "Coba lagi" (review R-01, R-02); the chart by keyboard with its point; the table and back; the three refusals at the fields with nothing fetched; "Batal"; an empty range; the kept period; a preset; axe, contrast, targets, 1366 px, 320 px and 200 % zoom | `tests/Browser/reporting/finance.spec.ts`, with the fixture `finance` of `tests/Harness/Browser/FixturesController.php` |
 
 ## 6. Acceptance criteria
 
 | Criterion | Proof | Status |
 | --- | --- | --- |
-| AC-040-01 | `FinanceReportTest::test_every_figure_comes_from_one_read_only_repeatable_read_snapshot` and its figures; `FinancePageTest::test_the_report_is_read_again_by_name_and_a_failed_read_is_never_zero`; `finance.spec.ts` | `NOT_RUN` until the fast run and the final head |
-| AC-040-02 | `FinanceReportTest::test_the_periods_are_half_open_asia_jakarta_ranges`; `FinancePageTest::test_the_periods_of_rp_502_are_read_and_a_custom_range_is_refused_before_anything_is_read`; `finance.test.ts`; `finance.spec.ts` | `NOT_RUN` until then |
-| AC-040-03 | `FinanceReportTest` (incomplete by UNKNOWN rows and by a mark; the margin only when complete and net sales above zero); `finance.spec.ts` (`incomplete`); no figure of net profit exists | `NOT_RUN` until then |
-| AC-040-04 | `FinanceReportTest::test_the_figures_follow_the_dates_the_projections_and_the_corrections` (two corrections, October corrected; refunds on 5 November) | `NOT_RUN` until then |
-| AC-040-05 | `finance.spec.ts` (KS-10's three states, UXA-19); `FinancePageTest` and `CapabilityMatrixTest` RP-502 (only the Owner) | `NOT_RUN` until then |
+| AC-040-01 | `FinanceReportTest::test_every_figure_comes_from_one_read_only_repeatable_read_snapshot` and its figures; `FinancePageTest::test_the_report_is_read_again_by_name_and_a_failed_read_is_never_zero` (the server's half); `finance.spec.ts`, a failed read and "Coba lagi" (the page's half, review R-01) | `PASS` in fast run 2 for the PHP tests; `finance.spec.ts` on the final head, `NOT_RUN` until then |
+| AC-040-02 | `FinanceReportTest::test_the_periods_are_half_open_asia_jakarta_ranges`; `FinancePageTest::test_the_periods_of_rp_502_are_read_and_a_custom_range_is_refused_before_anything_is_read`; `finance.test.ts`; `finance.spec.ts` | `PASS` in fast run 2 (PHP and `finance.test.ts`); the browser case on the final head |
+| AC-040-03 | `FinanceReportTest` (incomplete by UNKNOWN rows and by a mark; the margin only when complete and net sales above zero; a negative margin; non-sale losses never cost of goods sold, review R-03); `finance.spec.ts` (`incomplete`); no figure of net profit exists | `PASS` in fast run 2, but for the new case of review R-03 and the browser case, which run on the final head |
+| AC-040-04 | `FinanceReportTest::test_the_figures_follow_the_dates_the_projections_and_the_corrections` (two corrections, October corrected; refunds on 5 November) | `PASS` in fast run 2 |
+| AC-040-05 | `finance.spec.ts` (KS-10's three states, UXA-19); `FinancePageTest` and `CapabilityMatrixTest` RP-502 (only the Owner) | `PASS` in fast run 2 for the access; the browser cases on the final head |
 
 ## 7. Database (EXC-41 to EXC-47)
 
@@ -90,12 +95,50 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 
 | Dimension | Status |
 | --- | --- |
-| Business | `NOT_RUN` until the checks of section 1 — the criteria of section 6 and REQ-RPT-01 to REQ-RPT-03, REQ-RPT-06, REQ-COST-09 |
-| UI and UX | `NOT_RUN` until the browser suite on the final head — KS-10's states, UXI-308 to UXI-312, the copy keys verbatim (`CopyDeckTest`), UXA-19, 320 px and 200 % zoom |
-| Backend | N/A — no route or Action beyond RP-502 |
+| Business | `PASS` for what has run — the criteria of section 6 and REQ-RPT-01 to REQ-RPT-03, REQ-RPT-06, REQ-COST-09 in fast run 2; review R-03's case on the final head |
+| UI and UX | `PASS` for what has run — the copy keys verbatim (`CopyDeckTest`, `composer lint`), the page's checks (`finance.test.ts`); KS-10's states, UXI-308 to UXI-312, UXA-19, 320 px and 200 % zoom in the browser suite on the final head, `NOT_RUN` until then |
+| Backend | `PASS` — the contract leaves no route or Action beyond RP-502, which this Task builds: its FormRequest allowlist, its gate, the props allowlisted per role, the L4 tests in fast run 2 |
 | Database | N/A — no migration |
-| Security | `NOT_RUN` until then — CAP-20 only, every other role and the combined account refused, the props allowlisted on both channels, a failed read's cause on no answer, the guard |
+| Security | `PASS` — CAP-20 only, every other role and the combined account refused, the props allowlisted on both channels, a failed read's cause on no answer (fast run 2), the guard |
 | Data integrity | N/A — a read only, in a read-only transaction that is always rolled back |
 | Performance | `PASS` for what applies — every statement bounded by the period's dates through the indexes on `business_date`, the trend at most 366 points; the budgets are measured at TASK-048 |
 | Operations | N/A — no backup, runbook or status impact |
-| Verification | `NOT_RUN` until the review and the checks |
+| Verification | `PASS` for what runs before the pull request: the self-review; the class-A review `PASS` with no MUST-FIX (section 10); fast run 2 green. The command contract and the image checks run on the pull request's final head before the merge (CE-41) |
+
+## 9. The guard's candidates (CE-31; D-076, D-097, D-098)
+
+No candidate on checkpoints 1 and 2.
+
+## 10. Review (EXECUTION_CONTEXT CE-40)
+
+Self-review before the review: the query against COSTING section 9, ADR-008 sections 5 and 6, SCHEMA sections 5.8 and 5.9 and TR-TX-07 — the dates of each figure, the projections never the facts, each cost sum with its count, a missing projection never complete, the marks' scope, the margin's single rounding; the request against INTERACTION_CONTRACTS section 3.4 and TECHNICAL_RULES section 11.4; the page against KS-10, COPY_DECK sections 10.1 and 10.3, NAVIGATION_CONTRACTS UXP-502, UI_STATES section 6 and UXA-19; the props per role on both channels; the obligations of EXECUTION_CONTEXT section 10 for a route, a read and a page.
+
+### 10.1 Round 1, the full review
+
+Agent `bk-reviewer-high`, model `claude-opus-5-5`, effort High, mode `review`; package `review/TASK-040/r1` of the executor state, base `f46d215`, HEAD `45fa4ba`, snapshot tree `31cc1ea` with the uncommitted record; 21 November, 06:50 to 07:00; `review-pack.sh --check` `UNCHANGED` after it. Verdict `PASS`: no MUST-FIX, five SHOULD-FIX and six NOTEs, decided from the code and the documents, with no test run asked for. It tried and found holding: no join that multiplies rows, each cost sum with its count, the dates of each figure, the margin's single rounding, the snapshot and its test, the marks' scope, the refusals before any read, the gate before the FormRequest and the allowlisted props, the copy and the percent format.
+
+| ID | Severity | Finding | Outcome |
+| --- | --- | --- | --- |
+| R-01 | SHOULD-FIX | No browser case of a failed read (UXS-22) and "Coba lagi"; AC-040-01's proof named the spec for it | Fixed: `finance.spec.ts` aborts a visit to "7 Hari" once, sees "Gagal memuat" with no figure, then "Coba lagi" reads the report again |
+| R-02 | SHOULD-FIX | A failed visit to a new preset left the radio on it beside the old period's report | Fixed (C-15): the period choice starts again from the applied period after a failed visit; the same browser case proves it |
+| R-03 | SHOULD-FIX | No test of a manual issue or a negative adjustment in the period (BR-COST-39, F-3) | Fixed: `FinanceReportTest::test_non_sale_losses_and_a_not_saleable_return_are_never_cost_of_goods_sold_and_a_loss_shows_its_margin`, with R-11's not-saleable return and negative margin |
+| R-04 | SHOULD-FIX | Stop condition 7 not addressed for the end-after-today message | Recorded as C-14: no new text ships; T-52 keeps the wording for the change control |
+| R-05 | SHOULD-FIX | Sections 6 and 8 not current with fast run 2 | Fixed |
+| R-06 | NOTE | The report runs under the ordinary 10 s statement limit; `read_statement_timeout` (15 s) is read nowhere in `app/`, as before this Task | Deferred to TASK-048, which measures the report budgets of TECHNICAL_RULES section 13.1; a stricter limit fails safe (UXS-22) |
+| R-07 | NOTE | An active mark hides the margin of every later period, also where its product did not sell | The reading C-5, recorded; reported to the Owner |
+| R-08 | NOTE | `FinancePageTest` and the browser spec compute today apart from the request: a run across midnight WIB could fail | Recorded, no change: the page test keeps the real clock that the sign-in session follows; the window is seconds |
+| R-09 | NOTE | UXI-020 invisible until TASK-041 makes the Laporan destination | C-13; TASK-041 (F-6) |
+| R-10 | NOTE | The kept period costs a second report read when the page opens without one | Recorded for TASK-041 or TASK-048 |
+| R-11 | NOTE | No server case of a negative margin, a margin tie or a not-saleable return | The negative margin and the not-saleable return added with R-03; the tie is the shared percent table's (`31.95` → `32,0%`) and Brick's half-up |
+
+No MUST-FIX was raised, so no verification round is due (CE-40). The fixes change `Finance.tsx` (production behaviour of the page, R-02) and tests; the checks they touch — ESLint, the typecheck, the unit tests, `FinanceReportTest` and the browser suite — run in the fast run of the record's push and in the pull request's CI on the final head (CE-45).
+
+## 11. Record (CE-50)
+
+- Guard: `guard.sh` on every pushed head, `PASS`; `guard.sh --preview` of the record's change before its commit.
+- Backup impact (EXC-47): none; no new table or kind of stored file.
+- The previous merge: TASK-039's pull request #54 (head `7ed4b04`, CI 44824616616; squash `f46d215` by the tick, the automated review DONE; CI on `develop` 44828933816) — recorded in [TASK-039's evidence](TASK-039.md) section 13 and in CURRENT_HANDOFF.
+- Documents: TASK_PLAN — TASK-040 `DONE`, its one dependent TASK-041 `READY` (TASK-039 and TASK-032 `DONE`), the totals TODO 8, READY 2, DONE 40; OPEN_ITEMS T-52 and T-53; CURRENT_HANDOFF last. No decision is recorded; the next free decision is D-135.
+- Fast runs: two of the ten of CE-46 before the record; run 1 failed on one proven defect of a test, fixed in one push and cured in run 2 (F-7, D-133); no CI run was repeated.
+- Not verified before the pull request's final head: the whole PostgreSQL suite in four parts, `test:race`, the browser suite, the build and the image checks; and the review's fixes (R-01 to R-03), which run first in the record's fast run and there.
+- Next eligible Task: TASK-041, Owner home and daily summary, effort High (agent `bk-executor-high`; review and verification `bk-reviewer-high`).

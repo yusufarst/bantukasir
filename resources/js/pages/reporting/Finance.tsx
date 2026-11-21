@@ -69,6 +69,9 @@ export default function Finance(props: FinanceProps) {
 
 function FinancePage({ title, period, today, report }: FinanceProps & { title: string }) {
     const [read, setRead] = useState<Read>('read');
+    // A visit to another period that fails leaves the applied period shown, so the period choice starts again
+    // from it, never from the period that was not read (TASK-040 review R-02).
+    const [failures, setFailures] = useState(0);
 
     // The period kept for the sign-in session: an address without a period opens on it (NAVIGATION_CONTRACTS UXP-502).
     useEffect(() => {
@@ -85,6 +88,7 @@ function FinancePage({ title, period, today, report }: FinanceProps & { title: s
 
     const failed = (): boolean => {
         setRead('failed');
+        setFailures((count) => count + 1);
 
         return false;
     };
@@ -110,7 +114,7 @@ function FinancePage({ title, period, today, report }: FinanceProps & { title: s
     return (
         <ReportLayout
             header={<PageHeader title={title} subtitle={shown === null ? undefined : t('reporting.as_of', { waktu: formatDateTime(shown.asOf) })} />}
-            period={<PeriodChoice applied={period} today={today} shownRange={shown?.period ?? null} busy={read === 'reading'} onApply={visit} />}
+            period={<PeriodChoice key={failures} applied={period} today={today} shownRange={shown?.period ?? null} busy={read === 'reading'} onApply={visit} />}
             completeness={shown !== null && !shown.empty ? <Completeness report={shown} /> : undefined}
             figures={
                 read === 'reading' ? (
