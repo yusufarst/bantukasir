@@ -237,9 +237,11 @@ final class PostgresPartsTest extends TestCase
             $names[] = sprintf('PostgreSQL (%d/%d)', $k, $n);
         }
 
-        // TASK-037's job Restore rehearsal runs beside them, on its own runner and local environment.
-        $this->assertSame(['Command contract', ...$names, 'Restore rehearsal', 'Image checks'], array_keys($jobs));
+        // TASK-037's job Restore rehearsal and TASK-043's Migration rehearsal run beside them, each on its own
+        // runner and local environment.
+        $this->assertSame(['Command contract', ...$names, 'Restore rehearsal', 'Migration rehearsal', 'Image checks'], array_keys($jobs));
         $this->assertDoesNotMatchRegularExpression('/run:.*composer test:postgres/', $jobs['Restore rehearsal']);
+        $this->assertDoesNotMatchRegularExpression('/run:.*composer test:postgres/', $jobs['Migration rehearsal']);
 
         foreach ($names as $index => $name) {
             $this->assertStringContainsString('run: docker compose exec -T app composer test:postgres:'.($index + 1)."\n", $jobs[$name]);
