@@ -1,5 +1,5 @@
 {
-  "decision": "D-112, D-115, D-118, D-123, D-127, D-128, D-134",
+  "decision": "D-112, D-115, D-118, D-123, D-127, D-128, D-134, D-135",
   "limits": "Conditional and temporary, for development only: the Debian findings of the assessed image, at these exact versions. It authorizes no staging or production deployment and accepts no future CVE. A critical finding enters this list only by its own decision of the Owner. TASK-013 reassesses curl and libcurl before its HTTP or S3 integration; gate RELEASE reviews every remaining vulnerability independently.",
   "assessed": {
     "ciRun": 41129923061,
@@ -57,6 +57,15 @@
     "image": "the release stage of docker/app/Dockerfile at that head, identifier sha256:ae738545fe117beab809c11e9bd3ac30b137030909c2a9702fb935ed6318798f; libssl3t64, openssl and openssl-provider-legacy at 3.5.7-1~deb13u3, the newest that trixie-security holds, which the build's apt-get upgrade installed",
     "statusRead": "2026-11-20, by the host session: Debian's security tracker for each of the seven CVEs (trixie 3.5.7-1~deb13u2 and trixie-security 3.5.7-1~deb13u3 vulnerable, unstable unfixed); php-src PHP-8.5 ext/openssl/openssl_backend_v3.c line 911 and openssl_backend_v1.c line 747, curl 8.14.1 lib/vtls/openssl.c line 3106, and PostgreSQL REL_18_STABLE src/interfaces/libpq/fe-secure-openssl.c; known exploitation and EPSS from Grype's database of that run",
     "limits": "Development and CI only, at exactly 3.5.7-1~deb13u3 of the three packages: no staging, no production, no other CVE, no other version, no wildcard. Each entry expires at the first of: a fixed openssl for trixie, which the build installs and the gate then refuses as fixable or prints as accepted but not reported; known exploitation; a raise of severity; any Task that adds a use the entry rules out; gate RELEASE; and 31 December 2026, when the Owner reassesses it"
+  },
+  "assessedD135": {
+    "ciRun": 44903440436,
+    "head": "360a23069cc97d0ffae2c540851c99b924c47bb7",
+    "scanner": "Grype 0.121.0, with Syft 1.55.0",
+    "database": "2026-11-21T06:20:06Z",
+    "image": "the release stage of docker/app/Dockerfile on pull request #57 (TASK-042), identifier sha256:c74570ef5fabdee8d9c63a3a679a9d4f750f2458f87420fab2924bf69d1428ca, the same pinned base images as D-134; its apt-get upgrade installed libssl3t64, openssl and openssl-provider-legacy at 3.5.9-1~deb13u1 and libc-bin and libc6 at 2.41-12+deb13u5, from Debian 13's point release. The gate refused 27 findings of exactly the ten CVEs below and nothing else (158 accepted, 27 refused)",
+    "statusRead": "2026-11-21, by the host session: Debian's security tracker for openssl and glibc and for each of the ten CVEs. The seven OpenSSL CVEs: trixie 3.5.9-1~deb13u1 and trixie-security 3.5.7-1~deb13u3 vulnerable, unstable unfixed. CVE-2026-19499 and CVE-2026-5435: fixed in trixie 2.41-12+deb13u5. CVE-2026-84243: trixie 2.41-12+deb13u5 vulnerable, <no-dsa>. Known exploitation and EPSS are from Grype's database of that run: none exploited, EPSS at most 0.00569. The code added since D-134 (TASK-038 to TASK-042) adds no use that an entry rules out",
+    "limits": "Development and CI only, at exactly these versions: libssl3t64, openssl and openssl-provider-legacy 3.5.9-1~deb13u1, and libc-bin and libc6 2.41-12+deb13u5. No staging, no production, no other CVE, no other version, no wildcard. Each entry expires at the first of: a fix that the build installs and the gate then refuses as fixable or prints as accepted but not reported; known exploitation; a raise of severity; any Task that adds a use the entry rules out; a change of the base image; gate RELEASE; and 31 December 2026, when the Owner reassesses it"
   },
   "commonReviewTrigger": "Every entry is reviewed again when the gate refuses it (a fix available, known exploitation, another version or severity), and at gate RELEASE.",
   "accepted": [
@@ -791,47 +800,47 @@
     {
       "id": "CVE-2026-19499",
       "severity": "High",
-      "decision": "D-112",
+      "decision": "D-135",
       "sourcePackage": "glibc",
       "packages": [
-        {"name": "libc-bin", "version": "2.41-12+deb13u4", "type": "deb"},
-        {"name": "libc6", "version": "2.41-12+deb13u4", "type": "deb"}
+        {"name": "libc-bin", "version": "2.41-12+deb13u5", "type": "deb"},
+        {"name": "libc6", "version": "2.41-12+deb13u5", "type": "deb"}
       ],
       "fixState": "wont-fix",
-      "debianStatus": "trixie vulnerable, <no-dsa> (Minor issue); fixed in unstable 2.43",
-      "rationale": "strfmon and strfmon_l can write past the caller's buffer with right-justified padding.",
+      "debianStatus": "Fixed in trixie 2.41-12+deb13u5, the version installed, by Debian's security tracker read on 2026-11-21 (D-135); fixed in unstable 2.43-5. Grype's database of 2026-11-21T06:20:06Z still gives wont-fix at this version, so the scan's finding lags Debian's fix. First accepted at 2.41-12+deb13u4 by D-112.",
+      "rationale": "strfmon and strfmon_l can write past the caller's buffer with right-justified padding. High by the scan's database, which records no known exploitation (EPSS 0.00297).",
       "mitigation": "PHP removed its only call of strfmon, money_format, in 8.0; the application's money format is its own code.",
-      "reviewTrigger": "A Debian point release; any C dependency added to the image."
+      "reviewTrigger": "Grype's database recording Debian's fix, after which the gate prints the entry as accepted but not reported; known exploitation or a raise to Critical, which the gate refuses; any C dependency added to the image; a change of the base image; gate RELEASE; and 31 December 2026 at the latest, when the Owner reassesses it (D-135). Development and CI only: it authorizes no staging or production."
     },
     {
       "id": "CVE-2026-5435",
       "severity": "High",
-      "decision": "D-112",
+      "decision": "D-135",
       "sourcePackage": "glibc",
       "packages": [
-        {"name": "libc-bin", "version": "2.41-12+deb13u4", "type": "deb"},
-        {"name": "libc6", "version": "2.41-12+deb13u4", "type": "deb"}
+        {"name": "libc-bin", "version": "2.41-12+deb13u5", "type": "deb"},
+        {"name": "libc6", "version": "2.41-12+deb13u5", "type": "deb"}
       ],
       "fixState": "wont-fix",
-      "debianStatus": "trixie vulnerable, <no-dsa>",
-      "rationale": "The deprecated resolver functions ns_printrrf, ns_printrr and fp_nquery.",
+      "debianStatus": "Fixed in trixie 2.41-12+deb13u5, the version installed, by Debian's security tracker read on 2026-11-21 (D-135); fixed in unstable 2.43-3. Grype's database of 2026-11-21T06:20:06Z still gives wont-fix at this version, so the scan's finding lags Debian's fix. First accepted at 2.41-12+deb13u4 by D-112.",
+      "rationale": "The deprecated resolver functions ns_printrrf, ns_printrr and fp_nquery. High by the scan's database, which records no known exploitation (EPSS 0.00237).",
       "mitigation": "The application prints no DNS record through those functions.",
-      "reviewTrigger": "A Debian point release; any C dependency added to the image."
+      "reviewTrigger": "Grype's database recording Debian's fix, after which the gate prints the entry as accepted but not reported; known exploitation or a raise to Critical, which the gate refuses; any C dependency added to the image; a change of the base image; gate RELEASE; and 31 December 2026 at the latest, when the Owner reassesses it (D-135). Development and CI only: it authorizes no staging or production."
     },
     {
       "id": "CVE-2026-84243",
       "severity": "High",
-      "decision": "D-115",
+      "decision": "D-135",
       "sourcePackage": "glibc",
       "packages": [
-        {"name": "libc-bin", "version": "2.41-12+deb13u4", "type": "deb"},
-        {"name": "libc6", "version": "2.41-12+deb13u4", "type": "deb"}
+        {"name": "libc-bin", "version": "2.41-12+deb13u5", "type": "deb"},
+        {"name": "libc6", "version": "2.41-12+deb13u5", "type": "deb"}
       ],
       "fixState": "not-fixed",
-      "debianStatus": "trixie vulnerable, with no note of Debian's assessment; unfixed in unstable 2.43-7 as well (Debian bug 1152640, GLIBC-SA-2026-0025)",
+      "debianStatus": "trixie 2.41-12+deb13u5 vulnerable, <no-dsa> (Minor issue), by Debian's security tracker read on 2026-11-21 (D-135); unfixed in unstable 2.43-7 as well (Debian bug 1152640, GLIBC-SA-2026-0025). Grype's database of 2026-11-21T06:20:06Z records no known exploitation (EPSS 0.00297). First accepted at 2.41-12+deb13u4 by D-115.",
       "rationale": "gettext accepts a LANGUAGE entry holding a slash or equal to .., so a crafted .mo file can be loaded from another path; it needs the environment set across a trust boundary and that file in place.",
       "mitigation": "No SSH server and no gettext extension in the image, nothing in the repository sets LANGUAGE, the application has no putenv, and a request reaches $_SERVER rather than a process's environment.",
-      "reviewTrigger": "Debian's assessment or a fix; an SSH server or the gettext extension added to the image; a program started with an environment built from input; gate RELEASE."
+      "reviewTrigger": "Debian's assessment or a fix; an SSH server or the gettext extension added to the image; a program started with an environment built from input; known exploitation or a raise to Critical, which the gate refuses; a change of the base image; gate RELEASE; and 31 December 2026 at the latest, when the Owner reassesses it (D-135). Development and CI only: it authorizes no staging or production."
     },
     {
       "id": "CVE-2026-102010",
@@ -1150,114 +1159,114 @@
     {
       "id": "CVE-2026-107493",
       "severity": "High",
-      "decision": "D-134",
+      "decision": "D-135",
       "sourcePackage": "openssl",
       "packages": [
-        {"name": "libssl3t64", "version": "3.5.7-1~deb13u3", "type": "deb"},
-        {"name": "openssl", "version": "3.5.7-1~deb13u3", "type": "deb"},
-        {"name": "openssl-provider-legacy", "version": "3.5.7-1~deb13u3", "type": "deb"}
+        {"name": "libssl3t64", "version": "3.5.9-1~deb13u1", "type": "deb"},
+        {"name": "openssl", "version": "3.5.9-1~deb13u1", "type": "deb"},
+        {"name": "openssl-provider-legacy", "version": "3.5.9-1~deb13u1", "type": "deb"}
       ],
       "fixState": "not-fixed",
-      "debianStatus": "trixie 3.5.7-1~deb13u2 and trixie-security 3.5.7-1~deb13u3 vulnerable, unstable unfixed, no DSA, by Debian's security tracker read on 2026-11-20 (D-134); Grype's database of 2026-11-20T06:21:00Z gives the state not-fixed and no fixed version for Debian 13, and the build of run 44698518825, which upgrades every package from trixie, trixie-updates and trixie-security, left the three packages at this version",
+      "debianStatus": "trixie 3.5.9-1~deb13u1, the point release, and trixie-security 3.5.7-1~deb13u3 vulnerable, unstable unfixed, no DSA, by Debian's security tracker read on 2026-11-21 (D-135; first assessed at 3.5.7-1~deb13u3 by D-134); Grype's database of 2026-11-21T06:20:06Z gives the state not-fixed and no known exploitation, and the build of run 44903440436, which upgrades every package from trixie, trixie-updates and trixie-security, installed the three packages at this version",
       "rationale": "A use after free in PEM_X509_INFO_read_bio_ex() and the functions that share its code, when the caller passes an existing, non-NULL stack and the read fails, for instance on malformed PEM data; OpenSSL's own callers, the loading of CA certificates for TLS among them, always pass NULL (OpenSSL's advisory, read on Debian's tracker, D-134). High by the scan's database, which records no known exploitation (EPSS 0.00143).",
       "mitigation": "No caller in the image passes a stack: PHP 8.5's OpenSSL extension calls PEM_X509_INFO_read_bio_ex(in, NULL, ...) (php-src PHP-8.5 ext/openssl/openssl_backend_v3.c line 911, and PEM_X509_INFO_read_bio(in, NULL, ...) in openssl_backend_v1.c line 747), curl 8.14.1 calls PEM_X509_INFO_read_bio(cbio, NULL, ...) (lib/vtls/openssl.c line 3106), and libpq 18 does not call it.",
-      "reviewTrigger": "Any Debian update of openssl, a DSA or a point release, which the build installs and the gate then prints as ACCEPTED_NOT_REPORTED, or refuses as fixable while the build lags; known exploitation or a raise to Critical, which the gate refuses; any Task that adds a caller of PEM_X509_INFO_read_bio with a stack, CMS encryption, AES-GCM-SIV, QUIC or HTTP/3, or DANE; a change of the base image; gate RELEASE; and 31 December 2026 at the latest, when the Owner reassesses it (D-134). Development and CI only: it authorizes no staging or production."
+      "reviewTrigger": "Any Debian update of openssl, a DSA or a point release, which the build installs and the gate then prints as ACCEPTED_NOT_REPORTED, or refuses as fixable while the build lags; known exploitation or a raise to Critical, which the gate refuses; any Task that adds a caller of PEM_X509_INFO_read_bio with a stack, CMS encryption, AES-GCM-SIV, QUIC or HTTP/3, or DANE; a change of the base image; gate RELEASE; and 31 December 2026 at the latest, when the Owner reassesses it (D-134, D-135). Development and CI only: it authorizes no staging or production."
     },
     {
       "id": "CVE-2026-107496",
       "severity": "High",
-      "decision": "D-134",
+      "decision": "D-135",
       "sourcePackage": "openssl",
       "packages": [
-        {"name": "libssl3t64", "version": "3.5.7-1~deb13u3", "type": "deb"},
-        {"name": "openssl", "version": "3.5.7-1~deb13u3", "type": "deb"},
-        {"name": "openssl-provider-legacy", "version": "3.5.7-1~deb13u3", "type": "deb"}
+        {"name": "libssl3t64", "version": "3.5.9-1~deb13u1", "type": "deb"},
+        {"name": "openssl", "version": "3.5.9-1~deb13u1", "type": "deb"},
+        {"name": "openssl-provider-legacy", "version": "3.5.9-1~deb13u1", "type": "deb"}
       ],
       "fixState": "not-fixed",
-      "debianStatus": "trixie 3.5.7-1~deb13u2 and trixie-security 3.5.7-1~deb13u3 vulnerable, unstable unfixed, no DSA, by Debian's security tracker read on 2026-11-20 (D-134); Grype's database of 2026-11-20T06:21:00Z gives the state not-fixed and no fixed version for Debian 13, and the build of run 44698518825, which upgrades every package from trixie, trixie-updates and trixie-security, left the three packages at this version",
+      "debianStatus": "trixie 3.5.9-1~deb13u1, the point release, and trixie-security 3.5.7-1~deb13u3 vulnerable, unstable unfixed, no DSA, by Debian's security tracker read on 2026-11-21 (D-135; first assessed at 3.5.7-1~deb13u3 by D-134); Grype's database of 2026-11-21T06:20:06Z gives the state not-fixed and no known exploitation, and the build of run 44903440436, which upgrades every package from trixie, trixie-updates and trixie-security, installed the three packages at this version",
       "rationale": "CMS_encrypt() and CMS_encrypt_ex() loop without end when a recipient certificate is an EC certificate whose group order is 1, so an attacker who supplies the recipient certificate to an application that encrypts CMS messages can exhaust its CPU; OpenSSL's TLS and QUIC do not use this path (OpenSSL's advisory, read on Debian's tracker, D-134). High by the scan's database, which records no known exploitation (EPSS 0.00336).",
       "mitigation": "The image encrypts no CMS message: nothing in app/, config/, bootstrap/, routes/, docker/, compose.yaml or the scripts calls openssl_cms_encrypt, openssl_pkcs7_encrypt or CMS, and the backups are encrypted with age (ADR-010), which does not use OpenSSL.",
-      "reviewTrigger": "Any Debian update of openssl, a DSA or a point release, which the build installs and the gate then prints as ACCEPTED_NOT_REPORTED, or refuses as fixable while the build lags; known exploitation or a raise to Critical, which the gate refuses; any Task that adds a caller of PEM_X509_INFO_read_bio with a stack, CMS encryption, AES-GCM-SIV, QUIC or HTTP/3, or DANE; a change of the base image; gate RELEASE; and 31 December 2026 at the latest, when the Owner reassesses it (D-134). Development and CI only: it authorizes no staging or production."
+      "reviewTrigger": "Any Debian update of openssl, a DSA or a point release, which the build installs and the gate then prints as ACCEPTED_NOT_REPORTED, or refuses as fixable while the build lags; known exploitation or a raise to Critical, which the gate refuses; any Task that adds a caller of PEM_X509_INFO_read_bio with a stack, CMS encryption, AES-GCM-SIV, QUIC or HTTP/3, or DANE; a change of the base image; gate RELEASE; and 31 December 2026 at the latest, when the Owner reassesses it (D-134, D-135). Development and CI only: it authorizes no staging or production."
     },
     {
       "id": "CVE-2026-124709",
       "severity": "High",
-      "decision": "D-134",
+      "decision": "D-135",
       "sourcePackage": "openssl",
       "packages": [
-        {"name": "libssl3t64", "version": "3.5.7-1~deb13u3", "type": "deb"},
-        {"name": "openssl", "version": "3.5.7-1~deb13u3", "type": "deb"},
-        {"name": "openssl-provider-legacy", "version": "3.5.7-1~deb13u3", "type": "deb"}
+        {"name": "libssl3t64", "version": "3.5.9-1~deb13u1", "type": "deb"},
+        {"name": "openssl", "version": "3.5.9-1~deb13u1", "type": "deb"},
+        {"name": "openssl-provider-legacy", "version": "3.5.9-1~deb13u1", "type": "deb"}
       ],
       "fixState": "not-fixed",
-      "debianStatus": "trixie 3.5.7-1~deb13u2 and trixie-security 3.5.7-1~deb13u3 vulnerable, unstable unfixed, no DSA, by Debian's security tracker read on 2026-11-20 (D-134); Grype's database of 2026-11-20T06:21:00Z gives the state not-fixed and no fixed version for Debian 13, and the build of run 44698518825, which upgrades every package from trixie, trixie-updates and trixie-security, left the three packages at this version",
+      "debianStatus": "trixie 3.5.9-1~deb13u1, the point release, and trixie-security 3.5.7-1~deb13u3 vulnerable, unstable unfixed, no DSA, by Debian's security tracker read on 2026-11-21 (D-135; first assessed at 3.5.7-1~deb13u3 by D-134); Grype's database of 2026-11-21T06:20:06Z gives the state not-fixed and no known exploitation, and the build of run 44903440436, which upgrades every package from trixie, trixie-updates and trixie-security, installed the three packages at this version",
       "rationale": "A QUIC server that rejects a stream which the peer resets before the rejection is sent keeps the stream's state for the life of the connection, so a client that completes a QUIC handshake can exhaust the server's memory (OpenSSL's advisory, read on Debian's tracker, D-134). High by the scan's database, which records no known exploitation (EPSS 0.00569).",
       "mitigation": "No process of the image is a QUIC server: nginx listens with plain HTTP on 8080 and on the loopback address at 8081 (docker/app/nginx.conf), with no ssl, http3 or quic directive; PHP-FPM listens on the loopback address only (docker/app/php-fpm.conf); and nothing in app/, config/, docker/, compose.yaml or the scripts names QUIC or HTTP/3.",
-      "reviewTrigger": "Any Debian update of openssl, a DSA or a point release, which the build installs and the gate then prints as ACCEPTED_NOT_REPORTED, or refuses as fixable while the build lags; known exploitation or a raise to Critical, which the gate refuses; any Task that adds a caller of PEM_X509_INFO_read_bio with a stack, CMS encryption, AES-GCM-SIV, QUIC or HTTP/3, or DANE; a change of the base image; gate RELEASE; and 31 December 2026 at the latest, when the Owner reassesses it (D-134). Development and CI only: it authorizes no staging or production."
+      "reviewTrigger": "Any Debian update of openssl, a DSA or a point release, which the build installs and the gate then prints as ACCEPTED_NOT_REPORTED, or refuses as fixable while the build lags; known exploitation or a raise to Critical, which the gate refuses; any Task that adds a caller of PEM_X509_INFO_read_bio with a stack, CMS encryption, AES-GCM-SIV, QUIC or HTTP/3, or DANE; a change of the base image; gate RELEASE; and 31 December 2026 at the latest, when the Owner reassesses it (D-134, D-135). Development and CI only: it authorizes no staging or production."
     },
     {
       "id": "CVE-2026-84786",
       "severity": "High",
-      "decision": "D-134",
+      "decision": "D-135",
       "sourcePackage": "openssl",
       "packages": [
-        {"name": "libssl3t64", "version": "3.5.7-1~deb13u3", "type": "deb"},
-        {"name": "openssl", "version": "3.5.7-1~deb13u3", "type": "deb"},
-        {"name": "openssl-provider-legacy", "version": "3.5.7-1~deb13u3", "type": "deb"}
+        {"name": "libssl3t64", "version": "3.5.9-1~deb13u1", "type": "deb"},
+        {"name": "openssl", "version": "3.5.9-1~deb13u1", "type": "deb"},
+        {"name": "openssl-provider-legacy", "version": "3.5.9-1~deb13u1", "type": "deb"}
       ],
       "fixState": "not-fixed",
-      "debianStatus": "trixie 3.5.7-1~deb13u2 and trixie-security 3.5.7-1~deb13u3 vulnerable, unstable unfixed, no DSA, by Debian's security tracker read on 2026-11-20 (D-134); Grype's database of 2026-11-20T06:21:00Z gives the state not-fixed and no fixed version for Debian 13, and the build of run 44698518825, which upgrades every package from trixie, trixie-updates and trixie-security, left the three packages at this version",
+      "debianStatus": "trixie 3.5.9-1~deb13u1, the point release, and trixie-security 3.5.7-1~deb13u3 vulnerable, unstable unfixed, no DSA, by Debian's security tracker read on 2026-11-21 (D-135; first assessed at 3.5.7-1~deb13u3 by D-134); Grype's database of 2026-11-21T06:20:06Z gives the state not-fixed and no known exploitation, and the build of run 44903440436, which upgrades every package from trixie, trixie-updates and trixie-security, installed the three packages at this version",
       "rationale": "A TLS client that has enabled DANE may dereference a NULL pointer, and crash, on an unusual combination of certificate and TLSA records (Debian's tracker, D-134). High by the scan's database, which records no known exploitation (EPSS 0.00093).",
       "mitigation": "No client in the image enables DANE: PHP 8.5's OpenSSL extension (ext/openssl), curl 8.14.1's OpenSSL backend (lib/vtls/openssl.c) and libpq 18 (fe-secure-openssl.c) hold no call to SSL_dane_enable or any other DANE function, and nothing in app/, config/, docker/, compose.yaml or the scripts names DANE or TLSA.",
-      "reviewTrigger": "Any Debian update of openssl, a DSA or a point release, which the build installs and the gate then prints as ACCEPTED_NOT_REPORTED, or refuses as fixable while the build lags; known exploitation or a raise to Critical, which the gate refuses; any Task that adds a caller of PEM_X509_INFO_read_bio with a stack, CMS encryption, AES-GCM-SIV, QUIC or HTTP/3, or DANE; a change of the base image; gate RELEASE; and 31 December 2026 at the latest, when the Owner reassesses it (D-134). Development and CI only: it authorizes no staging or production."
+      "reviewTrigger": "Any Debian update of openssl, a DSA or a point release, which the build installs and the gate then prints as ACCEPTED_NOT_REPORTED, or refuses as fixable while the build lags; known exploitation or a raise to Critical, which the gate refuses; any Task that adds a caller of PEM_X509_INFO_read_bio with a stack, CMS encryption, AES-GCM-SIV, QUIC or HTTP/3, or DANE; a change of the base image; gate RELEASE; and 31 December 2026 at the latest, when the Owner reassesses it (D-134, D-135). Development and CI only: it authorizes no staging or production."
     },
     {
       "id": "CVE-2026-88823",
       "severity": "High",
-      "decision": "D-134",
+      "decision": "D-135",
       "sourcePackage": "openssl",
       "packages": [
-        {"name": "libssl3t64", "version": "3.5.7-1~deb13u3", "type": "deb"},
-        {"name": "openssl", "version": "3.5.7-1~deb13u3", "type": "deb"},
-        {"name": "openssl-provider-legacy", "version": "3.5.7-1~deb13u3", "type": "deb"}
+        {"name": "libssl3t64", "version": "3.5.9-1~deb13u1", "type": "deb"},
+        {"name": "openssl", "version": "3.5.9-1~deb13u1", "type": "deb"},
+        {"name": "openssl-provider-legacy", "version": "3.5.9-1~deb13u1", "type": "deb"}
       ],
       "fixState": "not-fixed",
-      "debianStatus": "trixie 3.5.7-1~deb13u2 and trixie-security 3.5.7-1~deb13u3 vulnerable, unstable unfixed, no DSA, by Debian's security tracker read on 2026-11-20 (D-134); Grype's database of 2026-11-20T06:21:00Z gives the state not-fixed and no fixed version for Debian 13, and the build of run 44698518825, which upgrades every package from trixie, trixie-updates and trixie-security, left the three packages at this version",
+      "debianStatus": "trixie 3.5.9-1~deb13u1, the point release, and trixie-security 3.5.7-1~deb13u3 vulnerable, unstable unfixed, no DSA, by Debian's security tracker read on 2026-11-21 (D-135; first assessed at 3.5.7-1~deb13u3 by D-134); Grype's database of 2026-11-21T06:20:06Z gives the state not-fixed and no known exploitation, and the build of run 44903440436, which upgrades every package from trixie, trixie-updates and trixie-security, installed the three packages at this version",
       "rationale": "The AES-GCM-SIV cipher takes an empty AAD update as a reset of the AAD supplied before it, so that part of the AAD is left unauthenticated, and kept AAD across a re-initialisation (OpenSSL's advisory, read on Debian's tracker, D-134). High by the scan's database, which records no known exploitation (EPSS 0.00267).",
       "mitigation": "No code in the image uses AES-GCM-SIV: Laravel's encrypter uses AES-256-CBC (config/app.php), TLS has no GCM-SIV cipher suite, the backups are encrypted with age (ADR-010), and nothing in app/, config/, docker/, compose.yaml or the scripts names GCM-SIV.",
-      "reviewTrigger": "Any Debian update of openssl, a DSA or a point release, which the build installs and the gate then prints as ACCEPTED_NOT_REPORTED, or refuses as fixable while the build lags; known exploitation or a raise to Critical, which the gate refuses; any Task that adds a caller of PEM_X509_INFO_read_bio with a stack, CMS encryption, AES-GCM-SIV, QUIC or HTTP/3, or DANE; a change of the base image; gate RELEASE; and 31 December 2026 at the latest, when the Owner reassesses it (D-134). Development and CI only: it authorizes no staging or production."
+      "reviewTrigger": "Any Debian update of openssl, a DSA or a point release, which the build installs and the gate then prints as ACCEPTED_NOT_REPORTED, or refuses as fixable while the build lags; known exploitation or a raise to Critical, which the gate refuses; any Task that adds a caller of PEM_X509_INFO_read_bio with a stack, CMS encryption, AES-GCM-SIV, QUIC or HTTP/3, or DANE; a change of the base image; gate RELEASE; and 31 December 2026 at the latest, when the Owner reassesses it (D-134, D-135). Development and CI only: it authorizes no staging or production."
     },
     {
       "id": "CVE-2026-95691",
       "severity": "High",
-      "decision": "D-134",
+      "decision": "D-135",
       "sourcePackage": "openssl",
       "packages": [
-        {"name": "libssl3t64", "version": "3.5.7-1~deb13u3", "type": "deb"},
-        {"name": "openssl", "version": "3.5.7-1~deb13u3", "type": "deb"},
-        {"name": "openssl-provider-legacy", "version": "3.5.7-1~deb13u3", "type": "deb"}
+        {"name": "libssl3t64", "version": "3.5.9-1~deb13u1", "type": "deb"},
+        {"name": "openssl", "version": "3.5.9-1~deb13u1", "type": "deb"},
+        {"name": "openssl-provider-legacy", "version": "3.5.9-1~deb13u1", "type": "deb"}
       ],
       "fixState": "not-fixed",
-      "debianStatus": "trixie 3.5.7-1~deb13u2 and trixie-security 3.5.7-1~deb13u3 vulnerable, unstable unfixed, no DSA, by Debian's security tracker read on 2026-11-20 (D-134); Grype's database of 2026-11-20T06:21:00Z gives the state not-fixed and no fixed version for Debian 13, and the build of run 44698518825, which upgrades every package from trixie, trixie-updates and trixie-security, left the three packages at this version",
+      "debianStatus": "trixie 3.5.9-1~deb13u1, the point release, and trixie-security 3.5.7-1~deb13u3 vulnerable, unstable unfixed, no DSA, by Debian's security tracker read on 2026-11-21 (D-135; first assessed at 3.5.7-1~deb13u3 by D-134); Grype's database of 2026-11-21T06:20:06Z gives the state not-fixed and no known exploitation, and the build of run 44903440436, which upgrades every package from trixie, trixie-updates and trixie-security, installed the three packages at this version",
       "rationale": "A retransmitted QUIC CRYPTO frame can release packet storage that the TLS record layer still points to, so a malicious QUIC server can cause a use after free read in an OpenSSL QUIC client and learn one byte of its heap (OpenSSL's advisory, read on Debian's tracker, D-134). High by the scan's database, which records no known exploitation (EPSS 0.00284).",
       "mitigation": "No process of the image is a QUIC client of OpenSSL: the application's outbound connections, to PostgreSQL through libpq and over HTTPS through PHP's streams and curl, use TCP and TLS; nothing in app/, config/, docker/, compose.yaml or the scripts asks for HTTP/3 or QUIC, and app/ sets no curl option of HTTP version.",
-      "reviewTrigger": "Any Debian update of openssl, a DSA or a point release, which the build installs and the gate then prints as ACCEPTED_NOT_REPORTED, or refuses as fixable while the build lags; known exploitation or a raise to Critical, which the gate refuses; any Task that adds a caller of PEM_X509_INFO_read_bio with a stack, CMS encryption, AES-GCM-SIV, QUIC or HTTP/3, or DANE; a change of the base image; gate RELEASE; and 31 December 2026 at the latest, when the Owner reassesses it (D-134). Development and CI only: it authorizes no staging or production."
+      "reviewTrigger": "Any Debian update of openssl, a DSA or a point release, which the build installs and the gate then prints as ACCEPTED_NOT_REPORTED, or refuses as fixable while the build lags; known exploitation or a raise to Critical, which the gate refuses; any Task that adds a caller of PEM_X509_INFO_read_bio with a stack, CMS encryption, AES-GCM-SIV, QUIC or HTTP/3, or DANE; a change of the base image; gate RELEASE; and 31 December 2026 at the latest, when the Owner reassesses it (D-134, D-135). Development and CI only: it authorizes no staging or production."
     },
     {
       "id": "CVE-2026-95692",
       "severity": "High",
-      "decision": "D-134",
+      "decision": "D-135",
       "sourcePackage": "openssl",
       "packages": [
-        {"name": "libssl3t64", "version": "3.5.7-1~deb13u3", "type": "deb"},
-        {"name": "openssl", "version": "3.5.7-1~deb13u3", "type": "deb"},
-        {"name": "openssl-provider-legacy", "version": "3.5.7-1~deb13u3", "type": "deb"}
+        {"name": "libssl3t64", "version": "3.5.9-1~deb13u1", "type": "deb"},
+        {"name": "openssl", "version": "3.5.9-1~deb13u1", "type": "deb"},
+        {"name": "openssl-provider-legacy", "version": "3.5.9-1~deb13u1", "type": "deb"}
       ],
       "fixState": "not-fixed",
-      "debianStatus": "trixie 3.5.7-1~deb13u2 and trixie-security 3.5.7-1~deb13u3 vulnerable, unstable unfixed, no DSA, by Debian's security tracker read on 2026-11-20 (D-134); Grype's database of 2026-11-20T06:21:00Z gives the state not-fixed and no fixed version for Debian 13, and the build of run 44698518825, which upgrades every package from trixie, trixie-updates and trixie-security, left the three packages at this version",
+      "debianStatus": "trixie 3.5.9-1~deb13u1, the point release, and trixie-security 3.5.7-1~deb13u3 vulnerable, unstable unfixed, no DSA, by Debian's security tracker read on 2026-11-21 (D-135; first assessed at 3.5.7-1~deb13u3 by D-134); Grype's database of 2026-11-21T06:20:06Z gives the state not-fixed and no known exploitation, and the build of run 44903440436, which upgrades every package from trixie, trixie-updates and trixie-security, installed the three packages at this version",
       "rationale": "AES-GCM-SIV reads past the caller's buffer when the IV given to EVP_CipherInit_ex() is shorter than its nonce, and silently truncates a longer one, which lets an attacker who knows one message and its tag forge messages under another IV (OpenSSL's advisory, read on Debian's tracker, D-134). High by the scan's database, which records no known exploitation (EPSS 0.00449).",
       "mitigation": "No code in the image uses AES-GCM-SIV: Laravel's encrypter uses AES-256-CBC (config/app.php), TLS has no GCM-SIV cipher suite, the backups are encrypted with age (ADR-010), and nothing in app/, config/, docker/, compose.yaml or the scripts names GCM-SIV.",
-      "reviewTrigger": "Any Debian update of openssl, a DSA or a point release, which the build installs and the gate then prints as ACCEPTED_NOT_REPORTED, or refuses as fixable while the build lags; known exploitation or a raise to Critical, which the gate refuses; any Task that adds a caller of PEM_X509_INFO_read_bio with a stack, CMS encryption, AES-GCM-SIV, QUIC or HTTP/3, or DANE; a change of the base image; gate RELEASE; and 31 December 2026 at the latest, when the Owner reassesses it (D-134). Development and CI only: it authorizes no staging or production."
+      "reviewTrigger": "Any Debian update of openssl, a DSA or a point release, which the build installs and the gate then prints as ACCEPTED_NOT_REPORTED, or refuses as fixable while the build lags; known exploitation or a raise to Critical, which the gate refuses; any Task that adds a caller of PEM_X509_INFO_read_bio with a stack, CMS encryption, AES-GCM-SIV, QUIC or HTTP/3, or DANE; a change of the base image; gate RELEASE; and 31 December 2026 at the latest, when the Owner reassesses it (D-134, D-135). Development and CI only: it authorizes no staging or production."
     }
   ]
 }
