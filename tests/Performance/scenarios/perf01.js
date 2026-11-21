@@ -139,7 +139,10 @@ function command(session, operation, expected, payload, measured) {
 }
 
 /** An Inertia visit after the first page, as a link or the page's own reload sends it. */
-function visit(session, path, measured, partial) {
+// A prop that the page answers as null when its read failed (UXS-22, TR-TX-07), named by `required`, makes
+// the visit a failure, kept out of the operation's trend: a report that hit its statement limit answers
+// 200 with `report: null`, which is never a successful sample.
+function visit(session, path, measured, partial, required) {
     const headers = { Accept: 'text/html, application/xhtml+xml', 'X-Requested-With': 'XMLHttpRequest', 'X-Inertia': 'true', 'X-Inertia-Version': session.version || '' };
 
     if (partial) {
@@ -148,24 +151,25 @@ function visit(session, path, measured, partial) {
     }
 
     const answer = http.get(`${BASE}${path}`, { headers, tags: { name: path.split('?')[0] } });
-    const ok = answer.status === 200;
+    const props = answer.status === 200 ? answer.json('props') : null;
+    const ok = props !== null && (!required || (props[required] !== null && props[required] !== undefined));
 
     if (measured) {
-        trends[measured].add(answer.timings.duration);
-
-        if (!ok) {
+        if (ok) {
+            trends[measured].add(answer.timings.duration);
+        } else {
             failures[measured].add(1);
         }
     }
 
     check(answer, { [`visit ${path.split('?')[0]}`]: () => ok });
 
-    return ok ? answer.json('props') : null;
+    return ok ? props : null;
 }
 
-/** A read of the data routes, which a page sends without a navigation. */
-function read(path, measured, background) {
-    const headers = { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' };
+/** A read of the data routes, which a page sends without a navigation, with the headers the page adds. */
+function read(path, measured, background, extra) {
+    const headers = Object.assign({ Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, extra || {});
 
     if (background) {
         headers['X-Background-Request'] = '1';
@@ -256,6 +260,7 @@ export function cashierB() {
 
 let reports = null;
 let reportLoops = 0;
+let searchSequence = 0;
 
 export function ownerReports() {
     if (reports === null) {
@@ -266,9 +271,15 @@ export function ownerReports() {
 
     const today = jakartaDate(0);
 
-    visit(reports, `/reports/finance?period=custom&from=${jakartaDate(30)}&to=${today}`, 'report_period', null);
+    visit(reports, `/reports/finance?period=custom&from=${jakartaDate(30)}&to=${today}`, 'report_period', null, 'report');
     sleep(1);
-    visit(reports, `/products?q=${encodeURIComponent(pick(plan.searchTerms))}`, 'product_search', null);
+
+    // Product Search (RP-301): the page's shell, then its results, which the page reads from RD-01 in the
+    // context `catalog` with its sequence header; the results are what the budget times.
+    const term = encodeURIComponent(pick(plan.searchTerms));
+    searchSequence++;
+    visit(reports, `/products?q=${term}`, null, null);
+    read(`/data/products/search?context=catalog&q=${term}`, 'product_search', false, { 'X-Search-Sequence': String(searchSequence) });
     sleep(1);
     read('/data/stock?state=LOW', 'stock_attention', true);
     read('/data/stock?state=OUT', 'stock_attention', true);
@@ -278,7 +289,7 @@ export function ownerReports() {
     sleep(1);
 
     if (reportLoops % 4 === 1) {
-        visit(reports, `/reports/finance?period=custom&from=${jakartaDate(365)}&to=${today}`, 'report_max_range', null);
+        visit(reports, `/reports/finance?period=custom&from=${jakartaDate(365)}&to=${today}`, 'report_max_range', null, 'report');
         sleep(1);
     }
 }

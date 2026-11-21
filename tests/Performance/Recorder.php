@@ -53,6 +53,7 @@ final class Recorder
             'startedAt' => $plan['startedAt'] ?? null,
             'finishedAt' => now('Asia/Jakarta')->toIso8601String(),
             'revision' => self::env('PERF_REVISION'),
+            'head' => self::env('PERF_HEAD'),
             'versions' => [
                 'php' => PHP_VERSION,
                 'laravel' => app()->version(),
@@ -62,7 +63,9 @@ final class Recorder
             'configuration' => [
                 'environment' => app()->environment(),
                 'fpmMaxChildren' => self::fpmMaxChildren(),
-                'opcache' => ini_get('opcache.enable'),
+                // The CLI's own setting, which records the image's opcache configuration; PHP-FPM reads
+                // the same ini files of the image (docker/app/php.ini).
+                'opcacheCli' => ini_get('opcache.enable'),
                 'databaseLimits' => config('database.limits'),
                 'replay' => config('costing.replay'),
                 'scenarioSeconds' => $plan['seconds'] ?? null,
@@ -105,8 +108,9 @@ final class Recorder
     }
 
     /**
-     * The metrics of the record without one successful sample, which a dry run of every scenario must
-     * not leave (TASK-043 section 7, "The dry run of every scenario").
+     * The metrics of the record without a sample, or with no fewer failures than samples, which a dry run
+     * of every scenario must not leave (TASK-043 section 7, "The dry run of every scenario"). A visit
+     * whose read failed is kept out of its trend and counted only as a failure (perf01.js).
      *
      * @param  array<string, mixed>  $record
      * @return list<string>

@@ -105,7 +105,7 @@ for run in $(seq 1 "$RUNS"); do
     begin "4. the dry run $run of $RUNS"
     docker compose exec -T app php tests/Performance/perf.php plan --run="$run" --runs="$RUNS" --seconds="$SECONDS_PER_RUN"
     docker compose run --rm -e PERF_RUN="$run" -e PERF_SECONDS="$SECONDS_PER_RUN" k6 run --quiet tests/Performance/scenarios/perf01.js
-    docker compose exec -T -e PERF_REVISION="$(git rev-parse HEAD)" -e PERF_LOAD_TOOL="k6 2.3.0" -e PERF_HOST="GitHub-hosted runner ubuntu-24.04, the containers of the local environment" app php tests/Performance/perf.php record --run="$run" | tee storage/app/perf/record-"$run".md
+    docker compose exec -T -e PERF_REVISION="$(git rev-parse HEAD)" -e PERF_HEAD="${PERF_HEAD:-}" -e PERF_LOAD_TOOL="k6 2.3.0" -e PERF_HOST="GitHub-hosted runner ubuntu-24.04, the containers of the local environment" app php tests/Performance/perf.php record --run="$run" | tee storage/app/perf/record-"$run".md
 
     if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
         cat storage/app/perf/record-"$run".md >> "$GITHUB_STEP_SUMMARY"

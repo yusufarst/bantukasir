@@ -273,6 +273,8 @@ jobs:
             - name: Rehearse the migrations on the base dataset and dry-run the PERF01 scenarios
               env:
                   REHEARSAL_BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+                  # The record names the pull request's head beside the merge commit that CI checks out.
+                  PERF_HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
               run: bash scripts/checks/migration-rehearsal.sh
 
             - name: Stop the local environment

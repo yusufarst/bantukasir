@@ -59,6 +59,15 @@ final class BudgetsTest extends TestCase
 
         $this->assertStringContainsString("'p(95)'", $script);
         $this->assertStringContainsString("'count'", $script);
+
+        // Review R-01: the Product Search budget times the page's results, RD-01 in the context `catalog`
+        // with its sequence header, not the page's shell, which carries no result.
+        $this->assertMatchesRegularExpression("~read\\(`/data/products/search\\?context=catalog&q=\\\$\\{term\\}`, 'product_search', false, \\{ 'X-Search-Sequence'~", $script);
+        $this->assertStringNotContainsString("'product_search', null", $script);
+
+        // Review R-02: a report answered with `report: null` (UXS-22) is a failure, never a sample.
+        $this->assertSame(2, substr_count($script, "null, 'report');"));
+        $this->assertStringContainsString('props[required] !== null', $script);
     }
 
     public function test_the_full_datasets_are_those_of_section_13_2(): void
