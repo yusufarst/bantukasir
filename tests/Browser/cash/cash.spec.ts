@@ -189,6 +189,8 @@ test('the Owner opens his own session with Rp0 through the review, and the regis
     await expect(page.getByRole('heading', { level: 1, name: 'Buka sesi kas' })).toBeVisible();
     await expect(page.getByText('Hitung uang di laci, lalu buka sesi kas atas nama Anda.')).toBeVisible();
     await expect(page.getByText('Jumlah uang di laci saat ini. Rp0 boleh.')).toBeVisible();
+    // UXI-100: the Owner's "Batal" leads to his non-till home, Beranda (TASK-041; review R-03).
+    await expect(page.getByRole('link', { name: 'Batal' })).toHaveAttribute('href', '/home');
     await page.getByRole('button', { name: /^Tinjau/ }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.getByText('Pilih laci kas dan isi modal awal.')).toBeVisible();

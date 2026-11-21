@@ -49,10 +49,21 @@ export interface AttentionPanel {
     readonly onboarding: boolean | null;
 }
 
+/**
+ * The shell's live read of the stock badge (RD-03, refreshed as the badge, BR-INV-41): its count of Habis and
+ * Menipis products, null before a successful read, and whether its last refresh failed (UXS-21).
+ */
+export interface LiveRestock {
+    readonly count: number | null;
+    readonly failed: boolean;
+}
+
 /** A shown attention item: the count it names, none for a state, where it leads, its icon and its tone. */
 export interface AttentionItem {
     readonly id: 'restock' | 'costs' | 'incidents' | 'status' | 'onboarding';
     readonly count: number | null;
+    /** The count is the last read of a refresh that failed since (UXS-21). */
+    readonly stale?: boolean;
     readonly href: string;
     readonly icon: IconName;
     readonly tone: Tone;
@@ -71,17 +82,20 @@ const ONBOARDING_PAGE = '/stock/onboarding';
 
 /**
  * The attention items that the evidence shows, in the order of COPY_DECK section 6.8, each exactly when its evidence
- * says so (AC-041-03): products Habis or Menipis (UXI-061), leading to Stok filtered to Habis while any product is
- * Habis and otherwise to Menipis, because RP-401's `state` takes one state; cost sources to complete (UXI-062);
- * open reconciliation incidents (UXI-063); a status item failed or unverified (UXI-064); the onboarding freeze
- * (UXI-065). None is shown for a count of zero, a false or an item the viewer may not see.
+ * says so (AC-041-03): products Habis or Menipis (UXI-061) — counted by the shell's live read of RD-03 once it has
+ * one, refreshed as the badge and kept with its stale mark when a refresh fails (BR-INV-41, UXS-21), the panel's
+ * count of the same definition before it — leading to Stok filtered to Habis while any product is Habis and
+ * otherwise to Menipis, because RP-401's `state` takes one state (OPEN_ITEMS T-54); cost sources to complete
+ * (UXI-062); open reconciliation incidents (UXI-063); a status item failed or unverified (UXI-064); the onboarding
+ * freeze (UXI-065). None is shown for a count of zero, a false or an item the viewer may not see.
  */
-export function attentionItems(attention: AttentionPanel): AttentionItem[] {
+export function attentionItems(attention: AttentionPanel, live: LiveRestock = { count: null, failed: false }): AttentionItem[] {
     const items: AttentionItem[] = [];
     const restock = attention.restock;
+    const count = restock === null ? null : (live.count ?? restock.out + restock.low);
 
-    if (restock !== null && restock.out + restock.low > 0) {
-        items.push({ id: 'restock', count: restock.out + restock.low, href: `${STOCK_PAGE}?state=${restock.out > 0 ? 'OUT' : 'LOW'}`, icon: 'boxes', tone: 'warning' });
+    if (restock !== null && count !== null && count > 0) {
+        items.push({ id: 'restock', count, stale: live.count !== null && live.failed, href: `${STOCK_PAGE}?state=${restock.out > 0 ? 'OUT' : 'LOW'}`, icon: 'boxes', tone: 'warning' });
     }
 
     if (attention.costs !== null && attention.costs > 0) {

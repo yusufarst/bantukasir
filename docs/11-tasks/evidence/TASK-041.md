@@ -17,6 +17,9 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | `npm run typecheck` | Local | 11:30 | under 1 min | `NOT_RUN`: `tsc` is not installed natively (`'tsc' is not recognized`), nor ESLint or PHP; the fast run runs them |
 | Guard | Local, on `aeadc3d` (checkpoint 1: the pages, the queries, the routes and the tests) | 11:49 to 11:53 | about 4 min | `PASS`, no candidate |
 | `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit`; the changed PostgreSQL files | Fast run 1, 44868271561 on `aeadc3d` | 11:53 to 12:01 | about 8 min | `FAIL` (F-6): `npm run lint`, `typecheck` and `test:unit` `PASS`; the targeted files `HomePageTest`, `HomeRedirectTest`, `RouteInventoryTest`, `CashPagesTest` and `TillPagesTest` `PASS`; two causes failed the rest — `DailySummaryRequest::date()` overrode `Request::date()` (PHP fatal at its load: `CapabilityMatrixTest` and `DailyPageTest` ended, PHPStan `parameter.missing`), and the helper `DailySummaryTest::session()` overrode `TestCase::session()` (PHP fatal at its load: `composer lint`, `PostgresPartsTest` and `DailySummaryTest`, PHPStan `method.static`); PHPStan also refused `is_string()` of a closure's by-reference null in `HomePageTest` line 101 |
+| Guard | Local, on `f6bd5a8` (checkpoint 2: F-6) | 12:03 to 12:07 | about 4 min | `PASS`, no candidate |
+| The steps of fast run 1 | Fast run 2, 44869411808 on `f6bd5a8`, the reviewed head | 12:08 to 12:17 | 9 min 39 s for the job | `PASS`: every step, `composer lint`, `analyse` and `test:unit` included, and the eight targeted PostgreSQL files (`DailySummaryTest`, `DailyPageTest`, `HomePageTest`, `CapabilityMatrixTest`, `RouteInventoryTest`, `HomeRedirectTest`, `CashPagesTest`, `TillPagesTest`); the retest of F-6, cured |
+| The whole PostgreSQL suite, `test:race`, the build, the browser suite with `reporting/home.spec.ts`, `daily.spec.ts` and every spec where the Owner signs in, the image checks | CI on the pull request's final head | — | — | `NOT_RUN` until then (CE-44, D-117) |
 
 ## 2. What was built (contract section 4.1)
 
@@ -33,7 +36,7 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | C-2 | **Today's figures** are the four that KS-02 shows — net sales, the number of Sales, cash and bank-transfer payments — from `FinanceReport` for today in its own snapshot, with its as-of time as the page's as-of line; no cost reaches Beranda |
 | C-3 | **The open sessions** are every OPEN session, by opening time, each with its register's label, its responsible user's frozen name and its opening time (":laci · :nama · dibuka :waktu"), bounded as `OpenSessions` is (500; one per register and per user at most, BR-CASH-06) |
 | C-4 | **An attention item appears exactly when its evidence says so** (AC-041-03): a count above zero or a state that holds. INTERACTION_INVENTORY gives UXI-061 "Always"; KS-02's approved `quiet` state shows no restock row and "Tidak ada yang perlu perhatian saat ini.", which is read as the item always being available to the Owner, shown when products need restocking |
-| C-5 | **UXI-061** counts the Habis and Menipis products by the one definition that RD-03's badge uses (`StockAttention`, ARC-22; "Count from RD-03"), read with the panel; RP-401's `state` takes one state, so the item leads to Stok filtered to Habis while any product is Habis and otherwise to Menipis |
+| C-5 | **UXI-061** counts the Habis and Menipis products by the shell's live read of RD-03 — the badge's own store, refreshed as the badge, its last count kept with "Data belum diperbarui" when a refresh fails (BR-INV-41, UXS-21; review R-01) — and, before the shell's first read, by the panel's count of the same definition (`StockAttention`, ARC-22). RP-401's `state` takes one state, so the item leads to Stok filtered to Habis while any product is Habis and otherwise to Menipis, by the panel's split (OPEN_ITEMS T-54; review R-02) |
 | C-6 | **OPEN_ITEMS T-53.** UXI-062 counts exactly the worklist's sources (`CostWorklist::count()`, the worklist's own definition), as INTERACTION_INVENTORY words it ("at least one cost is UNKNOWN"); a reversed UNKNOWN source therefore stays in both, so the item and the list it leads to agree. Whether it leaves the worklist is a change of RP-503, outside this contract (section 4.3); T-53 stays OPEN for that change, which then changes both |
 | C-7 | **The daily summary's figures** are those of `FinanceReport::within()` for the one day, in the summary's own snapshot: one computation of the figures from the source records for both reports (BR-RPT-01). Sales by business date; refunds and returns by posting date; no session total, opening cash or variance added |
 | C-8 | **The sessions of a day** (BR-RPT-02): a CLOSED session is listed on the Asia/Jakarta date of its close, once, with its opening time — the day before for one that crossed midnight, marked "Melewati tengah malam" — its register as its report froze it and its own variance; an OPEN session is listed in "Masih dibuka" for every date from its opening until it closes; a return to work the same day is a session of its own. A session crosses midnight when its opening and its close (for an OPEN one, the snapshot) fall on different business dates. Each list is bounded at 500 |
@@ -61,7 +64,7 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | F-3 | Carried for this Task: OPEN_ITEMS T-53 (TASK-026 F-1, TASK-040 F-5) | Read as C-6; T-53 stays OPEN for the next change of RP-503 or RP-504, its text amended |
 | F-4 | Carried for this Task: TASK-035 F-8, the attention item "Masa input stok awal aktif" (UXI-065); TASK-030 R-13, UXP-205 under Laporan for the Owner | Done: UXI-065 while onboarding is ACTIVE; the Laporan destination shows "Sesi kas" (UXI-019) |
 | F-6 | Fast run 1 (44868271561 on `aeadc3d`): two names that override the framework's — `DailySummaryRequest::date()` (Laravel's `Request::date()`) and `DailySummaryTest::session()` (`TestCase::session()`) — each a PHP fatal error where its class loads, and a PHPStan finding of an impossible type in `HomePageTest` | Fixed in one push (checkpoint 2): `businessDate()`, `sessionRow()`, and the failure injection's marker a typed property of the test; fast run 2 is their one targeted retest (D-133) |
-| F-5 | For later Tasks | TASK-048 — the budgets of the panels and the summary (contract section 9, Performance); the next change control of COPY_DECK — T-52's text, which UXP-501's date then uses |
+| F-5 | For later Tasks | TASK-048 — the budgets of the panels and the summary (contract section 9, Performance), and the silent bound of 500 sessions per list (review R-04); the next change of RP-401 — OPEN_ITEMS T-54 (review R-02); the next change control of COPY_DECK — T-52's text, which UXP-501's date then uses |
 
 ## 6. Tests (contract section 7)
 
@@ -94,4 +97,47 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Data integrity | N/A — reads only; the summary and today's figures in read-only transactions always rolled back |
 | Performance | `PASS` for what applies — every statement bounded by a date, an aggregate or a limit of 500; the budgets are measured at TASK-048 |
 | Operations | N/A — no backup, runbook or status impact; the status is read, never changed |
-| Verification | See section 1 and section 9 |
+| Verification | `PASS` for what runs before the pull request: the self-review; the class-A review and the targeted check of its MUST-FIX `PASS` (section 9); fast run 2 green. The command contract and the image checks run on the pull request's final head before the merge (CE-41) |
+
+## 9. Review (EXECUTION_CONTEXT CE-40)
+
+Self-review before the review: the summary against SALES_CASH BR-RPT-01 to BR-RPT-04, INTERACTION_CONTRACTS section 3.4 and TR-TX-07 — one snapshot, the figures by the finance report's computation, each session once on its close date with its span, the open ones apart, nothing added on top, a later date refused before any read; Beranda against KS-02, NAVIGATION_CONTRACTS UXP-007, INTERACTION_INVENTORY UXI-059 to UXI-065, INTERACTION_CONTRACTS section 9 and OPERATIONS_RUNBOOK section 5 — each panel deferred and failing on its own, each attention item by the definition of its page and only for its capability; the routes, gates and allowlists on every channel; the copy keys verbatim; the obligations of EXECUTION_CONTEXT section 10 for two routes, three reads and two pages; the browser specs that depended on the Owner's landing on Akun saya.
+
+### 9.1 Round 1, the full review
+
+Agent `bk-reviewer-high`, model `claude-opus-5-5`, effort High, mode `review`; package `review/TASK-041/r1` of the executor state, base `fa4f98b`, HEAD `f6bd5a8`, snapshot tree `f69f5aa` with the uncommitted record; 21 November, 12:19 to 12:31; `review-pack.sh --check` `UNCHANGED` after it. Verdict `FAIL`: one MUST-FIX, two SHOULD-FIX and four NOTEs, from the code and the documents, with no test run asked for. It tried and found holding: one snapshot and the figures computed once, the two session lists unable to overlap, the dates across midnight, a later date refused before any read, each panel guarded and its failure never reaching the page, the gates, the allowlists on both channels, `no-store`, RN-01, and no browser spec left on the Owner's old landing.
+
+| ID | Severity | Finding | Outcome |
+| --- | --- | --- | --- |
+| R-01 | MUST-FIX | UXI-061's count was read once with the panel, never refreshed as the badge (BR-INV-41), and a failed refresh could not show UXS-21 | Fixed: the item counts by the shell's live read of RD-03 (`useUnresolved().stockAttention`), the panel's count before the first read, marked stale after a failed refresh (C-5); regression tests in `home.test.ts` (the live count over the panel's, zero hiding the item, stale, no capability) and `home.spec.ts` (an answer of RD-03 of 7 shows "Perlu restok (7)" beside the badge's 7) |
+| R-02 | SHOULD-FIX | The item links to one state of RP-401 while counting two | Recorded as OPEN_ITEMS T-54, cited from C-5; the interim link kept |
+| R-03 | SHOULD-FIX | No test of the Owner's "Batal" on UXP-104 leading to Beranda (UXI-100) | Fixed: `cash.spec.ts` asserts its `href` `/home` before the Owner opens his session |
+| R-04 | NOTE | The session lists and the open-sessions panel stop at 500 rows without a sign | Recorded for TASK-048 with F-5 |
+| R-05 | NOTE | The zoom test's comment named Tab but focused the link | The comment reworded |
+| R-06 | NOTE | Each session row carries its number, which the page does not show | Kept: allowlisted and harmless; the row is the session's |
+| R-07 | NOTE | UXI-062 counts reversed UNKNOWN sources, as the worklist does | None: C-6 and OPEN_ITEMS T-53 |
+
+### 9.2 Round 2, the targeted check of R-01
+
+Agent `bk-reviewer-high`, model `claude-opus-5-5`, effort High, mode `verify`; package `review/TASK-041/r2` with `fix.patch` from round 1's tree; 21 November, 12:34 to 12:37; `review-pack.sh --check` `UNCHANGED` after it. Verdict `PASS`: R-01 FIXED (the item reads the badge's store, refreshed by the shell on load, every 30 s, on focus and after each command, and re-renders on each publish; stale marked after a failed refresh; never a zero), R-02 FIXED as recorded, R-03 FIXED, R-05 FIXED.
+
+| ID | Severity | Finding | Outcome |
+| --- | --- | --- | --- |
+| R-08 | SHOULD-FIX | The browser case of R-01 left the panel's real count free, so it could pass with the old code if the fixtures gave 7 | Fixed: the case pins the panel's answer at nothing to restock, so only the badge's read can show "Perlu restok (7)", and asserts the exact `href` `/stock?state=LOW`. A change of a test only, so no further check (CE-40) |
+| R-09 | NOTE | The link's state comes from the panel's split at page load, RD-03 carrying only the total | With OPEN_ITEMS T-54 (C-5) |
+| R-10 | NOTE | A failed RD-04 read after a good RD-03 marks a current count stale | None: the shell's notice says the same, on the safe side |
+
+The fixes change `home.ts`, `Home.tsx` and tests; their TypeScript checks and unit tests run in the fast run of the record's push, the browser cases on the pull request's final head (CE-45).
+
+## 10. Guard's candidates (CE-31; D-076, D-097, D-098)
+
+No candidate on checkpoints 1 and 2, nor in the preview of the record's change before its commit (`GUARD PREVIEW PASS`, 12:41); the guard on the record's head is stated in the pull request.
+
+## 11. Record (CE-50)
+
+- Backup impact (EXC-47): none; no new table or kind of stored file.
+- The previous merge: TASK-040's pull request #55 (head `ebd16b9`, CI 44857211790; squash `fa4f98b` by the tick, the automated review DONE; CI on `develop` 44861036973) — recorded in [TASK-040's evidence](TASK-040.md) section 12 and in CURRENT_HANDOFF.
+- Documents: TASK_PLAN — TASK-041 `DONE`; its one dependent, TASK-043, stays `TODO` (TASK-042 is not `DONE`); the totals TODO 8, READY 1, DONE 41. OPEN_ITEMS T-53 amended, the new T-54; CURRENT_HANDOFF last. No decision is recorded; the next free decision is D-135.
+- Fast runs: two of the ten of CE-46 before the record; run 1 failed on F-6's two causes, fixed in one push and cured in run 2 (D-133); no CI run was repeated.
+- Not verified before the pull request's final head: the whole PostgreSQL suite in four parts, `test:race`, the build, the browser suite (`reporting/home.spec.ts`, `daily.spec.ts`, every spec where the Owner signs in) and the image checks; and the review's fixes (R-01, R-03, R-08), whose TypeScript checks and unit tests run first in the record's fast run.
+- Next eligible Task: TASK-042, Audit log and security log views, effort High (agent `bk-executor-high`; review and verification `bk-reviewer-high`).

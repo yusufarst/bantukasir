@@ -148,7 +148,8 @@ test('the Owner lands on Beranda with today, his open session and what needs his
 
     // His OPEN session (UXI-060), with its register, his name and its opening time, leading to its detail.
     const sessions = panel(page, 'Sesi kas yang sedang dibuka');
-    const own = sessions.getByRole('link', { name: /^Laci uji · Hendra · dibuka \d{2} \w+ \d{4}, \d{2}\.\d{2}\.\d{2}$/ }).first();
+    // The fixtures name a test register "Laci uji", with a suffix of its own when the fixture `session` opened it.
+    const own = sessions.getByRole('link', { name: /^Laci uji( [a-z0-9]+)? · Hendra · dibuka \d{2} \w+ \d{4}, \d{2}\.\d{2}\.\d{2}$/ }).first();
     await expect(own).toHaveAttribute('href', /^\/cash-sessions\/\d+$/);
 
     // "Perlu perhatian" (UXI-062 to UXI-064): each item names its condition and leads to its page.
@@ -214,6 +215,18 @@ test('the Owner lands on Beranda with today, his open session and what needs his
     await expect(attention.getByRole('link')).toHaveCount(0);
     await checked(page);
 
+    // UXI-061 (review R-01): the restock item counts by the stock badge's live read of RD-03, as the badge beside it.
+    const shellData = (url: URL): boolean => url.pathname === '/data/shell';
+    // The panel's own read says nothing needs restocking, so only the badge's read can show the item (review R-08).
+    await page.route(shellData, (route) => route.fulfill({ json: { unresolvedRequests: 0, stockAttention: 7, onboarding: null, openIncidents: null, asOf: '2026-11-21T03:00:00.000000Z' } }));
+    await nextAnswer(page, 'attention', (props) => {
+        props.attention = { restock: { out: 0, low: 0 }, costs: 0, incidents: 0, status: false, onboarding: false };
+    });
+    await page.goto(PAGE);
+    await expect(attention.getByRole('link', { name: 'Perlu restok (7)' })).toHaveAttribute('href', '/stock?state=LOW');
+    await expect(page.getByRole('navigation', { name: 'Menu utama' }).getByRole('link', { name: /^Stok/ })).toHaveAccessibleName(/7 produk perlu restok/);
+    await page.unroute(shellData);
+
     // UXI-060 leads to the session's detail.
     await page.goto(PAGE);
     await Promise.all([page.waitForURL((url) => /^\/cash-sessions\/\d+$/.test(url.pathname)), own.click()]);
@@ -237,7 +250,7 @@ test('at 200 % zoom Beranda fits and its panels are reached from the keyboard', 
     await expect(panel(page, 'Perlu perhatian').getByRole('heading', { level: 2 })).toBeVisible();
     await checked(page);
 
-    // "Rekap harian" is reached with Tab and opens the daily summary of today with Enter.
+    // "Rekap harian" takes the focus and opens the daily summary of today with Enter.
     const daily = today.getByRole('link', { name: 'Rekap harian' });
     await daily.focus();
     await expect(daily).toBeFocused();

@@ -7,6 +7,7 @@ import { LoadFailed, Loading } from '@/components/ui/States';
 import { AppShell } from '@/layouts/AppShell';
 import { HomeLayout, PageHeader } from '@/layouts/Page';
 import { sessionPage } from '@/lib/cash/sessions';
+import { useUnresolved } from '@/lib/commands/unresolved';
 import { formatCount, formatDateTime, formatMoney } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import { DAILY_PAGE } from '@/lib/reporting/daily';
@@ -143,13 +144,15 @@ function OpenSessionsCard({ sessions }: { sessions: readonly OpenSessionRow[] | 
 /** "Perlu perhatian" (UXI-061 to UXI-065): the items its evidence shows; none, the sentence that nothing needs it. */
 function AttentionCard({ attention }: { attention: AttentionPanel | null | undefined }) {
     const { read, retry } = usePanel(ATTENTION_PROP);
+    // The stock badge's live read of RD-03, which the shell refreshes (UXI-061, BR-INV-41).
+    const shell = useUnresolved();
     const label = t('reporting.home.attention');
 
     return (
         <Section title={label}>
             <PanelBody value={attention} read={read} retry={retry}>
                 {(evidence) => {
-                    const items = attentionItems(evidence);
+                    const items = attentionItems(evidence, { count: shell.stockAttention, failed: shell.failed });
 
                     return items.length === 0 ? (
                         <p className={'bk-empty'} data-state={'empty'}>
@@ -159,7 +162,7 @@ function AttentionCard({ attention }: { attention: AttentionPanel | null | undef
                         <LinkRows label={label}>
                             {items.map((item) => (
                                 <li key={item.id} data-attention={item.id}>
-                                    <LinkRow href={item.href} icon={item.icon} tone={item.tone} title={attentionTitle(item)} />
+                                    <LinkRow href={item.href} icon={item.icon} tone={item.tone} title={attentionTitle(item)} {...(item.stale === true ? { meta: t('ux.state.stale_read.title') } : {})} />
                                 </li>
                             ))}
                         </LinkRows>
