@@ -23,7 +23,7 @@ final class Recorder
      * @param  array<mixed>  $summary  the summary that the load tool exported
      * @return array<string, mixed>
      */
-    public static function record(array $plan, array $summary, string $reconciliationAfter): array
+    public static function record(array $plan, array $summary, string $reconciliationAfter, ?int $reconciliationAfterMs = null): array
     {
         $metrics = is_array($summary['metrics'] ?? null) ? $summary['metrics'] : [];
         $results = [];
@@ -72,7 +72,7 @@ final class Recorder
             'dataset' => $plan['dataset'] ?? null,
             'load' => Budgets::LOAD,
             'results' => $results,
-            'reconciliation' => ['before' => $plan['reconciliationBefore'] ?? null, 'after' => $reconciliationAfter],
+            'reconciliation' => ['before' => $plan['reconciliationBefore'] ?? null, 'beforeMs' => $plan['reconciliationBeforeMs'] ?? null, 'after' => $reconciliationAfter, 'afterMs' => $reconciliationAfterMs],
         ];
     }
 
@@ -87,7 +87,7 @@ final class Recorder
         $lines = [
             '**'.self::LABEL.'**',
             '',
-            sprintf('Run %s of %s, revision %s, reconciliation before %s and after %s.', self::text($record['run'] ?? null), self::text($record['runs'] ?? null), self::text($record['revision'] ?? null), self::text($reconciliation['before'] ?? null), self::text($reconciliation['after'] ?? null)),
+            sprintf('Run %s of %s, revision %s, reconciliation of every product before %s (%s ms) and after %s (%s ms).', self::text($record['run'] ?? null), self::text($record['runs'] ?? null), self::text($record['revision'] ?? null), self::text($reconciliation['before'] ?? null), self::text($reconciliation['beforeMs'] ?? null), self::text($reconciliation['after'] ?? null), self::text($reconciliation['afterMs'] ?? null)),
             '',
             '| Operation | Proposed budget | Statistic | Observed (ms) | Samples | Failures |',
             '| --- | --- | --- | --- | --- | --- |',

@@ -273,7 +273,8 @@ export function ownerReports() {
     read('/data/stock?state=LOW', 'stock_attention', true);
     read('/data/stock?state=OUT', 'stock_attention', true);
     sleep(1);
-    visit(reports, pick(['/home', '/stock', '/sales', '/cash-sessions']), 'page_visit', null);
+    // The costs-to-complete worklist's condition runs over every cost source (TASK-025 F-5), so it is among the visits.
+    visit(reports, pick(['/home', '/stock', '/sales', '/cash-sessions', '/reports/costs-to-complete']), 'page_visit', null);
     sleep(1);
 
     if (reportLoops % 4 === 1) {

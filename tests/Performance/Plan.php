@@ -32,7 +32,11 @@ final class Plan
         TokoContoh::build(DB::connection());
 
         $heavy = is_int($dataset['heavyProduct'] ?? null) ? $dataset['heavyProduct'] : throw new LogicException('The dataset names its product of 10,000 movements.');
+        // The reconciliation of every product, timed: whether a run finishes within its budget on the
+        // provisional dataset is TASK-036's finding F-9, for TASK-043 and TASK-048.
+        $started = microtime(true);
         $before = app(RunReconciliation::class)(null, ReconciliationRuns::SCHEDULE)->outcome;
+        $beforeMs = (int) round((microtime(true) - $started) * 1000);
         $registers = DB::table('cash_registers')->orderBy('code')->pluck('id', 'code')->all();
         $people = [];
 
@@ -57,6 +61,7 @@ final class Plan
             'replay' => self::replay($heavy),
             'import' => ['category' => 'Kategori 01', 'prefix' => sprintf('IMP%02d', $run), 'rows' => 5000],
             'reconciliationBefore' => $before,
+            'reconciliationBeforeMs' => $beforeMs,
         ];
     }
 

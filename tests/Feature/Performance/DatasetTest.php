@@ -129,7 +129,7 @@ final class DatasetTest extends DatabaseTestCase
             'fail_barcode_lookup' => ['type' => 'counter', 'values' => ['count' => 2, 'rate' => 0.1]],
             'op_csv_import' => ['type' => 'trend', 'values' => ['p(95)' => 9000.4, 'max' => 9100.6, 'count' => 1]],
         ]];
-        $record = Recorder::record($plan, $summaryOfTool, ReconciliationRuns::CLEAN);
+        $record = Recorder::record($plan, $summaryOfTool, ReconciliationRuns::CLEAN, 250);
 
         $this->assertSame('NOT_RUN', $record['perf01']);
         $this->assertSame(Recorder::LABEL, $record['label']);
@@ -147,7 +147,9 @@ final class DatasetTest extends DatabaseTestCase
 
         // A dry run of every scenario leaves no metric without a successful sample.
         $this->assertSame(array_values(array_diff(array_keys(Budgets::METRICS), ['op_barcode_lookup', 'op_csv_import'])), Recorder::unmeasured($record));
-        $this->assertSame(['before' => ReconciliationRuns::CLEAN, 'after' => ReconciliationRuns::CLEAN], $record['reconciliation']);
+        // The reconciliation of every product before and after the run, each timed (TASK-036 F-9).
+        $this->assertIsInt($plan['reconciliationBeforeMs']);
+        $this->assertSame(['before' => ReconciliationRuns::CLEAN, 'beforeMs' => $plan['reconciliationBeforeMs'], 'after' => ReconciliationRuns::CLEAN, 'afterMs' => 250], $record['reconciliation']);
         $this->assertIsArray($record['indexes']);
         $this->assertGreaterThan(0, $record['indexes']['count']);
         $this->assertIsArray($record['host']);

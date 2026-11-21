@@ -89,8 +89,9 @@ try {
 
         case 'record':
             $run = $number('run', 1);
+            $started = microtime(true);
             $after = app(RunReconciliation::class)(null, ReconciliationRuns::SCHEDULE)->outcome;
-            $record = Recorder::record($read('plan.json'), $read(sprintf('summary-%d.json', $run)), $after);
+            $record = Recorder::record($read('plan.json'), $read(sprintf('summary-%d.json', $run)), $after, (int) round((microtime(true) - $started) * 1000));
             $write(sprintf('record-%d.json', $run), $record);
             echo Recorder::markdown($record);
             $missing = Recorder::unmeasured($record);
