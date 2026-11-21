@@ -255,7 +255,8 @@ test('the Owner changes the Owner own details, and the Owner account has no othe
     const watched = await watch(page);
     const hendra = await owner(context, page);
 
-    // UXI-046 on UXP-003, then UXP-005.
+    // UXI-046 on UXP-003, which is no longer the Owner's home (TASK-041), then UXP-005.
+    await page.goto(HOME);
     await expect(page.getByText('Pemilik toko. Mengatur pengguna', { exact: false })).toBeVisible();
     await Promise.all([page.waitForURL((url) => url.pathname === '/account/details'), page.getByRole('link', { name: 'Ubah nama dan email' }).click()]);
     await expect(page.getByRole('heading', { level: 1, name: 'Ubah nama dan email' })).toBeVisible();

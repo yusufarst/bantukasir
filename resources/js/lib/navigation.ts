@@ -81,14 +81,17 @@ export const SUB_ORDER: Readonly<Record<AreaId, Readonly<Partial<Record<Persona,
  * till at `/till` since TASK-029, whose server sends a user without an OPEN
  * session to Buka sesi kas; UXI-004 "Sesi kas" (CAP-21) of a cashier and the
  * combined account, from TASK-030 — the Owner reaches it through Laporan; UXI-003 "Penjualan" (CAP-21,
- * CAP-22), from TASK-031.
+ * CAP-22), from TASK-031; UXI-001 "Beranda" (CAP-22) and UXI-007 "Laporan" (CAP-22, CAP-20), which opens
+ * Rekap harian, the one destination without a page of its own (COPY_DECK section 4.3), from TASK-041.
  */
 export const DESTINATIONS: Readonly<Partial<Record<DestinationId, DestinationEntry>>> = {
+    home: { label: 'reporting.home.title', href: '/home', icon: 'home', capabilities: ['CAP-22'] },
     till: { label: 'sales.till.title', href: '/till', icon: 'till', capabilities: ['CAP-21'] },
     sales: { label: 'sales.list.title', href: '/sales', icon: 'receipt', capabilities: ['CAP-21', 'CAP-22'] },
     sessions: { label: 'cash.sessions.title', href: '/cash-sessions', icon: 'drawer', capabilities: ['CAP-21'] },
     stock: { label: 'inventory.stock.title', href: '/stock', icon: 'boxes', capabilities: ['CAP-14'] },
     products: { label: 'catalog.products.title', href: '/products', icon: 'tag', capabilities: ['CAP-02', 'CAP-04'] },
+    reports: { label: 'ux.nav.reports', href: '/reports/daily', icon: 'chart', capabilities: ['CAP-22', 'CAP-20'] },
     settings: { label: 'config.settings.title', href: '/settings', icon: 'sliders', capabilities: ['CAP-25', 'CAP-32'] },
 };
 
@@ -97,7 +100,7 @@ export const DESTINATIONS: Readonly<Partial<Record<DestinationId, DestinationEnt
  * from TASK-019; UXI-012 to UXI-014, from TASK-022; UXI-015 "Barang keluar", the Owner's explicit
  * entry of D-018, from TASK-023; UXI-021 "Biaya perlu dilengkapi" (CAP-20), from TASK-025, and
  * UXI-019 "Sesi kas" (CAP-22), from TASK-030, and UXI-020 "Laporan keuangan" (CAP-20), from TASK-040,
- * shown once the Laporan destination exists (TASK-041);
+ * shown since the Laporan destination exists, and UXI-018 "Rekap harian" (CAP-22), from TASK-041;
  * UXI-016 "Stok awal" (CAP-15), the Owner's, from TASK-035; UXI-017 "Insiden rekonsiliasi" (CAP-18), the
  * Owner's, with the count of open incidents, from TASK-036.
  */
@@ -116,6 +119,7 @@ export const SUB_DESTINATIONS: Readonly<Record<AreaId, Readonly<Partial<Record<S
         incidents: { label: 'inventory.incidents.title', href: '/stock/incidents', capabilities: ['CAP-18'] },
     },
     reports: {
+        daily: { label: 'reporting.daily.title', href: '/reports/daily', capabilities: ['CAP-22'] },
         sessions: { label: 'cash.sessions.title', href: '/cash-sessions', capabilities: ['CAP-22'] },
         finance: { label: 'reporting.finance.title', href: '/reports/finance', capabilities: ['CAP-20'] },
         worklist: { label: 'costing.worklist.title', href: '/reports/costs-to-complete', capabilities: ['CAP-20'] },

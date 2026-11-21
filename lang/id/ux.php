@@ -147,6 +147,8 @@ return [
         'menu_close' => 'Tutup menu',
         'main' => 'Menu utama',
         'sub' => 'Submenu :halaman',
+        // UXI-007 "Laporan", which opens Rekap harian (TASK-041; COPY_DECK section 4.3).
+        'reports' => 'Laporan',
         // The badge of "Stok" (UXI-006; TASK-022; COPY_DECK section 4.3).
         'stock_badge' => [
             'label' => ':jumlah produk perlu restok',

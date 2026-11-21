@@ -17,7 +17,7 @@ const expect = baseExpect.configure({ timeout: ACCESS_WAIT });
 // At the first width, an unresolved checkout of hers keeps "Lanjut hitung" disabled until his "Cek status"
 // settles it, the unsaved-changes guard asks once a count or a reason is entered, and two review notes are
 // added to the report. Her session is the fixture's and is closed in the test, so her home stays Buka sesi
-// kas; his own OPEN session, if any, is closed before he signs in, so his home stays Akun saya.
+// kas; his own OPEN session, if any, is closed before he signs in; his home is Beranda (TASK-041).
 
 test.describe.configure({ timeout: ACCESS_TIMEOUT });
 test.use(SECURE_LOCAL_ORIGIN);

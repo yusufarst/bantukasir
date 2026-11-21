@@ -197,6 +197,9 @@ final class RouteInventoryTest extends TestCase
         'GET /settings/system-status' => ['system.status', 'RP-611', 'CAP-32', [...self::SIGNED_IN, 'capability:CAP-32', 'input.allow']],
         // TASK-040: RP-502 for CAP-20, taking only its parameters.
         'GET /reports/finance' => ['reports.finance', 'RP-502', 'CAP-20', [...self::SIGNED_IN, 'capability:CAP-20', 'input.allow:period,from,to']],
+        // TASK-041: RP-007, taking no parameter, and RP-501, taking only its date, for CAP-22.
+        'GET /home' => ['home', 'RP-007', 'CAP-22', [...self::SIGNED_IN, 'capability:CAP-22', 'input.allow']],
+        'GET /reports/daily' => ['reports.daily', 'RP-501', 'CAP-22', [...self::SIGNED_IN, 'capability:CAP-22', 'input.allow:date']],
     ];
 
     public function test_the_routes_are_exactly_those_listed_each_with_its_gate(): void

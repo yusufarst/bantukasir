@@ -92,7 +92,9 @@ use App\Http\Controllers\Inventory\WithdrawZeroCountController;
 use App\Http\Controllers\Media\MediaController;
 use App\Http\Controllers\Operations\StatusController;
 use App\Http\Controllers\Reporting\CostWorklistController;
+use App\Http\Controllers\Reporting\DailyController;
 use App\Http\Controllers\Reporting\FinanceController;
+use App\Http\Controllers\Reporting\HomeController;
 use App\Http\Controllers\Sales\CheckoutSaleController;
 use App\Http\Controllers\Sales\ReceiptController;
 use App\Http\Controllers\Sales\RecordCorrectionController;
@@ -356,6 +358,13 @@ Route::middleware(['auth', 'signin.session', 'throttle:authenticated', 'cache.he
         Route::get('/reports/finance', [FinanceController::class, 'show'])->middleware('input.allow:period,from,to')->name('reports.finance');
         Route::get('/reports/costs-to-complete', [CostWorklistController::class, 'index'])->middleware('input.allow:product,after,before,perPage')->name('reports.costs');
         Route::get('/products/{product}/cost-history', [CostHistoryController::class, 'show'])->middleware('input.allow:from_page')->name('products.cost_history');
+    });
+
+    // The Owner's home and the daily summary (TASK-041), the Owner's alone: RP-007, taking no parameter, and RP-501,
+    // taking only its date, for CAP-22.
+    Route::middleware('capability:CAP-22')->group(function (): void {
+        Route::get('/home', [HomeController::class, 'show'])->middleware('input.allow')->name('home');
+        Route::get('/reports/daily', [DailyController::class, 'show'])->middleware('input.allow:date')->name('reports.daily');
     });
 
     // The system status (TASK-039), the Owner's alone: RP-611 for CAP-32, taking only its path; its link to the
