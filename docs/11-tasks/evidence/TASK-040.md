@@ -153,3 +153,7 @@ No MUST-FIX was raised, so no verification round is due (CE-40). The fixes chang
 - Fix cycle 2 of 3 (CE-42), after the stop `RETEST_FAILED` and the Owner's resume: CI 44845948379 on `5f23867` cured F-8 (a) and `users.spec.ts:534`, and failed only `finance.spec.ts:112` at line 202 (F-9), a predicate comparing the query string's order; fixed in the test alone, in one push. The run on the new head is its one targeted retest; a failure it does not cure is again `RETEST_FAILED`, and a third red head ends the cycles of CE-42.
 - Not verified before the pull request's final head: the whole PostgreSQL suite in four parts, `test:race`, the browser suite, the build and the image checks; and the review's fixes (R-01 to R-03), which run first in the record's fast run and there.
 - Next eligible Task: TASK-041, Owner home and daily summary, effort High (agent `bk-executor-high`; review and verification `bk-reviewer-high`).
+
+## 12. Merge
+
+Recorded by TASK-041 (EXECUTION_CONTEXT CE-50): pull request #55, head `ebd16b93c7d60b6ad365927649628574bf1d67af`, CI run 44857211790 passed; squash-merged by the tick under D-105 as `fa4f98b48bac548c9e384b7d6e81e56856d1d344` on `develop`, the automated review's status DONE; CI on `develop` run 44861036973 passed; verified by the tick on 21 November 2026 (`MERGE_VERIFIED pr=55`). TASK-040 is `DONE`.

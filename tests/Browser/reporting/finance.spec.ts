@@ -136,7 +136,8 @@ test('the Owner reads an incomplete report of today, its trend and its table, an
     await expect(main.getByText('Data biaya belum lengkap').first()).toBeVisible();
     await expect(main.getByText(/^Baris dengan biaya belum diketahui: [1-9][0-9.]*$/)).toBeVisible();
     await expect(main.getByText(/^Produk dengan laporan ditandai belum lengkap: [0-9.]+$/)).toBeVisible();
-    await expect(main.getByRole('link', { name: 'Biaya perlu dilengkapi' })).toHaveAttribute('href', '/reports/costs-to-complete');
+    // The completeness notice's link, apart from the same item of the Laporan sub-navigation (TASK-041).
+    await expect(main.locator('.bk-notice').getByRole('link', { name: 'Biaya perlu dilengkapi' })).toHaveAttribute('href', '/reports/costs-to-complete');
     for (const label of ['Penjualan bruto', 'Pengembalian uang', 'Penjualan neto', 'HPP', 'Laba kotor', 'Jumlah penjualan', 'Pembayaran tunai', 'Pembayaran transfer bank', 'Barang terjual', 'Barang diretur']) {
         await expect(main.getByText(label, { exact: true }).first()).toBeVisible();
     }

@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect as baseExpect, test, type Page } from '@playwright/test';
-import { ACCESS_TIMEOUT, ACCESS_WAIT, HOME, homeOf, OPEN_SESSION_HOME, resetPeople, SECURE_LOCAL_ORIGIN, signIn, unexpected, type Person } from '../support/access';
+import { ACCESS_TIMEOUT, ACCESS_WAIT, HOME, homeOf, OPEN_SESSION_HOME, OWNER_HOME, resetPeople, SECURE_LOCAL_ORIGIN, signIn, unexpected, type Person } from '../support/access';
 import { measure } from '../support/measure';
 import { contextAt, watch, WIDTHS } from '../support/specimen';
 
@@ -48,9 +48,9 @@ for (const persona of Object.keys(PEOPLE) as (keyof typeof PEOPLE)[]) {
 
             await signIn(page, accounts[person]);
             // Operations and the combined account land on Stok (TASK-022), a cashier without an
-            // OPEN session on Buka sesi kas (TASK-027), the Owner on Akun saya.
+            // OPEN session on Buka sesi kas (TASK-027), the Owner on Beranda (TASK-041).
             const home = homeOf(person);
-            const landing = home === HOME ? 'Akun saya' : home === OPEN_SESSION_HOME ? 'Buka sesi kas' : 'Stok';
+            const landing = home === OWNER_HOME ? 'Beranda' : home === OPEN_SESSION_HOME ? 'Buka sesi kas' : 'Stok';
 
             expect(new URL(page.url()).pathname).toBe(home);
             // The document title names the shop (UXA-13; TASK-010).
@@ -59,12 +59,12 @@ for (const persona of Object.keys(PEOPLE) as (keyof typeof PEOPLE)[]) {
             await expect(page.getByRole('banner')).toHaveCount(1);
             await expect(page.getByRole('main')).toHaveCount(1);
 
-            // The destinations that exist are "Kasir" (TASK-027), "Penjualan" (TASK-031), "Sesi kas" of
-            // a cashier and the combined account (TASK-030), "Stok" (TASK-022), with its badge when
-            // products need attention, "Produk" (TASK-017) and the Owner's "Pengaturan" (TASK-010;
-            // EXC-52): in the side navigation, or the drawer at compact width.
+            // The destinations that exist are the Owner's "Beranda" and "Laporan" (TASK-041), "Kasir" (TASK-027),
+            // "Penjualan" (TASK-031), "Sesi kas" of a cashier and the combined account (TASK-030), "Stok"
+            // (TASK-022), with its badge when products need attention, "Produk" (TASK-017) and the Owner's
+            // "Pengaturan" (TASK-010; EXC-52): in the side navigation, or the drawer at compact width.
             const destinations: Readonly<Record<keyof typeof PEOPLE, readonly (string | RegExp)[]>> = {
-                owner: ['Kasir', 'Penjualan', /^Stok/, 'Produk', 'Pengaturan'],
+                owner: ['Beranda', 'Kasir', 'Penjualan', /^Stok/, 'Produk', 'Laporan', 'Pengaturan'],
                 ops: [/^Stok/, 'Produk'],
                 cashier: ['Kasir', 'Penjualan', 'Sesi kas'],
                 combined: ['Kasir', 'Penjualan', 'Sesi kas', /^Stok/, 'Produk'],

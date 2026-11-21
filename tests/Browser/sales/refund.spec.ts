@@ -23,8 +23,8 @@ const expect = baseExpect.configure({ timeout: ACCESS_WAIT });
 // and the status check finds the refund, which stands once (RACE-15); the drawer, now at Rp0, refuses the next
 // refund with its expected cash and the source stays as chosen, and "Dana Pemilik" records it; a session closed
 // meanwhile is refused. Every session and Sale is the fixture's, through the Actions. Her session is closed at
-// the end, so her home stays Buka sesi kas, and his own OPEN session, if any, is closed before he signs in, so
-// his home stays Akun saya.
+// the end, so her home stays Buka sesi kas, and his own OPEN session, if any, is closed before he signs in; his
+// home is Beranda (TASK-041).
 
 test.describe.configure({ timeout: ACCESS_TIMEOUT });
 test.use(SECURE_LOCAL_ORIGIN);

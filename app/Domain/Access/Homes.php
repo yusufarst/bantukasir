@@ -11,20 +11,23 @@ use App\Models\User;
  * OPEN session of their own to Buka sesi kas (RP-104); the combined account
  * Kasir with an OPEN session of its own, otherwise Stok.
  *
- * Until a role's home page exists, its home is Akun saya (RP-003), the one
+ * Until a role's home page existed, its home was Akun saya (RP-003), the one
  * page every role has (TASK-007 scope item 7; EXECUTION_CONTEXT EXC-52): the
- * Tasks that deliver the homes switch them here — TASK-022 Stok for
+ * Tasks that deliver the homes switched them here — TASK-022 Stok for
  * Operations and for the combined account without an OPEN session, TASK-027
  * Buka sesi kas for a cashier without one, TASK-029 Kasir for a cashier and
- * the combined account with one, TASK-041 Beranda for the Owner
- * (TRACEABILITY, RN-01). Until TASK-041 the Owner's home is Akun saya.
- * Whether the account holds an OPEN session is the Cash module's, which the
- * caller reads.
+ * the combined account with one, TASK-041 Beranda for the Owner, with or
+ * without an OPEN session of his own (TRACEABILITY, RN-01). An account
+ * without a role keeps Akun saya. Whether the account holds an OPEN session
+ * is the Cash module's, which the caller reads.
  */
 final class Homes
 {
     /** The path of RP-003, UXP-003 "Akun saya". */
     public const string ACCOUNT = '/account';
+
+    /** The path of RP-007, UXP-007 "Beranda" (TASK-041). */
+    public const string OWNER = '/home';
 
     /** The path of RP-401, UXP-401 "Stok" (TASK-022). */
     public const string STOCK = '/stock';
@@ -38,15 +41,15 @@ final class Homes
     /**
      * The path of the account's home: Kasir for a cashier or the combined
      * account with an OPEN session; Buka sesi kas for a cashier without one;
-     * Stok for Operations and for the combined account without one; and Akun
-     * saya for the Owner until Beranda exists.
+     * Stok for Operations and for the combined account without one; and
+     * Beranda for the Owner.
      */
     public static function of(User $user, bool $holdsOpenSession): string
     {
         $roles = $user->roles();
 
         if (in_array(Role::SuperAdmin, $roles, true)) {
-            return self::ACCOUNT;
+            return self::OWNER;
         }
 
         if (in_array(Role::Cashier, $roles, true)) {

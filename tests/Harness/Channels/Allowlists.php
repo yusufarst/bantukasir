@@ -328,6 +328,38 @@ final class Allowlists
         // and trend; `#failed` with a read that failed. Never a line, a product, a person or an allocation.
         'reporting/Finance' => ['owner' => [...self::FINANCE_PERIOD, ...self::FINANCE_REPORT]],
         'reporting/Finance#failed' => ['owner' => [...self::FINANCE_PERIOD, 'report']],
+        // UXP-007 and UXP-501, the Owner's alone (TASK-041): Beranda carries nothing but its deferred panels; the daily
+        // summary its date, today, and the day's figures, completeness and sessions, each with its own variance;
+        // `#failed` with a read that failed. Never a line, a product, an allocation, a payment or a count's cash.
+        'reporting/Home' => ['owner' => []],
+        'reporting/Daily' => ['owner' => [...self::DAILY_DATE, ...self::DAILY_SUMMARY]],
+        'reporting/Daily#failed' => ['owner' => [...self::DAILY_DATE, 'summary']],
+    ];
+
+    /** The applied date of UXP-501 and today in Asia/Jakarta (TASK-041). */
+    private const array DAILY_DATE = ['date', 'today'];
+
+    /** The summary of UXP-501 with both of its lists of sessions (TASK-041). */
+    private const array DAILY_SUMMARY = [
+        'summary', 'summary.asOf', 'summary.date',
+        'summary.figures', 'summary.figures.grossSales', 'summary.figures.refunds', 'summary.figures.netSales', 'summary.figures.saleCount', 'summary.figures.paymentsCash',
+        'summary.figures.paymentsTransfer', 'summary.figures.refundPayoutsCash', 'summary.figures.refundPayoutsTransfer', 'summary.figures.quantitySold',
+        'summary.figures.quantityReturned', 'summary.figures.cogs', 'summary.figures.grossProfit', 'summary.figures.margin',
+        'summary.completeness', 'summary.completeness.complete', 'summary.completeness.unknownLines', 'summary.completeness.markedProducts', 'summary.completeness.lastCorrectionAt',
+        'summary.empty',
+        'summary.sessions', 'summary.sessions.*', 'summary.sessions.*.id', 'summary.sessions.*.number', 'summary.sessions.*.status', 'summary.sessions.*.registerCode',
+        'summary.sessions.*.registerLabel', 'summary.sessions.*.responsible', 'summary.sessions.*.openedAt', 'summary.sessions.*.closedAt', 'summary.sessions.*.variance',
+        'summary.sessions.*.crossesMidnight',
+        'summary.active', 'summary.active.*', 'summary.active.*.id', 'summary.active.*.number', 'summary.active.*.status', 'summary.active.*.registerCode',
+        'summary.active.*.registerLabel', 'summary.active.*.responsible', 'summary.active.*.openedAt', 'summary.active.*.closedAt', 'summary.active.*.variance',
+        'summary.active.*.crossesMidnight',
+    ];
+
+    /** The three deferred panels of UXP-007, read together (TASK-041): today's four figures, the open sessions and the attention items' evidence. */
+    private const array HOME_PANELS = [
+        'today', 'today.asOf', 'today.netSales', 'today.saleCount', 'today.paymentsCash', 'today.paymentsTransfer',
+        'openSessions', 'openSessions.*', 'openSessions.*.id', 'openSessions.*.registerLabel', 'openSessions.*.responsible', 'openSessions.*.openedAt',
+        'attention', 'attention.restock', 'attention.restock.out', 'attention.restock.low', 'attention.costs', 'attention.incidents', 'attention.status', 'attention.onboarding',
     ];
 
     /** The applied period of UXP-502 and today in Asia/Jakarta (TASK-040). */
@@ -513,6 +545,9 @@ final class Allowlists
         'operations/Status' => ['owner' => self::SYSTEM_STATUS],
         // TASK-040: UXP-502's report read again by name ("Coba lagi", UXS-22).
         'reporting/Finance' => ['owner' => self::FINANCE_REPORT],
+        // TASK-041: UXP-007's panels, each its own deferred prop, here read together; UXP-501's summary read again by name.
+        'reporting/Home' => ['owner' => self::HOME_PANELS],
+        'reporting/Daily' => ['owner' => self::DAILY_SUMMARY],
     ];
 
     /**

@@ -108,7 +108,7 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-038](tasks/TASK-038-housekeeping.md) | Housekeeping and retention | 7 | O | M | A | TASK-019, TASK-018, TASK-011 | — | `DONE` |
 | [TASK-039](tasks/TASK-039-system-status.md) | System status and monitoring | 7 | O | M | A | TASK-037, TASK-036 | — | `DONE` |
 | [TASK-040](tasks/TASK-040-finance-report.md) | Finance report | 8 | R | L | A | TASK-034, TASK-025 | — | `DONE` |
-| [TASK-041](tasks/TASK-041-owner-home-daily.md) | Owner home and daily summary | 8 | R | L | A | TASK-039, TASK-040, TASK-032 | — | `READY` |
+| [TASK-041](tasks/TASK-041-owner-home-daily.md) | Owner home and daily summary | 8 | R | L | A | TASK-039, TASK-040, TASK-032 | — | `DONE` |
 | [TASK-042](tasks/TASK-042-audit-views.md) | Audit log and security log views | 8 | R | M | A | TASK-036, TASK-035 | — | `READY` |
 | [TASK-043](tasks/TASK-043-performance-harness.md) | Performance harness and provisional dataset | 9 | V | M | B | TASK-041, TASK-042, TASK-038, TASK-014 | — | `TODO` |
 | [TASK-044](tasks/TASK-044-integrated-verification.md) | Release candidate and integrated verification | 9 | V | L | V | TASK-043 | TARGET, GATE-PUBLISH | `TODO` |
@@ -119,7 +119,7 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-049](tasks/TASK-049-release-readiness.md) | Release readiness: staging, UAT and first installation | 10 | R | L | V | TASK-045, TASK-047, TASK-048 | G1, G2, G3, G4, DEVICES, TARGET, GATE-PUBLISH | `TODO` |
 | [TASK-050](tasks/TASK-050-production-pilot.md) | Production release, cutover and pilot acceptance | 10 | R | L | V | TASK-049 | RELEASE, GATE-PUBLISH, G4 | `TODO` |
 
-Totals: `TODO` 8; `READY` 2; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 40; `SUPERSEDED` 0.
+Totals: `TODO` 8; `READY` 1; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 41; `SUPERSEDED` 0.
 
 ## 5. Implementation sequence
 

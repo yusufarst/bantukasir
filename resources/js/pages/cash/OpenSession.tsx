@@ -29,9 +29,8 @@ import { personaOf, type DestinationId, type RoleCode } from '@/lib/navigation';
 // session of the user's own opened meanwhile loads the page again, which leads home; an uncertain
 // outcome freezes the request (UXS-14). Success leads to the till — RN-01, the user's home, until
 // TASK-029 delivers it — with "Sesi kas :nomor dibuka.". "Batal" leads to the role's non-till home:
-// Stok for the combined account, Penjualan for a cashier (TASK-031), RN-01 for the Owner until Beranda
-// exists (EXC-52), asking
-// first once an amount was entered (UXS-45).
+// Stok for the combined account, Penjualan for a cashier (TASK-031), Beranda for the Owner (TASK-041),
+// asking first once an amount was entered (UXS-45).
 
 const DESTINATION: DestinationId = 'till';
 
@@ -49,13 +48,13 @@ const SEGMENTED_MAX = 3;
 
 /**
  * The non-till homes (UXI-100): Stok for the combined account (TASK-022), Penjualan for a cashier (UXP-201,
- * TASK-031), RN-01 for the Owner until Beranda exists (TASK-041).
+ * TASK-031), Beranda for the Owner (UXP-007, TASK-041).
  */
 const STOCK_HOME = '/stock';
 
 const SALES_HOME = '/sales';
 
-const HOME = '/';
+const OWNER_HOME = '/home';
 
 /** The amount the review names while none is entered, which the review never shows: it opens only with an amount. */
 const NO_AMOUNT = '0';
@@ -82,7 +81,7 @@ function OpenForm({ title, registers }: { title: string; registers: readonly Ava
     const ids = useId();
     const roles = usePage<SharedProps>().props.auth?.user.roles ?? [];
     const persona = personaOf(roles);
-    const cancel = persona === 'combined' ? STOCK_HOME : persona === 'cashier' ? SALES_HOME : HOME;
+    const cancel = persona === 'combined' ? STOCK_HOME : persona === 'cashier' ? SALES_HOME : OWNER_HOME;
     const only = registers.length === 1 ? registers[0] : undefined;
     const [chosen, setChosen] = useState<string | null>(only === undefined ? null : String(only.id));
     const [amount, setAmount] = useState<string | null>(null);

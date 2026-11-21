@@ -68,7 +68,7 @@ final class FinanceReport
             $connection->select('select 1');
             $now = $this->clock->now()->utc();
 
-            return $this->figures($connection, Period::of($kind, $now, $from, $to), $now);
+            return $this->within($connection, Period::of($kind, $now, $from, $to), $now);
         } finally {
             if ($connection->transactionLevel() > 0) {
                 $connection->rollBack();
@@ -77,6 +77,10 @@ final class FinanceReport
     }
 
     /**
+     * The report of a period inside the caller's read-only REPEATABLE READ snapshot, whose time is `now`: the
+     * one computation of the figures from the source records, which the daily summary reads in its own snapshot
+     * too (DailySummary; SALES_CASH BR-RPT-01; TASK-041), so that a day's figures are computed once and alike.
+     *
      * @return array{
      *     asOf: string,
      *     period: array{kind: string, from: string, to: string},
@@ -86,7 +90,7 @@ final class FinanceReport
      *     empty: bool
      * }
      */
-    private function figures(ConnectionInterface $connection, Period $period, CarbonImmutable $now): array
+    public function within(ConnectionInterface $connection, Period $period, CarbonImmutable $now): array
     {
         $first = $period->firstDate->toString();
         $last = $period->lastDate->toString();

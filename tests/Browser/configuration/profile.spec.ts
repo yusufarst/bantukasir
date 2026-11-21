@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect as baseExpect, test, type Page } from '@playwright/test';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { ACCESS_TIMEOUT, ACCESS_WAIT, HOME, resetPeople, SECURE_LOCAL_ORIGIN, signIn, unexpected } from '../support/access';
+import { ACCESS_TIMEOUT, ACCESS_WAIT, HOME, OWNER_HOME, resetPeople, SECURE_LOCAL_ORIGIN, signIn, unexpected } from '../support/access';
 import { injected, prepareCommands } from '../support/commands';
 import { measure } from '../support/measure';
 import { contextAt, watch, WIDTHS } from '../support/specimen';
@@ -73,8 +73,9 @@ for (const width of [WIDTHS[0], WIDTHS[4], WIDTHS[7]]) {
         await prepareCommands(context, ['Hendra']);
 
         await signIn(page, hendra);
-        expect(new URL(page.url()).pathname).toBe(HOME);
-        await expect(page).toHaveTitle('Akun saya — Toko Contoh');
+        // The Owner lands on Beranda (TASK-041).
+        expect(new URL(page.url()).pathname).toBe(OWNER_HOME);
+        await expect(page).toHaveTitle('Beranda — Toko Contoh');
         expect(await accent(page)).toBe('green');
 
         // UXI-008 "Pengaturan", in the side navigation, or in the drawer at

@@ -87,6 +87,15 @@ final class CostWorklist
     }
 
     /**
+     * How many cost sources the worklist holds, by its one definition: the count of the attention item "Biaya
+     * perlu dilengkapi" on Beranda (UXI-062; TASK-041), so that the item and the list it leads to agree.
+     */
+    public function count(): int
+    {
+        return self::scoped(['product' => null, 'after' => null, 'before' => null, 'perPage' => self::PER_PAGE])->count();
+    }
+
+    /**
      * The product of the filter, by its key, for the page's filter; null when none exists.
      *
      * @return array{id: int, name: string, sku: string}|null

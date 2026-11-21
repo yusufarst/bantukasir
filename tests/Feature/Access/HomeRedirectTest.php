@@ -11,8 +11,8 @@ use Tests\Harness\Http\Browsers;
  * NAVIGATION_CONTRACTS NC-12, UXP-001; INFORMATION_ARCHITECTURE section 4;
  * TASK-007 scope item 7): Operations and the combined account without an
  * OPEN session are sent to Stok (RP-401, TASK-022); a cashier without an OPEN
- * session to Buka sesi kas (RP-104, TASK-027); the Owner to Akun saya
- * (RP-003), until TASK-041 switches it; with an OPEN session a cashier and
+ * session to Buka sesi kas (RP-104, TASK-027); the Owner to Beranda
+ * (RP-007, TASK-041); with an OPEN session a cashier and
  * the combined account go to Kasir (RP-101, TASK-029, CashPagesTest);
  * a first visit is sent to the
  * sign-in page without the note that a sign-in session ended, and a browser
@@ -35,9 +35,9 @@ final class HomeRedirectTest extends DatabaseTestCase
     public function test_every_role_and_the_combined_account_go_to_their_home(): void
     {
         // TASK-022: Operations and the combined account go to Stok (RP-401); TASK-027: a
-        // cashier without an OPEN cash session to Buka sesi kas (RP-104). The homes with an
-        // OPEN session are CashPagesTest's.
-        foreach (['Hendra' => '/account', 'Agus' => '/stock', 'Rina' => '/till/open-session', 'Dewi' => '/stock'] as $person => $home) {
+        // cashier without an OPEN cash session to Buka sesi kas (RP-104); TASK-041: the Owner
+        // to Beranda (RP-007). The homes with an OPEN session are CashPagesTest's.
+        foreach (['Hendra' => '/home', 'Agus' => '/stock', 'Rina' => '/till/open-session', 'Dewi' => '/stock'] as $person => $home) {
             $account = TokoContoh::person($person);
             $this->browse($this->signInBrowser($account['email'], $account['password']));
 

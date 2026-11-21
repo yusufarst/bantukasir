@@ -145,6 +145,26 @@ export function daysBetween(from: string, to: string): number {
     return daysFromCivil(end.year, end.month, end.day) - daysFromCivil(start.year, start.month, start.day);
 }
 
+/**
+ * The business date a whole number of days after another, `YYYY-MM-DD`, before it when negative, in the
+ * proleptic Gregorian calendar: the day before and the day after of the daily summary (UXI-306; TASK-041).
+ * A date that does not exist, or a result outside the years 0001 to 9999, is refused.
+ */
+export function addDays(date: string, days: number): string {
+    if (!Number.isSafeInteger(days)) {
+        throw new RangeError('Days are a whole number.');
+    }
+
+    const start = calendarDate(date);
+    const shifted = civilFromDays(daysFromCivil(start.year, start.month, start.day) + days);
+
+    if (shifted.year < 1 || shifted.year > 9999) {
+        throw new RangeError('A business date is of the years 0001 to 9999.');
+    }
+
+    return `${fourDigits(shifted.year)}-${twoDigits(shifted.month)}-${twoDigits(shifted.day)}`;
+}
+
 /** An instant, in Asia/Jakarta: "01 Oktober 2026, 09.15.00". */
 export function formatDateTime(instant: string): string {
     const local = jakarta(instant);

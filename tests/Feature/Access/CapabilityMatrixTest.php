@@ -43,7 +43,7 @@ final class CapabilityMatrixTest extends DatabaseTestCase
      */
     private const array ROUTES = [
         'RN-01' => ['method' => 'GET', 'path' => '/', 'json' => false, 'answers' => [
-            'guest' => [302, '/login'], 'owner' => [302, '/account'], 'ops' => [302, '/stock'], 'cashier' => [302, '/till/open-session'], 'combined' => [302, '/stock'],
+            'guest' => [302, '/login'], 'owner' => [302, '/home'], 'ops' => [302, '/stock'], 'cashier' => [302, '/till/open-session'], 'combined' => [302, '/stock'],
         ]],
         'RP-001' => ['method' => 'GET', 'path' => '/login', 'json' => false, 'answers' => [
             'guest' => [200, null], 'owner' => [302, '/'], 'ops' => [302, '/'], 'cashier' => [302, '/'], 'combined' => [302, '/'],
@@ -497,6 +497,14 @@ final class CapabilityMatrixTest extends DatabaseTestCase
         // TASK-040: the finance report for CAP-20, the Owner's alone; every other role and the combined account
         // refused (AC-040-05, THR-02).
         'RP-502' => ['method' => 'GET', 'path' => '/reports/finance', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        // TASK-041: Beranda and the daily summary for CAP-22, the Owner's alone; every other role and the combined
+        // account refused (AC-041-04).
+        'RP-007' => ['method' => 'GET', 'path' => '/home', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RP-501' => ['method' => 'GET', 'path' => '/reports/daily', 'json' => false, 'answers' => [
             'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
         ]],
     ];

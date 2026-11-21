@@ -116,14 +116,17 @@ export function linkAddress(link: Link): string {
 }
 
 /**
- * Akun saya (RP-003): the home of the Owner until Beranda exists (RN-01,
- * NC-12; TASK-007), and the page that every role has. A cashier or the
+ * Akun saya (RP-003): the page that every role has, which was the Owner's home
+ * until Beranda existed (RN-01, NC-12; TASK-007, TASK-041). A cashier or the
  * combined account with an OPEN session goes to Kasir (TASK-029), which the
  * browser suite never leaves them: the cashier's sessions of
  * tests/Browser/cash/close.spec.ts and sessions.spec.ts are closed again in the
  * same test (TASK-030).
  */
 export const HOME = '/account';
+
+/** Beranda (RP-007): the home of the Owner, with or without an OPEN session of his own (RN-01, NC-12; TASK-041). */
+export const OWNER_HOME = '/home';
 
 /** Stok (RP-401): the home of Operations and of the combined account without an OPEN session (RN-01, NC-12; TASK-022). */
 export const STOCK_HOME = '/stock';
@@ -132,12 +135,12 @@ export const STOCK_HOME = '/stock';
 export const OPEN_SESSION_HOME = '/till/open-session';
 
 /**
- * The home of each person of Toko Contoh (NC-12): Agus is Operations, Dewi the
+ * The home of each person of Toko Contoh (NC-12): Hendra is the Owner, Agus is Operations, Dewi the
  * combined account, Rina a cashier, whose sessions the browser suite always
  * closes again (tests/Browser/cash/close.spec.ts, sessions.spec.ts), so her home is Buka sesi kas.
  */
 export function homeOf(person: Person): string {
-    return person === 'Agus' || person === 'Dewi' ? STOCK_HOME : person === 'Rina' ? OPEN_SESSION_HOME : HOME;
+    return person === 'Agus' || person === 'Dewi' ? STOCK_HOME : person === 'Rina' ? OPEN_SESSION_HOME : OWNER_HOME;
 }
 
 /** Signs in on UXP-001 with the keyboard: the form, then Enter (UXA-10 exception); the full page load ends at the account's home. */
@@ -146,7 +149,7 @@ export async function signIn(page: Page, account: Account): Promise<void> {
     await page.getByLabel('Email').fill(account.email);
     await page.getByLabel('Kata sandi', { exact: true }).fill(account.password);
     await Promise.all([
-        page.waitForURL((url) => url.pathname === HOME || url.pathname === STOCK_HOME || url.pathname === OPEN_SESSION_HOME),
+        page.waitForURL((url) => url.pathname === OWNER_HOME || url.pathname === HOME || url.pathname === STOCK_HOME || url.pathname === OPEN_SESSION_HOME),
         page.getByLabel('Kata sandi', { exact: true }).press('Enter'),
     ]);
 }

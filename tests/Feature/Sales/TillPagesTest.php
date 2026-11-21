@@ -89,7 +89,7 @@ final class TillPagesTest extends DatabaseTestCase
         TokoContoh::openSession('Rina', TokoContoh::register('LACI-2', 'Laci 2'));
         TokoContoh::openSession('Dewi', TokoContoh::register('LACI-3', 'Laci 3'));
 
-        foreach (['Rina' => '/till', 'Dewi' => '/till', 'Hendra' => '/account'] as $person => $home) {
+        foreach (['Rina' => '/till', 'Dewi' => '/till', 'Hendra' => '/home'] as $person => $home) {
             $this->as($person);
             $this->get('/')->assertRedirect($home);
             $this->get('/till/open-session')->assertRedirect('/till');

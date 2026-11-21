@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect as baseExpect, test, type BrowserContext, type Locator, type Page } from '@playwright/test';
-import { ACCESS_TIMEOUT, ACCESS_WAIT, HOME, newPassword, resetPeople, SECURE_LOCAL_ORIGIN, signIn, unexpected, type Account } from '../support/access';
+import { ACCESS_TIMEOUT, ACCESS_WAIT, HOME, newPassword, OWNER_HOME, resetPeople, SECURE_LOCAL_ORIGIN, signIn, unexpected, type Account } from '../support/access';
 import { envelopeOf, injected, prepareCommands, refuse } from '../support/commands';
 import { measure } from '../support/measure';
 import { contextAt, watch, WIDTHS } from '../support/specimen';
@@ -255,7 +255,8 @@ test('the Owner changes the Owner own details, and the Owner account has no othe
     const watched = await watch(page);
     const hendra = await owner(context, page);
 
-    // UXI-046 on UXP-003, then UXP-005.
+    // UXI-046 on UXP-003, which is no longer the Owner's home (TASK-041), then UXP-005.
+    await page.goto(HOME);
     await expect(page.getByText('Pemilik toko. Mengatur pengguna', { exact: false })).toBeVisible();
     await Promise.all([page.waitForURL((url) => url.pathname === '/account/details'), page.getByRole('link', { name: 'Ubah nama dan email' }).click()]);
     await expect(page.getByRole('heading', { level: 1, name: 'Ubah nama dan email' })).toBeVisible();
@@ -317,7 +318,9 @@ test('a real refusal shows at its field with its focused summary, and a 401 on a
     await page.getByLabel(/^Email/).fill(who.email);
     await page.route('**/commands/user.create', (route) => refuse(route, 401, 'UNAUTHENTICATED'));
     await page.getByRole('button', { name: 'Simpan dan buat tautan' }).click();
-    await page.waitForURL((url) => url.pathname === '/' || url.pathname === '/login' || url.pathname === HOME);
+    // Only the command's answer was a 401: the server still holds the sign-in session, so its root leads the Owner
+    // to his landing page, Beranda (RN-01, NC-12; TASK-041).
+    await page.waitForURL((url) => url.pathname === '/' || url.pathname === '/login' || url.pathname === OWNER_HOME);
 
     expect(injected(watched.problems).filter((problem) => !problem.includes('status of 423'))).toEqual([]);
     await context.close();
