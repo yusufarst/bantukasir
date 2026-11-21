@@ -55,8 +55,10 @@ final class DatasetTest extends DatabaseTestCase
         ], array_diff_key($summary['counts'], ['auditEvents' => 0]));
         $this->assertSame(0, $this->observer()->table('cash_sessions')->where('status', 'OPEN')->count());
 
-        // Every record is a command of its Action, which writes its audit event.
-        $this->assertGreaterThanOrEqual(61, $summary['counts']['auditEvents']);
+        // Every record is a command of its Action, which writes its audit event: 2 categories, 13 products,
+        // 1 deactivation, 19 barcodes, 1 retirement, 3 registers, 5 receivings, 1 Sale, 2 sessions opened
+        // and closed, besides the installation's and the cashiers' own.
+        $this->assertGreaterThanOrEqual(49, $summary['counts']['auditEvents']);
 
         // The history lies on its days in Asia/Jakarta: the Sale on the last day.
         $this->assertSame([self::UNTIL], $this->observer()->table('sales')->pluck('business_date')->map(static fn (mixed $date): string => is_string($date) ? substr($date, 0, 10) : '')->all());
@@ -95,11 +97,12 @@ final class DatasetTest extends DatabaseTestCase
             Datasets::build(Datasets::BASE, Datasets::SEED, self::SCALE, self::UNTIL);
             $this->fail('A dataset was built where the environment is staging.');
         } catch (DatabaseRefused) {
+            // The harness's own observer checks the marker too, so the name of the test comes back first.
+            config(['app.environment_name' => 'test']);
             $this->assertSame(0, $this->observer()->table('products')->count());
             $this->assertSame(0, $this->observer()->table('users')->count());
         }
 
-        config(['app.environment_name' => 'test']);
         TokoContoh::product('ADA-01');
 
         $this->expectException(LogicException::class);

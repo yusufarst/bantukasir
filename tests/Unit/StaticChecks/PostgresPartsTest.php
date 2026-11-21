@@ -256,10 +256,10 @@ final class PostgresPartsTest extends TestCase
         $this->assertStringContainsString('actions: read', $jobs['Command contract']);
 
         // No job has a condition; only the stop of each local environment runs
-        // always — Command contract's, each part's and the rehearsal's; no
+        // always — Command contract's, each part's and the two rehearsals'; no
         // failure is let through.
         preg_match_all('/^\s*if:.*$/m', $workflow, $conditions);
-        $this->assertSame(array_fill(0, $n + 2, 'if: always()'), array_map('trim', $conditions[0]));
+        $this->assertSame(array_fill(0, $n + 3, 'if: always()'), array_map('trim', $conditions[0]));
         $this->assertStringNotContainsString('continue-on-error', $workflow);
     }
 
