@@ -89,6 +89,15 @@ function tomorrow(): string {
     return new Date(Date.now() + (7 + 24) * 60 * 60 * 1000).toISOString().slice(0, 10);
 }
 
+/** Whether an address's query holds exactly these parameters, in whatever order the page writes them (F-9). */
+function hasQuery(expected: Record<string, string>): (url: URL) => boolean {
+    return (url) => {
+        const actual = [...url.searchParams.entries()];
+
+        return actual.length === Object.keys(expected).length && actual.every(([key, value]) => expected[key] === value);
+    };
+}
+
 /** The reads of the report that the page makes from now on. */
 function reads(page: Page): { count: () => number } {
     let count = 0;
@@ -199,7 +208,8 @@ test('the Owner reads an incomplete report of today, its trend and its table, an
     await page.getByRole('radio', { name: 'Rentang Kustom' }).click();
     await from.fill('2020-01-01');
     await to.fill('2020-01-31');
-    await Promise.all([page.waitForURL((url) => url.search === '?period=custom&from=2020-01-01&to=2020-01-31'), page.getByRole('button', { name: 'Terapkan' }).click()]);
+    const january = { period: 'custom', from: '2020-01-01', to: '2020-01-31' };
+    await Promise.all([page.waitForURL(hasQuery(january)), page.getByRole('button', { name: 'Terapkan' }).click()]);
     await expect(main.getByText('Belum ada penjualan pada periode ini.')).toBeVisible();
     await expect(main.getByText('01 Januari 2020 – 31 Januari 2020', { exact: true })).toBeVisible();
     await checked(page);
@@ -207,7 +217,7 @@ test('the Owner reads an incomplete report of today, its trend and its table, an
 
     // The applied period is kept for the sign-in session (NAVIGATION_CONTRACTS UXP-502).
     await page.goto(PAGE);
-    await page.waitForURL((url) => url.search === '?period=custom&from=2020-01-01&to=2020-01-31');
+    await page.waitForURL(hasQuery(january));
     await expect(main.getByText('Belum ada penjualan pada periode ini.')).toBeVisible();
 
     // A preset reads its report at once: Bulan Ini, with its figures and its trend.
