@@ -203,3 +203,7 @@ Verification (CE-42, class A, the form's accessible name being a change of the p
 | --- | --- | --- | --- | --- |
 | `npm run typecheck`, ESLint, PHP | Local | — | — | `NOT_RUN`: not installed natively (section 1) |
 | The whole command contract with `audit.spec.ts`, the four PostgreSQL parts with the three changed tests, the image checks with D-135's list | CI on the pull request's new head, the fix's one targeted retest (D-133) | — | — | `NOT_RUN` until that run |
+
+## 14. Merge
+
+Recorded by TASK-043 (EXECUTION_CONTEXT CE-50): pull request #57, head `ecf9865f6085ad1d3e675138681c1ece0c725418`, CI run 44915121486 passed at attempt 2 (the Owner's note: every required job PASS), after the stop `CI_TIMEOUT` of attempt 1 and his resume; squash-merged by the tick under D-105 as `6203e9048024f47cf73b241dfc9ca16b6db97066` on `develop`, the automated review's status DONE; CI on `develop` run 44922101510 passed; verified by the tick on 21 November 2026 (`MERGE_VERIFIED pr=57`). TASK-042 is `DONE`. OPEN_ITEMS T-56 is named for TASK-051 by D-137.

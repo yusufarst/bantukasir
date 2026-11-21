@@ -269,6 +269,21 @@ services:
         volumes:
             - .:/app
 
+    k6:
+        # The load tool of the performance harness (TASK-043; TOOLCHAIN section 2): k6 (AGPL-3.0), pinned
+        # by digest, run by hand or by CI's job Migration rehearsal against the application on the project's
+        # network, with the plan that tests/Performance/perf.php writes; as root, because the harness's
+        # folder storage/app/perf belongs to the application container's root:
+        #   docker compose run --rm -e PERF_RUN=1 k6 run tests/Performance/scenarios/perf01.js
+        image: grafana/k6:2.3.0@sha256:2dd4756ec6e14e62778916e1eb850108e4b499304c02df56760fa0bdb0fba0b8
+        profiles: ["tools"]
+        user: root
+        working_dir: /app
+        environment:
+            PERF_BASE_URL: http://bantukasir-app:8080
+        volumes:
+            - .:/app
+
 volumes:
     db-data:
     # The file volume of the rehearsal's target, destroyed at the rehearsal's end.

@@ -252,6 +252,35 @@ jobs:
               if: always()
               run: docker compose --profile rehearsal down
 
+    # The rehearsal of every migration on the populated provisional benchmark dataset (RELEASE_PROCESS
+    # REL-21; TASK-043 scope items 3 and 4), on its own runner and local environment, with synthetic data
+    # only: the base of the change — the pull request's base, or develop before the push — builds the
+    # dataset through its Actions, the head's migration job applies the head's new migrations and the
+    # verification queries of REL-20, then the dry run of the PERF01 scenarios records its results, never
+    # PERF01's evidence (scripts/checks/migration-rehearsal.sh). No store, key or server of staging or
+    # production is reached.
+    migration-rehearsal:
+        name: Migration rehearsal
+        runs-on: ubuntu-24.04
+        timeout-minutes: 55
+        steps:
+            - name: Check out the repository with its history
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  fetch-depth: 0
+                  persist-credentials: false
+
+            - name: Rehearse the migrations on the base dataset and dry-run the PERF01 scenarios
+              env:
+                  REHEARSAL_BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+                  # The record names the pull request's head beside the merge commit that CI checks out.
+                  PERF_HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+              run: bash scripts/checks/migration-rehearsal.sh
+
+            - name: Stop the local environment
+              if: always()
+              run: docker compose down
+
     # The image checks of RELEASE_PROCESS section 4 items 1 to 4 (TASK-012), on the
     # release stage of the image's definition, which this job builds and never
     # publishes; TASK-014's release workflow publishes it. The tick and a merge
