@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/Button';
 import { KeyValueList, type KeyValue } from '@/components/ui/Data';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Field, SelectInput, TextInput } from '@/components/ui/Field';
-import { EmptyState, NoResults } from '@/components/ui/States';
+import { EmptyState, LoadFailed, NoResults } from '@/components/ui/States';
 import { AppShell } from '@/layouts/AppShell';
 import { ListLayout, PageHeader } from '@/layouts/Page';
 import { accountOf, actorWord, outcomeWord, SECURITY_TYPES, securityAddress, securityTypeOf, securityTypeWord, SETTINGS_PAGE, type AuditActor, type SecurityFilters } from '@/lib/audit/activity';
@@ -52,11 +52,21 @@ export default function SecurityLog(props: SecurityProps) {
 
 function SecurityList({ title, filters, users, entries }: SecurityProps & { title: string }) {
     const [visiting, setVisiting] = useState(false);
+    // UXS-22: the address whose read failed, read again by "Coba lagi"; never the earlier rows.
+    const [failed, setFailed] = useState<string | null>(null);
 
-    const visit = (next: SecurityFilters, cursor: { readonly after?: string; readonly before?: string } = {}): void => {
+    const go = (address: string): void => {
+        const refused = (): boolean => {
+            setFailed(address);
+
+            return false;
+        };
+
         setVisiting(true);
-        router.visit(securityAddress(next, cursor), { preserveScroll: true, preserveState: true, onFinish: () => setVisiting(false) });
+        router.visit(address, { preserveScroll: true, preserveState: true, onSuccess: () => setFailed(null), onHttpException: refused, onNetworkError: refused, onFinish: () => setVisiting(false) });
     };
+
+    const visit = (next: SecurityFilters, cursor: { readonly after?: string; readonly before?: string } = {}): void => go(securityAddress(next, cursor));
 
     const apply = (patch: Partial<SecurityFilters>): void => visit({ ...filters, ...patch });
     const chooseDay = (value: string): void => apply({ from: value === '' ? null : value, to: value === '' ? null : value });
@@ -112,9 +122,10 @@ function SecurityList({ title, filters, users, entries }: SecurityProps & { titl
             }
         >
             <div className={'bk-stack'}>
-                {entries.rows.length > 0 && <DataTable caption={title} columns={columns} rows={entries.rows} rowKey={(row) => String(row.id)} wide={true} />}
-                {entries.rows.length === 0 && filtered && <NoResults onClear={clear} />}
-                {entries.rows.length === 0 && !filtered && <EmptyState body={t('audit.security.empty')} />}
+                {failed !== null && <LoadFailed onRetry={() => go(failed)} />}
+                {failed === null && entries.rows.length > 0 && <DataTable caption={title} columns={columns} rows={entries.rows} rowKey={(row) => String(row.id)} wide={true} />}
+                {failed === null && entries.rows.length === 0 && filtered && <NoResults onClear={clear} />}
+                {failed === null && entries.rows.length === 0 && !filtered && <EmptyState body={t('audit.security.empty')} />}
             </div>
         </ListLayout>
     );

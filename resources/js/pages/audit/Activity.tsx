@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/Button';
 import { KeyValueList } from '@/components/ui/Data';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Field, SelectInput, TextInput } from '@/components/ui/Field';
-import { EmptyState, NoResults } from '@/components/ui/States';
+import { EmptyState, LoadFailed, NoResults } from '@/components/ui/States';
 import { AppShell } from '@/layouts/AppShell';
 import { ListLayout, PageHeader } from '@/layouts/Page';
 import {
@@ -69,13 +69,23 @@ export default function Activity(props: ActivityProps) {
 
 function ActivityList({ title, filters, users, product, events }: ActivityProps & { title: string }) {
     const [visiting, setVisiting] = useState(false);
+    // UXS-22: the address whose read failed, read again by "Coba lagi"; never the earlier rows.
+    const [failed, setFailed] = useState<string | null>(null);
     const [session, setSession] = useState(filters.session ?? '');
     const [reference, setReference] = useState(filters.reference ?? '');
 
-    const visit = (next: ActivityFilters, cursor: { readonly after?: string; readonly before?: string } = {}): void => {
+    const go = (address: string): void => {
+        const refused = (): boolean => {
+            setFailed(address);
+
+            return false;
+        };
+
         setVisiting(true);
-        router.visit(activityAddress(next, cursor), { preserveScroll: true, preserveState: true, onFinish: () => setVisiting(false) });
+        router.visit(address, { preserveScroll: true, preserveState: true, onSuccess: () => setFailed(null), onHttpException: refused, onNetworkError: refused, onFinish: () => setVisiting(false) });
     };
+
+    const visit = (next: ActivityFilters, cursor: { readonly after?: string; readonly before?: string } = {}): void => go(activityAddress(next, cursor));
 
     const apply = (patch: Partial<ActivityFilters>): void => visit({ ...filters, ...patch });
     const chooseDay = (value: string): void => apply({ from: value === '' ? null : value, to: value === '' ? null : value });
@@ -157,9 +167,10 @@ function ActivityList({ title, filters, users, product, events }: ActivityProps 
             }
         >
             <div className={'bk-stack'}>
-                {events.rows.length > 0 && <DataTable caption={title} columns={columns} rows={events.rows} rowKey={(row) => String(row.id)} wide={true} />}
-                {events.rows.length === 0 && filtered && <NoResults onClear={clear} />}
-                {events.rows.length === 0 && !filtered && <EmptyState body={t('audit.activity.empty')} />}
+                {failed !== null && <LoadFailed onRetry={() => go(failed)} />}
+                {failed === null && events.rows.length > 0 && <DataTable caption={title} columns={columns} rows={events.rows} rowKey={(row) => String(row.id)} wide={true} />}
+                {failed === null && events.rows.length === 0 && filtered && <NoResults onClear={clear} />}
+                {failed === null && events.rows.length === 0 && !filtered && <EmptyState body={t('audit.activity.empty')} />}
             </div>
         </ListLayout>
     );

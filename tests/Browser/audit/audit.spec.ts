@@ -12,7 +12,8 @@ const expect = baseExpect.configure({ timeout: ACCESS_WAIT });
 // UXI-349, UXI-377 to UXI-385; UI_STATES section 6; suites UX01, UX02, AUDIT01; TASK-042, L5 RP-612 and RP-613):
 // the Owner reaches both views from "Pengaturan"; filters the activity by "Jenis", which stands in the address;
 // opens an event's details; follows its reference to the account's page, whose way back returns to the activity
-// with its filter; filters the security log by "Jenis" and opens an entry's details; both fit 320 px and 200 %
+// with its filter; sees a read that fails (UXS-22) and reads it again; filters the security log by "Jenis" and
+// opens an entry's details; both fit 320 px and 200 %
 // zoom and work from the keyboard; Operations is refused both. The events are the browser fixtures' own: the
 // newest password link used is Hendra's, by resetPeople(), and the newest sign-in is his. These tests sign in
 // the people of Toko Contoh, so they run one at a time (playwright.config.ts).
@@ -110,6 +111,15 @@ test('the Owner filters the activity, opens an event, follows its reference and 
     await Promise.all([page.waitForURL((url) => url.pathname === ACTIVITY), page.getByRole('link', { name: 'Kembali ke Riwayat aktivitas' }).click()]);
     expect(Object.fromEntries(new URL(page.url()).searchParams)).toEqual({ action: 'LINK_CONSUME' });
     await expect(page.getByRole('main').getByLabel('Jenis', { exact: true })).toHaveValue('LINK_CONSUME');
+
+    // UXS-22: a read that fails shows no row, then "Coba lagi" reads that address again.
+    await page.route((url) => url.pathname === ACTIVITY, (route) => route.abort(), { times: 1 });
+    await page.getByRole('main').getByLabel('Jenis', { exact: true }).selectOption('');
+    await expect(page.getByText('Gagal memuat')).toBeVisible();
+    await expect(page.getByRole('main').getByRole('table')).toHaveCount(0);
+    await checked(page);
+    await Promise.all([page.waitForURL((url) => url.pathname === ACTIVITY && !url.searchParams.has('action')), page.getByRole('button', { name: 'Coba lagi' }).click()]);
+    await expect(page.getByRole('main').getByRole('table')).toHaveCount(1);
 
     // UXI-381: back to "Pengaturan"; UXI-331: "Riwayat keamanan".
     await Promise.all([page.waitForURL((url) => url.pathname === '/settings'), page.getByRole('link', { name: 'Kembali ke Pengaturan' }).click()]);

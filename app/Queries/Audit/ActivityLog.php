@@ -280,8 +280,9 @@ final class ActivityLog
     }
 
     /**
-     * The change data of an event as pairs of a field and its value, in the order it was written: a text
-     * as it is, any other value as JSON. Never a secret: the writer refuses one (BR-AUD-05).
+     * The change data of an event as pairs of a field and its value, in the order the database keeps its
+     * fields (`jsonb`): a text as it is, any other value as JSON. Never a secret: the writer refuses one
+     * (BR-AUD-05).
      *
      * @return list<array{key: string, value: string}>
      */

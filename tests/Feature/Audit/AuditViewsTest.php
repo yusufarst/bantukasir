@@ -225,7 +225,9 @@ final class AuditViewsTest extends DatabaseTestCase
         $filters = ['from' => null, 'to' => null, 'user' => null, 'action' => null, 'product' => null, 'session' => null, 'reference' => null, 'after' => null, 'before' => null, 'perPage' => 100];
         $staff = app(ActivityLog::class)->list($filters, false);
         $cost = app(ActivityLog::class)->list([...$filters, 'action' => 'COST_CORRECTION'], false);
-        $this->assertSame(['evidenceId', 'movementId', 'correctionNo', 'publicationNo', 'projectionsRewritten', 'marksCleared'], array_column($cost['rows'][0]['changes'] ?? [], 'key'));
+        $keys = array_column($cost['rows'][0]['changes'] ?? [], 'key');
+        sort($keys);
+        $this->assertSame(['correctionNo', 'evidenceId', 'marksCleared', 'movementId', 'projectionsRewritten', 'publicationNo'], $keys);
         $this->assertStringNotContainsString('rahasia', (string) json_encode($staff));
         $business = $this->observer()->table('audit_events')->where('category', 'BUSINESS')->orderByDesc('occurred_at')->orderByDesc('id')->limit(100)->pluck('id')->all();
         $this->assertSame($business, array_column($staff['rows'], 'id'));
