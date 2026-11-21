@@ -160,3 +160,14 @@ No MUST-FIX was raised, so no verification round is due (CE-40). The review's fi
 - **Verification** (class A, CE-42, CE-43): agent `bk-reviewer-high`, model `claude-opus-5-5`, effort High, mode `verify`, package `review/TASK-039/r2` (previous `r1`), 21 November 04:47 to 04:49; `review-pack.sh --check` `UNCHANGED`. Verdict `FIXED`, no MUST-FIX. R-11 (SHOULD-FIX): record the finding, the fix and the round, correct the count of reads and the sentence on production behaviour, and mark the new test `NOT_RUN` until the final head — done in this section, sections 1, 4, 6, 8 and 10. R-12 (NOTE): the test proves one statement and a consistent result, not PostgreSQL's snapshot within a statement, which the database guarantees — no change.
 - **Checks**: PHP and PostgreSQL are not on this machine; `SystemStatusTest`, PHPStan and the static checks run in the fast run and in the pull request's CI on the new head, the one targeted retest (CE-45, D-133). No passing suite is run again by hand.
 - **The other output of the automated reviewer** (its summary comment 7051298332 and its review 5999796832) holds no further finding.
+
+## 13. Merge
+
+Recorded by TASK-040 (CE-50), from the executor state and GitHub.
+
+| Item | Value |
+| --- | --- |
+| Pull request | #54, head `7ed4b04471a2d0e74f1934478cc67f211c3e828f`; CI run 44824616616 passed on that head |
+| Merge | Squash commit `f46d215b9d02f268991f7983afa5ca585e3a6b27` on `develop`, by the tick under D-105; the automated review's status DONE |
+| CI on `develop` | Run 44828933816 passed at the merge; verified by the tick on 21 November 2026 (`MERGE_VERIFIED pr=54`) |
+| For later Tasks | F-5's UXI-064 from `SystemStatus::attention()` stays TASK-041's |

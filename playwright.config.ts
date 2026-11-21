@@ -16,8 +16,9 @@ import { SECURE_LOCAL_ORIGIN } from './tests/Browser/support/access';
 // sign-in sessions at the start of each test (tests/Harness/Browser/), so two
 // of these tests at once would end each other's sessions: they run one at a
 // time, in their own project, while the other tests run beside them (TASK-007).
-// A new test that signs in a person belongs in one of these files or folders.
-const PEOPLE = ['access/**', 'security/**', 'shell/shell.spec.ts', 'shell/session.spec.ts', 'commands/**', 'configuration/**', 'catalog/**', 'inventory/**', 'costing/**', 'cash/**', 'sales/**', 'operations/status.spec.ts'];
+// A new test that signs in a person belongs in one of these files or folders
+// (tests/Unit/StaticChecks/browser-projects.test.ts).
+const PEOPLE = ['access/**', 'security/**', 'shell/shell.spec.ts', 'shell/session.spec.ts', 'commands/**', 'configuration/**', 'catalog/**', 'inventory/**', 'costing/**', 'cash/**', 'sales/**', 'reporting/**', 'operations/status.spec.ts'];
 
 // Maintenance mode is the whole application's, so its tests run after every
 // other test, alone (TASK-014). A failure in another project skips them.

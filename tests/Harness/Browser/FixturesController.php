@@ -288,6 +288,32 @@ final class FixturesController
     }
 
     /**
+     * A Sale of today whose cost is UNKNOWN, for the finance report of the browser suite (TASK-040): the Owner's own
+     * OPEN cash session — opened through RC-02's Action on a new register when he holds none, as `till` opens it —
+     * and a new product of its own category received at an UNKNOWN cost through RC-07's Action, one unit of it sold
+     * in cash through RC-01's (EXECUTION_CONTEXT EXC-45), so that today's report is incomplete with at least one
+     * line of unknown cost. The name and SKU are new, because the local database keeps its products.
+     */
+    public function finance(): JsonResponse
+    {
+        EnvironmentMarker::require(DB::connection(), ['local', 'test']);
+
+        $owner = self::account('Hendra');
+        $session = DB::table('cash_sessions')->where('responsible_user_id', $owner->id)->where('status', 'OPEN')->value('id');
+
+        if (! is_int($session)) {
+            $session = TokoContoh::openSession('Hendra', TokoContoh::register('T-'.strtoupper(Str::random(10)), 'Laci uji'));
+        }
+
+        $suffix = strtoupper(Str::random(8));
+        $product = TokoContoh::product('LK-'.$suffix, ['categoryId' => TokoContoh::category('Uji laporan '.$suffix), 'name' => 'Produk laporan '.$suffix, 'sellingPrice' => '12000']);
+        TokoContoh::receive([['productId' => $product, 'quantity' => '5', 'cost' => ['status' => 'UNKNOWN']]]);
+        $sale = TokoContoh::sell('Hendra', $session, [['productId' => $product, 'quantity' => '1']]);
+
+        return new JsonResponse(['saleId' => $sale]);
+    }
+
+    /**
      * The evidence of the system status for the browser suite (TASK-039), written as each writer writes it
      * (EXECUTION_CONTEXT EXC-45): `backup_runs` as the backup role inserts its rows (BackupRunner),
      * `restore_drills` through RestoreDrills as OP-08 records a drill, `reconciliation_runs` through

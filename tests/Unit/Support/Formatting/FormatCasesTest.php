@@ -132,6 +132,7 @@ final class FormatCasesTest extends TestCase
                 'money' => Format::money(Money::of(self::string($input))),
                 'quantity' => Format::quantity(Quantity::of(self::string($input), self::int($case['precision'] ?? null)), isset($case['unit']) ? self::string($case['unit']) : null),
                 'cost' => Format::cost(self::costFigure(self::string($input))),
+                'percent' => Format::percent(CanonicalNumber::parse(self::string($input), Cost::SCALE, true, 'percentage')),
                 'date' => Format::date(BusinessDate::fromString(self::string($input))),
                 'dateTime' => Format::dateTime(CarbonImmutable::parse(self::string($input))),
                 'timeOfDay' => Format::timeOfDay(CarbonImmutable::parse(self::string($input))),

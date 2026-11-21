@@ -58,6 +58,8 @@ return [
         'required' => 'Wajib diisi.',
         // The date filters of the stock lists (TASK-022; COPY_DECK section 16.1).
         'date_order' => 'Tanggal awal tidak boleh setelah tanggal akhir.',
+        // The custom period of UXP-502 (TASK-040; COPY_DECK section 16.1).
+        'date_range_max' => 'Rentang paling lama 366 hari.',
         // The fields of a stock posting (TASK-021; COPY_DECK section 16.1).
         'lines_min' => 'Tambahkan minimal satu baris.',
         'lines_max' => 'Paling banyak :maks baris.',
@@ -123,6 +125,8 @@ return [
         'hide_password' => 'Sembunyikan kata sandi',
         // The filters of the till's search (UXI-069; TASK-029; COPY_DECK section 5).
         'filter' => 'Filter',
+        // The custom period of UXP-502 (UXI-309; TASK-040; COPY_DECK section 5).
+        'apply' => 'Terapkan',
     ],
     'list' => [
         'updated_at' => 'Diperbarui :waktu',

@@ -109,11 +109,40 @@ export function formatCost(value: string): string {
     return money(roundHalfUp(parseExact(value, 6, true, 'cost figure'), 0));
 }
 
+/**
+ * A percentage, such as a margin: one decimal with a decimal comma, directly
+ * followed by the percent sign, "32,0%"; a negative one "−12,5%" (COPY_DECK
+ * section 1.3, CC-03; TASK-003 F-8, D-100). The figure is rounded half-up —
+ * ties away from zero, also for a negative figure — once, to one decimal
+ * (ADR-008 section 5); a figure that rounds to zero is "0,0%", with no sign.
+ * A figure with more than six decimals is refused, as the server refuses it.
+ */
+export function formatPercent(value: string): string {
+    const rounded = roundHalfUp(parseExact(value, 6, true, 'percentage'), 1);
+    const negative = rounded.units < 0n;
+    const tenths = (negative ? -rounded.units : rounded.units).toString().padStart(2, '0');
+
+    return `${negative ? MINUS : ''}${group(tenths.slice(0, -1))},${tenths.slice(-1)}%`;
+}
+
 /** A business date, `YYYY-MM-DD`: "01 Oktober 2026". */
 export function formatDate(date: string): string {
     const { year, month, day } = calendarDate(date);
 
     return `${twoDigits(day)} ${monthName(month)} ${fourDigits(year)}`;
+}
+
+/**
+ * The number of days from one business date to another, `YYYY-MM-DD`, in the
+ * proleptic Gregorian calendar, negative when the second comes first: the
+ * length of a report's custom range (TECHNICAL_RULES section 11.4; TASK-040).
+ * A date that does not exist is refused.
+ */
+export function daysBetween(from: string, to: string): number {
+    const start = calendarDate(from);
+    const end = calendarDate(to);
+
+    return daysFromCivil(end.year, end.month, end.day) - daysFromCivil(start.year, start.month, start.day);
 }
 
 /** An instant, in Asia/Jakarta: "01 Oktober 2026, 09.15.00". */
