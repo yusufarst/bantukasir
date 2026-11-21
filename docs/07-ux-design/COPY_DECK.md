@@ -2,10 +2,10 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-4B under D-083 and corrected under D-084, 17 October 2026 (Asia/Jakarta); revised by TASK-002 under change control (section 22), 19 October 2026 (Asia/Jakarta) |
+| Status | CURRENT — written in RF-4B under D-083 and corrected under D-084, 17 October 2026 (Asia/Jakarta); revised by TASK-002 under change control (section 22), 19 October 2026 (Asia/Jakarta); amended by TASK-051 under change control (section 22.3), 22 November 2026 (Asia/Jakarta) |
 | Phase | P7 — terminology and copy (AICWDF sections 4B and 18; REQ-NFR-01) |
-| Gate | P7-G2, terminology and copy (D-025): **APPROVED** by D-086, with [GLOSSARY](../02-domain/GLOSSARY.md), as committed in `551b4eb`. Revised by TASK-002 under change control (section 22), whose package the Owner approves by the hash of each artifact at gate GATE-CC1 ([TASK_PLAN](../11-tasks/TASK_PLAN.md) section 3) |
-| Decisions | D-018, D-024, D-025, D-033, D-040, D-043, D-047, D-049, D-050, D-051, D-052, D-068, D-069, D-071, D-072, D-073, D-075, D-077, D-082, D-083, D-084, D-086, D-087, D-088 |
+| Gate | P7-G2, terminology and copy (D-025): **APPROVED** by D-086, with [GLOSSARY](../02-domain/GLOSSARY.md), as committed in `551b4eb`. Revised by TASK-002 under change control (section 22), whose package the Owner approves by the hash of each artifact at gate GATE-CC1 ([TASK_PLAN](../11-tasks/TASK_PLAN.md) section 3). Amended by TASK-051 (section 22.3), whose package the Owner approves by hash at gate GATE-CC3 |
+| Decisions | D-018, D-024, D-025, D-033, D-040, D-043, D-047, D-049, D-050, D-051, D-052, D-068, D-069, D-071, D-072, D-073, D-075, D-077, D-082, D-083, D-084, D-086, D-087, D-088, D-136, D-137 |
 | Structure | The six documents of gate P7-G1, approved by D-082: [USER_TASKS](USER_TASKS.md), [INFORMATION_ARCHITECTURE](INFORMATION_ARCHITECTURE.md), [NAVIGATION_CONTRACTS](NAVIGATION_CONTRACTS.md), [INTERACTION_INVENTORY](INTERACTION_INVENTORY.md), [UI_STATES](UI_STATES.md), [ADAPTIVE_AND_ACCESSIBILITY](ADAPTIVE_AND_ACCESSIBILITY.md) |
 | Related | [GLOSSARY](../02-domain/GLOSSARY.md), [ADR-005](../adr/ADR-005-localization-architecture.md), [TECHNICAL_RULES](../06-api-performance/TECHNICAL_RULES.md) section 4, [SECURITY_MODEL](../05-security/SECURITY_MODEL.md) |
 
@@ -1420,7 +1420,7 @@ Used on Beranda (UXP-007), Rekap harian (UXP-501) and Laporan keuangan (UXP-502)
 | --- | --- | --- | --- | --- |
 | UXI-377 | Filters | `audit.activity.filter_date`; `audit.activity.filter_user`; `audit.activity.filter_type`; `audit.activity.filter_product`; `audit.activity.filter_session`; `audit.activity.filter_reference` | Tanggal; Pengguna; Jenis; Produk; Sesi kas; Referensi | REQ-AUD-02 |
 | UXI-378 | Columns | `audit.activity.col_time`; `audit.activity.col_user`; `audit.activity.col_action`; `audit.activity.col_reference` | Waktu; Pengguna; Tindakan; Referensi | — |
-| UXI-378 | Expanded row | `audit.activity.details`; `audit.activity.changes`; `audit.activity.reason` | Rincian; Perubahan; Alasan | Accessible name of the expander: `audit.activity.expand`, "Tampilkan rincian" |
+| UXI-378 | Expanded row | `audit.activity.details`; `audit.activity.changes`; `audit.activity.reason` | Rincian; Perubahan; Alasan | Accessible name of the expander: `audit.activity.expand`, "Tampilkan rincian". What "Perubahan" shows: section 11.15 |
 | — | Action labels | `audit.action.*` | Section 11.14 | — |
 | UXI-379 | Reference link | `audit.activity.reference_link` | :referensi | The object's number or name; an object without a page is plain text |
 | UXI-380 | Paging | `ux.action.next_page`; `ux.action.previous_page` | Berikutnya; Sebelumnya | — |
@@ -1483,6 +1483,193 @@ The business audit records an action code per event (SCHEMA section 5.4); the li
 | `audit.action.onboarding_restore_hold` | Stok awal ditahan setelah pemulihan | `ONBOARDING_RESTORE_HOLD`, OP-04 (D-072) |
 | `audit.action.restore_reconciliation` | Rekonsiliasi pemulihan | `RESTORE_RECONCILIATION`, OP-05 (D-072, D-073) |
 | `audit.action.projection_rebuilt` | Data stok dan biaya dibangun ulang dari mutasi | `PROJECTION_REBUILT`, OP-07 (D-088) |
+
+### 11.15 Audit change values
+
+What "Perubahan" of UXI-378 shows for each audit event: the change control of [TASK-051](../11-tasks/tasks/TASK-051-audit-change-values.md) (section 22.3; D-136, D-137; OPEN_ITEMS T-56). Until the Owner approves this package by hash at gate GATE-CC3 ([TASK_PLAN](../11-tasks/TASK_PLAN.md) section 3), its texts are proposals and no Task uses them (section 1.1). It adds no business rule and changes nothing that an Action writes: it says which of the data that the events already hold the Owner reads, and in which words.
+
+#### 11.15.1 Rules
+
+| ID | Rule | Source |
+| --- | --- | --- |
+| ACV-01 | **What is shown.** Under "Perubahan" of an expanded row, RP-612 sends and UXP-612 shows the rows that section 11.15.3 names for the event's action code, in that order, and nothing else. A field of the event's change data or Owner-only data that the table does not name — an internal identifier, a sequence, correction or publication number, a version, a file key, a hash, a list of keys — never leaves the read, and no field's stored name leaves it: each row reaches the page as its copy key and its value. A row whose value the event does not hold is left out; an event with no row to show shows no "Perubahan" | AGENTS rule 14, EXC-51, T-56 |
+| ACV-02 | **Who sees it.** RP-612 is the Owner's alone (CAP-32). The rows marked "Pemilik" in section 11.15.3 come from the event's Owner-only data (BR-AUD-02, D-047) and are read only when the reader is the Owner; every other role, and the combined account, gets neither the page nor those rows on any channel (SEC-CH-01). The reason stays as TASK-042 shows it under "Alasan" and is not repeated under "Perubahan" | CAP-32, D-047, D-137 |
+| ACV-03 | **Kinds of row.** A value row shows its label and its value. A change row shows its label and `audit.change.from_to`; a side that the event holds as empty shows `audit.change.value.empty`. A list row shows the labels of the fields the event names, joined by a comma, in the order of the table, as `access.role.list` joins roles. A table shows the lines that the event recorded, one row per line in their order, under the column headers named; a column marked "Pemilik" is a column for the Owner only | Section 1.1 |
+| ACV-04 | **Values**, in the formats of section 1.3. Money: the money format; a variance with its word (section 1.4, `ux.format.variance`). Cost: the cost on screen; an UNKNOWN cost shows `costing.status.unknown`; a known zero cost with its evidence or reason shows `audit.change.value.cost_zero`. Quantity: the quantity format in the product's base unit and precision, which BR-CAT-07 keeps fixed once the product has a movement; for Stok minimum of a product edit, the unit and precision of the same side of the change; a signed quantity shows + before an increase and the minus sign − before a decrease. Date: the date format. Count: a whole number with the dot as thousands separator. Text: as the event recorded it. Product, category and user: the record's name now, read by its key (a user's name as UXP-604 shows it, an anonymized user's neutral name included). Code: the label that section 11.15.2 gives for that value; a value with no label there is not shown (ACV-01). Yes or no: `audit.change.value.yes` or `audit.change.value.no`. Roles: the labels of section 3, joined as `access.role.list` | BR-NUM-01 to BR-NUM-03, BR-NUM-07, BR-CAT-07 |
+| ACV-05 | **Bounds.** The rows are read with their page of events (TR-PAGE-01): the names that the rows of a page need are read once, by their keys; a table holds only the lines that its event recorded, within the limit of the command that wrote it | TR-PAGE-01 |
+
+#### 11.15.2 Keys
+
+Labels of rows and columns:
+
+| Key | Copy | Note |
+| --- | --- | --- |
+| `audit.change.from_to` | :lama → :baru | A change row (ACV-03) |
+| `audit.change.field.session` | Sesi kas | The cash session's number |
+| `audit.change.field.total` | Total | — |
+| `audit.change.field.payment_method` | Metode pembayaran | — |
+| `audit.change.field.tendered` | Uang diterima | — |
+| `audit.change.field.change` | Kembalian | — |
+| `audit.change.field.payment_reference` | Referensi pembayaran | — |
+| `audit.change.field.line_count` | Jumlah baris | — |
+| `audit.change.field.lines` | Barang | The caption of a table of lines |
+| `audit.change.field.register` | Laci kas | The register's code |
+| `audit.change.field.opening_cash` | Modal awal | — |
+| `audit.change.field.sale_count` | Jumlah penjualan | — |
+| `audit.change.field.cash_payments` | Pembayaran tunai | — |
+| `audit.change.field.transfer_payments` | Pembayaran transfer bank | — |
+| `audit.change.field.expected_cash` | Uang seharusnya di laci | — |
+| `audit.change.field.physical_cash` | Uang fisik di laci | — |
+| `audit.change.field.variance` | Selisih | With its word (section 1.4) |
+| `audit.change.field.responsible` | Penanggung jawab | — |
+| `audit.change.field.business_date` | Tanggal usaha | GLOSSARY "Business date" |
+| `audit.change.field.refund_total` | Uang dikembalikan | — |
+| `audit.change.field.refund_method` | Cara pengembalian uang | — |
+| `audit.change.field.refund_source` | Sumber uang | — |
+| `audit.change.field.refund_reference` | Referensi pengembalian uang | — |
+| `audit.change.field.document_date` | Tanggal dokumen | — |
+| `audit.change.field.issue_reason` | Alasan barang keluar | The reason chosen from the list of section 9.1 |
+| `audit.change.field.note` | Catatan | — |
+| `audit.change.field.count_reference` | Referensi hitung | — |
+| `audit.change.field.reversed_type` | Jenis mutasi yang dibatalkan | — |
+| `audit.change.field.reversed_quantity` | Jumlah mutasi yang dibatalkan | Signed |
+| `audit.change.field.inverse_quantity` | Jumlah mutasi kebalikannya | Signed |
+| `audit.change.field.quantity` | Jumlah | — |
+| `audit.change.field.cost` | Biaya | Owner only |
+| `audit.change.field.attempted_cost` | Biaya yang dicoba | Owner only |
+| `audit.change.field.mark_cause` | Sebab ditandai | — |
+| `audit.change.field.mark_cleared` | Tanda langsung dihapus | — |
+| `audit.change.field.marks_cleared` | Tanda belum lengkap yang dihapus | A count |
+| `audit.change.field.inventory_value` | Nilai persediaan | Owner only |
+| `audit.change.field.onboarding_state` | Status masa input stok awal | — |
+| `audit.change.field.restored_state` | Status pada data yang dipulihkan | — |
+| `audit.change.field.restore_subject` | Yang diputuskan | — |
+| `audit.change.field.restore_outcome` | Keputusan | — |
+| `audit.change.field.receipts_settled` | Permintaan yang diselesaikan | A count |
+| `audit.change.field.mismatch` | Yang tidak cocok | As UXP-415 |
+| `audit.change.field.sku` | SKU | — |
+| `audit.change.field.name` | Nama | — |
+| `audit.change.field.category` | Kategori | — |
+| `audit.change.field.brand` | Merek | — |
+| `audit.change.field.unit` | Satuan | — |
+| `audit.change.field.precision` | Jumlah desimal | — |
+| `audit.change.field.min_stock` | Stok minimum | — |
+| `audit.change.field.selling_price` | Harga jual | — |
+| `audit.change.field.barcode` | Barcode | — |
+| `audit.change.field.manufacturer_barcode` | Barcode pabrik | — |
+| `audit.change.field.symbology` | Jenis barcode | — |
+| `audit.change.field.retire_reason` | Alasan pensiun | — |
+| `audit.change.field.correction_kind` | Jenis koreksi | — |
+| `audit.change.field.product` | Produk | — |
+| `audit.change.field.category_name` | Nama kategori | — |
+| `audit.change.field.data_rows` | Baris data | A count |
+| `audit.change.field.products_created` | Produk baru | A count |
+| `audit.change.field.barcodes_created` | Barcode baru | A count |
+| `audit.change.field.products_by_category` | Produk per kategori | The caption of a table |
+| `audit.change.field.changed` | Yang diubah | A list row |
+| `audit.change.field.code` | Kode | — |
+| `audit.change.field.label` | Label | — |
+| `audit.change.field.status` | Status | — |
+| `audit.change.field.roles` | Peran | — |
+| `audit.change.field.link_kind` | Jenis tautan | — |
+| `audit.change.field.sessions_revoked` | Sesi masuk yang diakhiri | A count |
+| `audit.change.field.owner` | Pemilik | — |
+| `audit.change.field.label_count` | Jumlah label | — |
+| `audit.change.field.receipt_size` | Ukuran struk | — |
+| `audit.change.field.reprint` | Cetak ulang | — |
+| `audit.change.field.format` | Format | — |
+| `audit.change.field.rebuilt_subject` | Yang dibangun ulang | — |
+| `audit.change.field.balance_rebuilt` | Stok dibangun ulang | — |
+| `audit.change.field.valuation_rebuilt` | Nilai persediaan dibangun ulang | — |
+| `audit.change.field.totals_rebuilt` | Total penjualan dibangun ulang | — |
+| `audit.change.column.product` | Produk | — |
+| `audit.change.column.quantity` | Jumlah | — |
+| `audit.change.column.unit_price` | Harga | — |
+| `audit.change.column.line_total` | Subtotal | — |
+| `audit.change.column.cost` | Biaya | Owner only |
+| `audit.change.column.count_reference` | Referensi hitung | — |
+| `audit.change.column.returned_saleable` | Diretur layak jual | — |
+| `audit.change.column.returned_not_saleable` | Diretur tidak layak jual | — |
+| `audit.change.column.refund` | Uang dikembalikan | — |
+| `audit.change.column.return_cost` | Biaya retur | Owner only |
+| `audit.change.column.category` | Kategori | — |
+| `audit.change.column.product_count` | Jumlah produk | — |
+
+Values:
+
+| Key | Copy | Stored value |
+| --- | --- | --- |
+| `audit.change.value.empty` | Kosong | A side of a change that holds nothing |
+| `audit.change.value.yes`; `audit.change.value.no` | Ya; Tidak | true; false |
+| `audit.change.value.cost_zero` | :uang (:catatan) | A known zero cost with its evidence or reason; `:uang` is Rp0 |
+| `audit.change.value.status_active`; `audit.change.value.status_inactive` | Aktif; Nonaktif | A register's `active` true; false |
+| `audit.change.value.source_drawer` | Laci kas | `DRAWER` |
+| `audit.change.value.onboarding_not_started`; `audit.change.value.onboarding_active`; `audit.change.value.onboarding_released` | Belum dimulai; Sedang berjalan; Selesai | `NOT_STARTED`; `ACTIVE`; `RELEASED` |
+| `audit.change.value.restore_subject_intent`; `audit.change.value.restore_subject_hold` | Permintaan yang belum pasti; Stok awal yang ditahan | `intent`; `onboarding_hold` |
+| `audit.change.value.restore_not_committed`; `audit.change.value.restore_released_before`; `audit.change.value.restore_never_released` | Dinyatakan tidak tercatat; Sudah diakhiri sebelum pemulihan; Belum pernah diakhiri | `NOT_COMMITTED`; `RELEASED_BEFORE_RESTORE`; `NEVER_RELEASED` |
+| `audit.change.value.mark_movement_cap`; `audit.change.value.mark_time_budget`; `audit.change.value.mark_unsafe_history` | Riwayat mutasinya terlalu panjang untuk dihitung ulang; Penghitungan ulang melewati batas waktu; Riwayat mutasinya tidak bisa dihitung ulang dengan aman | `MOVEMENT_CAP`; `TIME_BUDGET`; `UNSAFE_HISTORY` (BR-COST-27) |
+| `audit.change.value.mismatch_balance`; `audit.change.value.mismatch_valuation`; `audit.change.value.mismatch_issue_projection`; `audit.change.value.mismatch_return_projection`; `audit.change.value.mismatch_history` | Saldo stok; Nilai persediaan; Biaya barang keluar; Biaya retur; Riwayat mutasi tidak bisa dihitung ulang | `BALANCE_MISMATCH`; `VALUATION_MISMATCH`; `ISSUE_PROJECTION_MISMATCH`; `RETURN_PROJECTION_MISMATCH`; `HISTORY_INVALID` (BR-INV-45) |
+| `audit.change.value.correction_move`; `audit.change.value.correction_reattach` | Dipindahkan; Dipasang kembali | `MOVE`; `REATTACH` (D-051, D-052) |
+| `audit.change.value.symbology_ean_13`; `audit.change.value.symbology_ean_8`; `audit.change.value.symbology_upc_a`; `audit.change.value.symbology_upc_e` | EAN-13; EAN-8; UPC-A; UPC-E | `EAN_13`; `EAN_8`; `UPC_A`; `UPC_E` |
+| `audit.change.value.link_first`; `audit.change.value.link_reset` | Kata sandi pertama; Atur ulang kata sandi | `FIRST_PASSWORD`; `RESET` |
+| `audit.change.value.rebuilt_product`; `audit.change.value.rebuilt_sale`; `audit.change.value.rebuilt_token` | Stok dan biaya produk; Total penjualan; Barcode | `product`; `sale`; `token` (OP-07) |
+
+Existing keys that give a value, unchanged: `sales.payment.method_cash` and `sales.payment.method_transfer` for `CASH` and `BANK_TRANSFER`; `sales.refund.source_owner` for `OWNER_FUNDS`; `inventory.type.*` for a movement type (section 9.1); `inventory.issue_reason.*` for `DAMAGED`, `INTERNAL_USE`, `LOST`, `SAMPLE` and `OTHER`; `inventory.onboarding.zero_count` for the quantity of a zero count; `catalog.barcode.reason_misassignment` and `catalog.barcode.reason_other` for `MISASSIGNMENT` and `OTHER`; `sales.receipt.size_58`, `sales.receipt.size_80` and `sales.receipt.size_a4` for `58`, `80` and `A4`; `access.role.super_admin`, `access.role.operations_admin`, `access.role.cashier` and `access.role.list` for roles; `access.account.name` and `access.account.email` for `displayName` and `email`; `config.profile.shop_name`, `config.profile.address`, `config.profile.contact`, `config.profile.email`, `config.profile.header_text`, `config.profile.footer_text`, `config.profile.document_label`, `config.profile.accent` and `config.profile.logo` for `shopName`, `address`, `contact`, `email`, `documentHeader`, `documentFooter`, `documentIdentity`, `accentToken` and `logo`; `costing.status.unknown` for an UNKNOWN cost; `ux.format.variance` with the words of section 1.4.
+
+#### 11.15.3 Rows per action code
+
+Each row is written `key (kind)`; the kinds are those of ACV-03 and ACV-04. "Pemilik" marks a row or column read from the Owner-only data, for the Owner alone (ACV-02). "Not shown" lists what the event holds and no channel shows (ACV-01).
+
+| Action code | Rows under "Perubahan" | Pemilik | Not shown |
+| --- | --- | --- | --- |
+| `SALE_CHECKOUT` | `field.session` (text); `field.total` (money); `field.payment_method` (code); `field.tendered` (money); `field.change` (money); `field.payment_reference` (text); `field.line_count` (count); table `field.lines`: `column.product` (product), `column.quantity` (quantity), `column.unit_price` (money), `column.line_total` (money), `column.cost` (cost) | `column.cost` | The Sale's number (the row's reference, UXI-379); each line's number, price revision, movement and product sequence; the Owner-only allocation and the publication it was based on |
+| `CASH_SESSION_OPEN` | `field.register` (text); `field.opening_cash` (money) | — | The session's number (the reference) |
+| `CASH_SESSION_CLOSE` | `field.register` (text); `field.opening_cash` (money); `field.sale_count` (count); `field.cash_payments` (money); `field.transfer_payments` (money); `field.expected_cash` (money); `field.physical_cash` (money); `field.variance` (money with its word) | — | The session's number; the activity version of the cut-off |
+| `CASH_SESSION_CLOSE_ASSISTED` | As `CASH_SESSION_CLOSE`, with `field.responsible` (text) after `field.register` | — | As `CASH_SESSION_CLOSE` |
+| `SALE_CORRECTION` | `field.business_date` (date); `field.refund_total` (money); `field.refund_method` (code); `field.refund_source` (code); `field.refund_reference` (text); table `field.lines`: `column.product` (product), `column.returned_saleable` (quantity), `column.returned_not_saleable` (quantity), `column.refund` (money), `column.return_cost` (cost of the line's return, empty for a line without one) | `column.return_cost` | The Sale's key and number (the reference); each line's sale line, movement and product sequence; the Owner-only allocations and the publication they were based on |
+| `RECEIVING_CONFIRM` | `field.document_date` (date); `field.line_count` (count); table `field.lines`: `column.product` (product), `column.quantity` (quantity), `column.cost` (cost) | `column.cost` | Each line's number, movement and product sequence; the Owner-only cost evidence |
+| `MANUAL_ISSUE_CONFIRM` | `field.issue_reason` (code); `field.note` (text); `field.line_count` (count); table `field.lines`: `column.product` (product), `column.quantity` (quantity), `column.cost` (cost) | `column.cost` | Each line's number, movement and product sequence; the Owner-only allocation and the publication it was based on |
+| `ADJUSTMENT_CONFIRM` | `field.count_reference` (text); `field.line_count` (count); table `field.lines`: `column.product` (product), `column.quantity` (signed quantity), `column.cost` (cost) | `column.cost` | The reason (under "Alasan"); each line's number, movement and product sequence; the Owner-only evidence, allocation and publication |
+| `REVERSAL_CONFIRM` | `field.reversed_type` (code); `field.reversed_quantity` (signed quantity); `field.inverse_quantity` (signed quantity); `field.marks_cleared` (count) | `field.marks_cleared` | The movements, of which the reference links to the one reversed; the product sequence; the Owner-only publication and the number of projections rewritten |
+| `OPENING_STOCK_CONFIRM` | `field.line_count` (count); table `field.lines`: `column.product` (product), `column.quantity` (quantity, or `inventory.onboarding.zero_count` for a zero count), `column.count_reference` (text), `column.cost` (cost) | `column.cost` | Each row's number, movement and zero count; the Owner-only cost evidence |
+| `OPENING_STOCK_REPLACE` | `field.quantity` (quantity); `field.count_reference` (text); `field.cost` (cost) | `field.cost` | The lines and movements replaced and added; the product sequence; the Owner-only cost evidence |
+| `ZERO_COUNT_WITHDRAW` | None | — | The zero count; the product (the reference names it) |
+| `ONBOARDING_START`; `ONBOARDING_RELEASE` | `field.onboarding_state` (change, code) | — | The version |
+| `ONBOARDING_RESTORE_HOLD` | `field.restored_state` (code) | — | The hold; the version |
+| `RESTORE_RECONCILIATION` | `field.restore_subject` (code); `field.restore_outcome` (code); `field.receipts_settled` (count); `field.restored_state` (code); `field.onboarding_state` (code, the state after the decision) | — | The report, the fence, the hold and the version; the operation's internal name (the request itself is on UXP-006) |
+| `COST_CORRECTION` | `field.cost` (change, cost); `field.marks_cleared` (count) | `field.cost` | The evidence, the movement, the correction and publication numbers, the number of projections rewritten, the mark of OP-06; the reason (under "Alasan", the Owner's alone) |
+| `COST_INCOMPLETE_MARK` | `field.mark_cause` (code); `field.mark_cleared` (yes or no); `field.attempted_cost` (cost) | `field.attempted_cost` | The evidence, the movement and the number of corrections seen; the reason (under "Alasan", the Owner's alone) |
+| `RECONCILIATION_BLOCK` | `field.mismatch` (code) | — | — |
+| `POSTING_REOPEN` | None | — | The block; the reason (under "Alasan") |
+| `PRODUCT_CREATE` | `field.sku` (text); `field.name` (text); `field.category` (category); `field.selling_price` (money); `field.manufacturer_barcode` (text); `field.symbology` (code) | — | The price revision; the barcode's mapping |
+| `PRODUCT_EDIT` | For each field that the event names as changed, a change row in this order: `field.name` (text); `field.category` (category); `field.brand` (text); `field.unit` (text); `field.precision` (count); `field.min_stock` (quantity) | — | The list of changed fields itself, whose fields are the rows |
+| `PRICE_CHANGE` | `field.selling_price` (change, money) | — | The price revisions |
+| `PRODUCT_DEACTIVATE`; `PRODUCT_REACTIVATE`; `CATEGORY_DEACTIVATE`; `CATEGORY_REACTIVATE` | None: the action's label states the change | — | — |
+| `CATEGORY_CREATE` | `field.category_name` (text) | — | — |
+| `CATEGORY_RENAME` | `field.category_name` (change, text) | — | — |
+| `PHOTO_CHANGE`; `PHOTO_REMOVE` | None: the action's label states the change | — | The stored files |
+| `BARCODE_ADD` | `field.barcode` (text); `field.symbology` (code) | — | The mapping |
+| `BARCODE_GENERATE` | `field.barcode` (text) | — | The mapping |
+| `BARCODE_RETIRE` | `field.barcode` (text); `field.retire_reason` (code) | — | The mapping |
+| `BARCODE_CORRECTION` | `field.barcode` (text); `field.correction_kind` (code); `field.product` (change, product) | — | The mappings; the reason (under "Alasan") |
+| `CSV_IMPORT` | `field.data_rows` (count); `field.products_created` (count); `field.barcodes_created` (count); table `field.products_by_category`: `column.category` (category), `column.product_count` (count) | — | The file's hash; the products' keys |
+| `PROFILE_CHANGE` | `field.changed` (list of the profile's fields); their values are the versions of UXP-607 | — | The revisions |
+| `REGISTER_CREATE` | `field.code` (text); `field.label` (text); `field.status` (code) | — | — |
+| `REGISTER_CHANGE` | A change row for each of `field.code` (text), `field.label` (text) and `field.status` (code) whose two sides differ | — | The sides that did not change |
+| `USER_CREATE` | `field.roles` (roles) | — | — |
+| `ROLE_CHANGE` | `field.roles` (change, roles) | — | — |
+| `DETAILS_CHANGE` | `field.changed` (list of `displayName` and `email`); the event holds no value of either | — | — |
+| `USER_DEACTIVATE`; `USER_REACTIVATE`; `USER_ANONYMIZE`; `LINK_REVOKE` | None: the action's label states the change | — | The reason of an anonymization stays under "Alasan" |
+| `LINK_ISSUE` | `field.link_kind` (code) | — | Never the link or its token (BR-AUD-05) |
+| `LINK_CONSUME` | `field.link_kind` (code); `field.sessions_revoked` (count) | — | As `LINK_ISSUE` |
+| `PASSWORD_CHANGE`; `OWNER_RECOVERY` | `field.sessions_revoked` (count) | — | — |
+| `OWNER_REPLACEMENT` | `field.owner` (change, user); `field.sessions_revoked` (count) | — | — |
+| `REVIEW_NOTE_ADD` | None: the note is on UXP-206 | — | The session's number; the note |
+| `PRINT` | For a label: `field.barcode` (text); `field.label_count` (count). For a receipt: `field.receipt_size` (code); `field.reprint` (yes or no). For a session report: none | — | The mapping |
+| `EXPORT` | `field.format` (text) | — | — |
+| `PROJECTION_REBUILT` | `field.rebuilt_subject` (code); for a product, `field.balance_rebuilt` (yes or no), `field.valuation_rebuilt` (yes or no) and `field.inventory_value` (change, cost); for a Sale, `field.totals_rebuilt` (yes or no) | `field.inventory_value` | The publication; the numbers of projections rebuilt; the mappings of a barcode |
+
+The keys in the table are those of section 11.15.2 without their prefix `audit.change.`.
 
 ## 12. States
 
@@ -2019,3 +2206,14 @@ Read with the decisions named, as INTERACTION_CONTRACTS section 10 reads the row
 | RELEASE_PROCESS section 4 item 4 and the contract of TASK-039 name four system-status items | Five items (CC-14) | The Owner's answer of 19 October 2026 |
 | DESIGN_SYSTEM section 13, INTERACTION_CONTRACTS sections 8, 11 and 12, DOCUMENT_CONTRACTS DC-04 and the previews' `BK_COPY_PROPOSED` call these texts proposals | After gate GATE-CC1 they are approved copy in this deck; DESIGN_SYSTEM and the previews are approved artifacts and stay byte-identical | D-087 |
 | `config.system_status.age` (`:durasi yang lalu`) | A unit above minutes (hours, days) needs its own keys, through change control before TASK-039 builds the item | TASK-003 finding F-1; CC-21 |
+
+### 22.3 Change control of TASK-051
+
+The amendment of [TASK-051](../11-tasks/tasks/TASK-051-audit-change-values.md) for OPEN_ITEMS T-56 (D-136, D-137): what "Perubahan" of UXI-378 shows. The package is this document alone, approved by its Git blob, size and SHA-256 at gate GATE-CC3 ([TASK_PLAN](../11-tasks/TASK_PLAN.md) section 3); the values are in the Task's [evidence](../11-tasks/evidence/TASK-051.md). Until then the texts of section 11.15 are proposals and no Task uses them (section 1.1). No page, control, state, navigation path, business rule, audit record or visual design changes; after the approval, the implementation of TASK-051 names section 11.15 in RP-612's row of ROUTE_CONTRACTS, a reference only (EXECUTION_CONTEXT EXC-81).
+
+| ID | Change | Where | Reason | Source |
+| --- | --- | --- | --- | --- |
+| CC-22 | The rules ACV-01 to ACV-05: what "Perubahan" shows and what it never shows, who reads the Owner-only rows, the kinds of row, the presentation of each kind of value, and the bounds of the read | Section 11.15.1 | T-56: COPY_DECK had no label for any field of an event's change data and no rule for its values, so TASK-042 showed only the reason | D-136, D-137 |
+| CC-23 | The keys `audit.change.*`: the labels of the rows and table columns, and the labels of the stored codes that have none yet; the existing keys that give the other values | Section 11.15.2 | T-56; no copy is invented outside change control (section 1.1, EXC-51) | D-137 |
+| CC-24 | For each of the 55 action codes of INTERACTION_CONTRACTS section 8, the rows that "Perubahan" shows, the Owner-only rows, and what no channel shows | Section 11.15.3 | T-56; D-047 keeps the Owner-only data his alone | D-047, D-136, D-137 |
+| CC-25 | UXI-378's note names section 11.15; the header names this amendment and gate GATE-CC3 | Sections 11.12 and the header | Consistency of the deck | D-137 |
