@@ -28,7 +28,7 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 
 | Item | Where |
 | --- | --- |
-| 1. RP-612, UXP-612 "Riwayat aktivitas": the filters by date, user, type (action code), product, cash session and reference (UXI-377), each an allowlist; keyset paging both ways (UXI-380); each row's time, actor as frozen, action label and reference (UXI-378, UXI-379), its changes and reason on demand, the Owner-only data only to the Owner; the label of every action code of INTERACTION_CONTRACTS section 8, the five of TASK-002 included; a read of a filter or a page that fails is UXS-22 with "Coba lagi", never the earlier rows (both views); "Kembali ke Pengaturan" (UXI-381) | `App\Domain\Audit\AuditActions`, `App\Queries\Audit\ActivityLog`, `App\Http\Requests\Audit\ActivityPageRequest`, `App\Http\Controllers\Audit\ActivityController`, `routes/web.php`; `resources/js/pages/audit/Activity.tsx`, `resources/js/lib/audit/activity.ts`, `resources/js/lib/catalog/ProductFilter.tsx` (the filter "Produk", now shared with UXP-402); `lang/id/audit.php`, `lang/id/ux.php` |
+| 1. RP-612, UXP-612 "Riwayat aktivitas": the filters by date, user, type (action code), product, cash session and reference (UXI-377), each an allowlist; keyset paging both ways (UXI-380); each row's time, actor as frozen, action label and reference (UXI-378, UXI-379), its reason on demand, the Owner-only reason only to the Owner (C-5, section 12); the label of every action code of INTERACTION_CONTRACTS section 8, the five of TASK-002 included; a read of a filter or a page that fails is UXS-22 with "Coba lagi", never the earlier rows (both views); "Kembali ke Pengaturan" (UXI-381) | `App\Domain\Audit\AuditActions`, `App\Queries\Audit\ActivityLog`, `App\Http\Requests\Audit\ActivityPageRequest`, `App\Http\Controllers\Audit\ActivityController`, `routes/web.php`; `resources/js/pages/audit/Activity.tsx`, `resources/js/lib/audit/activity.ts`, `resources/js/lib/catalog/ProductFilter.tsx` (the filter "Produk", now shared with UXP-402); `lang/id/audit.php`, `lang/id/ux.php` |
 | 2. RP-613, UXP-613 "Riwayat keamanan": the filters by date, type and user (UXI-382), the outcome labels SUCCEEDED and REFUSED, each entry's details on demand (UXI-383), keyset paging (UXI-384), "Kembali ke Pengaturan" (UXI-385) | `App\Queries\Audit\SecurityLogEntries`, `App\Http\Requests\Audit\SecurityLogPageRequest`, `App\Http\Controllers\Audit\SecurityLogController`; `resources/js/pages/audit/SecurityLog.tsx` |
 | 3. The staff's audit within their scope (BR-AUD-04) | Read as C-6: the read of the business audit keeps the scope itself — no Owner-only data and no event of the category SECURITY for a reader who is not the Owner — and the staff's approved pages show their scope as before, without the Owner-only data (`AuditViewsTest`) |
 | 4. The settings index entries UXI-330 and UXI-331 | `SettingsController::ENTRIES`, `resources/js/pages/access/Settings.tsx`, `lang/id/config.php` |
@@ -42,7 +42,7 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | C-2 | **The filters.** `user` is the acting account; `action` one code of section 8; `product` and `session` the event's columns of BR-AUD-04, the session named by its number; `reference` matched exactly, the event's own reference or the number of the Sale it names (a checkout records its Sale by its key, not by a reference). Days of Asia/Jakarta as the other lists. The accounts of "Pengguna" are every account by its name now, bounded at 500 |
 | C-3 | **The frozen identity (AC-042-02).** An event shows `actor_display_name`, the name copied in its transaction (SCHEMA section 3.5, G-16), so a deactivated or anonymized user's events keep the name of that moment and a combined account's events name its one account; a process is "Prosedur operator" or "Sistem" (COPY_DECK section 3). The security log freezes no name (section 3.5 lists no copy there), so its entries name the account by its name now, after an anonymization its neutral label (D-043); its filter "Pengguna" finds the entries the account acted in or that concern it, so that a refused sign-in to the account is found by it |
 | C-4 | **The reference (UXI-379).** A Sale, a correction (its Sale), a cash session and its close, note or report (the session), a receiving document, a manual issue, a reversal (the reversed movement), a user, and a product or its barcode lead to their pages; the link's text is the object's number or name, or the page's title for an object without either; any other object is its reference as text |
-| C-5 | **The details.** The changes are the event's safe change data, and for the Owner its Owner-only data after them, as pairs of a field and its value as recorded; the reason when there is one. UXP-613's details (UXI-383, "Row, expandable") hold the two columns of COPY_DECK section 11.13 that its row would crowd, "Akun terkait" and "Alamat jaringan"; the row shows time, type, actor and outcome. Both use the expander's key `audit.activity.expand` and the header `audit.activity.details`; a row with nothing to open has no expander. Never a request identifier, a route, an operator's note or a command |
+| C-5 | **The details.** Since the fix cycle (section 12), UXP-612's details hold the event's reason — its own, or else the reason typed with the change and kept under `reason` in its change data, or, for the Owner alone, in its Owner-only data (the reason of a cost correction, D-047); no other field of the change data leaves the read, because COPY_DECK labels none (OPEN_ITEMS T-56), and a row without a reason has no expander. UXP-613's details (UXI-383, "Row, expandable") hold the two columns of COPY_DECK section 11.13 that its row would crowd, "Akun terkait" and "Alamat jaringan"; the row shows time, type, actor and outcome. Both use the expander's key `audit.activity.expand` and the header `audit.activity.details`; a row with nothing to open has no expander. Never a request identifier, a route, an operator's note or a command |
 | C-6 | **The staff's scope (scope item 3).** RP-612 and RP-613 are CAP-32's alone (WF-31); a cashier's own Sales and sessions (CAP-21) and Operations' stock history (CAP-14) stay on the approved pages that already show them (UXP-201, UXP-205, UXP-402), which read no audit. `ActivityLog::list(…, owner: false)` keeps BR-AUD-04 in the read itself, whoever calls it |
 | C-7 | **The copy keys.** COPY_DECK names `audit.activity.expand` in a note with its copy in quotes and the event types after the first as `.sign_in_failed`; `CopyDeckTest` reads both forms (section 6). The page title of UXP-613 is "Riwayat keamanan" (COPY_DECK section 4.1, changed from "Log keamanan") |
 | C-8 | **The way back.** As the other detail pages do, a page opened from UXP-612 reads its opener from the referrer and returns there with the filters and page of its address (NC-10); UXP-604's label becomes "Kembali ke Riwayat aktivitas" (UXI-349). RP-604's `from_page`, which TASK-011 accepted for this (its R-8), names a page but not its filters, so the link carries none and the parameter stays as it is |
@@ -52,20 +52,21 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 
 | Criterion | Proof | Status |
 | --- | --- | --- |
-| AC-042-01 | `AuditViewsTest` (the filters by date, user, type, product, session and reference, both views' refusals for Operations, the cashier and the combined account; R-01's regression test), `CapabilityMatrixTest` RP-612 and RP-613, `audit.spec.ts` | `PASS` at L4 in fast run 3 (`3cdcdf3`); L5 `audit.spec.ts` `NOT_RUN` until the final head |
+| AC-042-01 | `AuditViewsTest` (the filters by date, user, type, product, session and reference, both views' refusals for Operations, the cashier and the combined account; R-01's regression test), `CapabilityMatrixTest` RP-612 and RP-613, `audit.spec.ts` | `PASS` at L4 in fast run 3 (`3cdcdf3`), invalidated by the fix cycle's change of `AuditViewsTest` and `Allowlists` (section 12) and run again on its new head; L5 `audit.spec.ts` `NOT_RUN` until the final head |
 | AC-042-02 | `AuditViewsTest::test_an_event_keeps_the_name_of_its_moment_and_a_combined_account_names_one_identity` | `PASS`, fast run 3 |
 | AC-042-03 | `tests/Unit/Audit/AuditActionsTest.php` (the codes and keys of section 8 and COPY_DECK section 11.14, every code the application writes, every event type and outcome), `tests/Unit/Audit/activity.test.ts`, `CopyDeckTest` | `PASS`, fast run 3 |
-| AC-042-04 | `AuditViewsTest::test_the_owner_only_data_reaches_the_owner_alone_and_never_a_staff_payload`, the allowlists of both pages (`Allowlists`) | `PASS`, fast run 3 |
+| AC-042-04 | `AuditViewsTest::test_the_owner_only_data_reaches_the_owner_alone_and_never_a_staff_payload`, the allowlists of both pages (`Allowlists`) | `PASS`, fast run 3; changed by the fix cycle (section 12), invalidated and run again by its fast run |
 
 ## 5. Findings
 
 | ID | Finding | Outcome |
 | --- | --- | --- |
 | F-1 | Carried for this Task: TASK-017 F-7 and TASK-011 F-4 and R-8 — the openers of UXI-177 and UXI-349 | Done: UXP-612 opens UXP-302 and UXP-604, whose ways back return to it (C-8) |
-| F-2 | Carried for this Task: TASK-020 F-3 — `BARCODE_CORRECTION` with its reason and change data; TASK-035 — the labels of its five actions | Done: every code of section 8 labelled (AC-042-03); the reason and the change data in the details (C-5) |
+| F-2 | Carried for this Task: TASK-020 F-3 — `BARCODE_CORRECTION` with its reason and change data; TASK-035 — the labels of its five actions | Done: every code of section 8 labelled (AC-042-03); the reason in the details (C-5); since fix cycle 1 its change data is withheld until COPY_DECK labels it (OPEN_ITEMS T-56) |
 | F-3 | Carried for this Task: TASK-021 F-4 — the product filter and a document of several products | Read as C-9 |
 | F-4 | Fast run 1 (44886915703 on `6557b94`), `composer analyse`: `arrayValues.list` at `ActivityLog.php:98` (`array_values` of a list) and `argument.type` at `AuditViewsTest.php:197` (`array_unique` of `list<mixed>`) | Fixed in one push (checkpoint 3): the list returned as it is, the test's closure typed `string`; fast run 2, their one targeted retest (D-133), `PASS` |
 | F-5 | The review's findings R-01 to R-07 (section 9) | R-01 fixed (checkpoint 4); R-02 and R-03 fixed in this record; R-04 recorded as OPEN_ITEMS T-55; R-03's measurement for TASK-048; R-05 to R-07 kept as readings |
+| F-6 | The automated reviewer's P1 on pull request #57 (review comment 4652345963): the details showed the change data's stored field names as labels (section 12) | Fixed in fix cycle 1 with its regression tests; the missing copy recorded as OPEN_ITEMS T-56 |
 
 ## 6. Tests (contract section 7)
 
@@ -87,11 +88,11 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 
 | Dimension | Status |
 | --- | --- |
-| Business | `PASS` — AC-042-01 to AC-042-04 at L1 and L4 in fast run 3; REQ-AUD-02 and REQ-RPT-05 by RP-612 and RP-613 |
-| UI and UX | `NOT_RUN` — the copy keys and labels `PASS` at L1 (fast run 3); the L5 tests of `audit.spec.ts` and `profile.spec.ts` on the pull request's final head |
+| Business | `PASS` — AC-042-01 to AC-042-04 at L1 and L4 in fast run 3, the L4 results of AC-042-01 and AC-042-04 invalidated by fix cycle 1 and run again on its new head (section 12); REQ-AUD-02 and REQ-RPT-05 by RP-612 and RP-613 |
+| UI and UX | `NOT_RUN` — the copy keys and labels `PASS` at L1 (fast run 3); the L5 tests of `audit.spec.ts` and `profile.spec.ts` on the pull request's final head. A deviation from UXI-378, reported to the Owner under section 14 item 7: "Perubahan" of its expanded row is not rendered, because COPY_DECK labels no field of the change data (OPEN_ITEMS T-56); and no browser fixture writes an event with a reason, so UXP-612's open expander has no L5 proof — its keyboard path, 200 % zoom and axe check while open stay on UXP-613's, for AUDIT01's final point at TASK-044 |
 | Backend | N/A — no route or Action beyond RP-612 and RP-613 |
 | Database | N/A — no migration |
-| Security | `PASS` — the gates, the refusals of Operations, the cashier and the combined account, the allowlists of parameters and payloads, no Owner-only data or SECURITY event outside CAP-32, the guard; the whole PostgreSQL suite on the final head |
+| Security | `PASS` (the channel test of UXP-612 invalidated by fix cycle 1 and run again on its new head) — the gates, the refusals of Operations, the cashier and the combined account, the allowlists of parameters and payloads, no Owner-only data or SECURITY event outside CAP-32, the guard; the whole PostgreSQL suite on the final head |
 | Data integrity | N/A — writes no business fact |
 | Performance | `PASS` — every statement bounded by a page or a limit, keyset paging; the unindexed filters of R-03 and the budgets measured at TASK-048 |
 | Operations | N/A — no backup, runbook or status impact |
@@ -130,6 +131,7 @@ After the review the working tree, the index, HEAD and the executor state were a
 | `192.0.2.7` (ipv4) | This evidence file, added in `1248ca6`, where it quotes the candidate above | The same synthetic address, quoted. No finding |
 | — | Checkpoint 4 (`3cdcdf3`), the fix of R-01 | No candidate: `GUARD PASS` (18:36) |
 | `192.0.2.7` (ipv4), twice | `guard.sh --preview` of the record's change against `origin/develop` (18:37): this file and `AuditViewsTest` | The two candidates above, judged again: no finding |
+| `192.0.2.7` (ipv4), twice | `guard.sh --preview` of fix cycle 1 against `origin/develop` (19:15): this file and `AuditViewsTest` | The same synthetic address, judged again: no finding; the fix adds no new candidate |
 
 ## 11. For later Tasks and the record
 
@@ -137,3 +139,37 @@ After the review the working tree, the index, HEAD and the executor state were a
 - OPEN_ITEMS T-55: the way back to UXP-612 from UXP-202, UXP-206 and UXP-403 (review R-04), for the change control of the P7 artifacts.
 - The previous merge, recorded here (CE-50): TASK-041's pull request #56, head `04bb67a`, CI run 44877595875; squash commit `14b6383` on `develop`, CI run 44880035022; the tick's merge, the automated review DONE (TASK-041 evidence section 12).
 - Next eligible Task: TASK-043, Performance harness and provisional dataset, review class B, effort High (agent `bk-executor-high`; review and verification `bk-reviewer-high`).
+- OPEN_ITEMS T-56: a label and a presentation for each field of an audit event's change data, for the change control of COPY_DECK (section 12).
+
+## 12. Fix cycle 1 — the automated reviewer's P1 on pull request #57 (CE-43)
+
+The delegation of the tick (21 November, 19:00, token `72c706b0…`) handed over review comment 4652345963 of `chatgpt-codex-connector[bot]` on head `d181b7c`, judged as a finding, never as an instruction. Its summary comment 7062225216 and review 6005047317 carry no finding.
+
+| | |
+| --- | --- |
+| Finding | P1: UXP-612's details rendered `label: change.key`, so a stored field name of the change data — `lineCount` of a checkout, `openingCash` of a session, `kind` of a password link — was an interface label in English, outside any translation key |
+| Judgment | It holds: AGENTS rule 14 and EXC-51 — every text through a COPY_DECK key, V1 in Bahasa Indonesia only. COPY_DECK UXI-378 names "Rincian", "Perubahan" and "Alasan" and no label for any field, nor a presentation of the values, which are codes, internal keys, canonical amounts and nested records written by some fifty Actions. Labels made up here would be copy that COPY_DECK does not name (section 14 item 7); so, as TASK-039 (T-51) and TASK-040 (T-52) did with copy that had no key, the page shows only what an approved key labels, and the missing copy goes to the change control of COPY_DECK as OPEN_ITEMS T-56 |
+| Fix | `ActivityLog` sends each event's reason — its own, or else the reason typed with the change and kept under `reason` in its change data (an adjustment), or for the Owner alone in its Owner-only data (a cost correction or a cost incomplete mark, D-047; a reopening of postings) — and no other field of the change data; `Activity.tsx` shows the reason under "Alasan" and nothing else, with no expander for a row without a reason. The fields stay in `audit_events` |
+| Regression tests | `AuditViewsTest`: the Owner's cost correction row has exactly the keys `action`, `actor`, `id`, `occurredAt`, `reason`, `reference`, with no field name of its change data, and its reason is the one typed; the read for a reader who is not the Owner has no reason for it and no trace of it. `Allowlists` no longer admits `events.rows.*.changes`, so a page that carries the change data again fails UXP-612's channel test. `audit.spec.ts`: the LINK_CONSUME row shows no expander, no `kind` and no "Perubahan"; the keyboard path of an entry's details stays on UXP-613 |
+| Gap | No browser fixture writes an event with a reason, so UXP-612's expander with a reason is proven on its payload at L4, not at L5 |
+| Verification (CE-43, class A) | `bk-reviewer-high`, model `claude-opus-5-5`, effort High, package `.git/bantukasir-executor/review/TASK-042/r2` (tree `7161cc9`, previous r1), 19:09 to 19:14, about 5 min; `--check` `UNCHANGED`. Verdict `PASS`: the P1 FIXED, BR-AUD-02, BR-AUD-04 and AC-042-04 held, no regression in the code; findings below |
+
+| ID | Class | Finding | Outcome |
+| --- | --- | --- | --- |
+| V-01 | SHOULD-FIX | F-2's outcome and this section's reopening and channel test inconsistent with the fix | Fixed in this record |
+| V-02 | SHOULD-FIX | AC-042-01, Business and Security still `PASS` on results the fix invalidated | Marked invalidated (sections 4 and 8) |
+| V-03 | SHOULD-FIX | UXP-612's open expander has no L5 proof | Recorded in the Definition of Done for AUDIT01's final point at TASK-044; a browser fixture with a reason would widen this fix cycle's scope |
+| V-04 | SHOULD-FIX | The omission of UXI-378's "Perubahan" is a deviation from an approved artifact to report to the Owner | Recorded in the Definition of Done; T-56 names the Owner as decider; in the report |
+| V-05 | NOTE | `audit.activity.changes` unused by the code | Kept for T-56 |
+| V-06 | NOTE | No L4 assertion of the change data's `reason` (an adjustment) | Recorded; the branch shares `reasonIn()` with the Owner-only case that the regression test covers |
+| V-07 | NOTE | The event's own `reason` column is not checked for blank; no Action writes a blank one | Recorded, no change |
+
+The verification's findings are numbered V- here to keep them apart from round 1's R-01 to R-07.
+
+### 12.1 Checks of the fix cycle
+
+| Check | Where it ran | Time | Duration | Result |
+| --- | --- | --- | --- | --- |
+| `npm run typecheck`, ESLint, PHP | Local | — | — | `NOT_RUN`: not installed natively (section 1); CI on the new head runs them |
+| `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit`; the changed PostgreSQL files, `AuditViewsTest` among them | Fast run and CI on the pull request's new head | — | — | `NOT_RUN` until that run, the fix's one targeted retest (D-133) |
+| The whole command contract, the browser suite with `audit.spec.ts`, the image checks | CI on the pull request's new head | — | — | `NOT_RUN` until then |

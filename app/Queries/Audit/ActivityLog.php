@@ -21,14 +21,16 @@ use JsonException;
  * checkout records its Sale by its key. Each row carries the actor as the event froze it (SCHEMA section 3.5,
  * G-16): a deactivated or anonymized user's events keep the name of that moment, and a combined account's
  * events name its one account (AC-042-02). Its reference leads to the object's page where one exists
- * (UXI-379), else it is text. The safe change data is shown to every reader in scope; the Owner-only data
- * (BR-AUD-02, D-047) only when the reader is the Owner, and a reader who is not sees no event of the
- * category SECURITY (BR-AUD-04, AC-042-04). RP-612 is the Owner's alone (CAP-32); the two guards keep the
- * read itself within BR-AUD-04 whoever calls it.
+ * (UXI-379), else it is text. Its reason is the event's own, or else the reason typed with the change and
+ * kept in its safe change data, or, only when the reader is the Owner, in its Owner-only data (BR-AUD-02,
+ * D-047: the reason of a cost correction); a reader who is not the Owner sees no event of the category
+ * SECURITY (BR-AUD-04, AC-042-04). The other fields of the change data leave no read: COPY_DECK has no label
+ * for them, and a stored field name is never interface copy (AGENTS rule 14, EXC-51; OPEN_ITEMS T-56).
+ * RP-612 is the Owner's alone (CAP-32); the two guards keep the read itself within BR-AUD-04 whoever calls it.
  *
  * @phpstan-type Filters array{from: string|null, to: string|null, user: int|null, action: string|null, product: int|null, session: string|null, reference: string|null, after: string|null, before: string|null, perPage: int}
  * @phpstan-type Reference array{text: string|null, kind: string|null, id: int|null}
- * @phpstan-type Row array{id: int, occurredAt: string, action: string, actor: array{kind: string, name: string|null}, reference: Reference, reason: string|null, changes: list<array{key: string, value: string}>}
+ * @phpstan-type Row array{id: int, occurredAt: string, action: string, actor: array{kind: string, name: string|null}, reference: Reference, reason: string|null}
  */
 final class ActivityLog
 {
@@ -143,11 +145,10 @@ final class ActivityLog
     private function row(array $values, array $names, bool $owner): array
     {
         $kind = Read::text($values, 'actor_kind');
-        $changes = self::pairs(Read::text($values, 'change_data'));
+        $reason = Read::nullableText($values, 'reason') ?? self::reasonIn(Read::text($values, 'change_data'));
 
-        if ($owner) {
-            $ownerOnly = Read::nullableText($values, 'owner_only_data');
-            $changes = [...$changes, ...($ownerOnly === null ? [] : self::pairs($ownerOnly))];
+        if ($reason === null && $owner) {
+            $reason = self::reasonIn(Read::nullableText($values, 'owner_only_data'));
         }
 
         return [
@@ -156,8 +157,7 @@ final class ActivityLog
             'action' => Read::text($values, 'action'),
             'actor' => ['kind' => $kind, 'name' => $kind === 'USER' ? Read::text($values, 'actor_display_name') : null],
             'reference' => self::reference($values, $names),
-            'reason' => Read::nullableText($values, 'reason'),
-            'changes' => $changes,
+            'reason' => $reason,
         ];
     }
 
@@ -280,34 +280,25 @@ final class ActivityLog
     }
 
     /**
-     * The change data of an event as pairs of a field and its value, in the order the database keeps its
-     * fields (`jsonb`): a text as it is, any other value as JSON. Never a secret: the writer refuses one
-     * (BR-AUD-05).
-     *
-     * @return list<array{key: string, value: string}>
+     * The reason that a person typed with a change and that its Action keeps in the event's change data or
+     * Owner-only data under `reason` — a cost correction, an adjustment, a reopening — when it is a text that
+     * is not blank; null otherwise. Every other field stays in the record (OPEN_ITEMS T-56).
      */
-    private static function pairs(string $json): array
+    private static function reasonIn(?string $json): ?string
     {
+        if ($json === null) {
+            return null;
+        }
+
         try {
             $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
         } catch (JsonException) {
-            return [];
+            return null;
         }
 
-        if (! is_array($data)) {
-            return [];
-        }
+        $reason = is_array($data) ? ($data['reason'] ?? null) : null;
 
-        $pairs = [];
-
-        foreach ($data as $key => $value) {
-            $pairs[] = [
-                'key' => (string) $key,
-                'value' => is_string($value) ? $value : (string) json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-            ];
-        }
-
-        return $pairs;
+        return is_string($reason) && trim($reason) !== '' ? $reason : null;
     }
 
     /**

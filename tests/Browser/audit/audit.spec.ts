@@ -13,7 +13,7 @@ const expect = baseExpect.configure({ timeout: ACCESS_WAIT });
 // the Owner reaches both views from "Pengaturan"; filters the activity by "Jenis", which stands in the address;
 // opens an event's details; follows its reference to the account's page, whose way back returns to the activity
 // with its filter; sees a read that fails (UXS-22) and reads it again; filters the security log by "Jenis" and
-// opens an entry's details; both fit 320 px and 200 %
+// opens an entry's details; no field name of an event's change data shows; both fit 320 px and 200 %
 // zoom and work from the keyboard; Operations is refused both. The events are the browser fixtures' own: the
 // newest password link used is Hendra's, by resetPeople(), and the newest sign-in is his. These tests sign in
 // the people of Toko Contoh, so they run one at a time (playwright.config.ts).
@@ -98,10 +98,12 @@ test('the Owner filters the activity, opens an event, follows its reference and 
     await expect(row).toContainText('Tautan kata sandi dipakai');
     await expect(row.getByRole('link', { name: 'Hendra' })).toBeVisible();
 
-    // UXI-378: the event's details, on demand.
-    await row.getByText('Tampilkan rincian').click();
-    await expect(row.getByText('Perubahan')).toBeVisible();
-    await expect(row.getByText('kind', { exact: true })).toBeVisible();
+    // UXI-378: an event without a reason has nothing to open, and no field name of its change data shows, since
+    // no copy key labels one (AGENTS rule 14, EXC-51; the automated reviewer's P1 on pull request #57; OPEN_ITEMS
+    // T-56). An event's reason, opened on demand, is proven on its payload (AuditViewsTest, AC-042-04).
+    await expect(row.locator('details')).toHaveCount(0);
+    await expect(row.getByText('kind', { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('main').getByText('Perubahan', { exact: true })).toHaveCount(0);
     await checked(page);
     await fitsNarrow(page);
 
@@ -176,13 +178,16 @@ test('at 200 % zoom both views fit and their controls work from the keyboard', a
         await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible();
         await checked(page);
 
-        // The first row's details open by Enter.
-        const summary = firstRow(page).locator('summary');
-        await summary.focus();
-        await expect(summary).toBeFocused();
-        await page.keyboard.press('Enter');
-        await expect(firstRow(page).locator('details')).toHaveAttribute('open', '');
-        await checked(page);
+        // The first entry's details open by Enter; the newest event of the activity, Hendra's password link used,
+        // has no reason and so nothing to open (UXI-378).
+        if (path === SECURITY) {
+            const summary = firstRow(page).locator('summary');
+            await summary.focus();
+            await expect(summary).toBeFocused();
+            await page.keyboard.press('Enter');
+            await expect(firstRow(page).locator('details')).toHaveAttribute('open', '');
+            await checked(page);
+        }
 
         // "Kembali ke Pengaturan" by Enter.
         const back = page.getByRole('link', { name: 'Kembali ke Pengaturan' });

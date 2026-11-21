@@ -223,17 +223,21 @@ final class AuditViewsTest extends DatabaseTestCase
         $this->as('Hendra');
         $correction = $this->rowsIn($this->propsOf($this->get(self::ACTIVITY.'?action=COST_CORRECTION')->assertOk()), 'events');
         $this->assertCount(1, $correction);
-        $changes = array_column((array) ($correction[0]['changes'] ?? []), 'value', 'key');
-        $this->assertSame(['Nota pemasok rahasia', true], [$changes['reason'] ?? null, array_key_exists('evidenceId', $changes)]);
+        // The reason typed with the correction is its "Alasan" for the Owner; no field name of the change data
+        // or of the Owner-only data reaches the page, whose copy has no label for one (AGENTS rule 14, EXC-51;
+        // the automated reviewer's P1 on pull request #57; OPEN_ITEMS T-56).
+        $this->assertSame('Nota pemasok rahasia', $correction[0]['reason'] ?? null);
+        $keys = array_keys($correction[0]);
+        sort($keys);
+        $this->assertSame(['action', 'actor', 'id', 'occurredAt', 'reason', 'reference'], $keys);
+        $this->assertStringNotContainsString('evidenceId', (string) json_encode($correction));
 
         // The read for a reader who is not the Owner holds neither the Owner-only data nor any event of the
         // category SECURITY (BR-AUD-04): it is the read itself that keeps the scope, not only the gate.
         $filters = ['from' => null, 'to' => null, 'user' => null, 'action' => null, 'product' => null, 'session' => null, 'reference' => null, 'after' => null, 'before' => null, 'perPage' => 100];
         $staff = app(ActivityLog::class)->list($filters, false);
         $cost = app(ActivityLog::class)->list([...$filters, 'action' => 'COST_CORRECTION'], false);
-        $keys = array_column($cost['rows'][0]['changes'] ?? [], 'key');
-        sort($keys);
-        $this->assertSame(['correctionNo', 'evidenceId', 'marksCleared', 'movementId', 'projectionsRewritten', 'publicationNo'], $keys);
+        $this->assertSame([null], array_column($cost['rows'], 'reason'));
         $this->assertStringNotContainsString('rahasia', (string) json_encode($staff));
         $business = $this->observer()->table('audit_events')->where('category', 'BUSINESS')->orderByDesc('occurred_at')->orderByDesc('id')->limit(100)->pluck('id')->all();
         $this->assertSame($business, array_column($staff['rows'], 'id'));

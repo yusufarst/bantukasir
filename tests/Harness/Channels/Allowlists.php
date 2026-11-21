@@ -335,9 +335,10 @@ final class Allowlists
         'reporting/Daily' => ['owner' => [...self::DAILY_DATE, ...self::DAILY_SUMMARY]],
         'reporting/Daily#failed' => ['owner' => [...self::DAILY_DATE, 'summary']],
         // UXP-612 and UXP-613, the Owner's alone (TASK-042): the filters, the accounts of "Pengguna", the chosen
-        // product and one page; each event with its time, action, actor as frozen, reference, reason and changes,
-        // the Owner-only ones among them; each entry with its type, actor, the account concerned, outcome and
-        // address. Never a request identifier, a route, a command, a token or a password. `#product` with a
+        // product and one page; each event with its time, action, actor as frozen, reference and reason, never the
+        // fields of its change data, whose names no copy key labels (OPEN_ITEMS T-56); each entry with its type,
+        // actor, the account concerned, outcome and address. Never a request identifier, a route, a command, a
+        // token or a password. `#product` with a
         // product chosen, `#empty` with no row.
         'audit/Activity' => ['owner' => [...self::ACTIVITY, ...self::ACTIVITY_ROWS]],
         'audit/Activity#product' => ['owner' => [...self::ACTIVITY, ...self::ACTIVITY_ROWS, 'product.id', 'product.name', 'product.sku']],
@@ -356,7 +357,7 @@ final class Allowlists
     private const array ACTIVITY_ROWS = [
         'events.rows.*', 'events.rows.*.id', 'events.rows.*.occurredAt', 'events.rows.*.action', 'events.rows.*.actor', 'events.rows.*.actor.kind',
         'events.rows.*.actor.name', 'events.rows.*.reference', 'events.rows.*.reference.text', 'events.rows.*.reference.kind', 'events.rows.*.reference.id',
-        'events.rows.*.reason', 'events.rows.*.changes', 'events.rows.*.changes.*', 'events.rows.*.changes.*.key', 'events.rows.*.changes.*.value',
+        'events.rows.*.reason',
     ];
 
     /** UXP-613 without its rows (TASK-042). */

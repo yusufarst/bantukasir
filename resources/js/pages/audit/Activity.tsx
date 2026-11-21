@@ -1,7 +1,6 @@
 import { router } from '@inertiajs/react';
 import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/Button';
-import { KeyValueList } from '@/components/ui/Data';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Field, SelectInput, TextInput } from '@/components/ui/Field';
 import { EmptyState, LoadFailed, NoResults } from '@/components/ui/States';
@@ -33,8 +32,10 @@ import type { DestinationId } from '@/lib/navigation';
 // every account by its name now; "Jenis", the label of an action code; "Produk", through the shared Product
 // Search; "Sesi kas", a session's number, and "Referensi", each searched on Enter. Each row (UXI-378) shows the
 // time, who acted by the name the event froze, the action's label and its reference — a link to the object's page
-// where it has one (UXI-379), else text — and opens on demand its changes, the Owner-only ones among them, and its
-// reason. The filters and the page stand in the address (NC-10), so that the way back of a linked page keeps them.
+// where it has one (UXI-379), else text — and opens on demand its reason, the Owner-only reason of a cost
+// correction among them. The fields of an event's change data are not shown: COPY_DECK has no label for them, and
+// a stored field name is never interface copy (AGENTS rule 14, EXC-51; OPEN_ITEMS T-56). The filters and the page
+// stand in the address (NC-10), so that the way back of a linked page keeps them.
 // The way back is "Kembali ke Pengaturan" (UXI-381).
 
 /** The destination of the navigation that holds the page (UXI-008). */
@@ -47,7 +48,6 @@ interface ActivityRow {
     readonly actor: AuditActor;
     readonly reference: AuditReference;
     readonly reason: string | null;
-    readonly changes: readonly { readonly key: string; readonly value: string }[];
 }
 
 interface ActivityProps {
@@ -191,9 +191,9 @@ function ReferenceCell({ reference }: { reference: AuditReference }) {
     );
 }
 
-/** UXI-378: the event's changes and reason, opened on demand; nothing to open without either. */
+/** UXI-378: the event's reason, opened on demand; nothing to open without one. */
 function Details({ row }: { row: ActivityRow }) {
-    if (row.changes.length === 0 && row.reason === null) {
+    if (row.reason === null) {
         return null;
     }
 
@@ -201,18 +201,8 @@ function Details({ row }: { row: ActivityRow }) {
         <details className={'bk-version bk-audit-detail'}>
             <summary>{t('audit.activity.expand')}</summary>
             <div className={'bk-stack'}>
-                {row.changes.length > 0 && (
-                    <div className={'bk-stack'}>
-                        <p className={'bk-meta'}>{t('audit.activity.changes')}</p>
-                        <KeyValueList items={row.changes.map((change, at) => ({ key: `${String(at)}-${change.key}`, label: change.key, value: change.value }))} />
-                    </div>
-                )}
-                {row.reason !== null && (
-                    <div className={'bk-stack'}>
-                        <p className={'bk-meta'}>{t('audit.activity.reason')}</p>
-                        <p>{row.reason}</p>
-                    </div>
-                )}
+                <p className={'bk-meta'}>{t('audit.activity.reason')}</p>
+                <p>{row.reason}</p>
             </div>
         </details>
     );
