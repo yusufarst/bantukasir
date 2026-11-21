@@ -202,7 +202,10 @@ test('the Owner lands on Beranda with today, his open session and what needs his
     release();
     await expect(attention.getByRole('link', { name: 'Status sistem perlu dicek' })).toBeVisible();
 
-    // KS-02 `quiet` (UXS-02): no open session and nothing to attend to, each said in its panel.
+    // KS-02 `quiet` (UXS-02): no open session and nothing to attend to, each said in its panel. The restock item counts
+    // by the stock badge's live read of RD-03 (UXI-061), which reads the shared database, so that read says none too.
+    const shellData = (url: URL): boolean => url.pathname === '/data/shell';
+    await page.route(shellData, (route) => route.fulfill({ json: { unresolvedRequests: 0, stockAttention: 0, onboarding: null, openIncidents: null, asOf: '2026-11-21T02:59:00.000000Z' } }));
     await nextAnswer(page, 'openSessions', (props) => {
         props.openSessions = [];
     });
@@ -214,9 +217,9 @@ test('the Owner lands on Beranda with today, his open session and what needs his
     await expect(attention.getByText('Tidak ada yang perlu perhatian saat ini.')).toBeVisible();
     await expect(attention.getByRole('link')).toHaveCount(0);
     await checked(page);
+    await page.unroute(shellData);
 
     // UXI-061 (review R-01): the restock item counts by the stock badge's live read of RD-03, as the badge beside it.
-    const shellData = (url: URL): boolean => url.pathname === '/data/shell';
     // The panel's own read says nothing needs restocking, so only the badge's read can show the item (review R-08).
     await page.route(shellData, (route) => route.fulfill({ json: { unresolvedRequests: 0, stockAttention: 7, onboarding: null, openIncidents: null, asOf: '2026-11-21T03:00:00.000000Z' } }));
     await nextAnswer(page, 'attention', (props) => {

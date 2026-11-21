@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect as baseExpect, test, type BrowserContext, type Locator, type Page } from '@playwright/test';
-import { ACCESS_TIMEOUT, ACCESS_WAIT, HOME, newPassword, resetPeople, SECURE_LOCAL_ORIGIN, signIn, unexpected, type Account } from '../support/access';
+import { ACCESS_TIMEOUT, ACCESS_WAIT, HOME, newPassword, OWNER_HOME, resetPeople, SECURE_LOCAL_ORIGIN, signIn, unexpected, type Account } from '../support/access';
 import { envelopeOf, injected, prepareCommands, refuse } from '../support/commands';
 import { measure } from '../support/measure';
 import { contextAt, watch, WIDTHS } from '../support/specimen';
@@ -318,7 +318,9 @@ test('a real refusal shows at its field with its focused summary, and a 401 on a
     await page.getByLabel(/^Email/).fill(who.email);
     await page.route('**/commands/user.create', (route) => refuse(route, 401, 'UNAUTHENTICATED'));
     await page.getByRole('button', { name: 'Simpan dan buat tautan' }).click();
-    await page.waitForURL((url) => url.pathname === '/' || url.pathname === '/login' || url.pathname === HOME);
+    // Only the command's answer was a 401: the server still holds the sign-in session, so its root leads the Owner
+    // to his landing page, Beranda (RN-01, NC-12; TASK-041).
+    await page.waitForURL((url) => url.pathname === '/' || url.pathname === '/login' || url.pathname === OWNER_HOME);
 
     expect(injected(watched.problems).filter((problem) => !problem.includes('status of 423'))).toEqual([]);
     await context.close();
