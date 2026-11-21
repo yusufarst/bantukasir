@@ -2,17 +2,17 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-7 under D-090, 18 October 2026 (Asia/Jakarta); corrected under D-091 the same day, after the independent review of the baseline; approved by the Owner with every Task (gate GATE-P11), and corrected for review finding R-1, under D-092 the same day; amended under D-101, 23 October 2026, for continuous execution: the introduction, sections 1, 5.1 and 6, and gate EXECUTOR |
+| Status | CURRENT — written in RF-7 under D-090, 18 October 2026 (Asia/Jakarta); corrected under D-091 the same day, after the independent review of the baseline; approved by the Owner with every Task (gate GATE-P11), and corrected for review finding R-1, under D-092 the same day; amended under D-101, 23 October 2026, for continuous execution: the introduction, sections 1, 5.1 and 6, and gate EXECUTOR; amended under D-137, 21 November 2026, by TASK-043: TASK-051 and gate GATE-CC3 added, sections 1 to 4, 5.1, 7, 8 and 10 |
 | Phase | P11 — Task planning, dependencies and execution specifications |
 | Replaces | `docs/11-tasks/legacy/11-BUILD-PLAN.md`, `docs/11-tasks/legacy/P11-BUILD-UNITS.md` and `docs/11-tasks/legacy/build-units/` (LEGACY — SUPERSEDED, [LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 16); decision D-012 |
-| Decisions | D-012, D-031, D-066, D-088, D-090, D-091, D-092, D-094, D-095, D-096, D-097, D-098, D-099, D-100, D-101; FD-07, FD-08, FD-10 |
+| Decisions | D-012, D-031, D-066, D-088, D-090, D-091, D-092, D-094, D-095, D-096, D-097, D-098, D-099, D-100, D-101, D-137; FD-07, FD-08, FD-10 |
 | Related | [EXECUTION_CONTEXT](EXECUTION_CONTEXT.md), [DEPENDENCY_GRAPH](DEPENDENCY_GRAPH.md), [TRACEABILITY](TRACEABILITY.md), the Task contracts in [tasks/](tasks/), [TEST_STRATEGY](../08-testing/TEST_STRATEGY.md) |
 
-The implementation baseline of BantuKasir V1: 50 Tasks, their dependencies, gates and status, the order in which to run them, and where every requirement, workflow, suite, route, table and control is built. Nothing here authorizes a Task: each one starts only on the Owner's explicit instruction ([EXECUTION_CONTEXT](EXECUTION_CONTEXT.md) EXC-10) or under the continuous execution of D-101 (EXECUTION_CONTEXT section 19), and none starts before gate GATE-P11.
+The implementation baseline of BantuKasir V1: 51 Tasks — the 50 of D-092 and TASK-051 of D-137 — their dependencies, gates and status, the order in which to run them, and where every requirement, workflow, suite, route, table and control is built. Nothing here authorizes a Task: each one starts only on the Owner's explicit instruction ([EXECUTION_CONTEXT](EXECUTION_CONTEXT.md) EXC-10) or under the continuous execution of D-101 (EXECUTION_CONTEXT section 19), and none starts before gate GATE-P11.
 
 ## 1. How to read
 
-- **Identifiers** are `TASK-NNN`, permanent and never reused (FD-08, EXC-80). Their order is the recommended order for one executor and is also a valid dependency order: every Task depends only on Tasks with a smaller number.
+- **Identifiers** are `TASK-NNN`, permanent and never reused (FD-08, EXC-80). Their order is the recommended order for one executor and is also a valid dependency order: every Task depends only on Tasks with a smaller number. The one exception is TASK-051, which the Owner added on 21 November 2026 and scheduled before TASK-044 (D-137): it takes the next free number, and TASK-044 depends on it, so the selection of CE-10 runs it after TASK-043 and before TASK-044.
 - **Authority.** This plan is the record of the list of Tasks, their dependencies, gates and status. Each Task contract in [tasks/](tasks/) is the record of that Task's scope, acceptance criteria, tests, evidence and Definition of Done. [DEPENDENCY_GRAPH](DEPENDENCY_GRAPH.md) and [TRACEABILITY](TRACEABILITY.md) are generated from the same data; where a contract and this plan disagree, the plan prevails for dependencies, gates and status, the contract for scope, and the difference is a defect to correct.
 - **Status** uses the vocabulary of PROJECT_RULES section 7 with the entry rules of EXECUTION_CONTEXT section 4. Section 4 below is the only place a status is recorded; under continuous execution, the `IN_PROGRESS`, `VERIFYING` and `BLOCKED` of the Task in flight are held by the executor state and its pull request (EXECUTION_CONTEXT CE-21).
 - **Size** — S, M, L or XL — is a relative planning judgement of the work, used to weigh the critical path; it is not an estimate of hours and promises no date.
@@ -23,8 +23,8 @@ The implementation baseline of BantuKasir V1: 50 Tasks, their dependencies, gate
 
 | Count | Value |
 | --- | --- |
-| Tasks | 50 |
-| Implementation Tasks (code, migrations, pages, operator tooling) | 41: TASK-001, TASK-003 to TASK-042 |
+| Tasks | 51 (50 in the baseline of D-092, and TASK-051, added by D-137) |
+| Implementation Tasks (code, migrations, pages, operator tooling) | 42: TASK-001, TASK-003 to TASK-042, TASK-051 |
 | Documentation and change-control Tasks | 2: TASK-002, TASK-047 |
 | Verification and release Tasks (FD-07), the performance harness included | 7: TASK-043 to TASK-046, TASK-048 to TASK-050 |
 | Phase 1 Foundation | 5 |
@@ -34,16 +34,16 @@ The implementation baseline of BantuKasir V1: 50 Tasks, their dependencies, gate
 | Phase 5 Inventory and costing | 6 |
 | Phase 6 Cash and sales | 8 |
 | Phase 7 Onboarding, reconciliation and operations | 5 |
-| Phase 8 Reports and audit views | 3 |
+| Phase 8 Reports and audit views | 4 |
 | Phase 9 Verification | 6 |
 | Phase 10 Release | 2 |
-| By size | S 1, M 18, L 27, XL 4 |
-| By review class | A 37, B 5, O 2, V 6 |
+| By size | S 1, M 19, L 27, XL 4 |
+| By review class | A 38, B 5, O 2, V 6 |
 | Waves of parallel work (DEPENDENCY_GRAPH section 4) | 32 |
 
 ## 3. Gates
 
-Gates that a Task waits for, besides its dependencies. GATE-P11 to GATE-CC2 are gates of this plan; the others are those of [OPEN_ITEMS](../00-governance/OPEN_ITEMS.md) section 3, unchanged.
+Gates that a Task waits for, besides its dependencies. GATE-P11 to GATE-CC3 are gates of this plan; the others are those of [OPEN_ITEMS](../00-governance/OPEN_ITEMS.md) section 3, unchanged.
 
 | Gate | What must be true | Blocks | State today |
 | --- | --- | --- | --- |
@@ -52,6 +52,7 @@ Gates that a Task waits for, besides its dependencies. GATE-P11 to GATE-CC2 are 
 | GATE-PUBLISH | Before the first push of implementation work: OPEN_ITEMS N-09 decided and the one-time audit N-10 completed; before every push, the publication guard of D-076 (EXC-31). A pull request, its CI run and a merge into `develop` need a push. | The `DONE` of TASK-001 — its first push, its pull request, CI and its merge into `develop` — and so the start of every later implementation Task, all of which depend on TASK-001; every push after it. TASK-001 itself may start and be built and verified locally before it (EXC-31) | SATISFIED — N-09 decided (D-096) and the N-10 audit completed (D-097); the publication guard of D-076, with the known baseline of D-097, before every push |
 | GATE-CC1 | The Owner approves, by the Git blob, size and SHA-256 of each changed artifact, the change-control package of TASK-002 (OPEN_ITEMS T-19, T-20). | TASK-005, TASK-009, TASK-010 and every interface Task that uses a key it adds | SATISFIED — D-099 |
 | GATE-CC2 | The Owner approves by hash the artifacts that TASK-047 changes, when gate DEVICES changes a shortcut or a breakpoint; no approval is needed when the values are confirmed. | TASK-047 | OPEN — after TASK-046 |
+| GATE-CC3 | The Owner approves by hash the COPY_DECK change control that TASK-051 writes: the labels of the fields of an audit event's change data, the presentation of their values and the fields that are his alone (OPEN_ITEMS T-56; D-136, D-137). | The implementation stage and the `DONE` of TASK-051, which stops for the approval once its package is written | OPEN — written by TASK-051 |
 | EXECUTOR | The executor runs as Claude Opus 5.5 at the effort that the Owner's instruction names for the Task, or under continuous execution at the effort of EXECUTION_CONTEXT CE-11 (D-031, D-095, D-101; EXECUTION_CONTEXT EXC-11; OPEN_ITEMS section 3). | Every Task | Checked at the start of each Task |
 | TARGET | The real server, Cloudflare, access, TLS and capacity, recorded by the operator (ENVIRONMENTS section 17; OPEN_ITEMS section 3). The operator is named by the Owner (RELEASE_PROCESS section 13). | TASK-044 (staging part), TASK-045, TASK-046, TASK-048, TASK-049 | OPEN |
 | DEVICES | The shop's real devices, printers and media, and the Owner's decision on DEVICE01 (DEVICE_VERIFICATION). | TASK-046, TASK-049 | OPEN |
@@ -110,22 +111,23 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-040](tasks/TASK-040-finance-report.md) | Finance report | 8 | R | L | A | TASK-034, TASK-025 | — | `DONE` |
 | [TASK-041](tasks/TASK-041-owner-home-daily.md) | Owner home and daily summary | 8 | R | L | A | TASK-039, TASK-040, TASK-032 | — | `DONE` |
 | [TASK-042](tasks/TASK-042-audit-views.md) | Audit log and security log views | 8 | R | M | A | TASK-036, TASK-035 | — | `DONE` |
-| [TASK-043](tasks/TASK-043-performance-harness.md) | Performance harness and provisional dataset | 9 | V | M | B | TASK-041, TASK-042, TASK-038, TASK-014 | — | `READY` |
-| [TASK-044](tasks/TASK-044-integrated-verification.md) | Release candidate and integrated verification | 9 | V | L | V | TASK-043 | TARGET, GATE-PUBLISH | `TODO` |
+| [TASK-043](tasks/TASK-043-performance-harness.md) | Performance harness and provisional dataset | 9 | V | M | B | TASK-041, TASK-042, TASK-038, TASK-014 | — | `DONE` |
+| [TASK-044](tasks/TASK-044-integrated-verification.md) | Release candidate and integrated verification | 9 | V | L | V | TASK-043, TASK-051 | TARGET, GATE-PUBLISH | `TODO` |
 | [TASK-045](tasks/TASK-045-operations-verification.md) | Operations verification | 9 | V | L | V | TASK-044 | TARGET, G4, operator named | `TODO` |
 | [TASK-046](tasks/TASK-046-device-verification.md) | Device verification | 9 | V | M | V | TASK-044 | DEVICES, TARGET, operator named | `TODO` |
 | [TASK-047](tasks/TASK-047-p7-change-control-2.md) | P7 change control, batch 2: device results | 9 | D | S | O | TASK-046 | GATE-CC2 | `TODO` |
 | [TASK-048](tasks/TASK-048-performance-verification.md) | Performance verification | 9 | V | M | V | TASK-044, TASK-043 | TARGET, G2, operator named | `TODO` |
 | [TASK-049](tasks/TASK-049-release-readiness.md) | Release readiness: staging, UAT and first installation | 10 | R | L | V | TASK-045, TASK-047, TASK-048 | G1, G2, G3, G4, DEVICES, TARGET, GATE-PUBLISH | `TODO` |
 | [TASK-050](tasks/TASK-050-production-pilot.md) | Production release, cutover and pilot acceptance | 10 | R | L | V | TASK-049 | RELEASE, GATE-PUBLISH, G4 | `TODO` |
+| [TASK-051](tasks/TASK-051-audit-change-values.md) | Audit change values: COPY_DECK change control and their display | 8 | R | M | A | TASK-042 | before `DONE`: GATE-CC3 | `READY` |
 
-Totals: `TODO` 7; `READY` 1; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 42; `SUPERSEDED` 0.
+Totals: `TODO` 7; `READY` 1; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 43; `SUPERSEDED` 0.
 
 ## 5. Implementation sequence
 
 ### 5.1 Recommended order
 
-One executor runs the Tasks in the order of their numbers; under continuous execution this order is its selection rule (EXECUTION_CONTEXT CE-10, D-101). The milestones below are points where a coherent part of V1 works end to end on `develop`; they authorize nothing.
+One executor runs the Tasks in the order of their numbers; under continuous execution this order is its selection rule (EXECUTION_CONTEXT CE-10, D-101). TASK-051, added by D-137, runs after TASK-043 and before TASK-044, which depends on it. The milestones below are points where a coherent part of V1 works end to end on `develop`; they authorize nothing.
 
 | Milestone | Reached after | What works |
 | --- | --- | --- |
@@ -191,7 +193,8 @@ With more than one executor the Owner may run Tasks of different lanes at the sa
 | OPEN_ITEMS N-08 | Recommended before the first merge into `develop` | Branch protection is the Owner's setting; not a gate |
 | OPEN_ITEMS N-03, N-05, T-11, T-14, T-15 | Not mapped | The Owner's or housekeeping items, unchanged by this baseline |
 | OPEN_ITEMS T-01, T-02 | TASK-001 | Line endings; `.env.example` and `.gitignore` |
-| OPEN_ITEMS T-09 | TASK-043 (provisional dataset), TASK-048 (final dataset when G2 is known) | |
+| OPEN_ITEMS T-09 | TASK-043 (provisional dataset, built), TASK-048 (final dataset when G2 is known) | |
+| OPEN_ITEMS T-56 | TASK-051 (D-137), gate GATE-CC3 | The old and new values of an audit event's change data, which block gate RELEASE (D-136) |
 | Gates G1, G2, G3, G4, DEVICES, TARGET, RELEASE, TESTS, EXECUTOR | Section 3 | |
 | Reading: the `labels` and `stock` contexts of RD-01 | TASK-015 — settled: `labels` removed from INTERACTION_CONTRACTS section 3.1, `stock` kept in both for TASK-022 ([TASK-015 evidence](evidence/TASK-015.md) section 3) | INTERACTION_CONTRACTS section 3.1 listed both; ROUTE_CONTRACTS RD-01 listed `stock` alone; no control of section 9 uses them |
 | Reading: the backup store's usage on the system status | TASK-002 (the Owner's answer), TASK-039 | ADR-010 item 11 and OPERATIONS_RUNBOOK section 5 differ |
@@ -201,7 +204,7 @@ With more than one executor the Owner may run Tasks of different lanes at the sa
 ## 8. Change control of the baseline
 
 - Adding, splitting, merging or removing a Task changes the baseline; the Owner approves it, DECISIONS records it, and this plan, the graph and the traceability change in the same commit (EXC-80).
-- A new Task takes the next free number, `TASK-051` today; a replaced Task becomes `SUPERSEDED` and names its replacement.
+- A new Task takes the next free number, `TASK-052` today, since D-137 added TASK-051; a replaced Task becomes `SUPERSEDED` and names its replacement.
 - A defect that a verification Task finds is fixed by a new Task, and the suites it touches run again (EXC-82, TS-32).
 - A business fact of gates G1 to G3, DEVICES or TARGET that changes a rule goes to the Owner first (PROJECT_RULES section 3); the affected contracts change through change control.
 
@@ -245,8 +248,8 @@ Counted by the generator from the documents named, not copied.
 
 | Check | Result |
 | --- | --- |
-| Tasks; identifiers `TASK-001` to `TASK-050` in order | 50 |
-| Dependencies: every Task depends only on smaller numbers; the graph has no cycle | Yes |
+| Tasks; identifiers `TASK-001` to `TASK-051` in order | 51; TASK-051 added by D-137, counted by hand with the dependency graph and the traceability of its commit |
+| Dependencies: every Task depends only on smaller numbers; the graph has no cycle | Yes, but for TASK-044's dependency on TASK-051 (D-137); no cycle |
 | Requirements of REQUIREMENTS carried by exactly one Task | 134 of 134 |
 | Workflows of CRITICAL_FLOWS carried by exactly one Task | 32 of 32 |
 | User tasks of USER_TASKS in force (UXT-05 is retired by D-077) with a carrying workflow, Task and UAT script | 38 of 38 |

@@ -5,7 +5,7 @@
 | Status | `TODO`; the status of record is [TASK_PLAN](../TASK_PLAN.md) section 4 |
 | Phase and lane | 9 Verification · lane V, verification |
 | Size and review | L · review class V — verification results accepted by the Owner ([EXECUTION_CONTEXT](../EXECUTION_CONTEXT.md) section 12) |
-| Depends on | [TASK-043](TASK-043-performance-harness.md) |
+| Depends on | [TASK-043](TASK-043-performance-harness.md), [TASK-051](TASK-051-audit-change-values.md) (D-137) |
 | Gates | TARGET (the staging part), GATE-PUBLISH (the candidate tag) ([TASK_PLAN](../TASK_PLAN.md) section 3) |
 | Branch | `task/TASK-044-integrated-verification` from `develop` (EXC-22) |
 | Executor | Claude Opus 5.5, at the effort that the Owner's instruction names for this Task (D-031, D-095), on one explicit instruction of the Owner (EXC-10, EXC-11) |

@@ -125,7 +125,7 @@ Each dimension is recorded `PASS`, `FAIL`, `BLOCKED` or `N/A` with its reason (E
 ## 12. For later Tasks
 
 - —
-- Tasks that depend on this one directly: [TASK-043](TASK-043-performance-harness.md).
+- Tasks that depend on this one directly: [TASK-043](TASK-043-performance-harness.md), and [TASK-051](TASK-051-audit-change-values.md), added by D-137 for OPEN_ITEMS T-56.
 
 ## 13. Expected files
 

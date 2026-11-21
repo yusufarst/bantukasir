@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-7 under D-090, 18 October 2026 (Asia/Jakarta); corrected under D-091 and D-092 the same day; approved by D-092; generated from the Task contracts and [TASK_PLAN](TASK_PLAN.md), which prevail |
+| Status | CURRENT — written in RF-7 under D-090, 18 October 2026 (Asia/Jakarta); corrected under D-091 and D-092 the same day; approved by D-092; generated from the Task contracts and [TASK_PLAN](TASK_PLAN.md), which prevail; TASK-051's rows changed by hand under D-137, 21 November 2026, by TASK-043 |
 | Phase | P11 |
 | Related | [REQUIREMENTS](../01-product/REQUIREMENTS.md), [CRITICAL_FLOWS](../03-workflows/CRITICAL_FLOWS.md), [ROUTE_CONTRACTS](../03-workflows/ROUTE_CONTRACTS.md), [INTERACTION_CONTRACTS](../03-workflows/INTERACTION_CONTRACTS.md), [SCHEMA](../04-architecture/SCHEMA.md), [ACCEPTANCE_SUITES](../08-testing/ACCEPTANCE_SUITES.md), [USER_TASKS](../07-ux-design/USER_TASKS.md), [UAT_PILOT](../10-release/UAT_PILOT.md) |
 
@@ -247,7 +247,7 @@ UXT-05 is retired (D-077). The UAT scripts of UAT_PILOT section 2 run in TASK-04
 | SIGNIN01 | Sign-in sessions and shared devices | [TASK-006](tasks/TASK-006-authentication.md) | [TASK-007](tasks/TASK-007-authorization-shell.md) | [TASK-044](tasks/TASK-044-integrated-verification.md) |
 | SEC01 | Application threat paths | [TASK-007](tasks/TASK-007-authorization-shell.md) | [TASK-001](tasks/TASK-001-toolchain-ci.md), [TASK-006](tasks/TASK-006-authentication.md), [TASK-010](tasks/TASK-010-bootstrap-profile-media.md), [TASK-012](tasks/TASK-012-application-image.md), [TASK-013](tasks/TASK-013-independent-backup.md), [TASK-014](tasks/TASK-014-release-pipeline.md), [TASK-018](tasks/TASK-018-photos-labels.md), [TASK-019](tasks/TASK-019-csv-import.md) | [TASK-044](tasks/TASK-044-integrated-verification.md) |
 | SEC02 | Infrastructure exposure on the target | [TASK-045](tasks/TASK-045-operations-verification.md) | — | [TASK-045](tasks/TASK-045-operations-verification.md) |
-| AUDIT01 | Audit log and security log | [TASK-042](tasks/TASK-042-audit-views.md) | [TASK-006](tasks/TASK-006-authentication.md), [TASK-038](tasks/TASK-038-housekeeping.md) | [TASK-044](tasks/TASK-044-integrated-verification.md) |
+| AUDIT01 | Audit log and security log | [TASK-042](tasks/TASK-042-audit-views.md) | [TASK-006](tasks/TASK-006-authentication.md), [TASK-038](tasks/TASK-038-housekeeping.md), [TASK-051](tasks/TASK-051-audit-change-values.md) | [TASK-044](tasks/TASK-044-integrated-verification.md) |
 | SEARCH01 | Barcode tokens and SKUs | [TASK-016](tasks/TASK-016-barcodes.md) | [TASK-015](tasks/TASK-015-catalog-core.md) | [TASK-044](tasks/TASK-044-integrated-verification.md) |
 | SEARCH02 | Product Search, master data and lifecycle | [TASK-015](tasks/TASK-015-catalog-core.md) | [TASK-016](tasks/TASK-016-barcodes.md), [TASK-017](tasks/TASK-017-catalog-pages.md), [TASK-021](tasks/TASK-021-ledger-receiving.md) | [TASK-044](tasks/TASK-044-integrated-verification.md) |
 | SEARCH03 | Scanning logic | [TASK-029](tasks/TASK-029-till-pages.md) | [TASK-017](tasks/TASK-017-catalog-pages.md) | [TASK-044](tasks/TASK-044-integrated-verification.md) |
@@ -708,7 +708,7 @@ Every table of SCHEMA section 10. Keys of a table that target a table created la
 | UXP-609 "Laci kas" | [TASK-027](tasks/TASK-027-registers-session-open.md) | — |
 | UXP-610 "Form laci kas" | [TASK-027](tasks/TASK-027-registers-session-open.md) | — |
 | UXP-611 "Status sistem" | [TASK-039](tasks/TASK-039-system-status.md) | — |
-| UXP-612 "Riwayat aktivitas" | [TASK-042](tasks/TASK-042-audit-views.md) | — |
+| UXP-612 "Riwayat aktivitas" | [TASK-042](tasks/TASK-042-audit-views.md) | [TASK-051](tasks/TASK-051-audit-change-values.md) |
 | UXP-613 "Log keamanan" | [TASK-042](tasks/TASK-042-audit-views.md) | — |
 
 ### 9.2 Controls
@@ -1094,7 +1094,7 @@ Every row of INTERACTION_CONTRACTS section 9. A control is built by the Task tha
 | UXI-375 | UXP-611 | Navigate | RP-414 | [TASK-039](tasks/TASK-039-system-status.md) | — |
 | UXI-376 | UXP-611 | Navigate | RP-601 | [TASK-039](tasks/TASK-039-system-status.md) | — |
 | UXI-377 | UXP-612 | Read | RP-612 | [TASK-042](tasks/TASK-042-audit-views.md) | — |
-| UXI-378 | UXP-612 | Local | — | [TASK-042](tasks/TASK-042-audit-views.md) | — |
+| UXI-378 | UXP-612 | Local | — | [TASK-042](tasks/TASK-042-audit-views.md) | [TASK-051](tasks/TASK-051-audit-change-values.md) |
 | UXI-379 | UXP-612 | Navigate | RP-202, RP-206, RP-302, RP-403, RP-406, RP-409, RP-604 | [TASK-042](tasks/TASK-042-audit-views.md) | — |
 | UXI-380 | UXP-612 | Read | RP-612 | [TASK-042](tasks/TASK-042-audit-views.md) | — |
 | UXI-381 | UXP-612 | Navigate | RP-601 | [TASK-042](tasks/TASK-042-audit-views.md) | — |
@@ -1154,8 +1154,8 @@ The operator runs the runbooks (D-088); the Tasks prepare their tooling and the 
 
 | Check | Result |
 | --- | --- |
-| Tasks; identifiers `TASK-001` to `TASK-050` in order | 50 |
-| Dependencies: every Task depends only on smaller numbers; the graph has no cycle | Yes |
+| Tasks; identifiers `TASK-001` to `TASK-051` in order | 51; TASK-051 added by D-137, as a contributor to UXP-612, UXI-378 and AUDIT01 (rows above, changed by hand); its extension of RP-612's payload is in its contract |
+| Dependencies: every Task depends only on smaller numbers; the graph has no cycle | Yes, but for TASK-044's dependency on TASK-051 (D-137); no cycle |
 | Requirements of REQUIREMENTS carried by exactly one Task | 134 of 134 |
 | Workflows of CRITICAL_FLOWS carried by exactly one Task | 32 of 32 |
 | User tasks of USER_TASKS in force (UXT-05 is retired by D-077) with a carrying workflow, Task and UAT script | 38 of 38 |
