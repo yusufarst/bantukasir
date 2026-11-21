@@ -73,6 +73,12 @@ final class Seeded
      */
     public function shuffle(array $items): array
     {
-        return array_values($this->random->shuffleArray($items));
+        // Fisher and Yates, on the seeded engine.
+        for ($i = count($items) - 1; $i > 0; $i--) {
+            $j = $this->random->getInt(0, $i);
+            [$items[$i], $items[$j]] = [$items[$j], $items[$i]];
+        }
+
+        return array_values($items);
     }
 }

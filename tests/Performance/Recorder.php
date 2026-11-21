@@ -150,7 +150,7 @@ final class Recorder
         return [
             'kind' => self::env('PERF_HOST'),
             'system' => php_uname('s').' '.php_uname('r').' '.php_uname('m'),
-            'processors' => preg_match_all('/^processor\s*:/m', $cpuinfo),
+            'processors' => (int) preg_match_all('/^processor\s*:/m', $cpuinfo),
             'memoryMiB' => preg_match('/^MemTotal:\s+([0-9]+) kB$/m', $meminfo, $match) === 1 ? intdiv((int) $match[1], 1024) : null,
         ];
     }
