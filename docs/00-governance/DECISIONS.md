@@ -4,7 +4,7 @@ The single log of decisions for BantuKasir. A decision made in conversation does
 
 ## 1. How to use this log
 
-- Identifiers are permanent and continue the original numbering. The next free identifier is **D-135**.
+- Identifiers are permanent and continue the original numbering. The next free identifier is **D-137**.
 - "Source" says who decided: **Owner**, or **Planner** (a planning agent acting on its own authority under the rules of the time).
 - "Status" says whether the decision is in force today. `REVALIDATION PENDING` means the decision still applies but the Owner has been asked to re-confirm it; the item number refers to [OPEN_ITEMS](OPEN_ITEMS.md).
 - D-001 to D-018 were recorded on 2 and 3 October 2026 in the former register, now [legacy/10-DECISIONS.md](legacy/10-DECISIONS.md). The table below summarizes them in English. For the exact meaning of D-001 to D-018 the original Indonesian wording governs; for whether a decision is in force, this log governs.
@@ -153,7 +153,9 @@ All by the Owner (Asia/Jakarta). D-019 to D-025 answer the questions of the [re-
 | D-131 | 15 November 2026: the PostgreSQL suite runs as four parts instead of two. `Postgres2` reached Composer's 1800 seconds on `develop` `f2a9e19`, CI run 43666348891, with 378 of its 411 tests run and none failing, while the same tree passed on pull request #47. Runners differ in speed by up to 1.6 times, so two parts of about 25 minutes each leave no margin. `phpunit.xml` gains `Postgres3` and `Postgres4`. Composer gains `test:postgres:3` and `test:postgres:4`, and the ci workflow gains the jobs `PostgreSQL (3/4)` and `PostgreSQL (4/4)`. The jobs are renamed `PostgreSQL (1/4)` to `PostgreSQL (4/4)`, and `Command contract` waits for all four. `scripts/checks/postgres-parts.sh` proves any number of parts complete, without overlap and numbered from 1. No test, assertion, check or timeout changes. | Ops, the Owner's choice in the host session, by an `ops/` pull request whose merge is the Owner's (CE-82). TEST_STRATEGY sections 6 and 7, STACK_AND_MODULES and EXECUTION_CONTEXT CE-41 follow. Not adopted. |
 | D-132 | 15 November 2026: a one-time recovery of CE-61 for pull request #47 (TASK-035), on the precedent of D-115 and D-119. The failure of CI run 43666348891 on `develop` at `f2a9e19` stays recorded as failed; it ran the two parts that D-131 replaced, and a retry would run them again at that commit. The adoption of this `ops/` pull request (`state.sh adopt`, CE-82) moves the tick's check of CE-61 to its own merge, and CE-82's rule that an `ops/` change made while a Task is stopped from a phase in flight is not adopted is set aside for this pull request alone. TASK-035 is operationally verified only when: CI on this pull request's head is green; the Owner has merged it; CI on `develop` at its squash commit is green with the four parts; and the identity and content of pull request #47's merge are verified, which they are. | Ops, the Owner's directive "ONE-TIME CI RECOVERY" in the host session, by an `ops/` pull request whose merge is the Owner's. Adopted. No rule, gate, test, timeout or executor script changes. |
 | D-133 | 20 November 2026: execution efficiency. The fast run of CI runs every check once its local environment has started, so that one red run reports every failure. The executor pushes for a fast run when the change is ready for its review, not after every stage. Each failure gets one fix and one targeted retest; a failure that its fix did not cure is recorded with its exact output and is the stop `RETEST_FAILED`. A SHOULD-FIX of the review, and a valid P2 finding of the automated reviewer, that bears on no acceptance criterion and touches none of the protected areas — sales, payments, refunds, stock, authorization, concurrency, database integrity, restoration and release safety — is deferred to a named later Task or open item. A Task blocked on a failed check stays unmerged and never `DONE`; only an Owner decision may set it aside. Every mandatory check, gate and limit of CE-44 stays. | Ops, the Owner's directive "ACCELERATE FULL V1 EXECUTION" in the host session, by an `ops/` pull request whose merge is the Owner's. EXECUTION_CONTEXT CE-30, CE-40, CE-42, CE-43, CE-46, CE-70 and CE-71, TEST_STRATEGY section 7, the workflow `fast-checks`, `scripts/checks/targeted-tests.sh` and the four executor agents' instructions follow. Adopted. |
-| D-134 | 20 November 2026: the image's vulnerability findings of develop `8f768bb`, TASK-037's merge, CI run 44698518825, which refused 43 findings that appeared after 15 November. PHP moves from 8.5.12 to 8.5.13, image `php:8.5.13-fpm-trixie` pinned by digest, which fixes the 11 critical and high findings in php-cli and php-fpm. Seven high findings in `libssl3t64`, `openssl` and `openssl-provider-legacy` at exactly 3.5.7-1~deb13u3, unfixed in Debian, are accepted temporarily, for development and CI only, each by its own assessment: CVE-2026-107493, CVE-2026-107496, CVE-2026-124709, CVE-2026-84786, CVE-2026-88823, CVE-2026-95691 and CVE-2026-95692. They expire at a fix, known exploitation, a raise of severity, a Task that adds a use they rule out, gate RELEASE, or 31 December 2026 at the latest. No staging or production, no other CVE, no wildcard, and no change to the scan or its gate. A one-time recovery of CE-61 for pull request #51 (TASK-037), on the precedent of D-115, D-119 and D-132: run 44698518825 stays failed, and the adoption of this pull request moves the check to its own merge. | Security and ops, the Owner's directive "D-134 APPROVAL" in the host session, by an `ops/` pull request whose merge is the Owner's, together with D-133. `docker/app/Dockerfile`, TOOLCHAIN, `scripts/checks/image-scan-accepted.json`, `scripts/checks/image-scan-gate-test.sh` and `ReleaseWorkflowTest` follow. Adopted. |
+| D-134 | 20 November 2026: the image's vulnerability findings of develop `8f768bb`, TASK-037's merge, CI run 44698518825, which refused 43 findings that appeared after 15 November. PHP moves from 8.5.12 to 8.5.13, image `php:8.5.13-fpm-trixie` pinned by digest, which fixes the 11 critical and high findings in php-cli and php-fpm. Seven high findings in `libssl3t64`, `openssl` and `openssl-provider-legacy` at exactly 3.5.7-1~deb13u3, unfixed in Debian, are accepted temporarily, for development and CI only, each by its own assessment: CVE-2026-107493, CVE-2026-107496, CVE-2026-124709, CVE-2026-84786, CVE-2026-88823, CVE-2026-95691 and CVE-2026-95692. They expire at a fix, known exploitation, a raise of severity, a Task that adds a use they rule out, gate RELEASE, or 31 December 2026 at the latest. No staging or production, no other CVE, no wildcard, and no change to the scan or its gate. A one-time recovery of CE-61 for pull request #51 (TASK-037), on the precedent of D-115, D-119 and D-132: run 44698518825 stays failed, and the adoption of this pull request moves the check to its own merge. | Security and ops, the Owner's directive "D-134 APPROVAL" in the host session, by an `ops/` pull request whose merge is the Owner's, together with D-133. `docker/app/Dockerfile`, TOOLCHAIN, `scripts/checks/image-scan-accepted.json`, `scripts/checks/image-scan-gate-test.sh` and `ReleaseWorkflowTest` follow. Adopted. Its seven entries move to D-135 at 3.5.9-1~deb13u1. |
+| D-135 | 21 November 2026: Debian 13's point release moved `libssl3t64`, `openssl` and `openssl-provider-legacy` to 3.5.9-1~deb13u1 and `libc-bin` and `libc6` to 2.41-12+deb13u5, so the gate refused, at the new versions, ten high CVEs that were accepted before at the old ones (CI run 44903440436, pull request #57). The ten are accepted again temporarily, for development and CI only, at exactly the new versions, each by its own entry: the seven OpenSSL CVEs of D-134 (CVE-2026-107493, CVE-2026-107496, CVE-2026-124709, CVE-2026-84786, CVE-2026-88823, CVE-2026-95691 and CVE-2026-95692), CVE-2026-19499 and CVE-2026-5435 of D-112, which Debian has fixed at 2.41-12+deb13u5 while the scan's database lags, and CVE-2026-84243 of D-115. Each expires at a fix, known exploitation, a raise of severity, a Task that adds a use it rules out, a change of the base image, gate RELEASE, or 31 December 2026 at the latest. No staging or production, no other CVE or version, no wildcard, and no change to the scan or its gate. | Security and ops, the Owner's decision "D-135 / TASK-042" in the host session, by an `ops/` pull request whose merge is the Owner's, together with D-136. `scripts/checks/image-scan-accepted.json` and `scripts/checks/image-scan-gate-test.sh` follow. |
+| D-136 | 21 November 2026: OPEN_ITEMS T-56 blocks RELEASE. TASK-042 shows only the reason of an audit event, because COPY_DECK has no label for a field of the change data. Before RELEASE, the Owner must be able to see the old and new values of an audit event, cost corrections included, under Bahasa Indonesia labels that he approved, with sensitive data protected. The route is change control of COPY_DECK and the audit view's display rules, approved by the Owner, then an implementation and its verification. TASK-047 does not cover it by default. The executing Task is named by the Owner or a planning change. | Owner, the host session of CE-03. OPEN_ITEMS T-56 and TASK-049's check of RELEASE follow. |
 
 ## 4. Facts supplied by the Owner
 
@@ -2551,3 +2553,67 @@ The Owner gave this decision on 20 November 2026 in the host session of CE-03. I
   - CE-61 for every other merge, and CE-82 for every other `ops/` change.
   - The guard, the scan and its gate, every required check, and the Owner's merges, gates and approvals.
   - No deployment to staging or production is authorized.
+
+### D-135 — Ten accepted findings at the versions of Debian 13's point release, for development and CI only
+
+The Owner gave this decision on 21 November 2026 in the host session of CE-03, after the stop `OWNER_DECISION` of TASK-042's fix cycle on pull request #57. He first answered the host's proposal with "Ya, siapkan D-135", then gave his words, in Bahasa Indonesia; items 1 to 3 are this decision, and item 5 is D-136:
+
+> OWNER DECISION — D-135 / TASK-042
+> Saya menyetujui penyiapan D-135 untuk penerimaan sementara 10 CVE yang sebelumnya sudah dinilai, terbatas pada development/CI dan versi paket baru yang persis.
+> 1. Verifikasi ulang 7 CVE OpenSSL dan 3 CVE glibc terhadap versi aktual, status perbaikan, eksploitasi, dan paparan aplikasi. Hentikan jika ada risiko baru yang material.
+> 2. Catat penerimaan sementara per CVE, tanpa wildcard, tanpa melemahkan scanner, dan tanpa mengizinkan staging/production. Evaluasi ulang seluruhnya sebelum RELEASE.
+> 3. Selesaikan D-135 melalui PR ops sesuai aturan repository. Gunakan bukti sebelumnya yang masih valid; jangan mengulang analisis atau tes yang tidak terdampak.
+> 5. Catat T-56 sebagai D-136 dengan kewajiban menyelesaikan tampilan nilai lama/baru audit sebelum RELEASE, melalui change control yang disetujui.
+> STOP jika ada CVE baru, eksploitasi yang diketahui, jalur paparan material, atau risiko yang belum dinilai. Jangan melakukan deployment.
+
+- **Why.** CI run 44903440436 on pull request #57 (TASK-042, head `360a230`) failed its image checks. The gate refused 27 findings: 158 accepted, 27 refused.
+  - The pinned base images are unchanged since D-134.
+  - The build's `apt-get upgrade` installed Debian 13's point release:
+    - `libssl3t64`, `openssl` and `openssl-provider-legacy` at 3.5.9-1~deb13u1, replacing 3.5.7-1~deb13u3;
+    - `libc-bin` and `libc6` at 2.41-12+deb13u5, replacing 2.41-12+deb13u4.
+  - The 27 refused findings are exactly ten CVEs that were accepted at the old versions, now found at the new ones (`REFUSED_NOT_ACCEPTED`). No other CVE was refused.
+  - The same condition affects every build of the image, `develop` included.
+- **The verification of item 1.** On 21 November the host read Debian's security tracker for openssl, glibc and each of the ten CVEs, and Grype's database of 2026-11-21T06:20:06Z.
+  - **The seven OpenSSL CVEs.** trixie 3.5.9-1~deb13u1 and trixie-security 3.5.7-1~deb13u3 are vulnerable, unstable is unfixed, and there is no DSA. All are High and none is known exploited, at EPSS 0.00143 to 0.00569. The assessments of D-134 hold unchanged, because each needs a use that the image does not have: a caller of `PEM_X509_INFO_read_bio_ex()` with a stack, CMS encryption, a QUIC server or client, DANE, or AES-GCM-SIV.
+  - **CVE-2026-19499 and CVE-2026-5435.** Debian lists both as fixed in trixie 2.41-12+deb13u5, the version installed. The scan's database still gives wont-fix, so the finding lags Debian's fix. Neither is known exploited.
+  - **CVE-2026-84243.** trixie 2.41-12+deb13u5 is vulnerable, `<no-dsa>` (Minor issue), and unstable is unfixed. It is not known exploited, at EPSS 0.00297. The assessment of D-115 holds: no SSH server, no gettext extension, nothing sets `LANGUAGE`, and no `putenv`.
+  - **No new use.** The code that TASK-038 to TASK-042 added since D-134 holds no OpenSSL, PKCS#7, CMS, QUIC, DANE, gettext, `strfmon`, `putenv` or `LANGUAGE` use, and no process started from input.
+  - **Result.** No new CVE, no known exploitation, no raise of severity and no new path of exposure. The stop of item 1 does not apply.
+- **The record.** In `scripts/checks/image-scan-accepted.json`:
+  - each of the ten entries names its CVE, severity High, decision D-135, its exact packages at the new version, Debian's status read on 21 November, and its expiry;
+  - the block `assessedD135` records the run, the scanner, its database, the image, the sources and the limits.
+
+  `image-scan-gate-test.sh` proves that D-135 holds exactly these ten entries, at those versions alone, and no critical finding, and that no entry remains under D-134. The list still names 73 CVEs and 187 findings.
+- **Limits.**
+  - The acceptance is for development and CI only, at exactly 3.5.9-1~deb13u1 of the three OpenSSL packages and 2.41-12+deb13u5 of the two glibc packages. It authorizes no staging and no production.
+  - It accepts no other CVE, no other version and no wildcard. The scan, its gate and every mandatory check are unchanged.
+  - Each entry expires at the first of:
+    - a fix that the build installs and the gate then refuses as fixable or prints as accepted but not reported;
+    - known exploitation or a raise to Critical;
+    - a Task that adds a use that an entry rules out;
+    - a change of the base image;
+    - gate RELEASE, which reassesses every unresolved finding;
+    - 31 December 2026 at the latest.
+- **Unchanged.**
+  - D-134's assessments, now carried by D-135's entries, and the acceptances of D-112 and D-115 other than these three.
+  - The guard, the scan and its gate, every required check, and the Owner's merges, gates and approvals.
+  - No deployment to staging or production is authorized.
+- **Then.** After the Owner merges this pull request and CI on `develop` is green, the loop resumes TASK-042 by `state.sh resume`. Its fix cycle fixes the three known test defects in one push.
+
+### D-136 — The audit view's old and new values before RELEASE (OPEN_ITEMS T-56)
+
+The Owner gave this decision on 21 November 2026 in the host session of CE-03. His words, in Bahasa Indonesia, came first on 21 November when TASK-042's fix cycle hid the section "Perubahan", and again as item 5 of his decision quoted under D-135:
+
+> V1 tetap penuh. T-56 wajib diselesaikan sebelum RELEASE: Pemilik harus dapat melihat perubahan nilai lama dan baru pada audit, termasuk koreksi biaya, dengan label Bahasa Indonesia yang disetujui serta perlindungan data sensitif.
+> Jangan tampilkan nama field internal, jangan mengarang COPY_DECK, dan jangan mengubah scope TASK-042 secara diam-diam.
+> Pertahankan perbaikan P1 saat ini. Pastikan T-56 memiliki jalur change control, Task pelaksana yang jelas, dan verifikasi sebelum RELEASE. Jangan menganggap TASK-047 otomatis mencakup pekerjaan ini.
+
+- **Why.** COPY_DECK UXI-378 names "Rincian", "Perubahan" and "Alasan", but no label for any field of an event's change data and no rule for showing its values. A Bahasa Indonesia-only interface (AGENTS rule 14) cannot show internal field names, and copy is never invented. TASK-042 therefore shows only the reason, which keeps its P1 fix.
+- **The obligation.** T-56 blocks gate RELEASE. Before RELEASE, the Owner can see, for each audit event that records a change, the old and new value of each field, cost corrections included, under a Bahasa Indonesia label that he approved. Sensitive data stays protected: the data that only the Owner may see (D-047) stays his alone, and nothing is shown that the event's channel rules out.
+- **The route.**
+  1. Change control: an amendment of COPY_DECK, for the labels of the fields and the display of their values, and of the audit view's rules, approved by the Owner.
+  2. The implementation in RP-612 and UXP-612, with its tests.
+  3. Its verification on the release candidate before RELEASE.
+- **The executing Task.** TASK-047 does not cover it by default. The Owner, or a planning change that he approves, names the Task that carries the route. Until that Task is named and DONE, T-56 stays open and RELEASE is refused.
+- **The record.** The next Task records D-136 in OPEN_ITEMS T-56 and in CURRENT_HANDOFF, and TASK-049 checks it at RELEASE.
+- **Unchanged.** TASK-042's scope, its P1 fix, V1 in full, and every gate.
