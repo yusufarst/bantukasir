@@ -133,6 +133,11 @@ return [
         'count' => ':jumlah hasil',
         'search_hint' => 'Ketik untuk mencari',
     ],
+    // The actors without a user of the audit views (TASK-042; COPY_DECK sections 3 and 11.13).
+    'actor' => [
+        'system' => 'Sistem',
+        'operator' => 'Prosedur operator',
+    ],
     // The document title of the pages without business data (TASK-006;
     // COPY_DECK section 4.2), that of the protected pages with the shop's
     // name (TASK-010) and the account menu of the shell (TASK-007; section

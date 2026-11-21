@@ -89,8 +89,9 @@ for (const width of [WIDTHS[0], WIDTHS[4], WIDTHS[7]]) {
 
         await Promise.all([page.waitForURL((url) => url.pathname === '/settings'), page.getByRole('navigation', { name: 'Menu utama' }).getByRole('link', { name: 'Pengaturan' }).click()]);
         await expect(page.getByRole('heading', { level: 1, name: 'Pengaturan' })).toBeVisible();
-        // Pengguna, Profil usaha, Laci kas (UXI-328, TASK-027) and Status sistem (UXI-329, TASK-039).
-        await expect(page.getByRole('main').getByRole('link')).toHaveCount(4);
+        // Pengguna, Profil usaha, Laci kas (UXI-328, TASK-027), Status sistem (UXI-329, TASK-039), Riwayat aktivitas
+        // and Riwayat keamanan (UXI-330, UXI-331, TASK-042).
+        await expect(page.getByRole('main').getByRole('link')).toHaveCount(6);
         await expect(page.getByRole('main').getByRole('link', { name: /Laci kas/ })).toBeVisible();
         await checked(page);
 

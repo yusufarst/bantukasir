@@ -2591,6 +2591,13 @@
         margin-bottom: 8px;
     }
 
+    /* The details of an audit event or a security log entry, opened on demand (UXI-378, UXI-383; TASK-042):
+       a recorded value is shown whole, wrapped anywhere, never cut. */
+    .bk-audit-detail {
+        min-width: 12rem;
+        overflow-wrap: anywhere;
+    }
+
     .bk-brand__name {
         min-width: 0;
         color: var(--color-text-primary);

@@ -7,6 +7,7 @@ import { Committed, StateMark } from '@/components/ui/States';
 import { AppShell } from '@/layouts/AppShell';
 import { PageContainer, PageHeader } from '@/layouts/Page';
 import { takeSavedNote } from '@/lib/access/users';
+import { activityBack } from '@/lib/audit/activity';
 import { CORRECT_CAPABILITY, type CorrectionEntry, type CostValue } from '@/lib/costing/costs';
 import { CorrectionButton, CorrectionHistory } from '@/lib/costing/Parts';
 import { formatCost, formatDate, formatDateTime, formatQuantity } from '@/lib/format';
@@ -25,8 +26,8 @@ import { movementPage, openerOf, RECEIVINGS_PAGE, RECEIVINGS_SHELL, REQUESTS_PAG
 // history (UXS-26; D-047); the Owner also sees the correction history (UXI-247) and "Koreksi biaya"
 // or "Lengkapi biaya" per line (UXI-249; TASK-025), and "Batalkan mutasi" per line (UXI-250;
 // TASK-026), disabled with its reason when the line's RECEIPT is reversed, while a reversal of the
-// user is uncertain or while the onboarding freeze is on. "Kembali ke …" names the page that opened it when that is UXP-403 or UXP-006,
-// otherwise UXP-404 with its filters; after the success of UXP-405, UXP-404 (UXI-251).
+// user is uncertain or while the onboarding freeze is on. "Kembali ke …" names the page that opened it when that is UXP-403, UXP-612 (TASK-042)
+// or UXP-006, otherwise UXP-404 with its filters; after the success of UXP-405, UXP-404 (UXI-251).
 
 /** UXP-504 and UXP-411 return here. */
 const OPENER = 'receiving';
@@ -82,8 +83,14 @@ function movementLinkName(line: Line): string {
     return `${t('inventory.movement.title')} ${line.product.name}`;
 }
 
-/** The way back of UXI-251. */
+/** The way back of UXI-251; to UXP-612 with its filters and page since TASK-042. */
 function backOf(): { readonly href: string; readonly page: string } {
+    const activity = activityBack(document.referrer, window.location.origin);
+
+    if (activity !== null) {
+        return activity;
+    }
+
     const opener = openerOf(document.referrer, window.location.origin);
     const path = opener?.pathname ?? '';
 

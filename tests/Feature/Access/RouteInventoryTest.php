@@ -200,6 +200,9 @@ final class RouteInventoryTest extends TestCase
         // TASK-041: RP-007, taking no parameter, and RP-501, taking only its date, for CAP-22.
         'GET /home' => ['home', 'RP-007', 'CAP-22', [...self::SIGNED_IN, 'capability:CAP-22', 'input.allow']],
         'GET /reports/daily' => ['reports.daily', 'RP-501', 'CAP-22', [...self::SIGNED_IN, 'capability:CAP-22', 'input.allow:date']],
+        // TASK-042: RP-612 and RP-613 for CAP-32, each taking only its parameters.
+        'GET /settings/activity' => ['audit.index', 'RP-612', 'CAP-32', [...self::SIGNED_IN, 'capability:CAP-32', 'input.allow:from,to,user,action,product,session,reference,after,before,perPage']],
+        'GET /settings/security-log' => ['security.index', 'RP-613', 'CAP-32', [...self::SIGNED_IN, 'capability:CAP-32', 'input.allow:from,to,type,user,after,before,perPage']],
     ];
 
     public function test_the_routes_are_exactly_those_listed_each_with_its_gate(): void

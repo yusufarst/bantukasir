@@ -12,6 +12,7 @@ import { AppShell } from '@/layouts/AppShell';
 import { PageContainer, PageHeader } from '@/layouts/Page';
 import { useWidthClass } from '@/layouts/widthClass';
 import { holdLink, rolesText, statusText, takeSavedNote, USER_COMMANDS, userPage, usersListAddress, type RoleCode, type StatusCode } from '@/lib/access/users';
+import { activityBack } from '@/lib/audit/activity';
 import { CloseSessionEntry } from '@/lib/cash/Parts';
 import { assistedClosePage, sessionPage } from '@/lib/cash/sessions';
 import { blockingRequest, committedText } from '@/lib/commands/families';
@@ -31,7 +32,8 @@ import type { DestinationId } from '@/lib/navigation';
 // message, and issuing a link leads to UXP-606. An unresolved request of the family blocks
 // the others, but never Nonaktifkan or Cabut tautan (NC-13 (d)). TASK-030 adds the OPEN
 // cash session with "Detail sesi kas" (UXI-340), TASK-032 its "Tutup sesi oleh Pemilik"
-// for another user's session, and TASK-042 the way back to UXP-612 (UXI-349).
+// for another user's session, and TASK-042 the way back to UXP-612, "Kembali ke Riwayat
+// aktivitas" with its filters and page, when it opened this page (UXI-349).
 
 const DESTINATION: DestinationId = 'settings';
 
@@ -100,6 +102,8 @@ function UserPage({ title, user, openSession }: { title: string; user: Account; 
     // A new key for each opening: its command starts again with a new intent.
     const [opening, setOpening] = useState(0);
     const [listPage] = useState(usersListAddress);
+    // UXI-349: "Kembali ke Riwayat aktivitas", with its filters and page, when UXP-612 opened this page (TASK-042).
+    const [activity] = useState(() => activityBack(document.referrer, window.location.origin));
     const unresolved = useUnresolved();
     const active = user.status === 'ACTIVE';
     const deactivated = user.status === 'DEACTIVATED';
@@ -173,7 +177,7 @@ function UserPage({ title, user, openSession }: { title: string; user: Account; 
         <PageContainer width={'form'}>
             <PageHeader
                 title={title}
-                back={{ href: listPage, page: t('access.users.title') }}
+                back={activity ?? { href: listPage, page: t('access.users.title') }}
                 actions={staff && user.status !== 'ANONYMIZED' ? <ButtonLink href={editPage} label={t('access.user_edit.title')} variant={'primary'} /> : undefined}
             />
             <div className={'bk-stack'}>

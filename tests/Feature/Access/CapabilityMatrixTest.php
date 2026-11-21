@@ -507,6 +507,14 @@ final class CapabilityMatrixTest extends DatabaseTestCase
         'RP-501' => ['method' => 'GET', 'path' => '/reports/daily', 'json' => false, 'answers' => [
             'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
         ]],
+        // TASK-042: the business audit and the security log for CAP-32, the Owner's alone; every other role and the
+        // combined account refused (AC-042-01).
+        'RP-612' => ['method' => 'GET', 'path' => '/settings/activity', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
+        'RP-613' => ['method' => 'GET', 'path' => '/settings/security-log', 'json' => false, 'answers' => [
+            'guest' => [302, '/login'], 'owner' => [200, null], 'ops' => [403, null], 'cashier' => [403, null], 'combined' => [403, null],
+        ]],
     ];
 
     /** @var array<string, array{id: int, email: string, password: string}> */

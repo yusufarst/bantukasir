@@ -1,0 +1,208 @@
+import { router } from '@inertiajs/react';
+import { useState, type FormEvent } from 'react';
+import { Button } from '@/components/ui/Button';
+import { KeyValueList } from '@/components/ui/Data';
+import { DataTable, type Column } from '@/components/ui/DataTable';
+import { Field, SelectInput, TextInput } from '@/components/ui/Field';
+import { EmptyState, NoResults } from '@/components/ui/States';
+import { AppShell } from '@/layouts/AppShell';
+import { ListLayout, PageHeader } from '@/layouts/Page';
+import {
+    accountOf,
+    ACTION_CODES,
+    ACTION_LABELS,
+    actionWord,
+    activityAddress,
+    actorWord,
+    isActionCode,
+    referenceLink,
+    SETTINGS_PAGE,
+    type ActivityFilters,
+    type AuditActor,
+    type AuditReference,
+} from '@/lib/audit/activity';
+import { ProductFilter } from '@/lib/catalog/ProductFilter';
+import { formatDateTime } from '@/lib/format';
+import { t } from '@/lib/i18n';
+import type { DestinationId } from '@/lib/navigation';
+
+// UXP-612 "Riwayat aktivitas" (ROUTE_CONTRACTS RP-612; COPY_DECK sections 11.12 and 11.14; INTERACTION_INVENTORY
+// UXI-377 to UXI-381; NAVIGATION_CONTRACTS UXP-612; UI_STATES section 6; REQ-AUD-01, REQ-AUD-02; BR-AUD-02 to
+// BR-AUD-04; TASK-042 scope item 1), the Owner's alone (CAP-32): the business audit, newest first, paged on the
+// server with "Berikutnya" and "Sebelumnya". The filters (UXI-377): "Tanggal", one day of Asia/Jakarta; "Pengguna",
+// every account by its name now; "Jenis", the label of an action code; "Produk", through the shared Product
+// Search; "Sesi kas", a session's number, and "Referensi", each searched on Enter. Each row (UXI-378) shows the
+// time, who acted by the name the event froze, the action's label and its reference — a link to the object's page
+// where it has one (UXI-379), else text — and opens on demand its changes, the Owner-only ones among them, and its
+// reason. The filters and the page stand in the address (NC-10), so that the way back of a linked page keeps them.
+// The way back is "Kembali ke Pengaturan" (UXI-381).
+
+/** The destination of the navigation that holds the page (UXI-008). */
+const DESTINATION: DestinationId = 'settings';
+
+interface ActivityRow {
+    readonly id: number;
+    readonly occurredAt: string;
+    readonly action: string;
+    readonly actor: AuditActor;
+    readonly reference: AuditReference;
+    readonly reason: string | null;
+    readonly changes: readonly { readonly key: string; readonly value: string }[];
+}
+
+interface ActivityProps {
+    readonly filters: ActivityFilters;
+    readonly users: readonly { readonly id: number; readonly displayName: string }[];
+    readonly product: { readonly id: number; readonly name: string; readonly sku: string } | null;
+    readonly events: { readonly rows: readonly ActivityRow[]; readonly nextCursor: string | null; readonly previousCursor: string | null };
+}
+
+export default function Activity(props: ActivityProps) {
+    const title = t('audit.activity.title');
+
+    return (
+        <AppShell title={title} current={DESTINATION}>
+            <ActivityList title={title} {...props} />
+        </AppShell>
+    );
+}
+
+function ActivityList({ title, filters, users, product, events }: ActivityProps & { title: string }) {
+    const [visiting, setVisiting] = useState(false);
+    const [session, setSession] = useState(filters.session ?? '');
+    const [reference, setReference] = useState(filters.reference ?? '');
+
+    const visit = (next: ActivityFilters, cursor: { readonly after?: string; readonly before?: string } = {}): void => {
+        setVisiting(true);
+        router.visit(activityAddress(next, cursor), { preserveScroll: true, preserveState: true, onFinish: () => setVisiting(false) });
+    };
+
+    const apply = (patch: Partial<ActivityFilters>): void => visit({ ...filters, ...patch });
+    const chooseDay = (value: string): void => apply({ from: value === '' ? null : value, to: value === '' ? null : value });
+
+    // "Sesi kas" and "Referensi": Enter in the field searches it, and runs nothing else.
+    const searchSession = (event: FormEvent<HTMLFormElement>): void => {
+        event.preventDefault();
+        apply({ session: session.trim() === '' ? null : session.trim() });
+    };
+
+    const searchReference = (event: FormEvent<HTMLFormElement>): void => {
+        event.preventDefault();
+        apply({ reference: reference.trim() === '' ? null : reference.trim() });
+    };
+
+    const filtered = filters.from !== null || filters.to !== null || filters.user !== null || filters.action !== null || filters.product !== null || filters.session !== null || filters.reference !== null;
+    const clear = (): void => {
+        setSession('');
+        setReference('');
+        visit({ from: null, to: null, user: null, action: null, product: null, session: null, reference: null, perPage: filters.perPage });
+    };
+
+    const columns: readonly Column<ActivityRow>[] = [
+        { id: 'time', header: t('audit.activity.col_time'), isHead: true, cell: (row) => formatDateTime(row.occurredAt) },
+        { id: 'user', header: t('audit.activity.col_user'), cell: (row) => actorWord(row.actor, 'activity') },
+        { id: 'action', header: t('audit.activity.col_action'), cell: (row) => actionWord(row.action) },
+        { id: 'reference', header: t('audit.activity.col_reference'), cell: (row) => <ReferenceCell reference={row.reference} /> },
+        { id: 'details', header: t('audit.activity.details'), cell: (row) => <Details row={row} /> },
+    ];
+
+    return (
+        <ListLayout
+            header={<PageHeader title={title} back={{ href: SETTINGS_PAGE, page: t('config.settings.title') }} />}
+            toolbar={
+                <>
+                    <Field label={t('audit.activity.filter_date')} error={filters.from !== null && filters.to !== null && filters.from > filters.to ? t('ux.validation.date_order') : undefined}>
+                        <TextInput type={'date'} value={filters.from ?? ''} onChange={(event) => chooseDay(event.target.value)} />
+                    </Field>
+                    <Field label={t('audit.activity.filter_user')}>
+                        <SelectInput value={filters.user === null ? '' : String(filters.user)} onChange={(event) => apply({ user: accountOf(users, event.target.value) })}>
+                            <option value={''} />
+                            {users.map((person) => (
+                                <option key={person.id} value={String(person.id)}>
+                                    {person.displayName}
+                                </option>
+                            ))}
+                        </SelectInput>
+                    </Field>
+                    <Field label={t('audit.activity.filter_type')}>
+                        <SelectInput value={filters.action ?? ''} onChange={(event) => apply({ action: isActionCode(event.target.value) ? event.target.value : null })}>
+                            <option value={''} />
+                            {ACTION_CODES.map((code) => (
+                                <option key={code} value={code}>
+                                    {t(ACTION_LABELS[code])}
+                                </option>
+                            ))}
+                        </SelectInput>
+                    </Field>
+                    <ProductFilter key={String(filters.product ?? '')} label={t('audit.activity.filter_product')} chosen={product === null ? null : { name: product.name }} onChoose={(picked) => apply({ product: picked === null ? null : picked.id })} />
+                    <form role={'search'} onSubmit={searchSession}>
+                        <Field label={t('audit.activity.filter_session')}>
+                            <TextInput type={'search'} inputMode={'numeric'} autoComplete={'off'} maxLength={40} value={session} onChange={(event) => setSession(event.target.value)} />
+                        </Field>
+                    </form>
+                    <form role={'search'} onSubmit={searchReference}>
+                        <Field label={t('audit.activity.filter_reference')}>
+                            <TextInput type={'search'} autoComplete={'off'} maxLength={100} value={reference} onChange={(event) => setReference(event.target.value)} />
+                        </Field>
+                    </form>
+                </>
+            }
+            more={
+                events.previousCursor !== null || events.nextCursor !== null ? (
+                    <div className={'bk-actions'}>
+                        {events.previousCursor !== null && <Button label={t('ux.action.previous_page')} variant={'secondary'} busy={visiting} onClick={() => visit(filters, { before: events.previousCursor ?? undefined })} />}
+                        {events.nextCursor !== null && <Button label={t('ux.action.next_page')} variant={'secondary'} busy={visiting} onClick={() => visit(filters, { after: events.nextCursor ?? undefined })} />}
+                    </div>
+                ) : undefined
+            }
+        >
+            <div className={'bk-stack'}>
+                {events.rows.length > 0 && <DataTable caption={title} columns={columns} rows={events.rows} rowKey={(row) => String(row.id)} wide={true} />}
+                {events.rows.length === 0 && filtered && <NoResults onClear={clear} />}
+                {events.rows.length === 0 && !filtered && <EmptyState body={t('audit.activity.empty')} />}
+            </div>
+        </ListLayout>
+    );
+}
+
+/** UXI-379: the object's page where it has one, its number or name as the link's text; else text. */
+function ReferenceCell({ reference }: { reference: AuditReference }) {
+    const link = referenceLink(reference);
+
+    if (link === null) {
+        return reference.text === null ? null : <>{reference.text}</>;
+    }
+
+    return (
+        <a className={'bk-table-link'} href={link.href}>
+            {t('audit.activity.reference_link', { referensi: link.text })}
+        </a>
+    );
+}
+
+/** UXI-378: the event's changes and reason, opened on demand; nothing to open without either. */
+function Details({ row }: { row: ActivityRow }) {
+    if (row.changes.length === 0 && row.reason === null) {
+        return null;
+    }
+
+    return (
+        <details className={'bk-version bk-audit-detail'}>
+            <summary>{t('audit.activity.expand')}</summary>
+            <div className={'bk-stack'}>
+                {row.changes.length > 0 && (
+                    <div className={'bk-stack'}>
+                        <p className={'bk-meta'}>{t('audit.activity.changes')}</p>
+                        <KeyValueList items={row.changes.map((change, at) => ({ key: `${String(at)}-${change.key}`, label: change.key, value: change.value }))} />
+                    </div>
+                )}
+                {row.reason !== null && (
+                    <div className={'bk-stack'}>
+                        <p className={'bk-meta'}>{t('audit.activity.reason')}</p>
+                        <p>{row.reason}</p>
+                    </div>
+                )}
+            </div>
+        </details>
+    );
+}

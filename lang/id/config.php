@@ -5,7 +5,8 @@
 // COPY_DECK by the first Task that uses them; TASK-003 adds none. TASK-010
 // adds the settings index (section 11.1, its entry of UXP-607) and the
 // BusinessProfile pages (sections 11.7 and 11.8), with the accent names of
-// TASK-002 (CC-05). TASK-039 adds the system status (section 11.11).
+// TASK-002 (CC-05). TASK-039 adds the system status (section 11.11), TASK-042
+// the entries of the two audit views (section 11.1).
 
 return [
     'settings' => [
@@ -16,6 +17,9 @@ return [
         'registers_desc' => 'Laci kas yang dipakai untuk sesi kas.',
         // UXI-329 "Status sistem" (TASK-039).
         'status_desc' => 'Cadangan data, pemulihan, ruang penyimpanan, dan rekonsiliasi.',
+        // UXI-330 "Riwayat aktivitas" and UXI-331 "Riwayat keamanan" (TASK-042).
+        'activity_desc' => 'Siapa mengubah apa, dan kapan.',
+        'security_desc' => 'Upaya masuk, tautan kata sandi, dan akses yang ditolak.',
     ],
     // UXP-611 "Status sistem" (TASK-039; COPY_DECK sections 3 and 11.11).
     'system_status' => [
