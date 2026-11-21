@@ -25,7 +25,8 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | The same checks, the targeted retest of the review's fixes (D-133) | Fast run 3, 44934771632 on `efaaaa0` (checkpoint 6) | 22 November, 01:18 to 01:23 | 5 min 29 s for the run | `PASS`: every step, `BudgetsTest` with the regression tests of R-01 and R-02, and `DatasetTest`, unchanged, run with the record's new fields |
 | Guard | Local, on `352b568` (checkpoint 7, R-12 to R-14) | 22 November, 01:28 to 01:35 | about 7 min | `GUARD PASS`, no candidate |
 | The same checks, the targeted retest of R-12 to R-14 (D-133) | Fast run 4, 44936355273 on `352b568` | 22 November, 01:35 to 01:41 | 5 min 38 s for the run | `PASS`: every step, `DatasetTest` with R-12's case and R-14's assertions. Four fast runs of the ten of CE-46 |
-| `composer test:postgres` (four parts), `test:race`, the build, the browser suite, the image checks, the restore rehearsal, the new job `Migration rehearsal` with the dry run | CI on the pull request's final head | — | — | `NOT_RUN` until then (CE-44, D-117) |
+| The command contract with `composer test:postgres` (four parts), `test:race`, the build and the browser suite; the image checks; the restore rehearsal; the fast checks; the new job `Migration rehearsal` with the dry run | CI on the pull request's first head, run 44938111782 (fast checks 44938084208) on `0151fe3` | 22 November, 01:55 to 02:37 | Command contract 42 min 10 s; PostgreSQL parts 15 min 34 s, 13 min 18 s, 13 min 44 s, 13 min 46 s; image checks 5 min 38 s; restore rehearsal 4 min 8 s; fast checks 6 min 36 s; `Migration rehearsal` 11 min 59 s | `PASS` for every job but `Migration rehearsal`, `FAIL` (F-3): steps 1 to 3 `PASS` — the base dataset built, its reconciliation `CLEAN`, no new migration, the verification `JOB_PASSED` — and step 4, the dry run, `PERF_DRY_RUN_INCOMPLETE no sample of op_sale_200_lines` |
+| The same jobs, the targeted retest of F-3 (D-133) | CI on the fix cycle's head | — | — | `NOT_RUN` until then; every push starts the whole contract and the image checks again (CE-41) |
 
 ## 2. What was built (contract section 4.1)
 
@@ -56,15 +57,16 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Criterion | Proof | Status |
 | --- | --- | --- |
 | AC-043-01 | `DatasetTest`: the base dataset at a small scale built through the Actions, its counts, a clean reconciliation, the same fingerprint from the same seed and another from another seed; the growth dataset with a clean reconciliation; the refusal outside test and local; `BudgetsTest`: the full counts of section 13.2 | `PASS`, fast run 2 (`1276eb1`), and again in fast runs 3 and 4 (`efaaaa0`, `352b568`) after the review's fixes changed `Recorder`, `BudgetsTest` and `DatasetTest` |
-| AC-043-02 | `BudgetsTest` (twelve budgets, names, figures and statistics against section 13.1, each measured by the script, Product Search on its results and the reports' null read as failures since R-01 and R-02); `DatasetTest` (the record's versions, configuration, indexes, host, dataset, results, reconciliation before and after) | `PASS`, fast run 4 (`352b568`), after the review's fixes invalidated fast runs 2 and 3 |
-| AC-043-03 | The dry run of the job `Migration rehearsal`, its record labelled as no PERF01 evidence | `NOT_RUN` until the pull request's final head |
-| AC-043-04 | The job `Migration rehearsal` | `NOT_RUN` until the pull request's final head |
+| AC-043-02 | `BudgetsTest` (twelve budgets, names, figures and statistics against section 13.1, each measured by the script, Product Search on its results and the reports' null read as failures since R-01 and R-02); `DatasetTest` (the record's versions, configuration, indexes, host, dataset, results, reconciliation before and after) | `PASS`, fast run 4 (`352b568`) and the Command contract of run 44938111782 (`0151fe3`); F-3's fix changes the script and `BudgetsTest`, so it runs again on the fix cycle's head |
+| AC-043-03 | The dry run of the job `Migration rehearsal`, its record labelled as no PERF01 evidence | `FAIL` on `0151fe3` (F-3, section 11); `NOT_RUN` on the fix cycle's head until its run |
+| AC-043-04 | The job `Migration rehearsal` | Steps 1 to 3, the rehearsal, `PASS` on `0151fe3` (run 44938111782); the job as a whole `NOT_RUN` on the fix cycle's head until its run |
 
 ## 4.1 Findings
 
 | ID | Finding | Outcome |
 | --- | --- | --- |
 | F-1 | Fast run 1 (44930804317 on `7dbe362`): `PostgresPartsTest:262` counted the workflow's `if: always()` steps as the parts plus two, and the new job adds its own stop; `DatasetTest:59` expected at least 61 audit events, one for each movement line, while a document of several lines writes one, so 58; `DatasetTest:98` read through the harness's observer while the test's environment name was still `staging`, which the observer's own marker check refused | Fixed in one push (checkpoint 5, `1276eb1`): the parts plus three; at least 49 audit events, one for each command the builder sends (the comment counts them); the test's name restored before the observer reads. Fast run 2 is their one targeted retest (D-133) |
+| F-3 | The automated reviewer's P1 finding on pull request #59 (review comment 4654439960), confirmed by run 44938111782: k6 empties a VU's cookie jar after each iteration by default, while the cashiers and the Owner's reports sign in once, in their first iteration; from the second on their requests ran without a session — 240 failed barcode lookups against 6 samples, 70 failed Sales of 50 lines against 2 — and the Sale of 200 lines, first tried in the eighth iteration, had no sample, so `perf.php record` failed the job | Fixed in the fix cycle's push: `noCookiesReset: true` in the script's options, so each VU keeps its sign-in for the run; regression assertion in `BudgetsTest::test_the_scenarios_measure_each_metric`. The run on the new head is its one targeted retest (D-133) |
 | F-2 | Carried for this Task: TASK-025 finding F-5 (the worklist's condition over every cost source) and TASK-036 finding F-9 (whether a reconciliation of every product finishes within its budget on the provisional dataset) | The costs-to-complete worklist is among the page visits of the scenarios; each record times the reconciliation before and after the run. Their measurement against the budgets stays for TASK-048 |
 
 ## 5. Tests (contract section 7)
@@ -151,6 +153,7 @@ R-12's fix is not a MUST-FIX's, so it has no targeted check of its own (CE-40); 
 | `http://bantukasir-app:8080` (url) | `compose.yaml` and `tests/Performance/scenarios/perf01.js`, added in `83a0ada` | The network alias of the local environment's application container, already in `compose.yaml` for the browser tests (`E2E_BASE_URL`): no real host, no person, no client datum. No finding; accepted with the candidates' hash `1ec33bac…` on checkpoint 1 and `27190cc7…` on checkpoints 1 to 4 |
 | — | Checkpoints 5 (`1276eb1`), 6 (`efaaaa0`) and 7 (`352b568`) | No candidate: `GUARD PASS` (00:47, 01:17, 01:35) |
 | `http://bantukasir-app:8080` (url), three times | `guard.sh --preview` of the record against `origin/develop` (22 November, 01:18): `compose.yaml`, `perf01.js` and this file, where it quotes the candidate | The same container alias, judged again: no finding |
+| `http://bantukasir-app:8080` (url), three times | `guard.sh --preview` of the fix cycle of F-3 (22 November, 02:41): the same three files | The same container alias: no finding |
 
 ## 10. For later Tasks and the record
 
@@ -158,5 +161,26 @@ R-12's fix is not a MUST-FIX's, so it has no targeted check of its own (CE-40); 
 - TASK-048: the generators and `perf.php` run only where the marker and the environment name are test or local (scope item 1), and a marker states what an environment is (ENV-04), so the performance target of ENVIRONMENTS section 2 needs a change control in TASK-048 — an environment and marker of its own that the harness accepts — never a relabelled `local`; the load tool's script itself takes the address in `PERF_BASE_URL` and the plan as a file (review R-11).
 - TASK-048: the second item of PERF01 — the ten-year growth dataset keeps paging and indexes bounded — needs its own check on the growth dataset, which this harness builds but does not measure (review R-08).
 - The dry run fails the job when a metric has no successful sample. A miss of the CSV import or the replay that is only a timeout of a slow shared runner is a condition of the runner, not a failure of the rehearsal of REL-21, and is read so in a fix cycle (review R-06).
-- The dry run's table and the job's step durations, which the script prints and adds to the job's summary, are copied into this file from the run on the pull request's final head by the record of this merge (CE-50, TASK-051's first record), or by a fix cycle if that run is red (review R-03, R-05).
+- The dry run's table and the job's step durations, which the script prints and adds to the job's summary, are copied into this file from the run on the pull request's final head by the record of this merge (CE-50, TASK-051's first record), or by a fix cycle if that run is red (review R-03, R-05). The red run on the first head is section 11.
+
+## 11. The dry run on the first head (run 44938111782, `0151fe3`, red)
+
+**DRY RUN: not PERF01 evidence.** Run 1 of 1, one run of 120 seconds on CI's shared runner, revision `4796b64` (GitHub's merge commit; head `0151fe3`); the reconciliation of every product `CLEAN` before (35,290 ms) and after (38,592 ms). The counts it ran on: 5,000 active and 500 inactive products in 50 categories, 7,500 active and 500 retired tokens, 101,991 movements, 10,000 of them of the first product, 3 registers, 2 cashiers, 730 sessions, 2,999 Sales, 7,010 receivings, 26,031 audit events, seed 43. The figures from the second iteration on are void (F-3): the requests ran without a session.
+
+| Operation | Proposed budget | Statistic | Observed (ms) | Samples | Failures |
+| --- | --- | --- | --- | --- | --- |
+| Exact barcode lookup | 500 ms | p(95) | 25 | 6 | 240 |
+| Product Search page | 700 ms | p(95) | 33 | 1 | 27 |
+| Sale commit, 50 lines | 2000 ms | p(95) | 171 | 2 | 70 |
+| Sale commit, 200 lines (the maximum) | 5000 ms | p(95) | - | 0 | 10 |
+| Cash session close | 2000 ms | p(95) | 31 | 3 | 0 |
+| Refund or return commit | 2000 ms | p(95) | 30 | 10 | 0 |
+| Ordinary period report (up to 31 days) | 2000 ms | p(95) | 50 | 1 | 27 |
+| Report over the maximum range (366 days) | 10000 ms | p(95) | 39 | 1 | 6 |
+| Stock attention refresh | 500 ms | p(95) | 22 | 2 | 54 |
+| Server time of an ordinary page visit | 500 ms | p(95) | 28 | 1 | 27 |
+| CSV import confirmation, 5,000 rows | 30000 ms | max | 4213 | 1 | 0 |
+| Cost-correction replay, 10,000 movements of one product | 30000 ms | max | 226 | 1 | 0 |
+
+The job's steps (review R-05), of 11 min 59 s: 1, the base's environment, 2 min 41 s; 2, the head's, 57 s; 3, the base dataset's build (4 min 20 s), the migration job and its verification, 4 min 56 s; 4, the plan, the load tool's pull and its run of 120 seconds and the record, 3 min 20 s.
 - TASK-051, added by D-137, is the next Task; TASK-044 depends on it.

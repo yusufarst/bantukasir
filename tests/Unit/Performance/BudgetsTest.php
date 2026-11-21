@@ -68,6 +68,10 @@ final class BudgetsTest extends TestCase
         // Review R-02: a report answered with `report: null` (UXS-22) is a failure, never a sample.
         $this->assertSame(2, substr_count($script, "null, 'report');"));
         $this->assertStringContainsString('props[required] !== null', $script);
+
+        // Pull request #59, finding P1: the cashiers and the Owner's reports sign in once, so the VU's
+        // cookie jar must outlive the iteration; k6 resets it after each one by default.
+        $this->assertMatchesRegularExpression('/export const options = \{\s*noCookiesReset: true,/', $script);
     }
 
     public function test_the_full_datasets_are_those_of_section_13_2(): void

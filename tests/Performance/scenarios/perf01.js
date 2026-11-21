@@ -50,7 +50,10 @@ for (const name of OPERATIONS) {
     failures[name] = new Counter(`fail_${name}`);
 }
 
+// k6 empties each VU's cookie jar after every iteration unless told not to; the cashiers and the Owner's
+// reports sign in once, in their first iteration, and keep that session, so the jar must stay.
 export const options = {
+    noCookiesReset: true,
     summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(95)', 'count'],
     scenarios: {
         cashier_a: { executor: 'constant-vus', vus: 1, duration: `${SECONDS}s`, exec: 'cashierA' },
