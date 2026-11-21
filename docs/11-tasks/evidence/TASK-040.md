@@ -21,7 +21,9 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | The steps of fast run 1 | Fast run 2, 44838706004 on `45fa4ba`, the reviewed head | 06:42 to 06:50 | 7 min 57 s for the job | `PASS`: every step, `composer analyse` included, and the four targeted PostgreSQL files; the retest of F-7, cured |
 | Review round 1 (section 10.1) | `bk-reviewer-high`, on the package `r1` of HEAD `45fa4ba` | 06:50 to 07:00 | about 10 min | `PASS`: no MUST-FIX; R-01 to R-05 fixed in the record's commit |
 | ESLint, the typecheck, the unit tests and `FinanceReportTest` for the review's fixes (R-01 to R-03) | The fast run of the record's push and the CI of the pull request's final head | — | — | `NOT_RUN` until then (CE-45) |
-| The whole PostgreSQL suite in four parts, `composer test:race`, the browser suite with `tests/Browser/reporting/finance.spec.ts`, `npm run build`, the image checks | CI on the pull request's final head | — | — | `NOT_RUN` until then (CE-44, D-117) |
+| The checks of the pull request, the heavy ones of CE-44 included | CI 44841508286 on `5c5bf7e`, the pull request's first head | 07:05 to 07:36 | about 31 min | `FAIL` (F-8): PostgreSQL (3/4), 214 tests, 2 failures; Command contract, the browser suite, 337 passed, 2 failed, 2 not run; every other job `PASS` |
+| `npm run typecheck`, `npx eslint` of the fix cycle's TypeScript | Local | 07:40 | under 1 min | `NOT_RUN`: neither `tsc` nor `eslint` is installed natively (`'tsc' is not recognized`); the fast run and the pull request's CI run them |
+| The whole PostgreSQL suite in four parts, `composer test:race`, the browser suite with `tests/Browser/reporting/finance.spec.ts`, `npm run build`, the image checks | CI on the pull request's head after the fix of F-8 | — | — | `NOT_RUN` until then; that run is F-8's one targeted retest (CE-42, CE-44, D-133) |
 
 ## 2. What was built (contract section 4.1)
 
@@ -60,6 +62,7 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | F-4 | Carried for this Task: TASK-033 F-3 — a refund on its correction's business date and the restored cost from the return projections | Done (C-2, C-3) |
 | F-5 | Carried for this Task: TASK-026 F-1, the worklist listing an UNKNOWN source whose movement was reversed | Not taken: it is RP-503's, outside this contract's scope, and the report reads no source; recorded as OPEN_ITEMS T-53 for TASK-041 or the next change of RP-503 or RP-504 |
 | F-7 | Fast run 1: PHPStan refused a cast of a mixed prop to a string in `FinancePageTest` | Fixed in checkpoint 2: the as-of time asserted a string first; fast run 2 is its one retest (D-133). In the same push, the browser test at 200 % zoom counts the trend's rows by their markup, since a narrow container shows them as cards (DESIGN_SYSTEM 8.11) |
+| F-8 | CI 44841508286 on `5c5bf7e`, fix cycle 1 of 3 (CE-42), four failures from two causes. (a) `FinanceReport` named the methods `'CASH'` and `'BANK_TRANSFER'` in its SQL and the figure `'refunds'` as a key: `CheckoutSaleTest::test_the_payment_boundary_holds_no_provider_record_route_callback_or_asynchronous_state` found a second file naming `BANK_TRANSFER` (BR-PAY-04, one place of the methods' names), and `RecordCorrectionTest::test_each_new_table_has_its_one_writer` a third file naming `refunds`. (b) `tests/Browser/reporting/` was outside the project `people` of `playwright.config.ts`, so `finance.spec.ts` reset the people of Toko Contoh beside the serial tests: its own sign-in session ended (the page went to `/login`, the test's 2 min timeout at line 202), and `access/users.spec.ts:534` at 320x640 lost its account mid-test ("Akun dianonimkan." never shown) | Fixed in one push: (a) the methods bound as parameters from `PaymentMethods::CASH` and `PaymentMethods::BANK_TRANSFER`, the same values, so the report's behaviour is unchanged; `RecordCorrectionTest` admits the finance report's query beside the writer and the refund pages' query, as a reader proven to write nothing in a read-only transaction (TR-TX-07), as TASK-034 admitted `CorrectionRecords`. (b) `reporting/**` in `PEOPLE`; the regression test `tests/Unit/StaticChecks/browser-projects.test.ts` fails when a spec that signs a person in lies outside `PEOPLE` and `MAINTENANCE`. No verification round: no production behaviour changed (CE-42) |
 | F-6 | For later Tasks | TASK-041 — today's figures from `FinanceReport` and the period functions of `Period` (contract section 12); the daily summary's date after today meets the same gap as F-2 (OPEN_ITEMS T-52); the Laporan destination shows UXI-020 |
 
 ## 5. Tests (contract section 7)
@@ -71,6 +74,8 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | L4 the custom range's checks in the page and the kept period | `tests/Unit/Reporting/finance.test.ts` |
 | L1 the percent format on both sides from one table | `tests/Unit/Support/cases/formatting.json` with `FormatCasesTest.php` and `format.test.ts` |
 | L1 UXI-020 in the registry | `tests/Unit/Shell/navigation.test.ts` |
+| L1 every browser spec that signs a person in runs in the project `people` or `maintenance` (F-8) | `tests/Unit/StaticChecks/browser-projects.test.ts` |
+| L2 the finance report's query a reader of the correction's tables that writes nothing; the methods' names in one place (F-8) | `tests/Feature/Sales/RecordCorrectionTest.php`, `CheckoutSaleTest.php` |
 | L5 KS-10 and the chart (the figure values of the `default` state are FinanceReportTest's, since the local database's other Sales make them vary): `incomplete` with the counts, the link and no margin; a failed read of another period, the period choice kept on the applied one, and "Coba lagi" (review R-01, R-02); the chart by keyboard with its point; the table and back; the three refusals at the fields with nothing fetched; "Batal"; an empty range; the kept period; a preset; axe, contrast, targets, 1366 px, 320 px and 200 % zoom | `tests/Browser/reporting/finance.spec.ts`, with the fixture `finance` of `tests/Harness/Browser/FixturesController.php` |
 
 ## 6. Acceptance criteria
@@ -107,7 +112,7 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 
 ## 9. The guard's candidates (CE-31; D-076, D-097, D-098)
 
-No candidate on checkpoints 1 and 2.
+No candidate on checkpoints 1 and 2, on the record's head, or in the preview of fix cycle 1 (F-8).
 
 ## 10. Review (EXECUTION_CONTEXT CE-40)
 
@@ -140,5 +145,6 @@ No MUST-FIX was raised, so no verification round is due (CE-40). The fixes chang
 - The previous merge: TASK-039's pull request #54 (head `7ed4b04`, CI 44824616616; squash `f46d215` by the tick, the automated review DONE; CI on `develop` 44828933816) — recorded in [TASK-039's evidence](TASK-039.md) section 13 and in CURRENT_HANDOFF.
 - Documents: TASK_PLAN — TASK-040 `DONE`, its one dependent TASK-041 `READY` (TASK-039 and TASK-032 `DONE`), the totals TODO 8, READY 2, DONE 40; OPEN_ITEMS T-52 and T-53; CURRENT_HANDOFF last. No decision is recorded; the next free decision is D-135.
 - Fast runs: two of the ten of CE-46 before the record; run 1 failed on one proven defect of a test, fixed in one push and cured in run 2 (F-7, D-133); no CI run was repeated.
+- Fix cycle 1 of 3 (CE-42): the pull request's CI 44841508286 on `5c5bf7e` failed on F-8's two causes, both fixed in one push; the run on the new head is their one targeted retest, and a failure it does not cure is the stop `RETEST_FAILED` (D-133). The Command contract failure was no known flake, so no rerun was asked.
 - Not verified before the pull request's final head: the whole PostgreSQL suite in four parts, `test:race`, the browser suite, the build and the image checks; and the review's fixes (R-01 to R-03), which run first in the record's fast run and there.
 - Next eligible Task: TASK-041, Owner home and daily summary, effort High (agent `bk-executor-high`; review and verification `bk-reviewer-high`).

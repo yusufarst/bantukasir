@@ -2,6 +2,7 @@
 
 namespace App\Queries\Reporting;
 
+use App\Domain\Sales\PaymentMethods;
 use App\Queries\Inventory\Column as Read;
 use App\Support\Numbers\Cost;
 use App\Support\Time\BusinessDate;
@@ -93,12 +94,12 @@ final class FinanceReport
         $sales = self::row($connection->select(<<<'SQL'
             select count(*) as sale_count,
                    coalesce(sum(s.total_amount), 0)::text as gross_sales,
-                   coalesce(sum(p.applied_amount) filter (where p.method = 'CASH'), 0)::text as payments_cash,
-                   coalesce(sum(p.applied_amount) filter (where p.method = 'BANK_TRANSFER'), 0)::text as payments_transfer
+                   coalesce(sum(p.applied_amount) filter (where p.method = ?), 0)::text as payments_cash,
+                   coalesce(sum(p.applied_amount) filter (where p.method = ?), 0)::text as payments_transfer
             from sales s
             join payments p on p.sale_id = s.id
             where s.business_date between ?::date and ?::date
-            SQL, [$first, $last]));
+            SQL, [PaymentMethods::CASH, PaymentMethods::BANK_TRANSFER, $first, $last]));
 
         // Every Sale line with its SALE_ISSUE projection; a line without one counts as not KNOWN.
         $issues = self::row($connection->select(<<<'SQL'
@@ -115,12 +116,12 @@ final class FinanceReport
         $refunds = self::row($connection->select(<<<'SQL'
             select (select count(*) from sale_corrections k where k.business_date between ?::date and ?::date) as corrections,
                    coalesce(sum(r.amount), 0)::text as refunds,
-                   coalesce(sum(r.amount) filter (where r.payout_method = 'CASH'), 0)::text as refund_payouts_cash,
-                   coalesce(sum(r.amount) filter (where r.payout_method = 'BANK_TRANSFER'), 0)::text as refund_payouts_transfer
+                   coalesce(sum(r.amount) filter (where r.payout_method = ?), 0)::text as refund_payouts_cash,
+                   coalesce(sum(r.amount) filter (where r.payout_method = ?), 0)::text as refund_payouts_transfer
             from sale_corrections c
             join refunds r on r.correction_id = c.id
             where c.business_date between ?::date and ?::date
-            SQL, [$first, $last, $first, $last]));
+            SQL, [$first, $last, PaymentMethods::CASH, PaymentMethods::BANK_TRANSFER, $first, $last]));
 
         // Every return line; a saleable one with its return projection, which a saleable line without one
         // counts as not KNOWN. A not-saleable return restores no cost (BR-COST-19).
