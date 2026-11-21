@@ -90,7 +90,7 @@ final class Recorder
         $lines = [
             '**'.self::LABEL.'**',
             '',
-            sprintf('Run %s of %s, revision %s, reconciliation of every product before %s (%s ms) and after %s (%s ms).', self::text($record['run'] ?? null), self::text($record['runs'] ?? null), self::text($record['revision'] ?? null), self::text($reconciliation['before'] ?? null), self::text($reconciliation['beforeMs'] ?? null), self::text($reconciliation['after'] ?? null), self::text($reconciliation['afterMs'] ?? null)),
+            sprintf('Run %s of %s, revision %s (head %s), reconciliation of every product before %s (%s ms) and after %s (%s ms).', self::text($record['run'] ?? null), self::text($record['runs'] ?? null), self::text($record['revision'] ?? null), self::text($record['head'] ?? null), self::text($reconciliation['before'] ?? null), self::text($reconciliation['beforeMs'] ?? null), self::text($reconciliation['after'] ?? null), self::text($reconciliation['afterMs'] ?? null)),
             '',
             '| Operation | Proposed budget | Statistic | Observed (ms) | Samples | Failures |',
             '| --- | --- | --- | --- | --- | --- |',
@@ -108,9 +108,10 @@ final class Recorder
     }
 
     /**
-     * The metrics of the record without a sample, or with no fewer failures than samples, which a dry run
-     * of every scenario must not leave (TASK-043 section 7, "The dry run of every scenario"). A visit
-     * whose read failed is kept out of its trend and counted only as a failure (perf01.js).
+     * The metrics of the record without a successful sample, which a dry run of every scenario must not
+     * leave (TASK-043 section 7, "The dry run of every scenario"). Every trend of perf01.js holds the
+     * successful answers only, and its failure counter the others, so a trend's count is its successful
+     * samples (review R-12).
      *
      * @param  array<string, mixed>  $record
      * @return list<string>
@@ -121,9 +122,8 @@ final class Recorder
 
         foreach (is_array($record['results'] ?? null) ? $record['results'] : [] as $metric => $result) {
             $samples = is_array($result) && is_int($result['samples'] ?? null) ? $result['samples'] : 0;
-            $failures = is_array($result) && is_int($result['failures'] ?? null) ? $result['failures'] : 0;
 
-            if ($samples === 0 || $failures >= $samples) {
+            if ($samples === 0) {
                 $missing[] = (string) $metric;
             }
         }

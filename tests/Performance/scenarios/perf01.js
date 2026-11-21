@@ -119,16 +119,19 @@ function confirmPassword(person) {
     check(answer, { 'password confirmed': (r) => r.status === 200 || r.status === 201 || r.status === 204 });
 }
 
-/** A command with a new intent and key; its time joins the operation's trend when one is named. */
+// Every operation's trend holds its successful answers only, and its failure counter the others, so that a
+// trend's count is its successful samples for every metric (review R-12).
+
+/** A command with a new intent and key; its time joins the operation's trend when one is named and it committed. */
 function command(session, operation, expected, payload, measured) {
     const envelope = { operation, version: 1, sourceIntentId: uuid(), idempotencyKey: uuid(), recoveryEpoch: session.epoch, expected, payload };
     const answer = http.post(`${BASE}/commands/${operation}`, JSON.stringify(envelope), { headers: jsonHeaders(), timeout: '65s', tags: { name: operation } });
     const committed = answer.status === 201 || answer.status === 200;
 
     if (measured) {
-        trends[measured].add(answer.timings.duration);
-
-        if (!committed) {
+        if (committed) {
+            trends[measured].add(answer.timings.duration);
+        } else {
             failures[measured].add(1);
         }
     }
@@ -176,9 +179,10 @@ function read(path, measured, background, extra) {
     }
 
     const answer = http.get(`${BASE}${path}`, { headers, tags: { name: path.split('?')[0] } });
-    trends[measured].add(answer.timings.duration);
 
-    if (answer.status !== 200) {
+    if (answer.status === 200) {
+        trends[measured].add(answer.timings.duration);
+    } else {
         failures[measured].add(1);
     }
 

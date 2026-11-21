@@ -131,6 +131,9 @@ final class DatasetTest extends DatabaseTestCase
             'op_barcode_lookup' => ['type' => 'trend', 'values' => ['p(95)' => 41.7, 'max' => 60.1, 'count' => 30]],
             'fail_barcode_lookup' => ['type' => 'counter', 'values' => ['count' => 2, 'rate' => 0.1]],
             'op_csv_import' => ['type' => 'trend', 'values' => ['p(95)' => 9000.4, 'max' => 9100.6, 'count' => 1]],
+            // One successful report and one that failed (review R-12): it has its sample.
+            'op_report_max_range' => ['type' => 'trend', 'values' => ['p(95)' => 3000.0, 'max' => 3000.0, 'count' => 1]],
+            'fail_report_max_range' => ['type' => 'counter', 'values' => ['count' => 1, 'rate' => 0.01]],
         ]];
         $record = Recorder::record($plan, $summaryOfTool, ReconciliationRuns::CLEAN, 250);
 
@@ -149,7 +152,12 @@ final class DatasetTest extends DatabaseTestCase
         $this->assertSame([null, 0], [$replay['observedMs'], $replay['samples']]);
 
         // A dry run of every scenario leaves no metric without a successful sample.
-        $this->assertSame(array_values(array_diff(array_keys(Budgets::METRICS), ['op_barcode_lookup', 'op_csv_import'])), Recorder::unmeasured($record));
+        $this->assertSame(array_values(array_diff(array_keys(Budgets::METRICS), ['op_barcode_lookup', 'op_csv_import', 'op_report_max_range'])), Recorder::unmeasured($record));
+
+        // The record names the image's opcache setting of the CLI and the pull request's head (R-09, R-10).
+        $this->assertIsArray($record['configuration']);
+        $this->assertArrayHasKey('opcacheCli', $record['configuration']);
+        $this->assertArrayHasKey('head', $record);
         // The reconciliation of every product before and after the run, each timed (TASK-036 F-9).
         $this->assertIsInt($plan['reconciliationBeforeMs']);
         $this->assertSame(['before' => ReconciliationRuns::CLEAN, 'beforeMs' => $plan['reconciliationBeforeMs'], 'after' => ReconciliationRuns::CLEAN, 'afterMs' => 250], $record['reconciliation']);
