@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect as baseExpect, test, type BrowserContext, type Locator, type Page } from '@playwright/test';
+import { expect as baseExpect, test, type BrowserContext, type Locator, type Page, type Route } from '@playwright/test';
 import { ACCESS_TIMEOUT, ACCESS_WAIT, OWNER_HOME, resetPeople, SECURE_LOCAL_ORIGIN, signIn } from '../support/access';
 import { injected, prepareCommands } from '../support/commands';
 import { measure } from '../support/measure';
@@ -225,6 +225,68 @@ test('the Owner lands on Beranda with today, his open session and what needs his
     await page.goto(PAGE);
     await expect(attention.getByRole('link', { name: 'Perlu restok (7)' })).toHaveAttribute('href', '/stock?state=LOW');
     await expect(page.getByRole('navigation', { name: 'Menu utama' }).getByRole('link', { name: /^Stok/ })).toHaveAccessibleName(/7 produk perlu restok/);
+    await page.unroute(shellData);
+
+    // The link follows the badge (pull request finding): a Menipis product sold out keeps the count of one, and once the
+    // badge reads again the panel is read again beside it, so the item leads to Habis, never to an empty Menipis list.
+    // Each read again is a background request (RT-10, review R-11); one that fails keeps the item with its stale mark,
+    // and an answer whose read failed shows the panel's failed state, never a zero (UXS-21, UXS-22; review R-13).
+    let badgeRead = 0;
+    let splitReads = 0;
+    const markers: string[] = [];
+    const homeAt = (url: URL): boolean => url.pathname === PAGE;
+    const splitAnswer = async (route: Route): Promise<void> => {
+        if (route.request().headers()['x-inertia-partial-data'] !== 'attention') {
+            await route.fallback();
+
+            return;
+        }
+
+        const read = splitReads;
+        splitReads += 1;
+
+        if (read > 0) {
+            markers.push(route.request().headers()['x-background-request'] ?? 'none');
+        }
+
+        if (read === 2) {
+            await route.fulfill({ status: 503, body: '' });
+
+            return;
+        }
+
+        const response = await route.fetch();
+        const body = (await response.json()) as { props: Record<string, unknown> };
+        body.props.attention = read === 3 ? null : { restock: read === 0 ? { out: 0, low: 1 } : { out: 1, low: 0 }, costs: 0, incidents: 0, status: false, onboarding: false };
+        await route.fulfill({ response, json: body });
+    };
+    /** The badge reads RD-03 again with a later as-of time (the shell's refresh on focus), and the panel is read again. */
+    const badgeReadsAgain = async (at: number): Promise<void> => {
+        badgeRead = at;
+        await Promise.all([
+            page.waitForResponse((response) => homeAt(new URL(response.url())) && response.request().headers()['x-inertia-partial-data'] === 'attention'),
+            page.evaluate(() => window.dispatchEvent(new Event('focus'))),
+        ]);
+    };
+    await page.route(shellData, (route) => route.fulfill({ json: { unresolvedRequests: 0, stockAttention: 1, onboarding: null, openIncidents: null, asOf: `2026-11-21T03:00:0${badgeRead}.000000Z` } }));
+    await page.route(homeAt, splitAnswer);
+    await page.goto(PAGE);
+    const restock = attention.getByRole('link', { name: 'Perlu restok (1)' });
+    await expect(restock).toHaveAttribute('href', '/stock?state=LOW');
+    // The badge's first read has been published before its time changes (review R-12).
+    await expect(page.getByRole('navigation', { name: 'Menu utama' }).getByRole('link', { name: /^Stok/ })).toHaveAccessibleName(/1 produk perlu restok/);
+    await badgeReadsAgain(1);
+    await expect(restock).toHaveAttribute('href', '/stock?state=OUT');
+    await expect(restock.getByText('Data belum diperbarui')).toHaveCount(0);
+    await badgeReadsAgain(2);
+    await expect(restock.getByText('Data belum diperbarui')).toBeVisible();
+    await expect(restock).toHaveAttribute('href', '/stock?state=OUT');
+    await badgeReadsAgain(3);
+    await expect(attention.getByText('Gagal memuat')).toBeVisible();
+    await expect(attention.getByRole('link')).toHaveCount(0);
+    expect(splitReads).toBe(4);
+    expect(markers).toEqual(['1', '1', '1']);
+    await page.unroute(homeAt, splitAnswer);
     await page.unroute(shellData);
 
     // UXI-060 leads to the session's detail.

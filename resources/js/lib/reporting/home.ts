@@ -56,6 +56,39 @@ export interface AttentionPanel {
 export interface LiveRestock {
     readonly count: number | null;
     readonly failed: boolean;
+    /** The panel's read again of its split of Habis and Menipis failed since (`splitStep`), so its link may be outdated (UXS-21). */
+    readonly splitStale?: boolean;
+}
+
+/** The panel's evidence that the restock item's link stands on, and the shell's read of RD-03 it stood beside. */
+export interface SplitBasis {
+    readonly evidence: AttentionPanel;
+    readonly asOf: string | null;
+}
+
+/**
+ * Keeps the restock item's split of Habis and Menipis as current as its count (UXI-061, BR-INV-41): RD-03 gives only
+ * the total, so a product turning from Menipis to Habis keeps the count and changes the state its link must open
+ * (`/stock?state=…`, which RP-401 applies exactly). Each new evidence of the panel becomes the basis, beside the
+ * shell's read at its arrival; each later read of RD-03 — the badge's refresh — asks for the panel to be read again,
+ * so the split follows the badge. The first read of RD-03 after evidence that arrived before any becomes the basis
+ * without a read again, the two being read together at the page's load. No evidence, or no restock item for this
+ * viewer, keeps no basis.
+ */
+export function splitStep(basis: SplitBasis | null, evidence: AttentionPanel | null | undefined, shellAsOf: string | null): { basis: SplitBasis | null; reread: boolean } {
+    if (evidence === undefined || evidence === null || evidence.restock === null) {
+        return { basis: null, reread: false };
+    }
+
+    if (basis === null || basis.evidence !== evidence) {
+        return { basis: { evidence, asOf: shellAsOf }, reread: false };
+    }
+
+    if (shellAsOf === null || shellAsOf === basis.asOf) {
+        return { basis, reread: false };
+    }
+
+    return { basis: { evidence, asOf: shellAsOf }, reread: basis.asOf !== null };
 }
 
 /** A shown attention item: the count it names, none for a state, where it leads, its icon and its tone. */
@@ -85,7 +118,8 @@ const ONBOARDING_PAGE = '/stock/onboarding';
  * says so (AC-041-03): products Habis or Menipis (UXI-061) — counted by the shell's live read of RD-03 once it has
  * one, refreshed as the badge and kept with its stale mark when a refresh fails (BR-INV-41, UXS-21), the panel's
  * count of the same definition before it — leading to Stok filtered to Habis while any product is Habis and
- * otherwise to Menipis, because RP-401's `state` takes one state (OPEN_ITEMS T-54); cost sources to complete
+ * otherwise to Menipis, by the panel's split read again with each read of the badge (`splitStep`) and marked stale
+ * when that read fails, because RP-401's `state` takes one state (OPEN_ITEMS T-54); cost sources to complete
  * (UXI-062); open reconciliation incidents (UXI-063); a status item failed or unverified (UXI-064); the onboarding
  * freeze (UXI-065). None is shown for a count of zero, a false or an item the viewer may not see.
  */
@@ -95,7 +129,7 @@ export function attentionItems(attention: AttentionPanel, live: LiveRestock = { 
     const count = restock === null ? null : (live.count ?? restock.out + restock.low);
 
     if (restock !== null && count !== null && count > 0) {
-        items.push({ id: 'restock', count, stale: live.count !== null && live.failed, href: `${STOCK_PAGE}?state=${restock.out > 0 ? 'OUT' : 'LOW'}`, icon: 'boxes', tone: 'warning' });
+        items.push({ id: 'restock', count, stale: (live.count !== null && live.failed) || live.splitStale === true, href: `${STOCK_PAGE}?state=${restock.out > 0 ? 'OUT' : 'LOW'}`, icon: 'boxes', tone: 'warning' });
     }
 
     if (attention.costs !== null && attention.costs > 0) {

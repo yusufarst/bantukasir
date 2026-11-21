@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import { useCallback, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ButtonLink } from '@/components/ui/Button';
 import { Section } from '@/components/ui/Card';
 import { Figure, Figures, LinkRow, LinkRows } from '@/components/ui/Data';
@@ -11,7 +11,7 @@ import { useUnresolved } from '@/lib/commands/unresolved';
 import { formatCount, formatDateTime, formatMoney } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import { DAILY_PAGE } from '@/lib/reporting/daily';
-import { ATTENTION_PROP, attentionItems, attentionTitle, HOME_SHELL, OPEN_SESSIONS_PROP, TODAY_PROP, type AttentionPanel, type OpenSessionRow, type TodayPanel } from '@/lib/reporting/home';
+import { ATTENTION_PROP, attentionItems, attentionTitle, HOME_SHELL, OPEN_SESSIONS_PROP, splitStep, TODAY_PROP, type AttentionPanel, type OpenSessionRow, type SplitBasis, type TodayPanel } from '@/lib/reporting/home';
 
 // UXP-007 "Beranda" (KEY_SCREENS KS-02 with its states `default`, `quiet`, `failed` and `loading`; ROUTE_CONTRACTS
 // RP-007; COPY_DECK sections 6.8 and 10.1; INTERACTION_INVENTORY UXI-059 to UXI-065; NAVIGATION_CONTRACTS UXP-007;
@@ -141,18 +141,49 @@ function OpenSessionsCard({ sessions }: { sessions: readonly OpenSessionRow[] | 
     );
 }
 
+/**
+ * The panel read again in the background, marked as such (RT-10), with each later read of RD-03 (`splitStep`), so that the restock item's link
+ * follows its count (UXI-061, BR-INV-41); true once such a read failed, until one succeeds. The panel stays as it is
+ * while it reads; an answer of the server whose read failed shows the panel's failed state, never a zero (UXS-22).
+ */
+function useRestockSplit(attention: AttentionPanel | null | undefined, shellAsOf: string | null): boolean {
+    const [failed, setFailed] = useState(false);
+    const basis = useRef<SplitBasis | null>(null);
+
+    useEffect(() => {
+        const step = splitStep(basis.current, attention, shellAsOf);
+        basis.current = step.basis;
+
+        if (!step.reread) {
+            return;
+        }
+
+        const failedRead = (): boolean => {
+            setFailed(true);
+
+            return false;
+        };
+
+        // A background read, never the user's activity: it extends neither the sign-in session nor the shell's idle count (RT-10, SEC-SESS-02).
+        router.reload({ only: [ATTENTION_PROP], async: true, showProgress: false, headers: { 'X-Background-Request': '1' }, onSuccess: () => setFailed(false), onHttpException: failedRead, onNetworkError: failedRead });
+    }, [attention, shellAsOf]);
+
+    return failed;
+}
+
 /** "Perlu perhatian" (UXI-061 to UXI-065): the items its evidence shows; none, the sentence that nothing needs it. */
 function AttentionCard({ attention }: { attention: AttentionPanel | null | undefined }) {
     const { read, retry } = usePanel(ATTENTION_PROP);
     // The stock badge's live read of RD-03, which the shell refreshes (UXI-061, BR-INV-41).
     const shell = useUnresolved();
+    const splitStale = useRestockSplit(attention, shell.asOf);
     const label = t('reporting.home.attention');
 
     return (
         <Section title={label}>
             <PanelBody value={attention} read={read} retry={retry}>
                 {(evidence) => {
-                    const items = attentionItems(evidence, { count: shell.stockAttention, failed: shell.failed });
+                    const items = attentionItems(evidence, { count: shell.stockAttention, failed: shell.failed, splitStale });
 
                     return items.length === 0 ? (
                         <p className={'bk-empty'} data-state={'empty'}>
