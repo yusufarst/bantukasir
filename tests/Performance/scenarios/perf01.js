@@ -255,11 +255,14 @@ export function cashierB() {
 // ---------------------------------------------------------------- the Owner's reports
 
 let reports = null;
+let reportLoops = 0;
 
 export function ownerReports() {
     if (reports === null) {
         reports = signIn(plan.people.owner);
     }
+
+    reportLoops++;
 
     const today = jakartaDate(0);
 
@@ -273,7 +276,7 @@ export function ownerReports() {
     visit(reports, pick(['/home', '/stock', '/sales', '/cash-sessions']), 'page_visit', null);
     sleep(1);
 
-    if (Math.random() < 0.25) {
+    if (reportLoops % 4 === 1) {
         visit(reports, `/reports/finance?period=custom&from=${jakartaDate(365)}&to=${today}`, 'report_max_range', null);
         sleep(1);
     }

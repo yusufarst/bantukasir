@@ -144,6 +144,9 @@ final class DatasetTest extends DatabaseTestCase
         // The 30-second budgets name the longest time; a metric that the run did not measure has no value.
         $this->assertSame(9101, $import['observedMs']);
         $this->assertSame([null, 0], [$replay['observedMs'], $replay['samples']]);
+
+        // A dry run of every scenario leaves no metric without a successful sample.
+        $this->assertSame(array_values(array_diff(array_keys(Budgets::METRICS), ['op_barcode_lookup', 'op_csv_import'])), Recorder::unmeasured($record));
         $this->assertSame(['before' => ReconciliationRuns::CLEAN, 'after' => ReconciliationRuns::CLEAN], $record['reconciliation']);
         $this->assertIsArray($record['indexes']);
         $this->assertGreaterThan(0, $record['indexes']['count']);

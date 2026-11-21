@@ -105,6 +105,29 @@ final class Recorder
     }
 
     /**
+     * The metrics of the record without one successful sample, which a dry run of every scenario must
+     * not leave (TASK-043 section 7, "The dry run of every scenario").
+     *
+     * @param  array<string, mixed>  $record
+     * @return list<string>
+     */
+    public static function unmeasured(array $record): array
+    {
+        $missing = [];
+
+        foreach (is_array($record['results'] ?? null) ? $record['results'] : [] as $metric => $result) {
+            $samples = is_array($result) && is_int($result['samples'] ?? null) ? $result['samples'] : 0;
+            $failures = is_array($result) && is_int($result['failures'] ?? null) ? $result['failures'] : 0;
+
+            if ($samples === 0 || $failures >= $samples) {
+                $missing[] = (string) $metric;
+            }
+        }
+
+        return $missing;
+    }
+
+    /**
      * Every index of the schema public, counted, with one SHA-256 of their definitions in order.
      *
      * @return array{count: int, sha256: string}

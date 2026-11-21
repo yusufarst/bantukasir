@@ -93,7 +93,13 @@ try {
             $record = Recorder::record($read('plan.json'), $read(sprintf('summary-%d.json', $run)), $after);
             $write(sprintf('record-%d.json', $run), $record);
             echo Recorder::markdown($record);
-            exit($after === ReconciliationRuns::CLEAN ? 0 : 1);
+            $missing = Recorder::unmeasured($record);
+
+            if ($missing !== []) {
+                echo 'PERF_DRY_RUN_INCOMPLETE no sample of '.implode(', ', $missing)."\n";
+            }
+
+            exit($after === ReconciliationRuns::CLEAN && $missing === [] ? 0 : 1);
 
         default:
             throw new InvalidArgumentException('Usage: perf.php dataset|plan|record [options]');
