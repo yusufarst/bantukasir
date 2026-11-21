@@ -194,7 +194,7 @@ final class AuditViewsTest extends DatabaseTestCase
         $props = $this->propsOf($this->get(self::ACTIVITY.'?user='.$rina)->assertOk());
         $rows = $this->rowsIn($props, 'events');
         $this->assertNotSame([], $rows);
-        $this->assertSame(['Rina'], array_values(array_unique(array_map(static fn (array $row): mixed => ((array) ($row['actor'] ?? []))['name'] ?? null, $rows))));
+        $this->assertSame(['Rina'], array_values(array_unique(array_map(static fn (array $row): string => self::text(((array) ($row['actor'] ?? []))['name'] ?? null), $rows))));
         $this->assertContains(['id' => $rina, 'displayName' => $label], (array) ($props['users'] ?? []));
 
         // The anonymization itself is the Owner's event, whose reference is the account by its name now.

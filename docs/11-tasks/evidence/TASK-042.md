@@ -15,6 +15,9 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Check | Where it ran | Time | Duration | Result |
 | --- | --- | --- | --- | --- |
 | `npm run typecheck` | Local | 15:10 | under 1 min | `NOT_RUN`: `tsc` is not installed natively (`'tsc' is not recognized`), nor ESLint or PHP; the fast run runs them |
+| Guard | Local, on `b144268` (checkpoint 1) | 15:33 to 15:37 | about 4 min | One candidate, `192.0.2.7` in `AuditViewsTest`, the documentation range of RFC 5737 (TEST-NET-1), synthetic as in `SignInTest`: judged no finding (section 10). Its run with `--accept` stopped unfinished, superseded by checkpoint 2 |
+| Guard | Local, on `6557b94` (checkpoints 1 and 2) | 15:41 to 15:51 | about 10 min, two passes | The same one candidate, its hash changed with the range (`REFUSED HASH`), judged again no finding; `GUARD ACCEPTED` on the second pass |
+| `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit`; the changed PostgreSQL files | Fast run 1, 44886915703 on `6557b94` | 15:52 to 16:04 | 11 min 44 s for the job | `FAIL` (F-4): every step `PASS` — `composer lint`, `test:unit` (`AuditActionsTest`, `CopyDeckTest`), `npm run lint`, `typecheck` and `test:unit` (`activity.test.ts`), and the changed PostgreSQL files (`AuditViewsTest`, `CapabilityMatrixTest`, `RouteInventoryTest`, `SettingsPagesTest`) — except `composer analyse`, two PHPStan findings |
 
 ## 2. What was built (contract section 4.1)
 
@@ -56,6 +59,7 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | F-1 | Carried for this Task: TASK-017 F-7 and TASK-011 F-4 and R-8 — the openers of UXI-177 and UXI-349 | Done: UXP-612 opens UXP-302 and UXP-604, whose ways back return to it (C-8) |
 | F-2 | Carried for this Task: TASK-020 F-3 — `BARCODE_CORRECTION` with its reason and change data; TASK-035 — the labels of its five actions | Done: every code of section 8 labelled (AC-042-03); the reason and the change data in the details (C-5) |
 | F-3 | Carried for this Task: TASK-021 F-4 — the product filter and a document of several products | Read as C-9 |
+| F-4 | Fast run 1 (44886915703 on `6557b94`), `composer analyse`: `arrayValues.list` at `ActivityLog.php:98` (`array_values` of a list) and `argument.type` at `AuditViewsTest.php:197` (`array_unique` of `list<mixed>`) | Fixed in one push (checkpoint 3): the list returned as it is, the test's closure typed `string`; fast run 2 is their one targeted retest (D-133) |
 
 ## 6. Tests (contract section 7)
 
@@ -86,3 +90,13 @@ Every check runs in CI, on GitHub's hosted runner, with the local environment's 
 | Performance | Bounded queries and paging; the budgets are measured at TASK-048 |
 | Operations | N/A — no backup, runbook or status impact |
 | Verification | `NOT_RUN` |
+
+## 9. Review (EXECUTION_CONTEXT CE-40)
+
+Self-review before the review: both reads against BR-AUD-02 to BR-AUD-05, SEC-LOG-03, SCHEMA section 5.4 and RT-08 — every parameter an allowlist in the route and the FormRequest, keyset paging both ways with the cursor read again under the filters, every statement bounded by a page or a limit, the Owner-only data selected only for CAP-32 and the category SECURITY excluded for anyone else, no request identifier, route, operator's note or command on any channel; the gates of both routes and the entries of the index; the labels of section 8 held to the documents and to the Actions' codes; the copy keys verbatim; the controls of section 4.2 and the four extended ways back; the obligations of EXECUTION_CONTEXT section 10 for two routes, two reads and two pages.
+
+## 10. Guard's candidates (CE-31; D-076, D-097, D-098)
+
+| Candidate | Where | Judgment |
+| --- | --- | --- |
+| `192.0.2.7` (ipv4) | `tests/Feature/Audit/AuditViewsTest.php`, added in `b144268` | The documentation range of RFC 5737 (TEST-NET-1), the client address of a refused sign-in in the test, synthetic as `SignInTest`'s `192.0.2.x`: no real host, no person, no client datum. No finding |

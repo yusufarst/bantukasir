@@ -95,7 +95,7 @@ final class ActivityLog
         $hasPrevious = $backwards ? $more : self::exists($filters, $owner, $first, '>');
 
         return [
-            'rows' => array_values($data),
+            'rows' => $data,
             'nextCursor' => $hasNext ? Keyset::encode($last) : null,
             'previousCursor' => $hasPrevious ? Keyset::encode($first) : null,
         ];
