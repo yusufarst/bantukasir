@@ -214,8 +214,8 @@ test('at 200 % zoom both views fit and their controls work from the keyboard', a
         await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible();
         await checked(page);
 
-        // The first entry's details open by Enter; the newest event of the activity, Hendra's password link used,
-        // has no reason and so nothing to open (UXI-378).
+        // The first entry's details open by Enter; those of the activity's events by Enter are proven by the test of
+        // "Perubahan" below (UXI-378, TASK-051).
         if (path === SECURITY) {
             const summary = firstRow(page).locator('summary');
             await summary.focus();

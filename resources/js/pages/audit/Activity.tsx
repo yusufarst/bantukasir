@@ -215,9 +215,10 @@ function Details({ row }: { row: ActivityRow }) {
                 {row.changes.length > 0 && (
                     <>
                         <p className={'bk-meta'}>{t('audit.activity.changes')}</p>
-                        {values.length > 0 && <KeyValueList items={values.map((change, index) => ({ key: `${String(index)}-${change.label}`, label: changeWord(change.label), value: changeLine(change) }))} />}
-                        {tables.map((change, index) => (
-                            <ChangeTable key={`${String(index)}-${change.label}`} change={change} />
+                        {/* An event holds each row's label once, so the label is its key. */}
+                        {values.length > 0 && <KeyValueList items={values.map((change) => ({ key: change.label, label: changeWord(change.label), value: changeLine(change) }))} />}
+                        {tables.map((change) => (
+                            <ChangeTable key={change.label} change={change} />
                         ))}
                     </>
                 )}

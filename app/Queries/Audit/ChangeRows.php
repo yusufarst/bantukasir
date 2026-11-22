@@ -195,6 +195,7 @@ final class ChangeRows
         $o = $owner ? ($event['owner'] ?? []) : null;
         $product = $event['product'] === null ? null : ($names['product'][$event['product']] ?? null);
 
+        /** @var list<Change|null> $rows */
         $rows = match ($event['action']) {
             'SALE_CHECKOUT' => self::sale($c, $o, $names),
             'CASH_SESSION_OPEN' => [self::value('register', self::text(self::str($c, 'register'))), self::value('opening_cash', self::money(self::str($c, 'openingCash')))],
