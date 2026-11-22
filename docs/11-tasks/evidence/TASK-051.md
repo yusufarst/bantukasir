@@ -3,11 +3,12 @@
 | | |
 | --- | --- |
 | Task | [TASK-051](../tasks/TASK-051-audit-change-values.md), review class A |
-| Instruction | Continuous execution, D-101, as the delegation of the tick printed it (EXECUTION_CONTEXT CE-01): the selection of CE-10 at `origin/develop` `ccc02dd`; the Owner's decisions D-136 and D-137 and his directives D-130 and D-133 |
+| Instruction | Continuous execution, D-101, as the delegation of the tick printed it (EXECUTION_CONTEXT CE-01): the selection of CE-10 at `origin/develop` `ccc02dd`; the Owner's decisions D-136, D-137 and D-138 and his directives D-130 and D-133 |
 | Executor | Agent `bk-executor-high`, model `claude-opus-5-5`, effort High from the table of EXECUTION_CONTEXT section 19; review and verification by `bk-reviewer-high` |
 | Branch and base | `task/TASK-051-audit-change-values`, from `ccc02dd019d0ed5755d347baeb07ddf9a204f1d9` (origin/develop, the squash merge of TASK-043's pull request #59) |
 | Preflight (EXC-20, EXC-21, EXC-23) | The tree clean but for `Claude outputs/` and `plan-p0-p11-review.patch`, which this Task leaves alone; the stash untouched; no branch or pull request of TASK-051 and no open pull request; the executor state at `BUILD` for TASK-051 with this session's lock, the merge of #59 verified; TASK-042 `DONE`; GATE-CC3 is this Task's own gate before `DONE` |
-| Status | **Stopped for gate GATE-CC3** (EXECUTION_CONTEXT CE-70, an approval by hash): the package of scope item 1 is written; the implementation starts only after the Owner's approval |
+| Resume | Stopped for gate GATE-CC3 on 22 November at 04:38 (Asia/Jakarta) at `c4e7486`; resumed at 11:32 with the Owner's note, recorded as D-138 (resume 1 of 3, CE-24). The approved COPY_DECK blob is unchanged on every commit after `52d619f` |
+| Status | `DONE` recorded on the branch; it takes effect at the squash merge of its pull request and green CI on `develop` (CE-50, CE-61) |
 
 ## 1. The package for gate GATE-CC3
 
@@ -17,7 +18,7 @@ The package is one artifact, COPY_DECK, changed in its sections 11.12 (UXI-378's
 | --- | --- | --- | --- | --- |
 | `docs/07-ux-design/COPY_DECK.md` | `83549cffd4ed741e4d7bcd29e25370c4d164fbf2` | 222,156 | `b85d1f93590427bc5fbac40e9b5c3c795333b0616b3aad4d02a169fb7e263ad6` | Changed; the base blob is `8002d473a27a7d8fa7118d3e9b3db14739c3686f`; 202 lines added, 4 changed |
 
-No other approved artifact changes. ROUTE_CONTRACTS RP-612 names section 11.15 only after the approval, as a reference (EXC-81; COPY_DECK section 22.3).
+**The Owner's approval.** On 22 November 2026 the Owner approved this package by its commit, blob, size and SHA-256, in his note to the resume, recorded as D-138: gate GATE-CC3 APPROVED. Checked again at 11:33, after the resume: `git rev-parse HEAD:docs/07-ux-design/COPY_DECK.md` gave `83549cffd4ed741e4d7bcd29e25370c4d164fbf2` and `sha256sum` of the file gave `b85d1f93…263ad6`; no later commit of this Task changes COPY_DECK.
 
 ## 2. What the package proposes
 
@@ -25,44 +26,108 @@ No other approved artifact changes. ROUTE_CONTRACTS RP-612 names section 11.15 o
 - **The keys** (section 11.15.2): `audit.change.from_to`; 89 labels, 77 of rows under `audit.change.field.*` and 12 of table columns under `audit.change.column.*`; the value labels under `audit.change.value.*` for the stored codes that have no label yet; and the existing keys that label the other codes, unchanged.
 - **The rows of each of the 55 action codes** of INTERACTION_CONTRACTS section 8 (section 11.15.3), with the Owner-only rows marked "Pemilik" and what no channel shows. Cost corrections show "Biaya: lama → baru", the Owner's alone.
 
-## 3. How the rows were derived
+## 3. What was built (contract section 4.1, items 2 to 4)
 
-Every field was read from the Action that writes it, not from a document: the 70 calls of `AuditLog::record` in 57 files of `app/` (`app/Actions/**`; no other class writes `audit_events`), each event's change data and Owner-only data with the shapes of the values they hold (`toCanonical()`, `valueOf()`, the line arrays `$safe`, `$costs`, `$restored`). The 55 action codes are those of INTERACTION_CONTRACTS section 8, each written by at least one Action; `PRINT` is written for three subjects (a label, a receipt, a session report) with different data.
+- **RP-612** (`app/Queries/Audit/ActivityLog.php`, `app/Queries/Audit/ChangeRows.php`): each event carries `changes`, the rows of section 11.15.3 for its action code in their order, each `{label, kind, value, from, to, columns, lines}` with its copy key and its value `{kind, text, keys, precision, unit}`. The Owner-only rows and columns are built only from the Owner-only data, which the read selects only for the Owner. The names of products, categories and users are read once per page by their keys.
+- **UXP-612** (`resources/js/pages/audit/Activity.tsx`, `resources/js/lib/audit/activity.ts`): the expanded row shows "Perubahan" — a key-value list of the value and change rows, then each table of lines under its caption — before "Alasan". Values are formatted by the shared formatters; a code shows its label; a key the dictionary lacks shows nothing (`namedKeyText`, `resources/js/lib/i18n.ts`).
+- **The keys** of COPY_DECK section 11.15.2 in `lang/id/audit.php`, with the generated key type `resources/js/types/translation-keys.ts`.
+- **UXP-415** (scope item 4, D-138): "Yang tidak cocok" shows the approved label of the block's detail code (`mismatchWord`, `resources/js/lib/inventory/incidents.ts`), never the code.
+- **Documents**: D-138 in DECISIONS; the contract's scope item 4 and AC-051-05 (D-138); ROUTE_CONTRACTS RP-612 names section 11.15 (COPY_DECK section 22.3, EXC-81); OPEN_ITEMS T-56 resolved; TASK_PLAN GATE-CC3 APPROVED and this row `DONE`.
 
 ## 4. Readings and technical choices
 
 | Subject | Reading or choice | Why |
 | --- | --- | --- |
-| Internal keys | Every identifier of a record, sequence, correction, publication or version number, file key and hash is shown to no one; a record that the Owner can recognise is shown by its name (product, category, user) | The contract's "no internal key reaches any channel"; a key has no shop meaning |
-| Names now | A product, a category or a user is shown by its name now, read once per page by its keys; the actor keeps the name frozen in the event (TASK-042) | The change data holds keys only; `ActivityLog` already reads names this way for the reference |
-| Lines | The lines of a Sale, a correction, a receiving, a manual issue, an adjustment and an opening stock entry are a table, with existing words for their columns | A table needs no sentence built from keys (section 1.1); an adjustment has no page of its own to link to |
-| Duplicates | A value that the row already shows — the Sale or session number of the reference, the reason under "Alasan" — is not repeated | ACV-02 and UXI-379 |
-| Values the audit never held | PROFILE_CHANGE and DETAILS_CHANGE record which fields changed, not their values; "Perubahan" lists the fields, and the profile's values stay on UXP-607's versions | ACV-01 shows only what the event holds; nothing an Action writes changes (contract section 4.3) |
-| Wording | Every label reuses the deck's approved word for the same thing where one exists (sections 3, 7, 8.1, 9.1, 10, 11); new words only where the deck has none: the reconciliation detail codes, the causes of a cost mark, the onboarding states, the restore decisions, the barcode symbologies, the link kinds | Section 2 and the precedence of section 1.5 |
-| "Tanggal usaha" | The GLOSSARY term for "Business date", whose status there is "proposed" | GLOSSARY row 168 |
+| How the derivation was made | Every field was read from the Action that writes it: the 70 calls of `AuditLog::record` in 57 files of `app/`, each event's change data and Owner-only data with the shapes of their values. The 55 action codes are those of INTERACTION_CONTRACTS section 8; `PRINT` is written for three subjects with different data | The package's rows are those that the events hold (contract section 4.3) |
+| Payload | A row reaches the page as its copy key and its value, never as text formatted on the server; the page formats with the shared formatters | ACV-01: "each row reaches the page as its copy key and its value" |
+| Codes | Each stored code is mapped on the server to its label key from the domain's own constants (payment methods, movement types, detail codes, roles, symbologies, onboarding and restore states); a code without a label gives no row | ACV-04; one place of each code's name (ARC-30, CheckoutSaleTest) |
+| Names now | A product, a category or a user is shown by its name now, read once per page by its keys | ACV-04, ACV-05 |
+| Quantities | In the product's base unit and precision now, which BR-CAT-07 keeps fixed once it has a movement; a value with more decimals than that precision keeps its own decimals, never rounded. Stok minimum of a product edit takes the unit and precision of its own side when the edit changed them | ACV-04; a refusal of the formatter would break the page |
+| Values the audit never held | PROFILE_CHANGE and DETAILS_CHANGE list the fields that changed and no value | ACV-01; the limit the Owner accepted (D-138) |
+| A value the page cannot read | Shows nothing rather than an error | A defect of one value never hides the page |
+| The sale's line cost | The cost cell of a Sale's line is the allocation that the Owner-only data holds; the test checks its kind and form, not its amount, which is the costing engine's | The costing engine is tested by its own Tasks |
+| Next Task | TASK-044 depends on this Task and on TASK-043, both `DONE` at this merge, but its row's gate TARGET is OPEN; CE-10 selects no Task until the operator's facts of TARGET are recorded, so TASK-044 stays `TODO` | TASK_PLAN sections 3 and 4; CE-10, CE-50 |
 
 ## 5. Findings
 
 | ID | Finding | Disposition |
 | --- | --- | --- |
-| F-1 | UXP-415 Detail insiden shows the reconciliation detail code as stored (`resources/js/pages/inventory/Incident.tsx`, the row "Yang tidak cocok": `BALANCE_MISMATCH` and the others), a stored code before the Owner, as T-56 found for the audit | Outside this Task's scope (D-137, contract section 4.3); the labels `audit.change.value.mismatch_*` of this package could serve it; reported to the Owner at this stop for his decision on where it goes |
+| F-1 | UXP-415 Detail insiden showed the reconciliation detail code as stored (`BALANCE_MISMATCH` and the others) under "Yang tidak cocok" | Fixed under the Owner's exception to D-137 (D-138): scope item 4, AC-051-05; the browser test of UXP-415 now expects "Saldo stok" and no code |
+| F-2 | The native TypeScript toolchain does not run on this machine (`tsc` not found by `npm run typecheck` or `npx tsc`), as in earlier Tasks | The typecheck and ESLint ran in the fast run of CI (section 6) |
 
 ## 6. Checks
 
-Times are Asia/Jakarta. The package is documentation only; the implementation and its tests come after the approval.
+Times are Asia/Jakarta, 22 November 2026.
 
 | Check | Where it ran | Time | Duration | Result |
 | --- | --- | --- | --- | --- |
-| Package hashes | Local, on `52d619f` | 22 November, 04:26 | under 1 min | Section 1 |
-| Guard | Local, on the checkpoints before their push | Section 7 | — | Section 7 |
-| Fast run of CI | Started by the push of the checkpoints | — | — | `NOT_RUN` until it completes; the Task stops for GATE-CC3 and does not wait for it |
-| The tests of contract section 7 (L1, L4, L5) and the heavy checks of CE-44 | — | — | — | `NOT_RUN`: after the approval, with the implementation |
+| COPY_DECK blob and SHA-256 after the resume | Local, on `c4e7486` | 11:33 | under 1 min | `83549cff…`, `b85d1f93…` — unchanged |
+| `npm run typecheck`, `npx tsc --noEmit` | Local | 12:00 | under 1 min | `NOT_RUN` — no native `tsc` (F-2) |
+| Guard's preview | Local, the uncommitted change | 12:07 | under 1 min | PASS, no candidate |
+| Guard | Local, `ecf294a`, 1 commit | 12:07 | about 4 min | PASS |
+| Fast run 1 of CI: `composer validate`, `lint`, `analyse`, `test:unit`; `npm run lint`, `typecheck`, `test:unit`; the changed PostgreSQL file `AuditViewsTest` | Run 44988303285 on `ecf294a` | 12:11 | 7 min 25 s | FAIL in two checks, every other PASS (`ChangeRowsTest`, `changes.test.ts`, `AuditViewsTest`, the typecheck among them): `composer analyse` — `ChangeRows.php:302` "Strict comparison using !== between non-empty-array<mixed, mixed> and null will always evaluate to true" (the inferred type of the match lost its null rows); `npm run lint` — `Activity.tsx:220` react/jsx-no-literals on a template literal in a `key` attribute |
+| Guard | Local, `753c3b7`, 1 commit | 12:56 | about 4 min | PASS |
+| Fast run 2 of CI, the one targeted retest of both fixes (D-133): the rows typed `list<Change\|null>`; each row keyed by its label | Run 44991674557 on `753c3b7` | 12:58 | 7 min 24 s | PASS, every check; both failures cured |
+| The review fix R-01 (`changes.test.ts`, test only) | The fast run and CI on the pull request's head | — | — | `NOT_RUN` until that run |
+| Guard's preview of the record and R-01 | Local, the uncommitted change | 13:20 | under 1 min | PASS, no candidate |
+| The whole command contract, the browser suite (`audit.spec.ts`, `incidents.spec.ts`), the four PostgreSQL parts, the build and the image checks | CI on the pull request's final head | — | — | `NOT_RUN` until that run (CE-44) |
 
-## 7. Stop for gate GATE-CC3
+## 7. Acceptance criteria
 
-The contract stops here (scope item 1; EXECUTION_CONTEXT CE-70, an approval by hash). The Owner approves the package by the blob, size and SHA-256 of section 1, or asks for changes, which give a new package with new values. His approval is recorded as the next free decision, D-138, by the run that resumes, and the implementation then starts.
+| Criterion | Status | Proof |
+| --- | --- | --- |
+| AC-051-01 | PASS | The amendment, section 2; the Owner's approval by hash, D-138 (section 1); `ChangeRowsTest` reads the rows of each code from COPY_DECK section 11.15.3 |
+| AC-051-02 | L1 and L4 PASS (run 44991674557); L5 `NOT_RUN` until the final head | `ChangeRowsTest` (L1), `AuditViewsTest` (L4), `audit.spec.ts` (L5) |
+| AC-051-03 | L1 and L4 PASS (run 44991674557) | `ChangeRowsTest` and `AuditViewsTest`: the Owner-only rows for the Owner alone, the read for another reader without them; RP-612 refused to every other role and the combined account (TASK-042's test, unchanged) |
+| AC-051-04 | Fast checks PASS; the heavy checks `NOT_RUN` until the final head | Section 6 |
+| AC-051-05 | `NOT_RUN` until the final head: `changes.test.ts` with R-01's five codes (L1) and `incidents.spec.ts` (L5) | Code reviewed correct (R-01) |
 
-| Acceptance criterion | Status |
+## 8. Tests (contract section 7)
+
+| Level | Test | What it proves |
+| --- | --- | --- |
+| L1 | `tests/Unit/Audit/ChangeRowsTest.php` | For each of the 55 action codes, the rows are exactly those of COPY_DECK section 11.15.3, read from the document, in order, for the Owner and, without the "Pemilik" rows, for another reader; every key a row carries is in lang/id, and every `audit.change.*` key is used; no stored field name or code leaves the rows; each kind of value carries what the page formats |
+| L1 | `tests/Unit/Audit/changes.test.ts` | Each kind of value as the page presents it; a key the dictionary lacks shows nothing; a value it cannot read shows nothing; the detail code's label (scope item 4) |
+| L1 | `CopyDeckTest`, `translation-types.php --check`, `translation-keys.php` (existing) | The new keys' texts are COPY_DECK's verbatim; the key type equals lang/id |
+| L4 | `tests/Feature/Audit/AuditViewsTest.php` | RP-612's payload per role through the channel allowlist (`#changes`, and the default and `#product` pages with their rows); a Sale, a receiving, a cost correction and a product creation with their values; the Owner-only rows absent from the read for another reader; no field name |
+| L5 | `tests/Browser/audit/audit.spec.ts` | "Perubahan" of a cost correction, a price change and a receiving's lines, opened by Enter, at the first width and at 200 % zoom, with axe, contrast, targets and 320 px; a password link's rows with no field name |
+| L5 | `tests/Browser/inventory/incidents.spec.ts` | UXP-415 shows "Saldo stok", never `BALANCE_MISMATCH` |
+
+## 9. Definition of Done
+
+| Dimension | Result |
 | --- | --- |
-| AC-051-01 | The amendment is written (section 2); the Owner's approval by hash is pending (GATE-CC3 OPEN) |
-| AC-051-02 to AC-051-04 | `NOT_RUN`: the implementation and the targeted verification come after the approval |
+| Business | PASS for L1 and L4; L5 on the final head — the criteria of section 7 |
+| UI and UX | `NOT_RUN` until the browser suite on the final head — UXI-378 as amended; UXP-415's label |
+| Backend | PASS — RP-612's payload (L1, L4, run 44991674557) |
+| Database | N/A — no migration, no table |
+| Security | PASS — the Owner-only data at the data layer and the channel allowlist (L1, L4); reviewed |
+| Data integrity | N/A — writes no fact; reads only |
+| Performance | PASS by construction — the rows are read with their page; the names once per page by their keys (ACV-05) |
+| Operations | N/A |
+| Verification | Fast checks PASS; the heavy checks on the final head — section 8; AUDIT01's final point is TASK-044 |
+
+## 10. Review (EXECUTION_CONTEXT CE-40)
+
+The self-review of the whole diff against the contract preceded it. One review, class A, independent and adversarial, by `bk-reviewer-high` (Claude Opus 5.5, effort High), on package `review/TASK-051/r1` (the diff from `ccc02dd` to a snapshot of the working tree at `753c3b7` with the record edits); `review-pack.sh --check` printed `UNCHANGED` after it. Verdict PASS: no MUST-FIX, so no verification round (CE-40). The reviewer compared all 55 codes' rows with the data each Action writes and with COPY_DECK section 11.15.3, and the Owner-only paths at the data layer.
+
+| ID | Severity | Finding | Outcome |
+| --- | --- | --- | --- |
+| R-01 | SHOULD-FIX | `changes.test.ts` checked the label of 2 of the 5 detail codes; a misspelt code in the client's map would show nothing with no test failing (AC-051-05) | Fixed: the test asserts all five codes with their labels; it runs in CI on the pull request's head |
+| R-02 | NOTE | The L1 events are written by hand; only four codes go through real Actions at L4, so a key renamed later by an Action would drop its row silently | For TASK-044 (AUDIT01): real events for more codes, such as PRODUCT_EDIT, ADJUSTMENT_CONFIRM, CASH_SESSION_CLOSE and REVERSAL_CONFIRM (section 12) |
+| R-03 | NOTE | CURRENT_HANDOFF and this section not yet written | Done in the record of CE-50 |
+| R-04 | NOTE | After this merge no Task is `READY`: TASK-044's row holds gate TARGET, OPEN | Stated in CURRENT_HANDOFF and in the report to the Owner |
+| R-05 | NOTE | The detail codes' labels kept on the server by constants and on the client by strings; some server maps use strings | Recorded; R-01's test covers the client's copy |
+| R-06 | NOTE | Stok minimum without its unit in the event takes the product's unit now | Recorded; the best the stored data allows (section 4) |
+| R-07 | NOTE | Every event's tables are rendered while its details are closed; the products are read twice per page | For TASK-048 if a large audit page is profiled (section 12) |
+
+## 11. Guard's candidates (CE-31; D-076, D-097, D-098)
+
+The preview and the guard over `ecf294a`, the guard over `753c3b7`, and the preview of the record and of R-01's fix (13:20) found no candidate; nothing to judge.
+
+## 12. For later Tasks
+
+- TASK-044 verifies AUDIT01 on the release candidate; TASK-049 checks T-56 at RELEASE (D-136).
+- TASK-044 waits for gate TARGET (TASK_PLAN section 3); after this merge no Task is eligible until the Owner records its facts (review R-04).
+- TASK-044 (AUDIT01): real events, through the Actions, for more action codes than the four of `AuditViewsTest` — PRODUCT_EDIT, ADJUSTMENT_CONFIRM, CASH_SESSION_CLOSE, REVERSAL_CONFIRM — so that a key an Action renames cannot drop a row silently (review R-02).
+- TASK-048: the audit page builds every event's tables while their details are closed and reads the products twice per page; to look at if a large page is profiled (review R-07).

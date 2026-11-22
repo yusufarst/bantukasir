@@ -18,6 +18,9 @@ beforeAll(() => {
         'audit.change.value.cost_zero': ':uang (:catatan)',
         'audit.change.value.yes': 'Ya',
         'audit.change.value.mismatch_balance': 'Saldo stok',
+        'audit.change.value.mismatch_valuation': 'Nilai persediaan',
+        'audit.change.value.mismatch_issue_projection': 'Biaya barang keluar',
+        'audit.change.value.mismatch_return_projection': 'Biaya retur',
         'audit.change.value.mismatch_history': 'Riwayat mutasi tidak bisa dihitung ulang',
         'costing.status.unknown': 'Belum diketahui',
         'ux.format.variance': ':uang (:keterangan)',
@@ -76,8 +79,12 @@ describe('a key that the server names', () => {
 });
 
 describe('the detail code of an incident (UXP-415)', () => {
-    it('shows its approved label and never the stored code', () => {
+    it('shows its approved label for each of the five codes, and never the stored code', () => {
+        // Review R-01: every code of ProductReconciliation, each with its label of COPY_DECK section 11.15.2.
         expect(mismatchWord('BALANCE_MISMATCH')).toBe('Saldo stok');
+        expect(mismatchWord('VALUATION_MISMATCH')).toBe('Nilai persediaan');
+        expect(mismatchWord('ISSUE_PROJECTION_MISMATCH')).toBe('Biaya barang keluar');
+        expect(mismatchWord('RETURN_PROJECTION_MISMATCH')).toBe('Biaya retur');
         expect(mismatchWord('HISTORY_INVALID')).toBe('Riwayat mutasi tidak bisa dihitung ulang');
         expect(mismatchWord('SOMETHING_NEW')).toBe('');
     });

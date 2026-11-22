@@ -2,10 +2,10 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-7 under D-090, 18 October 2026 (Asia/Jakarta); corrected under D-091 the same day, after the independent review of the baseline; approved by the Owner with every Task (gate GATE-P11), and corrected for review finding R-1, under D-092 the same day; amended under D-101, 23 October 2026, for continuous execution: the introduction, sections 1, 5.1 and 6, and gate EXECUTOR; amended under D-137, 21 November 2026, by TASK-043: TASK-051 and gate GATE-CC3 added, sections 1 to 4, 5.1, 7, 8 and 10 |
+| Status | CURRENT — written in RF-7 under D-090, 18 October 2026 (Asia/Jakarta); corrected under D-091 the same day, after the independent review of the baseline; approved by the Owner with every Task (gate GATE-P11), and corrected for review finding R-1, under D-092 the same day; amended under D-101, 23 October 2026, for continuous execution: the introduction, sections 1, 5.1 and 6, and gate EXECUTOR; amended under D-137, 21 November 2026, by TASK-043: TASK-051 and gate GATE-CC3 added, sections 1 to 4, 5.1, 7, 8 and 10; gate GATE-CC3 approved under D-138, 22 November 2026, recorded by TASK-051 |
 | Phase | P11 — Task planning, dependencies and execution specifications |
 | Replaces | `docs/11-tasks/legacy/11-BUILD-PLAN.md`, `docs/11-tasks/legacy/P11-BUILD-UNITS.md` and `docs/11-tasks/legacy/build-units/` (LEGACY — SUPERSEDED, [LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 16); decision D-012 |
-| Decisions | D-012, D-031, D-066, D-088, D-090, D-091, D-092, D-094, D-095, D-096, D-097, D-098, D-099, D-100, D-101, D-137; FD-07, FD-08, FD-10 |
+| Decisions | D-012, D-031, D-066, D-088, D-090, D-091, D-092, D-094, D-095, D-096, D-097, D-098, D-099, D-100, D-101, D-137, D-138; FD-07, FD-08, FD-10 |
 | Related | [EXECUTION_CONTEXT](EXECUTION_CONTEXT.md), [DEPENDENCY_GRAPH](DEPENDENCY_GRAPH.md), [TRACEABILITY](TRACEABILITY.md), the Task contracts in [tasks/](tasks/), [TEST_STRATEGY](../08-testing/TEST_STRATEGY.md) |
 
 The implementation baseline of BantuKasir V1: 51 Tasks — the 50 of D-092 and TASK-051 of D-137 — their dependencies, gates and status, the order in which to run them, and where every requirement, workflow, suite, route, table and control is built. Nothing here authorizes a Task: each one starts only on the Owner's explicit instruction ([EXECUTION_CONTEXT](EXECUTION_CONTEXT.md) EXC-10) or under the continuous execution of D-101 (EXECUTION_CONTEXT section 19), and none starts before gate GATE-P11.
@@ -52,7 +52,7 @@ Gates that a Task waits for, besides its dependencies. GATE-P11 to GATE-CC3 are 
 | GATE-PUBLISH | Before the first push of implementation work: OPEN_ITEMS N-09 decided and the one-time audit N-10 completed; before every push, the publication guard of D-076 (EXC-31). A pull request, its CI run and a merge into `develop` need a push. | The `DONE` of TASK-001 — its first push, its pull request, CI and its merge into `develop` — and so the start of every later implementation Task, all of which depend on TASK-001; every push after it. TASK-001 itself may start and be built and verified locally before it (EXC-31) | SATISFIED — N-09 decided (D-096) and the N-10 audit completed (D-097); the publication guard of D-076, with the known baseline of D-097, before every push |
 | GATE-CC1 | The Owner approves, by the Git blob, size and SHA-256 of each changed artifact, the change-control package of TASK-002 (OPEN_ITEMS T-19, T-20). | TASK-005, TASK-009, TASK-010 and every interface Task that uses a key it adds | SATISFIED — D-099 |
 | GATE-CC2 | The Owner approves by hash the artifacts that TASK-047 changes, when gate DEVICES changes a shortcut or a breakpoint; no approval is needed when the values are confirmed. | TASK-047 | OPEN — after TASK-046 |
-| GATE-CC3 | The Owner approves by hash the COPY_DECK change control that TASK-051 writes: the labels of the fields of an audit event's change data, the presentation of their values and the fields that are his alone (OPEN_ITEMS T-56; D-136, D-137). | The implementation stage and the `DONE` of TASK-051, which stops for the approval once its package is written | OPEN — written by TASK-051 |
+| GATE-CC3 | The Owner approves by hash the COPY_DECK change control that TASK-051 writes: the labels of the fields of an audit event's change data, the presentation of their values and the fields that are his alone (OPEN_ITEMS T-56; D-136, D-137). | The implementation stage and the `DONE` of TASK-051, which stops for the approval once its package is written | APPROVED — D-138, COPY_DECK blob `83549cff` at `52d619f` |
 | EXECUTOR | The executor runs as Claude Opus 5.5 at the effort that the Owner's instruction names for the Task, or under continuous execution at the effort of EXECUTION_CONTEXT CE-11 (D-031, D-095, D-101; EXECUTION_CONTEXT EXC-11; OPEN_ITEMS section 3). | Every Task | Checked at the start of each Task |
 | TARGET | The real server, Cloudflare, access, TLS and capacity, recorded by the operator (ENVIRONMENTS section 17; OPEN_ITEMS section 3). The operator is named by the Owner (RELEASE_PROCESS section 13). | TASK-044 (staging part), TASK-045, TASK-046, TASK-048, TASK-049 | OPEN |
 | DEVICES | The shop's real devices, printers and media, and the Owner's decision on DEVICE01 (DEVICE_VERIFICATION). | TASK-046, TASK-049 | OPEN |
@@ -119,9 +119,9 @@ The status of record of every Task. Contracts: [tasks/](tasks/).
 | [TASK-048](tasks/TASK-048-performance-verification.md) | Performance verification | 9 | V | M | V | TASK-044, TASK-043 | TARGET, G2, operator named | `TODO` |
 | [TASK-049](tasks/TASK-049-release-readiness.md) | Release readiness: staging, UAT and first installation | 10 | R | L | V | TASK-045, TASK-047, TASK-048 | G1, G2, G3, G4, DEVICES, TARGET, GATE-PUBLISH | `TODO` |
 | [TASK-050](tasks/TASK-050-production-pilot.md) | Production release, cutover and pilot acceptance | 10 | R | L | V | TASK-049 | RELEASE, GATE-PUBLISH, G4 | `TODO` |
-| [TASK-051](tasks/TASK-051-audit-change-values.md) | Audit change values: COPY_DECK change control and their display | 8 | R | M | A | TASK-042 | before `DONE`: GATE-CC3 | `READY` |
+| [TASK-051](tasks/TASK-051-audit-change-values.md) | Audit change values: COPY_DECK change control and their display | 8 | R | M | A | TASK-042 | before `DONE`: GATE-CC3 | `DONE` |
 
-Totals: `TODO` 7; `READY` 1; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 43; `SUPERSEDED` 0.
+Totals: `TODO` 7; `READY` 0; `IN_PROGRESS` 0; `BLOCKED` 0; `VERIFYING` 0; `DONE` 44; `SUPERSEDED` 0.
 
 ## 5. Implementation sequence
 
