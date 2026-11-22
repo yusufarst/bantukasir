@@ -70,14 +70,16 @@ Times are Asia/Jakarta, 22 November 2026.
 | Fast run 2 of CI, the one targeted retest of both fixes (D-133): the rows typed `list<Change\|null>`; each row keyed by its label | Run 44991674557 on `753c3b7` | 12:58 | 7 min 24 s | PASS, every check; both failures cured |
 | The review fix R-01 (`changes.test.ts`, test only) | The fast run and CI on the pull request's head | — | — | `NOT_RUN` until that run |
 | Guard's preview of the record and R-01 | Local, the uncommitted change | 13:20 | under 1 min | PASS, no candidate |
-| The whole command contract, the browser suite (`audit.spec.ts`, `incidents.spec.ts`), the four PostgreSQL parts, the build and the image checks | CI on the pull request's final head | — | — | `NOT_RUN` until that run (CE-44) |
+| The whole command contract, the browser suite (`audit.spec.ts`, `incidents.spec.ts`), the four PostgreSQL parts, the build and the image checks | CI run 44993562295 on the pull request's head `f6cc817` | 13:24 | 31 min 59 s (Command contract) | FAIL in two checks (section 13): `PostgreSQL (4/4)` — 309 tests, 1 failure; `npm run test:e2e` — 1 failed, 2 did not run, 344 passed. Every other job PASS: `PostgreSQL (1/4)` to `(3/4)`, the static checks, `composer test:unit`, `test:race`, `npm run test:unit`, `npm run build`, the image checks, the migration and restore rehearsals |
+| Guard's preview of fix cycle 1 | Local, the uncommitted change | 14:16 | under 1 min | PASS, no candidate |
+| The one targeted retest of fix cycle 1 (D-133): `OnboardingCommandsTest` in `PostgreSQL (4/4)` and `audit.spec.ts` at 640 x 400 in the browser suite, with the whole command contract and the image checks | CI on the pull request's next head | — | — | `NOT_RUN` until that run (CE-42, CE-44) |
 
 ## 7. Acceptance criteria
 
 | Criterion | Status | Proof |
 | --- | --- | --- |
 | AC-051-01 | PASS | The amendment, section 2; the Owner's approval by hash, D-138 (section 1); `ChangeRowsTest` reads the rows of each code from COPY_DECK section 11.15.3 |
-| AC-051-02 | L1 and L4 PASS (run 44991674557); L5 `NOT_RUN` until the final head | `ChangeRowsTest` (L1), `AuditViewsTest` (L4), `audit.spec.ts` (L5) |
+| AC-051-02 | L1 and L4 PASS (run 44991674557); L5 FAIL at 640 x 400 in run 44993562295 (CI-2, section 13), fixed; `NOT_RUN` until the next head | `ChangeRowsTest` (L1), `AuditViewsTest` (L4), `audit.spec.ts` (L5) |
 | AC-051-03 | L1 and L4 PASS (run 44991674557) | `ChangeRowsTest` and `AuditViewsTest`: the Owner-only rows for the Owner alone, the read for another reader without them; RP-612 refused to every other role and the combined account (TASK-042's test, unchanged) |
 | AC-051-04 | Fast checks PASS; the heavy checks `NOT_RUN` until the final head | Section 6 |
 | AC-051-05 | `NOT_RUN` until the final head: `changes.test.ts` with R-01's five codes (L1) and `incidents.spec.ts` (L5) | Code reviewed correct (R-01) |
@@ -123,7 +125,7 @@ The self-review of the whole diff against the contract preceded it. One review, 
 
 ## 11. Guard's candidates (CE-31; D-076, D-097, D-098)
 
-The preview and the guard over `ecf294a`, the guard over `753c3b7`, and the preview of the record and of R-01's fix (13:20) found no candidate; nothing to judge.
+The preview and the guard over `ecf294a`, the guard over `753c3b7`, and the preview of the record and of R-01's fix (13:20) found no candidate; nothing to judge. The preview of fix cycle 1 (14:16) found no candidate either.
 
 ## 12. For later Tasks
 
@@ -131,3 +133,18 @@ The preview and the guard over `ecf294a`, the guard over `753c3b7`, and the prev
 - TASK-044 waits for gate TARGET (TASK_PLAN section 3); after this merge no Task is eligible until the Owner records its facts (review R-04).
 - TASK-044 (AUDIT01): real events, through the Actions, for more action codes than the four of `AuditViewsTest` — PRODUCT_EDIT, ADJUSTMENT_CONFIRM, CASH_SESSION_CLOSE, REVERSAL_CONFIRM — so that a key an Action renames cannot drop a row silently (review R-02).
 - TASK-048: the audit page builds every event's tables while their details are closed and reads the products twice per page; to look at if a large page is profiled (review R-07).
+
+## 13. Fix cycle 1 of 3 (CE-42): CI run 44993562295 on `f6cc817`
+
+| ID | Failure, as CI reported it | Cause | Fix |
+| --- | --- | --- | --- |
+| CI-1 | `PostgreSQL (4/4)`: `Tests\Feature\Inventory\OnboardingCommandsTest::test_each_table_of_the_onboarding_has_its_one_writer` — "Failed asserting that two arrays are identical", `+ 1 => 'Queries/Audit/ChangeRows.php'` at line 706, `filesNaming('onboarding_state')` | `ChangeRows.php` quotes `'onboarding_state'` as the suffix of the row label `audit.change.field.onboarding_state` (COPY_DECK section 11.15.2), not as the table; the guard of STK-12 matches any quoted table name | `tests/Feature/Inventory/OnboardingCommandsTest.php` (TASK-035's test): the list names `ChangeRows.php` too, and two assertions pin that each quoted `onboarding_state` in it, by the guard's own pattern, is the label of a `::change(` or `::value(` row, and that it names no onboarding table in `table(`, `from` or `join`; the one-writer list of every other file is unchanged |
+| CI-2 | `npm run test:e2e`: `tests/Browser/audit/audit.spec.ts:240` ("Perubahan" …), `checked` at line 295 at 640 x 400 — "no sideways scrolling of the page", `expect(received).toBeLessThanOrEqual(expected)`, expected `<= 640`, received `664`; the two tests after it did not run | With the three rows' details open, the receiving's table of lines — a narrow table inside the list's wide table — becomes cards, whose header is hidden with `position: absolute`; the wide table's host scrolls (`overflow-x: auto`) but was not positioned, so that header's containing block lay outside the scroller, which did not clip it, and it widened the page | `resources/css/components.css`: `.bk-table-host[data-wide='true']` is `position: relative`, so that everything absolutely positioned inside a wide table is clipped by its scroller. A shared rule: it changes no other wide table (Riwayat aktivitas, Riwayat keamanan, Riwayat stok, the specimen) — the sticky first column, the hidden caption and the stacking stay as they were. Regression test: the check at 640 that failed, on the next head |
+
+Production behaviour changed (the shared CSS rule), so the verification agent `bk-reviewer-high` made the targeted check of CE-42 on package `review/TASK-051/r2` (tree `630cdb7`, previous `r1`); `review-pack.sh --check` printed `UNCHANGED`. Verdict PASS: CI-1 and CI-2 FIXED, no regression of the wide tables, no MUST-FIX.
+
+| ID | Severity | Finding | Outcome |
+| --- | --- | --- | --- |
+| R-08 | SHOULD-FIX | This cycle not yet recorded, nor the two files outside the contract's list with their reasons | Done: this section and section 6 |
+| R-09 | NOTE | The count of the quoted name matched only `'onboarding_state'`, not the guard's own pattern with double quotes or an alias | Done, in the same test: the count uses the guard's pattern |
+| R-10 | NOTE | At 640 the checks after line 54 and the 320 px check from 640 have not yet run with the three rows open | A red retest only at those later steps is a new cause with its own single retest, not `RETEST_FAILED`; if line 54 fails again, the overflowing element is measured |
