@@ -3,11 +3,11 @@
 | | |
 | --- | --- |
 | Task | [TASK-051](../tasks/TASK-051-audit-change-values.md), review class A |
-| Instruction | Continuous execution, D-101, as the delegation of the tick printed it (EXECUTION_CONTEXT CE-01): the selection of CE-10 at `origin/develop` `ccc02dd`; the Owner's decisions D-136, D-137 and D-138 and his directives D-130 and D-133 |
+| Instruction | Continuous execution, D-101, as the delegation of the tick printed it (EXECUTION_CONTEXT CE-01): the selection of CE-10 at `origin/develop` `ccc02dd`; the Owner's decisions D-136, D-137, D-138 and D-139 and his directives D-130 and D-133 |
 | Executor | Agent `bk-executor-high`, model `claude-opus-5-5`, effort High from the table of EXECUTION_CONTEXT section 19; review and verification by `bk-reviewer-high` |
 | Branch and base | `task/TASK-051-audit-change-values`, from `ccc02dd019d0ed5755d347baeb07ddf9a204f1d9` (origin/develop, the squash merge of TASK-043's pull request #59) |
 | Preflight (EXC-20, EXC-21, EXC-23) | The tree clean but for `Claude outputs/` and `plan-p0-p11-review.patch`, which this Task leaves alone; the stash untouched; no branch or pull request of TASK-051 and no open pull request; the executor state at `BUILD` for TASK-051 with this session's lock, the merge of #59 verified; TASK-042 `DONE`; GATE-CC3 is this Task's own gate before `DONE` |
-| Resume | Stopped for gate GATE-CC3 on 22 November at 04:38 (Asia/Jakarta) at `c4e7486`; resumed at 11:32 with the Owner's note, recorded as D-138 (resume 1 of 3, CE-24). The approved COPY_DECK blob is unchanged on every commit after `52d619f` |
+| Resume | Stopped for gate GATE-CC3 on 22 November at 04:38 (Asia/Jakarta) at `c4e7486`; resumed at 11:32 with the Owner's note, recorded as D-138 (resume 1 of 3, CE-24). Stopped again in fix cycle 2 on 22 November at 14:57 (`OWNER_DECISION`, CVE-2026-121482, section 14); resumed at 17:13 after the Owner's merge of D-139 (resume 1 of 3 of that stop). The approved COPY_DECK blob is unchanged on every commit after `52d619f`, the merge of `develop` included |
 | Status | `DONE` recorded on the branch; it takes effect at the squash merge of its pull request and green CI on `develop` (CE-50, CE-61) |
 
 ## 1. The package for gate GATE-CC3
@@ -72,17 +72,20 @@ Times are Asia/Jakarta, 22 November 2026.
 | Guard's preview of the record and R-01 | Local, the uncommitted change | 13:20 | under 1 min | PASS, no candidate |
 | The whole command contract, the browser suite (`audit.spec.ts`, `incidents.spec.ts`), the four PostgreSQL parts, the build and the image checks | CI run 44993562295 on the pull request's head `f6cc817` | 13:24 | 31 min 59 s (Command contract) | FAIL in two checks (section 13): `PostgreSQL (4/4)` — 309 tests, 1 failure; `npm run test:e2e` — 1 failed, 2 did not run, 344 passed. Every other job PASS: `PostgreSQL (1/4)` to `(3/4)`, the static checks, `composer test:unit`, `test:race`, `npm run test:unit`, `npm run build`, the image checks, the migration and restore rehearsals |
 | Guard's preview of fix cycle 1 | Local, the uncommitted change | 14:16 | under 1 min | PASS, no candidate |
-| The one targeted retest of fix cycle 1 (D-133): `OnboardingCommandsTest` in `PostgreSQL (4/4)` and `audit.spec.ts` at 640 x 400 in the browser suite, with the whole command contract and the image checks | CI on the pull request's next head | — | — | `NOT_RUN` until that run (CE-42, CE-44) |
+| The one targeted retest of fix cycle 1 (D-133): `OnboardingCommandsTest` in `PostgreSQL (4/4)` and `audit.spec.ts` at 640 x 400 in the browser suite, with the whole command contract and the image checks | CI run 44998056780 on the pull request's head `ab34bb6` | 14:24 | 30 min 12 s (Command contract) | PASS for both fixes and every job but one: `Command contract` (the browser suite, the static checks, the unit tests, the build), `PostgreSQL (1/4)` to `(4/4)`, the migration and restore rehearsals. FAIL: the image checks, on CVE-2026-121482 alone, which no change of this Task caused (section 14) |
+| Merge of `origin/develop` `832686c` (D-139, EXC-36) | Local | 17:14 | under 1 min | One conflict, in DECISIONS, resolved by keeping both rows and both sections (section 14); COPY_DECK's blob unchanged |
+| Guard's preview of fix cycle 2 | Local, the uncommitted merge and record | 17:16 | under 1 min | PASS, no candidate |
+| The one targeted retest of fix cycle 2 (D-133): the image checks with D-139's entry, and the whole command contract on the merged head | CI on the pull request's next head | — | — | `NOT_RUN` until that run (CE-42, CE-44) |
 
 ## 7. Acceptance criteria
 
 | Criterion | Status | Proof |
 | --- | --- | --- |
 | AC-051-01 | PASS | The amendment, section 2; the Owner's approval by hash, D-138 (section 1); `ChangeRowsTest` reads the rows of each code from COPY_DECK section 11.15.3 |
-| AC-051-02 | L1 and L4 PASS (run 44991674557); L5 FAIL at 640 x 400 in run 44993562295 (CI-2, section 13), fixed; `NOT_RUN` until the next head | `ChangeRowsTest` (L1), `AuditViewsTest` (L4), `audit.spec.ts` (L5) |
+| AC-051-02 | L1 and L4 PASS (run 44991674557); L5 FAIL at 640 x 400 in run 44993562295 (CI-2, section 13), fixed; L5 PASS in run 44998056780 on `ab34bb6` | `ChangeRowsTest` (L1), `AuditViewsTest` (L4), `audit.spec.ts` (L5) |
 | AC-051-03 | L1 and L4 PASS (run 44991674557) | `ChangeRowsTest` and `AuditViewsTest`: the Owner-only rows for the Owner alone, the read for another reader without them; RP-612 refused to every other role and the combined account (TASK-042's test, unchanged) |
-| AC-051-04 | Fast checks PASS; the heavy checks `NOT_RUN` until the final head | Section 6 |
-| AC-051-05 | `NOT_RUN` until the final head: `changes.test.ts` with R-01's five codes (L1) and `incidents.spec.ts` (L5) | Code reviewed correct (R-01) |
+| AC-051-04 | Every check PASS on `ab34bb6` (run 44998056780) but the image checks, refused on CVE-2026-121482 (section 14); the whole contract on the merged head `NOT_RUN` until its run | Section 6 |
+| AC-051-05 | PASS in run 44998056780 on `ab34bb6`: `changes.test.ts` with R-01's five codes (L1) and `incidents.spec.ts` (L5) | Code reviewed correct (R-01) |
 
 ## 8. Tests (contract section 7)
 
@@ -125,7 +128,7 @@ The self-review of the whole diff against the contract preceded it. One review, 
 
 ## 11. Guard's candidates (CE-31; D-076, D-097, D-098)
 
-The preview and the guard over `ecf294a`, the guard over `753c3b7`, and the preview of the record and of R-01's fix (13:20) found no candidate; nothing to judge. The preview of fix cycle 1 (14:16) found no candidate either.
+The preview and the guard over `ecf294a`, the guard over `753c3b7`, and the preview of the record and of R-01's fix (13:20) found no candidate; nothing to judge. The preview of fix cycle 1 (14:16) found no candidate either, nor did that of fix cycle 2 (17:16).
 
 ## 12. For later Tasks
 
@@ -147,4 +150,14 @@ Production behaviour changed (the shared CSS rule), so the verification agent `b
 | --- | --- | --- | --- |
 | R-08 | SHOULD-FIX | This cycle not yet recorded, nor the two files outside the contract's list with their reasons | Done: this section and section 6 |
 | R-09 | NOTE | The count of the quoted name matched only `'onboarding_state'`, not the guard's own pattern with double quotes or an alias | Done, in the same test: the count uses the guard's pattern |
-| R-10 | NOTE | At 640 the checks after line 54 and the 320 px check from 640 have not yet run with the three rows open | A red retest only at those later steps is a new cause with its own single retest, not `RETEST_FAILED`; if line 54 fails again, the overflowing element is measured |
+| R-10 | NOTE | At 640 the checks after line 54 and the 320 px check from 640 have not yet run with the three rows open | They ran in run 44998056780 on `ab34bb6` and passed |
+
+## 14. Fix cycle 2 of 3 (CE-42): CI run 44998056780 on `ab34bb6`
+
+Both fixes of cycle 1 held: `PostgreSQL (4/4)`, the browser suite in `Command contract` and every other job passed. Only the image checks failed.
+
+| ID | Failure, as CI reported it | Cause | Fix |
+| --- | --- | --- | --- |
+| CI-3 | Image checks, step "Build the release image and check it": "no high or critical finding is fixable, known to be exploited or without an accepted reason" — CVE-2026-121482, High, in `libssl3t64`, `openssl` and `openssl-provider-legacy` at 3.5.9-1~deb13u1, not fixed, not known to be exploited | A CVE published on 18 November 2026, after `develop` at `ccc02dd` passed its image checks; no change of this Task caused it, and no fix exists | Outside this Task's scope, so the cycle stopped for the Owner (`OWNER_DECISION`, 14:57). He decided D-139: the CVE accepted temporarily for development and CI only, at exactly that version, by `ops/` pull request #61, which he squash-merged as `832686c`; CI on `develop` run 45008420495 passed. This cycle merged `origin/develop` into the branch (EXC-36), with no change of its own to the accept list or the gate test |
+
+The merge's one conflict was in DECISIONS: both the row and the section of D-138 (this Task's) and of D-139 (develop's) are kept, D-138 first; the next free identifier is D-140, and the note that D-138 is recorded only on this branch is gone. COPY_DECK's blob at the merge is `83549cffd4ed741e4d7bcd29e25370c4d164fbf2`, the approved one. The production code of this Task did not change, so no verification of CE-42 is needed; the one targeted retest is the image checks and the whole contract on the merged head.
