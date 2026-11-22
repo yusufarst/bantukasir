@@ -184,3 +184,26 @@ R-12's fix is not a MUST-FIX's, so it has no targeted check of its own (CE-40); 
 
 The job's steps (review R-05), of 11 min 59 s: 1, the base's environment, 2 min 41 s; 2, the head's, 57 s; 3, the base dataset's build (4 min 20 s), the migration job and its verification, 4 min 56 s; 4, the plan, the load tool's pull and its run of 120 seconds and the record, 3 min 20 s.
 - TASK-051, added by D-137, is the next Task; TASK-044 depends on it.
+
+## 12. Merge
+
+Recorded by TASK-051 (EXECUTION_CONTEXT CE-50): pull request #59, head `4684fb6b1f582bd5c185daf51406fccc25ae04dd`, CI run 44943007130 passed (every job, the migration rehearsal with its dry run among them); squash-merged by the tick under D-105 as `ccc02dd019d0ed5755d347baeb07ddf9a204f1d9` on `develop`, the automated review's status DONE; CI on `develop` run 44945896318 passed. TASK-043 is `DONE`.
+
+The dry run on the final head, copied from the job `Migration rehearsal` of run 44943007130 (section 10). **DRY RUN: not PERF01 evidence.** Run 1 of 1, one run of 120 seconds on CI's shared runner, revision `be1a8be` (GitHub's merge commit; head `4684fb6`); the reconciliation of every product `CLEAN` before (33,487 ms) and after (37,768 ms). The counts: 5,000 active and 500 inactive products in 50 categories, 7,500 active and 500 retired tokens, 101,991 movements, 10,000 of them of the first product, 3 registers, 2 cashiers, 730 sessions, 2,999 Sales with 26,991 lines, 7,010 receivings, 26,031 audit events, seed 43. Every sample succeeded.
+
+| Operation | Proposed budget | Statistic | Observed (ms) | Samples | Failures |
+| --- | --- | --- | --- | --- | --- |
+| Exact barcode lookup | 500 ms | p(95) | 25 | 234 | 0 |
+| Product Search page | 700 ms | p(95) | 28 | 27 | 0 |
+| Sale commit, 50 lines | 2000 ms | p(95) | 130 | 70 | 0 |
+| Sale commit, 200 lines (the maximum) | 5000 ms | p(95) | 426 | 8 | 0 |
+| Cash session close | 2000 ms | p(95) | 33 | 3 | 0 |
+| Refund or return commit | 2000 ms | p(95) | 35 | 10 | 0 |
+| Ordinary period report (up to 31 days) | 2000 ms | p(95) | 40 | 27 | 0 |
+| Report over the maximum range (366 days) | 10000 ms | p(95) | 54 | 7 | 0 |
+| Stock attention refresh | 500 ms | p(95) | 27 | 54 | 0 |
+| Server time of an ordinary page visit | 500 ms | p(95) | 238 | 27 | 0 |
+| CSV import confirmation, 5,000 rows | 30000 ms | max | 4247 | 1 | 0 |
+| Cost-correction replay, 10,000 movements of one product | 30000 ms | max | 261 | 1 | 0 |
+
+The job's steps, of 11 min 17 s, as the script measured them: 1, the base's environment at `6203e90`, 153 s; 2, the head's, 54 s; 3, the base dataset's build and the rehearsal of the head's migrations (none), 269 s; 4, the plan, the load tool's pull, its run and the record, 196 s.

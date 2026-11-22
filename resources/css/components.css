@@ -1181,7 +1181,11 @@
         min-width: 0;
     }
 
+    /* Positioned, so that the scroll container also clips what is absolutely positioned inside it — the
+       visually hidden header of a table of lines that becomes cards within a row (TASK-051) — and nothing
+       of the table widens the page (UXA-12). */
     .bk-table-host[data-wide='true'] {
+        position: relative;
         overflow-x: auto;
     }
 

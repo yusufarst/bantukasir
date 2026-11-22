@@ -314,6 +314,26 @@ final class FixturesController
     }
 
     /**
+     * The audit events of one new product for "Perubahan" of the browser suite (TASK-051): a new product of its own
+     * category at Rp5.000, 10 pcs received at a KNOWN cost of Rp3.000 through RC-07's Action, its price changed to
+     * Rp6.000 through RC-18's, and that cost corrected to Rp3.500 by the Owner through RC-09's (EXECUTION_CONTEXT
+     * EXC-45). The name and SKU are new, because the local database keeps its products.
+     */
+    public function audit(): JsonResponse
+    {
+        EnvironmentMarker::require(DB::connection(), ['local', 'test']);
+
+        $suffix = strtoupper(Str::random(8));
+        $name = 'Produk audit '.$suffix;
+        $product = TokoContoh::product('AU-'.$suffix, ['categoryId' => TokoContoh::category('Uji audit '.$suffix), 'name' => $name, 'sellingPrice' => '5000']);
+        $document = TokoContoh::receive([['productId' => $product, 'quantity' => '10', 'cost' => ['status' => 'KNOWN', 'amount' => '3000']]]);
+        TokoContoh::reprice($product, '6000');
+        TokoContoh::correctCost(TokoContoh::evidenceOf(TokoContoh::movementOf($document)), '3500', 'Nota pemasok '.$suffix);
+
+        return new JsonResponse(['productId' => $product, 'name' => $name, 'reason' => 'Nota pemasok '.$suffix]);
+    }
+
+    /**
      * The evidence of the system status for the browser suite (TASK-039), written as each writer writes it
      * (EXECUTION_CONTEXT EXC-45): `backup_runs` as the backup role inserts its rows (BackupRunner),
      * `restore_drills` through RestoreDrills as OP-08 records a drill, `reconciliation_runs` through

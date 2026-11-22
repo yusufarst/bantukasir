@@ -703,7 +703,13 @@ final class OnboardingCommandsTest extends DatabaseTestCase
         $this->assertSame(['Domain/Inventory/Onboarding/OpeningStock.php'], self::filesNaming('onboarding_zero_counts'));
         $this->assertSame(['Domain/Inventory/Onboarding/OpeningStock.php'], self::filesNaming('onboarding_zero_count_withdrawals'));
         $this->assertSame(['Domain/Inventory/OnboardingState.php'], self::filesNaming('onboarding_releases'));
-        $this->assertSame(['Domain/Inventory/OnboardingState.php'], self::filesNaming('onboarding_state'));
+        // "Perubahan" of RP-612 (TASK-051) names `onboarding_state` only as the suffix of the row label
+        // `audit.change.field.onboarding_state` of COPY_DECK section 11.15.2, never as the table: each mention is
+        // the label of a change or a value row, and the file reads no onboarding table.
+        $this->assertSame(['Domain/Inventory/OnboardingState.php', 'Queries/Audit/ChangeRows.php'], self::filesNaming('onboarding_state'));
+        $rows = (string) file_get_contents(app_path('Queries/Audit/ChangeRows.php'));
+        $this->assertSame(preg_match_all('/[\'"]onboarding_state(?: as [a-z]+)?[\'"]/', $rows), substr_count($rows, "::change('onboarding_state',") + substr_count($rows, "::value('onboarding_state',"));
+        $this->assertSame(0, preg_match('/table\(\s*[\'"]onboarding_|from\s+onboarding_|join\s+onboarding_/i', $rows));
         $this->assertSame(['Domain/Inventory/OnboardingState.php'], self::filesNaming('onboarding_restore_holds'));
         $this->assertSame(['Domain/Inventory/OnboardingState.php'], self::filesNaming('onboarding_restore_reconciliations'));
         $this->assertSame(['onboarding.release', 'onboarding.start', 'onboarding.withdraw_zero_count', 'opening_stock.confirm', 'opening_stock.replace'], self::operationsOf(['onboarding.', 'opening_stock.']));

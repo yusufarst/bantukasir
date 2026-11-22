@@ -335,13 +335,15 @@ final class Allowlists
         'reporting/Daily' => ['owner' => [...self::DAILY_DATE, ...self::DAILY_SUMMARY]],
         'reporting/Daily#failed' => ['owner' => [...self::DAILY_DATE, 'summary']],
         // UXP-612 and UXP-613, the Owner's alone (TASK-042): the filters, the accounts of "Pengguna", the chosen
-        // product and one page; each event with its time, action, actor as frozen, reference and reason, never the
-        // fields of its change data, whose names no copy key labels (OPEN_ITEMS T-56); each entry with its type,
-        // actor, the account concerned, outcome and address. Never a request identifier, a route, a command, a
-        // token or a password. `#product` with a
-        // product chosen, `#empty` with no row.
-        'audit/Activity' => ['owner' => [...self::ACTIVITY, ...self::ACTIVITY_ROWS]],
-        'audit/Activity#product' => ['owner' => [...self::ACTIVITY, ...self::ACTIVITY_ROWS, 'product.id', 'product.name', 'product.sku']],
+        // product and one page; each event with its time, action, actor as frozen, reference and reason, and its
+        // "Perubahan" as COPY_DECK section 11.15 approves it (TASK-051): rows of a copy key and a value, never a
+        // field name of its change data; each entry with its type, actor, the account concerned, outcome and
+        // address. Never a request identifier, a route, a command, a token or a password. The default with the
+        // accounts' events alone, whose rows are values; `#product` with a product chosen, whose events add a table
+        // of lines; `#changes` adds a change "lama → baru"; `#empty` with no row.
+        'audit/Activity' => ['owner' => [...self::ACTIVITY, ...self::ACTIVITY_ROWS, ...self::CHANGE_ROWS]],
+        'audit/Activity#product' => ['owner' => [...self::ACTIVITY, ...self::ACTIVITY_ROWS, ...self::CHANGE_ROWS, ...self::CHANGE_TABLE, 'product.id', 'product.name', 'product.sku']],
+        'audit/Activity#changes' => ['owner' => [...self::ACTIVITY, ...self::ACTIVITY_ROWS, ...self::CHANGE_ROWS, ...self::CHANGE_TABLE, ...self::CHANGE_SIDES, 'product.id', 'product.name', 'product.sku']],
         'audit/Activity#empty' => ['owner' => self::ACTIVITY],
         'audit/SecurityLog' => ['owner' => [...self::SECURITY_LOG, ...self::SECURITY_LOG_ROWS]],
         'audit/SecurityLog#empty' => ['owner' => self::SECURITY_LOG],
@@ -357,7 +359,30 @@ final class Allowlists
     private const array ACTIVITY_ROWS = [
         'events.rows.*', 'events.rows.*.id', 'events.rows.*.occurredAt', 'events.rows.*.action', 'events.rows.*.actor', 'events.rows.*.actor.kind',
         'events.rows.*.actor.name', 'events.rows.*.reference', 'events.rows.*.reference.text', 'events.rows.*.reference.kind', 'events.rows.*.reference.id',
-        'events.rows.*.reason',
+        'events.rows.*.reason', 'events.rows.*.changes',
+    ];
+
+    /**
+     * The rows under "Perubahan" of UXP-612 (TASK-051; COPY_DECK section 11.15): each row's copy key, kind and
+     * value — a value's kind, its number, date or text, the copy keys of a code, a quantity's precision and unit.
+     */
+    private const array CHANGE_ROWS = [
+        'events.rows.*.changes.*', 'events.rows.*.changes.*.label', 'events.rows.*.changes.*.kind', 'events.rows.*.changes.*.value',
+        'events.rows.*.changes.*.value.kind', 'events.rows.*.changes.*.value.text', 'events.rows.*.changes.*.value.keys', 'events.rows.*.changes.*.value.keys.*',
+        'events.rows.*.changes.*.value.precision', 'events.rows.*.changes.*.value.unit', 'events.rows.*.changes.*.from', 'events.rows.*.changes.*.to',
+        'events.rows.*.changes.*.columns', 'events.rows.*.changes.*.lines',
+    ];
+
+    /** A table of the lines that an event recorded: the columns' copy keys and one value per cell (TASK-051). */
+    private const array CHANGE_TABLE = [
+        'events.rows.*.changes.*.columns.*', 'events.rows.*.changes.*.lines.*', 'events.rows.*.changes.*.lines.*.*', 'events.rows.*.changes.*.lines.*.*.kind',
+        'events.rows.*.changes.*.lines.*.*.text', 'events.rows.*.changes.*.lines.*.*.keys', 'events.rows.*.changes.*.lines.*.*.precision', 'events.rows.*.changes.*.lines.*.*.unit',
+    ];
+
+    /** Both sides of a change "lama → baru" (TASK-051). */
+    private const array CHANGE_SIDES = [
+        'events.rows.*.changes.*.from.kind', 'events.rows.*.changes.*.from.text', 'events.rows.*.changes.*.from.keys', 'events.rows.*.changes.*.from.precision', 'events.rows.*.changes.*.from.unit',
+        'events.rows.*.changes.*.to.kind', 'events.rows.*.changes.*.to.text', 'events.rows.*.changes.*.to.keys', 'events.rows.*.changes.*.to.precision', 'events.rows.*.changes.*.to.unit',
     ];
 
     /** UXP-613 without its rows (TASK-042). */

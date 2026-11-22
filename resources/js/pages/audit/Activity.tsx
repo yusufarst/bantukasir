@@ -1,6 +1,7 @@
 import { router } from '@inertiajs/react';
 import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/Button';
+import { KeyValueList } from '@/components/ui/Data';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Field, SelectInput, TextInput } from '@/components/ui/Field';
 import { EmptyState, LoadFailed, NoResults } from '@/components/ui/States';
@@ -13,12 +14,16 @@ import {
     actionWord,
     activityAddress,
     actorWord,
+    changeText,
+    changeWord,
     isActionCode,
     referenceLink,
     SETTINGS_PAGE,
     type ActivityFilters,
     type AuditActor,
     type AuditReference,
+    type ChangeRow,
+    type ChangeValue,
 } from '@/lib/audit/activity';
 import { ProductFilter } from '@/lib/catalog/ProductFilter';
 import { formatDateTime } from '@/lib/format';
@@ -32,10 +37,11 @@ import type { DestinationId } from '@/lib/navigation';
 // every account by its name now; "Jenis", the label of an action code; "Produk", through the shared Product
 // Search; "Sesi kas", a session's number, and "Referensi", each searched on Enter. Each row (UXI-378) shows the
 // time, who acted by the name the event froze, the action's label and its reference — a link to the object's page
-// where it has one (UXI-379), else text — and opens on demand its reason, the Owner-only reason of a cost
-// correction among them. The fields of an event's change data are not shown: COPY_DECK has no label for them, and
-// a stored field name is never interface copy (AGENTS rule 14, EXC-51; OPEN_ITEMS T-56). The filters and the page
-// stand in the address (NC-10), so that the way back of a linked page keeps them.
+// where it has one (UXI-379), else text — and opens on demand its "Perubahan" and its reason, the Owner-only
+// reason of a cost correction among them. "Perubahan" shows the rows that COPY_DECK section 11.15 approves for the
+// event's action code, each by its copy key and its value — a value, a change "lama → baru" or a table of the
+// lines the event recorded — never a stored field name (TASK-051, D-138; AGENTS rule 14, EXC-51; OPEN_ITEMS T-56).
+// The filters and the page stand in the address (NC-10), so that the way back of a linked page keeps them.
 // The way back is "Kembali ke Pengaturan" (UXI-381).
 
 /** The destination of the navigation that holds the page (UXI-008). */
@@ -48,6 +54,7 @@ interface ActivityRow {
     readonly actor: AuditActor;
     readonly reference: AuditReference;
     readonly reason: string | null;
+    readonly changes: readonly ChangeRow[];
 }
 
 interface ActivityProps {
@@ -192,19 +199,54 @@ function ReferenceCell({ reference }: { reference: AuditReference }) {
     );
 }
 
-/** UXI-378: the event's reason, opened on demand; nothing to open without one. */
+/** UXI-378: the event's "Perubahan" and its reason, opened on demand; nothing to open without either. */
 function Details({ row }: { row: ActivityRow }) {
-    if (row.reason === null) {
+    if (row.reason === null && row.changes.length === 0) {
         return null;
     }
+
+    const values = row.changes.filter((change) => change.kind !== 'table');
+    const tables = row.changes.filter((change) => change.kind === 'table');
 
     return (
         <details className={'bk-version bk-audit-detail'}>
             <summary>{t('audit.activity.expand')}</summary>
             <div className={'bk-stack'}>
-                <p className={'bk-meta'}>{t('audit.activity.reason')}</p>
-                <p>{row.reason}</p>
+                {row.changes.length > 0 && (
+                    <>
+                        <p className={'bk-meta'}>{t('audit.activity.changes')}</p>
+                        {/* An event holds each row's label once, so the label is its key. */}
+                        {values.length > 0 && <KeyValueList items={values.map((change) => ({ key: change.label, label: changeWord(change.label), value: changeLine(change) }))} />}
+                        {tables.map((change) => (
+                            <ChangeTable key={change.label} change={change} />
+                        ))}
+                    </>
+                )}
+                {row.reason !== null && (
+                    <>
+                        <p className={'bk-meta'}>{t('audit.activity.reason')}</p>
+                        <p>{row.reason}</p>
+                    </>
+                )}
             </div>
         </details>
     );
+}
+
+/** A value row shows its value; a change row "lama → baru" (ACV-03). */
+function changeLine(change: ChangeRow): string {
+    return change.kind === 'change' ? t('audit.change.from_to', { lama: changeText(change.from), baru: changeText(change.to) }) : changeText(change.value);
+}
+
+/** A table of the lines that the event recorded, one row per line, under its column headers (ACV-03). */
+function ChangeTable({ change }: { change: ChangeRow }) {
+    const columns: readonly Column<{ readonly index: number; readonly cells: readonly (ChangeValue | null)[] }>[] = change.columns.map((column, at) => ({
+        id: `${String(at)}-${column}`,
+        header: changeWord(column),
+        isHead: at === 0,
+        numeric: at > 0 && change.lines.some((line) => ['money', 'cost', 'quantity', 'signed', 'count'].includes(line[at]?.kind ?? '')),
+        cell: (line) => changeText(line.cells[at] ?? null),
+    }));
+
+    return <DataTable caption={changeWord(change.label)} captionHidden={false} columns={columns} rows={change.lines.map((cells, index) => ({ index, cells }))} rowKey={(line) => String(line.index)} />;
 }

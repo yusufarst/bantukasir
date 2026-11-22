@@ -56,6 +56,18 @@ export function t(key: TranslationKey, replacements?: Readonly<Record<string, st
 }
 
 /**
+ * The text of a key that the server named as data, such as the copy key of a row of an audit event's changes
+ * or of a stored code's label (COPY_DECK section 11.15; TASK-051). Such a key is never typed by the client, so a
+ * key that the dictionary lacks, or whose text takes placeholders, shows nothing rather than a key or a
+ * placeholder; it never throws.
+ */
+export function namedKeyText(key: string): string {
+    const text = dictionary?.get(key);
+
+    return text === undefined || /:[a-z]/.test(text) ? '' : text;
+}
+
+/**
  * Laravel's replacement of placeholders (Translator::makeReplacements, then
  * strtr): `:name` takes the value, `:Name` the value with its first letter
  * upper-cased and `:NAME` the value upper-cased; at each position the longest

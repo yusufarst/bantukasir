@@ -6,7 +6,7 @@
 | Phase and lane | 8 Reports and audit views · lane R, reports, audit views and release |
 | Size and review | M · review class A — the change data holds data that only the Owner may see (D-047), so its display is an authorization surface ([EXECUTION_CONTEXT](../EXECUTION_CONTEXT.md) section 12) |
 | Depends on | [TASK-042](TASK-042-audit-views.md) |
-| Gates | Before `DONE`: GATE-CC3, the Owner's approval by hash of the COPY_DECK change control of scope item 1 ([TASK_PLAN](../TASK_PLAN.md) section 3) |
+| Gates | Before `DONE`: GATE-CC3, the Owner's approval by hash of the COPY_DECK change control of scope item 1 ([TASK_PLAN](../TASK_PLAN.md) section 3) — APPROVED on 22 November 2026 (D-138) |
 | Branch | `task/TASK-051-audit-change-values` from `develop` (EXC-22) |
 | Executor | Claude Opus 5.5, at the effort of EXECUTION_CONTEXT CE-11, under continuous execution (D-101) |
 | MCP | None required. |
@@ -17,7 +17,7 @@
 
 Close OPEN_ITEMS T-56 before gate RELEASE (D-136): the Owner sees, under "Perubahan" of the expanded row of UXP-612 (UXI-378), the old and new value of each field of an audit event that records a change, cost corrections included, under Bahasa Indonesia labels that he approved, with the data that only he may see staying his alone.
 
-The Owner limited this Task to three things (D-137): the COPY_DECK change control, its implementation, and a targeted verification. It adds nothing else.
+The Owner limited this Task to three things (D-137): the COPY_DECK change control, its implementation, and a targeted verification. It adds nothing else, except the one exception that he made in D-138: scope item 4.
 
 ## 2. Prerequisites
 
@@ -42,6 +42,7 @@ After AGENTS.md, CURRENT_HANDOFF, EXECUTION_CONTEXT and TASK_PLAN sections 1 to 
 1. **Change control.** An amendment of COPY_DECK, and of the audit view's rules where they need it: for each action code whose events record a change, which fields "Perubahan" shows, a key and a Bahasa Indonesia label for each, and how each value is shown (amounts, quantities, dates, codes as their labels, references); which fields are the Owner's alone (D-047); and the fields shown to no one. No copy is invented outside this amendment (EXC-51). The package is approved by the Owner by the Git blob, size and SHA-256 of each changed artifact (gate GATE-CC3), as TASK-002 was. Once the package is written, the Task stops for that approval (EXECUTION_CONTEXT CE-70, an approval by hash), and the implementation starts only after it. His approval is recorded as the next free decision.
 2. **Implementation.** RP-612 sends, and UXP-612 shows under "Perubahan" of UXI-378, the old and new values of the approved fields with their approved labels, through translation keys only. The Owner-only fields reach the Owner alone (CAP-32 and D-047). No internal field name, internal key, or field that the amendment does not name reaches any channel. The reason stays as TASK-042 shows it.
 3. **Targeted verification.** The tests of section 7, covering only what this Task changes.
+4. **UXP-415, by the exception of D-138 to D-137.** UXP-415 Detail insiden shows under "Yang tidak cocok" the Bahasa Indonesia label that COPY_DECK section 11.15.2 approved for the block's detail code (`audit.change.value.mismatch_*`), never the stored code (finding F-1 of this Task's evidence), with its targeted verification. Nothing else of UXP-415 or RP-415 changes.
 
 ### 4.2 Owned by this Task
 
@@ -58,7 +59,7 @@ After AGENTS.md, CURRENT_HANDOFF, EXECUTION_CONTEXT and TASK_PLAN sections 1 to 
 
 ### 4.3 Out of scope
 
-- Anything beyond the three items of section 4.1 (D-137).
+- Anything beyond the items of section 4.1 (D-137, D-138).
 - TASK-047's change control of the device results (gate GATE-CC2), which this Task neither extends nor replaces.
 - Any change to the audit record itself, its tables or what an Action writes.
 - Any access to sensitive data beyond what the approved amendment names; any deployment.
@@ -82,12 +83,14 @@ After AGENTS.md, CURRENT_HANDOFF, EXECUTION_CONTEXT and TASK_PLAN sections 1 to 
 - **AC-051-02** UXP-612 shows the old and new values of the approved fields with the approved labels, cost corrections included, and no internal field name or unapproved field on any channel.
 - **AC-051-03** The Owner-only fields reach the Owner alone. Every other role, and the combined account, gets neither the page nor those fields on any channel.
 - **AC-051-04** The targeted verification of section 7 passes.
+- **AC-051-05** UXP-415 shows the approved label of the block's detail code and never the stored code (D-138).
 
 ## 7. Tests
 
 - L1: every approved field has its key in `lang/id`; every action code's fields are those of the amendment, and no other field leaves the read.
 - L4: RP-612's payload per role, with the Owner-only fields for the Owner alone, through the channel allowlist (`Allowlists`); no field name in the payload.
 - L5: UXP-612's "Perubahan" for a cost correction and one other change, at the widths, keyboard path and the automated accessibility checks of EXECUTION_CONTEXT section 10, in the browser project of signed-in people.
+- Scope item 4 (D-138): the label of each detail code (L1), and UXP-415 showing the label and not the code (L5, the existing browser test of UXP-415).
 - The standing obligations of EXECUTION_CONTEXT section 10 for what this Task changes.
 
 ## 8. Evidence
@@ -127,4 +130,5 @@ After AGENTS.md, CURRENT_HANDOFF, EXECUTION_CONTEXT and TASK_PLAN sections 1 to 
 
 - `docs/07-ux-design/COPY_DECK.md` and the documents the amendment names
 - `app/Queries/Audit/ActivityLog.php`, `resources/js/pages/audit/Activity.tsx`, `lang/id/audit.php`
+- For scope item 4: `resources/js/pages/inventory/Incident.tsx` and `resources/js/lib/inventory/incidents.ts`
 - Their tests
