@@ -1,7 +1,8 @@
 import { userPage } from '@/lib/access/users';
 import { sessionPage } from '@/lib/cash/sessions';
 import { productPage } from '@/lib/catalog/products';
-import { t } from '@/lib/i18n';
+import { formatCost, formatCount, formatDate, formatMoney, formatQuantity, formatVariance } from '@/lib/format';
+import { namedKeyText, t } from '@/lib/i18n';
 import { issuePage, movementPage, openerOf, receivingPage } from '@/lib/inventory/stock';
 import { salePage } from '@/lib/sales/sales';
 import type { TranslationKey } from '@/types/translation-keys';
@@ -195,6 +196,77 @@ export function referenceLink(reference: AuditReference): { readonly href: strin
             return { href: issuePage(reference.id), text };
         case 'user':
             return { href: userPage(reference.id), text };
+    }
+}
+
+/**
+ * A value of a row under "Perubahan" (COPY_DECK section 11.15, ACV-03 and ACV-04; TASK-051): its kind and
+ * what that kind needs — the canonical number, date or text; the copy keys of a stored code or of the
+ * fields a list names; a quantity's precision and unit. Never a stored field name.
+ */
+export interface ChangeValue {
+    readonly kind: string;
+    readonly text: string | null;
+    readonly keys: readonly string[];
+    readonly precision: number | null;
+    readonly unit: string | null;
+}
+
+/** A row under "Perubahan": a value, a change "lama → baru", or a table of the lines the event recorded. */
+export interface ChangeRow {
+    readonly label: string;
+    readonly kind: string;
+    readonly value: ChangeValue | null;
+    readonly from: ChangeValue | null;
+    readonly to: ChangeValue | null;
+    readonly columns: readonly string[];
+    readonly lines: readonly (readonly (ChangeValue | null)[])[];
+}
+
+/** The text of a copy key that the server named; a key the dictionary lacks shows nothing. */
+export function changeWord(key: string): string {
+    return namedKeyText(key);
+}
+
+/**
+ * A value as ACV-04 presents it: money and a variance with its word, a cost rounded once on screen, a
+ * quantity in its unit and precision, a signed quantity with + before an increase, a date, a count, a text,
+ * the labels of codes joined as `access.role.list` joins roles. A value it cannot read is not shown.
+ */
+export function changeText(value: ChangeValue | null): string {
+    if (value === null) {
+        return '';
+    }
+
+    const text = value.text ?? '';
+
+    try {
+        switch (value.kind) {
+            case 'money':
+                return formatMoney(text);
+            case 'variance':
+                return formatVariance(text);
+            case 'cost':
+                return formatCost(text);
+            case 'cost_zero':
+                return t('audit.change.value.cost_zero', { uang: formatCost('0'), catatan: text });
+            case 'quantity':
+                return formatQuantity(text, value.precision ?? 0, value.unit ?? undefined);
+            case 'signed':
+                return `${/^(-|0(\.0+)?$)/.test(text) ? '' : '+'}${formatQuantity(text, value.precision ?? 0, value.unit ?? undefined)}`;
+            case 'date':
+                return formatDate(text);
+            case 'count':
+                return formatCount(BigInt(text));
+            case 'text':
+                return text;
+            case 'labels':
+                return value.keys.length === 0 ? '' : t('access.role.list', { peran: value.keys.map(changeWord).join(', ') });
+            default:
+                return '';
+        }
+    } catch {
+        return '';
     }
 }
 

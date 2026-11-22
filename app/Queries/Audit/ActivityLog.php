@@ -24,13 +24,17 @@ use JsonException;
  * (UXI-379), else it is text. Its reason is the event's own, or else the reason typed with the change and
  * kept in its safe change data, or, only when the reader is the Owner, in its Owner-only data (BR-AUD-02,
  * D-047: the reason of a cost correction); a reader who is not the Owner sees no event of the category
- * SECURITY (BR-AUD-04, AC-042-04). The other fields of the change data leave no read: COPY_DECK has no label
- * for them, and a stored field name is never interface copy (AGENTS rule 14, EXC-51; OPEN_ITEMS T-56).
- * RP-612 is the Owner's alone (CAP-32); the two guards keep the read itself within BR-AUD-04 whoever calls it.
+ * SECURITY (BR-AUD-04, AC-042-04). Its "Perubahan" are the rows that COPY_DECK section 11.15 approves for its
+ * action code, each as its copy key and its value, the Owner-only rows only when the reader is the Owner
+ * (ChangeRows; TASK-051, D-138, OPEN_ITEMS T-56); no other field of the change data, and no stored field name,
+ * leaves the read (AGENTS rule 14, EXC-51). RP-612 is the Owner's alone (CAP-32); the two guards keep the read
+ * itself within BR-AUD-04 whoever calls it.
+ *
+ * @phpstan-import-type Change from ChangeRows
  *
  * @phpstan-type Filters array{from: string|null, to: string|null, user: int|null, action: string|null, product: int|null, session: string|null, reference: string|null, after: string|null, before: string|null, perPage: int}
  * @phpstan-type Reference array{text: string|null, kind: string|null, id: int|null}
- * @phpstan-type Row array{id: int, occurredAt: string, action: string, actor: array{kind: string, name: string|null}, reference: Reference, reason: string|null}
+ * @phpstan-type Row array{id: int, occurredAt: string, action: string, actor: array{kind: string, name: string|null}, reference: Reference, reason: string|null, changes: list<Change>}
  */
 final class ActivityLog
 {
@@ -89,7 +93,23 @@ final class ActivityLog
 
         $values = array_map(static fn (object $row): array => (array) $row, $rows);
         $names = self::names($values);
-        $data = array_map(fn (array $row): array => $this->row($row, $names, $owner), $values);
+        $events = [];
+
+        foreach ($values as $row) {
+            $events[] = [
+                'action' => Read::text($row, 'action'),
+                'change' => self::decoded(Read::text($row, 'change_data')) ?? [],
+                'owner' => $owner ? self::decoded(Read::nullableText($row, 'owner_only_data')) : null,
+                'product' => Read::nullableInt($row, 'product_id'),
+            ];
+        }
+
+        $changeNames = ChangeRows::names($events);
+        $data = [];
+
+        foreach ($events as $index => $event) {
+            $data[] = $this->row($values[$index] ?? [], $names, $owner, ChangeRows::of($event, $owner, $changeNames));
+        }
 
         $first = [$data[0]['occurredAt'], $data[0]['id']];
         $last = [$data[count($data) - 1]['occurredAt'], $data[count($data) - 1]['id']];
@@ -140,9 +160,10 @@ final class ActivityLog
     /**
      * @param  array<array-key, mixed>  $values
      * @param  array{sale: array<int, string>, session: array<int, string>, product: array<int, string>, user: array<int, string>, receiving: array<int, string|null>}  $names
+     * @param  list<Change>  $changes
      * @return Row
      */
-    private function row(array $values, array $names, bool $owner): array
+    private function row(array $values, array $names, bool $owner, array $changes): array
     {
         $kind = Read::text($values, 'actor_kind');
         $reason = Read::nullableText($values, 'reason') ?? self::reasonIn(Read::text($values, 'change_data'));
@@ -158,7 +179,28 @@ final class ActivityLog
             'actor' => ['kind' => $kind, 'name' => $kind === 'USER' ? Read::text($values, 'actor_display_name') : null],
             'reference' => self::reference($values, $names),
             'reason' => $reason,
+            'changes' => $changes,
         ];
+    }
+
+    /**
+     * The decoded object of an event's change data or Owner-only data; null when there is none.
+     *
+     * @return array<array-key, mixed>|null
+     */
+    private static function decoded(?string $json): ?array
+    {
+        if ($json === null) {
+            return null;
+        }
+
+        try {
+            $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            return null;
+        }
+
+        return is_array($data) ? $data : null;
     }
 
     /**
@@ -282,21 +324,11 @@ final class ActivityLog
     /**
      * The reason that a person typed with a change and that its Action keeps in the event's change data or
      * Owner-only data under `reason` — a cost correction, an adjustment, a reopening — when it is a text that
-     * is not blank; null otherwise. Every other field stays in the record (OPEN_ITEMS T-56).
+     * is not blank; null otherwise. It is shown under "Alasan", never under "Perubahan" (ACV-02).
      */
     private static function reasonIn(?string $json): ?string
     {
-        if ($json === null) {
-            return null;
-        }
-
-        try {
-            $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
-        } catch (JsonException) {
-            return null;
-        }
-
-        $reason = is_array($data) ? ($data['reason'] ?? null) : null;
+        $reason = self::decoded($json)['reason'] ?? null;
 
         return is_string($reason) && trim($reason) !== '' ? $reason : null;
     }

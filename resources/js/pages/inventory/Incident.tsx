@@ -15,13 +15,13 @@ import { useUnresolved } from '@/lib/commands/unresolved';
 import { useCommand } from '@/lib/commands/useCommand';
 import { formatDateTime } from '@/lib/format';
 import { t } from '@/lib/i18n';
-import { INCIDENTS_PAGE, INCIDENTS_SHELL, REOPEN_COMMAND, statusLabel, type IncidentDetail } from '@/lib/inventory/incidents';
+import { INCIDENTS_PAGE, INCIDENTS_SHELL, mismatchWord, REOPEN_COMMAND, statusLabel, type IncidentDetail } from '@/lib/inventory/incidents';
 import { productHistory, REQUESTS_PAGE } from '@/lib/inventory/stock';
 
 // UXP-415 "Detail insiden" (ROUTE_CONTRACTS RP-415 and RC-16; COPY_DECK section 9.16; INTERACTION_INVENTORY
 // UXI-303 to UXI-305; NAVIGATION_CONTRACTS UXP-415; UI_STATES section 6; BR-INV-45, BR-INV-46; WF-27;
-// TASK-036), the Owner's alone (CAP-18): when the reconciliation found it, what did not match — the
-// block's detail code — and the blocked product, with "Riwayat stok" filtered to it (UXI-303). While the
+// TASK-036), the Owner's alone (CAP-18): when the reconciliation found it, what did not match — the label
+// of the block's detail code (TASK-051 F-1) — and the blocked product, with "Riwayat stok" filtered to it (UXI-303). While the
 // incident is open, "Buka kembali mutasi" (UXI-304) asks in its dialog, which Enter never confirms, that
 // the facts were checked and reconciled first, and needs recent authentication (UXS-11); an unresolved
 // reopening disables it with the way to UXP-006 (NC-13), and an uncertain one shows its panel. Once
@@ -64,10 +64,11 @@ function IncidentView({ title, incident }: IncidentProps & { title: string }) {
     const open = incident.status === 'BLOCKED';
     const reason = blockingRequest(unresolved.union, REOPEN_COMMAND.operation, REOPEN_COMMAND.family) === null ? undefined : unresolvedReason();
 
-    // "Ditemukan", "Yang tidak cocok" — the block's detail code — and "Produk yang diblokir" (COPY_DECK section 9.16).
+    // "Ditemukan", "Yang tidak cocok" — the label of the block's detail code, never the code (COPY_DECK section
+    // 11.15.2; TASK-051 F-1, D-138) — and "Produk yang diblokir" (COPY_DECK section 9.16).
     const fields: readonly KeyValue[] = [
         { key: 'detected', label: t('inventory.incident.detected'), value: formatDateTime(incident.detectedAt) },
-        { key: 'mismatch', label: t('inventory.incident.mismatch'), value: <code>{incident.detailCode}</code> },
+        { key: 'mismatch', label: t('inventory.incident.mismatch'), value: mismatchWord(incident.detailCode) },
         { key: 'product', label: t('inventory.incident.blocked_product'), value: `${incident.product.name} · ${incident.product.sku}` },
     ];
 

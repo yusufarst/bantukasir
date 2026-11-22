@@ -224,12 +224,12 @@ final class AuditViewsTest extends DatabaseTestCase
         $correction = $this->rowsIn($this->propsOf($this->get(self::ACTIVITY.'?action=COST_CORRECTION')->assertOk()), 'events');
         $this->assertCount(1, $correction);
         // The reason typed with the correction is its "Alasan" for the Owner; no field name of the change data
-        // or of the Owner-only data reaches the page, whose copy has no label for one (AGENTS rule 14, EXC-51;
-        // the automated reviewer's P1 on pull request #57; OPEN_ITEMS T-56).
+        // or of the Owner-only data reaches the page: its "Perubahan" are copy keys and values (AGENTS rule 14,
+        // EXC-51; the automated reviewer's P1 on pull request #57; OPEN_ITEMS T-56; TASK-051).
         $this->assertSame('Nota pemasok rahasia', $correction[0]['reason'] ?? null);
         $keys = array_keys($correction[0]);
         sort($keys);
-        $this->assertSame(['action', 'actor', 'id', 'occurredAt', 'reason', 'reference'], $keys);
+        $this->assertSame(['action', 'actor', 'changes', 'id', 'occurredAt', 'reason', 'reference'], $keys);
         $this->assertStringNotContainsString('evidenceId', (string) json_encode($correction));
 
         // The read for a reader who is not the Owner holds neither the Owner-only data nor any event of the
@@ -249,6 +249,68 @@ final class AuditViewsTest extends DatabaseTestCase
             $this->as($person);
             $this->assertNoSecret($this->get('/stock/history?product='.$product)->assertOk(), ['Nota pemasok rahasia', 'rahasia']);
             $this->assertNoSecret($this->get('/stock/receivings/'.$document)->assertOk(), ['Nota pemasok rahasia', 'rahasia']);
+        }
+    }
+
+    public function test_perubahan_carries_the_approved_rows_with_their_values_and_the_owner_only_rows_reach_the_owner_alone(): void
+    {
+        // AC-051-02, AC-051-03 (COPY_DECK section 11.15, ACV-01 to ACV-04; CAP-32, BR-AUD-02, D-047; TASK-051, L4):
+        // each event of the product carries its approved rows as copy keys and values; the cost of a line and of
+        // a correction reach the Owner alone, and the read for anyone else holds neither; no field name leaves it.
+        $product = TokoContoh::product('PEN-02', ['name' => 'Pulpen Biru', 'sellingPrice' => '5000']);
+        $document = TokoContoh::receive([['productId' => $product, 'quantity' => '10', 'cost' => ['status' => 'KNOWN', 'amount' => '3000']]], 'NOTA-9');
+        $session = TokoContoh::openSession('Rina', TokoContoh::register('LACI-1', 'Laci 1'));
+        TokoContoh::sell('Rina', $session, [['productId' => $product, 'quantity' => '2']]);
+        TokoContoh::correctCost(TokoContoh::evidenceOf(TokoContoh::movementOf($document)), '3500', 'Nota pemasok rahasia');
+        $sessionNumber = self::text($this->observer()->table('cash_sessions')->where('id', $session)->value('session_number'));
+
+        $this->as('Hendra');
+        $page = $this->get(self::ACTIVITY.'?product='.$product)->assertOk();
+        $this->assertPageChannel($page, 'owner', $this->secrets(), 'changes');
+        $rows = $this->rowsIn($this->propsOf($page), 'events');
+        $this->assertSame(['COST_CORRECTION', 'SALE_CHECKOUT', 'RECEIVING_CONFIRM', 'PRODUCT_CREATE'], array_column($rows, 'action'));
+        $owner = array_map(static fn (array $row): array => self::shortChanges($row['changes'] ?? null), $rows);
+
+        $field = 'audit.change.field.';
+        $column = 'audit.change.column.';
+        $this->assertSame([[$field.'cost', 'cost:3000', 'cost:3500'], [$field.'marks_cleared', 'count:0']], $owner[0]);
+        $this->assertSame([
+            [$field.'session', 'text:'.$sessionNumber],
+            [$field.'total', 'money:10000'],
+            [$field.'payment_method', 'labels:sales.payment.method_cash'],
+            [$field.'tendered', 'money:10000'],
+            [$field.'change', 'money:0'],
+            [$field.'line_count', 'count:1'],
+        ], array_slice($owner[1], 0, 6));
+        $table = (array) ($owner[1][6] ?? []);
+        $this->assertSame([$field.'lines', [$column.'product', $column.'quantity', $column.'unit_price', $column.'line_total', $column.'cost']], array_slice($table, 0, 2));
+        $sold = (array) (((array) ($table[2] ?? []))[0] ?? []);
+        $this->assertSame(['text:Pulpen Biru', 'quantity:2 pcs/0', 'money:5000', 'money:10000'], array_slice($sold, 0, 4));
+        // The cost the Sale's line issued, the Owner's alone.
+        $this->assertMatchesRegularExpression('/^cost:[1-9][0-9]*(\.[0-9]+)?$/', self::text($sold[4] ?? null));
+        $this->assertSame([[$field.'line_count', 'count:1'], [$field.'lines', [$column.'product', $column.'quantity', $column.'cost'], [['text:Pulpen Biru', 'quantity:10 pcs/0', 'cost:3000']]]], $owner[2]);
+        $this->assertSame([[$field.'sku', 'text:PEN-02'], [$field.'name', 'text:Pulpen Biru'], [$field.'category', 'text:Alat Tulis'], [$field.'selling_price', 'money:5000']], $owner[3]);
+
+        // No field name of the change data or the Owner-only data, and no stored code, reaches the page (ACV-01).
+        $json = (string) json_encode($rows);
+
+        foreach (['evidenceId', 'movementId', 'correctionNo', 'publicationNo', 'marksCleared', 'lineNo', 'productId', 'priceRevisionId', 'unitPrice', 'lineTotal', 'productSequence', 'allocationId', 'basedOnPublicationNo', 'sessionNumber', 'lineCount', 'categoryId', 'sellingPrice', 'revisionId', 'zeroNote', 'KNOWN', 'CASH'] as $name) {
+            $this->assertStringNotContainsString('"'.$name.'"', $json, $name);
+        }
+
+        // The read for a reader who is not the Owner: the same rows without the cost of a line or of the correction
+        // (ACV-02), whoever calls it.
+        $filters = ['from' => null, 'to' => null, 'user' => null, 'action' => null, 'product' => $product, 'session' => null, 'reference' => null, 'after' => null, 'before' => null, 'perPage' => 25];
+        $staff = app(ActivityLog::class)->list($filters, false);
+        $other = array_map(static fn (array $row): array => self::shortChanges($row['changes']), $staff['rows']);
+        $this->assertSame([[$field.'marks_cleared', 'count:0']], $other[0] ?? null);
+        $this->assertSame(array_slice($owner[1], 0, 6), array_slice($other[1] ?? [], 0, 6));
+        $this->assertSame([$field.'lines', [$column.'product', $column.'quantity', $column.'unit_price', $column.'line_total'], [['text:Pulpen Biru', 'quantity:2 pcs/0', 'money:5000', 'money:10000']]], ($other[1] ?? [])[6] ?? null);
+        $this->assertSame([[$field.'line_count', 'count:1'], [$field.'lines', [$column.'product', $column.'quantity'], [['text:Pulpen Biru', 'quantity:10 pcs/0']]]], $other[2] ?? null);
+        $read = (string) json_encode($staff);
+
+        foreach ([$column.'cost', $field.'cost"', '"3500"', '"3000"', 'rahasia'] as $secret) {
+            $this->assertStringNotContainsString($secret, $read, $secret);
         }
     }
 
@@ -291,6 +353,49 @@ final class AuditViewsTest extends DatabaseTestCase
         $this->assertSame([['SIGN_IN_SUCCEEDED'], null], [array_column($this->rowsOfPage($second), 'type'), $second['nextCursor'] ?? null]);
         $back = (array) ($this->propsOf($this->get($query.'&before='.self::text($second['previousCursor'] ?? null))->assertOk())['entries'] ?? []);
         $this->assertSame(['SIGN_IN_FAILED', 'AUTHORIZATION_REFUSED'], array_column($this->rowsOfPage($back), 'type'));
+    }
+
+    /**
+     * An event's rows under "Perubahan" in short (TASK-051): a value as its key and `kind:text`, the labels of a
+     * code as `labels:key`, a quantity with its unit and precision; a change with both sides; a table with its
+     * columns and cells.
+     *
+     * @return list<list<mixed>>
+     */
+    private static function shortChanges(mixed $changes): array
+    {
+        $short = [];
+
+        foreach (is_array($changes) ? $changes : [] as $change) {
+            $change = (array) $change;
+            $label = self::text($change['label'] ?? null);
+            $short[] = match ($change['kind'] ?? null) {
+                'change' => [$label, self::shortValue($change['from'] ?? null), self::shortValue($change['to'] ?? null)],
+                'table' => [
+                    $label,
+                    array_values((array) ($change['columns'] ?? [])),
+                    array_map(static fn (mixed $line): array => array_map(self::shortValue(...), array_values((array) $line)), array_values((array) ($change['lines'] ?? []))),
+                ],
+                default => [$label, self::shortValue($change['value'] ?? null)],
+            };
+        }
+
+        return $short;
+    }
+
+    private static function shortValue(mixed $value): ?string
+    {
+        if (! is_array($value)) {
+            return null;
+        }
+
+        $kind = self::text($value['kind'] ?? null);
+
+        return match ($kind) {
+            'labels' => 'labels:'.implode(',', array_map(self::text(...), array_values((array) ($value['keys'] ?? [])))),
+            'quantity', 'signed' => $kind.':'.self::text($value['text'] ?? null).' '.self::text($value['unit'] ?? null).'/'.(string) self::number($value['precision'] ?? null),
+            default => $kind.':'.self::text($value['text'] ?? null),
+        };
     }
 
     /**

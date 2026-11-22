@@ -11,8 +11,8 @@ const expect = baseExpect.configure({ timeout: ACCESS_WAIT });
 // NAVIGATION_CONTRACTS UXP-414, UXP-415; INTERACTION_INVENTORY UXI-017 and UXI-301 to UXI-305, UXI-223;
 // UI_STATES UXS-04, UXS-11; INTERACTION_CONTRACTS section 1.5; WF-27; suites UX01, UX02, INV01, AUTH03;
 // TASK-036, L5 RP-414 and RP-415): the Owner reaches the incidents from the sub-navigation of Stok, which
-// counts the open ones; filters them by state; opens the incident, which says what did not match and which
-// product is blocked; reads the product's history and comes back to the incident; reopens its postings
+// counts the open ones; filters them by state; opens the incident, which says what did not match, by its label
+// and never its stored code (TASK-051 F-1), and which product is blocked; reads the product's history and comes back to the incident; reopens its postings
 // after the confirmation, which "Batal" closes with nothing sent, and the password; the incident then shows
 // as reopened. Both pages fit 320 px. The incident is a fixture's (tests/Harness/Browser/FixturesController.php,
 // `incident`), a new product each time, because the local database keeps its products. These tests sign in
@@ -114,10 +114,12 @@ test('the Owner finds the incident, reads what did not match and reopens its pos
     await page.getByRole('button', { name: 'Mutasi dibuka kembali' }).click();
     await page.waitForURL((url) => !url.searchParams.has('status'));
 
-    // UXP-415: what did not match and the blocked product.
+    // UXP-415: what did not match, by the label that COPY_DECK section 11.15.2 approved for its detail code and
+    // never the stored code (TASK-051 F-1, D-138), and the blocked product.
     await Promise.all([page.waitForURL((url) => url.pathname === `${LIST}/${String(found.blockId)}`), page.getByRole('main').getByRole('link', { name: found.name }).first().click()]);
     await expect(page.getByRole('heading', { level: 1, name: 'Detail insiden' })).toBeVisible();
-    await expect(page.getByText('BALANCE_MISMATCH')).toBeVisible();
+    await expect(page.getByRole('main').getByText('Saldo stok', { exact: true })).toBeVisible();
+    await expect(page.getByText('BALANCE_MISMATCH')).toHaveCount(0);
     await expect(page.getByText(`${found.name} · ${found.sku}`)).toBeVisible();
     await checked(page);
     await fitsNarrow(page);

@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect as baseExpect, test, type Page } from '@playwright/test';
+import { expect as baseExpect, test, type BrowserContext, type Page } from '@playwright/test';
 import { ACCESS_TIMEOUT, ACCESS_WAIT, resetPeople, SECURE_LOCAL_ORIGIN, signIn } from '../support/access';
 import { injected, prepareCommands } from '../support/commands';
 import { measure } from '../support/measure';
@@ -14,9 +14,11 @@ const expect = baseExpect.configure({ timeout: ACCESS_WAIT });
 // opens an event's details; follows its reference to the account's page, whose way back returns to the activity
 // with its filter; sees a read that fails (UXS-22) and reads it again; filters the security log by "Jenis" and
 // opens an entry's details; no field name of an event's change data shows; both fit 320 px and 200 %
-// zoom and work from the keyboard; Operations is refused both. The events are the browser fixtures' own: the
-// newest password link used is Hendra's, by resetPeople(), and the newest sign-in is his. These tests sign in
-// the people of Toko Contoh, so they run one at a time (playwright.config.ts).
+// zoom and work from the keyboard; Operations is refused both. "Perubahan" (TASK-051, L5; COPY_DECK section
+// 11.15): a cost correction, a price change and a receiving's table of lines, opened by Enter, at the widths and
+// 200 % zoom. The events are the browser fixtures' own: the newest password link used is Hendra's, by
+// resetPeople(), and the newest sign-in is his. These tests sign in the people of Toko Contoh, so they run one at
+// a time (playwright.config.ts).
 
 test.describe.configure({ timeout: ACCESS_TIMEOUT });
 test.use(SECURE_LOCAL_ORIGIN);
@@ -71,6 +73,31 @@ function firstRow(page: Page) {
     return page.getByRole('main').getByRole('table').getByRole('row').nth(1);
 }
 
+/** The newest row of the activity whose action is this label; a table of lines inside it comes after it. */
+function actionRow(page: Page, action: string) {
+    return page.getByRole('main').getByRole('table', { name: 'Riwayat aktivitas', exact: true }).getByRole('row').filter({ hasText: action }).first();
+}
+
+async function token(context: BrowserContext): Promise<string> {
+    let cookie = (await context.cookies()).find((candidate) => candidate.name === 'XSRF-TOKEN');
+
+    if (cookie === undefined) {
+        await context.request.get('/login');
+        cookie = (await context.cookies()).find((candidate) => candidate.name === 'XSRF-TOKEN');
+    }
+
+    return decodeURIComponent(cookie?.value ?? '');
+}
+
+/** The audit events of one new product, by the fixture: its receiving, a price change and a cost correction (TASK-051). */
+async function audited(context: BrowserContext): Promise<{ productId: number; name: string; reason: string }> {
+    const answer = await context.request.post('/testing/browser/audit', { headers: { 'X-XSRF-TOKEN': await token(context), Accept: 'application/json' } });
+
+    expect(answer.status(), await answer.text()).toBe(200);
+
+    return (await answer.json()) as { productId: number; name: string; reason: string };
+}
+
 test('the Owner filters the activity, opens an event, follows its reference and back, and reads the security log', async ({ browser }) => {
     const context = await contextAt(browser, WIDTHS[0]!);
     const page = await context.newPage();
@@ -103,12 +130,16 @@ test('the Owner filters the activity, opens an event, follows its reference and 
     await expect(row).toContainText('Tautan kata sandi dipakai');
     await expect(row.getByRole('link', { name: 'Hendra' })).toBeVisible();
 
-    // UXI-378: an event without a reason has nothing to open, and no field name of its change data shows, since
-    // no copy key labels one (AGENTS rule 14, EXC-51; the automated reviewer's P1 on pull request #57; OPEN_ITEMS
-    // T-56). An event's reason, opened on demand, is proven on its payload (AuditViewsTest, AC-042-04).
-    await expect(row.locator('details')).toHaveCount(0);
-    await expect(row.getByText('kind', { exact: true })).toHaveCount(0);
-    await expect(page.getByRole('main').getByText('Perubahan', { exact: true })).toHaveCount(0);
+    // UXI-378: the event's "Perubahan" opens on demand, under the approved labels of COPY_DECK section 11.15 and
+    // never a stored field name (AGENTS rule 14, EXC-51; OPEN_ITEMS T-56; TASK-051); it has no reason.
+    await row.getByText('Tampilkan rincian').click();
+    await expect(row.getByText('Perubahan', { exact: true })).toBeVisible();
+    await expect(row.getByText('Jenis tautan', { exact: true })).toBeVisible();
+    await expect(row.getByText('Sesi masuk yang diakhiri', { exact: true })).toBeVisible();
+    await expect(row.getByText('Alasan', { exact: true })).toHaveCount(0);
+    for (const name of ['kind', 'sessionsRevoked', 'FIRST_PASSWORD', 'RESET']) {
+        await expect(row.getByText(name, { exact: true })).toHaveCount(0);
+    }
     await checked(page);
     await fitsNarrow(page);
 
@@ -204,4 +235,66 @@ test('at 200 % zoom both views fit and their controls work from the keyboard', a
 
     expect(injected(watched.problems)).toEqual([]);
     await context.close();
+});
+
+test('"Perubahan" shows a cost correction, a price change and a receiving\'s lines under their approved labels, by keyboard and at 200 % zoom', async ({ browser }) => {
+    // AC-051-02 (COPY_DECK section 11.15; TASK-051, L5): the Owner's own events of one new product. At the first
+    // width, then at 200 % zoom (640 × 400 at a scale of 2), each with the checks at rest and at 320 px.
+    const first = await contextAt(browser, WIDTHS[0]!);
+    const accounts = await resetPeople(first, ['Hendra']);
+    await prepareCommands(first, ['Hendra']);
+    const found = await audited(first);
+
+    for (const width of [WIDTHS[0]!, WIDTHS[4]!]) {
+        const context = width === WIDTHS[0] ? first : await contextAt(browser, width);
+        const page = await context.newPage();
+        await signIn(page, accounts.Hendra);
+        const watched = await watch(page);
+
+        await page.goto(`${ACTIVITY}?product=${String(found.productId)}`);
+        await expect(page.getByRole('heading', { level: 1, name: 'Riwayat aktivitas' })).toBeVisible();
+
+        // The cost correction, opened by Enter: its cost "lama → baru", the Owner's alone, the marks it cleared,
+        // and its reason under "Alasan", not under "Perubahan".
+        const correction = actionRow(page, 'Koreksi biaya');
+        const summary = correction.locator('summary');
+        await summary.focus();
+        await expect(summary).toBeFocused();
+        await page.keyboard.press('Enter');
+        await expect(correction.locator('details')).toHaveAttribute('open', '');
+        await expect(correction.getByText('Perubahan', { exact: true })).toBeVisible();
+        await expect(correction.getByText('Biaya', { exact: true })).toBeVisible();
+        await expect(correction.getByText('Rp3.000 → Rp3.500', { exact: true })).toBeVisible();
+        await expect(correction.getByText('Tanda belum lengkap yang dihapus', { exact: true })).toBeVisible();
+        await expect(correction.getByText('Alasan', { exact: true })).toBeVisible();
+        await expect(correction.getByText(found.reason, { exact: true })).toBeVisible();
+
+        // The price change: "Harga jual" from the old price to the new.
+        const price = actionRow(page, 'Harga jual diubah');
+        await price.locator('summary').focus();
+        await page.keyboard.press('Enter');
+        await expect(price.getByText('Harga jual', { exact: true })).toBeVisible();
+        await expect(price.getByText('Rp5.000 → Rp6.000', { exact: true })).toBeVisible();
+
+        // The receiving: its lines as a table under "Barang", with the cost column for the Owner.
+        const receiving = actionRow(page, 'Barang masuk');
+        await receiving.locator('summary').focus();
+        await page.keyboard.press('Enter');
+        const lines = receiving.getByRole('table', { name: 'Barang', exact: true });
+        await expect(lines).toBeVisible();
+
+        for (const text of ['Produk', 'Jumlah', 'Biaya', found.name, '10 pcs', 'Rp3.000']) {
+            await expect(lines).toContainText(text);
+        }
+
+        // No stored field name or code reaches the page (ACV-01).
+        for (const name of ['old', 'new', 'evidenceId', 'lineNo', 'productId', 'marksCleared', 'KNOWN', 'from', 'to']) {
+            await expect(page.getByRole('main').getByText(name, { exact: true })).toHaveCount(0);
+        }
+
+        await checked(page);
+        await fitsNarrow(page);
+        expect(injected(watched.problems)).toEqual([]);
+        await context.close();
+    }
 });
