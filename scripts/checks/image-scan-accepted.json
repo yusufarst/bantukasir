@@ -1,5 +1,5 @@
 {
-  "decision": "D-112, D-115, D-118, D-123, D-127, D-128, D-134, D-135, D-139",
+  "decision": "D-112, D-115, D-118, D-123, D-127, D-128, D-134, D-135, D-139, D-140",
   "limits": "Conditional and temporary, for development only: the Debian findings of the assessed image, at these exact versions. It authorizes no staging or production deployment and accepts no future CVE. A critical finding enters this list only by its own decision of the Owner. TASK-013 reassesses curl and libcurl before its HTTP or S3 integration; gate RELEASE reviews every remaining vulnerability independently.",
   "assessed": {
     "ciRun": 41129923061,
@@ -75,6 +75,15 @@
     "image": "the release stage of docker/app/Dockerfile on pull request #60 (TASK-051), identifier sha256:101670276a50a063cf0671b8bb2d1dbc06822719f96c5e9aac1712d897c1f1e9, the same pinned base images as D-135; libssl3t64, openssl and openssl-provider-legacy at 3.5.9-1~deb13u1. The gate refused 3 findings of exactly the one CVE below and nothing else (181 accepted, 3 refused, 240 of lower severity reported)",
     "statusRead": "2026-11-22, by the host session: Debian's security tracker for CVE-2026-121482 (every suite vulnerable, unstable unfixed); NVD's record and CISA's SSVC record; OpenSSL's pull request 33546 and its commit 14a9f9ad, which change crypto/x509/x509_vfy.c alone; OpenSSL's release list (3.5.9 the newest 3.5 release); openssl-3.5.9 crypto/x509/x509_vfy.c, php-src PHP-8.5 ext/openssl, and PostgreSQL REL_18_STABLE src/interfaces/libpq/fe-secure-openssl.c; known exploitation and EPSS from Grype's database of that run. OpenSSL's own advisory page was not found by this reading, so OpenSSL's own severity rating is unrecorded",
     "limits": "Development and CI only, at exactly 3.5.9-1~deb13u1 of the three packages: no staging, no production, no other CVE, no other version, no wildcard. The entry expires at the first of: a fix that the build installs and the gate then refuses as fixable or prints as accepted but not reported; known exploitation; a raise of severity; any Task that adds a use the entry rules out; a change of the base image; gate RELEASE; and 31 December 2026, when the Owner reassesses it"
+  },
+  "assessedD140": {
+    "ciRun": 45134720773,
+    "head": "d2fd54a16605b6b36f4be200e2439db64f9253ed",
+    "scanner": "Grype 0.121.0, with Syft 1.55.0",
+    "database": "2026-11-23T06:28:32Z",
+    "image": "the release stage of docker/app/Dockerfile on pull request #62, identifier sha256:54885e9170914127625bd4470ffe5ad77f8e7fc68024b6baa97baba36294bfe8, the same pinned base images as D-139; its apt-get upgrade installed libgssapi-krb5-2, libk5crypto3, libkrb5-3 and libkrb5support0 at 1.21.3-5+deb13u2 from trixie-security (DSA-6650-1). The gate refused 4 findings of exactly the one CVE below and nothing else, and printed the six krb5 CVEs of D-127 and D-128 as accepted but not reported",
+    "statusRead": "2026-11-23, by the host session: Debian's security tracker for CVE-2026-107778 (trixie and trixie-security vulnerable, <no-dsa>, fixed in sid 1.22.3-1) and for CVE-2026-112321 and CVE-2026-112314 (fixed in trixie-security 1.21.3-5+deb13u2 by DSA-6650-1), and its list of krb5's advisories; known exploitation and EPSS from Grype's database of that run",
+    "limits": "Development and CI only, at exactly 1.21.3-5+deb13u2 of the four libraries: no staging, no production, no other CVE, no other version, no wildcard. The entry expires at the first of: a fix that the build installs and the gate then refuses as fixable or prints as accepted but not reported; known exploitation; a raise of severity; any Task that adds a use the entry rules out; a change of the base image; gate RELEASE; and 31 December 2026, when the Owner reassesses it"
   },
   "commonReviewTrigger": "Every entry is reviewed again when the gate refuses it (a fix available, known exploitation, another version or severity), and at gate RELEASE.",
   "accepted": [
@@ -948,19 +957,19 @@
     {
       "id": "CVE-2026-107778",
       "severity": "High",
-      "decision": "D-112",
+      "decision": "D-140",
       "sourcePackage": "krb5",
       "packages": [
-        {"name": "libgssapi-krb5-2", "version": "1.21.3-5+deb13u1", "type": "deb"},
-        {"name": "libk5crypto3", "version": "1.21.3-5+deb13u1", "type": "deb"},
-        {"name": "libkrb5-3", "version": "1.21.3-5+deb13u1", "type": "deb"},
-        {"name": "libkrb5support0", "version": "1.21.3-5+deb13u1", "type": "deb"}
+        {"name": "libgssapi-krb5-2", "version": "1.21.3-5+deb13u2", "type": "deb"},
+        {"name": "libk5crypto3", "version": "1.21.3-5+deb13u2", "type": "deb"},
+        {"name": "libkrb5-3", "version": "1.21.3-5+deb13u2", "type": "deb"},
+        {"name": "libkrb5support0", "version": "1.21.3-5+deb13u2", "type": "deb"}
       ],
       "fixState": "wont-fix",
-      "debianStatus": "trixie vulnerable, <no-dsa> (Minor issue); unfixed in unstable",
-      "rationale": "A NULL dereference that lets an authenticated Kerberos client crash a GSS-API acceptor.",
-      "mitigation": "The image holds no GSS-API acceptor and uses no Kerberos; these libraries are present only as dependencies of libpq and libcurl.",
-      "reviewTrigger": "A Debian point release; any Task that uses Kerberos."
+      "debianStatus": "trixie 1.21.3-5+deb13u1 and trixie-security 1.21.3-5+deb13u2 vulnerable, <no-dsa> (Minor issue); forky 1.22.1-3 vulnerable; fixed in sid 1.22.3-1 (Debian bug 1150461), by Debian's security tracker read on 2026-11-23 (D-140; first accepted at 1.21.3-5+deb13u1 by D-112). DSA-6650-1 moved the four libraries to 1.21.3-5+deb13u2 and fixed the six krb5 CVEs of D-127 and D-128, not this one. Grype's database of 2026-11-23T06:28:32Z gives the state wont-fix and no known exploitation (EPSS 0.00448), and the build of run 45134720773, which upgrades every package from trixie, trixie-updates and trixie-security, installed the four libraries at this version",
+      "rationale": "A NULL pointer dereference in make_cred_list() of rd_cred.c, in MIT Kerberos 5 through 1.22.2: an authenticated Kerberos client that sends forwarded credentials with mismatched KRB-CRED arrays can crash the service that reads them (Debian's tracker, D-140). A denial of service of a Kerberos service only.",
+      "mitigation": "No exposure path was identified in the configuration examined, which is not a guarantee that the flaw cannot be exploited (D-140). No process of the image reads Kerberos credentials: the image runs no Kerberos service, GSS-API acceptor or kadmind, and holds no keytab or credential cache. The four libraries are present only as dependencies of libpq and libcurl; libpq would act only as a GSS-API initiator, never as the acceptor that reads forwarded credentials, and it has no Kerberos credential in the image to start with. Nothing in app/, config/, bootstrap/, routes/, docker/, compose.yaml or the scripts names Kerberos, GSS-API or gssencmode.",
+      "reviewTrigger": "Any Debian update of krb5, a DSA or a point release, which the build installs and the gate then prints as ACCEPTED_NOT_REPORTED, or refuses as fixable while the build lags; known exploitation or a raise to Critical, which the gate refuses; any Task that uses Kerberos or GSS-API, enables gssencmode, or installs a Kerberos service, a keytab or a credential cache; a change of the base image; gate RELEASE; and 31 December 2026 at the latest, when the Owner reassesses it (D-140). Development and CI only: it authorizes no staging or production."
     },
     {
       "id": "CVE-2026-107161",
