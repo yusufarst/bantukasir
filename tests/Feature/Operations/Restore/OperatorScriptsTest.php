@@ -35,7 +35,7 @@ final class OperatorScriptsTest extends BackupTestCase
     public function test_the_fetch_checks_and_decrypts_a_stored_backup_with_its_recovery_key(): void
     {
         $key = $this->storeLogo();
-        $this->atJakarta('2026-11-17 07:00:00');
+        $this->atJakarta('2030-11-12 07:00:00');
         $outcome = $this->runBackup();
         $this->assertNull($outcome->failure, $outcome->diagnostic);
         $manifestHash = $this->readText($this->rowOf($outcome->backupId)['manifest'] ?? null);
@@ -60,7 +60,7 @@ final class OperatorScriptsTest extends BackupTestCase
         $this->assertFalse($refused->successful());
         $this->assertStringContainsString('FETCH_FAILED the manifest does not decrypt with this recovery key', $refused->errorOutput());
         $this->assertStringContainsString('the work folder is not empty', $this->fetch($outcome->backupId, $this->area.'/fetched', $this->identity)->errorOutput());
-        $this->assertStringContainsString('the backup identifier has another form', $this->fetch('20261117T000000Z', $this->area.'/x', $this->identity)->errorOutput());
+        $this->assertStringContainsString('the backup identifier has another form', $this->fetch('20301112T000000Z', $this->area.'/x', $this->identity)->errorOutput());
 
         // Plain HTTP only with the rehearsal's own setting, refused before any folder is made (review R-07).
         $plain = $this->fetch($outcome->backupId, $this->area.'/plain-http', $this->identity, false);
@@ -136,7 +136,7 @@ final class OperatorScriptsTest extends BackupTestCase
 
     public function test_the_count_comparison_finds_the_manifests_counts_and_names_each_difference(): void
     {
-        $this->atJakarta('2026-11-17 07:00:00');
+        $this->atJakarta('2030-11-12 07:00:00');
         $outcome = $this->runBackup();
         $this->assertNull($outcome->failure, $outcome->diagnostic);
         $manifest = $this->area.'/manifest.json';
