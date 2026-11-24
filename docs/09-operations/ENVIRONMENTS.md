@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | CURRENT — written in RF-6 under D-088, 18 October 2026 (Asia/Jakarta); corrected under D-089, 18 October 2026: decryption and the restore-drill target off the VPS (ENV-01, sections 2, 3, 6 and 16; finding B-1 of the RF-6 review); the names of the settings of trusted hosts, trusted proxies and HSTS added to section 11 by TASK-007, 27 October 2026; the exact names and the start-up check added to section 11, and the image's health check to section 6, by TASK-012, 31 October 2026 |
+| Status | CURRENT — written in RF-6 under D-088, 18 October 2026 (Asia/Jakarta); corrected under D-089, 18 October 2026: decryption and the restore-drill target off the VPS (ENV-01, sections 2, 3, 6 and 16; finding B-1 of the RF-6 review); the names of the settings of trusted hosts, trusted proxies and HSTS added to section 11 by TASK-007, 27 October 2026; the exact names and the start-up check added to section 11, and the image's health check to section 6, by TASK-012, 31 October 2026; the sanitized progress record of gate TARGET added as section 17.1 by an `ops/` pull request, 23 November 2026, the gate still OPEN |
 | Phase | P9 — environments, access, configuration, network, certificates, scheduled tasks, logs, monitoring and the free-tier record |
 | Replaces | The runtime, configuration and TLS paragraphs of `docs/09-operations/legacy/09-DEPLOYMENT-OPS.md` and `docs/09-operations/legacy/P9-OPERATIONS.md`; `docs/04-architecture/legacy/P4-ARCHITECTURE.md` §Deployment, operasi dan maintenance (all LEGACY — SUPERSEDED, [LEGACY_INDEX](../00-governance/LEGACY_INDEX.md) section 15) |
 | Decisions | D-005, D-053, D-076, D-088, D-089; [ADR-002](../adr/ADR-002-minimum-runtime-infrastructure.md), [ADR-003](../adr/ADR-003-hosting-topology.md), [ADR-010](../adr/ADR-010-independent-backup-and-recovery-key-custody.md), [ADR-011](../adr/ADR-011-release-pipeline-environments-and-production-operation.md) |
@@ -233,11 +233,39 @@ Recorded by the operator. Facts that identify the server, the domain, an account
 8. PERF01 run on the server with the provisional dataset (TECHNICAL_RULES section 13).
 9. This free-tier record checked again.
 
+### 17.1 Progress record
+
+Gate TARGET is **OPEN**, and continuous execution is held while it is reviewed (DECISIONS D-141). This record tracks the operator's progress, sanitized: it holds no address, hostname, provider name, account, key or other secret, and names no other service on the server. Each entry carries one of three states:
+
+| State | Meaning |
+| --- | --- |
+| OPERATOR_REPORTED | The operator reported it to the Owner; no check that this repository can cite has confirmed it. No agent reaches the server (ENV-03), so an agent never confirms a fact of the server itself. |
+| VERIFIED | Confirmed by a check whose result is recorded: the operator's own recorded verification of the item as this section requires, or a fact of the repository. |
+| PENDING | Not done, or not reported. |
+
+Reported on 23 November 2026, reviewed by the host session on the same day. Nothing in this subsection closes an item or the gate.
+
+| Item | OPERATOR_REPORTED | VERIFIED | PENDING |
+| --- | --- | --- | --- |
+| 1. Server and domain | Memory 15 GiB; 187 GB of disk free; the domain's DNS on Cloudflare. Other services, unrelated to BantuKasir, run on the same server and stay untouched by BantuKasir's operations. | — | CPU count and region; the provider and the other services in the operator's private record; section 5's sizing checked against the other services' use. |
+| 2. Section 5 and Coolify | Coolify installed. | — | Coolify's version recorded; the operating system release and automatic security updates; NTP with the system time zone UTC; a personal non-root account, SSH by key only, password and root login disabled; Docker's log rotation (section 14). |
+| 3. Firewall and certificate | A Cloudflare Origin CA certificate for BantuKasir's hostnames is installed and served by the proxy (Traefik); the operator checked that the certificate and its key match. | — | The firewall verified from outside (ENV-22, SEC02); SSL/TLS mode Full (strict) confirmed; the certificate's expiry date recorded (ENV-11); the key readable only by root and the certificate naming exactly the two hostnames (ENV-10); risk R-TGT-01 below closed. |
+| 4. Production and staging | The Coolify environments `production` and `staging` configured. The application is not deployed; staging's HTTPS address answers 503. | — | The separation of ENV-02 shown: database, file volume, application key, secrets, hostname, backup bucket and recovery key pair per environment; staging's access gate and `X-Robots-Tag: noindex` (ENV-06). |
+| 5. Database roles | Staging: PostgreSQL 18.6, its database and three roles created. Production: PostgreSQL 18.7, running and healthy, time zone UTC, persistent storage, private access only. | The repository pins `postgres:18.6-trixie` by digest (`compose.yaml`, `docker/rehearsal/Dockerfile`). | Production's three roles; for both environments, creation by the reviewed script of ENV-30, the marker of ENV-04 and the privileges proven (DB01); decision TD-TGT-01 below. |
+| 6. Backup store, first backup and drill | — | — | All of it (gate G4). |
+| 7. Heartbeat | — | — | All of it. |
+| 8. PERF01 | — | — | All of it; it needs the application deployed on the target. |
+| 9. Free-tier record | — | — | Checked again (section 15). |
+
+**TD-TGT-01, an open technical decision: PostgreSQL 18.6 or 18.7** (OPEN_ITEMS question 39). Production runs PostgreSQL 18.7, while staging runs 18.6 and the repository pins 18.6 by digest, which section 6 makes the version of every environment's database. Production holds no data yet. The choice — align production to the pinned 18.6, or raise the repository's pin to 18.7 through a reviewed change that CI tests — is the Owner's. Until he makes it, item 5 stays PENDING, and no database or image changes.
+
+**R-TGT-01, an open risk: a private key that was exposed.** A private key of this server's setup was exposed at an earlier point, by the Owner's report of 23 November 2026. Which key, where and when stay in the operator's private record; the repository holds no material of it. It is handled as an incident (OPERATIONS_RUNBOOK RB-05, SEC-SECRET-04): the key is replaced as section 16 prescribes for its kind — for the origin certificate's key, revoked at Cloudflare and a new certificate issued and installed (RB-07); for an SSH key, replaced and the old one removed — and the operator records that the old key no longer works. Until then item 3 stays PENDING, with any other item the key touches.
+
 ## 18. Open items
 
 | Item | Subject | Step |
 | --- | --- | --- |
-| Gate TARGET | The real server, domain and accounts; section 17 | Before the pilot |
+| Gate TARGET | The real server, domain and accounts; section 17, its progress in section 17.1 (OPEN; TD-TGT-01 and R-TGT-01 open) | Before the pilot |
 | N-12 | The transition from the planning branch to `develop` and `main` (ADR-011 item 3) | Before the first implementation Task |
 | N-08 | GitHub branch protection | The Owner, when convenient |
 | T-02 | `.env.example` rebuilt with the settings of section 11, placeholders only | Foundation Task |
