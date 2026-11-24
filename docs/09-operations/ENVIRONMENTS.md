@@ -235,7 +235,7 @@ Recorded by the operator. Facts that identify the server, the domain, an account
 
 ### 17.1 Progress record
 
-Gate TARGET is **OPEN**. This record tracks the operator's progress, sanitized: it holds no address, hostname, provider name, account, key or other secret, and names no other service on the server. Each entry carries one of three states:
+Gate TARGET is **OPEN**, and continuous execution is held while it is reviewed (DECISIONS D-141). This record tracks the operator's progress, sanitized: it holds no address, hostname, provider name, account, key or other secret, and names no other service on the server. Each entry carries one of three states:
 
 | State | Meaning |
 | --- | --- |
