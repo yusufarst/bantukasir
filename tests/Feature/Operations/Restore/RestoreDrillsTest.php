@@ -27,12 +27,12 @@ final class RestoreDrillsTest extends BackupTestCase
     {
         $checks = [
             'restore_drills_kind_allowed' => ['kind' => 'PARTIAL'],
-            'restore_drills_backup_id_format' => ['backup_id' => '20261117T000000Z'],
+            'restore_drills_backup_id_format' => ['backup_id' => '20301112T000000Z'],
             'restore_drills_manifest_sha256_length' => ['manifest_sha256' => '\x00ff'],
             'restore_drills_result_allowed' => ['result' => 'PARTIAL'],
             'restore_drills_restore_seconds_not_negative' => ['restore_seconds' => -1],
             'restore_drills_operator_note_length' => ['operator_note' => ''],
-            'restore_drills_finished_after_started' => ['finished_at' => '2026-11-17 00:59:59+00'],
+            'restore_drills_finished_after_started' => ['finished_at' => '2030-11-12 00:59:59+00'],
             'restore_drills_actor' => ['actor_process' => 'owner_recovery'],
         ];
 
@@ -76,7 +76,7 @@ final class RestoreDrillsTest extends BackupTestCase
         $this->assertSame(0, $this->record(['--backup' => $backupId, '--manifest-sha256' => $manifest]), Artisan::output());
 
         $drill = (array) $this->observer()->selectOne("select kind, backup_id, encode(manifest_sha256, 'hex') as manifest, to_char(started_at at time zone 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as started, result, restore_seconds, operator_note, actor_kind, actor_user_id, actor_process from restore_drills");
-        $this->assertSame(['ROUTINE', $backupId, $manifest, '2026-11-17T01:00:00Z', 'PASS', 9, self::NOTE, 'OPERATOR_PROCEDURE', null, 'restore_drill_record'], array_values($drill));
+        $this->assertSame(['ROUTINE', $backupId, $manifest, '2030-11-12T01:00:00Z', 'PASS', 9, self::NOTE, 'OPERATOR_PROCEDURE', null, 'restore_drill_record'], array_values($drill));
 
         // Changes no business data: no audit event; the run is in the security log.
         $this->assertSame(0, $this->observer()->table('audit_events')->where('actor_process', 'restore_drill_record')->count());
@@ -92,11 +92,11 @@ final class RestoreDrillsTest extends BackupTestCase
     {
         [$backupId, $manifest] = $this->backupWithManifest();
         $cases = [
-            ['--backup' => '20261117T000000Z-AAAAAAAA', '--manifest-sha256' => $manifest],
+            ['--backup' => '20301112T000000Z-AAAAAAAA', '--manifest-sha256' => $manifest],
             ['--backup' => $backupId, '--manifest-sha256' => str_repeat('ab', 32)],
-            ['--backup' => $backupId, '--manifest-sha256' => $manifest, '--started-at' => '2026-11-17T01:00:10Z', '--finished-at' => '2026-11-17T01:00:00Z'],
+            ['--backup' => $backupId, '--manifest-sha256' => $manifest, '--started-at' => '2030-11-12T01:00:10Z', '--finished-at' => '2030-11-12T01:00:00Z'],
             ['--backup' => $backupId, '--manifest-sha256' => $manifest, '--restore-seconds' => '601'],
-            ['--backup' => $backupId, '--manifest-sha256' => $manifest, '--finished-at' => '2026-11-18T03:00:00Z'],
+            ['--backup' => $backupId, '--manifest-sha256' => $manifest, '--finished-at' => '2030-11-13T03:00:00Z'],
             ['--backup' => $backupId, '--manifest-sha256' => $manifest, '--started-at' => '2026-02-30T01:00:00Z'],
             ['--backup' => $backupId, '--manifest-sha256' => strtoupper($manifest)],
             ['--backup' => $backupId, '--manifest-sha256' => $manifest, '--kind' => 'DAILY'],
@@ -108,8 +108,8 @@ final class RestoreDrillsTest extends BackupTestCase
             $this->assertSame(1, $this->record($options), json_encode($options).' '.Artisan::output());
         }
 
-        $this->assertSame(1, Artisan::call('restore:record-drill', ['--environment' => 'production', '--kind' => 'ROUTINE', '--backup' => $backupId, '--manifest-sha256' => $manifest, '--started-at' => '2026-11-17T01:00:00Z', '--finished-at' => '2026-11-17T01:10:00Z', '--result' => 'PASS', '--restore-seconds' => '9', '--note' => self::NOTE]));
-        $this->assertSame(1, Artisan::call('restore:record-drill', ['--environment' => 'test', '--kind' => 'ROUTINE', '--backup' => $backupId, '--manifest-sha256' => $manifest, '--started-at' => '2026-11-17T01:00:00Z', '--finished-at' => '2026-11-17T01:10:00Z', '--result' => 'PASS', '--restore-seconds' => '9']));
+        $this->assertSame(1, Artisan::call('restore:record-drill', ['--environment' => 'production', '--kind' => 'ROUTINE', '--backup' => $backupId, '--manifest-sha256' => $manifest, '--started-at' => '2030-11-12T01:00:00Z', '--finished-at' => '2030-11-12T01:10:00Z', '--result' => 'PASS', '--restore-seconds' => '9', '--note' => self::NOTE]));
+        $this->assertSame(1, Artisan::call('restore:record-drill', ['--environment' => 'test', '--kind' => 'ROUTINE', '--backup' => $backupId, '--manifest-sha256' => $manifest, '--started-at' => '2030-11-12T01:00:00Z', '--finished-at' => '2030-11-12T01:10:00Z', '--result' => 'PASS', '--restore-seconds' => '9']));
         $this->assertSame(0, $this->observer()->table('restore_drills')->count());
         $this->assertSame('REFUSED', $this->observer()->table('security_log_entries')->where('actor_process', 'restore_drill_record')->orderByDesc('id')->value('outcome_code'));
     }
@@ -138,10 +138,10 @@ final class RestoreDrillsTest extends BackupTestCase
      */
     private function backupWithManifest(): array
     {
-        $this->atJakarta('2026-11-17 07:00:00');
+        $this->atJakarta('2030-11-12 07:00:00');
         $outcome = $this->runBackup();
         $this->assertNull($outcome->failure, $outcome->diagnostic);
-        $this->atJakarta('2026-11-17 08:30:00');
+        $this->atJakarta('2030-11-12 08:30:00');
 
         return [$outcome->backupId, $this->readText($this->rowOf($outcome->backupId)['manifest'] ?? null)];
     }
@@ -154,8 +154,8 @@ final class RestoreDrillsTest extends BackupTestCase
         return Artisan::call('restore:record-drill', [
             '--environment' => 'test',
             '--kind' => 'ROUTINE',
-            '--started-at' => '2026-11-17T01:00:00Z',
-            '--finished-at' => '2026-11-17T01:10:00Z',
+            '--started-at' => '2030-11-12T01:00:00Z',
+            '--finished-at' => '2030-11-12T01:10:00Z',
             '--result' => 'PASS',
             '--restore-seconds' => '9',
             '--note' => self::NOTE,
@@ -170,14 +170,14 @@ final class RestoreDrillsTest extends BackupTestCase
     {
         return [
             'kind' => 'ROUTINE',
-            'backup_id' => '20261117T000000Z-AbCd1234',
+            'backup_id' => '20301112T000000Z-AbCd1234',
             'manifest_sha256' => '\x'.str_repeat('ab', 32),
-            'started_at' => '2026-11-17 01:00:00+00',
-            'finished_at' => '2026-11-17 01:10:00+00',
+            'started_at' => '2030-11-12 01:00:00+00',
+            'finished_at' => '2030-11-12 01:10:00+00',
             'result' => 'PASS',
             'restore_seconds' => 9,
             'operator_note' => 'Uji pemulihan',
-            'recorded_at' => '2026-11-17 01:11:00+00',
+            'recorded_at' => '2030-11-12 01:11:00+00',
             'actor_kind' => 'OPERATOR_PROCEDURE',
             'actor_user_id' => null,
             'actor_process' => 'restore_drill_record',

@@ -34,10 +34,19 @@ RUN set -eux; \
 # The production Composer dependencies. Composer's own image has another set of
 # PHP extensions, so the platform is not checked here: the application's image
 # is, in the check of the runtime stage and by the image checks.
+# GitHub's download service sometimes answers 504 for longer than Composer's own
+# three retries within a second, so the whole install is tried at most three
+# times against the same composer.lock, after 30 and then 60 seconds; the build
+# fails when the third attempt fails.
 FROM composer AS vendor
 WORKDIR /app
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-interaction --no-progress --no-scripts --no-autoloader --prefer-dist --ignore-platform-reqs
+RUN for attempt in 1 2 3; do \
+        composer install --no-dev --no-interaction --no-progress --no-scripts --no-autoloader --prefer-dist --ignore-platform-reqs && exit 0; \
+        echo "composer install failed (attempt $attempt of 3)" >&2; \
+        if [ "$attempt" -lt 3 ]; then sleep $((attempt * 30)); fi; \
+    done; \
+    exit 1
 COPY app ./app
 RUN composer dump-autoload --no-dev --no-interaction --no-scripts --optimize --ignore-platform-reqs
 
