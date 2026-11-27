@@ -2788,7 +2788,7 @@ TASK_PLAN section 3 holds each phase as its own gate. A row names after "before 
 - **Phase B, TARGET:** completed by TASK-045 (staging's first backup and off-VPS drill, the heartbeat alerts, SEC02) and TASK-048 (PERF01).
 - **Phase C, TARGET-PRODUCTION:** production before its installation, on the PostgreSQL version that OPEN_ITEMS question 39 decides.
 
-**G4 precedes the cutover.** The cutover inside TASK-050 starts only after the Owner accepts G4 on the measured production values (RELEASE_PROCESS RB-23 step 10; BACKUP_RECOVERY section 12). Production's own 30-day measurement follows within the 30 days after the cutover.
+**G4 precedes the cutover.** The cutover inside TASK-050 starts only after the Owner accepts G4 on the measured production values (RELEASE_PROCESS RB-23 step 10; BACKUP_RECOVERY section 12). The recovery point before the cutover is measured on staging's runs on the production schedule (at least 7 days) together with every production run since the installation (at least one full day). Production's own 30-day value follows within the 30 days after the cutover, and a breach is an incident. This method needs the Owner's explicit acceptance, which is OPEN_ITEMS question 40, still OPEN; until he accepts it, G4 cannot be APPROVED and the cutover waits.
 
 **Authorizations kept.**
 

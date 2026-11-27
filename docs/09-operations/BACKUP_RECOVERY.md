@@ -200,11 +200,17 @@ The restored data end at the backup's snapshot. What happened afterwards is lost
 
 The proposals become accepted only when the Owner accepts the measured values, recorded in DECISIONS (gate G4, REQ-NFR-05). The full recovery estimate is repeated yearly with the latest measurements.
 
-**Gate G4 precedes the cutover** (D-142; RELEASE_PROCESS RB-23 step 10). The Owner accepts the values measured until then:
-- **Recovery time:** the first production drill's restore time, the installation time of RB-23, and the Owner's reconciliation time from the staging rehearsal.
-- **Recovery point:** staging's `backup_runs` since TASK-045, together with production's first runs, plus the run's duration.
+**Gate G4 precedes the cutover** (D-142; RELEASE_PROCESS RB-23 step 10). Production has no 30 days of runs before the cutover, so the method below changes how the recovery point is measured, not its objective. **The method itself needs the Owner's explicit acceptance** (OPEN_ITEMS question 40). Until he accepts it, G4 cannot be APPROVED on it, and the cutover waits.
 
-Production's own measurement over its first 30 days is then taken and recorded in DECISIONS within the 30 days after the cutover. A value above the accepted one is an incident (OPERATIONS_RUNBOOK RB-05), and the objective is reviewed with the Owner.
+| Step | When | What is measured |
+| --- | --- | --- |
+| 1. Recovery time | Before the cutover | The first production drill's restore time (RB-02), plus the installation time of RB-23 steps 1 to 5, plus the Owner's reconciliation time from the staging rehearsal of RB-01 phase E (TASK-045). |
+| 2. Recovery point before the cutover | Before the cutover | Sources: staging's `backup_runs` since TASK-045 on the production schedule (section 3), at least the last 7 days; and every production run since the installation, at least one full day of the four scheduled runs. Value: the longest interval between two successful snapshots, plus the longest run's duration. A missed or failed scheduled run counts in the interval; nothing is left out. |
+| 3. Acceptance | Before the cutover | The Owner accepts steps 1 and 2 against the objectives, recorded in DECISIONS: gate G4. |
+| 4. Production's own 30 days | Within the 30 days after the cutover | The recovery point measured as the table above defines it, on production's `backup_runs` alone, recorded in DECISIONS. |
+| 5. A breach | Any day of those 30 | A value above the accepted one is an incident (OPERATIONS_RUNBOOK RB-05) and is reported to the Owner at once; the objective is reviewed with him. G4 then stays APPROVED only if he confirms it again. |
+
+The method does not weaken the objectives or the 30-day definition. It orders the evidence so that the cutover does not wait 30 days for production's own runs, and step 4 completes the 30-day measurement afterwards.
 
 ## 13. RB-02 — Restore drill
 
