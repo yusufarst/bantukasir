@@ -86,14 +86,16 @@ Phases A and B (the Owner's authorization, writes stopped, the original preserve
 
 ## 2. RB-02 — Restore drill
 
-- [ ] **Step 1.** The latest production backup with a stored manifest: its identifier from `backup_runs`.
+The form of the drill (BACKUP_RECOVERY section 13; D-145): **populated staging** takes staging's backup made by the release image's digest and is recorded in staging; **empty production**, at RB-23 step 9, takes production's latest backup taken after RB-23 step 8; **populated production** runs as written. No business record is added to production for any form.
+
+- [ ] **Step 1.** The latest production backup with a stored manifest: its identifier from `backup_runs`. Populated staging: staging's latest backup whose manifest names the release image's digest. Empty production: the latest taken after RB-23 step 8.
 - [ ] **Step 2.** The drill target off the VPS (section 8): the manifest's release image; the roles and the marker `drill` by the setup script of ENV-30, with new passwords.
 - [ ] **Step 3.** `fetch-backup.sh` as RB-01 step 8, on the operator's machine or on the drill target itself; record the `manifest_sha256` it prints.
 - [ ] **Step 4.** The restore, the grants, the privilege test and the files, as RB-01 steps 9 and 10.
 - [ ] **Step 5.** `compare-counts.sql` and `reconciliation:run --operator --environment=drill`, which must be clean.
 - [ ] **Step 6.** `restore:after --environment=drill` and `advance-sequences.sql` with `sales_seen=0 sessions_seen=0`.
-- [ ] **Step 7.** The application started without traffic: `/up` answers 200. `php artisan owner:recover --environment=drill --note="<the drill>"` prints an Owner recovery link to the operator's terminal only; through it, set a password, sign in, and open one recent receipt (`/sales/<id>/receipt`) and one session report (`/cash-sessions/<id>`).
+- [ ] **Step 7.** The application started without traffic: `/up` answers 200. `php artisan owner:recover --environment=drill --note="<the drill>"` prints an Owner recovery link to the operator's terminal only; through it, set a password, sign in, and open one recent receipt (`/sales/<id>/receipt`) and one session report (`/cash-sessions/<id>`). Empty production, which has neither: open the BusinessProfile, the cash registers and the staff list, and compare each with production's.
 - [ ] **Step 8.** The time of each step, from the operator's own clock.
 - [ ] **Step 9.** The target's database, volume and every decrypted file destroyed on every machine that held one.
-- [ ] **Step 10.** In production, `php artisan restore:record-drill --environment=production --kind=ROUTINE --backup=<identifier> --manifest-sha256=<hash> --started-at=<UTC> --finished-at=<UTC> --result=PASS|FAIL --restore-seconds=<seconds of steps 3 to 6> --note="<the durations>"`, the times as `YYYY-MM-DDTHH:MM:SSZ`. A drill that passed is recorded only with the manifest's hash as its upload recorded it.
+- [ ] **Step 10.** In production, `php artisan restore:record-drill --environment=production --kind=ROUTINE --backup=<identifier> --manifest-sha256=<hash> --started-at=<UTC> --finished-at=<UTC> --result=PASS|FAIL --restore-seconds=<seconds of steps 3 to 6> --note="<the durations>"`, the times as `YYYY-MM-DDTHH:MM:SSZ`. A drill that passed is recorded only with the manifest's hash as its upload recorded it. Populated staging: the same command in staging, with `--environment=staging`; it never counts as a production drill.
 - [ ] **Step 11.** A failed drill is an incident of class S3 at least (RB-03), fixed and repeated.
