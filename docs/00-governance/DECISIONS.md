@@ -165,7 +165,7 @@ All by the Owner (Asia/Jakarta). D-019 to D-025 answer the questions of the [re-
 <br>• **TARGET** splits into TARGET-STAGING (phase A, before the first deployment), TARGET (phase B, completed by TASK-045 and TASK-048) and TARGET-PRODUCTION (phase C, before production's installation).
 <br>• **G4** splits into G4-STORE (before TASK-045), G4-SEALED (TASK-049) and G4 itself, accepted before the cutover inside TASK-050.
 <br>• **DEVICES** splits into DEVICES-AVAILABLE (before TASK-046) and DEVICES (the Owner's decision, before TASK-046 is `DONE`).
-<br>• **RELEASE** splits into STAGING-DEPLOY (each staging deployment authorized), RELEASE-AUTH (before production's installation, with the independent vulnerability review and the Owner's production decision) and RELEASE (complete with the pilot).
+<br>• **RELEASE** splits into STAGING-DEPLOY (each staging deployment authorized by its digest), RELEASE-AUTH (before TASK-050: the release of the final candidate verified on staging, with the independent vulnerability review and the Owner's production decision), PRODUCTION-DEPLOY (inside TASK-050: the production installation of the release image's own digest, after its staging verification) and RELEASE (complete with the pilot). The scan gate's acceptances are for development and CI only and count for no authorization.
 <br>• **New gate:** OPERATOR.
 <br>• **Moved to "before `DONE`":** GATE-CC2 and G2 bind only a Task's `DONE`.
 <br>• **Resources:** they are measured on the existing hardware and never assumed (ENVIRONMENTS section 17.2).
@@ -2780,7 +2780,7 @@ TASK_PLAN section 3 holds each phase as its own gate. A row names after "before 
 | TASK-047 | — | GATE-CC2, SATISFIED without an approval when the values are confirmed |
 | TASK-048 | OPERATOR, TARGET-STAGING | — (G2 is no gate of it: the final dataset when known, otherwise the provisional one, stated) |
 | TASK-049 | OPERATOR, TARGET, DEVICES, GATE-PUBLISH | G1, G2, G3, G4-SEALED |
-| TASK-050 | OPERATOR, TARGET-PRODUCTION, G4-SEALED, RELEASE-AUTH, GATE-PUBLISH | G4, accepted before the cutover; RELEASE |
+| TASK-050 | OPERATOR, TARGET-PRODUCTION, G4-SEALED, RELEASE-AUTH, GATE-PUBLISH | PRODUCTION-DEPLOY, before the production installation; G4, accepted before the cutover; RELEASE |
 
 **TARGET's three phases (ENVIRONMENTS section 17).** Every item keeps its requirement.
 
@@ -2793,7 +2793,9 @@ TASK_PLAN section 3 holds each phase as its own gate. A row names after "before 
 **Authorizations kept.**
 
 - **Staging:** each staging deployment needs the Owner's explicit authorization of the exact candidate (STAGING-DEPLOY, REL-01).
-- **Production:** the production installation needs RELEASE-AUTH. It includes the independent review of every vulnerability remaining in the release image (D-112, D-113) and the Owner's own decision for production on each finding still present. The development and CI acceptances of D-139 and D-140 do not count for production.
+- **Release:** RELEASE-AUTH, before TASK-050, names the final candidate by its commit, candidate tag and the image digest verified on staging. It includes the independent review of every vulnerability remaining in that image (D-112, D-113) and the Owner's own decision for production on each finding still present. It authorizes the tag `v1.0.0` and the image's publication, not a deployment.
+- **Production:** the release workflow builds the image of `v1.0.0` again, so its digest exists only inside TASK-050. That digest goes to staging first, under its own STAGING-DEPLOY, and is verified there (REL-03). Then the Owner authorizes its production installation by that exact digest (PRODUCTION-DEPLOY). A new high or critical finding of its scan goes back to the Owner.
+- **Development and CI only:** every acceptance of the scan gate's list, D-139 and D-140 among them, counts for no staging or production authorization. Each of STAGING-DEPLOY, RELEASE-AUTH and PRODUCTION-DEPLOY carries the Owner's own decision for its environment on each high or critical finding still present.
 
 #### Resources
 
@@ -2810,9 +2812,22 @@ The plan assumes no headroom; it measures it (ENVIRONMENTS section 17.2).
 
 - every gate of TASK-044 to TASK-050 has its row;
 - no Task waits at its start for a gate that it or a later Task completes;
-- with the external gates satisfied in their order, the selection starts TASK-044, TASK-048, TASK-045, TASK-046, TASK-047, TASK-049 and TASK-050 in turn, each while the gates it completes are still open, and refuses each one while a start gate is open.
+- with the external gates satisfied in their order, the selection starts TASK-044, TASK-048, TASK-045, TASK-046, TASK-047, TASK-049 and TASK-050 in turn, each while the gates it completes are still open, and refuses each one while a start gate is open;
+- no authorization names an image digest that does not exist when it is given, and none counts an acceptance for development and CI only.
 
 Run on the plan before this decision, the check fails on each cycle above.
+
+#### The Owner's corrections of the same day
+
+After the first CI run of this pull request, the Owner directed its remediation in the same pull request (27 November 2026). The items this decision takes up, in English as he wrote them:
+
+> 4. Correct restore feasibility assumptions against the complete RB-02 procedure. Prohibit AI agents during recovery-key use or decrypted-data handling.
+> 5. Eliminate remaining circular release prerequisites, particularly RELEASE-AUTH and image digest availability.
+> 6. Preserve exact deployment authorization and same-image staging verification.
+> 7. Ensure development/CI-only CVE acceptances never authorize staging or production.
+> 8. Present the pre-cutover RPO method and subsequent 30-day production measurement for explicit Owner acceptance.
+
+**What was still circular.** RELEASE-AUTH, a start gate of TASK-050, named the exact revision, including the image digest (REL-01). But the image of `v1.0.0` is built by the release workflow from the tag, which TASK-050 pushes, so its digest did not exist yet. That image was also never deployed to staging, against REL-03. RELEASE-AUTH now names the final candidate verified on staging, and PRODUCTION-DEPLOY names the release image's own digest inside TASK-050, after its staging verification.
 
 #### Unchanged
 

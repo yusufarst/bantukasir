@@ -10,9 +10,11 @@ use PHPUnit\Framework\TestCase;
  * the tick's own selection functions of scripts/executor/lib.sh, that every
  * gate of the release path has its row, that no Task waits at its start for a
  * gate that it or a later Task completes, and that the selection starts each
- * Task in turn as the external gates are satisfied. The real plan passes; a
- * copy written in a temporary folder outside the tree, with a cycle put back
- * or a gate's row removed, is refused.
+ * Task in turn as the external gates are satisfied, and that no authorization
+ * names an image digest that does not exist yet. The real plan passes; a copy
+ * written in a temporary folder outside the tree, with a cycle put back, a
+ * gate's row removed or the release image's own authorization removed, is
+ * refused.
  */
 final class GateProgressionTest extends TestCase
 {
@@ -65,6 +67,20 @@ final class GateProgressionTest extends TestCase
 
         $this->assertSame(1, $process->getExitCode(), $process->getOutput());
         $this->assertStringContainsString('FAIL 1 TASK-045: gate G4-STORE has a row in section 3: no row', $process->getOutput());
+    }
+
+    public function test_a_production_authorization_without_the_release_images_own_digest_is_refused(): void
+    {
+        $plan = $this->copyOfThePlan(fn (string $text): string => str_replace(
+            'RELEASE-AUTH, GATE-PUBLISH; before `DONE`: PRODUCTION-DEPLOY, G4, RELEASE |',
+            'RELEASE-AUTH, GATE-PUBLISH; before `DONE`: G4, RELEASE |',
+            $text,
+        ));
+
+        $process = self::runCheck(['bash', 'scripts/checks/gate-progression.sh', $plan]);
+
+        $this->assertSame(1, $process->getExitCode(), $process->getOutput());
+        $this->assertStringContainsString('FAIL 5 PRODUCTION-DEPLOY is completed inside TASK-050, never at its start', $process->getOutput());
     }
 
     /**

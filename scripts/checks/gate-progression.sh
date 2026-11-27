@@ -14,7 +14,11 @@
 #     CE-10 starts TASK-044, TASK-048, TASK-045, TASK-046, TASK-047, TASK-049 and
 #     TASK-050 in that order, each while the gates that it completes are still
 #     open;
-#   - the selection refuses each Task while a gate it needs at its start is open.
+#   - the selection refuses each Task while a gate it needs at its start is open;
+#   - an authorization names only an image digest that exists when it is given
+#     (RELEASE-AUTH the final candidate verified on staging, PRODUCTION-DEPLOY
+#     the release image's digest inside TASK-050), and none counts the scan
+#     gate's acceptances, which are for development and CI only.
 # It changes nothing: it works on a temporary copy, and it reads lib.sh's
 # functions without running the rest of lib.sh. The status is 0 when every case
 # passes, 1 when one fails and 2 when the plan or the functions cannot be read.
@@ -102,7 +106,7 @@ completed_by() {
         GATE-CC2) echo "TASK-047" ;;
         TARGET) echo "TASK-048" ;;
         G1 | G2 | G3 | G4-SEALED) echo "TASK-049" ;;
-        G4 | RELEASE) echo "TASK-050" ;;
+        PRODUCTION-DEPLOY | G4 | RELEASE) echo "TASK-050" ;;
         *) echo "" ;;
     esac
 }
@@ -119,7 +123,7 @@ for t in $release_path; do
 done
 
 # 3. The progression on a copy: every gate of the path open, every Task TODO.
-for g in OPERATOR TARGET-STAGING STAGING-DEPLOY TARGET TARGET-PRODUCTION DEVICES-AVAILABLE DEVICES G1 G2 G3 G4-STORE G4-SEALED G4 GATE-CC2 RELEASE-AUTH RELEASE; do set_gate "$g" "OPEN"; done
+for g in OPERATOR TARGET-STAGING STAGING-DEPLOY TARGET TARGET-PRODUCTION DEVICES-AVAILABLE DEVICES G1 G2 G3 G4-STORE G4-SEALED G4 GATE-CC2 RELEASE-AUTH PRODUCTION-DEPLOY RELEASE; do set_gate "$g" "OPEN"; done
 for t in $release_path; do set_status "$t" TODO; done
 set_status TASK-043 DONE
 set_status TASK-051 DONE
@@ -168,6 +172,7 @@ expect_blocked "3 TASK-050 waits for RELEASE-AUTH" TASK-050 RELEASE-AUTH
 set_gate TARGET-PRODUCTION "SATISFIED — phase C recorded"
 set_gate RELEASE-AUTH "SATISFIED — the Owner's exact authorization"
 expect_selected "3 TASK-050 starts with G4 and RELEASE still open" TASK-050
+expect_selected "3 TASK-050 starts with PRODUCTION-DEPLOY still open" TASK-050
 
 # 4. A gate that a Task needs at its start, open again, blocks it.
 set_gate G4-SEALED "OPEN"
@@ -177,6 +182,36 @@ set_gate TARGET "OPEN"
 set_status TASK-050 TODO
 set_status TASK-049 READY
 expect_blocked "4 TASK-049 waits for TARGET" TASK-049 TARGET
+
+# 5. An authorization names only an image digest that exists when it is given:
+# the release image of v1.0.0 is built inside TASK-050, so its production
+# installation is authorized there (PRODUCTION-DEPLOY, before `DONE`), and
+# RELEASE-AUTH names the final candidate verified on staging. No deployment
+# authorization counts an acceptance of the scan gate's list, which is for
+# development and CI only.
+gate_row() {
+    awk -v g="$1" '
+        /^## 3\./ { sec = 1; next } /^## / { sec = 0 }
+        sec && /^\|/ { n = split($0, c, "|"); id = c[2]; gsub(/^[ \t]+|[ \t]+$/, "", id); if (id == g) print }' "$plan_src"
+}
+case "$(row_of TASK-050 | cut -d'|' -f6)" in
+    *'before `DONE`:'*PRODUCTION-DEPLOY*) pass "5 PRODUCTION-DEPLOY is completed inside TASK-050, never at its start" ;;
+    *) fail "5 PRODUCTION-DEPLOY is completed inside TASK-050, never at its start" "not after before \`DONE\`: in TASK-050's row" ;;
+esac
+case "$(gate_row RELEASE-AUTH)" in
+    *"final candidate"*"verified on staging"*"authorizes no deployment"*) pass "5 RELEASE-AUTH names the final candidate verified on staging and authorizes no deployment" ;;
+    *) fail "5 RELEASE-AUTH names the final candidate verified on staging and authorizes no deployment" "row text" ;;
+esac
+case "$(gate_row PRODUCTION-DEPLOY)" in
+    *'`v1.0.0`'*digest*STAGING-DEPLOY*REL-03*) pass "5 PRODUCTION-DEPLOY names the release image's digest verified on staging" ;;
+    *) fail "5 PRODUCTION-DEPLOY names the release image's digest verified on staging" "row text" ;;
+esac
+for g in STAGING-DEPLOY RELEASE-AUTH PRODUCTION-DEPLOY; do
+    case "$(gate_row "$g")" in
+        *"development and CI only"*) pass "5 $g counts no development and CI acceptance" ;;
+        *) fail "5 $g counts no development and CI acceptance" "row text" ;;
+    esac
+done
 
 echo "Gate progression: $passes passed, $failures failed"
 [ "$failures" -eq 0 ]
