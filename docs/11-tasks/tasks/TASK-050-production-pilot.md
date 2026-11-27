@@ -6,7 +6,7 @@
 | Phase and lane | 10 Release · lane R, reports, audit views and release |
 | Size and review | L · review class V — verification results accepted by the Owner ([EXECUTION_CONTEXT](../EXECUTION_CONTEXT.md) section 12) |
 | Depends on | [TASK-049](TASK-049-release-readiness.md) |
-| Gates | RELEASE (the Owner's exact authorization), GATE-PUBLISH (the merge into `main` and the tag), G4 (accepted before the cutover) ([TASK_PLAN](../TASK_PLAN.md) section 3) |
+| Gates | OPERATOR, TARGET-PRODUCTION (production ready before its installation), G4-SEALED, RELEASE-AUTH (the Owner's exact authorization, with the independent vulnerability review), GATE-PUBLISH (the merge into `main` and the tag); before `DONE`: G4 (accepted before the cutover, scope item 5), RELEASE (complete with the pilot's acceptance) ([TASK_PLAN](../TASK_PLAN.md) section 3; D-142) |
 | Branch | `task/TASK-050-production-pilot` from `develop` (EXC-22) |
 | Executor | Claude Opus 5.5, at the effort that the Owner's instruction names for this Task (D-031, D-095), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None. |
@@ -43,7 +43,7 @@ After AGENTS.md, CURRENT_HANDOFF, EXECUTION_CONTEXT and TASK_PLAN sections 1 to 
 2. Operator: RB-20 in production with the migration job; RB-21; OP-01 `owner:bootstrap` with the shop's name and the Owner's email; the link handed to the Owner directly.
 3. Owner: the password, the BusinessProfile, the cash registers, the staff accounts with their links (D-056).
 4. Operator: the first production backup and the first production drill, recorded with OP-08; the Owner accepts the measured recovery point and time (gate G4, REQ-NFR-05).
-5. Owner with staff: the cutover RB-24 — onboarding started and released once (D-071).
+5. Owner with staff: the cutover RB-24 — onboarding started and released once (D-071) — only once gate G4 is APPROVED in TASK_PLAN section 3 on the measured production values of item 4; until then the Task stops for the Owner and nothing of the shop's data is entered (D-142).
 6. The pilot of at least 7 consecutive trading days and its criteria PIL-01 to PIL-11.
 7. Write the release record `docs/10-release/records/RELEASE-v1.0.0.md` from the operator's report without real identities, creating the folder; record the Owner's written acceptance of the pilot in DECISIONS.
 

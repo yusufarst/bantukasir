@@ -6,7 +6,7 @@
 | Phase and lane | 9 Verification · lane V, verification |
 | Size and review | M · review class V — verification results accepted by the Owner ([EXECUTION_CONTEXT](../EXECUTION_CONTEXT.md) section 12) |
 | Depends on | [TASK-044](TASK-044-integrated-verification.md), [TASK-043](TASK-043-performance-harness.md) |
-| Gates | TARGET (the intended server before production data exist), G2 (when known, for the final dataset), The operator named by the Owner ([TASK_PLAN](../TASK_PLAN.md) section 3) |
+| Gates | OPERATOR, TARGET-STAGING (the intended server, before production data exist) ([TASK_PLAN](../TASK_PLAN.md) section 3; D-142). G2 is no gate of this Task: the final dataset when G2 is known, otherwise the provisional one, stated. With TASK-045 it completes gate TARGET's phase B (item 8) |
 | Branch | `task/TASK-048-performance-verification` from `develop` (EXC-22) |
 | Executor | Claude Opus 5.5, at the effort that the Owner's instruction names for this Task (D-031, D-095), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None. |
@@ -38,10 +38,11 @@ After AGENTS.md, CURRENT_HANDOFF, EXECUTION_CONTEXT and TASK_PLAN sections 1 to 
 
 ### 4.1 In scope
 
-1. The operator runs the TASK-043 harness on the intended server — on staging or a temporary environment, never production — and reports.
+1. The operator runs the TASK-043 harness on the intended server — on staging or a temporary environment, never production — and reports. The run uses the memory limits of ENVIRONMENTS section 17.2 within the measured headroom, beside the server's other services as they run, without stopping or slowing them on purpose; a headroom that cannot hold the limits is a stop for the Owner, never a change of memory.
 2. Measure and record every budget; benchmark the Argon2id parameters on the target (ADR-004 item 7); verify the worker pool and the timeouts of TR-TIME-03; measure the trigram index.
 3. When gate G2 gives the catalogue's size, set the final dataset (T-09); otherwise state that the provisional one was used.
 4. Handle a miss through change control; never weaken integrity, privacy or cost completeness.
+5. When TASK-045 is already merged, record gate TARGET SATISFIED in TASK_PLAN section 3 from the operator's report; otherwise TASK-045 does (D-142).
 
 ### 4.2 Owned by this Task
 

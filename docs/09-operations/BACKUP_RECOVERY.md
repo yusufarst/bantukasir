@@ -200,6 +200,12 @@ The restored data end at the backup's snapshot. What happened afterwards is lost
 
 The proposals become accepted only when the Owner accepts the measured values, recorded in DECISIONS (gate G4, REQ-NFR-05). The full recovery estimate is repeated yearly with the latest measurements.
 
+**Gate G4 precedes the cutover** (D-142; RELEASE_PROCESS RB-23 step 10). The Owner accepts the values measured until then:
+- **Recovery time:** the first production drill's restore time, the installation time of RB-23, and the Owner's reconciliation time from the staging rehearsal.
+- **Recovery point:** staging's `backup_runs` since TASK-045, together with production's first runs, plus the run's duration.
+
+Production's own measurement over its first 30 days is then taken and recorded in DECISIONS within the 30 days after the cutover. A value above the accepted one is an incident (OPERATIONS_RUNBOOK RB-05), and the objective is reviewed with the Owner.
+
 ## 13. RB-02 — Restore drill
 
 1. Choose the latest production backup with a stored manifest.

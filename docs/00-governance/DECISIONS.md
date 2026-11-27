@@ -4,7 +4,7 @@ The single log of decisions for BantuKasir. A decision made in conversation does
 
 ## 1. How to use this log
 
-- Identifiers are permanent and continue the original numbering. The next free identifier is **D-142**.
+- Identifiers are permanent and continue the original numbering. The next free identifier is **D-143**.
 - "Source" says who decided: **Owner**, or **Planner** (a planning agent acting on its own authority under the rules of the time).
 - "Status" says whether the decision is in force today. `REVALIDATION PENDING` means the decision still applies but the Owner has been asked to re-confirm it; the item number refers to [OPEN_ITEMS](OPEN_ITEMS.md).
 - D-001 to D-018 were recorded on 2 and 3 October 2026 in the former register, now [legacy/10-DECISIONS.md](legacy/10-DECISIONS.md). The table below summarizes them in English. For the exact meaning of D-001 to D-018 the original Indonesian wording governs; for whether a decision is in force, this log governs.
@@ -161,6 +161,16 @@ All by the Owner (Asia/Jakarta). D-019 to D-025 answer the questions of the [re-
 | D-139 | 22 November 2026: CVE-2026-121482, a new high finding in `libssl3t64`, `openssl` and `openssl-provider-legacy` at 3.5.9-1~deb13u1 that the gate refused on pull request #60 (CI run 44998056780), is accepted temporarily, for development and CI only, at exactly that version, by its own entry. Verifying with CRL checking enabled can exhaust the CPU. The configuration examined enables CRL checking nowhere, so no exposure path was identified; this is not a guarantee that the flaw cannot be exploited. No fixed version exists: Debian has none in any suite, and OpenSSL has not released 3.5.10. The entry expires at a fix, known exploitation, a raise of severity, a Task that adds a use it rules out, a change of the base image, gate RELEASE, or 31 December 2026 at the latest. No staging or production, no other CVE or version, no wildcard, and no change to the scan or its gate. | Security and ops, the Owner's decision in the host session, by an `ops/` pull request whose merge is the Owner's. `scripts/checks/image-scan-accepted.json` and `scripts/checks/image-scan-gate-test.sh` follow. |
 | D-140 | 23 November 2026: DSA-6650-1 moved `libgssapi-krb5-2`, `libk5crypto3`, `libkrb5-3` and `libkrb5support0` to 1.21.3-5+deb13u2. It fixed the six krb5 CVEs of D-127 and D-128, but not CVE-2026-107778 of D-112, which the gate refused at the new version (CI run 45134720773, pull request #62). CVE-2026-107778 is accepted again, temporarily, for development and CI only, at exactly 1.21.3-5+deb13u2, by its own entry. Debian lists it `<no-dsa>` (Minor issue), fixed only in sid. It is a crash of a Kerberos service that reads forwarded credentials. The configuration examined runs no such service, so no exposure path was identified; this is not a guarantee that the flaw cannot be exploited. The entry expires at a fix, known exploitation, a raise of severity, a Task that adds a use it rules out, a change of the base image, gate RELEASE, or 31 December 2026 at the latest. No staging or production, no other CVE or version, no wildcard, and no change to the scan or its gate. | Security and ops, the Owner's decision "D-140" in the host session, approved in principle, by an `ops/` pull request whose merge is his. The six fixed entries of D-127 and D-128 are kept. `scripts/checks/image-scan-accepted.json` and `scripts/checks/image-scan-gate-test.sh` follow. |
 | D-141 | 23 November 2026: the Owner's HOLD of continuous execution while gate TARGET is reviewed. Gate TARGET stays OPEN. The host session's watcher stays stopped. No tick, no `state.sh resume` and no TASK-044 run, and no gate is approved. The HOLD ends only when the Owner explicitly instructs the resume in the host session: a restart of the watcher, a `state.sh resume`, or the start of TASK-044. Recording gate TARGET's facts makes TASK-044 eligible (CE-10), but it does not by itself end the HOLD. The Owner's other work under the HOLD — reviews, `ops/` pull requests, CI reruns he asks for — goes on. | Owner, the host session of CE-03, in his instructions of 23 November 2026 and every instruction since; recorded by `ops/` pull request #62, after the automated review's finding that only CURRENT_HANDOFF held it. CURRENT_HANDOFF and ENVIRONMENTS section 17.1 follow. |
+| D-142 | 27 November 2026: the gates of TASK-044 to TASK-050 in phases, so that no gate waits for a Task that it blocks.
+<br>• **TARGET** splits into TARGET-STAGING (phase A, before the first deployment), TARGET (phase B, completed by TASK-045 and TASK-048) and TARGET-PRODUCTION (phase C, before production's installation).
+<br>• **G4** splits into G4-STORE (before TASK-045), G4-SEALED (TASK-049) and G4 itself, accepted before the cutover inside TASK-050.
+<br>• **DEVICES** splits into DEVICES-AVAILABLE (before TASK-046) and DEVICES (the Owner's decision, before TASK-046 is `DONE`).
+<br>• **RELEASE** splits into STAGING-DEPLOY (each staging deployment authorized), RELEASE-AUTH (before production's installation, with the independent vulnerability review and the Owner's production decision) and RELEASE (complete with the pilot).
+<br>• **New gate:** OPERATOR.
+<br>• **Moved to "before `DONE`":** GATE-CC2 and G2 bind only a Task's `DONE`.
+<br>• **Resources:** they are measured on the existing hardware and never assumed (ENVIRONMENTS section 17.2).
+<br>• **Proof:** `scripts/checks/gate-progression.sh` proves the progression in `composer lint`.
+<br>No acceptance criterion is weakened, FULL V1 stands, and no gate is approved, no deployment authorized and no PostgreSQL version changed. | Owner, approved in principle in the host session, by an `ops/` pull request whose merge is his. TASK_PLAN, DEPENDENCY_GRAPH, the contracts of TASK-044 to TASK-050, ENVIRONMENTS, BACKUP_RECOVERY, RELEASE_PROCESS, OPEN_ITEMS and CURRENT_HANDOFF follow. |
 
 ## 4. Facts supplied by the Owner
 
@@ -2731,3 +2741,84 @@ He repeated it in each instruction since, for example, in Bahasa Indonesia: "TAS
 - **How it ends.** Only the Owner's explicit instruction in the host session ends it, and that instruction must name the resume: a restart of the watcher, a `state.sh resume`, or the start of TASK-044. Rule A of the host session (CE-03) runs only after such an instruction. Recording gate TARGET's facts (ENVIRONMENTS section 17) makes TASK-044 eligible under CE-10, but it does not by itself end the HOLD.
 - **Why it is here.** The automated review of pull request #62 found that the HOLD changed what continuous execution may do, but was recorded only in CURRENT_HANDOFF. SOURCE_OF_TRUTH section 1 ranks DECISIONS above the handoff, and AGENTS rule 17 asks for real decisions in DECISIONS in the same piece of work. CURRENT_HANDOFF and ENVIRONMENTS section 17.1 refer to this decision.
 - **Unchanged.** D-101, D-104 and D-105, apart from the stop this decision holds; FULL V1 (D-130); every gate and mandatory check. No deployment is authorized, and no agent reaches the server (ENV-03).
+
+### D-142 — The release path's gates in phases, on the existing hardware
+
+The Owner gave this decision on 27 November 2026 in the host session of CE-03, after the host session's production delivery plan, as an approval in principle that he completes by reviewing and merging this pull request. His words, in English as he wrote them:
+
+> Approved in principle. Prepare one consolidated D-142 ops PR with these mandatory corrections.
+> Eliminate ALL circular prerequisites across TASK-044–050 using existing `before DONE` semantics wherever possible.
+> G4 production backup and recovery acceptance must precede cutover, not TASK-050 entry.
+> Separate pre-deployment TARGET readiness from post-deployment verification.
+> Resolve GATE-CC2, G4-SEALED, provisional G2, DEVICES and operator prerequisites.
+> Preserve independent vulnerability review and explicit staging/production authorization.
+> No additional RAM, no requests to free RAM, no interruption of unrelated services, no additional spending. Do not assume 6.5–7 GiB is available. Heavy builds/tests use CI. Verify restore-drill feasibility on existing hardware.
+> Do not authorize a PostgreSQL downgrade or destructive operation.
+> Prove the complete gate progression from TASK-044 through TASK-050 with automated checks. Preserve FULL V1 and all acceptance criteria.
+
+#### What was circular
+
+The selection of CE-10 reads each gate's state by its identifier in TASK_PLAN section 3. A word such as "the staging part" in a gates cell is not read. As written before this decision:
+
+- **TARGET** needed PERF01, which TASK-048 produces, and a first backup and drill, which TASK-045 produces. Yet TARGET blocked TASK-044, TASK-045, TASK-046 and TASK-048 at their start.
+- **G4** blocked TASK-045 for its store, but its single state held until TASK-050's acceptance.
+- **DEVICES** held the Owner's decision on DEVICE01, which comes from TASK-046, which it blocked.
+- **GATE-CC2** blocked TASK-047's start, but its approval is made inside TASK-047.
+- **G2** blocked TASK-048, although TASK-048 may measure the provisional dataset.
+- **"operator named"** had no row, so it could never be satisfied.
+- **RELEASE** held the pilot's acceptance, which TASK-050 produces, and blocked TASK-050's start.
+
+#### The phases
+
+TASK_PLAN section 3 holds each phase as its own gate. A row names after "before `DONE`:" the gates that the Task completes, which CE-10 does not check at its start.
+
+| Task | At its start | Before `DONE` |
+| --- | --- | --- |
+| TASK-044 | OPERATOR, TARGET-STAGING, GATE-PUBLISH | STAGING-DEPLOY |
+| TASK-045 | OPERATOR, TARGET-STAGING, G4-STORE | — (it completes TARGET's phase B with TASK-048) |
+| TASK-046 | OPERATOR, TARGET-STAGING, DEVICES-AVAILABLE | DEVICES |
+| TASK-047 | — | GATE-CC2, SATISFIED without an approval when the values are confirmed |
+| TASK-048 | OPERATOR, TARGET-STAGING | — (G2 is no gate of it: the final dataset when known, otherwise the provisional one, stated) |
+| TASK-049 | OPERATOR, TARGET, DEVICES, GATE-PUBLISH | G1, G2, G3, G4-SEALED |
+| TASK-050 | OPERATOR, TARGET-PRODUCTION, G4-SEALED, RELEASE-AUTH, GATE-PUBLISH | G4, accepted before the cutover; RELEASE |
+
+**TARGET's three phases (ENVIRONMENTS section 17).** Every item keeps its requirement.
+
+- **Phase A, TARGET-STAGING:** the server and staging before their first deployment, with the memory headroom measured.
+- **Phase B, TARGET:** completed by TASK-045 (staging's first backup and off-VPS drill, the heartbeat alerts, SEC02) and TASK-048 (PERF01).
+- **Phase C, TARGET-PRODUCTION:** production before its installation, on the PostgreSQL version that OPEN_ITEMS question 39 decides.
+
+**G4 precedes the cutover.** The cutover inside TASK-050 starts only after the Owner accepts G4 on the measured production values (RELEASE_PROCESS RB-23 step 10; BACKUP_RECOVERY section 12). Production's own 30-day measurement follows within the 30 days after the cutover.
+
+**Authorizations kept.**
+
+- **Staging:** each staging deployment needs the Owner's explicit authorization of the exact candidate (STAGING-DEPLOY, REL-01).
+- **Production:** the production installation needs RELEASE-AUTH. It includes the independent review of every vulnerability remaining in the release image (D-112, D-113) and the Owner's own decision for production on each finding still present. The development and CI acceptances of D-139 and D-140 do not count for production.
+
+#### Resources
+
+The plan assumes no headroom; it measures it (ENVIRONMENTS section 17.2).
+
+- **The server's memory:** measured in phase A beside the other services as they run. Each container's limit fits inside it, and a headroom too small is a stop for the Owner, never a change of memory or of another service.
+- **One environment at a time:** only one environment runs its full workload, until PERF01 has measured both. Staging is stopped, never deleted, before the production installation.
+- **Builds and heavy tests:** only in GitHub Actions. The server pulls images by digest.
+- **The restore drill off the VPS:** the Owner's machine has 7.2 GiB of memory, 16 logical processors and 28 GB of free disk. It already ran the local environment with the PostgreSQL suite, so a drill of the first, small production database is feasible on it, with no AI agent running and the disk checked before each drill.
+
+#### The proof
+
+`scripts/checks/gate-progression.sh`, in `composer lint` with its unit test `tests/Unit/StaticChecks/GateProgressionTest.php`, runs the tick's own selection functions of `scripts/executor/lib.sh` on a copy of the plan. It proves three things:
+
+- every gate of TASK-044 to TASK-050 has its row;
+- no Task waits at its start for a gate that it or a later Task completes;
+- with the external gates satisfied in their order, the selection starts TASK-044, TASK-048, TASK-045, TASK-046, TASK-047, TASK-049 and TASK-050 in turn, each while the gates it completes are still open, and refuses each one while a start gate is open.
+
+Run on the plan before this decision, the check fails on each cycle above.
+
+#### Unchanged
+
+- FULL V1 (D-130) and every acceptance criterion and suite.
+- The scans, the gates' content and every mandatory check.
+- OPEN_ITEMS question 39 stays OPEN. No PostgreSQL downgrade and no destructive operation is authorized.
+- No gate is approved here and no deployment is authorized.
+- The HOLD of D-141 stays until the Owner's explicit instruction that names the resume.
+- No executor script changes: the check only reads `lib.sh`.

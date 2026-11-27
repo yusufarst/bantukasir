@@ -6,7 +6,7 @@
 | Phase and lane | 10 Release · lane R, reports, audit views and release |
 | Size and review | L · review class V — verification results accepted by the Owner ([EXECUTION_CONTEXT](../EXECUTION_CONTEXT.md) section 12) |
 | Depends on | [TASK-045](TASK-045-operations-verification.md), [TASK-047](TASK-047-p7-change-control-2.md), [TASK-048](TASK-048-performance-verification.md) |
-| Gates | G1, G2, G3, G4 (the sealed copy handed over), DEVICES, TARGET, GATE-PUBLISH ([TASK_PLAN](../TASK_PLAN.md) section 3) |
+| Gates | OPERATOR, TARGET (phases A and B verified), DEVICES, GATE-PUBLISH; before `DONE`: G1, G2, G3 (the Owner records them in scope item 5), G4-SEALED (the sealed copy handed over) ([TASK_PLAN](../TASK_PLAN.md) section 3; D-142) |
 | Branch | `task/TASK-049-release-readiness` from `develop` (EXC-22) |
 | Executor | Claude Opus 5.5, at the effort that the Owner's instruction names for this Task (D-031, D-095), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None. |
@@ -46,7 +46,7 @@ After AGENTS.md, CURRENT_HANDOFF, EXECUTION_CONTEXT and TASK_PLAN sections 1 to 
 4. Rehearse the cutover RB-24 on staging with synthetic data.
 5. Have the Owner record the facts of gates G1, G2 and G3; have the operator create the production backup keys and hand the Owner the tested sealed copy (BKP-20).
 6. Check the cost inventory and the free-tier record again (REQ-NFR-06).
-7. Confirm that the Owner has named the operator and approved the runbooks (TASK-045); prepare the request for gate RELEASE naming the exact target, revision, operation and window (REL-01).
+7. Confirm that the Owner has named the operator (gate OPERATOR) and approved the runbooks (TASK-045); prepare the request for gate RELEASE-AUTH naming the exact target, revision, operation and window (REL-01), with the independent review of every vulnerability remaining in the release image for the Owner's production decision (D-112, D-113; D-139 and D-140 cover development and CI only).
 
 ### 4.2 Owned by this Task
 
@@ -130,7 +130,7 @@ Each dimension is recorded `PASS`, `FAIL`, `BLOCKED` or `N/A` with its reason (E
 
 ## 12. For later Tasks
 
-- TASK-050 starts only with the Owner's authorization of gate RELEASE.
+- TASK-050 starts only with gates RELEASE-AUTH, TARGET-PRODUCTION and G4-SEALED SATISFIED (D-142).
 - Tasks that depend on this one directly: [TASK-050](TASK-050-production-pilot.md).
 
 ## 13. Expected files

@@ -14,7 +14,7 @@ How a revision of BantuKasir reaches staging and production, how its migrations 
 
 | ID | Rule | Source |
 | --- | --- | --- |
-| REL-01 | **One exact authorization per release.** The Owner authorizes a production release by naming its target environment, its revision (tag, commit and image digest), its operation (deploy; the reviewed list of migrations; any operator procedure) and its window. A passing check, a merge, a tag or an earlier approval is not that authorization. | PROJECT_RULES section 5, PDS §2 |
+| REL-01 | **One exact authorization per release.** The Owner authorizes a production release by naming its target environment, its revision (tag, commit and image digest), its operation (deploy; the reviewed list of migrations; any operator procedure) and its window. A passing check, a merge, a tag or an earlier approval is not that authorization. Each staging deployment of a candidate needs its own explicit authorization too, naming the candidate's tag and image digest and the operation (gate STAGING-DEPLOY, D-142). | PROJECT_RULES section 5, PDS §2 |
 | REL-02 | **The operator releases.** Agents prepare the release — code, migrations, the release record draft, the rehearsals in local environments — and the operator deploys, migrates and verifies (ADR-011 item 1). | D-088 |
 | REL-03 | **Staging first, same image.** Every release is deployed to staging with the same image digest and verified there before production (ENVIRONMENTS ENV-05). | ADR-011 |
 | REL-04 | **Backed up and drilled.** A production release needs a successful backup less than one hour old, taken by the release runbook; a release with a migration also needs a production restore drill that passed within the last 35 days (BACKUP_RECOVERY RB-02). | PDS §2, ADR-010 |
@@ -121,19 +121,19 @@ Written into `docs/10-release/records/` from the operator's report, one file per
 
 ## 10. RB-23 — First installation
 
-For each new shop, before its pilot. Steps 1 to 5 are also the server rebuild of BACKUP_RECOVERY RB-01.
+For each new shop, before its pilot. Steps 1 to 5 are also the server rebuild of BACKUP_RECOVERY RB-01. The gates of D-142 order them: steps 1 to 3 and 5 for staging are gate TARGET-STAGING; step 4's store is G4-STORE; step 6 runs under STAGING-DEPLOY, and with it TASK-045 and TASK-048 complete gate TARGET; steps 2, 3 and 5 for production are TARGET-PRODUCTION, and step 4's production key pair and sealed copy are G4-SEALED, all before step 7.
 
 1. Gate TARGET: the server, Cloudflare, the firewall and the certificate (ENVIRONMENTS sections 5 to 9 and 17).
 2. Coolify: the project, the environments `staging` and `production`, and their resources (ENVIRONMENTS section 6). Record the time each step takes: it is part of the recovery-time estimate (BACKUP_RECOVERY section 12).
 3. The databases, roles and markers of both environments (ENVIRONMENTS ENV-30).
 4. The backup store, its buckets and keys, and both key pairs generated on the operator's machine; the production sealed copy tested and handed to the Owner (BACKUP_RECOVERY BKP-20).
 5. The heartbeat checks, each alert tested once.
-6. Staging: deploy the release (RB-20); rehearse every operator procedure (suite OPPROC01); run UAT (UAT_PILOT section 2); rehearse the cutover of RB-24 with synthetic data.
-7. Production, with the Owner's authorization: deploy the release, by RB-20 without its step 6's backup, whose table does not exist yet, and with `--first-installation` on the migration job (REL-23); the first backup is step 9. If its migrations stop part-way, the database is no longer empty and has no table of backups, so the job refuses it with the option and without it. Stop there and report to the Owner: the way on is to recreate that database by ENV-30, a destructive operation that needs his approval of that exact operation (PRODUCTION_DATA_SAFETY section 1). Then run OP-01 `owner:bootstrap` with the shop's name and the Owner's email; hand the link to the Owner directly (OPERATIONS_RUNBOOK OPR-06); record the Owner recovery facts (OPERATIONS_RUNBOOK section 8).
+6. Staging, each deployment with the Owner's authorization of that candidate (STAGING-DEPLOY): deploy the release (RB-20); rehearse every operator procedure (suite OPPROC01); run gate DEVICES with the shop's real devices (DEVICE_VERIFICATION); run UAT (UAT_PILOT section 2); rehearse the cutover of RB-24 with synthetic data.
+7. Production, with the Owner's authorization (gate RELEASE-AUTH): deploy the release, by RB-20 without its step 6's backup, whose table does not exist yet, and with `--first-installation` on the migration job (REL-23); the first backup is step 9. If its migrations stop part-way, the database is no longer empty and has no table of backups, so the job refuses it with the option and without it. Stop there and report to the Owner: the way on is to recreate that database by ENV-30, a destructive operation that needs his approval of that exact operation (PRODUCTION_DATA_SAFETY section 1). Then run OP-01 `owner:bootstrap` with the shop's name and the Owner's email; hand the link to the Owner directly (OPERATIONS_RUNBOOK OPR-06); record the Owner recovery facts (OPERATIONS_RUNBOOK section 8).
 8. **Owner:** set the password; complete the BusinessProfile; create the cash registers; create the staff accounts and hand over their links, telling each person to report a password they did not set (D-056).
 9. The first production backup and the first production drill; the measured objectives go to the Owner for gate G4 (BACKUP_RECOVERY section 12).
-10. Gate DEVICES on staging with the shop's real devices (DEVICE_VERIFICATION).
-11. The cutover RB-24, then the pilot (UAT_PILOT section 3).
+10. **Owner:** accept gate G4 on step 9's measured values, recorded in DECISIONS. Gate DEVICES ran on staging in step 6 (D-142).
+11. The cutover RB-24, only after step 10, then the pilot (UAT_PILOT section 3).
 
 ## 11. RB-24 — Cutover: master data and opening stock
 
@@ -151,10 +151,14 @@ Onboarding is started and released **once** for a shop's business data; after it
 
 V1 is released for a shop only when PRODUCT_BLUEPRINT section 12 holds: every requirement accepted on the release revision (every suite of ACCEPTANCE_SUITES at FINAL_PASS on it, TEST_STRATEGY section 9); gates P7-G1 to P7-G3 approved (D-082, D-086, D-087); gates G1 to G4, DEVICES and TARGET satisfied with real evidence; the independent review of every vulnerability that remains in the image, which the temporary acceptance of D-112 does not settle, with curl and libcurl reassessed again, the update of `trixie-backports` included (D-113, OPEN_ITEMS T-38); the Owner's authorization of the exact target, revision and operation; and the pilot accepted by the Owner (UAT_PILOT section 3, suite RELEASE01). The Owner's acceptance is recorded in DECISIONS.
 
+D-142 orders the gate in two parts:
+- **RELEASE-AUTH, before the production installation (RB-23 step 7).** It needs TASK-049 `DONE`, so G1 to G3, DEVICES, TARGET and G4-SEALED are already recorded. It also needs the runbooks approved, the independent review of every vulnerability remaining in the release image, the Owner's own decision for production on each finding still present, and his authorization of the exact target, revision and operation (REL-01). The acceptances of D-139 and D-140, for development and CI only, do not count for production.
+- **RELEASE, complete.** It adds G4, accepted before the cutover (RB-23 step 10), every suite `FINAL_PASS`, and the pilot accepted. It binds TASK-050's `DONE`.
+
 ## 13. Open items
 
 | Item | Subject | Step |
 | --- | --- | --- |
 | N-12 | The transition from the planning branch to `develop` and `main` | Before the first implementation Task |
-| Gate RELEASE | The Owner names the operator and authorizes the first release | Before the pilot |
+| Gate RELEASE | The Owner names the operator (gate OPERATOR, before TASK-044) and authorizes the first release (gate RELEASE-AUTH, before TASK-050) (D-142) | Before the first staging deployment, and before the production installation |
 | Implementation | The release workflow, `release:preflight`, `db:check-privileges` and the grants procedure, with their tests (DB01, READY01) | RF-7 Tasks |

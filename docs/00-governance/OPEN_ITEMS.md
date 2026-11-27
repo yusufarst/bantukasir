@@ -74,7 +74,14 @@ Older decisions the Owner has been asked to re-confirm. Until answered, the olde
 
 ## 3. Business and external gates carried over
 
-From the legacy gap register. These are facts or approvals that only the Owner, the client or an operator can supply. None is satisfied. [TASK_PLAN](../11-tasks/TASK_PLAN.md) section 3 names the Tasks that each gate blocks (D-090).
+From the legacy gap register. These are facts or approvals that only the Owner, the client or an operator can supply. None is satisfied. [TASK_PLAN](../11-tasks/TASK_PLAN.md) section 3 names the Tasks that each gate blocks (D-090), and by D-142 holds the gates' phases:
+- TARGET: TARGET-STAGING, the phases A and B of TARGET, and TARGET-PRODUCTION;
+- G4: G4-STORE, G4-SEALED, and G4 itself before the cutover;
+- DEVICES: DEVICES-AVAILABLE, and DEVICES itself;
+- RELEASE: STAGING-DEPLOY, RELEASE-AUTH, and RELEASE itself;
+- OPERATOR.
+
+The rows below keep their facts.
 
 | Gate | What is needed | Blocks | Related |
 | --- | --- | --- | --- |
@@ -85,7 +92,7 @@ From the legacy gap register. These are facts or approvals that only the Owner, 
 | DEVICES | Verification with the production-intended devices: cashier PC and tablet (the first store's devices, OF-02; not yet verified), USB and Bluetooth HID scanners and tablet browser compatibility, receipt printer and paper width (first store: UNKNOWN), label and A4 printers, drivers and media. The product policy (D-039, FD-05) is not device acceptance. | Final device acceptance | D-039, FD-05 |
 | TARGET | The actual server (provider, CPU, memory, disk, other services), network, whether the domain is already on Cloudflare, non-production access, TLS, capacity | Representative benchmarks; operations evidence | D-053 decided the topology; these facts stay UNKNOWN (plan decision P-2). The operator's progress is recorded, sanitized, in [ENVIRONMENTS](../09-operations/ENVIRONMENTS.md) section 17.1 (23 November 2026: OPEN, no item complete); open with it are question 39 (TD-TGT-01, PostgreSQL 18.6 or 18.7) and R-TGT-01, a private key of the setup that was exposed earlier, which the operator replaces and records (ENVIRONMENTS section 17.1) |
 | EXECUTOR | Availability of the named model and effort in the actual harness | Start of each executor instruction, and of each Task under continuous execution (EXECUTION_CONTEXT CE-13) | D-031, D-095, D-101 |
-| RELEASE | Explicit authorization of an exact target, revision and operation; the operator named; the runbooks approved (RELEASE_PROCESS section 12) | Any deployment | Not authorized; operated by a person, never an agent (D-088) |
+| RELEASE | Explicit authorization of an exact target, revision and operation; the operator named; the runbooks approved (RELEASE_PROCESS section 12) | Any production deployment (RELEASE-AUTH); each staging deployment needs its own authorization (STAGING-DEPLOY, D-142) | Not authorized; operated by a person, never an agent (D-088) |
 | TESTS | All acceptance suites on the current revision | Product acceptance | The suites are defined in RF-6 ([ACCEPTANCE_SUITES](../08-testing/ACCEPTANCE_SUITES.md), D-088); nothing is built; nothing has been run. The Task that builds each suite and the Task of its final point are in [TRACEABILITY](../11-tasks/TRACEABILITY.md) section 5 (D-090) |
 
 Design gates. The legacy gate "owner visual approval of one exact revision" no longer exists. P7 has three Owner gates (D-025), each closed by its own RF-4 checkpoint and a separate Owner approval (D-070, plan decision P-10):

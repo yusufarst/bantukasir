@@ -6,7 +6,7 @@
 | Phase and lane | 9 Verification · lane D, documents and change control |
 | Size and review | S · review class O — the Owner approves the artifacts by hash ([EXECUTION_CONTEXT](../EXECUTION_CONTEXT.md) section 12) |
 | Depends on | [TASK-046](TASK-046-device-verification.md) |
-| Gates | GATE-CC2 (only when an approved artifact changes) ([TASK_PLAN](../TASK_PLAN.md) section 3) |
+| Gates | before `DONE`: GATE-CC2 (an approval by hash only when an approved artifact changes; SATISFIED without one when the values are confirmed); a new candidate's staging deployment needs its own STAGING-DEPLOY ([TASK_PLAN](../TASK_PLAN.md) section 3; D-142) |
 | Branch | `task/TASK-047-p7-change-control-2` from `develop` (EXC-22) |
 | Executor | Claude Opus 5.5, at the effort that the Owner's instruction names for this Task (D-031, D-095), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None. |
@@ -38,7 +38,7 @@ After AGENTS.md, CURRENT_HANDOFF, EXECUTION_CONTEXT and TASK_PLAN sections 1 to 
 
 ### 4.1 In scope
 
-1. If gate DEVICES confirmed the provisional values: record the confirmation for the Owner's decision that ends their provisional status (D-075), and close T-20.
+1. If gate DEVICES confirmed the provisional values: record the confirmation for the Owner's decision that ends their provisional status (D-075), record gate GATE-CC2 SATISFIED without an approval in TASK_PLAN section 3, and close T-20.
 2. If it changed them: amend ADAPTIVE_AND_ACCESSIBILITY, DESIGN_SYSTEM and the accessible names of COPY_DECK, for the Owner's approval by hash (GATE-CC2); change the shortcut registry and the breakpoints in the implementation; cut a new candidate; run UX01, UX02, POS04 and the DVT checks the change touches again (TS-32).
 
 ### 4.2 Owned by this Task

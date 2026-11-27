@@ -233,6 +233,16 @@ Recorded by the operator. Facts that identify the server, the domain, an account
 8. PERF01 run on the server with the provisional dataset (TECHNICAL_RULES section 13).
 9. This free-tier record checked again.
 
+D-142 splits these items into three phases, so that no phase waits for a Task that it blocks. Each phase is its own gate in TASK_PLAN section 3, and none of them changes what an item requires.
+
+| Phase | Gate | Items | When |
+| --- | --- | --- | --- |
+| A — the server and staging before their first deployment | TARGET-STAGING | 1; 2; 3 (the firewall from outside for the ports of section 9, the certificate, Full (strict) and its expiry, R-TGT-01 closed); 4 and 5 for staging, with its access gate and `noindex` (ENV-06); 7, the heartbeat checks created; 9; and the memory headroom of section 17.2 measured | Before TASK-044, TASK-045, TASK-046 and TASK-048 |
+| B — verification after staging's deployment | TARGET (complete with phase A) | 6 for staging: its first backup and its first drill off the VPS (TASK-045); 7, each alert received once (TASK-045); SEC02 from outside against the deployed staging (TASK-045); 8, PERF01 (TASK-048) | Completed by TASK-045 and TASK-048; before TASK-049 |
+| C — production before its installation | TARGET-PRODUCTION | 4 and 5 for production: its separation (ENV-02), its database and roles by the script of ENV-30 with its marker, on the version that OPEN_ITEMS question 39 decides; its heartbeat checks; its bucket and keys of G4-STORE. No application and no data | Before TASK-050 |
+
+Production's first backup and drill, and their acceptance, are gate G4, before the cutover inside TASK-050 (RELEASE_PROCESS RB-23 step 10).
+
 ### 17.1 Progress record
 
 Gate TARGET is **OPEN**, and continuous execution is held while it is reviewed (DECISIONS D-141). This record tracks the operator's progress, sanitized: it holds no address, hostname, provider name, account, key or other secret, and names no other service on the server. Each entry carries one of three states:
@@ -261,11 +271,35 @@ Reported on 23 November 2026, reviewed by the host session on the same day. Noth
 
 **R-TGT-01, an open risk: a private key that was exposed.** A private key of this server's setup was exposed at an earlier point, by the Owner's report of 23 November 2026. Which key, where and when stay in the operator's private record; the repository holds no material of it. It is handled as an incident (OPERATIONS_RUNBOOK RB-05, SEC-SECRET-04): the key is replaced as section 16 prescribes for its kind — for the origin certificate's key, revoked at Cloudflare and a new certificate issued and installed (RB-07); for an SSH key, replaced and the old one removed — and the operator records that the old key no longer works. Until then item 3 stays PENDING, with any other item the key touches.
 
+### 17.2 Resources on the existing hardware
+
+The server's memory and the operator's machine are fixed: no added memory, no spending, no interruption of the server's other services, and no request to free memory (the Owner's constraints, D-142). The plan therefore assumes no headroom; it measures it.
+
+- **The headroom is measured, never assumed.** In phase A the operator records the server's total memory, the memory in use and the memory available, with the other services running as they normally do. Each BantuKasir container then gets a memory limit in Coolify that fits inside that headroom; the limits are recorded here as sizes. A headroom that cannot hold one environment at its limits is a stop for the Owner. It is never answered by stopping another service or by adding memory.
+- **One environment at full size at a time.** Until PERF01 has measured both environments' footprint beside the other services, staging and production never run their full workload at once:
+  - staging runs until TASK-049 is `DONE`;
+  - it is then stopped before the production installation (RB-23 step 7), stopped and never deleted, its volumes kept;
+  - after go-live it is started only for a release rehearsal, outside the shop's hours, and only when the measured headroom holds it beside production.
+- **No build on the server.** Every image is built and checked by GitHub Actions; the server pulls the release image by digest (section 6, ENV-05), and Coolify builds nothing. Heavy tests run only in CI (D-108).
+- **PERF01.**
+  - The run happens on staging, beside the other services as they run.
+  - k6 runs as a short-lived container with its own small memory limit, inside the measured headroom.
+  - The measured footprint and the worker pool of `docker/app/php-fpm.conf` are checked against the limits (TASK-048).
+  - A budget missed because the headroom is small goes through change control (TASK-048 scope item 4).
+- **The restore drill off the VPS** (BACKUP_RECOVERY section 8). The Owner's machine was measured on 27 November 2026: 7.2 GiB of memory, 16 logical processors, and 28 GB of disk free on its system drive, 95 % used.
+  - The same machine ran the local environment — the application, PostgreSQL and the S3-compatible test store — and 126 tests of the PostgreSQL suite on 24 November 2026.
+  - A drill needs one PostgreSQL container, age and the fetch script: less than that environment.
+  - So a drill of the first production database, which is small, is feasible on it, when:
+    - no AI agent runs on the machine while it holds the recovery key or decrypted data (ENV-01, BKP-08);
+    - its disk holds about three times the size of the backup (the encrypted copy, the decrypted dump, the restored database), checked before each drill;
+    - the drill's data are removed at its end (RB-02).
+  - When the operator is another person, the same check is made on that person's machine before the first drill.
+
 ## 18. Open items
 
 | Item | Subject | Step |
 | --- | --- | --- |
-| Gate TARGET | The real server, domain and accounts; section 17, its progress in section 17.1 (OPEN; TD-TGT-01 and R-TGT-01 open) | Before the pilot |
+| Gate TARGET | The real server, domain and accounts; section 17 in its phases A to C (D-142), its progress in section 17.1 (OPEN; TD-TGT-01 and R-TGT-01 open) and its resources in section 17.2 | Phase A before TASK-044, B before TASK-049, C before TASK-050 |
 | N-12 | The transition from the planning branch to `develop` and `main` (ADR-011 item 3) | Before the first implementation Task |
 | N-08 | GitHub branch protection | The Owner, when convenient |
 | T-02 | `.env.example` rebuilt with the settings of section 11, placeholders only | Foundation Task |
