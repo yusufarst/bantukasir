@@ -2,7 +2,7 @@
 
 The current operational state of BantuKasir. This is the only document that says what is authorized now. Keep it short; history is in Git and in [DECISIONS](../00-governance/DECISIONS.md).
 
-Written 27 November 2026 (Asia/Jakarta) by the host session, in the `ops/` pull request #65 of D-142, which puts the gates of TASK-044 to TASK-050 in phases and changes no application code. It was updated the same day by the Owner's remediation of that pull request. Its first CI run, 45986520608 on `e345dd6`, failed on two findings from outside the change, which stay open: 13 new Composer advisories, and CVE-2026-107494 in the image (section 7). On `develop`:
+Written 27 November 2026 (Asia/Jakarta) by the host session, in the `ops/` pull request #65 of D-142, which puts the gates of TASK-044 to TASK-050 in phases and changes no application code. It was updated the same day by the Owner's remediation of that pull request. Its first CI run, 45986520608 on `e345dd6`, failed on two findings from outside the change. The 13 Composer advisories are fixed by D-143, in the same pull request. CVE-2026-107494 in the image stays open (section 7). On `develop`:
 - TASK-051's pull request #60 is squash-merged as `41259aa`, with CI green (run 45015070217).
 - D-140's `ops/` pull request #63 is squash-merged as `2bf0511` by the Owner, with CI green on `develop` (run 45319006301).
 - The `ops/` pull request #62, gate TARGET's progress and D-141, is squash-merged as `2d1f1f7` by the Owner, with CI green on `develop` (run 45339179575).
@@ -427,7 +427,7 @@ The re-foundation steps are in [REFOUNDATION_PLAN](../00-governance/REFOUNDATION
 
 Under continuous execution (D-101, D-104) these follow each other without an instruction for each Task; under D-105 the tick merges the pull requests of CE-60 and the Owner merges the others.
 
-1. **Gates OPERATOR and TARGET-STAGING**, under the Owner's HOLD (D-141). The Owner names the operator. The operator completes phase A of ENVIRONMENTS section 17, beginning with the firewall verified from outside (the exact next action below), closes R-TGT-01 and measures the memory headroom (section 17.2). The Owner decides TD-TGT-01, which gate TARGET-PRODUCTION needs before TASK-050. The axe checks of `tests/Browser/configuration/profile.spec.ts:245` and `tests/Browser/catalog/catalog.spec.ts:285` are known to be flaky (D-124 class); the image build's fetch of the nginx and PGDG signing keys fails intermittently; a database of Grype newer than the assessed one may report a CVE that no decision accepts, which is a stop for the Owner. Before pull request #65 or any other can merge, the Owner decides the two CI blockers of section 7: the Composer update, and CVE-2026-107494. He also answers question 40, G4's measurement method, before the cutover.
+1. **Gates OPERATOR and TARGET-STAGING**, under the Owner's HOLD (D-141). The Owner names the operator. The operator completes phase A of ENVIRONMENTS section 17, beginning with the firewall verified from outside (the exact next action below), closes R-TGT-01 and measures the memory headroom (section 17.2). The Owner decides TD-TGT-01, which gate TARGET-PRODUCTION needs before TASK-050. The axe checks of `tests/Browser/configuration/profile.spec.ts:245` and `tests/Browser/catalog/catalog.spec.ts:285` are known to be flaky (D-124 class); the image build's fetch of the nginx and PGDG signing keys fails intermittently; a database of Grype newer than the assessed one may report a CVE that no decision accepts, which is a stop for the Owner. Before pull request #65 or any other can merge, the Owner decides CVE-2026-107494 (section 7); the Composer advisories are fixed by D-143. He also answers question 40, G4's measurement method, before the cutover.
 2. **No Task is eligible after TASK-051's merge** (CE-10): TASK-044 — Release candidate and integrated verification — waits for gates OPERATOR and TARGET-STAGING (D-142). The Owner has them recorded (TASK_PLAN section 3, ENVIRONMENTS section 17) and resumes. TASK-044 then runs at effort High, agent `bk-executor-high`, review and verification by `bk-reviewer-high`; it records TASK-051's merge (CE-50) and adds AUDIT01's real events for more codes (TASK-051 review R-02). Every Task is required (D-130).
 3. **The `ops/` change of TASK-006's finding F-5** — proposed, not made (CE-80): measure and remove the delay of the local environment on the Owner's Windows machine (the bind mount of the working tree and the PHP settings of the local container); it needs his instruction. TASK-007's local runs used one Playwright worker and `APP_PORT=18080` on the command line, by the Owner's directive (evidence section 13).
 4. **Repository settings** — the Owner makes them himself; agents never change settings.
@@ -609,7 +609,9 @@ Latest Owner decisions (11 October to 11 November 2026, D-066 to D-126), recorde
 
   GATE-CC2 and G2 bind only a `DONE`, the resources are measured, never assumed, and the progression is proved by `scripts/checks/gate-progression.sh`. The release image's own digest is authorized inside TASK-050, and no acceptance for development and CI counts for staging or production. G4's measurement before the cutover waits for the Owner's acceptance (question 40). No acceptance weakened and no gate approved. By its `ops/` pull request #65, whose merge is the Owner's.
 
-D-019 to D-065 remain as recorded. The next free identifiers are D-143 and ADR-012.
+- D-143 — the security update of six packages (27 November 2026): the 13 Composer advisories of 17 and 25 November, fixed at the first fixed versions, `composer.json` unchanged and no advisory accepted. By the `ops/` pull request #65, whose merge is the Owner's.
+
+D-019 to D-065 remain as recorded. The next free identifiers are D-144 and ADR-012.
 
 Decisions pending: each Task's merge that CE-60 leaves to the Owner; the `ops/` change that TASK-006's finding F-5 proposes; N-08 (branch protection) and the default branch; items N-03 and N-05 in [OPEN_ITEMS](../00-governance/OPEN_ITEMS.md).
 
@@ -674,8 +676,12 @@ TASK PLAN (docs/11-tasks/TASK_PLAN.md section 4 is the status of record)
 
 ## 7. Open blockers and gaps
 
-- **Two findings from outside D-142 block every pull request and `develop`** (CI run 45986520608 on pull request #65, 27 November 2026). Neither is accepted.
-  - **Composer:** `composer audit --locked` fails on 13 new advisories without a rated severity. They are in `symfony/http-kernel`, `symfony/mailer`, `symfony/routing` and `symfony/serializer` (locked at 8.1.11 and 8.1.7, mailer's fix in 8.1.12), and six in `web-auth/webauthn-lib` (locked at 5.3.9, fixed in 5.3.13). The fix is the minimal update of those five packages in `composer.lock`. This session could not make it: Docker was not running, the host has no PHP, and the tool for reading Packagist's advisory data was denied. It needs the Owner's way forward.
+- **Two findings from outside D-142 blocked every pull request and `develop`** (CI run 45986520608 on pull request #65, 27 November 2026). Neither is accepted.
+  - **Composer, fixed by D-143 in pull request #65.** `composer audit --locked` failed on 13 new advisories without a rated severity. Six packages are updated to the first fixed versions:
+    - `symfony/http-kernel`, `symfony/mailer`, `symfony/routing` and `symfony/serializer` to v8.1.12;
+    - `symfony/http-foundation` to v8.1.12, which http-kernel requires;
+    - `web-auth/webauthn-lib` to 5.3.13.
+    `develop` keeps the failing audit until #65 merges, and every other branch takes the lock from `develop` then.
   - **Image:** CVE-2026-107494, High, in `libssl3t64`, `openssl` and `openssl-provider-legacy` 3.5.9-1~deb13u1. It is unbounded memory in OpenSSL's QUIC stack, triggered by a malicious QUIC peer. OpenSSL rates it Low and fixes it in 3.5.10, due 1 December 2026; Debian marks trixie `<postponed>`, with no fixed version. No configuration in the repository uses QUIC or HTTP/3. It is a stop for the Owner's decision; nothing is accepted.
 - Gate GATE-PUBLISH is SATISFIED (D-096, D-097); the publication guard runs before every push, against the baseline of D-097 as D-098 extends it.
 - Unverified, not blocking (D-097): whether the Canva design from which the LATANSA mark was exported is shared through a public link, and whose team its export metadata names; the Owner may check it at any time.
