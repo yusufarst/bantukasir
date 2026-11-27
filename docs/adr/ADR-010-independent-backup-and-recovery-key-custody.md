@@ -38,7 +38,7 @@ Other inputs: the temporary CSV area is never backed up (D-054); the backup cred
 
    | Tier | Written | Kept for | Copies at any time (about) |
    | --- | --- | --- | --- |
-   | `db/6h/` | Every run: 00.00, 06.00, 12.00 and 18.00 Asia/Jakarta, and every on-demand run | 7 days | 28 to 32 |
+   | `db/6h/` | Every run: 00.00, 05.00, 10.00, 15.00 and 20.00 Asia/Jakarta (D-145, which replaced 00.00, 06.00, 12.00 and 18.00), and every on-demand run | 7 days | 35 to 40 |
    | `db/weekly/` | The run of Sunday 00.00, a second upload of the same objects | 35 days | 5 to 6 |
    | `db/monthly/` | The run of the 1st of the month at 00.00, a second upload | 93 days | 3 to 4 |
    | `files/` | Once per stored file, at the first run after it exists, and again at a key rotation | Never removed: no lifecycle rule; a hidden file is never deleted. During a key rotation only, a superseded version of an unchanged file is removed after 100 days (TASK-013, OPEN_ITEMS T-21; [BACKUP_RECOVERY](../09-operations/BACKUP_RECOVERY.md) section 6 and BKP-22) | One per stored file |
@@ -53,7 +53,7 @@ Other inputs: the temporary CSV area is never backed up (D-054); the backup cred
 9. **Status and alerting.** Every run writes one row of `backup_runs` (SCHEMA section 5.12), from which the Owner's system status shows "Cadangan data terakhir" (OPERATIONS_RUNBOOK section 5). A successful run also pings the external heartbeat of [ADR-011](ADR-011-release-pipeline-environments-and-production-operation.md) item 11, so that a backup that stops altogether is noticed outside the server.
 10. **Restore and drills.** A backup is never restored over the live database (PRODUCTION_DATA_SAFETY section 1). It is restored only into a new, isolated target, by the operator, under the restore runbook RB-01 of BACKUP_RECOVERY, whose order of steps puts SEC-OP-04, SEC-OP-05 and the sequence advance of SCH-28 before the shop reopens. A restore drill (RB-02) restores the latest production backup into an isolated drill target at least once a month, after any change of the schema, the backup tooling or the storage, and before the pilot; its result is recorded in production by the operator procedure SEC-OP-08 and shown as "Uji pemulihan terakhir".
 11. **Capacity.** The status shows the store's usage against the free allowance. The operator applies the reduced retention of BACKUP_RECOVERY section 6 at its threshold, which allows for staging's share and for the lock periods (TASK-013, OPEN_ITEMS T-22), and at the latest at the 80 % of the status; if even the reduced retention does not fit, the Owner decides on a paid exception (COST_POLICY). A real restore downloads less than the stored total, inside the free download allowance; should the store refuse a download during a real restore, raising the cap is a cost the Owner approves at that moment.
-12. **Recovery objectives.** The six-hourly schedule serves the proposed RPO of 6 hours; the drills measure the restore time. Both stay proposals until the Owner accepts the measured values at gate G4 (REQ-NFR-05).
+12. **Recovery objectives.** The schedule of five runs a day serves the proposed RPO of 6 hours (D-145, which replaced the six-hourly schedule); the drills measure the restore time. Both stay proposals until the Owner accepts the measured values at gate G4 (REQ-NFR-05).
 
 ## Alternatives considered
 

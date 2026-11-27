@@ -195,7 +195,7 @@ At OP-01 the operator records privately, for RB-10: the Owner's telephone number
 | --- | --- | --- |
 | Every 5 minutes | Web heartbeat (SC-04) | Respond to alerts |
 | Hourly | Housekeeping (SC-02) | — |
-| Four times a day | Backup (SC-03) | — |
+| Five times a day | Backup (SC-03) | — |
 | Daily | Reconciliation (SC-01) | — |
 | Weekly | Remote re-verification of the latest weekly copy | — |
 | Monthly | — | Restore drill RB-02 and its record; review of advisories; look at the system status and the store's usage |

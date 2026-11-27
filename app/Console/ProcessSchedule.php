@@ -31,7 +31,7 @@ final class ProcessSchedule
     public const array COMMANDS = [
         'SC-01' => [RequiredSettings::WEB, 'reconciliation:run', '0 3 * * *'],
         'SC-02' => [RequiredSettings::WEB, 'housekeeping:run', '0 * * * *'],
-        'SC-03' => [RequiredSettings::BACKUP, 'backup:run', '0 0,6,12,18 * * *'],
+        'SC-03' => [RequiredSettings::BACKUP, 'backup:run', '0 0,5,10,15,20 * * *'],
         'SC-04' => [RequiredSettings::WEB, 'monitor:heartbeat', '*/5 * * * *'],
     ];
 

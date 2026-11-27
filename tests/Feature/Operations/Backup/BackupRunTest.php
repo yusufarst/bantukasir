@@ -177,7 +177,7 @@ final class BackupRunTest extends BackupTestCase
 
     public function test_the_reduced_retention_is_set_at_upload(): void
     {
-        $this->atJakarta('2030-01-01 06:00:10');
+        $this->atJakarta('2030-01-01 05:00:10');
         config(['backup.retention_profile' => 'reduced']);
 
         $reduced = $this->runBackup();
