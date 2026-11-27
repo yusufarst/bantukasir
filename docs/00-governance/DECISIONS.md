@@ -2804,7 +2804,10 @@ The plan assumes no headroom; it measures it (ENVIRONMENTS section 17.2).
 - **The server's memory:** measured in phase A beside the other services as they run. Each container's limit fits inside it, and a headroom too small is a stop for the Owner, never a change of memory or of another service.
 - **One environment at a time:** only one environment runs its full workload, until PERF01 has measured both. Staging is stopped, never deleted, before the production installation.
 - **Builds and heavy tests:** only in GitHub Actions. The server pulls images by digest.
-- **The restore drill off the VPS:** the Owner's machine has 7.2 GiB of memory, 16 logical processors and 28 GB of free disk. It already ran the local environment with the PostgreSQL suite, so a drill of the first, small production database is feasible on it, with no AI agent running and the disk checked before each drill.
+- **The restore drill off the VPS:** its feasibility is not yet verified. A complete RB-02 needs the release image, PostgreSQL of the production version, the restored file volume and the application started on the target, not one database container.
+  - **Candidate machine:** the Owner's machine (7.2 GiB of memory, 16 logical processors, 28 GB of free disk, a container engine shared with another project within about 3.4 GiB) is a candidate only.
+  - **Verification:** TASK-045's complete staging drill on the target measures its peak memory and disk. The production drill runs only where that drill passed and the disk, memory and no-agent check passes; otherwise it is a stop for the Owner, never a request to free memory.
+  - **No AI agent:** none runs on a machine holding the recovery key or decrypted data, from the key's retrieval until the data are destroyed (ENVIRONMENTS section 17.2; BACKUP_RECOVERY section 8).
 
 #### The proof
 

@@ -286,14 +286,27 @@ The server's memory and the operator's machine are fixed: no added memory, no sp
   - k6 runs as a short-lived container with its own small memory limit, inside the measured headroom.
   - The measured footprint and the worker pool of `docker/app/php-fpm.conf` are checked against the limits (TASK-048).
   - A budget missed because the headroom is small goes through change control (TASK-048 scope item 4).
-- **The restore drill off the VPS** (BACKUP_RECOVERY section 8). The Owner's machine was measured on 27 November 2026: 7.2 GiB of memory, 16 logical processors, and 28 GB of disk free on its system drive, 95 % used.
-  - The same machine ran the local environment — the application, PostgreSQL and the S3-compatible test store — and 126 tests of the PostgreSQL suite on 24 November 2026.
-  - A drill needs one PostgreSQL container, age and the fetch script: less than that environment.
-  - So a drill of the first production database, which is small, is feasible on it, when:
-    - no AI agent runs on the machine while it holds the recovery key or decrypted data (ENV-01, BKP-08);
-    - its disk holds about three times the size of the backup (the encrypted copy, the decrypted dump, the restored database), checked before each drill;
-    - the drill's data are removed at its end (RB-02).
-  - When the operator is another person, the same check is made on that person's machine before the first drill.
+- **The restore drill off the VPS** (BACKUP_RECOVERY section 8). Its feasibility on existing hardware is **not yet verified**. It is measured by the first complete RB-02 on staging's backups, on the machine that will hold the production drill, in TASK-045.
+  - **What a complete RB-02 needs.** RB-02 is more than a database restore:
+    - the manifest's release image, pulled by digest;
+    - a PostgreSQL container of the production version (OPEN_ITEMS question 39);
+    - the encrypted download, decrypted with age;
+    - the restored database and the restored file volume;
+    - the application started on the target, `/up` answering 200, and one receipt and one session report rendered through an Owner recovery link;
+    - OP-04 and the sequence advance run on the target.
+    It therefore needs about the footprint of the local environment's application and database together, not that of one database container.
+  - **A candidate machine, measured on 27 November 2026:** the Owner's machine, with 7.2 GiB of memory, 16 logical processors, and 28 GB of disk free on its system drive, 95 % used. It is not a verified target:
+    - Its container engine is shared with another project, within a memory limit of about 3.4 GiB.
+    - Its local PostgreSQL suite reached Composer's 1,800-second limit after 126 of its 309 tests on 24 November 2026; that suite ran in CI instead.
+    - AI agents run on it in ordinary use.
+    - It qualifies as the drill target only while the operator controls it for the whole drill (BACKUP_RECOVERY section 8).
+  - **The check before each drill**, recorded as sizes and durations only:
+    - **Disk:** the free disk is at least three times the sum of the backup's dump and files (the encrypted copy, the decrypted copy, the restored database and file volume), plus the images not already present.
+    - **Memory:** the engine's free memory is at least the peak measured in the last staging drill on that machine.
+    - **No agent:** no AI agent session, scheduled agent task or agent background process runs on the machine.
+    A check that fails is a stop for the Owner. It is never answered by stopping another project's containers, by asking to free memory, or by spending money (D-142).
+  - **No AI agent while the key or decrypted data are present.** From the moment the recovery key is taken from its custody until every decrypted file is destroyed and the key is closed, no AI agent runs on any machine that holds either. This covers the desktop application, the command line, IDE extensions, browser extensions, scheduled tasks and the executor's watcher. No agent performs, watches or screenshots a step; agents later see only the sanitized durations, sizes and results (ENV-01, ENV-03, BKP-08). The same holds for the creation and test decryption of a key pair (BKP-20).
+  - **Before the production drill (G4):** the production drill runs only on a machine where a complete staging RB-02 passed with these measurements, and where the production backup's size passes the disk check. Otherwise it is a stop for the Owner.
 
 ## 18. Open items
 

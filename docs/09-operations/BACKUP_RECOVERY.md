@@ -119,7 +119,7 @@ Configured by the operator when the store account is opened (gate G4); one bucke
 
 ## 8. The restore-drill target and copies of production data
 
-- The drill target is the operator's own machine, or another isolated machine under the operator's control that is physically or logically separate from the VPS, for example a virtual machine on the operator's computer. It is never the VPS: never the production or staging server, a Coolify environment on it, or one of their resources (ENVIRONMENTS section 2; BKP-08). While the recovery key is in use there or decrypted data are present, no AI agent runs on it (ENVIRONMENTS ENV-01, ENV-03). A machine that would cost money needs the Owner's approval first (COST_POLICY).
+- The drill target is the operator's own machine, or another isolated machine under the operator's control that is physically or logically separate from the VPS, for example a virtual machine on the operator's computer. It is never the VPS: never the production or staging server, a Coolify environment on it, or one of their resources (ENVIRONMENTS section 2; BKP-08). While the recovery key is in use there or decrypted data are present, no AI agent runs on it (ENVIRONMENTS ENV-01, ENV-03). The same holds for the operator's machine that decrypts, and for the creation and test decryption of a key pair (BKP-20). From the moment the key is taken from its custody until every decrypted file is destroyed, no agent session, scheduled agent task or agent background process runs on such a machine, and no agent performs, watches or screenshots a step (ENVIRONMENTS section 17.2, D-142). Before each drill, the target passes the disk, memory and no-agent check of ENVIRONMENTS section 17.2. A machine that would cost money needs the Owner's approval first (COST_POLICY).
 - The backup is decrypted on the operator's own machine or on the drill target itself. The decrypted dump and files exist only there; when the decrypting machine and the target differ, the decrypted data pass between them only through an SSH tunnel. At the end of the drill the operator destroys the target's database, volume and every decrypted file on every machine that held one, and the drill record says so. Destroying a drill copy is not a destructive production operation; keeping one "for later" is not allowed (BKP-07).
 - The same target, with the latest production backup, is the representative data of a migration rehearsal (RELEASE_PROCESS section 5).
 
@@ -209,13 +209,13 @@ Production's own measurement over its first 30 days is then taken and recorded i
 ## 13. RB-02 — Restore drill
 
 1. Choose the latest production backup with a stored manifest.
-2. Prepare the drill target off the VPS (section 8): deploy the manifest's release image; create roles and the marker `drill`.
+2. Prepare the drill target off the VPS (section 8): run the check of ENVIRONMENTS section 17.2 (disk, memory, no AI agent running) and stop on a failure; deploy the manifest's release image; create roles and the marker `drill`.
 3. Download the backup to the operator's own machine, or to the drill target itself, and decrypt it there with the recovery key — never on the VPS (BKP-08); compare every SHA-256 with the manifest. When the target is another machine than the one that decrypted, the decrypted dump and files reach it only through an SSH tunnel.
 4. Restore the database, apply the grants and run the privilege test; restore the files and check them against `stored_files.sha256`.
 5. Compare the row counts with the manifest; run `reconciliation:run` on the target: it must be clean, because the backup came from reconciled data.
 6. Rehearse the fence: run OP-04 and the sequence advance on the target.
 7. Start the application on the target without traffic and check that `/up` answers 200; reach it locally or through an SSH tunnel and render one recent receipt and one session report through an Owner recovery link issued in the drill copy (OP-02 on the target).
-8. Measure the time of each step.
+8. Measure the time of each step, and the peak memory and disk the drill used on the target (ENVIRONMENTS section 17.2).
 9. Destroy the target and every decrypted file on every machine that held one (section 8).
 10. Record the drill in production with OP-08 `restore:record-drill`: kind `ROUTINE`, the backup identifier, the manifest's SHA-256, the result, the measured durations and a note; the system status then shows "Uji pemulihan terakhir" (OPERATIONS_RUNBOOK section 5).
 11. A failed drill is an incident of class S3 at least (RB-03), fixed and repeated.
