@@ -4,7 +4,7 @@ The single log of decisions for BantuKasir. A decision made in conversation does
 
 ## 1. How to use this log
 
-- Identifiers are permanent and continue the original numbering. The next free identifier is **D-143**.
+- Identifiers are permanent and continue the original numbering. The next free identifier is **D-144**.
 - "Source" says who decided: **Owner**, or **Planner** (a planning agent acting on its own authority under the rules of the time).
 - "Status" says whether the decision is in force today. `REVALIDATION PENDING` means the decision still applies but the Owner has been asked to re-confirm it; the item number refers to [OPEN_ITEMS](OPEN_ITEMS.md).
 - D-001 to D-018 were recorded on 2 and 3 October 2026 in the former register, now [legacy/10-DECISIONS.md](legacy/10-DECISIONS.md). The table below summarizes them in English. For the exact meaning of D-001 to D-018 the original Indonesian wording governs; for whether a decision is in force, this log governs.
@@ -171,6 +171,7 @@ All by the Owner (Asia/Jakarta). D-019 to D-025 answer the questions of the [re-
 <br>• **Resources:** they are measured on the existing hardware and never assumed (ENVIRONMENTS section 17.2).
 <br>• **Proof:** `scripts/checks/gate-progression.sh` proves the progression in `composer lint`.
 <br>No acceptance criterion is weakened, FULL V1 stands, and no gate is approved, no deployment authorized and no PostgreSQL version changed. | Owner, approved in principle in the host session, by an `ops/` pull request whose merge is his. TASK_PLAN, DEPENDENCY_GRAPH, the contracts of TASK-044 to TASK-050, ENVIRONMENTS, BACKUP_RECOVERY, RELEASE_PROCESS, OPEN_ITEMS and CURRENT_HANDOFF follow. |
+| D-143 | 27 November 2026: the security update of six packages for the 13 advisories of 17 and 25 November 2026 that failed `composer audit --locked` on pull request #65, in that same pull request, the smallest versions that fix them. `symfony/http-kernel`, `symfony/mailer`, `symfony/routing` and `symfony/serializer` go to v8.1.12. `symfony/http-foundation` goes from v8.1.11 to v8.1.12 because http-kernel v8.1.12 requires it. `web-auth/webauthn-lib` goes from 5.3.9 to 5.3.13. Only those six entries of `composer.lock` change; `composer.json` and the content hash are unchanged. No advisory is accepted or ignored, and the audit's policy is unchanged. | Owner, his remediation directive for pull request #65 ("minimal compatible security updates") and his choice "Allow Packagist read" in the host session. CURRENT_HANDOFF follows. |
 
 ## 4. Facts supplied by the Owner
 
@@ -2840,3 +2841,38 @@ After the first CI run of this pull request, the Owner directed its remediation 
 - No gate is approved here and no deployment is authorized.
 - The HOLD of D-141 stays until the Owner's explicit instruction that names the resume.
 - No executor script changes: the check only reads `lib.sh`.
+
+### D-143 — The security update of six packages in pull request #65
+
+The Owner gave this decision on 27 November 2026 in the host session of CE-03. It has two parts, in English as he wrote them.
+
+His remediation directive for pull request #65:
+
+> 2. Resolve all 13 Composer advisories using minimal compatible security updates.
+
+His choice when the host session asked how the lock should be made, after the tool that read Packagist's advisory data had been refused:
+
+> Allow Packagist read
+
+- **What failed.** CI run 45986520608 on `e345dd6`, and run 46003145955 on `f2b3444`, failed at `composer audit --locked`. There were 13 advisories, reported on 17 and 25 November 2026, none with a rated severity, so the policy of THR-14 fails them:
+  - `symfony/http-kernel` CVE-2026-133743; `symfony/mailer` CVE-2026-133751 and CVE-2026-133755; `symfony/routing` CVE-2026-133746 and CVE-2026-133754; `symfony/serializer` CVE-2026-133761 and CVE-2026-133752. Every one is fixed in v8.1.12 for 8.1.
+  - `web-auth/webauthn-lib`: six advisories without a CVE (PKSA-mstn-ywch-n48d, PKSA-cc3j-tk8g-4j9v, PKSA-2h5m-mtv3-857q, PKSA-ktqk-pv7f-ynkv, PKSA-f652-rtjq-ksry, PKSA-3yvx-trwt-wx7f), all fixed in 5.3.13.
+- **The smallest versions.**
+  - The four Symfony packages go to v8.1.12, the first fixed version. `symfony/mailer` was at v8.1.7; the other three were at v8.1.11.
+  - `web-auth/webauthn-lib` goes from 5.3.9 to 5.3.13.
+  - `symfony/http-foundation` goes from v8.1.11 to v8.1.12, because http-kernel v8.1.12 requires `^7.4.24|^8.1.12`. That is the only dependency the update needed.
+- **Exposure, as read before the update.** The review found no use of what the advisories need:
+  - No mailer is configured: `config/mail.php` has the default `none` and no transport.
+  - Passkeys are off, and no passkey route exists (`config/fortify.php`). `web-auth/webauthn-lib` and its Serializer use are therefore out of reach, as D-121 found.
+  - The application has no inline fragment of Symfony, no route with a host, and no CSV encoder.
+- **How the lock was made, without Docker.** Docker was not running, and D-108 and the Owner's resource constraints exclude starting it. The host has no PHP. So the six entries were built from Packagist's own metadata (`repo.packagist.org/p2/<package>.json`), with a script in the host session's temporary folder:
+  - It parsed and wrote `composer.lock` in Composer's format; the whole file came back byte for byte identical.
+  - It rebuilt each of the six entries at its old locked version from that metadata; each came back byte for byte identical to the lock's entry.
+  - Only then did it build each entry at its new version.
+  - A second script checked every requirement and conflict of the six, and every one naming them in other packages, against the locked versions. All are met: Laravel 13.37.0 allows the Symfony packages at `^7.4.0 || ^8.0.0`, and `laravel/passkeys` allows webauthn-lib at `5.3.x`.
+  - The content hash is unchanged, because `composer.json` is unchanged.
+- **The result.**
+  - In `composer.lock` only those six entries change, in their version, the commit of the source and of the archive, the link to the source and the release time.
+  - http-kernel's requirement on http-foundation and its conflict with `symfony/dependency-injection`, which is not installed, also change, as v8.1.12 publishes them.
+  - CI on the new head proves the lock, `composer install` in the image, the audit and every suite.
+- **Unchanged:** the audit and its policy, with no advisory accepted, ignored or suppressed; `composer.json`; every test, the executor scripts and the timeouts. No deployment to staging or production is authorized.
