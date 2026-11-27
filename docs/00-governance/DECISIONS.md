@@ -2780,7 +2780,7 @@ TASK_PLAN section 3 holds each phase as its own gate. A row names after "before 
 | TASK-047 | — | GATE-CC2, SATISFIED without an approval when the values are confirmed |
 | TASK-048 | OPERATOR, TARGET-STAGING | — (G2 is no gate of it: the final dataset when known, otherwise the provisional one, stated) |
 | TASK-049 | OPERATOR, TARGET, DEVICES, GATE-PUBLISH | G1, G2, G3, G4-SEALED |
-| TASK-050 | OPERATOR, TARGET-PRODUCTION, G4-SEALED, RELEASE-AUTH, GATE-PUBLISH | PRODUCTION-DEPLOY, before the production installation; G4, accepted before the cutover; RELEASE |
+| TASK-050 | OPERATOR, TARGET-PRODUCTION, G4-SEALED, RELEASE-AUTH, GATE-PUBLISH | STAGING-DEPLOY for the release image's digest; PRODUCTION-DEPLOY, before the production installation; G4, accepted before the cutover; RELEASE |
 
 **TARGET's three phases (ENVIRONMENTS section 17).** Every item keeps its requirement.
 
@@ -2788,7 +2788,7 @@ TASK_PLAN section 3 holds each phase as its own gate. A row names after "before 
 - **Phase B, TARGET:** completed by TASK-045 (staging's first backup and off-VPS drill, the heartbeat alerts, SEC02) and TASK-048 (PERF01).
 - **Phase C, TARGET-PRODUCTION:** production before its installation, on the PostgreSQL version that OPEN_ITEMS question 39 decides.
 
-**G4 precedes the cutover.** The cutover inside TASK-050 starts only after the Owner accepts G4 on the measured production values (RELEASE_PROCESS RB-23 step 10; BACKUP_RECOVERY section 12). The recovery point before the cutover is measured on staging's runs on the production schedule (at least 7 days) together with every production run since the installation (at least one full day). Production's own 30-day value follows within the 30 days after the cutover, and a breach is an incident. This method needs the Owner's explicit acceptance, which is OPEN_ITEMS question 40, still OPEN; until he accepts it, G4 cannot be APPROVED and the cutover waits.
+**G4 precedes the cutover.** The cutover inside TASK-050 starts only after the Owner accepts G4 on the measured production values (RELEASE_PROCESS RB-23 step 10; BACKUP_RECOVERY section 12). The recovery point before the cutover is measured on two series, each on its own: staging's runs on the production schedule (at least the last 7 days before staging stops) and every production run since its first scheduled run (at least one full day); the value is the larger of the two. Production's own 30-day value follows within the 30 days after the cutover, and a breach is an incident. This method needs the Owner's explicit acceptance, which is OPEN_ITEMS question 40, still OPEN; until he accepts it, G4 cannot be APPROVED and the cutover waits.
 
 **Authorizations kept.**
 

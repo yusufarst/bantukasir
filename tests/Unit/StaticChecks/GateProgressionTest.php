@@ -72,8 +72,8 @@ final class GateProgressionTest extends TestCase
     public function test_a_production_authorization_without_the_release_images_own_digest_is_refused(): void
     {
         $plan = $this->copyOfThePlan(fn (string $text): string => str_replace(
-            'RELEASE-AUTH, GATE-PUBLISH; before `DONE`: PRODUCTION-DEPLOY, G4, RELEASE |',
-            'RELEASE-AUTH, GATE-PUBLISH; before `DONE`: G4, RELEASE |',
+            'RELEASE-AUTH, GATE-PUBLISH; before `DONE`: STAGING-DEPLOY, PRODUCTION-DEPLOY, G4, RELEASE |',
+            'RELEASE-AUTH, GATE-PUBLISH; before `DONE`: STAGING-DEPLOY, G4, RELEASE |',
             $text,
         ));
 

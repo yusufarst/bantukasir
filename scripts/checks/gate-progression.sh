@@ -172,7 +172,10 @@ expect_blocked "3 TASK-050 waits for RELEASE-AUTH" TASK-050 RELEASE-AUTH
 set_gate TARGET-PRODUCTION "SATISFIED — phase C recorded"
 set_gate RELEASE-AUTH "SATISFIED — the Owner's exact authorization"
 expect_selected "3 TASK-050 starts with G4 and RELEASE still open" TASK-050
-expect_selected "3 TASK-050 starts with PRODUCTION-DEPLOY still open" TASK-050
+case "$(gate_state "$plan" PRODUCTION-DEPLOY)" in
+    OPEN*) pass "3 TASK-050 starts with PRODUCTION-DEPLOY still open" ;;
+    *) fail "3 TASK-050 starts with PRODUCTION-DEPLOY still open" "state $(gate_state "$plan" PRODUCTION-DEPLOY)" ;;
+esac
 
 # 4. A gate that a Task needs at its start, open again, blocks it.
 set_gate G4-SEALED "OPEN"
@@ -207,8 +210,10 @@ case "$(gate_row PRODUCTION-DEPLOY)" in
     *) fail "5 PRODUCTION-DEPLOY names the release image's digest verified on staging" "row text" ;;
 esac
 for g in STAGING-DEPLOY RELEASE-AUTH PRODUCTION-DEPLOY; do
+    # The phrase must come with its negation, so that a row saying that such an
+    # acceptance counts does not pass.
     case "$(gate_row "$g")" in
-        *"development and CI only"*) pass "5 $g counts no development and CI acceptance" ;;
+        *"development and CI only"*"never counts"* | *"development and CI only"*"not counting"*) pass "5 $g counts no development and CI acceptance" ;;
         *) fail "5 $g counts no development and CI acceptance" "row text" ;;
     esac
 done

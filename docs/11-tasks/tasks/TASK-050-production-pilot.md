@@ -6,7 +6,7 @@
 | Phase and lane | 10 Release · lane R, reports, audit views and release |
 | Size and review | L · review class V — verification results accepted by the Owner ([EXECUTION_CONTEXT](../EXECUTION_CONTEXT.md) section 12) |
 | Depends on | [TASK-049](TASK-049-release-readiness.md) |
-| Gates | OPERATOR, TARGET-PRODUCTION (production ready before its installation), G4-SEALED, RELEASE-AUTH (the Owner's authorization to release the final candidate verified on staging, with the independent vulnerability review), GATE-PUBLISH (the merge into `main` and the tag); before `DONE`: PRODUCTION-DEPLOY (the Owner's authorization of the release image's exact digest after its staging verification, scope item 2), G4 (accepted before the cutover, scope item 6), RELEASE (complete with the pilot's acceptance) ([TASK_PLAN](../TASK_PLAN.md) section 3; D-142) |
+| Gates | OPERATOR, TARGET-PRODUCTION (production ready before its installation), G4-SEALED, RELEASE-AUTH (the Owner's authorization to release the final candidate verified on staging, with the independent vulnerability review), GATE-PUBLISH (the merge into `main` and the tag); before `DONE`: STAGING-DEPLOY (its own authorization for the release image's digest, which the state names, scope item 2), PRODUCTION-DEPLOY (the Owner's authorization of the release image's exact digest after its staging verification, scope item 2), G4 (accepted before the cutover, scope item 6), RELEASE (complete with the pilot's acceptance) ([TASK_PLAN](../TASK_PLAN.md) section 3; D-142) |
 | Branch | `task/TASK-050-production-pilot` from `develop` (EXC-22) |
 | Executor | Claude Opus 5.5, at the effort that the Owner's instruction names for this Task (D-031, D-095), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None. |
@@ -44,7 +44,7 @@ After AGENTS.md, CURRENT_HANDOFF, EXECUTION_CONTEXT and TASK_PLAN sections 1 to 
 3. Operator, under PRODUCTION-DEPLOY: RB-20 in production with the migration job (RB-23 step 7); RB-21; OP-01 `owner:bootstrap` with the shop's name and the Owner's email; the link handed to the Owner directly.
 4. Owner: the password, the BusinessProfile, the cash registers, the staff accounts with their links (D-056).
 5. Operator: the first production backup and the first production drill, recorded with OP-08; the Owner accepts the measured recovery point and time (gate G4, REQ-NFR-05), by the method of BACKUP_RECOVERY section 12.
-6. Owner with staff: the cutover RB-24 — onboarding started and released once (D-071) — only once gate G4 is APPROVED in TASK_PLAN section 3 on the measured production values of item 5; until then the Task stops for the Owner and nothing of the shop's data is entered (D-142).
+6. Owner with staff: the cutover RB-24 — onboarding started and released once (D-071) — only once gate G4 is APPROVED in TASK_PLAN section 3 on the values of item 5, measured by the method of BACKUP_RECOVERY section 12 that the Owner accepted (OPEN_ITEMS question 40); until then the Task stops for the Owner and nothing of the shop's data is entered (D-142).
 7. The pilot of at least 7 consecutive trading days and its criteria PIL-01 to PIL-11.
 8. Write the release record `docs/10-release/records/RELEASE-v1.0.0.md` from the operator's report without real identities, creating the folder; record the Owner's written acceptance of the pilot in DECISIONS.
 
@@ -85,7 +85,7 @@ Controls are those of [TRACEABILITY](../TRACEABILITY.md) section 9.2, each built
 ## 6. Acceptance criteria
 
 - **AC-050-01** The release is carried out by the operator under the Owner's exact authorization, and recorded; production runs the digest that staging verified and that PRODUCTION-DEPLOY names (REL-03).
-- **AC-050-02** Gate G4 is accepted by the Owner on the measured production values before the cutover.
+- **AC-050-02** Gate G4 is accepted by the Owner before the cutover, on the values measured by the method of BACKUP_RECOVERY section 12 that he accepted (question 40), production's own drill among them.
 - **AC-050-03** PIL-01 to PIL-11 hold; RELEASE01 is `FINAL_PASS`; the Owner's written acceptance is in DECISIONS.
 
 ## 7. Tests
@@ -128,7 +128,8 @@ Each dimension is recorded `PASS`, `FAIL`, `BLOCKED` or `N/A` with its reason (E
 
 - `docs/10-release/records/` (created)
 - DECISIONS (the Owner's acceptance)
-- OPEN_ITEMS section 3 (G4, RELEASE)
+- OPEN_ITEMS section 3 (G4, RELEASE, with PRODUCTION-DEPLOY)
+- TASK_PLAN section 3 (the states of STAGING-DEPLOY for the release image, PRODUCTION-DEPLOY, G4 and RELEASE)
 - Its row in TASK_PLAN section 4, its evidence file, and CURRENT_HANDOFF last (EXECUTION_CONTEXT section 15)
 
 ## 12. For later Tasks
