@@ -4,7 +4,7 @@ The single log of decisions for BantuKasir. A decision made in conversation does
 
 ## 1. How to use this log
 
-- Identifiers are permanent and continue the original numbering. The next free identifier is **D-144**.
+- Identifiers are permanent and continue the original numbering. The next free identifier is **D-145**.
 - "Source" says who decided: **Owner**, or **Planner** (a planning agent acting on its own authority under the rules of the time).
 - "Status" says whether the decision is in force today. `REVALIDATION PENDING` means the decision still applies but the Owner has been asked to re-confirm it; the item number refers to [OPEN_ITEMS](OPEN_ITEMS.md).
 - D-001 to D-018 were recorded on 2 and 3 October 2026 in the former register, now [legacy/10-DECISIONS.md](legacy/10-DECISIONS.md). The table below summarizes them in English. For the exact meaning of D-001 to D-018 the original Indonesian wording governs; for whether a decision is in force, this log governs.
@@ -172,6 +172,7 @@ All by the Owner (Asia/Jakarta). D-019 to D-025 answer the questions of the [re-
 <br>• **Proof:** `scripts/checks/gate-progression.sh` proves the progression in `composer lint`.
 <br>No acceptance criterion is weakened, FULL V1 stands, and no gate is approved, no deployment authorized and no PostgreSQL version changed. | Owner, approved in principle in the host session, by an `ops/` pull request whose merge is his. TASK_PLAN, DEPENDENCY_GRAPH, the contracts of TASK-044 to TASK-050, ENVIRONMENTS, BACKUP_RECOVERY, RELEASE_PROCESS, OPEN_ITEMS and CURRENT_HANDOFF follow. |
 | D-143 | 27 November 2026: the security update of six packages for the 13 advisories of 17 and 25 November 2026 that failed `composer audit --locked` on pull request #65, in that same pull request, the smallest versions that fix them. `symfony/http-kernel`, `symfony/mailer`, `symfony/routing` and `symfony/serializer` go to v8.1.12. `symfony/http-foundation` goes from v8.1.11 to v8.1.12 because http-kernel v8.1.12 requires it. `web-auth/webauthn-lib` goes from 5.3.9 to 5.3.13. Only those six entries of `composer.lock` change; `composer.json` and the content hash are unchanged. No advisory is accepted or ignored, and the audit's policy is unchanged. | Owner, his remediation directive for pull request #65 ("minimal compatible security updates") and his choice "Allow Packagist read" in the host session. CURRENT_HANDOFF follows. |
+| D-144 | 28 November 2026: CVE-2026-107494 is accepted temporarily, for development and CI only, at exactly 3.5.9-1~deb13u1 of `libssl3t64`, `openssl` and `openssl-provider-legacy`, by its own entry. It is a new high finding that the image gate refused on pull request #65 (CI run 46032223236). OpenSSL's QUIC stack can be made to allocate memory without a limit by a malicious QUIC peer. OpenSSL rates it Low and fixes it in 3.5.10, whose release is scheduled for 1 December 2026; Debian marks trixie `<postponed>`, with no fixed version. No process of the image speaks QUIC through OpenSSL, and the image holds no HTTP/3 library, so no exposure path was identified in the configuration examined; this is no guarantee. It expires at a fix that the build installs, known exploitation, a raise of severity, a Task that adds QUIC or HTTP/3, a change of the base image, gate RELEASE, or 31 December 2026 at the latest. It authorizes no staging or production deployment, and counts for none of STAGING-DEPLOY, RELEASE-AUTH or PRODUCTION-DEPLOY (D-142). | Owner, his choice "Accept dev/CI only" in the host session, after its assessment. `scripts/checks/image-scan-accepted.json`, `scripts/checks/image-scan-gate-test.sh` and CURRENT_HANDOFF follow. |
 
 ## 4. Facts supplied by the Owner
 
@@ -2796,7 +2797,7 @@ TASK_PLAN section 3 holds each phase as its own gate. A row names after "before 
 - **Staging:** each staging deployment needs the Owner's explicit authorization of the exact candidate (STAGING-DEPLOY, REL-01).
 - **Release:** RELEASE-AUTH, before TASK-050, names the final candidate by its commit, candidate tag and the image digest verified on staging. It includes the independent review of every vulnerability remaining in that image (D-112, D-113) and the Owner's own decision for production on each finding still present. It authorizes the tag `v1.0.0` and the image's publication, not a deployment.
 - **Production:** the release workflow builds the image of `v1.0.0` again, so its digest exists only inside TASK-050. That digest goes to staging first, under its own STAGING-DEPLOY, and is verified there (REL-03). Then the Owner authorizes its production installation by that exact digest (PRODUCTION-DEPLOY). A new high or critical finding of its scan goes back to the Owner.
-- **Development and CI only:** every acceptance of the scan gate's list, D-139 and D-140 among them, counts for no staging or production authorization. Each of STAGING-DEPLOY, RELEASE-AUTH and PRODUCTION-DEPLOY carries the Owner's own decision for its environment on each high or critical finding still present.
+- **Development and CI only:** every acceptance of the scan gate's list, D-139, D-140 and D-144 among them, counts for no staging or production authorization. Each of STAGING-DEPLOY, RELEASE-AUTH and PRODUCTION-DEPLOY carries the Owner's own decision for its environment on each high or critical finding still present.
 
 #### Resources
 
@@ -2876,3 +2877,38 @@ His choice when the host session asked how the lock should be made, after the to
   - http-kernel's requirement on http-foundation and its conflict with `symfony/dependency-injection`, which is not installed, also change, as v8.1.12 publishes them.
   - CI on the new head proves the lock, `composer install` in the image, the audit and every suite.
 - **Unchanged:** the audit and its policy, with no advisory accepted, ignored or suppressed; `composer.json`; every test, the executor scripts and the timeouts. No deployment to staging or production is authorized.
+
+### D-144 — CVE-2026-107494 accepted temporarily at OpenSSL 3.5.9-1~deb13u1, development and CI only
+
+The Owner gave this decision on 28 November 2026, in the host session of CE-03, after the host session's assessment. The session asked how CVE-2026-107494 should be handled, and offered two answers: wait for Debian's fix, or accept it temporarily for development and CI only as D-144, not for staging or production. His answer, in English as he wrote it:
+
+> Accept dev/CI only
+
+- **The finding.** CI run 46032223236 on pull request #65 (head `fcaf102`) failed its image checks on one CVE alone. The same finding had refused runs 45986520608 and 46003145955.
+  - The CVE is CVE-2026-107494, High, in `libssl3t64`, `openssl` and `openssl-provider-legacy` at 3.5.9-1~deb13u1.
+  - Its fix state is not-fixed, with no known exploitation and an EPSS of 0.00778, by Grype's database of 2026-11-27T06:22:11Z.
+  - The gate counted 160 accepted, 3 refused and 204 of lower severity.
+- **The flaw.** OpenSSL's QUIC stack queues a RETIRE_CONNECTION_ID frame for every retransmitted NEW_CONNECTION_ID frame, without a limit. A malicious remote QUIC peer can therefore make it allocate memory until it runs out: a denial of service, CWE-770. It is the incomplete fix of CVE-2026-84784.
+  - OpenSSL's advisory of 24 November 2026 rates it **Low**. It places the QUIC implementation outside the FIPS module boundary, and says 3.0, 1.1.1 and 1.0.2 are not affected.
+  - The scan's database rates it High.
+- **The exposure in the image.** No exposure path was identified in the configuration examined. As in D-139, this is a finding of that examination, not a guarantee that the flaw cannot be exploited.
+  - No process of the image speaks QUIC through OpenSSL. The application's outbound connections use TCP and TLS: to PostgreSQL through libpq, and over HTTPS through PHP's streams and curl.
+  - The image's package list of that run holds neither `libngtcp2` nor `libnghttp3`, so curl has no HTTP/3.
+  - Nothing in `app/`, `config/`, `docker/`, `compose.yaml` or the scripts asks for QUIC or HTTP/3, and `app/` sets no curl option of HTTP version.
+  - Nginx serves plain HTTP on port 8080, with no `quic` listener: TLS ends before the container.
+- **The fix.** None to install yet. Debian marks trixie `<postponed>` ("Fix along with future update"): trixie 3.5.9-1~deb13u1 and trixie-security 3.5.7-1~deb13u3 are vulnerable, and there is no DSA. OpenSSL fixes it in 3.5.10, 4.0.4 and 4.1.1, with releases scheduled for 1 December 2026.
+- **The record.**
+  - `scripts/checks/image-scan-accepted.json` holds the CVE's own entry under D-144, at exactly the three packages and that version.
+  - A block `assessedD144` records the run, the scanner, its database, the image and the limits.
+  - `image-scan-gate-test.sh` checks that D-144 holds exactly that one entry at that version and no critical finding. The counts become 75 CVEs and 193 findings.
+- **The limits.** Development and CI only, at exactly 3.5.9-1~deb13u1: no staging, no production, no other CVE or version, and no wildcard. The entry expires at the first of these:
+  - a fix that the build installs;
+  - known exploitation;
+  - a raise of severity;
+  - a Task that adds QUIC or HTTP/3, a QUIC listener of Nginx, `libngtcp2` or `libnghttp3`, or a curl option of HTTP version;
+  - a change of the base image;
+  - gate RELEASE;
+  - 31 December 2026 at the latest, when the Owner reassesses it.
+
+  It counts for none of STAGING-DEPLOY, RELEASE-AUTH and PRODUCTION-DEPLOY, which each need the Owner's own decision for their environment (D-142).
+- **Unchanged.** The scan, its gate and every mandatory check; every other entry; and the D-141 HOLD. No deployment is authorized.
