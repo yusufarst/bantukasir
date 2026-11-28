@@ -6,7 +6,7 @@
 | Phase and lane | 9 Verification · lane V, verification |
 | Size and review | L · review class V — verification results accepted by the Owner ([EXECUTION_CONTEXT](../EXECUTION_CONTEXT.md) section 12) |
 | Depends on | [TASK-043](TASK-043-performance-harness.md), [TASK-051](TASK-051-audit-change-values.md) (D-137) |
-| Gates | TARGET (the staging part), GATE-PUBLISH (the candidate tag) ([TASK_PLAN](../TASK_PLAN.md) section 3) |
+| Gates | OPERATOR, TARGET-STAGING (staging ready before its first deployment), GATE-PUBLISH (the candidate tag); before `DONE`: STAGING-DEPLOY (the Owner's authorization of the candidate's staging deployment) ([TASK_PLAN](../TASK_PLAN.md) section 3; D-142) |
 | Branch | `task/TASK-044-integrated-verification` from `develop` (EXC-22) |
 | Executor | Claude Opus 5.5, at the effort that the Owner's instruction names for this Task (D-031, D-095), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None required. |
@@ -38,7 +38,7 @@ After AGENTS.md, CURRENT_HANDOFF, EXECUTION_CONTEXT and TASK_PLAN sections 1 to 
 ### 4.1 In scope
 
 1. Prepare the candidate on `develop`: release notes listing every change, every migration with its class and every Task it closes; the candidate tag pushed only with its authorization and after the publication guard (REL-10).
-2. Run every L1 to L4 case in CI on the candidate, and the L5 cases in CI and, where a real proxy or browser behaviour matters (the content security policy, the client address), against staging deployed by the operator with the candidate image.
+2. Run every L1 to L4 case in CI on the candidate, and the L5 cases in CI and, where a real proxy or browser behaviour matters (the content security policy, the client address), against staging deployed by the operator with the candidate image, after the Owner's authorization of that deployment (gate STAGING-DEPLOY, recorded in the evidence with the tag and digest). The request for it carries the digest's scan result, and the Owner decides for staging on each high or critical finding still present: the scan gate's acceptances are for development and CI only and never count for staging (RELEASE_PROCESS section 4).
 3. Run UX01 in full: every page for every role and the combined account against the approved artifacts; every control routed as INTERACTION_CONTRACTS section 9 says; no dead control; every state reachable with its wording; the key screens against their previews; the widths of KEY_SCREENS section 4 and 1440 px.
 4. Run the automated part of UX02, L10N01 and the complete capability matrix of AUTH01.
 5. Check TRACEABILITY against the evidence: every requirement, race, guard, threat and workflow has its passing cases; report any gap.
@@ -115,7 +115,7 @@ Each dimension is recorded `PASS`, `FAIL`, `BLOCKED` or `N/A` with its reason (E
 ## 10. Stop conditions
 
 - A defect needs a business decision.
-- Staging is not available (gate TARGET); the staging part stays BLOCKED.
+- The candidate's staging deployment is not yet authorized (gate STAGING-DEPLOY) or not yet reported by the operator: a stop for the Owner or the operator (CE-70); the staging part stays BLOCKED and the Task is not `DONE`.
 - Every stop condition of EXECUTION_CONTEXT section 14.
 
 ## 11. Documents this Task updates

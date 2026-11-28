@@ -31,12 +31,12 @@ A backup is the set of ADR-010 item 1: the database dump, every stored file that
 
 | Run | When | Started by |
 | --- | --- | --- |
-| Scheduled | 00.00, 06.00, 12.00 and 18.00 Asia/Jakarta (SC-03, ENVIRONMENTS section 13) | The backup container's scheduler |
+| Scheduled | 00.00, 05.00, 10.00, 15.00 and 20.00 Asia/Jakarta (SC-03, ENVIRONMENTS section 13; D-145) | The backup container's scheduler |
 | Weekly copy and re-verification | The Sunday 00.00 run | The same run |
 | Monthly copy | The 00.00 run on the 1st of the month | The same run |
 | On demand | Before every production migration or release (RELEASE_PROCESS RB-20), before an operator procedure that changes data in bulk, and whenever the operator needs a fresh copy | The operator: `backup:run --reason=<code>` in the backup container |
 
-The four daily runs serve the proposed recovery point of 6 hours (REQ-NFR-05); a shorter interval is a configuration change if the Owner wants a smaller recovery point at gate G4, within the store's free allowance.
+The five daily runs serve the proposed recovery point of 6 hours (REQ-NFR-05; D-145). The recovery point counts the interval between two successful snapshots plus the run's duration (section 12), and a run may last up to its time limit of 30 minutes (section 4). The longest scheduled interval is 5 hours, so a schedule kept without a miss gives at most 5 hours 30 minutes. Four runs 6 hours apart could never give 6 hours or less. A missed or failed scheduled run makes the interval 9 or 10 hours, 9 hours 30 minutes to 10 hours 30 minutes with the run's duration, which is a breach (section 12 step 5). A shorter interval is a configuration change if the Owner wants a smaller recovery point at gate G4, within the store's free allowance. The prefix `db/6h/` keeps its name: it names the scheduled tier, not its interval.
 
 ## 4. One backup run
 
@@ -93,17 +93,17 @@ Configured by the operator when the store account is opened (gate G4); one bucke
 
 | Profile | Environment | `db/6h/` | `db/weekly/` | `db/monthly/` | Dumps at any time, about |
 | --- | --- | --- | --- | --- | --- |
-| Full | Production | 7 days | 35 days | 93 days | 36 to 42 |
-| Reduced | Production, once applied | 3 days | 21 days | 62 days | 17 to 21 |
-| Staging | Staging, always | 3 days | 14 days | 31 days | 15 to 20 |
+| Full | Production | 7 days | 35 days | 93 days | 43 to 50 |
+| Reduced | Production, once applied | 3 days | 21 days | 62 days | 20 to 27 |
+| Staging | Staging, always | 3 days | 14 days | 31 days | 18 to 25 |
 
 **Capacity (OPEN_ITEMS T-22).** The free 10 GB belong to the store account, which holds one bucket per environment, and a run can read only its own bucket's usage. So the allowance is divided in advance:
 
 - **Staging's share is at most 1 GB.** Staging holds synthetic data with few or no files. The run says `BACKUP_STORE_ABOVE_THRESHOLD` when its `store_bytes` passes 1 GB: its data have grown beyond its purpose, and the operator reduces them or its tiers first, because staging's copies have no value that production's lack.
-- **Production's bucket** holds about 36 to 42 dumps with their manifests, plus the files; with a 50 MB dump that is about 2 GB plus the files.
+- **Production's bucket** holds about 43 to 50 dumps with their manifests, plus the files; with a 50 MB dump that is about 2.5 GB plus the files.
 - **The threshold for the reduced retention is 6 GB in production's bucket**, its `store_bytes`, which with staging's share is 70 % of the allowance. The run says `BACKUP_STORE_ABOVE_THRESHOLD` in its log from then on, and the operator reads the newest `store_bytes` of each environment at each restore drill (OPERATIONS_RUNBOOK section 4) and applies the reduced retention by changing the lifecycle rules and `BACKUP_RETENTION` together. The Owner's status item still turns failed at 80 % of the allowance (OPERATIONS_RUNBOOK section 5): by then the reduced retention must already be in force.
 
-**Why 6 GB: the lock periods.** The reduced retention removes nothing at once, because a copy stays until its own lock ends. For the first 4 days after it is applied, each new `db/6h/` copy replaces one that ages out, and the usage does not fall; it falls by about 16 dumps by day 8, by about 2 more by day 36, and by the last by day 94. Meanwhile a run may add a weekly and a monthly copy at once, and the data grow. The 4 GB left above the threshold, of which staging's share is 1 GB, leave 3 GB for this: at the largest dump production can reach at the threshold, about 140 MB (6 GB over 42), three copies are under 0.5 GB, which leaves about 2.5 GB for 94 days' growth of the files and of each kept dump, so that under that growth the store does not refuse while older copies age out. Should it refuse a backup at its cap all the same, applying the reduced retention frees nothing for days: the Owner then decides on a paid exception, or the operator shrinks staging's share first.
+**Why 6 GB: the lock periods.** The reduced retention removes nothing at once, because a copy stays until its own lock ends. For the first 4 days after it is applied, each new `db/6h/` copy replaces one that ages out, and the usage does not fall; it falls by about 20 dumps by day 8, by about 2 more by day 36, and by the last by day 94. Meanwhile a run may add a weekly and a monthly copy at once, and the data grow. The 4 GB left above the threshold, of which staging's share is 1 GB, leave 3 GB for this: at the largest dump production can reach at the threshold, about 120 MB (6 GB over 50), three copies are under 0.5 GB, which leaves about 2.5 GB for 94 days' growth of the files and of each kept dump, so that under that growth the store does not refuse while older copies age out. Should it refuse a backup at its cap all the same, applying the reduced retention frees nothing for days: the Owner then decides on a paid exception, or the operator shrinks staging's share first.
 
 **A rotation and the allowance.** A key rotation adds the size of the files again for 100 days (BKP-22), which costs nothing while it fits. The operator checks the room before starting. A rotation that does not fit, an urgent one included, is refused by the cap: step 7a fails the run with `STORE_REFUSED` after the backup is stored, and the rotation stops there until the Owner decides under COST_POLICY whether to pay for the room or to reduce what is kept. If the reduced retention does not fit either, the Owner decides on a paid exception (ADR-010 item 11; COST_POLICY).
 
@@ -114,12 +114,12 @@ Configured by the operator when the store account is opened (gate G4); one bucke
 | Archive check, hashes and the store's integrity check (section 4 steps 2 to 6) | The dump is readable and every object arrived intact | Every run |
 | File check against `stored_files.sha256` | No stored file is missing or corrupt on the server | Every run, for every file not yet in the store |
 | Remote re-verification (step 7) | The store still returns the bytes it received | Every Sunday run |
-| Restore drill (RB-02) | The backup decrypts with the recovery key, restores, reconciles and starts the application | At least monthly; after any change of the schema, the backup tooling or the store; before the pilot |
+| Restore drill (RB-02) | The backup decrypts with the recovery key, restores, reconciles and starts the application | At least monthly; after any change of the schema, the backup tooling or the store; before the pilot, on the empty production, and within the pilot's first three trading days, on the shop's own data (section 13) |
 | Full recovery estimate (section 12) | The recovery time of a lost server | At the first installation and yearly |
 
 ## 8. The restore-drill target and copies of production data
 
-- The drill target is the operator's own machine, or another isolated machine under the operator's control that is physically or logically separate from the VPS, for example a virtual machine on the operator's computer. It is never the VPS: never the production or staging server, a Coolify environment on it, or one of their resources (ENVIRONMENTS section 2; BKP-08). While the recovery key is in use there or decrypted data are present, no AI agent runs on it (ENVIRONMENTS ENV-01, ENV-03). A machine that would cost money needs the Owner's approval first (COST_POLICY).
+- The drill target is the operator's own machine, or another isolated machine under the operator's control that is physically or logically separate from the VPS, for example a virtual machine on the operator's computer. It is never the VPS: never the production or staging server, a Coolify environment on it, or one of their resources (ENVIRONMENTS section 2; BKP-08). While the recovery key is in use there or decrypted data are present, no AI agent runs on it (ENVIRONMENTS ENV-01, ENV-03). The same holds for the operator's machine that decrypts, and for the creation and test decryption of a key pair (BKP-20). From the moment the key is taken from its custody until every decrypted file is destroyed, no agent session, scheduled agent task or agent background process runs on such a machine, and no agent performs, watches or screenshots a step (ENVIRONMENTS section 17.2, D-142). Before each drill, the target passes the disk, memory and no-agent check of ENVIRONMENTS section 17.2. A machine that would cost money needs the Owner's approval first (COST_POLICY).
 - The backup is decrypted on the operator's own machine or on the drill target itself. The decrypted dump and files exist only there; when the decrypting machine and the target differ, the decrypted data pass between them only through an SSH tunnel. At the end of the drill the operator destroys the target's database, volume and every decrypted file on every machine that held one, and the drill record says so. Destroying a drill copy is not a destructive production operation; keeping one "for later" is not allowed (BKP-07).
 - The same target, with the latest production backup, is the representative data of a migration rehearsal (RELEASE_PROCESS section 5).
 
@@ -127,7 +127,7 @@ Configured by the operator when the store account is opened (gate G4); one bucke
 
 | ID | Rule | Source |
 | --- | --- | --- |
-| BKP-20 | **Creation.** The operator generates each environment's key pair with `age-keygen` on the operator's own machine, never on the server. The recipient goes into the backup container's settings; the private key into the operator's password manager. For production, the operator prints the private key and the storage account access, writes both to an offline USB drive, decrypts a test object with that copy on the operator's own machine (BKP-08) together with the Owner, then seals it and hands it to the Owner (ADR-010 item 3). | D-088 (Q18b) |
+| BKP-20 | **Creation.** The operator generates each environment's key pair with `age-keygen` on the operator's own machine, never on the server. The recipient goes into the backup container's settings; the private key into the operator's password manager. For production, the operator prints the private key and the storage account access, writes both to an offline USB drive, decrypts a test object with that copy on the operator's own machine (BKP-08) together with the Owner, with no AI agent running on that machine from the key's generation until the copy is sealed (section 8; ENVIRONMENTS section 17.2), then seals it and hands it to the Owner (ADR-010 item 3). | D-088 (Q18b) |
 | BKP-21 | **Yearly check.** Once a year, at the full recovery estimate, the Owner confirms that the sealed copy is still sealed and stored apart from the shop's devices, and the operator confirms that the password manager still holds the key. | D-088 (Q18b) |
 | BKP-22 | **Rotation.** When a holder changes or a leak is suspected: generate a new key pair as BKP-20 says and, for production, **make, test and hand over the new sealed copy at once**, before setting the new recipient, because every new backup is then encrypted to the new key, and recovery never depends on one person (ADR-010 item 3). The account owner sets the rule of section 6 for superseded versions; then set the new recipient. Every new dump uses it from the next run, and each run encrypts up to 1,000 existing files again (section 4 step 7a). The rotation **finishes** when the object `state/files-recipient` names the new recipient alone and 101 days have passed since then: by that day the rule has removed every superseded version of `files/` (100 days) and the tiers have removed every dump and manifest encrypted to the old recipient (at most 93 days and one day of hiding), so that no object encrypted to it is still in the store. The operator confirms this by listing the bucket's versions; the account owner removes the rule; and only then the old private key is retired: until then it stays in the same custody, with the old sealed copy, because a restore may need it. Afterwards the operator removes it from the password manager and the Owner destroys the old sealed copy. During those 101 days the files count twice in the store's usage (section 6). A suspected leak of a private key is also an incident (RB-05): every copy encrypted to it may be readable by someone else. | SEC-SECRET-04, D-088 |
 | BKP-23 | **Loss.** If the operator's copy is lost, the sealed copy restores it, and the key is rotated. If both copies are lost, every backup is unreadable: generate a new key pair at once, take a new backup, record the incident and inform the Owner; the live data are unaffected. | ADR-010 |
@@ -152,7 +152,7 @@ Used only when the live data are lost, corrupted or untrustworthy and no forward
 
 **C. Restore**
 
-8. Download the manifest, the dump and the files with the operator's storage access to the operator's own machine, and decrypt them there with the recovery key — never on the target or anywhere else on the VPS (BKP-08); compare every SHA-256 with the manifest. On a difference, take the next older backup.
+8. Download the manifest, the dump and the files with the operator's storage access to the operator's own machine, and decrypt them there with the recovery key — never on the target or anywhere else on the VPS (BKP-08), and with no AI agent running on that machine until step 11's deletion, the executor's host session and watcher included (section 8; ENVIRONMENTS section 17.2); compare every SHA-256 with the manifest. On a difference, take the next older backup.
 9. Restore the dump into the empty database with `pg_restore` run on the operator's machine through an SSH tunnel to the target database, whose port stays unpublished (ENVIRONMENTS section 9), as the migration role, without owners or privileges; then apply the grants of SCHEMA section 10 with the release image's grants procedure, and run the privilege test against the target (DB01). A difference stops the restore.
 10. Copy the decrypted files from the operator's machine over SSH into the new file volume under their storage keys; check each against `stored_files.sha256`.
 11. Compare the row counts with the manifest's `counts`; run `reconciliation:run` against the target. A mismatch blocks the products concerned, which RB-04 handles before they reopen. Then delete every decrypted file from the operator's machine (BKP-07); a later need downloads and decrypts again.
@@ -196,25 +196,45 @@ The restored data end at the backup's snapshot. What happened afterwards is lost
 | Objective | Proposed | Measured as |
 | --- | --- | --- |
 | Recovery point | ≤ 6 hours | The longest interval between two successful snapshots over the last 30 days, from `backup_runs`, plus the run's duration |
-| Recovery time | ≤ 4 hours | The restore time of the latest drill (download, decryption, restore, verification, fence and reconciliation run), plus the installation time of a new server measured at the first installation (RELEASE_PROCESS RB-23), plus the Owner's reconciliation time measured in a staging rehearsal of RB-01 phase E |
+| Recovery time | ≤ 4 hours | The restore time of the latest production drill, or before the cutover the larger of the two drills of the method below (download, decryption, restore, verification, fence and reconciliation run), plus the installation time of a new server measured at the first installation (RELEASE_PROCESS RB-23), plus the Owner's reconciliation time measured in a staging rehearsal of RB-01 phase E |
 
 The proposals become accepted only when the Owner accepts the measured values, recorded in DECISIONS (gate G4, REQ-NFR-05). The full recovery estimate is repeated yearly with the latest measurements.
+
+**Gate G4 precedes the cutover** (D-142; RELEASE_PROCESS RB-23 step 10). Production has no 30 days of runs before the cutover, so the method below changes how the recovery point is measured, not its objective. **The method itself needs the Owner's explicit acceptance** (OPEN_ITEMS question 40). Until he accepts it, G4 cannot be APPROVED on it, and the cutover waits.
+
+| Step | When | What is measured |
+| --- | --- | --- |
+| 1. Recovery time | Before the cutover | The restore time of a drill (RB-02), plus the installation time of RB-23 steps 1 to 5, plus the Owner's reconciliation time from the staging rehearsal of RB-01 phase E (TASK-045). The restore time is the larger of two drills, because production's first backup holds almost no data: the populated staging drill of the release image, and the first production drill of the empty production (section 13). |
+| 2. Recovery point before the cutover | Before the cutover | Two series, each measured on its own: (a) staging's `backup_runs` on the production schedule (section 3), over at least the last 7 days before staging is stopped; (b) every production run from its first scheduled run until the acceptance, at least one full day of the five scheduled runs. In each series: the longest interval between two successful snapshots, plus that series' longest run duration. The value is the larger of the two. Within a series, a missed or failed scheduled run counts in the interval and nothing is left out. The gap between staging's last run and production's first is no interval of either series. |
+| 3. Acceptance | Before the cutover | The Owner accepts steps 1 and 2 against the objectives, recorded in DECISIONS: gate G4. |
+| 4. Production's own 30 days | Within the 30 days after the cutover | The recovery point measured as the table above defines it, on production's `backup_runs` alone, recorded in DECISIONS. The recovery time measured again with the restore time of the populated production drill (section 13; RELEASE_PROCESS RB-23 step 12), within the pilot's first three trading days, recorded in DECISIONS. |
+| 5. A breach | Any day of those 30 | A value above the accepted one is an incident (OPERATIONS_RUNBOOK RB-05) and is reported to the Owner at once; the objective is reviewed with him. G4 then stays APPROVED only if he confirms it again. |
+
+The method does not weaken the objectives or the 30-day definition. It orders the evidence so that the cutover does not wait 30 days for production's own runs, and step 4 completes the 30-day measurement afterwards.
 
 ## 13. RB-02 — Restore drill
 
 1. Choose the latest production backup with a stored manifest.
-2. Prepare the drill target off the VPS (section 8): deploy the manifest's release image; create roles and the marker `drill`.
+2. Prepare the drill target off the VPS (section 8): run the check of ENVIRONMENTS section 17.2 (disk, memory, no AI agent running) and stop on a failure; deploy the manifest's release image; create roles and the marker `drill`.
 3. Download the backup to the operator's own machine, or to the drill target itself, and decrypt it there with the recovery key — never on the VPS (BKP-08); compare every SHA-256 with the manifest. When the target is another machine than the one that decrypted, the decrypted dump and files reach it only through an SSH tunnel.
 4. Restore the database, apply the grants and run the privilege test; restore the files and check them against `stored_files.sha256`.
 5. Compare the row counts with the manifest; run `reconciliation:run` on the target: it must be clean, because the backup came from reconciled data.
 6. Rehearse the fence: run OP-04 and the sequence advance on the target.
 7. Start the application on the target without traffic and check that `/up` answers 200; reach it locally or through an SSH tunnel and render one recent receipt and one session report through an Owner recovery link issued in the drill copy (OP-02 on the target).
-8. Measure the time of each step.
+8. Measure the time of each step, and the peak memory and disk the drill used on the target (ENVIRONMENTS section 17.2).
 9. Destroy the target and every decrypted file on every machine that held one (section 8).
 10. Record the drill in production with OP-08 `restore:record-drill`: kind `ROUTINE`, the backup identifier, the manifest's SHA-256, the result, the measured durations and a note; the system status then shows "Uji pemulihan terakhir" (OPERATIONS_RUNBOOK section 5).
 11. A failed drill is an incident of class S3 at least (RB-03), fixed and repeated.
 
-The same runbook on staging's backups rehearses the procedure with synthetic data, with its decryption off the VPS as well (BKP-08); a staging drill is recorded in staging only and never counts for production.
+The same runbook on staging's backups rehearses the procedure with synthetic data, with its decryption off the VPS as well (BKP-08); a staging drill is recorded in staging only and never counts for production as a drill (REL-04, gate G4). It serves production only as the feasibility measurement of its target (ENVIRONMENTS section 17.2) and as the populated staging form below.
+
+**Three forms of the drill at the first installation.** No business record is ever added to production to make a drill possible: no Sale, receipt, movement, session or other business record, synthetic or real, outside the shop's own work (RELEASE_PROCESS REL-07 and RB-21; D-145). The rows of `backup_runs` and `restore_drills` that the commands write are not business records.
+
+| Form | When | What differs | What it proves | Counts as |
+| --- | --- | --- | --- | --- |
+| Populated staging | After the release image's digest is deployed to staging, before PRODUCTION-DEPLOY (RELEASE_PROCESS RB-23 step 7) | A staging backup that this digest made, holding staging's synthetic sessions, receipts and session reports (RELEASE_PROCESS RB-21, its populated staging form); staging's own key; recorded in staging. Steps 1 to 11 otherwise as written | That a backup made by the release image, with receipts and sessions, decrypts, restores, reconciles and renders a receipt and a session report on that image | Staging only: never a production drill. Its restore time is one value of section 12 step 1 |
+| Empty production | RELEASE_PROCESS RB-23 step 9, before gate G4 and the cutover | Step 1 takes the latest production backup taken after RB-23 step 8, which holds the Owner, the staff accounts, the BusinessProfile and the cash registers, and no session or receipt; the backups of RB-23 step 7 hold no Owner and do not serve. Step 7 renders the BusinessProfile, the cash registers and the staff list through the recovery link instead, and they must match production's | The decryption with production's own recovery key, the restore, the privileges, the reconciliation, the fence and the start, on production's backup and image | Production's first drill: gate G4 and the system status, and REL-04 only until the shop's data exist (RELEASE_PROCESS RB-23 step 12). It does not prove the restore of receipts and sessions |
+| Populated production | RELEASE_PROCESS RB-23 step 12, within the pilot's first three trading days | None: steps 1 to 11 as written, on a scheduled production backup that holds the shop's own receipts and a closed session | Everything step 7 asks, on the shop's own data | A production drill (`ROUTINE`); its restore time is checked against the accepted recovery time (section 12 step 4) |
 
 ## 14. Open items
 

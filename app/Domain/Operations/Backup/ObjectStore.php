@@ -17,7 +17,7 @@ use Psr\Http\Message\ResponseInterface;
  * A refusal keeps only the status and the store's code for the tests' messages,
  * never its message: BackupFailed. A failed connection and a transient answer are
  * tried again, within what remains of the run: one of them must not cost a whole
- * backup, whose next chance is six hours away.
+ * backup, whose next chance is up to five hours away.
  */
 final class ObjectStore implements BackupStore
 {

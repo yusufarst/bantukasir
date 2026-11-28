@@ -4,7 +4,7 @@ The single log of decisions for BantuKasir. A decision made in conversation does
 
 ## 1. How to use this log
 
-- Identifiers are permanent and continue the original numbering. The next free identifier is **D-142**.
+- Identifiers are permanent and continue the original numbering. The next free identifier is **D-146**.
 - "Source" says who decided: **Owner**, or **Planner** (a planning agent acting on its own authority under the rules of the time).
 - "Status" says whether the decision is in force today. `REVALIDATION PENDING` means the decision still applies but the Owner has been asked to re-confirm it; the item number refers to [OPEN_ITEMS](OPEN_ITEMS.md).
 - D-001 to D-018 were recorded on 2 and 3 October 2026 in the former register, now [legacy/10-DECISIONS.md](legacy/10-DECISIONS.md). The table below summarizes them in English. For the exact meaning of D-001 to D-018 the original Indonesian wording governs; for whether a decision is in force, this log governs.
@@ -161,6 +161,19 @@ All by the Owner (Asia/Jakarta). D-019 to D-025 answer the questions of the [re-
 | D-139 | 22 November 2026: CVE-2026-121482, a new high finding in `libssl3t64`, `openssl` and `openssl-provider-legacy` at 3.5.9-1~deb13u1 that the gate refused on pull request #60 (CI run 44998056780), is accepted temporarily, for development and CI only, at exactly that version, by its own entry. Verifying with CRL checking enabled can exhaust the CPU. The configuration examined enables CRL checking nowhere, so no exposure path was identified; this is not a guarantee that the flaw cannot be exploited. No fixed version exists: Debian has none in any suite, and OpenSSL has not released 3.5.10. The entry expires at a fix, known exploitation, a raise of severity, a Task that adds a use it rules out, a change of the base image, gate RELEASE, or 31 December 2026 at the latest. No staging or production, no other CVE or version, no wildcard, and no change to the scan or its gate. | Security and ops, the Owner's decision in the host session, by an `ops/` pull request whose merge is the Owner's. `scripts/checks/image-scan-accepted.json` and `scripts/checks/image-scan-gate-test.sh` follow. |
 | D-140 | 23 November 2026: DSA-6650-1 moved `libgssapi-krb5-2`, `libk5crypto3`, `libkrb5-3` and `libkrb5support0` to 1.21.3-5+deb13u2. It fixed the six krb5 CVEs of D-127 and D-128, but not CVE-2026-107778 of D-112, which the gate refused at the new version (CI run 45134720773, pull request #62). CVE-2026-107778 is accepted again, temporarily, for development and CI only, at exactly 1.21.3-5+deb13u2, by its own entry. Debian lists it `<no-dsa>` (Minor issue), fixed only in sid. It is a crash of a Kerberos service that reads forwarded credentials. The configuration examined runs no such service, so no exposure path was identified; this is not a guarantee that the flaw cannot be exploited. The entry expires at a fix, known exploitation, a raise of severity, a Task that adds a use it rules out, a change of the base image, gate RELEASE, or 31 December 2026 at the latest. No staging or production, no other CVE or version, no wildcard, and no change to the scan or its gate. | Security and ops, the Owner's decision "D-140" in the host session, approved in principle, by an `ops/` pull request whose merge is his. The six fixed entries of D-127 and D-128 are kept. `scripts/checks/image-scan-accepted.json` and `scripts/checks/image-scan-gate-test.sh` follow. |
 | D-141 | 23 November 2026: the Owner's HOLD of continuous execution while gate TARGET is reviewed. Gate TARGET stays OPEN. The host session's watcher stays stopped. No tick, no `state.sh resume` and no TASK-044 run, and no gate is approved. The HOLD ends only when the Owner explicitly instructs the resume in the host session: a restart of the watcher, a `state.sh resume`, or the start of TASK-044. Recording gate TARGET's facts makes TASK-044 eligible (CE-10), but it does not by itself end the HOLD. The Owner's other work under the HOLD — reviews, `ops/` pull requests, CI reruns he asks for — goes on. | Owner, the host session of CE-03, in his instructions of 23 November 2026 and every instruction since; recorded by `ops/` pull request #62, after the automated review's finding that only CURRENT_HANDOFF held it. CURRENT_HANDOFF and ENVIRONMENTS section 17.1 follow. |
+| D-142 | 27 November 2026: the gates of TASK-044 to TASK-050 in phases, so that no gate waits for a Task that it blocks.
+<br>• **TARGET** splits into TARGET-STAGING (phase A, before the first deployment), TARGET (phase B, completed by TASK-045 and TASK-048) and TARGET-PRODUCTION (phase C, before production's installation).
+<br>• **G4** splits into G4-STORE (before TASK-045), G4-SEALED (TASK-049) and G4 itself, accepted before the cutover inside TASK-050.
+<br>• **DEVICES** splits into DEVICES-AVAILABLE (before TASK-046) and DEVICES (the Owner's decision, before TASK-046 is `DONE`).
+<br>• **RELEASE** splits into STAGING-DEPLOY (each staging deployment authorized by its digest), RELEASE-AUTH (before TASK-050: the release of the final candidate verified on staging, with the independent vulnerability review and the Owner's production decision), PRODUCTION-DEPLOY (inside TASK-050: the production installation of the release image's own digest, after its staging verification) and RELEASE (complete with the pilot). The scan gate's acceptances are for development and CI only and count for no authorization.
+<br>• **New gate:** OPERATOR.
+<br>• **Moved to "before `DONE`":** GATE-CC2 and G2 bind only a Task's `DONE`.
+<br>• **Resources:** they are measured on the existing hardware and never assumed (ENVIRONMENTS section 17.2).
+<br>• **Proof:** `scripts/checks/gate-progression.sh` proves the progression in `composer lint`.
+<br>No acceptance criterion is weakened, FULL V1 stands, and no gate is approved, no deployment authorized and no PostgreSQL version changed. | Owner, approved in principle in the host session, by an `ops/` pull request whose merge is his. TASK_PLAN, DEPENDENCY_GRAPH, the contracts of TASK-044 to TASK-050, ENVIRONMENTS, BACKUP_RECOVERY, RELEASE_PROCESS, OPEN_ITEMS and CURRENT_HANDOFF follow. |
+| D-143 | 27 November 2026: the security update of six packages for the 13 advisories of 17 and 25 November 2026 that failed `composer audit --locked` on pull request #65, in that same pull request, the smallest versions that fix them. `symfony/http-kernel`, `symfony/mailer`, `symfony/routing` and `symfony/serializer` go to v8.1.12. `symfony/http-foundation` goes from v8.1.11 to v8.1.12 because http-kernel v8.1.12 requires it. `web-auth/webauthn-lib` goes from 5.3.9 to 5.3.13. Only those six entries of `composer.lock` change; `composer.json` and the content hash are unchanged. No advisory is accepted or ignored, and the audit's policy is unchanged. | Owner, his remediation directive for pull request #65 ("minimal compatible security updates") and his choice "Allow Packagist read" in the host session. CURRENT_HANDOFF follows. |
+| D-144 | 28 November 2026: CVE-2026-107494 is accepted temporarily, for development and CI only, at exactly 3.5.9-1~deb13u1 of `libssl3t64`, `openssl` and `openssl-provider-legacy`, by its own entry. It is a new high finding that the image gate refused on pull request #65 (CI run 46032223236). OpenSSL's QUIC stack can be made to allocate memory without a limit by a malicious QUIC peer. OpenSSL rates it Low and fixes it in 3.5.10, whose release is scheduled for 1 December 2026; Debian marks trixie `<postponed>`, with no fixed version. No process of the image speaks QUIC through OpenSSL, and the image holds no HTTP/3 library, so no exposure path was identified in the configuration examined; this is no guarantee. It expires at a fix that the build installs, known exploitation, a raise of severity, a Task that adds QUIC or HTTP/3, a change of the base image, gate RELEASE, or 31 December 2026 at the latest. It authorizes no staging or production deployment, and counts for none of STAGING-DEPLOY, RELEASE-AUTH or PRODUCTION-DEPLOY (D-142). | Owner, his choice "Accept dev/CI only" in the host session, after its assessment. `scripts/checks/image-scan-accepted.json`, `scripts/checks/image-scan-gate-test.sh` and CURRENT_HANDOFF follow. |
+| D-145 | 28 November 2026: two corrections of the operational path, on pull request #65. (1) The first installation in phases of evidence: no business record is ever added to production for a check or drill. RB-21 and RB-02 each have three forms: populated staging on the release image's own digest before PRODUCTION-DEPLOY, empty production before gate G4, and the populated production drill within the pilot's first three trading days, before the pilot's acceptance. The pre-cutover production backup and drill stay. (2) The scheduled backups run five times a day, at 00.00, 05.00, 10.00, 15.00 and 20.00 Asia/Jakarta, instead of four runs 6 hours apart. Those could never meet the proposed recovery point of 6 hours, which adds the run's duration. The objective, its 30-day definition and the cost of Rp0 stay. Question 40 stays OPEN. | Owner: his directive "Final PR #65 operational consistency correction" in the host session, then his choice "Lima run sehari" for the schedule. Terms in section 6. |
 
 ## 4. Facts supplied by the Owner
 
@@ -2731,3 +2744,198 @@ He repeated it in each instruction since, for example, in Bahasa Indonesia: "TAS
 - **How it ends.** Only the Owner's explicit instruction in the host session ends it, and that instruction must name the resume: a restart of the watcher, a `state.sh resume`, or the start of TASK-044. Rule A of the host session (CE-03) runs only after such an instruction. Recording gate TARGET's facts (ENVIRONMENTS section 17) makes TASK-044 eligible under CE-10, but it does not by itself end the HOLD.
 - **Why it is here.** The automated review of pull request #62 found that the HOLD changed what continuous execution may do, but was recorded only in CURRENT_HANDOFF. SOURCE_OF_TRUTH section 1 ranks DECISIONS above the handoff, and AGENTS rule 17 asks for real decisions in DECISIONS in the same piece of work. CURRENT_HANDOFF and ENVIRONMENTS section 17.1 refer to this decision.
 - **Unchanged.** D-101, D-104 and D-105, apart from the stop this decision holds; FULL V1 (D-130); every gate and mandatory check. No deployment is authorized, and no agent reaches the server (ENV-03).
+
+### D-142 — The release path's gates in phases, on the existing hardware
+
+The Owner gave this decision on 27 November 2026 in the host session of CE-03, after the host session's production delivery plan, as an approval in principle that he completes by reviewing and merging this pull request. His words, in English as he wrote them:
+
+> Approved in principle. Prepare one consolidated D-142 ops PR with these mandatory corrections.
+> Eliminate ALL circular prerequisites across TASK-044–050 using existing `before DONE` semantics wherever possible.
+> G4 production backup and recovery acceptance must precede cutover, not TASK-050 entry.
+> Separate pre-deployment TARGET readiness from post-deployment verification.
+> Resolve GATE-CC2, G4-SEALED, provisional G2, DEVICES and operator prerequisites.
+> Preserve independent vulnerability review and explicit staging/production authorization.
+> No additional RAM, no requests to free RAM, no interruption of unrelated services, no additional spending. Do not assume 6.5–7 GiB is available. Heavy builds/tests use CI. Verify restore-drill feasibility on existing hardware.
+> Do not authorize a PostgreSQL downgrade or destructive operation.
+> Prove the complete gate progression from TASK-044 through TASK-050 with automated checks. Preserve FULL V1 and all acceptance criteria.
+
+#### What was circular
+
+The selection of CE-10 reads each gate's state by its identifier in TASK_PLAN section 3. A word such as "the staging part" in a gates cell is not read. As written before this decision:
+
+- **TARGET** needed PERF01, which TASK-048 produces, and a first backup and drill, which TASK-045 produces. Yet TARGET blocked TASK-044, TASK-045, TASK-046 and TASK-048 at their start.
+- **G4** blocked TASK-045 for its store, but its single state held until TASK-050's acceptance.
+- **DEVICES** held the Owner's decision on DEVICE01, which comes from TASK-046, which it blocked.
+- **GATE-CC2** blocked TASK-047's start, but its approval is made inside TASK-047.
+- **G2** blocked TASK-048, although TASK-048 may measure the provisional dataset.
+- **"operator named"** had no row, so it could never be satisfied.
+- **RELEASE** held the pilot's acceptance, which TASK-050 produces, and blocked TASK-050's start.
+
+#### The phases
+
+TASK_PLAN section 3 holds each phase as its own gate. A row names after "before `DONE`:" the gates that the Task completes, which CE-10 does not check at its start.
+
+| Task | At its start | Before `DONE` |
+| --- | --- | --- |
+| TASK-044 | OPERATOR, TARGET-STAGING, GATE-PUBLISH | STAGING-DEPLOY |
+| TASK-045 | OPERATOR, TARGET-STAGING, G4-STORE | — (it completes TARGET's phase B with TASK-048) |
+| TASK-046 | OPERATOR, TARGET-STAGING, DEVICES-AVAILABLE | DEVICES |
+| TASK-047 | — | GATE-CC2, SATISFIED without an approval when the values are confirmed |
+| TASK-048 | OPERATOR, TARGET-STAGING | — (G2 is no gate of it: the final dataset when known, otherwise the provisional one, stated) |
+| TASK-049 | OPERATOR, TARGET, DEVICES, GATE-PUBLISH | G1, G2, G3, G4-SEALED |
+| TASK-050 | OPERATOR, TARGET-PRODUCTION, G4-SEALED, RELEASE-AUTH, GATE-PUBLISH | STAGING-DEPLOY for the release image's digest; PRODUCTION-DEPLOY, before the production installation; G4, accepted before the cutover; RELEASE |
+
+**TARGET's three phases (ENVIRONMENTS section 17).** Every item keeps its requirement.
+
+- **Phase A, TARGET-STAGING:** the server and staging before their first deployment, with the memory headroom measured.
+- **Phase B, TARGET:** completed by TASK-045 (staging's first backup and off-VPS drill, the heartbeat alerts, SEC02) and TASK-048 (PERF01).
+- **Phase C, TARGET-PRODUCTION:** production before its installation, on the PostgreSQL version that OPEN_ITEMS question 39 decides.
+
+**G4 precedes the cutover.** The cutover inside TASK-050 starts only after the Owner accepts G4 on the measured production values (RELEASE_PROCESS RB-23 step 10; BACKUP_RECOVERY section 12). The recovery point before the cutover is measured on two series, each on its own: staging's runs on the production schedule (at least the last 7 days before staging stops) and every production run since its first scheduled run (at least one full day); the value is the larger of the two. Production's own 30-day value follows within the 30 days after the cutover, and a breach is an incident. This method needs the Owner's explicit acceptance, which is OPEN_ITEMS question 40, still OPEN; until he accepts it, G4 cannot be APPROVED and the cutover waits.
+
+**Authorizations kept.**
+
+- **Staging:** each staging deployment needs the Owner's explicit authorization of the exact candidate (STAGING-DEPLOY, REL-01).
+- **Release:** RELEASE-AUTH, before TASK-050, names the final candidate by its commit, candidate tag and the image digest verified on staging. It includes the independent review of every vulnerability remaining in that image (D-112, D-113) and the Owner's own decision for production on each finding still present. It authorizes the tag `v1.0.0` and the image's publication, not a deployment.
+- **Production:** the release workflow builds the image of `v1.0.0` again, so its digest exists only inside TASK-050. That digest goes to staging first, under its own STAGING-DEPLOY, and is verified there (REL-03). Then the Owner authorizes its production installation by that exact digest (PRODUCTION-DEPLOY). A new high or critical finding of its scan goes back to the Owner.
+- **Development and CI only:** every acceptance of the scan gate's list, D-139, D-140 and D-144 among them, counts for no staging or production authorization. Each of STAGING-DEPLOY, RELEASE-AUTH and PRODUCTION-DEPLOY carries the Owner's own decision for its environment on each high or critical finding still present.
+
+#### Resources
+
+The plan assumes no headroom; it measures it (ENVIRONMENTS section 17.2).
+
+- **The server's memory:** measured in phase A beside the other services as they run. Each container's limit fits inside it, and a headroom too small is a stop for the Owner, never a change of memory or of another service.
+- **One environment at a time:** only one environment runs its full workload, until PERF01 has measured both. Staging is stopped, never deleted, before the production installation.
+- **Builds and heavy tests:** only in GitHub Actions. The server pulls images by digest.
+- **The restore drill off the VPS:** its feasibility is not yet verified. A complete RB-02 needs the release image, PostgreSQL of the production version, the restored file volume and the application started on the target, not one database container.
+  - **Candidate machine:** the Owner's machine (7.2 GiB of memory, 16 logical processors, 28 GB of free disk, a container engine shared with another project within about 3.4 GiB) is a candidate only.
+  - **Verification:** TASK-045's complete staging drill on the target measures its peak memory and disk. The production drill runs only where that drill passed and the disk, memory and no-agent check passes; otherwise it is a stop for the Owner, never a request to free memory.
+  - **No AI agent:** none runs on a machine holding the recovery key or decrypted data, from the key's retrieval until the data are destroyed (ENVIRONMENTS section 17.2; BACKUP_RECOVERY section 8).
+
+#### The proof
+
+`scripts/checks/gate-progression.sh`, in `composer lint` with its unit test `tests/Unit/StaticChecks/GateProgressionTest.php`, runs the tick's own selection functions of `scripts/executor/lib.sh` on a copy of the plan. It proves three things:
+
+- every gate of TASK-044 to TASK-050 has its row;
+- no Task waits at its start for a gate that it or a later Task completes;
+- with the external gates satisfied in their order, the selection starts TASK-044, TASK-048, TASK-045, TASK-046, TASK-047, TASK-049 and TASK-050 in turn, each while the gates it completes are still open, and refuses each one while a start gate is open;
+- no authorization names an image digest that does not exist when it is given, and none counts an acceptance for development and CI only.
+
+Run on the plan before this decision, the check fails on each cycle above.
+
+#### The Owner's corrections of the same day
+
+After the first CI run of this pull request, the Owner directed its remediation in the same pull request (27 November 2026). The items this decision takes up, in English as he wrote them:
+
+> 4. Correct restore feasibility assumptions against the complete RB-02 procedure. Prohibit AI agents during recovery-key use or decrypted-data handling.
+> 5. Eliminate remaining circular release prerequisites, particularly RELEASE-AUTH and image digest availability.
+> 6. Preserve exact deployment authorization and same-image staging verification.
+> 7. Ensure development/CI-only CVE acceptances never authorize staging or production.
+> 8. Present the pre-cutover RPO method and subsequent 30-day production measurement for explicit Owner acceptance.
+
+**What was still circular.** RELEASE-AUTH, a start gate of TASK-050, named the exact revision, including the image digest (REL-01). But the image of `v1.0.0` is built by the release workflow from the tag, which TASK-050 pushes, so its digest did not exist yet. That image was also never deployed to staging, against REL-03. RELEASE-AUTH now names the final candidate verified on staging, and PRODUCTION-DEPLOY names the release image's own digest inside TASK-050, after its staging verification.
+
+#### Unchanged
+
+- FULL V1 (D-130) and every acceptance criterion and suite.
+- The scans, the gates' content and every mandatory check.
+- OPEN_ITEMS question 39 stays OPEN. No PostgreSQL downgrade and no destructive operation is authorized.
+- No gate is approved here and no deployment is authorized.
+- The HOLD of D-141 stays until the Owner's explicit instruction that names the resume.
+- No executor script changes: the check only reads `lib.sh`.
+
+### D-143 — The security update of six packages in pull request #65
+
+The Owner gave this decision on 27 November 2026 in the host session of CE-03. It has two parts, in English as he wrote them.
+
+His remediation directive for pull request #65:
+
+> 2. Resolve all 13 Composer advisories using minimal compatible security updates.
+
+His choice when the host session asked how the lock should be made, after the tool that read Packagist's advisory data had been refused:
+
+> Allow Packagist read
+
+- **What failed.** CI run 45986520608 on `e345dd6`, and run 46003145955 on `f2b3444`, failed at `composer audit --locked`. There were 13 advisories, reported on 17 and 25 November 2026, none with a rated severity, so the policy of THR-14 fails them:
+  - `symfony/http-kernel` CVE-2026-133743; `symfony/mailer` CVE-2026-133751 and CVE-2026-133755; `symfony/routing` CVE-2026-133746 and CVE-2026-133754; `symfony/serializer` CVE-2026-133761 and CVE-2026-133752. Every one is fixed in v8.1.12 for 8.1.
+  - `web-auth/webauthn-lib`: six advisories without a CVE (PKSA-mstn-ywch-n48d, PKSA-cc3j-tk8g-4j9v, PKSA-2h5m-mtv3-857q, PKSA-ktqk-pv7f-ynkv, PKSA-f652-rtjq-ksry, PKSA-3yvx-trwt-wx7f), all fixed in 5.3.13.
+- **The smallest versions.**
+  - The four Symfony packages go to v8.1.12, the first fixed version. `symfony/mailer` was at v8.1.7; the other three were at v8.1.11.
+  - `web-auth/webauthn-lib` goes from 5.3.9 to 5.3.13.
+  - `symfony/http-foundation` goes from v8.1.11 to v8.1.12, because http-kernel v8.1.12 requires `^7.4.24|^8.1.12`. That is the only dependency the update needed.
+- **Exposure, as read before the update.** The review found no use of what the advisories need:
+  - No mailer is configured: `config/mail.php` has the default `none` and no transport.
+  - Passkeys are off, and no passkey route exists (`config/fortify.php`). `web-auth/webauthn-lib` and its Serializer use are therefore out of reach, as D-121 found.
+  - The application has no inline fragment of Symfony, no route with a host, and no CSV encoder.
+- **How the lock was made, without Docker.** Docker was not running, and D-108 and the Owner's resource constraints exclude starting it. The host has no PHP. So the six entries were built from Packagist's own metadata (`repo.packagist.org/p2/<package>.json`), with a script in the host session's temporary folder:
+  - It parsed and wrote `composer.lock` in Composer's format; the whole file came back byte for byte identical.
+  - It rebuilt each of the six entries at its old locked version from that metadata; each came back byte for byte identical to the lock's entry.
+  - Only then did it build each entry at its new version.
+  - A second script checked every requirement and conflict of the six, and every one naming them in other packages, against the locked versions. All are met: Laravel 13.37.0 allows the Symfony packages at `^7.4.0 || ^8.0.0`, and `laravel/passkeys` allows webauthn-lib at `5.3.x`.
+  - The content hash is unchanged, because `composer.json` is unchanged.
+- **The result.**
+  - In `composer.lock` only those six entries change, in their version, the commit of the source and of the archive, the link to the source and the release time.
+  - http-kernel's requirement on http-foundation and its conflict with `symfony/dependency-injection`, which is not installed, also change, as v8.1.12 publishes them.
+  - CI on the new head proves the lock, `composer install` in the image, the audit and every suite.
+- **Unchanged:** the audit and its policy, with no advisory accepted, ignored or suppressed; `composer.json`; every test, the executor scripts and the timeouts. No deployment to staging or production is authorized.
+
+### D-144 — CVE-2026-107494 accepted temporarily at OpenSSL 3.5.9-1~deb13u1, development and CI only
+
+The Owner gave this decision on 28 November 2026, in the host session of CE-03, after the host session's assessment. The session asked how CVE-2026-107494 should be handled, and offered two answers: wait for Debian's fix, or accept it temporarily for development and CI only as D-144, not for staging or production. His answer, in English as he wrote it:
+
+> Accept dev/CI only
+
+- **The finding.** CI run 46032223236 on pull request #65 (head `fcaf102`) failed its image checks on one CVE alone. The same finding had refused runs 45986520608 and 46003145955.
+  - The CVE is CVE-2026-107494, High, in `libssl3t64`, `openssl` and `openssl-provider-legacy` at 3.5.9-1~deb13u1.
+  - Its fix state is not-fixed, with no known exploitation and an EPSS of 0.00778, by Grype's database of 2026-11-27T06:22:11Z.
+  - The gate counted 160 accepted, 3 refused and 204 of lower severity.
+- **The flaw.** OpenSSL's QUIC stack queues a RETIRE_CONNECTION_ID frame for every retransmitted NEW_CONNECTION_ID frame, without a limit. A malicious remote QUIC peer can therefore make it allocate memory until it runs out: a denial of service, CWE-770. It is the incomplete fix of CVE-2026-84784.
+  - OpenSSL's advisory of 24 November 2026 rates it **Low**. It places the QUIC implementation outside the FIPS module boundary, and says 3.0, 1.1.1 and 1.0.2 are not affected.
+  - The scan's database rates it High.
+- **The exposure in the image.** No exposure path was identified in the configuration examined. As in D-139, this is a finding of that examination, not a guarantee that the flaw cannot be exploited.
+  - No process of the image speaks QUIC through OpenSSL. The application's outbound connections use TCP and TLS: to PostgreSQL through libpq, and over HTTPS through PHP's streams and curl.
+  - The image's package list of that run holds neither `libngtcp2` nor `libnghttp3`, so curl has no HTTP/3.
+  - Nothing in `app/`, `config/`, `docker/`, `compose.yaml` or the scripts asks for QUIC or HTTP/3, and `app/` sets no curl option of HTTP version.
+  - Nginx serves plain HTTP on port 8080, with no `quic` listener: TLS ends before the container.
+- **The fix.** None to install yet. Debian marks trixie `<postponed>` ("Fix along with future update"): trixie 3.5.9-1~deb13u1 and trixie-security 3.5.7-1~deb13u3 are vulnerable, and there is no DSA. OpenSSL fixes it in 3.5.10, 4.0.4 and 4.1.1, with releases scheduled for 1 December 2026.
+- **The record.**
+  - `scripts/checks/image-scan-accepted.json` holds the CVE's own entry under D-144, at exactly the three packages and that version.
+  - A block `assessedD144` records the run, the scanner, its database, the image and the limits.
+  - `image-scan-gate-test.sh` checks that D-144 holds exactly that one entry at that version and no critical finding. The counts become 75 CVEs and 193 findings.
+- **The limits.** Development and CI only, at exactly 3.5.9-1~deb13u1: no staging, no production, no other CVE or version, and no wildcard. The entry expires at the first of these:
+  - a fix that the build installs;
+  - known exploitation;
+  - a raise of severity;
+  - a Task that adds QUIC or HTTP/3, a QUIC listener of Nginx, `libngtcp2` or `libnghttp3`, or a curl option of HTTP version;
+  - a change of the base image;
+  - gate RELEASE;
+  - 31 December 2026 at the latest, when the Owner reassesses it.
+
+  It counts for none of STAGING-DEPLOY, RELEASE-AUTH and PRODUCTION-DEPLOY, which each need the Owner's own decision for their environment (D-142).
+- **Unchanged.** The scan, its gate and every mandatory check; every other entry; and the D-141 HOLD. No deployment is authorized.
+
+### D-145 — The first installation's evidence in phases, and five scheduled backups a day
+
+The Owner gave this decision on 28 November 2026, in the host session of CE-03. His directive "Final PR #65 operational consistency correction", in English as he wrote it, asked among other things:
+
+> Never insert synthetic transactions into production.
+
+The host session then asked how the backup schedule should meet the recovery point. It offered five runs a day, or leaving the choice to him. His choice was "Lima run sehari".
+
+- **The first-installation deadlock.** RB-21 step 5 opens an OPEN session, a recent receipt and a session report. RB-02 step 7 renders a recent receipt and a session report. Before the cutover, production holds none of these, and the shop's own transactions begin only after gate G4 (D-142). The checks could therefore never pass at the first installation.
+- **The correction: three forms of each check** (RELEASE_PROCESS RB-21; BACKUP_RECOVERY section 13).
+  - **Populated staging**, before PRODUCTION-DEPLOY: the release image's own digest passes RB-21 on staging's synthetic sessions and receipts. A restore drill of a staging backup made by that digest renders a receipt and a session report. It is recorded in staging and never counts as a production drill.
+  - **Empty production**, before gate G4: RB-21 and the first production drill on what the installation and the Owner's setup leave. The drill takes a backup made after the Owner's setup; the backups that RB-20 step 11 makes before it hold no Owner. Step 7 renders the BusinessProfile, the cash registers and the staff list, and the system status is read after the drill. The pre-cutover production backup and drill stay, and count for G4. They count for REL-04 only until the shop's data exist.
+  - **Populated production**, within the pilot's first three trading days: a complete RB-02 of a scheduled backup that holds the shop's own receipts and a closed session. It is the drill of PIL-04. Gate RELEASE and the pilot's acceptance wait for it, and so does any production release with a migration.
+  - No business record is added to production for any check or drill: no Sale, receipt, movement, session or other business record, synthetic or real, outside the shop's own work (REL-07). The operational rows the commands write, such as `backup_runs` and `restore_drills`, are not business records.
+  - The first installation skips RB-20 step 4 as well as step 6: production's first drill follows it (REL-04).
+- **The recovery time before the cutover.** The empty production's restore says little about the restore of a real day. Section 12 step 1 therefore takes the larger restore time of the populated staging drill and the empty production drill. Step 4 measures it again with the populated production drill.
+- **The backup schedule.**
+  - The recovery point is the longest interval between two successful snapshots plus the run's duration, and a run may last up to 30 minutes (BACKUP_RECOVERY section 4). Four runs 6 hours apart could never be 6 hours or less.
+  - Five runs at 00.00, 05.00, 10.00, 15.00 and 20.00 Asia/Jakarta give at most 5 hours 30 minutes without a miss. A missed or failed run is still a breach (section 12 step 5).
+  - The weekly and monthly copies keep their 00.00 runs. The prefix `db/6h/` and the retention periods are unchanged.
+  - The store holds about a quarter more dumps: production's full profile about 43 to 50, about 2.5 GB at a 50 MB dump. This is within the free 10 GB and below the 6 GB threshold of the reduced retention, so the cost stays Rp0. Every capped transaction class stays capped at Rp0, so the store refuses rather than bills (section 6).
+  - The status and heartbeat thresholds of 7 hours stay. They now detect a run missing for 2 hours after its time.
+  - The code changed in `app/Console/ProcessSchedule.php` (SC-03's cron `0 0,5,10,15,20 * * *`), with `ProcessScheduleTest` and the tier cases of `BackupRulesTest`.
+- **Unchanged.** The objectives of REQ-NFR-05 and their 30-day definition; question 40, which stays OPEN for the Owner's explicit acceptance of the method; every mandatory check; the D-141 HOLD. No gate or acceptance criterion is weakened: G4, PRODUCTION-DEPLOY and RELEASE gain the evidence above, and TASK-050 gains AC-050-04. No deployment is authorized, no server is accessed, and no risk is accepted.
+- **Amended as necessary consequences:** RELEASE_PROCESS (REL-04, RB-21, RB-23 steps 7 to 12, section 12); BACKUP_RECOVERY (sections 3, 6, 7, 12 and 13); RESTORE_CHECKLISTS section 2; ADR-010 items 5 and 12; ROUTE_CONTRACTS SC-03; ENVIRONMENTS sections 13 and 17.2; `BackupRunTest`; OPERATIONS_RUNBOOK section 9; TASK_PLAN section 3 (G4, PRODUCTION-DEPLOY, RELEASE); the contract of TASK-050; OPEN_ITEMS question 40; and CURRENT_HANDOFF last.

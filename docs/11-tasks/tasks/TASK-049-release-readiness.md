@@ -6,7 +6,7 @@
 | Phase and lane | 10 Release · lane R, reports, audit views and release |
 | Size and review | L · review class V — verification results accepted by the Owner ([EXECUTION_CONTEXT](../EXECUTION_CONTEXT.md) section 12) |
 | Depends on | [TASK-045](TASK-045-operations-verification.md), [TASK-047](TASK-047-p7-change-control-2.md), [TASK-048](TASK-048-performance-verification.md) |
-| Gates | G1, G2, G3, G4 (the sealed copy handed over), DEVICES, TARGET, GATE-PUBLISH ([TASK_PLAN](../TASK_PLAN.md) section 3) |
+| Gates | OPERATOR, TARGET (phases A and B verified), DEVICES, GATE-PUBLISH; before `DONE`: G1, G2, G3 (the Owner records them in scope item 5), G4-SEALED (the sealed copy handed over) ([TASK_PLAN](../TASK_PLAN.md) section 3; D-142) |
 | Branch | `task/TASK-049-release-readiness` from `develop` (EXC-22) |
 | Executor | Claude Opus 5.5, at the effort that the Owner's instruction names for this Task (D-031, D-095), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None. |
@@ -44,9 +44,9 @@ After AGENTS.md, CURRENT_HANDOFF, EXECUTION_CONTEXT and TASK_PLAN sections 1 to 
 2. With the operator present, the shop's people run UAT-01 to UAT-19, UAT-21 and UAT-22 on staging (UAT-20, UAT-23 and UAT-24 ran in TASK-045), each script recorded by the person who ran it and checked by the operator (UPR-02).
 3. Train the cashiers, OPERATIONS_ADMIN and the Owner as UAT_PILOT section 4 says; finalize the guidance UG-01 to UG-13 with the Owner.
 4. Rehearse the cutover RB-24 on staging with synthetic data.
-5. Have the Owner record the facts of gates G1, G2 and G3; have the operator create the production backup keys and hand the Owner the tested sealed copy (BKP-20).
+5. Have the Owner record the facts of gates G1, G2 and G3; have the operator create the production backup keys and hand the Owner the tested sealed copy (BKP-20), the Task stopping for the operator (CE-70) first, with no AI agent running on the machine that generates or holds the key, the host session and its watcher closed by the Owner until the copy is sealed (ENVIRONMENTS section 17.2).
 6. Check the cost inventory and the free-tier record again (REQ-NFR-06).
-7. Confirm that the Owner has named the operator and approved the runbooks (TASK-045); prepare the request for gate RELEASE naming the exact target, revision, operation and window (REL-01).
+7. Confirm that the Owner has named the operator (gate OPERATOR) and approved the runbooks (TASK-045); prepare the request for gate RELEASE-AUTH naming the target, the operation and the window, and the final candidate by its commit, its candidate tag and the image digest deployed and verified on staging (REL-01, REL-03), with the independent review of every vulnerability remaining in that image for the Owner's production decision (D-112, D-113; every acceptance of the scan gate's list, D-139, D-140 and D-144 among them, covers development and CI only). The release image of `v1.0.0` is built only inside TASK-050, so its own digest is authorized there (PRODUCTION-DEPLOY).
 
 ### 4.2 Owned by this Task
 
@@ -130,7 +130,7 @@ Each dimension is recorded `PASS`, `FAIL`, `BLOCKED` or `N/A` with its reason (E
 
 ## 12. For later Tasks
 
-- TASK-050 starts only with the Owner's authorization of gate RELEASE.
+- TASK-050 starts only with gates RELEASE-AUTH, TARGET-PRODUCTION and G4-SEALED SATISFIED (D-142).
 - Tasks that depend on this one directly: [TASK-050](TASK-050-production-pilot.md).
 
 ## 13. Expected files

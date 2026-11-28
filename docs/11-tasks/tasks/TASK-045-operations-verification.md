@@ -6,7 +6,7 @@
 | Phase and lane | 9 Verification · lane V, verification |
 | Size and review | L · review class V — verification results accepted by the Owner ([EXECUTION_CONTEXT](../EXECUTION_CONTEXT.md) section 12) |
 | Depends on | [TASK-044](TASK-044-integrated-verification.md) |
-| Gates | TARGET, G4 (store account, buckets and keys), The operator named by the Owner ([TASK_PLAN](../TASK_PLAN.md) section 3) |
+| Gates | OPERATOR, TARGET-STAGING, G4-STORE (store account, buckets and keys) ([TASK_PLAN](../TASK_PLAN.md) section 3; D-142). With TASK-048 it completes gate TARGET's phase B |
 | Branch | `task/TASK-045-operations-verification` from `develop` (EXC-22) |
 | Executor | Claude Opus 5.5, at the effort that the Owner's instruction names for this Task (D-031, D-095), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None. |
@@ -41,11 +41,11 @@ After AGENTS.md, CURRENT_HANDOFF, EXECUTION_CONTEXT and TASK_PLAN sections 1 to 
 ### 4.1 In scope
 
 1. Prepare for the operator the checklists, scripts and expected results of every step below; never hold a credential (EXC-13).
-2. Operator: the record of gate TARGET (ENVIRONMENTS section 17); staging and production environments created as section 6 says; the staging deployment of the candidate with RB-20, the migration job and the preflight; the checks of RB-21; the privilege test on the target.
-3. Operator: backups on staging; a restore drill RB-02 of a staging backup on a drill target off the VPS; the rehearsal of RB-01 phases D and E with the Owner's time measured (UAT-24); every operator procedure OP-01 to OP-08 rehearsed on staging, with RB-10 and RB-11 (OPPROC01); UAT-20 and UAT-23 with the Owner.
+2. Operator: the post-deployment items of gate TARGET's phase B for staging (ENVIRONMENTS section 17); the candidate on staging as TASK-044 deployed it, or a redeployment under its own STAGING-DEPLOY, with RB-20, the migration job and the preflight; the checks of RB-21; the privilege test on the target. Production's environment belongs to gate TARGET-PRODUCTION, before TASK-050 (D-142).
+3. Operator: backups on staging; a complete restore drill RB-02 of a staging backup on the drill target off the VPS that will hold the production drill, with no AI agent running there while the key or decrypted data are present — the Task stops for the operator (CE-70) before the key is taken, and the Owner closes the host session, its watcher and every other agent on that machine until the operator reports the decrypted data destroyed (ENVIRONMENTS section 17.2) — its peak memory and disk recorded as the feasibility measurement of ENVIRONMENTS section 17.2; the rehearsal of RB-01 phases D and E with the Owner's time measured (UAT-24); every operator procedure OP-01 to OP-08 rehearsed on staging, with RB-10 and RB-11 (OPPROC01); UAT-20 and UAT-23 with the Owner.
 4. Operator: SEC02 from outside the server; each heartbeat alert received once; the status evidence on the target (STATUS01).
-5. READY01 on the candidate: the release integrity report of TASK-014, the image checks, the scans clean or each finding accepted with its reason, the publication guard, the cost inventory and the free-tier record checked again, staging on the same digest, no `FINAL_PASS` invalidated, and the Owner's approval of OPERATIONS_RUNBOOK, BACKUP_RECOVERY and RELEASE_PROCESS after their rehearsal.
-6. Record the results without real identities (EXC-62), and the measured times that gate G4 needs (BACKUP_RECOVERY section 12; the production measurements follow in TASK-050).
+5. READY01 on the candidate: the release integrity report of TASK-014, the image checks, the scans clean or each finding accepted with its reason (a high or critical finding only with the Owner's decision for staging, no acceptance for development and CI only counting, D-142), the publication guard, the cost inventory and the free-tier record checked again, staging on the same digest, no `FINAL_PASS` invalidated, and the Owner's approval of OPERATIONS_RUNBOOK, BACKUP_RECOVERY and RELEASE_PROCESS after their rehearsal.
+6. Record the results without real identities (EXC-62), and the measured times that gate G4 needs (BACKUP_RECOVERY section 12; the production measurements follow in TASK-050). When TASK-048 is already merged, record gate TARGET SATISFIED in TASK_PLAN section 3 from the operator's report; otherwise TASK-048 does (D-142).
 
 ### 4.2 Owned by this Task
 

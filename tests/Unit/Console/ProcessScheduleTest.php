@@ -41,7 +41,7 @@ final class ProcessScheduleTest extends TestCase
                 'SC-04' => ['monitor:heartbeat', '*/5 * * * *'],
             ]],
             'backup' => ['backup', [
-                'SC-03' => ['backup:run', '0 0,6,12,18 * * *'],
+                'SC-03' => ['backup:run', '0 0,5,10,15,20 * * *'],
             ]],
             'none' => [null, []],
             'another' => ['worker', []],

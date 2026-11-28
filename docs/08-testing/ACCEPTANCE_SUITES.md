@@ -414,7 +414,7 @@ Levels: L1 unit, L2 database, L3 concurrency, L4 HTTP, L5 browser, L6 operations
 - The protocol of DEVICE_VERIFICATION on the shop's PC, tablet, USB and Bluetooth scanners, receipt, A4 and label printers and browsers (REQ-NFR-02, REQ-NFR-03, REQ-SCAN-01, REQ-DOC-02, REQ-CAT-11).
 
 **READY01 — Release readiness**
-- The release integrity report complete (RELEASE_PROCESS section 4); the image checks passed; the scans clean or each finding accepted with its reason (THR-14); the publication guard passed (REL-10).
+- The release integrity report complete (RELEASE_PROCESS section 4); the image checks passed; the scans clean or each finding accepted with its reason (THR-14), where a high or critical finding on an image deployed to staging or production counts only with the Owner's own decision for that environment, an acceptance for development and CI only, D-139, D-140 and D-144 among them, never counting (D-142); the publication guard passed (REL-10).
 - The cost inventory shows zero or approved exceptions and the free-tier record is current (REQ-NFR-06); staging runs the same digest and its separation is verified (REQ-OPS-06).
 - No `FINAL_PASS` on the candidate is invalidated (TEST_STRATEGY TS-32); the runbooks are approved (REQ-OPS-03).
 

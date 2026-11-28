@@ -6,7 +6,7 @@
 | Phase and lane | 9 Verification · lane V, verification |
 | Size and review | M · review class V — verification results accepted by the Owner ([EXECUTION_CONTEXT](../EXECUTION_CONTEXT.md) section 12) |
 | Depends on | [TASK-044](TASK-044-integrated-verification.md) |
-| Gates | DEVICES (the shop's devices available), TARGET (staging), The operator named by the Owner ([TASK_PLAN](../TASK_PLAN.md) section 3) |
+| Gates | OPERATOR, TARGET-STAGING, DEVICES-AVAILABLE (the shop's devices available); before `DONE`: DEVICES (the Owner's decision on DEVICE01) ([TASK_PLAN](../TASK_PLAN.md) section 3; D-142) |
 | Branch | `task/TASK-046-device-verification` from `develop` (EXC-22) |
 | Executor | Claude Opus 5.5, at the effort that the Owner's instruction names for this Task (D-031, D-095), on one explicit instruction of the Owner (EXC-10, EXC-11) |
 | MCP | None. |
@@ -120,7 +120,7 @@ Each dimension is recorded `PASS`, `FAIL`, `BLOCKED` or `N/A` with its reason (E
 
 ## 12. For later Tasks
 
-- TASK-047 applies the DVT-R4 outcome; the Owner decides gate DEVICES.
+- TASK-047 applies the DVT-R4 outcome; the Owner decides gate DEVICES on this Task's results, and the Task records his decision before it is `DONE` (D-142).
 - Tasks that depend on this one directly: [TASK-047](TASK-047-p7-change-control-2.md).
 
 ## 13. Expected files

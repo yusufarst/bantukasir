@@ -28,9 +28,9 @@ final class BackupRulesTest extends TestCase
         return [
             'a working day at 00.00' => [BackupReason::SCHEDULED, '2026-11-03 00:00:05', ['6h']],
             'a Sunday at 00.00' => [BackupReason::SCHEDULED, '2026-11-08 00:00:05', ['6h', 'weekly']],
-            'a Sunday at 06.00' => [BackupReason::SCHEDULED, '2026-11-08 06:00:05', ['6h']],
+            'a Sunday at 05.00' => [BackupReason::SCHEDULED, '2026-11-08 05:00:05', ['6h']],
             'the 1st at 00.00' => [BackupReason::SCHEDULED, '2026-12-01 00:00:05', ['6h', 'monthly']],
-            'the 1st at 12.00' => [BackupReason::SCHEDULED, '2026-12-01 12:00:05', ['6h']],
+            'the 1st at 10.00' => [BackupReason::SCHEDULED, '2026-12-01 10:00:05', ['6h']],
             'a Sunday the 1st at 00.00' => [BackupReason::SCHEDULED, '2026-11-01 00:00:05', ['6h', 'weekly', 'monthly']],
             'on demand on a Sunday the 1st' => [BackupReason::ON_DEMAND, '2026-11-01 00:00:05', ['6h']],
             'before a release on a Sunday' => [BackupReason::PRE_RELEASE, '2026-11-08 00:00:05', ['6h']],

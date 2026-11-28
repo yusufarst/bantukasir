@@ -172,7 +172,7 @@ A default is a placeholder, a fallback of `config/` or a value of the local envi
 | --- | --- | --- | --- | --- |
 | SC-01 | Application | `reconciliation:run` | Daily at 03.00 | Writes a `reconciliation_runs` row; blocks mismatching products (BR-INV-45); pings the reconciliation check when the run completes |
 | SC-02 | Application | `housekeeping:run` | Hourly | Removes, in bounded batches: expired one-time link tokens; unreferenced stored files older than one hour; temporary CSV files older than 24 hours; resolved request receipts older than 30 days; security log entries older than 365 days (section 14). Never a business record and never an unresolved receipt |
-| SC-03 | Backup | `backup:run` | 00.00, 06.00, 12.00 and 18.00; the Sunday 00.00 run also writes the weekly copy and re-verifies the latest weekly copy; the 00.00 run on the 1st of the month also writes the monthly copy | ADR-010; writes a `backup_runs` row; pings the backup check after success |
+| SC-03 | Backup | `backup:run` | 00.00, 05.00, 10.00, 15.00 and 20.00 (D-145); the Sunday 00.00 run also writes the weekly copy and re-verifies the latest weekly copy; the 00.00 run on the 1st of the month also writes the monthly copy | ADR-010; writes a `backup_runs` row; pings the backup check after success |
 | SC-04 | Application | `monitor:heartbeat` | Every 5 minutes | Fetches the environment's public `/up` through Cloudflare; on success pings the web check |
 
 Every scheduled command runs without overlap, takes its arguments from configuration only and never passes stored data to a process (TR-RUN-04, THR-10). ROUTE_CONTRACTS section 7 lists them.
@@ -233,6 +233,16 @@ Recorded by the operator. Facts that identify the server, the domain, an account
 8. PERF01 run on the server with the provisional dataset (TECHNICAL_RULES section 13).
 9. This free-tier record checked again.
 
+D-142 splits these items into three phases, so that no phase waits for a Task that it blocks. Each phase is its own gate in TASK_PLAN section 3, and none of them changes what an item requires.
+
+| Phase | Gate | Items | When |
+| --- | --- | --- | --- |
+| A — the server and staging before their first deployment | TARGET-STAGING | 1; 2; 3 (the firewall from outside for the ports of section 9, the certificate, Full (strict) and its expiry, R-TGT-01 closed); 4 and 5 for staging, with its access gate and `noindex` (ENV-06); 7, the heartbeat checks created; 9; and the memory headroom of section 17.2 measured | Before TASK-044, TASK-045, TASK-046 and TASK-048 |
+| B — verification after staging's deployment | TARGET (complete with phase A) | 6 for staging: its first backup and its first drill off the VPS (TASK-045); 7, each alert received once (TASK-045); SEC02 from outside against the deployed staging (TASK-045); 8, PERF01 (TASK-048) | Completed by TASK-045 and TASK-048; before TASK-049 |
+| C — production before its installation | TARGET-PRODUCTION | 4 and 5 for production: its separation (ENV-02), its database and roles by the script of ENV-30 with its marker, on the version that OPEN_ITEMS question 39 decides; its heartbeat checks; its bucket and keys of G4-STORE. No application and no data | Before TASK-050 |
+
+Production's first backup and drill, and their acceptance, are gate G4, before the cutover inside TASK-050 (RELEASE_PROCESS RB-23 step 10).
+
 ### 17.1 Progress record
 
 Gate TARGET is **OPEN**, and continuous execution is held while it is reviewed (DECISIONS D-141). This record tracks the operator's progress, sanitized: it holds no address, hostname, provider name, account, key or other secret, and names no other service on the server. Each entry carries one of three states:
@@ -261,11 +271,49 @@ Reported on 23 November 2026, reviewed by the host session on the same day. Noth
 
 **R-TGT-01, an open risk: a private key that was exposed.** A private key of this server's setup was exposed at an earlier point, by the Owner's report of 23 November 2026. Which key, where and when stay in the operator's private record; the repository holds no material of it. It is handled as an incident (OPERATIONS_RUNBOOK RB-05, SEC-SECRET-04): the key is replaced as section 16 prescribes for its kind — for the origin certificate's key, revoked at Cloudflare and a new certificate issued and installed (RB-07); for an SSH key, replaced and the old one removed — and the operator records that the old key no longer works. Until then item 3 stays PENDING, with any other item the key touches.
 
+### 17.2 Resources on the existing hardware
+
+The server's memory and the operator's machine are fixed: no added memory, no spending, no interruption of the server's other services, and no request to free memory (the Owner's constraints, D-142). The plan therefore assumes no headroom; it measures it.
+
+- **The headroom is measured, never assumed.** In phase A the operator records the server's total memory, the memory in use and the memory available, with the other services running as they normally do. Each BantuKasir container then gets a memory limit in Coolify that fits inside that headroom; the limits are recorded here as sizes. A headroom that cannot hold one environment at its limits is a stop for the Owner. It is never answered by stopping another service or by adding memory.
+- **One environment at full size at a time.** Until PERF01 has measured both environments' footprint beside the other services, staging and production never run their full workload at once:
+  - staging runs until the release image's own staging verification inside TASK-050 is reported (TASK-050 scope item 2), with production not yet installed;
+  - it is then stopped before the production installation (RB-23 step 7), stopped and never deleted, its volumes kept;
+  - after go-live it is started only for a release rehearsal, outside the shop's hours, and only when the measured headroom holds it beside production.
+- **No build on the server.** Every image is built and checked by GitHub Actions; the server pulls the release image by digest (section 6, ENV-05), and Coolify builds nothing. Heavy tests run only in CI (D-108).
+- **PERF01.**
+  - The run happens on staging, beside the other services as they run.
+  - k6 runs as a short-lived container with its own small memory limit, inside the measured headroom.
+  - The measured footprint and the worker pool of `docker/app/php-fpm.conf` are checked against the limits (TASK-048).
+  - A budget missed because the headroom is small goes through change control (TASK-048 scope item 4).
+- **The restore drill off the VPS** (BACKUP_RECOVERY section 8). Its feasibility on existing hardware is **not yet verified**. It is measured by the first complete RB-02 on staging's backups, on the machine that will hold the production drill, in TASK-045.
+  - **What a complete RB-02 needs.** RB-02 is more than a database restore:
+    - the manifest's release image, pulled by digest;
+    - a PostgreSQL container of the production version (OPEN_ITEMS question 39);
+    - the encrypted download, decrypted with age;
+    - the restored database and the restored file volume;
+    - the application started on the target, `/up` answering 200, and one receipt and one session report rendered through an Owner recovery link;
+    - OP-04 and the sequence advance run on the target.
+    It therefore needs about the footprint of the local environment's application and database together, not that of one database container.
+  - **A candidate machine, measured on 27 November 2026:** the Owner's machine, with 7.2 GiB of memory, 16 logical processors, and 28 GB of disk free on its system drive, 95 % used. It is not a verified target:
+    - Its container engine is shared with another project, within a memory limit of about 3.4 GiB.
+    - Its local PostgreSQL suite reached Composer's 1,800-second limit after 126 of its 309 tests on 24 November 2026; that suite ran in CI instead.
+    - AI agents run on it in ordinary use.
+    - It qualifies as the drill target only while the operator controls it for the whole drill (BACKUP_RECOVERY section 8).
+  - **The check before each drill**, recorded as sizes and durations only:
+    - **Disk:** the free disk is at least three times the sum of the backup's dump and files (the encrypted copy, the decrypted copy, the restored database and file volume), plus the images not already present.
+    - **Memory:** the engine's free memory is at least the peak measured in the last staging drill on that machine. The first staging drill, which has no earlier peak, starts only when that free memory holds the memory limits set for the drill's containers, and records its peak.
+    - **No agent:** no AI agent session, scheduled agent task or agent background process runs on the machine.
+    A check that fails is a stop for the Owner. It is never answered by stopping another project's containers, by asking to free memory, or by spending money (D-142).
+  - **No AI agent while the key or decrypted data are present.** From the moment the recovery key is taken from its custody until every decrypted file is destroyed and the key is closed, no AI agent runs on any machine that holds either. This covers the desktop application, the command line, IDE extensions, browser extensions, scheduled tasks and the executor's watcher. No agent performs, watches or screenshots a step; agents later see only the sanitized durations, sizes and results (ENV-01, ENV-03, BKP-08). The same holds for the creation and test decryption of a key pair (BKP-20), and for a restore (RB-01).
+    - **The executor too.** Under continuous execution the host session and its watcher run on the Owner's machine (EXECUTION_CONTEXT CE-03). The Task whose step needs the key — TASK-045's staging drill, TASK-049's key pair and sealed copy, TASK-050's staging drill of the release image, its empty production drill and its populated production drill — stops for the operator (CE-70) before the key is taken. The Owner then closes the host session, stops its watcher and every other agent on that machine, and starts them again only after the operator reports every decrypted file destroyed and the key closed. A watcher or agent found running during that time is an incident (OPERATIONS_RUNBOOK RB-05): the step is repeated, and a key that was in use is treated as exposed and rotated (BACKUP_RECOVERY BKP-22).
+  - **Before the production drill (G4):** the production drill runs only on a machine where a complete staging RB-02 passed with these measurements, and where the production backup's size passes the disk check. Otherwise it is a stop for the Owner.
+
 ## 18. Open items
 
 | Item | Subject | Step |
 | --- | --- | --- |
-| Gate TARGET | The real server, domain and accounts; section 17, its progress in section 17.1 (OPEN; TD-TGT-01 and R-TGT-01 open) | Before the pilot |
+| Gate TARGET | The real server, domain and accounts; section 17 in its phases A to C (D-142), its progress in section 17.1 (OPEN; TD-TGT-01 and R-TGT-01 open) and its resources in section 17.2 | Phase A before TASK-044, B before TASK-049, C before TASK-050 |
 | N-12 | The transition from the planning branch to `develop` and `main` (ADR-011 item 3) | Before the first implementation Task |
 | N-08 | GitHub branch protection | The Owner, when convenient |
 | T-02 | `.env.example` rebuilt with the settings of section 11, placeholders only | Foundation Task |
